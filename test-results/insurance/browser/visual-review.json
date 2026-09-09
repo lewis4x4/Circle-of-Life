@@ -1,0 +1,58 @@
+{
+  "verdict": "pass",
+  "assessment": "Manual inspection of generated screenshots against functional and responsive criteria; no reference screenshot supplied",
+  "browser": "Chromium 147.0.7727.15 (full Chromium new headless)",
+  "inspected": [
+    "draft-desktop.png",
+    "draft-mobile.png",
+    "draft-mobile-facts.png",
+    "policy-desktop.png"
+  ],
+  "findings": [
+    "Native PDF visibly renders source page2 beside editable policy facts. Chromium Page number control reports2, matching the app Preview page control.",
+    "Mobile navigation wraps within390px viewport; source panel and evidence forms stack without horizontal overflow or overlapping controls.",
+    "Policy view labels unknown premium/limits explicitly and separates dated links, premium allocations and claim figures.",
+    "Three web UI axe scans report zero WCAG A/AA violations."
+  ],
+  "corrected_issue": "Native PDF ignored fragment-only page updates; keying iframe by document and page remounts the viewer and navigates to the requested page. Regression test asserts remount, browser asserts actual native page.",
+  "security_headers": "Original sandbox CSP and nosniff preserved; outer frame-src self reproduced. No security-header modification was needed.",
+  "limitations": [
+    "Auth, API and Next navigation are mocked; this does not replace SQL/API/hosted evidence.",
+    "This is Chromium-only visual proof, not Safari/Firefox native-PDF equivalence.",
+    "PDF document accessibility is not certified by the web UI axe scans."
+  ],
+  "initial_attempts": [
+    "First Vite bootstrap failed dependency resolution from temporary root; explicit existing dependency aliases repaired harness.",
+    "Headless-shell blank PDF was rejected and recorded; full Chromium rendered native PDF.",
+    "Native page1 persisted despite app Preview page2 until iframe-remount repair."
+  ],
+  "servicing_review": {
+    "verdict": "pass",
+    "inspected": [
+      "servicing-package-desktop.png",
+      "servicing-package-mobile.png",
+      "servicing-loss-rows.png",
+      "servicing-exposure-rows.png",
+      "approved-package-print.pdf"
+    ],
+    "checks": 18,
+    "axe_views": 7,
+    "axe_violations": 0,
+    "page_errors": 0,
+    "observations": [
+      "All five servicing forms produced schema-valid draft commands through actual browser controls.",
+      "Additional insured selected the approved shared policy and its covered facility; frozen printed names include both parties.",
+      "Editing an in-review record saved its new version without a duplicate status transition.",
+      "Former-assignee recovery changed current operational owner while preserving prepared owner and approved payload.",
+      "Exported package matched selected immutable version; real Chromium produced a readable one-page printable PDF."
+    ],
+    "limitations": "API/auth/Next navigation remain explicit fixtures. These screenshots do not replace SQL/API/hosted proof.",
+    "harness_correction": "Version status locator was narrowed to visible text to exclude identical hidden version-history snapshots.",
+    "null_prepared_owner": {
+      "verdict": "pass",
+      "screenshot": "servicing-null-owner-print.png",
+      "printed_pdf": "approved-unassigned-owner-print.pdf",
+      "observed": "Owner at preparation stays Unassigned after operational reassignment and directory rename; the current name does not appear in the frozen preparation field."
+    }
+  }
+}

@@ -1,1 +1,1 @@
-export { default } from "../../../insurance/policies/page";
+export { default } from "@/app/(admin)/insurance/policies/page";

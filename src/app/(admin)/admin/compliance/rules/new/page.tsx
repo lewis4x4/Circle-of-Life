@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
@@ -61,6 +62,7 @@ const PREDEFINED_RULES = [
 ] as const;
 
 export default function NewComplianceRulePage() {
+  const router = useRouter();
   const { selectedFacilityId } = useFacilityStore();
   const supabase = createClient();
 
@@ -138,7 +140,7 @@ export default function NewComplianceRulePage() {
       setSuccess(true);
       // Reset form
       setTimeout(() => {
-        window.location.href = "/admin/compliance/rules";
+        router.push("/admin/compliance/rules");
       }, 1500);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create rule");

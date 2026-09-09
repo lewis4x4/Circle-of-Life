@@ -2,8 +2,18 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import {
+  LegacyInsuranceGuard,
+  ServicingContextLink,
+} from "@/components/insurance/servicing-client";
 import { InsuranceHubNav } from "../insurance-hub-nav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
@@ -15,7 +25,7 @@ import type { Database } from "@/types/database";
 
 type Row = Database["public"]["Tables"]["loss_runs"]["Row"];
 
-export default function InsuranceLossRunsPage() {
+function InsuranceLossRunsPage() {
   const supabase = createClient();
   const { organizationId, loading: authLoading } = useHavenAuth();
 
@@ -50,10 +60,14 @@ export default function InsuranceLossRunsPage() {
   return (
     <div className="space-y-6">
       <InsuranceHubNav />
+      <ServicingContextLink kind="loss_report" />
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Loss runs</h1>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+          Loss runs
+        </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Generated loss summaries by entity and period (export in a later iteration).
+          Generated loss summaries by entity and period (export in a later
+          iteration).
         </p>
       </div>
       {loadError && (
@@ -64,7 +78,9 @@ export default function InsuranceLossRunsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">History</CardTitle>
-          <CardDescription>{loading ? "Loading…" : `${rows.length} row(s)`}</CardDescription>
+          <CardDescription>
+            {loading ? "Loading…" : `${rows.length} row(s)`}
+          </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -78,22 +94,41 @@ export default function InsuranceLossRunsPage() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
+                <tr
+                  key={r.id}
+                  className="border-b border-slate-100 dark:border-slate-900"
+                >
                   <td className="py-2 pr-4">
                     {r.period_start} – {r.period_end}
                   </td>
-                  <td className="py-2 pr-4 tabular-nums">{r.total_claims_count}</td>
-                  <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(Number(r.total_paid_cents))}</td>
-                  <td className="py-2 tabular-nums">{formatUsdFromCents(Number(r.total_reserve_cents))}</td>
+                  <td className="py-2 pr-4 tabular-nums">
+                    {r.total_claims_count}
+                  </td>
+                  <td className="py-2 pr-4 tabular-nums">
+                    {formatUsdFromCents(Number(r.total_paid_cents))}
+                  </td>
+                  <td className="py-2 tabular-nums">
+                    {formatUsdFromCents(Number(r.total_reserve_cents))}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {!loading && rows.length === 0 && (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No loss runs generated yet.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              No loss runs generated yet.
+            </p>
           )}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function GuardedPage() {
+  return (
+    <LegacyInsuranceGuard>
+      <InsuranceLossRunsPage />
+    </LegacyInsuranceGuard>
   );
 }

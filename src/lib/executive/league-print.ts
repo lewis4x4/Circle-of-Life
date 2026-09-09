@@ -84,7 +84,8 @@ export function buildExecutiveLeaguePrintHtml(data: ExecutiveLeagueData) {
       <tbody>${topRows}</tbody>
     </table>
 
-    <h2>Insurance Readiness</h2>
+    <h2>Legacy Insurance Readiness</h2>
+    <p>This legacy heuristic uses primary-entity policy rows and archived packages. It does not assess coverage or include reviewed shared-policy servicing. Refer to the insurance workspace for verified records and current actions.</p>
     <table>
       <thead>
         <tr><th>Entity</th><th>Score</th><th>Label</th><th>Active Policies</th><th>Expiring 60d</th><th>Open Renewals</th><th>Primary Concern</th></tr>

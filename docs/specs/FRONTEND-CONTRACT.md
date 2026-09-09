@@ -154,6 +154,11 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/insurance/policies/new`
 - `/admin/insurance/policies/[id]`
 - `/admin/insurance/renewals`
+- `/admin/insurance/documents`
+- `/admin/insurance/documents/[id]`
+- `/admin/insurance/review/[id]`
+- `/admin/insurance/servicing`
+- `/admin/insurance/servicing/[id]`
 - `/admin/insurance/claims`
 - `/admin/insurance/claims/[id]`
 - `/admin/insurance/loss-runs`

@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
+import {
+  LegacyInsuranceGuard,
+  ServicingContextLink,
+} from "@/components/insurance/servicing-client";
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,7 +42,7 @@ export {
   INSURANCE_CLAIMS_LIST_SCOPE_COPY,
 };
 
-export default function InsuranceClaimsPage() {
+function InsuranceClaimsPage() {
   const supabase = createClient();
   const { organizationId, loading: authLoading } = useHavenAuth();
 
@@ -67,16 +71,19 @@ export default function InsuranceClaimsPage() {
     organizationId,
     hasOrgScopedData: rows.length > 0,
   });
-  const fetchErrorBannerMessage = resolveInsuranceClaimsFetchErrorBannerMessage({
-    authLoading,
-    fetchError: error?.message ?? null,
-  });
+  const fetchErrorBannerMessage = resolveInsuranceClaimsFetchErrorBannerMessage(
+    {
+      authLoading,
+      fetchError: error?.message ?? null,
+    },
+  );
   const showLoading = authLoading || isPending;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 w-full">
         <InsuranceHubNav />
+        <ServicingContextLink kind="claim_matter" />
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
@@ -85,19 +92,27 @@ export default function InsuranceClaimsPage() {
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
               Corporate GL claims; optional link to incidents when applicable.
             </p>
-            <p className="text-sm text-muted-foreground max-w-2xl">{INSURANCE_CLAIMS_LIST_SCOPE_COPY}</p>
+            <p className="text-sm text-muted-foreground max-w-2xl">
+              {INSURANCE_CLAIMS_LIST_SCOPE_COPY}
+            </p>
           </div>
         </header>
 
         {authLoading ? (
-          <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          <p
+            className="text-sm text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
             {INSURANCE_CLAIMS_LOADING_PROFILE_COPY}
           </p>
         ) : null}
 
         {organizationGapMessage ? (
           <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
-            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+            <CardContent className="p-4 text-sm text-muted-foreground">
+              {organizationGapMessage}
+            </CardContent>
           </Card>
         ) : null}
 
@@ -119,18 +134,28 @@ export default function InsuranceClaimsPage() {
 
           <MotionList className="space-y-3">
             {showLoading ? (
-              <p className="text-sm font-mono text-slate-500 pl-2" role="status" aria-live="polite">
+              <p
+                className="text-sm font-mono text-slate-500 pl-2"
+                role="status"
+                aria-live="polite"
+              >
                 {INSURANCE_CLAIMS_LOADING_LIST_COPY}
               </p>
             ) : rows.length === 0 ? (
               <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
-                <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Claims</p>
-                <p className="text-sm opacity-80 mt-1">No insurance claims have been tracked yet.</p>
+                <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">
+                  No Claims
+                </p>
+                <p className="text-sm opacity-80 mt-1">
+                  No insurance claims have been tracked yet.
+                </p>
               </div>
             ) : (
               rows.map((r) => {
                 const isOpen = r.status !== "closed";
-                const formattedDate = formatInsuranceClaimDateOfLoss(r.date_of_loss);
+                const formattedDate = formatInsuranceClaimDateOfLoss(
+                  r.date_of_loss,
+                );
 
                 return (
                   <MotionItem
@@ -142,7 +167,9 @@ export default function InsuranceClaimsPage() {
                         : "border-slate-200/80 bg-white dark:border-white/5 dark:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/20",
                     )}
                   >
-                    {isOpen && <div className="absolute left-0 top-0 w-1.5 h-full bg-red-500" />}
+                    {isOpen && (
+                      <div className="absolute left-0 top-0 w-1.5 h-full bg-red-500" />
+                    )}
                     <div className="flex-1 min-w-0 pl-1">
                       <div className="flex items-center gap-3 mb-1">
                         <span
@@ -213,5 +240,13 @@ export default function InsuranceClaimsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GuardedPage() {
+  return (
+    <LegacyInsuranceGuard loadingCopy={INSURANCE_CLAIMS_LOADING_PROFILE_COPY}>
+      <InsuranceClaimsPage />
+    </LegacyInsuranceGuard>
   );
 }

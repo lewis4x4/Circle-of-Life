@@ -1,0 +1,8 @@
+SYNTHETIC INSURANCE TEST FIXTURE - NOT REAL COVERAGE
+PAGE 1
+Policy TEST-CONFLICT
+Effective 2026-01-01. Expiration 2027-01-01.
+PAGE 2
+Policy TEST-CONFLICT
+Expiration 2026-12-01.
+No explanation of which expiration controls is supplied.

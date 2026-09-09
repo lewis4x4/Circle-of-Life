@@ -10,11 +10,20 @@ import InsuranceClaimsPage, {
 
 const authMock = vi.hoisted(() => ({
   loading: true,
+  appRole: "owner",
   organizationId: null as string | null,
 }));
 
 const queryMock = vi.hoisted(() => ({
-  rows: [] as { id: string; status: string; date_of_loss: string | null; reserve_cents: number; paid_cents: number; claim_number: string | null; incident_id: string | null }[],
+  rows: [] as {
+    id: string;
+    status: string;
+    date_of_loss: string | null;
+    reserve_cents: number;
+    paid_cents: number;
+    claim_number: string | null;
+    incident_id: string | null;
+  }[],
   isPending: true,
   error: null as Error | null,
 }));
@@ -23,6 +32,7 @@ vi.mock("@/contexts/haven-auth-context", () => ({
   useHavenAuth: () => ({
     organizationId: authMock.organizationId,
     loading: authMock.loading,
+    appRole: authMock.appRole,
   }),
 }));
 
@@ -43,13 +53,18 @@ vi.mock("../insurance-hub-nav", () => ({
 }));
 
 vi.mock("@/components/ui/motion-list", () => ({
-  MotionList: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  MotionItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  MotionList: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  MotionItem: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 describe("InsuranceClaimsPage organization context", () => {
   beforeEach(() => {
     authMock.loading = true;
+    authMock.appRole = "owner";
     authMock.organizationId = null;
     queryMock.rows = [];
     queryMock.isPending = true;
@@ -59,11 +74,21 @@ describe("InsuranceClaimsPage organization context", () => {
   it("names the wait and suppresses organization gaps while auth hydrates", () => {
     render(<InsuranceClaimsPage />);
 
-    expect(screen.getByText(INSURANCE_CLAIMS_LOADING_PROFILE_COPY)).toBeInTheDocument();
-    expect(screen.getByText(INSURANCE_CLAIMS_LOADING_LIST_COPY)).toBeInTheDocument();
-    expect(screen.getByText(INSURANCE_CLAIMS_LIST_SCOPE_COPY)).toBeInTheDocument();
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
-    expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(INSURANCE_CLAIMS_LOADING_PROFILE_COPY),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(INSURANCE_CLAIMS_LOADING_LIST_COPY),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(INSURANCE_CLAIMS_LIST_SCOPE_COPY),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Organization missing on profile."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No organization on this profile"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the named quiet gap after auth resolves without an organization", () => {
@@ -72,8 +97,12 @@ describe("InsuranceClaimsPage organization context", () => {
 
     render(<InsuranceClaimsPage />);
 
-    expect(screen.getByText("No organization on this profile")).toBeInTheDocument();
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("No organization on this profile"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Organization missing on profile."),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -85,7 +114,11 @@ describe("InsuranceClaimsPage organization context", () => {
 
     render(<InsuranceClaimsPage />);
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Unable to load insurance claims.");
-    expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Unable to load insurance claims.",
+    );
+    expect(
+      screen.queryByText("No organization on this profile"),
+    ).not.toBeInTheDocument();
   });
 });

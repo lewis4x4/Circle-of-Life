@@ -168,8 +168,8 @@ export default function ExecutiveLeaguePageClient({
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/executive/reports">
             Executive reports
           </Link>
-          <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/insurance/renewal-packages">
-            Insurance readiness
+          <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/insurance">
+            Verified insurance records
           </Link>
         </div>
       </div>
@@ -195,9 +195,9 @@ export default function ExecutiveLeaguePageClient({
             />
             <LeagueMetricCard
               icon={ShieldCheck}
-              label="Insurance-ready entities"
+              label="Legacy insurance heuristic"
               value={`${summary.insuranceReadyEntities}/${insuranceRows.length}`}
-              detail="Entities with a current packet and no active readiness flags"
+              detail="Legacy primary-entity inventory and package scoring; not a coverage assessment"
               tone={summary.insuranceReadyEntities === insuranceRows.length ? "emerald" : "indigo"}
             />
             <LeagueMetricCard
@@ -289,9 +289,9 @@ export default function ExecutiveLeaguePageClient({
 
           <Card>
             <CardHeader>
-              <CardTitle>Insurance readiness by entity</CardTitle>
+              <CardTitle>Legacy insurance readiness by entity</CardTitle>
               <CardDescription>
-                Renewal posture summarized once per legal entity so board review can see packet freshness and expiring coverage without bouncing into the insurance hub.
+                This legacy heuristic uses primary-entity policy rows and archived packages. It does not assess coverage or include the new shared-policy and reviewed-servicing workflows. Use the insurance workspace for verified records and current actions.
               </CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">

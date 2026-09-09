@@ -4,10 +4,14 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { LegacyInsuranceGuard } from "@/components/insurance/servicing-client";
 import { InsuranceHubNav } from "../../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
@@ -30,7 +34,7 @@ import type { Database } from "@/types/database";
 type Claim = Database["public"]["Tables"]["insurance_claims"]["Row"];
 type Activity = Database["public"]["Tables"]["claim_activities"]["Row"];
 
-export default function InsuranceClaimDetailPage() {
+function InsuranceClaimDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = useMemo(() => createClient(), []);
@@ -40,15 +44,17 @@ export default function InsuranceClaimDetailPage() {
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const organizationGapMessage = resolveInsuranceClaimDetailOrganizationGapMessage({
-    authLoading,
-    organizationId,
-    hasOrgScopedData: claim !== null,
-  });
-  const fetchErrorBannerMessage = resolveInsuranceClaimDetailFetchErrorBannerMessage({
-    authLoading,
-    fetchError,
-  });
+  const organizationGapMessage =
+    resolveInsuranceClaimDetailOrganizationGapMessage({
+      authLoading,
+      organizationId,
+      hasOrgScopedData: claim !== null,
+    });
+  const fetchErrorBannerMessage =
+    resolveInsuranceClaimDetailFetchErrorBannerMessage({
+      authLoading,
+      fetchError,
+    });
   const loading = authLoading || fetching;
 
   const load = useCallback(async () => {
@@ -120,7 +126,9 @@ export default function InsuranceClaimDetailPage() {
       <div className="space-y-6">
         <InsuranceHubNav />
         <p className="text-sm text-muted-foreground" role="status">
-          {authLoading ? INSURANCE_CLAIM_DETAIL_AUTH_LOADING_COPY : INSURANCE_CLAIM_DETAIL_LOADING_COPY}
+          {authLoading
+            ? INSURANCE_CLAIM_DETAIL_AUTH_LOADING_COPY
+            : INSURANCE_CLAIM_DETAIL_LOADING_COPY}
         </p>
       </div>
     );
@@ -131,9 +139,14 @@ export default function InsuranceClaimDetailPage() {
       <div className="space-y-6">
         <InsuranceHubNav />
         <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
-          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            {organizationGapMessage}
+          </CardContent>
         </Card>
-        <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/claims">
+        <Link
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          href="/admin/insurance/claims"
+        >
           Back to claims
         </Link>
       </div>
@@ -145,11 +158,17 @@ export default function InsuranceClaimDetailPage() {
       <div className="space-y-6">
         <InsuranceHubNav />
         {fetchErrorBannerMessage ? (
-          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+          <p
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            role="alert"
+          >
             {fetchErrorBannerMessage}
           </p>
         ) : null}
-        <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/claims">
+        <Link
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          href="/admin/insurance/claims"
+        >
           Back to claims
         </Link>
       </div>
@@ -165,7 +184,9 @@ export default function InsuranceClaimDetailPage() {
         backLink={{ label: "Back to claims", href: "/admin/insurance/claims" }}
       />
 
-      <p className="text-sm text-muted-foreground">{INSURANCE_CLAIM_DETAIL_SCOPE_ET_COPY}</p>
+      <p className="text-sm text-muted-foreground">
+        {INSURANCE_CLAIM_DETAIL_SCOPE_ET_COPY}
+      </p>
 
       <RecordDetailSection
         title="Summary"
@@ -182,23 +203,31 @@ export default function InsuranceClaimDetailPage() {
           </p>
           <p>
             <span className="text-muted-foreground">Reserve:</span>{" "}
-            <span className="tabular-nums">{formatUsdFromCents(claim.reserve_cents)}</span>
+            <span className="tabular-nums">
+              {formatUsdFromCents(claim.reserve_cents)}
+            </span>
           </p>
           <p>
             <span className="text-muted-foreground">Paid:</span>{" "}
-            <span className="tabular-nums">{formatUsdFromCents(claim.paid_cents)}</span>
+            <span className="tabular-nums">
+              {formatUsdFromCents(claim.paid_cents)}
+            </span>
           </p>
           {claim.incident_id && (
             <p className="md:col-span-2">
               <span className="text-muted-foreground">Incident:</span>{" "}
-              <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/incidents/${claim.incident_id}`}>
+              <Link
+                className="text-primary underline-offset-4 hover:underline"
+                href={`/admin/incidents/${claim.incident_id}`}
+              >
                 Open incident
               </Link>
             </p>
           )}
           {claim.description && (
             <p className="md:col-span-2">
-              <span className="text-muted-foreground">Description:</span> {claim.description}
+              <span className="text-muted-foreground">Description:</span>{" "}
+              {claim.description}
             </p>
           )}
         </div>
@@ -210,7 +239,9 @@ export default function InsuranceClaimDetailPage() {
       >
         <div className="overflow-x-auto">
           {activities.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No activities logged.</p>
+            <p className="text-sm text-muted-foreground">
+              No activities logged.
+            </p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
@@ -234,5 +265,15 @@ export default function InsuranceClaimDetailPage() {
         </div>
       </RecordDetailSection>
     </div>
+  );
+}
+
+export default function GuardedClaimDetail() {
+  return (
+    <LegacyInsuranceGuard
+      loadingCopy={INSURANCE_CLAIM_DETAIL_AUTH_LOADING_COPY}
+    >
+      <InsuranceClaimDetailPage />
+    </LegacyInsuranceGuard>
   );
 }

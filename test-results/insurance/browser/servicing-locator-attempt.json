@@ -1,0 +1,455 @@
+{
+  "pdf_csp_mode": "sandbox",
+  "fixture_only": true,
+  "scope": "Real Chromium; unchanged Haven components and CSS; mocked auth, Next navigation and insurance API. No production access, provider extraction or database authorization claim.",
+  "checks": [
+    {
+      "name": "upload failure and retained-file retry",
+      "passed": true,
+      "detail": {
+        "attempts": 2
+      }
+    },
+    {
+      "name": "extraction failure and manual-review fallback",
+      "passed": true,
+      "detail": {
+        "attempts": 2
+      }
+    },
+    {
+      "name": "same-origin PDF transport to browser frame",
+      "passed": true,
+      "detail": {
+        "pdf_requests": [
+          {
+            "method": "GET",
+            "path": "/api/insurance/documents/33333333-3333-4333-8333-333333333333"
+          }
+        ],
+        "frames": [
+          {
+            "url": "http://127.0.0.1:5173/admin/insurance/documents/33333333-3333-4333-8333-333333333333",
+            "name": ""
+          },
+          {
+            "url": "http://127.0.0.1:5173/api/insurance/documents/33333333-3333-4333-8333-333333333333#page=1",
+            "name": ""
+          },
+          {
+            "url": "chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html",
+            "name": "12341B133166A6232711DA66C030F954"
+          },
+          {
+            "url": "http://127.0.0.1:5173/api/insurance/documents/33333333-3333-4333-8333-333333333333#page=1",
+            "name": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "native PDF viewer displays requested page",
+      "passed": true,
+      "detail": {
+        "page": 2,
+        "inputs": [
+          [
+            {
+              "type": "text",
+              "value": "46%",
+              "label": "Zoom level",
+              "title": ""
+            },
+            {
+              "type": "text",
+              "value": "2",
+              "label": "Page number",
+              "title": ""
+            }
+          ]
+        ],
+        "original_csp": "sandbox; default-src 'none'; frame-ancestors 'self'",
+        "outer_frame_src": "'self'"
+      }
+    },
+    {
+      "name": "source page and per-field evidence controls",
+      "passed": true,
+      "detail": {
+        "source_page": 2,
+        "manual_fields": 8,
+        "document_fields": 1
+      }
+    },
+    {
+      "name": "responsive mobile width",
+      "passed": true,
+      "detail": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "manual draft save and explicit approval navigate to one verified policy",
+      "passed": true,
+      "detail": {
+        "save_calls": 1,
+        "approvals": 1,
+        "premium_cents": null
+      }
+    },
+    {
+      "name": "servicing vendor_evidence form saves schema-valid draft",
+      "passed": true,
+      "detail": {
+        "record_count": 1
+      }
+    },
+    {
+      "name": "servicing loss_report form saves schema-valid draft",
+      "passed": true,
+      "detail": {
+        "record_count": 2
+      }
+    },
+    {
+      "name": "servicing claim_matter form saves schema-valid draft",
+      "passed": true,
+      "detail": {
+        "record_count": 3
+      }
+    },
+    {
+      "name": "servicing workforce_exposure form saves schema-valid draft",
+      "passed": true,
+      "detail": {
+        "record_count": 4
+      }
+    },
+    {
+      "name": "additional insured selects approved shared policy and covered facility",
+      "passed": true,
+      "detail": {
+        "entity_id": "99999999-9999-4999-8999-999999999999",
+        "facility_id": "22222222-2222-4222-8222-222222222222"
+      }
+    }
+  ],
+  "screenshots": [
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/document-desktop.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/draft-desktop.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/draft-mobile.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/draft-mobile-facts.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/policy-desktop.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/servicing-loss-rows.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/servicing-exposure-rows.png"
+  ],
+  "axe": [
+    {
+      "name": "draft-desktop",
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "draft-mobile",
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "policy-desktop",
+      "violations": [],
+      "incomplete": []
+    }
+  ],
+  "errors": [],
+  "api_commands": [
+    {
+      "action": "save_draft",
+      "payload": {
+        "id": "5078b3e7-7a2d-492c-942f-251aa6d78fd3",
+        "kind": "new_policy",
+        "document_id": "33333333-3333-4333-8333-333333333333",
+        "payload": {
+          "entity_id": "11111111-1111-4111-8111-111111111111",
+          "policy_type": "general_liability",
+          "carrier_name": "Example carrier",
+          "broker_name": null,
+          "policy_number": "GL-123",
+          "effective_date": "2026-09-01",
+          "expiration_date": "2027-09-01",
+          "premium_cents": null,
+          "aggregate_limit_cents": null,
+          "occurrence_limit_cents": null,
+          "deductible_cents": null,
+          "premium_period": null,
+          "notes": null,
+          "shared_limit": true,
+          "parties": [
+            {
+              "entity_id": "11111111-1111-4111-8111-111111111111",
+              "role": "primary_named_insured",
+              "effective_from": "2026-09-01",
+              "effective_to": null
+            },
+            {
+              "entity_id": "99999999-9999-4999-8999-999999999999",
+              "role": "additional_insured",
+              "effective_from": "2026-09-01",
+              "effective_to": null
+            }
+          ],
+          "facilities": [
+            {
+              "facility_id": "22222222-2222-4222-8222-222222222222",
+              "role": "scheduled_location",
+              "effective_from": "2026-09-01",
+              "effective_to": null
+            }
+          ],
+          "coverages": []
+        },
+        "evidence": {
+          "entity_id": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "policy_type": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "carrier_name": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "effective_date": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "expiration_date": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "shared_limit": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "parties.0": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "facilities.0": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "policy_number": {
+            "source": "document",
+            "document_id": "33333333-3333-4333-8333-333333333333",
+            "page": 2,
+            "excerpt": "Policy number: GL-123"
+          }
+        }
+      }
+    },
+    {
+      "action": "approve_draft",
+      "payload": {
+        "id": "5078b3e7-7a2d-492c-942f-251aa6d78fd3",
+        "revision": 1,
+        "confirm_evidence": true
+      }
+    },
+    {
+      "action": "save",
+      "payload": {
+        "id": "62f174e0-54e3-4064-8335-55f8e7245e7a",
+        "kind": "vendor_evidence",
+        "title": "Synthetic vendor evidence",
+        "entity_id": "11111111-1111-4111-8111-111111111111",
+        "facility_id": null,
+        "policy_id": null,
+        "document_id": null,
+        "owner_id": null,
+        "due_date": null,
+        "payload": {
+          "vendor_id": "11111111-1111-4111-8111-111111111111",
+          "contract_id": null,
+          "requirements": "Review the signed contract requirements.",
+          "requires_endorsement": true,
+          "endorsement_document_id": "33333333-3333-4333-8333-333333333333",
+          "endorsement_page": 1,
+          "assessment": "Supporting provisions await final review.",
+          "exception_reason": null,
+          "expiration_date": "2027-09-01"
+        }
+      }
+    },
+    {
+      "action": "save",
+      "payload": {
+        "id": "caf50a23-1f99-4177-a689-fffa7818dca7",
+        "kind": "loss_report",
+        "title": "Synthetic loss report",
+        "entity_id": "11111111-1111-4111-8111-111111111111",
+        "facility_id": null,
+        "policy_id": null,
+        "document_id": null,
+        "owner_id": null,
+        "due_date": null,
+        "payload": {
+          "carrier_name": "Example carrier",
+          "valuation_date": "2026-09-09",
+          "period_start": "2026-01-01",
+          "period_end": "2026-09-09",
+          "coverage_line": "General liability",
+          "complete_periods": false,
+          "no_losses_confirmed": false,
+          "no_loss_evidence_page": null,
+          "claims": [
+            {
+              "claim_reference": "SYNTHETIC-CLAIM-1",
+              "loss_date": null,
+              "paid_cents": 125025,
+              "reserve_cents": null,
+              "recovery_cents": null,
+              "expense_cents": null,
+              "incurred_cents": null,
+              "incurred_includes_expenses": null,
+              "page": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "action": "save",
+      "payload": {
+        "id": "d8cedc17-88f7-4f50-8d93-759bbc51b67d",
+        "kind": "claim_matter",
+        "title": "Synthetic claim matter",
+        "entity_id": "11111111-1111-4111-8111-111111111111",
+        "facility_id": "22222222-2222-4222-8222-222222222222",
+        "policy_id": null,
+        "document_id": null,
+        "owner_id": null,
+        "due_date": null,
+        "payload": {
+          "incident_id": "44444444-4444-4444-8444-444444444444",
+          "carrier_reference": null,
+          "loss_date": "2026-09-09",
+          "reported_date": null,
+          "recipient": null,
+          "acknowledgment": null,
+          "next_action": "Request carrier reference through existing channel.",
+          "description": "Administrative insurance inquiry only; no clinical notes copied."
+        }
+      }
+    },
+    {
+      "action": "save",
+      "payload": {
+        "id": "d8fdcfa1-b871-4fc5-9b00-af702ae33159",
+        "kind": "workforce_exposure",
+        "title": "Synthetic workforce exposure",
+        "entity_id": "11111111-1111-4111-8111-111111111111",
+        "facility_id": null,
+        "policy_id": null,
+        "document_id": null,
+        "owner_id": null,
+        "due_date": null,
+        "payload": {
+          "period_start": "2026-01-01",
+          "period_end": "2026-12-31",
+          "broker_mapping_confirmed": false,
+          "rows": [
+            {
+              "state": "FL",
+              "class_code": "8810",
+              "estimated_payroll_cents": 1000025,
+              "actual_payroll_cents": null,
+              "basis_note": "Forecast aggregate; actual payroll unknown."
+            }
+          ],
+          "notes": "",
+          "manual_source_reason": "Synthetic aggregate payroll ledger reviewed by finance."
+        }
+      }
+    },
+    {
+      "action": "save",
+      "payload": {
+        "id": "3468432c-fa29-4326-8436-1d566882ad80",
+        "kind": "renewal_package",
+        "title": "Synthetic renewal package",
+        "entity_id": "99999999-9999-4999-8999-999999999999",
+        "facility_id": "22222222-2222-4222-8222-222222222222",
+        "policy_id": "44444444-4444-4444-8444-444444444444",
+        "document_id": null,
+        "owner_id": "88888888-8888-4888-8888-888888888888",
+        "due_date": null,
+        "payload": {
+          "period_start": "2026-09-01",
+          "period_end": "2027-09-01",
+          "document_ids": [
+            "33333333-3333-4333-8333-333333333333"
+          ],
+          "location_changes": "Review the dated schedule; no assumed new locations.",
+          "exposures": "Approved aggregate exposure facts only.",
+          "open_questions": "",
+          "recipient": "Synthetic broker servicing desk"
+        }
+      }
+    },
+    {
+      "action": "transition",
+      "payload": {
+        "id": "3468432c-fa29-4326-8436-1d566882ad80",
+        "version": 1,
+        "status": "review_required"
+      }
+    },
+    {
+      "action": "save",
+      "payload": {
+        "id": "3468432c-fa29-4326-8436-1d566882ad80",
+        "version": 2,
+        "kind": "renewal_package",
+        "title": "Synthetic renewal package",
+        "entity_id": "99999999-9999-4999-8999-999999999999",
+        "facility_id": "22222222-2222-4222-8222-222222222222",
+        "policy_id": "44444444-4444-4444-8444-444444444444",
+        "document_id": null,
+        "owner_id": "88888888-8888-4888-8888-888888888888",
+        "due_date": null,
+        "payload": {
+          "period_start": "2026-09-01",
+          "period_end": "2027-09-01",
+          "document_ids": [
+            "33333333-3333-4333-8333-333333333333"
+          ],
+          "location_changes": "Review the dated schedule; no assumed new locations.",
+          "exposures": "Approved aggregate exposure facts only.",
+          "open_questions": "Confirm the revised shared-location schedule.",
+          "recipient": "Synthetic broker servicing desk"
+        }
+      }
+    }
+  ],
+  "native_pdf_inputs": [
+    [
+      {
+        "type": "text",
+        "value": "46%",
+        "label": "Zoom level",
+        "title": ""
+      },
+      {
+        "type": "text",
+        "value": "2",
+        "label": "Page number",
+        "title": ""
+      }
+    ]
+  ],
+  "passed": false,
+  "failure": "Error: locator.waitFor: Error: strict mode violation: getByText('Renewal packages · review required · Version 3', { exact: true }) resolved to 2 elements:\n    1) <p class=\"text-sm\">…</p> aka getByRole('paragraph').filter({ hasText: 'Renewal packages · review' })\n    2) <p class=\"text-sm\">…</p> aka getByText('Renewal packages · review').nth(2)\n\nCall log:\n\u001b[2m  - waiting for getByText('Renewal packages · review required · Version 3', { exact: true }) to be visible\u001b[22m\n"
+}

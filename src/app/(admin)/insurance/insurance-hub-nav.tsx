@@ -4,13 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { buttonVariants } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin/insurance", label: "Overview" },
   { href: "/admin/insurance/policies", label: "Policies" },
+  { href: "/admin/insurance/documents", label: "Documents" },
   { href: "/admin/insurance/policies/new", label: "New policy" },
   { href: "/admin/insurance/renewals", label: "Renewals" },
+  { href: "/admin/insurance/servicing", label: "Servicing" },
   { href: "/admin/insurance/renewal-packages", label: "Renewal packages" },
   { href: "/admin/insurance/claims", label: "Claims" },
   { href: "/admin/insurance/loss-runs", label: "Loss runs" },
@@ -20,20 +23,28 @@ const LINKS = [
 
 export function InsuranceHubNav() {
   const pathname = usePathname();
+  const { appRole, loading } = useHavenAuth();
+  const canManage = !loading && ["owner", "org_admin"].includes(appRole);
 
   return (
     <nav
       className="flex flex-wrap gap-2 rounded-xl border border-slate-200/80 bg-white/80 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70"
       aria-label="Insurance sections"
     >
-      {LINKS.map((item) => {
+      {LINKS.filter(
+        (item) =>
+          !["New policy", "Servicing"].includes(item.label) || canManage,
+      ).map((item) => {
         const active = pathname === item.href;
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              buttonVariants({ variant: active ? "default" : "outline", size: "sm" }),
+              buttonVariants({
+                variant: active ? "default" : "outline",
+                size: "sm",
+              }),
               active && "pointer-events-none",
             )}
           >
@@ -41,6 +52,14 @@ export function InsuranceHubNav() {
           </Link>
         );
       })}
+      {canManage && (
+        <Link
+          href="/admin/insurance/documents#upload"
+          className={buttonVariants({ size: "sm" })}
+        >
+          Upload insurance document
+        </Link>
+      )}
     </nav>
   );
 }

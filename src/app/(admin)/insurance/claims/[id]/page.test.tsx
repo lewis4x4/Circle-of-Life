@@ -12,16 +12,27 @@ import {
 
 const authMock = vi.hoisted(() => ({
   loading: true,
+  appRole: "owner",
   organizationId: null as string | null,
 }));
 
 const supabaseMock = vi.hoisted(() => ({
-  claimResult: { data: null as Record<string, unknown> | null, error: null as { message: string } | null },
-  activitiesResult: { data: [] as Record<string, unknown>[], error: null as { message: string } | null },
+  claimResult: {
+    data: null as Record<string, unknown> | null,
+    error: null as { message: string } | null,
+  },
+  activitiesResult: {
+    data: [] as Record<string, unknown>[],
+    error: null as { message: string } | null,
+  },
 }));
 
 function makeClient() {
-  const builder = (single: unknown, list: unknown[] = [], singleError: { message: string } | null = null) => {
+  const builder = (
+    single: unknown,
+    list: unknown[] = [],
+    singleError: { message: string } | null = null,
+  ) => {
     const q: Record<string, unknown> = {
       select: () => q,
       eq: () => q,
@@ -37,10 +48,18 @@ function makeClient() {
   return {
     from: (table: string) => {
       if (table === "insurance_claims") {
-        return builder(supabaseMock.claimResult.data, [], supabaseMock.claimResult.error);
+        return builder(
+          supabaseMock.claimResult.data,
+          [],
+          supabaseMock.claimResult.error,
+        );
       }
       if (table === "claim_activities") {
-        return builder(null, supabaseMock.activitiesResult.data, supabaseMock.activitiesResult.error);
+        return builder(
+          null,
+          supabaseMock.activitiesResult.data,
+          supabaseMock.activitiesResult.error,
+        );
       }
       return builder(null);
     },
@@ -55,6 +74,7 @@ vi.mock("@/contexts/haven-auth-context", () => ({
   useHavenAuth: () => ({
     organizationId: authMock.organizationId,
     loading: authMock.loading,
+    appRole: authMock.appRole,
   }),
 }));
 
@@ -69,13 +89,25 @@ vi.mock("../../insurance-hub-nav", () => ({
 }));
 
 vi.mock("@/design-system/components/record-detail", () => ({
-  RecordDetailHeader: ({ title, subtitle }: { title: string; subtitle?: string }) => (
+  RecordDetailHeader: ({
+    title,
+    subtitle,
+  }: {
+    title: string;
+    subtitle?: string;
+  }) => (
     <header>
       <h1>{title}</h1>
       {subtitle ? <p>{subtitle}</p> : null}
     </header>
   ),
-  RecordDetailSection: ({ title, children }: { title: string; children: React.ReactNode }) => (
+  RecordDetailSection: ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
     <section>
       <h2>{title}</h2>
       {children}
@@ -86,6 +118,7 @@ vi.mock("@/design-system/components/record-detail", () => ({
 describe("InsuranceClaimDetailPage auth hydration", () => {
   beforeEach(() => {
     authMock.loading = true;
+    authMock.appRole = "owner";
     authMock.organizationId = null;
     supabaseMock.claimResult = { data: null, error: null };
     supabaseMock.activitiesResult = { data: [], error: null };
@@ -94,9 +127,15 @@ describe("InsuranceClaimDetailPage auth hydration", () => {
   it("names the auth wait and never shows the legacy org crash string while hydrating", () => {
     render(<InsuranceClaimDetailPage />);
 
-    expect(screen.getByRole("status")).toHaveTextContent(INSURANCE_CLAIM_DETAIL_AUTH_LOADING_COPY);
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
-    expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      INSURANCE_CLAIM_DETAIL_AUTH_LOADING_COPY,
+    );
+    expect(
+      screen.queryByText("Organization missing on profile."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No organization on this profile"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the named quiet gap when auth resolved without an organization", async () => {
@@ -105,8 +144,12 @@ describe("InsuranceClaimDetailPage auth hydration", () => {
 
     render(<InsuranceClaimDetailPage />);
 
-    expect(await screen.findByText("No organization on this profile")).toBeInTheDocument();
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
+    expect(
+      await screen.findByText("No organization on this profile"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Organization missing on profile."),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -123,7 +166,9 @@ describe("InsuranceClaimDetailPage auth hydration", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       INSURANCE_CLAIM_DETAIL_UNEXPECTED_FETCH_ERROR_COPY,
     );
-    expect(screen.queryByText("permission denied for table insurance_claims")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("permission denied for table insurance_claims"),
+    ).not.toBeInTheDocument();
   });
 
   it("names a missing claim without surfacing postgres errors", async () => {
@@ -133,7 +178,9 @@ describe("InsuranceClaimDetailPage auth hydration", () => {
 
     render(<InsuranceClaimDetailPage />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(INSURANCE_CLAIM_DETAIL_NOT_FOUND_COPY);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      INSURANCE_CLAIM_DETAIL_NOT_FOUND_COPY,
+    );
   });
 
   it("stamps the detail view with organization scope and Eastern date cues", async () => {
@@ -156,7 +203,9 @@ describe("InsuranceClaimDetailPage auth hydration", () => {
 
     render(<InsuranceClaimDetailPage />);
 
-    expect(await screen.findByText(INSURANCE_CLAIM_DETAIL_SCOPE_ET_COPY)).toBeInTheDocument();
+    expect(
+      await screen.findByText(INSURANCE_CLAIM_DETAIL_SCOPE_ET_COPY),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Date of loss \(ET\):/)).toBeInTheDocument();
     expect(screen.getByText(/Reported \(ET\):/)).toBeInTheDocument();
   });

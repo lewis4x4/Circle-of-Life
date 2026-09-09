@@ -2125,12 +2125,14 @@ async function answerFinanceCloseSummary(
   return buildDeterministicResult(`${blocked.length} GL period close${blocked.length === 1 ? "" : "s"} are not closed and ${drafts.length} journal entr${drafts.length === 1 ? "y is" : "ies are"} still in draft.`, "finance", scope, ["gl_period_closes", "journal_entries"], closes.length + journals.length);
 }
 
-async function answerInsuranceRenewalSummary(
+export async function answerInsuranceRenewalSummary(
   ctx: ToolContext,
   scope: GraceQueryScope,
 ): Promise<ReturnType<typeof buildDeterministicResult>> {
-  if (!FINANCIAL_ROLES.has(ctx.userRole)) {
-    return buildDeterministicResult("I do not have access to insurance and claims data for this role.", "insurance", scope, ["insurance_policies", "insurance_claims", "insurance_renewals"], 0, "access_restricted");
+  // This service-role query reads the complete organization register. Facility
+  // access is served by the insurance workspace's approved summary projection.
+  if (ctx.userRole !== "owner" && ctx.userRole !== "org_admin") {
+    return buildDeterministicResult("Open Insurance to see the approved summaries for your facilities. Full policy and claims summaries require insurance management access.", "insurance", scope, [], 0, "access_restricted");
   }
   const [policyRes, claimRes, renewalRes] = await Promise.all([
     ctx.admin.from("insurance_policies").select("expiration_date,status,carrier_name,policy_type").eq("organization_id", ctx.workspaceId).is("deleted_at", null).limit(30),

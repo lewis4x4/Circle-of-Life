@@ -1,110 +1,81 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import InsurancePoliciesPage from "./page";
+import { beforeEach, expect, it, vi } from "vitest";
+import Page from "./page";
 import {
-  INSURANCE_POLICIES_LOADING_COPY,
-  INSURANCE_POLICIES_LOADING_PROFILE_COPY,
-  INSURANCE_POLICIES_ORG_DATE_SCOPE_COPY,
-} from "@/lib/insurance/policies-display-copy";
-
-const authMock = vi.hoisted(() => ({
-  loading: true,
-  organizationId: null as string | null,
+  draftFixture,
+  policyId,
+  workspaceFixture,
+} from "@/components/insurance/test-support/fixtures";
+const auth = vi.hoisted(() => ({
+  loading: false,
+  organizationId: "org",
   appRole: "owner",
 }));
-
-const queryMock = vi.hoisted(() => ({
-  entities: [] as { id: string; name: string }[],
-  policies: [] as unknown[],
-  policiesPending: true,
-  policiesError: null as Error | null,
+vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => auth }));
+vi.mock("@/hooks/useFacilityStore", () => ({
+  useFacilityStore: (select: (s: { selectedFacilityId: null }) => unknown) =>
+    select({ selectedFacilityId: null }),
 }));
-
-vi.mock("@/contexts/haven-auth-context", () => ({
-  useHavenAuth: () => ({
-    organizationId: authMock.organizationId,
-    appRole: authMock.appRole,
-    loading: authMock.loading,
-  }),
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/insurance/policies",
+  useParams: () => ({}),
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
 }));
-
-vi.mock("@/lib/supabase/client", () => ({
-  createClient: () => ({}),
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: ({ queryKey }: { queryKey: string[] }) => {
-    if (queryKey[1] === "policy-entities") {
-      return { data: queryMock.entities, isPending: false, error: null, refetch: vi.fn() };
-    }
-    if (queryKey[1] === "policies") {
-      return {
-        data: queryMock.policies,
-        isPending: queryMock.policiesPending,
-        error: queryMock.policiesError,
-        refetch: vi.fn(),
-      };
-    }
-    return { data: undefined, isPending: true, error: null, refetch: vi.fn() };
-  },
-}));
-
-vi.mock("../insurance-hub-nav", () => ({
-  InsuranceHubNav: () => <nav aria-label="Insurance hub" />,
-}));
-
-describe("InsurancePoliciesPage organization context", () => {
-  beforeEach(() => {
-    authMock.loading = true;
-    authMock.organizationId = null;
-    authMock.appRole = "owner";
-    queryMock.entities = [];
-    queryMock.policies = [];
-    queryMock.policiesPending = true;
-    queryMock.policiesError = null;
-  });
-
-  it("names the wait and suppresses organization gaps while auth hydrates", () => {
-    render(<InsurancePoliciesPage />);
-
-    expect(screen.getByText(INSURANCE_POLICIES_LOADING_PROFILE_COPY)).toBeInTheDocument();
-    expect(screen.getByText(INSURANCE_POLICIES_ORG_DATE_SCOPE_COPY)).toBeInTheDocument();
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
-    expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
-  });
-
-  it("shows the named quiet gap after auth resolves without an organization", () => {
-    authMock.loading = false;
-
-    render(<InsurancePoliciesPage />);
-
-    expect(screen.getByText("No organization on this profile")).toBeInTheDocument();
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  });
-
-  it("keeps genuine policy fetch failures in the alert lane", () => {
-    authMock.loading = false;
-    authMock.organizationId = "00000000-0000-4000-8000-00000000org1";
-    queryMock.policiesPending = false;
-    queryMock.policiesError = new Error("Unable to load insurance policies.");
-
-    render(<InsurancePoliciesPage />);
-
-    expect(screen.getByRole("alert")).toHaveTextContent("Unable to load insurance policies.");
-    expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
-  });
-
-  it("uses named loading copy while policies fetch", () => {
-    authMock.loading = false;
-    authMock.organizationId = "00000000-0000-4000-8000-00000000org1";
-    queryMock.policiesPending = true;
-
-    render(<InsurancePoliciesPage />);
-
-    expect(screen.getByText(INSURANCE_POLICIES_LOADING_COPY)).toBeInTheDocument();
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
-  });
+beforeEach(() => {
+  auth.appRole = "owner";
+  vi.stubGlobal("fetch", vi.fn());
+});
+it("labels legacy policies unverified and offers a review retaining identity", async () => {
+  const workspace = workspaceFixture();
+  workspace.policies = [
+    {
+      ...draftFixture().payload,
+      id: policyId,
+      verification_status: "unverified",
+      version: 0,
+      status: "active",
+      premium_cents: 9000000,
+    },
+  ];
+  vi.mocked(fetch).mockResolvedValue(Response.json(workspace));
+  render(<Page />);
+  expect(
+    await screen.findByText("Unverified legacy record"),
+  ).toBeInTheDocument();
+  expect(screen.queryByText("$90,000.00")).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: "Verify existing policy" }),
+  ).toHaveAttribute(
+    "href",
+    `/admin/insurance/policies/new?kind=verification&policy_id=${policyId}`,
+  );
+});
+it("renders minimal facility summaries without premium columns", async () => {
+  auth.appRole = "facility_admin";
+  const workspace = workspaceFixture();
+  workspace.can_manage = false;
+  workspace.policies = [
+    {
+      id: policyId,
+      policy_type: "general_liability",
+      carrier_name: "Example carrier",
+      policy_number: "GL-123",
+      effective_date: "2026-09-01",
+      expiration_date: "2027-09-01",
+      verification_status: "verified",
+      status: "active",
+      version: 1,
+    },
+  ];
+  vi.mocked(fetch).mockResolvedValue(Response.json(workspace));
+  render(<Page />);
+  await screen.findByRole("link", { name: "GL-123" });
+  expect(
+    screen.queryByRole("columnheader", { name: "Premium" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: "Verify existing policy" }),
+  ).not.toBeInTheDocument();
 });
