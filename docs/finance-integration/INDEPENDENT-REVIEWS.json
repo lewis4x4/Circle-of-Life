@@ -430,6 +430,73 @@
         "Not a full accessibility certification or broader release approval",
         "Broad gate preceded final inward-outline-only change; final focused browser/component/lint/diagnostic evidence covers the final source."
       ]
+    },
+    {
+      "scope": "GET capture/config/stream bounds/exact JSON/schema/privacy boundary only; no network/provider/authorization acceptance",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "finance_source_inventory"
+      ],
+      "source_files": [
+        {
+          "path": "supabase/functions/_shared/qbo-read.ts",
+          "sha256": "ed72b25ef3a452cd870bcb2806b0583c54371432445cc893654e9a0655305faf"
+        },
+        {
+          "path": "supabase/functions/_shared/qbo-read.test.ts",
+          "sha256": "9b51f9f4a6ab58fa369f2c75e34a5f8f7c2d211a87686d4855557bc3e6a6c6b1"
+        },
+        {
+          "path": "docs/finance-integration/F04-QBO-READ-CONTRACT.md",
+          "sha256": "720e50034b0d515448b66542a5ba2282f714844ff10b38a638f10c92fbbf347b"
+        }
+      ],
+      "evidence": [
+        "test-results/finance-integration/f04-qbo-read/verification.json",
+        "test-results/finance-integration/f04-qbo-read/probe-final.json",
+        "test-results/finance-integration/f04-qbo-read/extended-final.json",
+        "test-results/finance-integration/f04-qbo-read/abort-aware-final.json"
+      ],
+      "limits": [
+        "Capture primitive only; no live provider/network calls or actual provider compatibility proof",
+        "Compressed wire-length integrity delegated to platform fetch; retained decoded bytes remain bounded",
+        "Digest follows validation outsideI/O deadline; no CPU preemption claim",
+        "No current-actor authorization, encryption/durable storage, complete scan/import, snapshot or reconciliation acceptance",
+        "Production enablement only trusted configuration; actualbinding/auth/dispatch guards remain common-engine responsibility"
+      ]
+    },
+    {
+      "scope": "QBO read shared test runner, package command, unconditional CI and scoped acceptance records; excludes reviewer-authored transport source",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "qbo_read_contract"
+      ],
+      "source_files": [
+        {
+          "path": "scripts/finance-integration/run-edge-tests.mjs",
+          "sha256": "3872821684887fad949eccece21020712ec4647af61471710d9b526a46438955"
+        },
+        {
+          "path": "package.json",
+          "sha256": "5d9291334a7266292fa578f3812cbd63b23cc2ec0cbdb6406beda12d6427ae9b"
+        },
+        {
+          "path": ".github/workflows/finance-integration.yml",
+          "sha256": "a271c346647c85bfede2c9d8b833876450e9d311fb18738fa2b364298acd69d7"
+        }
+      ],
+      "checks": {
+        "independent_runner_cases": 9,
+        "matched_json_junit_cases": 98,
+        "skipped": 0
+      },
+      "evidence": [
+        "test-results/finance-integration/f04-qbo-read/integration-checks.json"
+      ],
+      "limits": [
+        "In-memory runner orchestration only; no CI execution or provider/release approval.",
+        "Transport source independently reviewed by finance_source_inventory."
+      ]
     }
   ]
 }

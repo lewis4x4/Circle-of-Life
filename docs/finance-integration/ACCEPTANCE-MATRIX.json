@@ -521,12 +521,17 @@
       "gate": "provider",
       "required": true,
       "na_permitted": true,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "provider integration engineering / provider operator",
-      "evidence": [],
+      "evidence": [
+        "F04-QBO-READ-CONTRACT.md",
+        "test-results/finance-integration/f04-qbo-read/verification.json",
+        "test-results/finance-integration/2026-09-09T14-06-37.538Z-qbo-read.json"
+      ],
       "reviewer": null,
       "verified_at": null,
-      "blocked_by": []
+      "blocked_by": [],
+      "evidence_limits": "Bounded synthetic read-capture proof only; provider capability, complete import and financial serialization acceptance remain open."
     },
     {
       "id": "HFA-029",
@@ -652,11 +657,15 @@
       "status": "IN_PROGRESS",
       "owner": "finance engineering / controller",
       "evidence": [
-        "test-results/finance-integration/money-input-review.json"
+        "test-results/finance-integration/money-input-review.json",
+        "F04-QBO-READ-CONTRACT.md",
+        "test-results/finance-integration/f04-qbo-read/verification.json",
+        "test-results/finance-integration/2026-09-09T14-06-37.538Z-qbo-read.json"
       ],
       "reviewer": null,
       "verified_at": null,
-      "blocked_by": []
+      "blocked_by": [],
+      "evidence_limits": "Bounded synthetic read-capture proof only; provider capability, complete import and financial serialization acceptance remain open."
     },
     {
       "id": "HFA-037",

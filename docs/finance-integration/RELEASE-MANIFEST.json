@@ -14,7 +14,7 @@
   "baseline_refresh_commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
   "upstream_main_commit": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
   "observed_production_deployment_id": "6aa054790bc9d700089b72cb",
-  "candidate_source_base": "5c24e1d5b358bdc70483b609e5417d9593e26f1a",
+  "candidate_source_base": "8443ce47d36ad646507e5bd06e52ea99af758d67",
   "source_review_register": "INDEPENDENT-REVIEWS.json",
   "independent_reviews_scope": "No final release approval; bounded source reviews are in the source review register",
   "candidate_migrations": [
@@ -75,7 +75,14 @@
     "billing_gate": "test-results/agent-gates/2026-09-09T06-57-32-030Z-HFA-F06-SOURCE-GUARDS.json",
     "focused_finance_passed": 272,
     "native_api_evidence": "test-results/finance-integration/native-auth-api/acceptance-review.json",
-    "temporal_gate": "test-results/agent-gates/2026-09-09T12-51-04-745Z-HFA-F06-TEMPORAL.json"
+    "temporal_gate": "test-results/agent-gates/2026-09-09T12-51-04-745Z-HFA-F06-TEMPORAL.json",
+    "qbo_read": {
+      "source_sha256": "ed72b25ef3a452cd870bcb2806b0583c54371432445cc893654e9a0655305faf",
+      "permanent_tests": 98,
+      "independent_probes": 21,
+      "evidence": "test-results/finance-integration/f04-qbo-read/verification.json",
+      "scope": "GET capture/config/stream bounds/exact JSON/schema/privacy boundary only; no network/provider/authorization acceptance"
+    }
   },
   "open_credential_review": "Independent dynamic security review blocked by automatic possible-cybersecurity-risk filter; no final verdict",
   "engineering_acceptance_passed": [

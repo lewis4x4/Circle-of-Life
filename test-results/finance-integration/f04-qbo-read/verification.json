@@ -1,0 +1,117 @@
+{
+  "verdict": "APPROVE",
+  "timestamp": "2026-09-09T14:01:47.862859+00:00",
+  "reviewed_source_sha256": "ed72b25ef3a452cd870bcb2806b0583c54371432445cc893654e9a0655305faf",
+  "scope": "GET capture/config/stream bounds/exact JSON/schema/privacy boundary only; no network/provider/authorization acceptance",
+  "author_tests": {
+    "passed": 98,
+    "failed": 0,
+    "typecheck": "Deno check bothfilesPASS",
+    "lint": "Deno lint bothfilesPASS",
+    "lsp": "0diagnostics forbothfiles; Deno check directEdge proof"
+  },
+  "findings": [
+    {
+      "severity": "HIGH",
+      "name": "Ready streams escape I/O deadline and zero chunks grow storage",
+      "source_lines": "440\u2013512",
+      "repro": "probe.json ready-empty-chunks",
+      "observed": "20000 empty chunks +34bytes with1ms timeout returnedcaptured after35.48ms",
+      "repair": "Check absolute monotonic deadline during stream consumption; ignore zero-length chunks and bound chunk storage/overhead; retain fixed timeout/prefix semantics",
+      "status": "RESOLVED; unchanged independent reproducer passes final source"
+    },
+    {
+      "severity": "MEDIUM",
+      "name": "Calendar-invalid GeneralLedger timestamp accepted",
+      "source_lines": "343\u2013354",
+      "repro": "probe.json report-invalid-calendar-timestamp",
+      "observed": "2026-02-30 accepted as captured;24:00 also accepted by Date normalization",
+      "repair": "Validate canonical date component and explicit supported time/offset ranges before treating timestamp as compatible",
+      "status": "RESOLVED; unchanged independent reproducer passes final source"
+    },
+    {
+      "severity": "MEDIUM",
+      "name": "Identity content encoding bypasses length mismatch",
+      "source_lines": "512\u2013516",
+      "repro": "probe.json identity-content-encoding-length-mismatch",
+      "observed": "Declared35bytes/actual34bytes withContent-Encodingidentity markedcapture_complete",
+      "repair": "Enforce raw length for noencoding/identity; explicitly handle supported compressed encodings rather than anyheader presence",
+      "status": "RESOLVED; unchanged independent reproducer passes final source"
+    },
+    {
+      "severity": "MEDIUM",
+      "name": "Unknown report row members pass strict schema boundary",
+      "source_lines": "372\u2013411",
+      "repro": "probe.json unknown-report-row-group-member andunknown-data-row-member",
+      "observed": "Extra hidden financial-row arrays accepted as captured",
+      "repair": "Allowlist supported report/group/row structural members; reject unknown variants pendingreviewedfixture",
+      "status": "RESOLVED; unchanged independent reproducer passes final source"
+    },
+    {
+      "severity": "MEDIUM",
+      "name": "Malformed cancellation object escapes fixed result contract",
+      "source_lines": "450\u2013452,545",
+      "repro": "extended.json malformed-cancellation-shape-normalized",
+      "observed": "signal:{} rejects withTypeError fromfinally removeEventListener",
+      "repair": "Validate cancellation signal before listener use and make cleanup nonthrowing",
+      "status": "RESOLVED; unchanged independent reproducer passes final source"
+    },
+    {
+      "severity": "MEDIUM",
+      "name": "Signal-aware transport cancellation misclassified as transport error",
+      "source_lines": "449\u2013457",
+      "repro": "abort-aware.json",
+      "observed": "Both timeout and external cancellation produce transport_error when the transport promptly rejects AbortError",
+      "repair": "Record/reject the stop reason before aborting transport, or give recorded cancellation reason priority in normalization",
+      "status": "RESOLVED; unchanged independent reproducer passes final source"
+    }
+  ],
+  "other_executed_checks": "10 extended casesPASS including400000-cell rejection, safe/unsafe counts, inactivepage, exactdecimals/hash/copy, duplicatekeys, page mismatch, partialHTTP andprivacycanaries",
+  "artifacts": {
+    "author-tests.log": "2c57433704412019f7900e280fd21485a73e72636b678e51cf05fa3ea5764f0d",
+    "probe-final.json": "c5df346cdf1fb8a2a14009591ab6c8cff2f75c92c1096e8c8e3591fdf41ac25b",
+    "baseline-extended.ts": "331a45f05f4451cf931251b14b58c7c764641850474187c8a4bb282281e9392b",
+    "extended.json": "b27be0ebe01f997b3fee3c0f680f2cbd9a81645dc7d861fba37edd49adc6e711",
+    "baseline-probe.json": "3c27d1673c39c3df7e238735ad058faa545c51a2c040b07135c465529f64a0ad",
+    "extended-final.json": "050a9a3d3fe18eccd9a642f1514347a681228d09cf5901afad3f2bb1c391957f",
+    "abort-aware-final.json": "58a71ba7c827ce0fa2a75afd0c0c22e3311ec315986c97aef696d580990cbb11",
+    "probe.ts": "67d89b8713d08732da2fd76503925471a554ed606ad5e27466ecd10bd3589017",
+    "author-tests-final.log": "263149484a5ceed3078a0d54ae033245e85315acc091a3be4c00bc8062503904",
+    "baseline-source.ts": "24a1710c6c0883cf915840340317e191cefa3f4b4dc5cafb0ca56d2b69b561a1",
+    "diagnostics.json": "df0fcfc165e4a2cc59136cbac7e1012ce6777234c4ccc142dece2c728af769ab",
+    "baseline-extended.json": "b27be0ebe01f997b3fee3c0f680f2cbd9a81645dc7d861fba37edd49adc6e711",
+    "baseline-verdict.json": "a575b7a045062c3301b1fa505ddd3aab1299fda44b00c82038c0fe6e2bb167ba",
+    "probe.json": "3c27d1673c39c3df7e238735ad058faa545c51a2c040b07135c465529f64a0ad",
+    "diagnostics-final.json": "2ab9185d03fccdaeba302aac54c93f73964889a48175033005451d06f58712f0",
+    "baseline-probe.ts": "bf6e01831c92d0e7dc13bf7de29c831b1879088c0e2a3c43388c9958880b9309",
+    "extended.ts": "82f481a081f7dffa2fcf32cadeb295b9581ad9d7e51ecf93d5f5bbabf5138a01",
+    "abort-aware.json": "b2336629e2aa8fc180e7dd52251a35eeb4f55cfbbc27bbfbca9f95962302b555",
+    "baseline-tests.ts": "4737d86f1251f176ae22ba82b4bd9a28fba825f3c3db3e01a596a196941f9df1",
+    "abort-aware.ts": "b3d9cf03fc754cbef722ccfa73ea8609d27e0773e8b2471b0aaa1c6481162b9c",
+    "baseline-contract.md": "9550ca03b9cd0571c6fc82dae2fb98fac69577673ff9e5d7ece2d73f891887d5"
+  },
+  "baseline_source_sha256": "24a1710c6c0883cf915840340317e191cefa3f4b4dc5cafb0ca56d2b69b561a1",
+  "reviewed_test_sha256": "9b51f9f4a6ab58fa369f2c75e34a5f8f7c2d211a87686d4855557bc3e6a6c6b1",
+  "reviewed_contract_sha256": "720e50034b0d515448b66542a5ba2282f714844ff10b38a638f10c92fbbf347b",
+  "independent_retests": {
+    "probe-final.json": {
+      "passed": 8,
+      "failed": 0
+    },
+    "extended-final.json": {
+      "passed": 11,
+      "failed": 0
+    },
+    "abort-aware-final.json": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "limits": [
+    "Capture primitive only; no live provider/network calls or actual provider compatibility proof",
+    "Compressed wire-length integrity delegated to platform fetch; retained decoded bytes remain bounded",
+    "Digest follows validation outsideI/O deadline; no CPU preemption claim",
+    "No current-actor authorization, encryption/durable storage, complete scan/import, snapshot or reconciliation acceptance",
+    "Production enablement only trusted configuration; actualbinding/auth/dispatch guards remain common-engine responsibility"
+  ]
+}

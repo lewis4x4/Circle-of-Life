@@ -17,9 +17,15 @@ const suites = {
     permissions: [], prefix: 'qbo-webhook', acceptanceIds: ['HFA-024'],
     limits: ['Synthetic cryptographic/schema checks only; not an actual Intuit signature, receiver, durable inbox, tenant authorization, ACK or processed-event proof.'],
   },
+  'qbo-read': {
+    testFile: 'supabase/functions/_shared/qbo-read.test.ts',
+    sourceFile: 'supabase/functions/_shared/qbo-read.ts',
+    permissions: [], prefix: 'qbo-read', acceptanceIds: ['HFA-028', 'HFA-036'],
+    limits: ['Synthetic read-capture transport/schema/privacy checks only; no provider calls, authority, durable encrypted storage, complete scan/import, snapshot or reconciliation proof.'],
+  },
 };
 const suite = process.argv[2] ?? 'audit';
-if (process.argv.length > 3 || !Object.hasOwn(suites, suite)) throw new Error('Expected audit or qbo-webhook');
+if (process.argv.length > 3 || !Object.hasOwn(suites, suite)) throw new Error('Expected audit, qbo-webhook or qbo-read');
 const config = suites[suite];
 const { testFile } = config;
 const command = ['deno', 'test', ...config.permissions, '--reporter=junit', testFile];

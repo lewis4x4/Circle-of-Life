@@ -1,0 +1,17 @@
+{
+  "source_sha256": "24a1710c6c0883cf915840340317e191cefa3f4b4dc5cafb0ca56d2b69b561a1",
+  "cases": [
+    {
+      "name": "abort-aware-fetch-deadline",
+      "expected": "timeout",
+      "actual": "transport_error",
+      "pass": false
+    },
+    {
+      "name": "abort-aware-fetch-external-cancel",
+      "expected": "aborted",
+      "actual": "transport_error",
+      "pass": false
+    }
+  ]
+}
