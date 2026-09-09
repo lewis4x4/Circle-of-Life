@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="deno test" tests="24" failures="0" errors="0" time="1.720">
+    <testsuite name="./supabase/functions/_shared/qbo-webhook.test.ts" tests="24" disabled="0" errors="0" failures="0">
+        <testcase name="HFA-024: RFC4231 known HMAC vector authenticates before JSON rejection" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.013" line="71" col="6">
+        </testcase>
+        <testcase name="HFA-024: exact whitespace and nonASCII bytes use independent HMAC and digest oracles" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.021" line="99" col="6">
+        </testcase>
+        <testcase name="HFA-024: documented content types and header casing authenticate" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.068" line="127" col="6">
+        </testcase>
+        <testcase name="HFA-024: invalid or absent verifier configuration never exposes secrets" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.000" line="141" col="6">
+        </testcase>
+        <testcase name="HFA-024: missing malformed and noncanonical signatures fail closed" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.001" line="163" col="6">
+        </testcase>
+        <testcase name="HFA-024: duplicate security headers and injection characters rejected" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.000" line="197" col="6">
+        </testcase>
+        <testcase name="HFA-024: unsupported missing and merged content types are not authenticated" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.000" line="230" col="6">
+        </testcase>
+        <testcase name="HFA-024: oversized bodies fail before authentication and parsing" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.000" line="256" col="6">
+        </testcase>
+        <testcase name="HFA-024: authentication precedes corrupt UTF8 and JSON parsing" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.005" line="268" col="6">
+        </testcase>
+        <testcase name="HFA-024: malformed JSON duplicate decoded keys and trailing bytes are rejected" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.070" line="288" col="6">
+        </testcase>
+        <testcase name="HFA-024: current array shape required without fabricated legacy IDs" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.039" line="320" col="6">
+        </testcase>
+        <testcase name="HFA-024: all required fields must exist and unsupported extensions fail closed" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.095" line="327" col="6">
+        </testcase>
+        <testcase name="HFA-024: wrong metadata types and malformed current event fields rejected" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.046" line="360" col="6">
+        </testcase>
+        <testcase name="HFA-024: nanosecond provider time retained without freshness or checkpoints" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.019" line="379" col="6">
+        </testcase>
+        <testcase name="HFA-024: mixed companies and opaque private identifiers are not tenant bindings" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.003" line="409" col="6">
+        </testcase>
+        <testcase name="HFA-024: same provider identity with changed exact bytes is a conflict" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.010" line="454" col="6">
+        </testcase>
+        <testcase name="HFA-024: byte-identical repeated events remain hints for future durable dedup" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.019" line="476" col="6">
+        </testcase>
+        <testcase name="HFA-024: large JSON numbers and lexical representations cannot collide via float rounding" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.095" line="494" col="6">
+        </testcase>
+        <testcase name="HFA-024: caller mutation cannot swap authenticated bytes after await" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.006" line="524" col="6">
+        </testcase>
+        <testcase name="HFA-024: bounded event count depth and JSON nodes fail without dropping authenticated evidence" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.137" line="549" col="6">
+        </testcase>
+        <testcase name="HFA-024: all error diagnostics exclude body signature and verifier canaries" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.022" line="581" col="6">
+        </testcase>
+        <testcase name="HFA-024: validly formatted wrong verifier has no authenticated evidence" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.010" line="606" col="6">
+        </testcase>
+        <testcase name="HFA-024: all events at the local batch bound are returned without truncation" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.967" line="621" col="6">
+        </testcase>
+        <testcase name="HFA-024: envelope whitespace does not change exact event slice identity" classname="./supabase/functions/_shared/qbo-webhook.test.ts" time="0.001" line="641" col="6">
+        </testcase>
+    </testsuite>
+</testsuites>

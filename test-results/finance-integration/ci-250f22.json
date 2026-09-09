@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "evidence_layer": "GitHub Linux CI with Docker PostgreSQL",
+  "run": {
+    "conclusion": "success",
+    "headSha": "250f22ffcd91d3743a45e71a971b64cce493fe4b",
+    "jobs": [
+      {
+        "completedAt": "2026-09-09T02:30:57Z",
+        "conclusion": "success",
+        "databaseId": 102313331019,
+        "name": "deterministic-finance-audit",
+        "startedAt": "2026-09-09T02:21:08Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-09T02:21:10Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-09T02:21:09Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:21:14Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-09T02:21:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:21:19Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 3,
+            "startedAt": "2026-09-09T02:21:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:21:21Z",
+            "conclusion": "success",
+            "name": "Run denoland/setup-deno@v2",
+            "number": 4,
+            "startedAt": "2026-09-09T02:21:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:21:45Z",
+            "conclusion": "success",
+            "name": "Run npm ci",
+            "number": 5,
+            "startedAt": "2026-09-09T02:21:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:22:43Z",
+            "conclusion": "success",
+            "name": "Run npm run typecheck",
+            "number": 6,
+            "startedAt": "2026-09-09T02:21:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:26:44Z",
+            "conclusion": "success",
+            "name": "Full unit suite including optional benchmark fixtures",
+            "number": 7,
+            "startedAt": "2026-09-09T02:22:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:26:46Z",
+            "conclusion": "success",
+            "name": "Run npm run test:finance-integration",
+            "number": 8,
+            "startedAt": "2026-09-09T02:26:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:26:48Z",
+            "conclusion": "success",
+            "name": "Run npm run test:platform-audit",
+            "number": 9,
+            "startedAt": "2026-09-09T02:26:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:26:49Z",
+            "conclusion": "success",
+            "name": "Run npm run test:audit-edge",
+            "number": 10,
+            "startedAt": "2026-09-09T02:26:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:26:50Z",
+            "conclusion": "success",
+            "name": "Run npm run test:finance-provider-contract",
+            "number": 11,
+            "startedAt": "2026-09-09T02:26:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:30:53Z",
+            "conclusion": "success",
+            "name": "Required segment gates including SQL replay",
+            "number": 12,
+            "startedAt": "2026-09-09T02:26:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:30:55Z",
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 13,
+            "startedAt": "2026-09-09T02:30:53Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:30:55Z",
+            "conclusion": "success",
+            "name": "Post Run denoland/setup-deno@v2",
+            "number": 24,
+            "startedAt": "2026-09-09T02:30:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:30:55Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 25,
+            "startedAt": "2026-09-09T02:30:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:30:56Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 26,
+            "startedAt": "2026-09-09T02:30:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-09T02:30:56Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 27,
+            "startedAt": "2026-09-09T02:30:56Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/lewis4x4/Circle-of-Life/actions/runs/34302861337/job/102313331019"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/lewis4x4/Circle-of-Life/actions/runs/34302861337"
+  },
+  "gate_artifact": "test-results/agent-gates/2026-09-09T02-26-50-144Z-HFA-CI.json",
+  "required_gate_results": [
+    {
+      "id": "hygiene.env-example",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "security.gitleaks",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "qa.eslint",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "qa.migration-sequence",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "qa.root-build",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "status": "passed",
+      "required": false
+    },
+    {
+      "id": "qa.web-build",
+      "status": "skipped",
+      "required": false
+    },
+    {
+      "id": "chaos.stress-suite",
+      "status": "passed",
+      "required": true
+    },
+    {
+      "id": "cdo.design-review",
+      "status": "skipped",
+      "required": false
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "status": "skipped",
+      "required": false
+    }
+  ],
+  "limits": [
+    "Run covers exact head 250f22ff through migration338, not later339/Cash changes",
+    "No provider, hosted application or business acceptance",
+    "Other optional UI workflows remain skipped; this workflow is unconditional but main branch protection is not configured"
+  ]
+}

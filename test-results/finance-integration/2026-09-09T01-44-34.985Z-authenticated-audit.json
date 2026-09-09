@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "run_id": "c644a890-8533-4a56-af8d-7aa9231750a9",
+  "suite": "audit",
+  "status": "BLOCKED_EXTERNAL",
+  "evidence_layer": "full-local-GoTrue-PostgREST",
+  "target_identity": null,
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "scripts/finance-integration/authenticated-smoke.mjs"
+  ],
+  "exit_code": 2,
+  "commit": "1e0a36eec5542d537b15c20f20b50b533d819a82",
+  "source_sha256": "0ef55a3c4a7aa75eccf7913efc0182fa474c3c654995ca2c04911b042c186f6a",
+  "schema_bootstrap_sha256": null,
+  "fixture_seed_sha256": "98b73ecfefa321942e7fd874faef0a9bcec34b44403531ae7a19d9e926da04e4",
+  "cases": [
+    {
+      "name": "authenticated scenario execution",
+      "acceptance_ids": [
+        "HFA-012"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "expected": "scenario completes",
+      "actual": "Private local runtime configuration is required"
+    }
+  ],
+  "counts": {
+    "total": 1,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 1,
+    "skipped": 0
+  },
+  "failure": "Private local runtime configuration is required",
+  "started_at": "2026-09-09T01:44:34.985Z",
+  "completed_at": "2026-09-09T01:44:35.007Z",
+  "duration_ms": 22,
+  "limits": [
+    "Synthetic isolated local Auth/PostgREST only. Not hosted production, provider or business acceptance."
+  ]
+}

@@ -1,0 +1,723 @@
+{
+  "schema_version": 1,
+  "suite": "finance",
+  "status": "PASS",
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/lib/finance-integration",
+    "src/lib/finance/post-to-gl.test.ts",
+    "src/lib/finance/forecast.test.ts",
+    "src/lib/finance/resident-money.test.ts",
+    "src/lib/finance/format-cents.test.ts",
+    "src/lib/finance/journal-form-lines.test.ts",
+    "src/app/(admin)/admin/cash/page.test.tsx",
+    "src/app/(admin)/finance/journal-entries/new",
+    "--reporter=json",
+    "--outputFile=/Users/brianlewis/Circle of Life/Haven Finance Integration/test-results/finance-integration/2026-09-09T03-06-27.061Z-finance-vitest.json"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "spawn_error": null,
+  "fixture": {
+    "kind": "inline-synthetic-test-source",
+    "sha256": {
+      "src/lib/finance-integration/payload.test.ts": "af9ae34749fac49896e1bb621b34280beeaafc2e793ed7e1389b6f9cd56f27cb",
+      "src/lib/finance/forecast.test.ts": "7ca6fe2ef92f9d279955808aed22262e61c7874041b8745cd4c826c9882acb8c",
+      "src/lib/finance/format-cents.test.ts": "048a52a465375ad77ebd459f9e1cb49ff87a4e50fb2ae020ef634f431464cc0a",
+      "src/lib/finance/journal-form-lines.test.ts": "01797069a59b459ae3e2f4b1a2cb17a107a09a29d15ce5938c5d08ce28ffa0dc",
+      "src/lib/finance/post-to-gl.test.ts": "cd9ad682f3c670533ec3f85aa334bd727a2e61521f143aeb5dad453fee7dbda8",
+      "src/lib/finance/resident-money.test.ts": "b3279407648a29c7bbf90d5546b4d12c3ad0bb4198d120d9fcbfc24f1916214f",
+      "src/app/(admin)/admin/cash/page.test.tsx": "3f23e58e42b3fba6cf1cb0c6c78b266d432394292525359277044466ad507420",
+      "src/app/(admin)/finance/journal-entries/new/money-input.test.tsx": "a7e04d79811190bae0dd01b13c79ab14741386f2fb66b48f8f060fc50bfc2a7e",
+      "src/app/(admin)/finance/journal-entries/new/page.test.tsx": "c36e9973414782e10611af788e2883ce21114bd12cecaa50fa33bb2ef7a6ac06"
+    }
+  },
+  "evidence_layer": "unit",
+  "target_identity": "synthetic-local-no-network",
+  "commit": "b2582e8364546f747da21f272353b1f55617302e",
+  "changed_file_sha256": {
+    "docs/finance-integration/ACCEPTANCE-MATRIX.json": "7fc31cad42dbdef907f8384a8e7631a6773e35230d57606440a137d881e2bbab",
+    "docs/finance-integration/F03-BATCH-APPROVAL-CONTRACT.md": "fe0d6651c1208588c6eef4ace00258a49f5db5007a94739c35134a8975713fcd",
+    "docs/finance-integration/RESUMPTION.md": "c6b9bdead800970c5604dc46f0ce6fdeb42d91f31314e1cc4beeab383aaab0e9",
+    "scripts/finance-integration/run-tests.mjs": "4eb310b1763f267ce13f987e8639cf2f44640cf3c756589a42fd4ada644dd704",
+    "src/app/(admin)/finance/journal-entries/[id]/page.tsx": "b9ae9228468530f38a1783db68a2d98085bcae75e0c90cb1cb67f699be6309f5",
+    "src/app/(admin)/finance/journal-entries/new/money-input.test.tsx": "a7e04d79811190bae0dd01b13c79ab14741386f2fb66b48f8f060fc50bfc2a7e",
+    "src/app/(admin)/finance/journal-entries/new/page.tsx": "27c52ba6897fe36a008758d2f02b0d937ffd19ad2d5ec73c955899cbd4484f0a",
+    "src/lib/finance/format-cents.test.ts": "048a52a465375ad77ebd459f9e1cb49ff87a4e50fb2ae020ef634f431464cc0a",
+    "src/lib/finance/format-cents.ts": "347bf82df1305177d16196b74457d54232d6d115d4da9ef7f44167f3e1ebf84b",
+    "src/lib/finance/journal-form-lines.test.ts": "01797069a59b459ae3e2f4b1a2cb17a107a09a29d15ce5938c5d08ce28ffa0dc",
+    "src/lib/finance/journal-form-lines.ts": "a767647427c7a025c9976b4077ddfd9bf5931ad442d3807c95d2860d69900fa9",
+    "supabase/migrations/340_finance_batch_approval.sql": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+    "supabase/tests/review_finance_batch_approval.sql": "2a3aff69d7a79c84e279a095a385b1c093fbd91161e27e49754533c2a3ffc974"
+  },
+  "tracked_diff_sha256": "3679269516622c885f5b753d0eeaad8e09cb532ae3c31b479f08ddb10b49252b",
+  "started_at": "2026-09-09T03:06:27.061Z",
+  "completed_at": "2026-09-09T03:06:32.580Z",
+  "duration_ms": 5519,
+  "counts": {
+    "total": 70,
+    "passed": 70,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts accepts balanced non-identifying structural fixture beyond 32-bit cents",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 5.442250000000058,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts retains precision beyond JSON safe integer and rejects storage overflow",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.6628329999998641,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary residentId at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.8895420000001195,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary memo at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.5396670000000086,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary description at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.21145799999999326,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary filename at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.18983400000001893,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary attachments at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.4052910000000338,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary source at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.7822909999999865,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary error at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.4205420000000686,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects invalid dates, amounts, identifiers, currency and unbalanced journals",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.34924999999998363,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-016 resident funds remain separate from receivables does not offset open AR with trust money",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-016"
+      ],
+      "status": "passed",
+      "duration_ms": 4.483624999999847,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 12.34 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.6077080000000024,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 1234 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.5293749999998454,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses  $1,234.56  as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.16574999999988904,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses .29 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.22725000000014006,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 0.01 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.3324170000000777,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 12. as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.11220800000000963,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 12.3 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2168340000000626,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses -$1,234.56 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.10162500000001273,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses +12.34 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.4103750000001583,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 0 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2730830000000424,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 90071992547409.91 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.12070799999992232,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses -90071992547409.91 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.08774999999991451,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1.005 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.5790000000001783,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 0.009 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.07550000000014734,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1.999 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.03674999999998363,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1e3 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.027874999999994543,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 0x10 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.021583000000191532,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1,2,3 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.018790999999964697,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 12,34.56 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.018209000000069864,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1$2 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.0183750000001055,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 90071992547409.92 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.024208000000044194,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects -90071992547409.92 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.0232499999999618,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects  without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.018041000000039276,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects $ without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.017041000000062922,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects . without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.01654099999996106,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects NaN without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.01675000000000182,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects Infinity without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.01633300000003146,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity keeps exact line amounts and ignores only wholly empty rows",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.2082090000001244,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1.005\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2353330000000824,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1e3\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.14287500000000364,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"bad\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.13591599999995196,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"-1\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 5.732042000000092,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1\",\"credit\":\"1\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.8753750000000764,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"\",\"debit\":\"1\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.13345899999990252,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.07766700000001947,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity preserves unbalanced drafts for further editing",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.9810419999998885,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an individual line beyond its database integer bound",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 3.447832999999946,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity supports aggregate totals beyond 32-bit cents using storable lines",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.3527919999999085,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting posts invoice through one command",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 6.809332999999924,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting posts payment through one command",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.6870420000000195,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting preserves a failed posting result instead of treating a draft as posted",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.3375829999999951,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt (null)",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.352916999999934,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt ({})",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2540000000001328,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt (undefined)",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.12520800000015697,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt ({\"journal_entry_id\":5})",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2930830000000242,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 mapped resident-money response contract accepts existing PostgreSQL portfolio UUIDs without inventing a canonical zero",
+      "acceptance_ids": [
+        "HFA-014"
+      ],
+      "status": "passed",
+      "duration_ms": 1.9546250000000782,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 mapped resident-money response contract rejects malformed scope identities",
+      "acceptance_ids": [
+        "HFA-014"
+      ],
+      "status": "passed",
+      "duration_ms": 4.276000000000067,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope hides the previous facility ledger immediately while the new facility loads",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 44.279875000000175,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not replace the current facility with a late response from the prior facility",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 78.41450000000032,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not show another resident's late transaction response under the selected resident",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 126.09875000000011,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope clears previous transactions when the newly selected account fails to load",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 67.83062500000005,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: false)",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 206.12725,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: true)",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 626.10475,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope ignores a rejected ledger request after a different account has loaded",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 170.65087500000027,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not restart ledger requests when an outstanding mutation completes after unmount",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 107.15004199999976,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal form submission sends exact cents for a valid draft",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 202.97562500000004,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal form submission does not discard an invalid third line and save only the balanced pair",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 362.9852910000004,
+      "failures": []
+    },
+    {
+      "name": "NewJournalEntryPage entry date defaults to the Eastern calendar date at 8:05pm ET, not the next UTC date",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 176.7598750000002,
+      "failures": []
+    },
+    {
+      "name": "NewJournalEntryPage entry date uses the shared facility date helper instead of a UTC ISO slice",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 1.3460410000002412,
+      "failures": []
+    }
+  ],
+  "limits": [
+    "Unit assertions only; does not satisfy provider, Auth/PostgREST, complete financial workflow or business acceptance."
+  ],
+  "raw_artifact": "test-results/finance-integration/2026-09-09T03-06-27.061Z-finance-vitest.json"
+}

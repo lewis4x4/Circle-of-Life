@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "scope": "Exact currency input and journal caller validation",
+  "acceptance_ids": [
+    "HFA-036"
+  ],
+  "status": "PASS",
+  "evidence_layer": "unit-and-rendered-components",
+  "timestamp": "2026-09-09T03:11:17.838757+00:00",
+  "source_commit": "b2582e8364546f747da21f272353b1f55617302e",
+  "source_sha256": {
+    "src/lib/finance/format-cents.ts": "347bf82df1305177d16196b74457d54232d6d115d4da9ef7f44167f3e1ebf84b",
+    "src/lib/finance/format-cents.test.ts": "048a52a465375ad77ebd459f9e1cb49ff87a4e50fb2ae020ef634f431464cc0a",
+    "src/lib/finance/journal-form-lines.ts": "a767647427c7a025c9976b4077ddfd9bf5931ad442d3807c95d2860d69900fa9",
+    "src/lib/finance/journal-form-lines.test.ts": "01797069a59b459ae3e2f4b1a2cb17a107a09a29d15ce5938c5d08ce28ffa0dc",
+    "src/app/(admin)/finance/journal-entries/new/page.tsx": "27c52ba6897fe36a008758d2f02b0d937ffd19ad2d5ec73c955899cbd4484f0a",
+    "src/app/(admin)/finance/journal-entries/new/money-input.test.tsx": "a7e04d79811190bae0dd01b13c79ab14741386f2fb66b48f8f060fc50bfc2a7e",
+    "src/app/(admin)/finance/journal-entries/[id]/page.tsx": "b9ae9228468530f38a1783db68a2d98085bcae75e0c90cb1cb67f699be6309f5",
+    "scripts/finance-integration/run-tests.mjs": "4eb310b1763f267ce13f987e8639cf2f44640cf3c756589a42fd4ada644dd704"
+  },
+  "before": {
+    "artifact": "money-input-before.json",
+    "failed": 10,
+    "passed": 17,
+    "skipped": 0
+  },
+  "after": {
+    "artifact": "2026-09-09T03-06-27.061Z-finance.json",
+    "passed": 70,
+    "failed": 0,
+    "skipped": 0
+  },
+  "independent_review": {
+    "reviewer": "finance_source_inventory",
+    "verdict": "APPROVE",
+    "scoped_cases_passed": 45,
+    "findings_fixed": [
+      "Per-line journal values respect PostgreSQL integer while larger aggregates use multiple valid lines"
+    ],
+    "checks": [
+      "Scoped tests, lint, script syntax and diff checks pass",
+      "Original new/page.test.tsx is byte-identical to HEAD",
+      "No scoped TypeScript diagnostics; whole source typecheck exit0"
+    ]
+  },
+  "notes": [
+    "New submission tests are in a separate money-input.test.tsx; existing date tests retained",
+    "Earlier draft money test requirement labels were corrected to HFA-036; historical reports annotated and superseded"
+  ],
+  "limits": [
+    "No provider or hosted Auth/API proof",
+    "Other monetary producers, mappings and financial workflows remain open"
+  ]
+}

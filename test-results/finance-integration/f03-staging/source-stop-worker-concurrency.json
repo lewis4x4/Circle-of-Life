@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS",
+  "target": "run-owned Unix socket55447/hfa_outbox_339",
+  "timestamp": "2026-09-09T00:17:41.399101+00:00",
+  "migrationSHA256": "ffb4f41d3454b4d8d89c90be538edeef894b8689ce0a16ecee9e431f602e65b3",
+  "cases": [
+    {
+      "case": "concurrent-source-replay-one-intent",
+      "status": "PASS",
+      "method": "both source requests observed contending on same command lock before release",
+      "events": 1,
+      "intents": 1,
+      "payments": 1,
+      "receipts": 1
+    },
+    {
+      "case": "stop-wins-worker-denied",
+      "status": "PASS",
+      "stopExit": 0,
+      "expectedWorkerExit": 3,
+      "attempts": 0
+    },
+    {
+      "case": "stopped-control-retains-new-source-event",
+      "status": "PASS"
+    },
+    {
+      "case": "worker-wins-records-blocked-attempt-stop-retains-it",
+      "status": "PASS",
+      "attempts": 1,
+      "finalStopped": true,
+      "dispatchEnabled": false
+    }
+  ],
+  "skips": 0
+}

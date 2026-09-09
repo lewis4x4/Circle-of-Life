@@ -2,6 +2,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+import { supabaseCspOrigins } from "./src/lib/supabase/env";
 
 // `__dirname` is undefined when this file is loaded as ESM (Next 16 + .ts config).
 // Resolve it explicitly so Turbopack's `root:` gets an absolute path that works
@@ -20,9 +21,7 @@ const __dirname_resolved = (() => {
 
 const isProd = process.env.NODE_ENV === "production";
 
-const supabaseHost = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
-  .replace(/^https?:\/\//, "")
-  .replace(/\/$/, "");
+const supabaseOrigins = supabaseCspOrigins(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim());
 const sentryHost = [process.env.NEXT_PUBLIC_SENTRY_DSN, process.env.SENTRY_DSN]
   .map((dsn) => {
     if (!dsn) return "";
@@ -38,10 +37,10 @@ const cspDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https://images.unsplash.com${supabaseHost ? ` https://${supabaseHost}` : ""}`,
+  `img-src 'self' data: blob: https://images.unsplash.com${supabaseOrigins.http ? ` ${supabaseOrigins.http}` : ""}`,
   "media-src 'self' https://cdn.pixabay.com",
   "font-src 'self'",
-  `connect-src 'self'${supabaseHost ? ` https://${supabaseHost} wss://${supabaseHost}` : ""}${sentryHost ? ` https://${sentryHost}` : ""}`,
+  `connect-src 'self'${supabaseOrigins.http ? ` ${supabaseOrigins.http} ${supabaseOrigins.websocket}` : ""}${sentryHost ? ` https://${sentryHost}` : ""}`,
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -72,6 +71,8 @@ if (isProd) {
 }
 
 const nextConfig: NextConfig = {
+  // Match npm run typecheck; Vitest executes test fixtures independently.
+  typescript: { tsconfigPath: "tsconfig.typecheck.json" },
   experimental: {
     optimizePackageImports: [
       "lucide-react",

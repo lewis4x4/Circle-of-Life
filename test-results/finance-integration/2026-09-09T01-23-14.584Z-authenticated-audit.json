@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "run_id": "02091b99-fb08-4476-af7f-c76773e3050f",
+  "suite": "audit",
+  "status": "FAIL",
+  "evidence_layer": "full-local-GoTrue-PostgREST",
+  "target_identity": {
+    "project_id": "hfa-01a08335",
+    "api_url": "http://127.0.0.1:59331",
+    "database_port": 59322,
+    "transport": "docker-exec-gateway-proxy",
+    "containers": [
+      {
+        "service": "native-gateway-proxy",
+        "pid": 26976,
+        "port": 59331
+      },
+      {
+        "service": "db",
+        "container_id": "1ad3eb7f2a3a8fa1a827beceba3a630d500dafc529a80a8af767002ddaed22f5"
+      },
+      {
+        "service": "kong",
+        "container_id": "aa2a8b2fe8cdaea424b2d91ccaa139e5c10a8f159c5d3660c231bed9575ef9e2"
+      },
+      {
+        "service": "auth",
+        "container_id": "12ebbf185e5135a1985db35ce60a79ce7604cac66d93b64e3af69903193d8a15"
+      },
+      {
+        "service": "rest",
+        "container_id": "b7e7584ac5fd9655595927d1bc2a0d92eed76e06e4faf4054896ccb5bcefb3cb"
+      }
+    ]
+  },
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "scripts/finance-integration/authenticated-smoke.mjs",
+    "--config=<run-private-configuration>",
+    "--suite=audit"
+  ],
+  "exit_code": 1,
+  "commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "source_sha256": "4f19db9143c70c0a562bdb3522e518c1c6ade9d2385335a7ce79c0fa6d3528ba",
+  "schema_bootstrap_sha256": "1b69e8c1d74c54d0d4c54ffe025530c370bb9c1e0e819579ccdac07431323207",
+  "fixture_seed_sha256": "d0094f4e2054ee29ce0ccf5c0a74785f67feb6cf03a844d54701e7bad18f2649",
+  "cases": [
+    {
+      "name": "run-owned native proxy listener and backend binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "db: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "kong: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "auth: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "rest: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "genuine GoTrue auth schema exists",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "restricted: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "authenticated scenario execution",
+      "acceptance_ids": [
+        "HFA-012"
+      ],
+      "status": "FAIL",
+      "expected": "scenario completes",
+      "actual": "The operation was aborted due to timeout"
+    }
+  ],
+  "counts": {
+    "total": 8,
+    "passed": 7,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "failure": "The operation was aborted due to timeout",
+  "started_at": "2026-09-09T01:23:14.584Z",
+  "completed_at": "2026-09-09T01:23:59.356Z",
+  "duration_ms": 44772,
+  "limits": [
+    "Synthetic isolated local Auth/PostgREST only. Not hosted production, provider or business acceptance."
+  ]
+}

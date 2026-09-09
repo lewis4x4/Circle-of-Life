@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="deno test" tests="98" failures="0" errors="0" time="0.474">
+    <testsuite name="./supabase/functions/_shared/qbo-read.test.ts" tests="98" disabled="0" errors="0" failures="0">
+        <testcase name="[HFA-028] Account request is GET fixed host encoded query including inactive" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.003" line="105" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Count returns exact safe count and no money" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="130" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Empty page is a live observation only" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="138" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Explicit later offset is retained" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="144" col="6">
+        </testcase>
+        <testcase name="[HFA-028] wrong company never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] production defaults disabled never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] invalid environment never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] company injection never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] token header injection never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] unknown operation never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] zero page never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] oversized page never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] invalid minorversion never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] invalid byte bound never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="183" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Trusted explicit production read chooses production host" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="196" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Redirect 301 rejected without follow" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="207" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Redirect 302 rejected without follow" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="207" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Redirect 307 rejected without follow" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="207" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Redirect 308 rejected without follow" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="207" col="8">
+        </testcase>
+        <testcase name="[HFA-028] HTTP 401 fixed classification no retry or error leakage" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="229" col="8">
+        </testcase>
+        <testcase name="[HFA-028] HTTP 403 fixed classification no retry or error leakage" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="229" col="8">
+        </testcase>
+        <testcase name="[HFA-028] HTTP 404 fixed classification no retry or error leakage" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.009" line="229" col="8">
+        </testcase>
+        <testcase name="[HFA-028] HTTP 429 fixed classification no retry or error leakage" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="229" col="8">
+        </testcase>
+        <testcase name="[HFA-028] HTTP 500 fixed classification no retry or error leakage" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="229" col="8">
+        </testcase>
+        <testcase name="[HFA-028] HTTP 503 fixed classification no retry or error leakage" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="229" col="8">
+        </testcase>
+        <testcase name="[HFA-028] HTTP 400 fixed classification no retry or error leakage" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="229" col="8">
+        </testcase>
+        <testcase name="[HFA-028] HTTP200 Fault rejects even parseable successful envelope" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="246" col="6">
+        </testcase>
+        <testcase name="[HFA-028] HTTP200 warning rejects" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="253" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Invalid JSON duplicate key" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="267" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Invalid JSON trailing comma" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.007" line="267" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Invalid JSON trailing bytes" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="267" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Invalid JSON malformed number" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="267" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Invalid JSON wrong root" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="267" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Invalid JSON literal control" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="267" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Page validation wrong offset" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="288" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Page validation wrong page length" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="288" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Page validation wrong count" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="288" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Page validation duplicate ID" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.015" line="288" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Page validation missing version" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="288" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Page validation numeric ID" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="288" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Page validation unexpected entity" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="288" col="8">
+        </testcase>
+        <testcase name="[HFA-036] Huge monetary numeric lexemes survive bytes/hash with no parsed numbers returned" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="295" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Oversize streaming evidence hash is prefix only" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="315" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Content length early refusal has no evidence digest" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="324" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Short stream relative to length rejects complete hash claim" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="332" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Deadline applies to transport ignoring signal" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.008" line="340" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Deadline applies to stalled body and retains captured prefix" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.008" line="347" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Pre-aborted signal never fetches" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="366" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Caller cancellation applies to transport ignoring signal" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="380" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Transport exception message remains private" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="389" col="6">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger fixed request and raw hierarchy" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="397" col="6">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger StartPeriod mismatch rejects" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.005" line="425" col="8">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger EndPeriod mismatch rejects" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="425" col="8">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger ReportBasis mismatch rejects" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="425" col="8">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger Currency mismatch rejects" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="425" col="8">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger ReportName mismatch rejects" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="425" col="8">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger Time mismatch rejects" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="425" col="8">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger explicit no-data declaration is not zero or completeness" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="434" col="6">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger missing data contradicts declaration" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="446" col="6">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger truncation message anywhere rejects HTTP200" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.004" line="454" col="6">
+        </testcase>
+        <testcase name="[HFA-028] GeneralLedger missing cells reject partial row" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="463" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Invalid calendar date refused before request" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="471" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Invalid UTF8 preserves evidence but rejects schema" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="477" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Content type mismatch is never an empty successful page" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="492" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Truncated JSON is complete byte capture but invalid response" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="501" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Early length rejection cancels response body" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="507" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Delayed transport resolution after cancellation discards body" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="524" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Mutable operation cannot change response expectation after dispatch" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="550" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Unsafe count never rounds to a nearby integer" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="569" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Excessive nesting fails closed" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="576" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Duplicate report declaration fails closed" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.004" line="583" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Unknown report row type fails closed" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="591" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Continuously ready zero-byte chunks cannot starve absolute deadline" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.002" line="599" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Ready stream yields so external timer cancellation is observed" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.003" line="628" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Tiny positive chunks preserve bytes within one bounded capture" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.001" line="649" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Strict report timestamp rejects 2026-02-30T12:00:00Z" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="680" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Strict report timestamp rejects 2026-06-01T24:00:00Z" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="680" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Strict report timestamp rejects 2026-06-01T12:60:00Z" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="680" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Strict report timestamp rejects 2026-06-01T12:00:60Z" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="680" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Strict report timestamp rejects 2026-06-01T12:00:00+24:00" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="680" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Strict report timestamp rejects 2026-06-01T12:00:00+00:60" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="680" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Strict report timestamp accepts real leap-day with nanoseconds and offset" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.005" line="689" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Content-length mismatch rejected with encoding &quot;identity&quot;" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="695" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Content-length mismatch rejected with encoding &quot;IDENTITY&quot;" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="695" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Content-length mismatch rejected with encoding &quot; identity &quot;" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="695" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Content-length mismatch rejected with encoding &quot;&quot;" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="695" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Unknown report group members cannot hide financial rows" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="715" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Unknown report data members cannot hide financial rows" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="715" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Unknown report section members cannot hide financial rows" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="715" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Unknown report header members cannot hide financial rows" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.005" line="715" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Unknown report cell members cannot hide financial rows" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="715" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Unknown report root members cannot hide financial rows" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="715" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Unknown report columns members cannot hide financial rows" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="715" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Malformed cancellation value returns fixed invalid_config false" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="742" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Malformed cancellation value returns fixed invalid_config true" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="742" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Malformed cancellation value returns fixed invalid_config false" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="742" col="8">
+        </testcase>
+        <testcase name="[HFA-028] Abort-aware transport deadline always classified timeout" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.003" line="764" col="6">
+        </testcase>
+        <testcase name="[HFA-028] Abort-aware transport caller cancellation always classified aborted" classname="./supabase/functions/_shared/qbo-read.test.ts" time="0.000" line="769" col="6">
+        </testcase>
+    </testsuite>
+</testsuites>

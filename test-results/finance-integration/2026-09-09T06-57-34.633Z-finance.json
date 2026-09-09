@@ -1,0 +1,1887 @@
+{
+  "schema_version": 1,
+  "suite": "finance",
+  "status": "PASS",
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/lib/finance-integration",
+    "src/lib/finance/post-to-gl.test.ts",
+    "src/lib/finance/forecast.test.ts",
+    "src/lib/finance/resident-money.test.ts",
+    "src/lib/finance/format-cents.test.ts",
+    "src/lib/finance/journal-form-lines.test.ts",
+    "src/lib/billing/generate-monthly-invoices.test.ts",
+    "src/lib/billing/generate-monthly-source-guards.test.ts",
+    "src/app/(admin)/admin/cash/page.test.tsx",
+    "src/app/(admin)/finance/journal-entries/new",
+    "src/components/finance/FinanceReviewQueueClient.test.tsx",
+    "--reporter=json",
+    "--outputFile=/Users/brianlewis/Circle of Life/Haven Finance Integration/test-results/finance-integration/2026-09-09T06-57-34.633Z-finance-vitest.json"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "spawn_error": null,
+  "fixture": {
+    "kind": "inline-synthetic-test-source",
+    "sha256": {
+      "src/components/finance/FinanceReviewQueueClient.test.tsx": "6b277aef6beacedbd25c3c0ab068a9ddacc28dd394fa43823ddbe84c2829c220",
+      "src/lib/billing/generate-monthly-invoices.test.ts": "280d5b0c04e132f607200cbb00a9ae7691e94e97d6cda39c4404110e820831ce",
+      "src/lib/billing/generate-monthly-source-guards.test.ts": "56b871fe0acf4d51592720bad839eee3bcad685b6dc4dd96e1c4f5f06236065b",
+      "src/lib/finance-integration/payload.test.ts": "af9ae34749fac49896e1bb621b34280beeaafc2e793ed7e1389b6f9cd56f27cb",
+      "src/lib/finance-integration/review-queue.test.ts": "18d8a67b0ef01aaccb9fe0312f32ade9e118f35c33262b39bf6f74fb7154133d",
+      "src/lib/finance/forecast.test.ts": "7ca6fe2ef92f9d279955808aed22262e61c7874041b8745cd4c826c9882acb8c",
+      "src/lib/finance/format-cents.test.ts": "048a52a465375ad77ebd459f9e1cb49ff87a4e50fb2ae020ef634f431464cc0a",
+      "src/lib/finance/journal-form-lines.test.ts": "01797069a59b459ae3e2f4b1a2cb17a107a09a29d15ce5938c5d08ce28ffa0dc",
+      "src/lib/finance/post-to-gl.test.ts": "cd9ad682f3c670533ec3f85aa334bd727a2e61521f143aeb5dad453fee7dbda8",
+      "src/lib/finance/resident-money.test.ts": "b3279407648a29c7bbf90d5546b4d12c3ad0bb4198d120d9fcbfc24f1916214f",
+      "src/app/(admin)/admin/cash/page.test.tsx": "3f23e58e42b3fba6cf1cb0c6c78b266d432394292525359277044466ad507420",
+      "src/app/(admin)/finance/journal-entries/new/money-input.test.tsx": "a7e04d79811190bae0dd01b13c79ab14741386f2fb66b48f8f060fc50bfc2a7e",
+      "src/app/(admin)/finance/journal-entries/new/page.test.tsx": "c36e9973414782e10611af788e2883ce21114bd12cecaa50fa33bb2ef7a6ac06"
+    }
+  },
+  "evidence_layer": "unit",
+  "target_identity": "synthetic-local-no-network",
+  "commit": "cbd94135481ba2ba28095677a17cef09d8e9525b",
+  "changed_file_sha256": {
+    "docs/finance-integration/F06-BILLING-SOURCE-GUARDS.md": "8ae2c4698ead0c4ce5922da6c0ff7f38ac7700e1261debbcba5230aadfd0ff14",
+    "scripts/finance-integration/run-tests.mjs": "455a31f0b2f80d146e1b0929d5f4d483c83fdfca562d18461610de71bc56cdc0",
+    "src/lib/billing/generate-monthly-invoices.test.ts": "280d5b0c04e132f607200cbb00a9ae7691e94e97d6cda39c4404110e820831ce",
+    "src/lib/billing/generate-monthly-invoices.ts": "8bb8f636ba77ce38c3250e219b66a9b0246ce31f58aca28cc09dad98cff127ac",
+    "src/lib/billing/generate-monthly-source-guards.test.ts": "56b871fe0acf4d51592720bad839eee3bcad685b6dc4dd96e1c4f5f06236065b",
+    "supabase/functions/_shared/billing/generate-monthly-invoices.ts": "9348579072d7b6b44f5cc34fcc71ede7c883b3fe7787cd5fdf78479ee2ad863d",
+    "supabase/functions/generate-monthly-invoices/index.ts": "9877826411b54fa6d1504925b295f911e6181c8af656392fd374a5f486451616"
+  },
+  "tracked_diff_sha256": "b7ec5e8842dab87ee7bd12b8d9d40191f996169d4812381c2bf62baceb6fc63a",
+  "started_at": "2026-09-09T06:57:34.633Z",
+  "completed_at": "2026-09-09T06:57:45.196Z",
+  "duration_ms": 10563,
+  "counts": {
+    "total": 225,
+    "passed": 225,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "name": "Accounting review rendered read-only journeys HFA-063: renders the operational viewer through each route entry",
+      "acceptance_ids": [
+        "HFA-063"
+      ],
+      "status": "passed",
+      "duration_ms": 263.4925000000003,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-063: renders the operational viewer through each route entry",
+      "acceptance_ids": [
+        "HFA-063"
+      ],
+      "status": "passed",
+      "duration_ms": 80.15041699999983,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-054: shows explicit empty state, live coverage limits and release blockers without mutation controls",
+      "acceptance_ids": [
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 129.84804199999962,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-036 HFA-065: renders exact large money and a protected broader claim without a forbidden link",
+      "acceptance_ids": [
+        "HFA-036",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 21.986666999999215,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-052: uses keyset next and previous page requests for more than one page",
+      "acceptance_ids": [
+        "HFA-052"
+      ],
+      "status": "passed",
+      "duration_ms": 347.3327079999999,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-054: distinguishes failure from empty and retries a literal release flag violation",
+      "acceptance_ids": [
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 181.01429199999984,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-065: ignores delayed data after facility changes and aborts its request",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 45.24645799999962,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-065: removes prior actor data immediately and ignores a pending detail on account switch",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 31.50158399999964,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-054 HFA-065: shows current declared rules and authorized exact detail while stripping sessions",
+      "acceptance_ids": [
+        "HFA-054",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 46.605625000000146,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-065: keeps protected detail denial distinct from an empty batch",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 21.519083999999566,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-063: supports keyboard navigation through the existing tabs primitive",
+      "acceptance_ids": [
+        "HFA-063"
+      ],
+      "status": "passed",
+      "duration_ms": 188.44291599999997,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-054: ignores a pending source page after switching record kinds",
+      "acceptance_ids": [
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 260.35291700000016,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-065: clears current rows during a same-account session refresh",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 373.94504099999995,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-065: masks prior owner choices immediately on a same-session role downgrade",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 265.1755840000005,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-065: restricts a facility administrator selector to an explicit facility",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 58.015416999999616,
+      "failures": []
+    },
+    {
+      "name": "Accounting review rendered read-only journeys HFA-065: aborts in-flight work on unmount",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 97.51800000000003,
+      "failures": []
+    },
+    {
+      "name": "prorationFactorForResident prorates mid-month admission",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 1.555084000000079,
+      "failures": []
+    },
+    {
+      "name": "prorationFactorForResident prorates mid-month discharge",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.18754199999989396,
+      "failures": []
+    },
+    {
+      "name": "prorationFactorForResident returns zero when discharged before the billing month",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07150000000001455,
+      "failures": []
+    },
+    {
+      "name": "buildMonthlyInvoicePreview prorates date-only admission dates and uses due date on the 5th",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 36.281083999999964,
+      "failures": []
+    },
+    {
+      "name": "buildMonthlyInvoicePreview includes hospital_hold residents at full monthly private rate",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 15.516958999999815,
+      "failures": []
+    },
+    {
+      "name": "buildMonthlyInvoicePreview keeps prorated line items summing exactly to the subtotal (half-cent boundary)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.35629199999993943,
+      "failures": []
+    },
+    {
+      "name": "buildMonthlyInvoicePreview skips Medicaid residents with no usable rate instead of billing private",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 23.710624999999936,
+      "failures": []
+    },
+    {
+      "name": "buildMonthlyInvoicePreview uses Medicaid catalog monthly rate for medicaid_oss payers",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.5854580000000169,
+      "failures": []
+    },
+    {
+      "name": "persistMonthlyInvoicesFromPreview calls haven_create_invoice_with_line_items and counts inserts",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 1.1922500000000582,
+      "failures": []
+    },
+    {
+      "name": "persistMonthlyInvoicesFromPreview counts duplicate skips when inserted is false",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.17045899999993708,
+      "failures": []
+    },
+    {
+      "name": "persistMonthlyInvoicesFromPreview reports RPC uncertainty without exposing provider error text",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.5219160000001466,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources uses period-applicable published rates and preserves independent charge fixtures",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 107.70575000000008,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources uses period-applicable superseded rates and preserves independent charge fixtures",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.6142079999999623,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects a 2501-row resident source truncated by the existing 500-row cap",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.8369999999999891,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources retains acknowledged progress before 'returned error' (first inserted=true)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 3.8524579999998423,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources retains acknowledged progress before 'timeout' (first inserted=true)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 1.2473329999997986,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources retains acknowledged progress before 'missing acknowledgement' (first inserted=true)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.8954579999999623,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources retains acknowledged progress before 'returned error' (first inserted=false)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.6330419999999322,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources keeps raw provider text and unresolved identity out of generic errors",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 1.9754159999997682,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources blocks residents count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 1.5076249999997344,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources blocks resident_payers count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.42774999999983265,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources blocks facility_medicaid_providers count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.40854200000012497,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources blocks resident_rate_agreements count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.6356250000003456,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources blocks invoices count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.17141700000001947,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'residents' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.13499999999976353,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'residents' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.09341700000004494,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'residents' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.08704200000011042,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'resident_payers' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.08833300000014788,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'resident_payers' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07637500000009823,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'resident_payers' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.14099999999962165,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'facility_medicaid_providers' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07841699999971752,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'facility_medicaid_providers' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.0784590000002936,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'facility_medicaid_providers' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.1147080000000642,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'resident_rate_agreements' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07783399999971152,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'resident_rate_agreements' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.0773749999998472,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'resident_rate_agreements' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.06891600000017206,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'invoices' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.19829200000003766,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'invoices' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.6735000000003311,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects 'invoices' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 1.1645000000003165,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources keeps provider transport failure distinct from zero providers",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.36104199999999764,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid month 0 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.24549999999999272,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid month 13 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.11583399999972244,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid month 5.5 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.056749999999738066,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid month NaN before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.056666999999833934,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid month Infinity before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.04749999999967258,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid year 0 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.0884169999999358,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid year 2026.5 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.05795800000032614,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid year NaN before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.09208300000000236,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects invalid year Infinity before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.04087500000014188,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects incomplete organization facility response {\"count\":2501}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.3907080000003589,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects incomplete organization facility response {\"count\":null}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.0803329999998823,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects incomplete organization facility response {}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.06987500000013824,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources rejects incomplete organization facility response {\"data\":null,\"count\":0}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.063083000000006,
+      "failures": []
+    },
+    {
+      "name": "F06 app complete billing sources recognizes an exactly counted empty facility list",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.05658300000004601,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources uses period-applicable published rates and preserves independent charge fixtures",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.8576669999997648,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources uses period-applicable superseded rates and preserves independent charge fixtures",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.2888750000001892,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects a 2501-row resident source truncated by the existing 500-row cap",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.6123750000001564,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources retains acknowledged progress before 'returned error' (first inserted=true)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.4810000000002219,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources retains acknowledged progress before 'timeout' (first inserted=true)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.4837090000000899,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources retains acknowledged progress before 'missing acknowledgement' (first inserted=true)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.21166600000015023,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources retains acknowledged progress before 'returned error' (first inserted=false)",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.1772499999997308,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources keeps raw provider text and unresolved identity out of generic errors",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.13558400000010806,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources blocks residents count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.09554200000002311,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources blocks resident_payers count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.09070799999972223,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources blocks facility_medicaid_providers count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.09974999999985812,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources blocks resident_rate_agreements count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.08983299999999872,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources blocks invoices count larger than 2000 without a partial preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.08958299999994779,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'residents' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.08529200000020865,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'residents' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07637500000009823,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'residents' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.0886249999998654,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'resident_payers' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07637499999964348,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'resident_payers' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07549999999991996,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'resident_payers' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07116700000005949,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'facility_medicaid_providers' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07633400000031543,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'facility_medicaid_providers' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07975000000033106,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'facility_medicaid_providers' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.08520799999996598,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'resident_rate_agreements' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07158399999980247,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'resident_rate_agreements' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07720800000015515,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'resident_rate_agreements' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07587499999999636,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'invoices' 'null count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.0757499999999709,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'invoices' 'missing count'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.0759170000001177,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects 'invoices' 'null data'",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 13.19879200000014,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources keeps provider transport failure distinct from zero providers",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.22216600000001563,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid month 0 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.0599170000000413,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid month 13 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.04037500000004002,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid month 5.5 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.036125000000083674,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid month NaN before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.10125000000016371,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid month Infinity before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 2.8311249999997017,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid year 0 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 8.023915999999645,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid year 2026.5 before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 3.567457999999988,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid year NaN before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 22.023541999999907,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects invalid year Infinity before querying",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.13100000000031287,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects incomplete organization facility response {\"count\":2501}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 14.61962500000027,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects incomplete organization facility response {\"count\":null}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.18183300000009694,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects incomplete organization facility response {}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.07833400000026813,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources rejects incomplete organization facility response {\"data\":null,\"count\":0}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 10.653708000000279,
+      "failures": []
+    },
+    {
+      "name": "F06 Edge shared complete billing sources recognizes an exactly counted empty facility list",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.1832910000002812,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler executes organization success and returns max_facilities without ReferenceError",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 522.6347090000004,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler reports known progress and unresolved mutation in facility mode",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 178.9572079999998,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler reports known progress and unresolved mutation in organization mode",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 361.5784170000006,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler reports mixed-facility known progress when the second facility is blocked",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 240.4444170000006,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler reports mixed-facility known progress when the second facility is unknown",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 303.6292090000006,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler keeps a timed-out RPC separate from a known duplicate",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 311.2336660000001,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler reports an intentional organization cap as incomplete without changing its processing limit",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 363.62512499999957,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler reports preserved business-warning billing as partial in facility mode",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 94.57929200000035,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler reports preserved business-warning billing as partial in organization mode",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 312.294167,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler keeps unresolved identity in authorized output while sanitizing actual handler telemetry",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 271.2762499999999,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler does not persist an incomplete residents facility preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 205.30025000000023,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler does not persist an incomplete resident_payers facility preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 301.8225419999999,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler does not persist an incomplete facility_medicaid_providers facility preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 205.8976249999996,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler does not persist an incomplete resident_rate_agreements facility preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 254.11350000000039,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler does not persist an incomplete invoices facility preview",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 208.87329200000022,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler blocks organization work before persistence when facility listing is truncated",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 122.04999999999927,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler reports blocked-only organization work as unsuccessful",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 196.04758299999958,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler rejects invalid request period/body {\"billing_year\":2026.5,\"billing_month\":5}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 47.56458399999974,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler rejects invalid request period/body {\"billing_year\":2026,\"billing_month\":5.5}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 148.93712500000038,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler rejects invalid request period/body {\"billing_year\":\"2026\",\"billing_month\":\"5\"}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 71.12241599999834,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler rejects invalid request period/body {\"billing_year\":null,\"billing_month\":null}",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 41.42033300000003,
+      "failures": []
+    },
+    {
+      "name": "F06 actual registered Edge billing handler rejects invalid request period/body null",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 205.71754099999998,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts accepts balanced non-identifying structural fixture beyond 32-bit cents",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.8256670000000668,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts retains precision beyond JSON safe integer and rejects storage overflow",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.6646670000000086,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary residentId at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.49099999999998545,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary memo at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.18183300000009694,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary description at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.15174999999999272,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary filename at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.1757910000001175,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary attachments at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.19079099999999016,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary source at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.13099999999985812,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary error at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2616250000000946,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects invalid dates, amounts, identifiers, currency and unbalanced journals",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.26320799999984956,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-054: displays both summer and winter timestamps in Eastern time",
+      "acceptance_ids": [
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 1.2318749999999454,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-036: accepts PostgreSQL seed UUIDs and retains exact cents beyond JSON safe integers",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 27.423208999999588,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-065: rejects mismatched organization_id",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 0.624416999999994,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-065: rejects mismatched entity_id",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2565420000000813,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-065: rejects mismatched facility_id",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 25.07262499999979,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-054: requires literal false for business_release_eligible",
+      "acceptance_ids": [
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 1.2774160000003576,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-054: requires literal false for dispatch_enabled",
+      "acceptance_ids": [
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 11.045249999999669,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-036: rejects numeric, noncanonical and overflowing amounts",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.127875000000131,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-052: rejects incomplete, wrong-last-row and inconsistent cursors/counts",
+      "acceptance_ids": [
+        "HFA-052"
+      ],
+      "status": "passed",
+      "duration_ms": 7.030500000000302,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-052: honors microsecond ordering rather than rounding timestamps",
+      "acceptance_ids": [
+        "HFA-052"
+      ],
+      "status": "passed",
+      "duration_ms": 0.22779200000013589,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-052 HFA-065: rejects rows before the requested cursor and facility leakage",
+      "acceptance_ids": [
+        "HFA-052",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 0.32349999999996726,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-065: retains claims with inaccessible broader batch details",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 0.21370799999976953,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-065 HFA-054: strips historical session identifiers from parsed detail and checks detail scope",
+      "acceptance_ids": [
+        "HFA-065",
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 12.992957999999817,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-036: rejects nested payload free fields and non-string member money",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.5920830000000024,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-052 HFA-054: rejects excess timestamp precision and active invalidated detail",
+      "acceptance_ids": [
+        "HFA-052",
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 0.40675000000010186,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-054: does not accept an active batch row with a current invalidation reason",
+      "acceptance_ids": [
+        "HFA-054"
+      ],
+      "status": "passed",
+      "duration_ms": 0.6378749999998945,
+      "failures": []
+    },
+    {
+      "name": "accounting review read boundary HFA-052: passes complete cursor and abort signal to the read-only RPC",
+      "acceptance_ids": [
+        "HFA-052"
+      ],
+      "status": "passed",
+      "duration_ms": 1.0603329999999005,
+      "failures": []
+    },
+    {
+      "name": "authorized selector keysets HFA-052: reads through a server cap lower than requested and stops only on empty pages",
+      "acceptance_ids": [
+        "HFA-052"
+      ],
+      "status": "passed",
+      "duration_ms": 0.7985000000003311,
+      "failures": []
+    },
+    {
+      "name": "authorized selector keysets HFA-052 HFA-065: rejects duplicates, nonadvancing IDs and wrong-organization choices",
+      "acceptance_ids": [
+        "HFA-052",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 0.7720839999997224,
+      "failures": []
+    },
+    {
+      "name": "authorized selector keysets HFA-065: rejects a facility whose entity is absent from authorized entity choices",
+      "acceptance_ids": [
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 0.17658399999982066,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-016 resident funds remain separate from receivables does not offset open AR with trust money",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-016"
+      ],
+      "status": "passed",
+      "duration_ms": 0.8739580000001297,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 12.34 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.136583999999857,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 1234 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.19458399999984977,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses  $1,234.56  as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.06091699999979028,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses .29 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.08762500000011642,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 0.01 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.0939579999999296,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 12. as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.049583999999867956,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 12.3 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.33808300000009694,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses -$1,234.56 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.06341699999984485,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses +12.34 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.3265000000001237,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 0 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.07704199999989214,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses 90071992547409.91 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.0466670000000704,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input parses -90071992547409.91 as exact cents",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.030333999999584194,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1.005 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.04295799999999872,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 0.009 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.023166999999830296,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1.999 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.020375000000058208,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1e3 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.021541999999953987,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 0x10 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.020250000000032742,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1,2,3 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.02033400000027541,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 12,34.56 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.019958999999744265,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 1$2 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.02162499999985812,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects 90071992547409.92 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.020250000000032742,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects -90071992547409.92 without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.02295800000001691,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects  without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.019416000000092026,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects $ without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.01929100000006656,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects . without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.018209000000297237,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects NaN without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.019375000000309228,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 exact dollar input rejects Infinity without rounding or reinterpretation",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.017792000000099506,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity keeps exact line amounts and ignores only wholly empty rows",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 1.856249999999818,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1.005\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.21941700000024866,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1e3\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.10579099999995378,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"bad\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.11004200000024866,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"-1\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.13991699999996854,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1\",\"credit\":\"1\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.05691600000000108,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"\",\"debit\":\"1\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.04070799999999508,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"\",\"credit\":\"\"}",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.037792000000081316,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity preserves unbalanced drafts for further editing",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.3075000000003456,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity rejects an individual line beyond its database integer bound",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.34287499999982174,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal input integrity supports aggregate totals beyond 32-bit cents using storable lines",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.10333300000002055,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting posts invoice through one command",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 2.9396670000000995,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting posts payment through one command",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.3334580000000642,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting preserves a failed posting result instead of treating a draft as posted",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.16133300000001327,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt (null)",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.11045800000010786,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt ({})",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.09979199999997945,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt (undefined)",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.05966599999965183,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt ({\"journal_entry_id\":5})",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.08279100000027029,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 mapped resident-money response contract accepts existing PostgreSQL portfolio UUIDs without inventing a canonical zero",
+      "acceptance_ids": [
+        "HFA-014"
+      ],
+      "status": "passed",
+      "duration_ms": 38.798833000000286,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 mapped resident-money response contract rejects malformed scope identities",
+      "acceptance_ids": [
+        "HFA-014"
+      ],
+      "status": "passed",
+      "duration_ms": 23.01516700000002,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope hides the previous facility ledger immediately while the new facility loads",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 506.3567500000004,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not replace the current facility with a late response from the prior facility",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 143.6421250000003,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not show another resident's late transaction response under the selected resident",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 253.29283299999952,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope clears previous transactions when the newly selected account fails to load",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 321.21129199999996,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: false)",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 725.5059579999997,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: true)",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 976.8237910000007,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope ignores a rejected ledger request after a different account has loaded",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 491.9854999999998,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not restart ledger requests when an outstanding mutation completes after unmount",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 319.18375000000015,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal form submission sends exact cents for a valid draft",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 609.8864590000012,
+      "failures": []
+    },
+    {
+      "name": "HFA-036 journal form submission does not discard an invalid third line and save only the balanced pair",
+      "acceptance_ids": [
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 284.5439580000002,
+      "failures": []
+    },
+    {
+      "name": "NewJournalEntryPage entry date defaults to the Eastern calendar date at 8:05pm ET, not the next UTC date",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 192.64687499999854,
+      "failures": []
+    },
+    {
+      "name": "NewJournalEntryPage entry date uses the shared facility date helper instead of a UTC ISO slice",
+      "acceptance_ids": [],
+      "status": "passed",
+      "duration_ms": 0.31554200000027777,
+      "failures": []
+    }
+  ],
+  "limits": [
+    "Unit assertions only; does not satisfy provider, Auth/PostgREST, complete financial workflow or business acceptance."
+  ],
+  "raw_artifact": "test-results/finance-integration/2026-09-09T06-57-34.633Z-finance-vitest.json"
+}

@@ -1,0 +1,10 @@
+{
+  "target": "manfqmasfqppukpobpld",
+  "observed_at": "2026-09-09T01:08:03.385Z",
+  "layer": "hosted-read-only-metadata",
+  "rows": 10140,
+  "before_after_json_bytes": 11895743,
+  "max_before_after_json_bytes": 42345,
+  "oldest": "2026-03-31T00:23:24.725036+00:00",
+  "newest": "2026-09-08T22:14:17.747755+00:00"
+}

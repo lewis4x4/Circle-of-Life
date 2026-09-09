@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "verdict": "APPROVE",
+  "scope": "Bounded F06 monthly source completeness/draft-rate guards and truthful partial-progress/telemetry response repairs",
+  "reviewer": "f00_independent_review",
+  "checked_at": "2026-09-09T07:02:17.677724+00:00",
+  "source_sha256": {
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/billing/generate-monthly-invoices.ts": "8bb8f636ba77ce38c3250e219b66a9b0246ce31f58aca28cc09dad98cff127ac",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/billing/generate-monthly-invoices.ts": "9348579072d7b6b44f5cc34fcc71ede7c883b3fe7787cd5fdf78479ee2ad863d",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/generate-monthly-invoices/index.ts": "9877826411b54fa6d1504925b295f911e6181c8af656392fd374a5f486451616",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/cors.ts": "b9aef573def741647d164585c1a38a50f8dc593ca45c527a8d18705bf5360ab4",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/structured-log.ts": "f1ce9faa7d7a912e5f35fc50444098534acc6b0b01cee7135f5bd9330008c527",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/redact-pii.ts": "322f19217aa7cf85e5e6c6cd058cde84f9d98bfccc76f68ab2f902184e1ebf6b",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/observability/redact.ts": "00c9cf369ff2d0fc61c9ca20afffe237e6758a31d458a5990a17ca5237a53889"
+  },
+  "executed_report": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/billing-f06-independent/2026-09-09T06-57-03.263Z-report.json",
+  "executed_report_sha256": "e1fa71f65b959b5a34bf1d8938673b1628355bed514dac902d96683a7bf7a1f2",
+  "driver": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/billing-f06-independent/probe.mjs",
+  "driver_sha256": "d446e4f5c4ccf7e83064686f6e21234759e88f947b6d50864a6f00b5be8ec2d5",
+  "independent_cases": {
+    "passed": 131,
+    "failed": 0,
+    "skipped": 0
+  },
+  "checks": {
+    "actual_app_producer": "PASS",
+    "actual_Edge_shared_producer": "PASS",
+    "actual_registered_Edge_handler_in_VM": "PASS",
+    "query_semantic_exact_charge_oracle": "PASS",
+    "source_typecheck_no_incremental_cache": "PASS",
+    "diff_check": "PASS"
+  },
+  "resolved_findings": [
+    {
+      "problem": "Later persistence failure discarded earlier acknowledged creation counts in Edge organization response.",
+      "first_reproduction": "2026-09-09T06-39-03.994Z-report.json",
+      "resolution": "Known counts preserved, stable unresolved invoice identified privately, outcome_unknown true, no retry/third call."
+    },
+    {
+      "problem": "Cap truncation and business-warning partial billing returned full success.",
+      "first_reproduction": "2026-09-09T06-39-03.994Z-report.json",
+      "resolution": "Explicit complete/partial/unknown fields; ok only on complete run."
+    },
+    {
+      "problem": "Mixed successful and blocked/unknown facilities reported partial false despite known writes.",
+      "first_reproduction": "2026-09-09T06-45-15.721Z-report.json",
+      "resolution": "Organization partial includes acknowledged progress from other facilities when incomplete."
+    },
+    {
+      "problem": "Root identified resident-derived invoice identity/raw errors entering ordinary logs.",
+      "provenance": "Root finding; independently validated repair against real structured-log code and captured console output.",
+      "resolution": "Generic message and fixed log code/counts; identity retained only in typed property/authorized response."
+    }
+  ],
+  "fixture_correction": "First report had four false positives because payer/provider2501 rows were returned uncapped. Fixture corrected to realbackendcap2000; original failure report retained and those four are not application findings.",
+  "remaining_source_work": [
+    {
+      "problem": "Future-effective primary payer is selected for an earlier billing period.",
+      "status": "OPEN_SOURCE_WORK_NEXT_F06_SEGMENT",
+      "column": "public.resident_payers.effective_date (NOT NULL), migration027 line64",
+      "producer_lines": "src/lib/billing/generate-monthly-invoices.ts:298-303; same Edge shared query",
+      "fixture": "May2026, private-default level2 resident, published rate310000+62000; Medicaid override100000 effective2026-06-01/endNULL is incorrectlyselected.",
+      "observed_both_producers": 100000,
+      "expected_without_future_payer": 372000,
+      "report_observations": [
+        {
+          "name": "app future-effective payer influences earlier billing period",
+          "period": "2026-05",
+          "payer_effective_date": "2026-06-01",
+          "billing_source": "medicaid_resident_override",
+          "total": 100000,
+          "expected_without_future_payer": 372000,
+          "scope": "Concrete F06 source-selection defect for next bounded fix; not an external blocker or policy waiver"
+        },
+        {
+          "name": "edge-shared future-effective payer influences earlier billing period",
+          "period": "2026-05",
+          "payer_effective_date": "2026-06-01",
+          "billing_source": "medicaid_resident_override",
+          "total": 100000,
+          "expected_without_future_payer": 372000,
+          "scope": "Concrete F06 source-selection defect for next bounded fix; not an external blocker or policy waiver"
+        }
+      ],
+      "not_an_external_blocker": true
+    }
+  ],
+  "limitations": [
+    "Actual source executed with TypeScript/CommonJS VM and synthetic Supabase query/RPC transport, not hosted Deno/Auth/database/cron/provider proof.",
+    "Per-query count equality is not one immutable multi-source billing snapshot.",
+    "Existing read/REST caps remain fail-closed; no complete large-source pagination was implemented.",
+    "No full F06, historical billing, cutover or business acceptance claimed.",
+    "No application source/shared runner edits made by this review lane."
+  ]
+}

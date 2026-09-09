@@ -11,7 +11,10 @@ const mocks = vi.hoisted(() => ({
   params: { id: "b5000000-0000-0000-0000-0000000000a1" },
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
   appRole: "admin" as string,
-  client: { from: () => ({}) as unknown },
+  canFinance: false,
+  journal: null as { id: string; status: string } | null,
+  receipt: null as { result: { journal_entry_id: string } } | null,
+  client: { from: (table: string) => ({ table }) as unknown },
 }));
 
 vi.mock("next/navigation", () => ({
@@ -37,7 +40,7 @@ vi.mock("../../billing-invoice-ledger", () => ({
   mapDbPayerTypeToUi: () => "private_pay",
 }));
 vi.mock("@/lib/finance/post-to-gl", () => ({ postInvoiceToGl: vi.fn() }));
-vi.mock("@/lib/finance/load-finance-context", () => ({ canMutateFinance: () => false }));
+vi.mock("@/lib/finance/load-finance-context", () => ({ canMutateFinance: () => mocks.canFinance }));
 vi.mock("@/design-system/components/record-detail", () => ({
   RecordDetailHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
   RecordDetailSection: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -84,7 +87,8 @@ function makeClient() {
       if (table === "invoices") return builder(invoice);
       if (table === "invoice_line_items") return builder(null, []);
       if (table === "residents") return builder({ id: mocks.residentId, first_name: "A", last_name: "B" });
-      if (table === "journal_entries") return builder(null);
+      if (table === "journal_entries") return builder(mocks.journal);
+      if (table === "finance_command_receipts") return builder(mocks.receipt);
       return builder(null);
     },
   };
@@ -92,6 +96,7 @@ function makeClient() {
 
 describe("AdminInvoiceDetailPage invoice title", () => {
   beforeEach(() => {
+    mocks.canFinance = false; mocks.journal = null; mocks.receipt = null;
     mocks.params = { id: mocks.invoiceId };
     mocks.selectedFacilityId = mocks.facilityId;
     mocks.client = makeClient();
@@ -99,6 +104,23 @@ describe("AdminInvoiceDetailPage invoice title", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("HFA-009 leaves abandoned source drafts available for posting recovery", async () => {
+    mocks.canFinance = true;
+    mocks.journal = { id: "abandoned-draft", status: "draft" };
+    render(<AdminInvoiceDetailPage />);
+    expect(await screen.findByRole("button", { name: /post to gl/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Previously posted|Reconciliation confirmed/)).not.toBeInTheDocument();
+  });
+
+  it("HFA-009 verifies a local receipt before labeling an existing journal posted", async () => {
+    mocks.canFinance = true;
+    mocks.journal = { id: "posted-journal", status: "posted" };
+    mocks.receipt = { result: { journal_entry_id: "posted-journal" } };
+    render(<AdminInvoiceDetailPage />);
+    expect(await screen.findByText("Previously posted to GL; local receipt verified.")).toBeInTheDocument();
+    expect(screen.queryByText(/Reconciliation confirmed/)).not.toBeInTheDocument();
   });
 
   it("formats internal persist keys in the detail header", async () => {

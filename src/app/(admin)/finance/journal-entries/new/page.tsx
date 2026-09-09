@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
-import { parseDollarsToCents } from "@/lib/finance/format-cents";
+import { parseJournalFormLines } from "@/lib/finance/journal-form-lines";
 import { canCreateDraftFinance } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -102,23 +102,12 @@ export default function NewJournalEntryPage() {
     setBusy(true);
     setError(null);
     try {
-      const parsedLines = lines
-        .map((l) => {
-          const dc = parseDollarsToCents(l.debit);
-          const cc = parseDollarsToCents(l.credit);
-          return {
-            gl_account_id: l.gl_account_id,
-            debit_cents: dc && dc > 0 ? dc : 0,
-            credit_cents: cc && cc > 0 ? cc : 0,
-          };
-        })
-        .filter((l) => l.gl_account_id && (l.debit_cents > 0 || l.credit_cents > 0))
-        .map((l, i) => ({
-          line_number: i + 1,
-          gl_account_id: l.gl_account_id,
-          debit_cents: l.debit_cents,
-          credit_cents: l.credit_cents,
-        }));
+      const parsed = parseJournalFormLines(lines);
+      if (!parsed.ok) {
+        setError(parsed.error);
+        return;
+      }
+      const parsedLines = parsed.lines;
 
       if (parsedLines.length < 2) {
         setError("Add at least two lines with accounts and a debit or credit amount.");
@@ -240,6 +229,7 @@ export default function NewJournalEntryPage() {
                   className={cn(
                     "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950",
                   )}
+                  aria-label={`Account, line ${i + 1}`}
                   value={line.gl_account_id}
                   onChange={(e) => setLine(i, { gl_account_id: e.target.value })}
                 >
@@ -255,6 +245,7 @@ export default function NewJournalEntryPage() {
                 <Label>Debit $</Label>
                 <Input
                   inputMode="decimal"
+                  aria-label={`Debit dollars, line ${i + 1}`}
                   value={line.debit}
                   onChange={(e) => setLine(i, { debit: e.target.value, credit: "" })}
                 />
@@ -263,6 +254,7 @@ export default function NewJournalEntryPage() {
                 <Label>Credit $</Label>
                 <Input
                   inputMode="decimal"
+                  aria-label={`Credit dollars, line ${i + 1}`}
                   value={line.credit}
                   onChange={(e) => setLine(i, { credit: e.target.value, debit: "" })}
                 />

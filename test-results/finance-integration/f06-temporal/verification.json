@@ -1,0 +1,40 @@
+{
+  "status": "AUTHOR_PASS_REVIEW_PENDING",
+  "timestamp": "2026-09-09T12:18:00.885656+00:00",
+  "files": {
+    "src/lib/billing/generate-monthly-invoices.ts": "df86fbcda1991e3f0a0d8df0d9b6de605a441ca1e9e9bb3230c9abc77e6d0b25",
+    "supabase/functions/_shared/billing/generate-monthly-invoices.ts": "09bc62372da4214cd68c003e1fe4315efc1f3ccca94695f4f61cae44844a10df",
+    "src/lib/billing/generate-monthly-invoices.test.ts": "7cb90a7ce0133c0e9db2bbc7a4a4ff4c7b84bbadce2e0f2b55c8f86a939c183b",
+    "src/lib/billing/generate-monthly-source-guards.test.ts": "19704ae3d1bd57c596b2eb61d93be013be01b4cde648396c542e0c22ceb052d3",
+    "src/lib/billing/generate-monthly-temporal-payers.test.ts": "1bb5102d71ffc8ce51d27daacd2cf86a2e2f8a0acd20093f8823751a05a6ada4"
+  },
+  "baseline": "d1023d14 exact app/Edge source both charge100000 instead of372000 for future-June payer; baseline-future.json",
+  "results": {
+    "existing-tests.json": {
+      "passed": 119,
+      "failed": 0
+    },
+    "temporal-tests.json": {
+      "passed": 47,
+      "failed": 0
+    },
+    "temporal-utc.json": {
+      "passed": 47,
+      "failed": 0
+    },
+    "temporal-et.json": {
+      "passed": 47,
+      "failed": 0
+    }
+  },
+  "typecheck": "PASS source and all3 touchedtests strict tsc",
+  "lint": "PASS app and forcedEdge0warnings",
+  "diffcheck": "PASS",
+  "scope": "Known billable interval primary selection only; no true split/responsibility allocation or source-history reconstruction",
+  "remaining": [
+    "True split/patient responsibility/secondary-payer engineering remains required",
+    "Historical status/rate/agreement and mutable payer history require reviewed source provenance",
+    "Current rate/agreement selection and Medicaid override-unit handling not changed",
+    "Exact-count payer history read may failclosed at existingRESTlimit; no pagination/snapshot claim"
+  ]
+}

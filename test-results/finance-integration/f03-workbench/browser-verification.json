@@ -1,0 +1,139 @@
+{
+  "environment": "private Vite actual-component fixture; synthetic Auth/RPC; no route/Auth/provider/business proof",
+  "results": [
+    {
+      "case": "empty-keeps-external-business-release-blocker",
+      "status": "PASS"
+    },
+    {
+      "case": "empty-does-not-claim-complete-export",
+      "status": "PASS"
+    },
+    {
+      "case": "source-cents-exact-beyond-number-safe-integer",
+      "status": "PASS"
+    },
+    {
+      "case": "timestamps-display-eastern-label",
+      "status": "PASS"
+    },
+    {
+      "case": "microseconds-not-displayed",
+      "status": "PASS"
+    },
+    {
+      "case": "broader-claim-has-no-forbidden-detail-link",
+      "status": "PASS"
+    },
+    {
+      "case": "keyboard-entity-to-facility",
+      "status": "PASS"
+    },
+    {
+      "case": "keyboard-arrow-navigates-tabs",
+      "status": "PASS"
+    },
+    {
+      "case": "detail-strips-transient-session-canaries",
+      "status": "PASS"
+    },
+    {
+      "case": "detail-has-no-mutation-actions",
+      "status": "PASS"
+    },
+    {
+      "case": "expanded-payload-strips-transient-session-canaries",
+      "status": "PASS"
+    },
+    {
+      "case": "axe-actual-client",
+      "status": "PASS",
+      "violations": []
+    },
+    {
+      "case": "current-invalidity-distinct-from-historical-review",
+      "status": "PASS"
+    },
+    {
+      "case": "error-not-empty-or-zero",
+      "status": "PASS"
+    },
+    {
+      "case": "error-retry-recovers-authorized-data",
+      "status": "PASS"
+    },
+    {
+      "case": "last-page-next-disabled",
+      "status": "PASS"
+    },
+    {
+      "case": "previous-page-remains-available-after-error",
+      "status": "PASS"
+    },
+    {
+      "case": "facility-change-masks-pending-detail",
+      "status": "PASS"
+    },
+    {
+      "case": "facility-change-masks-prior-source-event",
+      "status": "PASS"
+    },
+    {
+      "case": "ignored-abort-old-facility-detail-does-not-reappear",
+      "status": "PASS"
+    },
+    {
+      "case": "entity-change-removes-previous-facility-options",
+      "status": "PASS"
+    },
+    {
+      "case": "rules-labelled-declared-draft",
+      "status": "PASS"
+    },
+    {
+      "case": "actor-switch-immediately-masks-pending-detail",
+      "status": "PASS"
+    },
+    {
+      "case": "actor-switch-masks-prior-page-before-response",
+      "status": "PASS"
+    },
+    {
+      "case": "late-old-detail-does-not-return-after-actor-switch",
+      "status": "PASS"
+    },
+    {
+      "case": "role-downgrade-masks-stale-selector-options-before-response",
+      "status": "PASS"
+    },
+    {
+      "case": "restricted-scope-excludes-facility-B",
+      "status": "PASS"
+    },
+    {
+      "case": "session-identity-change-masks-prior-page-before-response",
+      "status": "PASS"
+    },
+    {
+      "case": "mobile-document-width",
+      "status": "PASS"
+    },
+    {
+      "case": "long-entity-selector-arrow-inside-viewport",
+      "status": "PASS",
+      "bounds": {
+        "right": 355.5,
+        "viewport": 390
+      }
+    },
+    {
+      "case": "mobile-long-scope-name-width",
+      "status": "PASS"
+    },
+    {
+      "case": "no-browser-console-or-page-errors",
+      "status": "PASS"
+    }
+  ],
+  "errorCount": 0
+}

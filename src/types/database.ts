@@ -15788,6 +15788,26 @@ export type Database = {
       }
     }
     Functions: {
+      finance_batch_snapshot: { Args: { p_batch: string }; Returns: Json };
+      finance_review_queue: { Args: { p_entity: string; p_facility?: string | null; p_kind?: string; p_after_created_at?: string | null; p_after_id?: string | null; p_limit?: number }; Returns: Json };
+      resident_money_snapshot: { Args: { p_organization_id: string; p_facility_id?: string | null }; Returns: Json };
+      create_finance_opening_balance: {
+        Args: { p_facility_id: string; p_resident_id: string; p_invoice_number: string; p_invoice_date: string; p_due_date: string; p_period_start: string; p_period_end: string; p_amount_cents: number; p_payer_type: string | null; p_payer_name: string | null; p_notes: string | null };
+        Returns: { invoice_id: string | null; inserted: boolean }[];
+      };
+
+      resolve_finance_payment: {
+        Args: { p_id: string; p_resident_id: string; p_invoice_id: string | null; p_payment_date: string; p_amount_cents: number; p_method: string; p_reference?: string | null; p_payer_name?: string | null; p_notes?: string | null };
+        Returns: Json;
+      };
+      record_finance_payment: {
+        Args: { p_id: string; p_resident_id: string; p_invoice_id: string | null; p_payment_date: string; p_amount_cents: number; p_method: string; p_reference?: string | null; p_payer_name?: string | null; p_notes?: string | null };
+        Returns: Json;
+      };
+      post_finance_source: { Args: { p_source_type: string; p_source_id: string }; Returns: Json };
+      post_finance_journal: { Args: { p_id: string; p_expected_updated_at: string }; Returns: Json };
+      reverse_finance_journal: { Args: { p_id: string; p_journal_id: string; p_entry_date: string; p_reason: string }; Returns: Json };
+
       record_verified_med_pass_witness: {
         Args: { p_pass_id: string; p_actor_id: string; p_witness_id: string }
         Returns: string

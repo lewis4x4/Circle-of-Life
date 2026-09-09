@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "scope": "independent340-money-member-payload",
+  "schemaSha": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+  "fixtureSha": "2a3aff69d7a79c84e279a095a385b1c093fbd91161e27e49754533c2a3ffc974",
+  "zodSchemaSha": "edccccb89c7cdf5b6c43a06ddb3878c3dfb53166adc2179fbb6b9566b8377bb7",
+  "driverSha": "a398a4854efc108afca603d0355811d11ace74478ad883b24e8ccd83ed92efa0",
+  "target": {
+    "socket": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335",
+    "port": 55447,
+    "database": "hfa_batch_340_review_01a08335"
+  },
+  "status": "PASS",
+  "cases": [
+    {
+      "name": "valid",
+      "expected": true,
+      "sqlAccepted": true,
+      "zodInputAccepted": true,
+      "zodOutputAccepted": true,
+      "status": "PASS"
+    },
+    {
+      "name": "null-side",
+      "expected": false,
+      "sqlAccepted": false,
+      "zodInputAccepted": false,
+      "zodOutputAccepted": null,
+      "status": "PASS"
+    },
+    {
+      "name": "numeric-cents",
+      "expected": false,
+      "sqlAccepted": false,
+      "zodInputAccepted": false,
+      "zodOutputAccepted": null,
+      "status": "PASS"
+    },
+    {
+      "name": "leading-zero",
+      "expected": false,
+      "sqlAccepted": false,
+      "zodInputAccepted": false,
+      "zodOutputAccepted": null,
+      "status": "PASS"
+    },
+    {
+      "name": "exponent",
+      "expected": false,
+      "sqlAccepted": false,
+      "zodInputAccepted": false,
+      "zodOutputAccepted": null,
+      "status": "PASS"
+    },
+    {
+      "name": "trailing-newline",
+      "expected": false,
+      "sqlAccepted": false,
+      "zodInputAccepted": false,
+      "zodOutputAccepted": null,
+      "status": "PASS"
+    },
+    {
+      "name": "null-extra",
+      "expected": false,
+      "sqlAccepted": false,
+      "zodInputAccepted": false,
+      "zodOutputAccepted": null,
+      "status": "PASS"
+    },
+    {
+      "name": "above-json-safe",
+      "expected": true,
+      "sqlAccepted": true,
+      "zodInputAccepted": true,
+      "zodOutputAccepted": true,
+      "status": "PASS"
+    },
+    {
+      "name": "max-i64",
+      "expected": true,
+      "sqlAccepted": true,
+      "zodInputAccepted": true,
+      "zodOutputAccepted": true,
+      "status": "PASS"
+    },
+    {
+      "name": "overflow",
+      "expected": false,
+      "sqlAccepted": false,
+      "zodInputAccepted": false,
+      "zodOutputAccepted": null,
+      "status": "PASS"
+    },
+    {
+      "name": "empty",
+      "expected": false,
+      "sqlAccepted": false,
+      "zodInputAccepted": false,
+      "zodOutputAccepted": null,
+      "status": "PASS"
+    },
+    {
+      "name": "group-duplicates",
+      "expected": true,
+      "sqlAccepted": true,
+      "zodInputAccepted": true,
+      "zodOutputAccepted": true,
+      "status": "PASS"
+    },
+    {
+      "name": "actual-public-batch-payload-and-binding",
+      "status": "PASS",
+      "exactDebitCents": "4000000000",
+      "members": 2,
+      "dateStyleAndMemberOrderPreserveBinding": true,
+      "classification": "unverified",
+      "businessReleaseEligible": false,
+      "dispatchEnabled": false
+    }
+  ],
+  "limitations": [
+    "Native PostgreSQL with synthetic Auth stubs; no hosted/provider/dispatch proof."
+  ],
+  "timestamp": "2026-09-09T03:21:06.046Z"
+}

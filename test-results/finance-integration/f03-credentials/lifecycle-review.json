@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "verdict": "APPROVE",
+  "scope": "342 lifecycle source and native state/transaction review only",
+  "reviewer": "f00_independent_review",
+  "checked_at": "2026-09-09T06:22:45.491550+00:00",
+  "source_sha256": {
+    "migration.sql": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+    "review.sql": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8",
+    "F03-CREDENTIAL-CONTRACT.md": "28abcc7625cc387069d622309ea2f5112d9f2d668206c0f46949abee9c869842"
+  },
+  "source_paths": {
+    "migration.sql": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342/migration.sql",
+    "review.sql": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342/review.sql",
+    "F03-CREDENTIAL-CONTRACT.md": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342/F03-CREDENTIAL-CONTRACT.md"
+  },
+  "target": {
+    "database": "hfa_credentials_342_lifecycle_final",
+    "socket": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335",
+    "port": 55447,
+    "layer": "run-owned native PostgreSQL with synthetic Auth and explicitly noncryptographic Vault stub"
+  },
+  "base_suite": {
+    "passed": 83,
+    "failed": 0,
+    "skipped": 0,
+    "case_names": [
+      "physical-grant-cannot-have-second-organization-owner",
+      "same-client-shared-lineage",
+      "distinct-client-distinct-lineage",
+      "fresh-seed-while-stopped-denied",
+      "missing-vault-fails-closed",
+      "unobserved-candidate-cannot-install",
+      "identity-read-access-only-fixed-sandbox-host",
+      "observed-seed-installed",
+      "claim-no-credential",
+      "reconnect-releases-never-started-claim",
+      "reconnect-fresh-seed-needs-explicit-resume",
+      "reconnect-unstarted-can-stage-fresh-candidate",
+      "expired-known-hard-cap-blocks-start",
+      "identity-observer-loss-at-final-start-receipt-rolls-back",
+      "failed-final-start-delivery-does-not-mark-started",
+      "start-first-delivery",
+      "credential-no-store",
+      "capture-wrong-completion-proof",
+      "capture-final-write-injected-abort",
+      "capture-abort-rolls-back-vault-and-metadata",
+      "later-reported-hard-cap-conservative-bound",
+      "earlier-reported-hard-cap-conservative-bound",
+      "capture-identical-replay-retains",
+      "capture-changed-response-conflict",
+      "wrong-company-observation-denied",
+      "wrong-client-observation-denied",
+      "production-host-observation-denied",
+      "vault-outage-identity-read-is-storage-failure",
+      "vault-outage-install-is-storage-failure",
+      "vault-outage-does-not-write-invalid-provider-evidence",
+      "expired-known-hard-cap-blocks-install",
+      "identity-observer-loss-at-final-install-receipt-rolls-back",
+      "failed-final-install-does-not-advance-revision",
+      "normal-refresh-install-CAS-revision",
+      "install-replay-no-double-revision",
+      "omitted-hard-cap-preserves-prior-deadline",
+      "single-active-revision-and-cleared-claim",
+      "no-canary-in-lifecycle-receipts",
+      "no-canary-in-candidate-metadata",
+      "completed-start-replay-preserves-known-installed-outcome",
+      "ready-credential-replacement-needs-explicit-reconnect",
+      "existing-staging-stop-fences-identity-read-by-context",
+      "stop-fences-preexisting-identity-access-read",
+      "stop-fences-preexisting-identity-observation",
+      "worker-no-table-or-vault-grants",
+      "worker-not-human-or-service-member",
+      "worker-table-read-denied",
+      "worker-human-status-denied",
+      "worker-exact-post-guard",
+      "worker-get-guard-denied",
+      "worker-financial-dispatch-denied",
+      "malformed-exp-safe-denial",
+      "malformed-sub-safe-denial",
+      "human-scope-claims-denied",
+      "expired-worker-jwt-denied",
+      "wrong-worker-org-denied",
+      "explicit-reconnect-may-establish-new-grant-cap",
+      "expired-known-hard-cap-blocks-claim",
+      "unstarted-expired-lease-reclaim",
+      "start-replay-never-returns-credential",
+      "lost-start-blocks-automatic-refresh",
+      "start-replay-unknown-capture-cannot-activate",
+      "revoked-worker-capture-denied",
+      "worker-trusted-preserve-denied",
+      "trusted-preserve-needs-start-proof",
+      "trusted-late-capture-preserves-without-secret-return",
+      "service-preserver-cannot-install",
+      "trusted-candidate-provenance-immutable",
+      "trusted-late-candidate-cannot-release-access",
+      "reactivated-worker-cannot-install-trusted-late",
+      "reconnect-preserves-distributed-unknown",
+      "reconnect-updates-only-shared-client-lineage",
+      "unresolved-attempt-cannot-be-hidden-by-reseed",
+      "production-seed-denied",
+      "production-resume-denied",
+      "invalid-json-sanitized-reconnect-state",
+      "expired-access-never-blind-refresh",
+      "human-status-no-raw-secret-or-body",
+      "wrong-organization-human-denied",
+      "facility-admin-credential-control-denied",
+      "raw-token-metadata-field-denied",
+      "dispatch-and-production-default-disabled",
+      "all-secrets-have-durable-candidates"
+    ]
+  },
+  "independent_probes": {
+    "status": "PASS",
+    "cases": [
+      {
+        "name": "independent-ready-reseed-denied",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-explicit-stop-read-denied",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-new-seed-while-reconnect-stopped-denied",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-explicit-resume-reconnect-bootstrap-succeeds",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-hard-cap-preserved-until-explicit-reconnect",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-global-grant-denial-sanitized",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-vault-outage-not-invalid-identity",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-vault-outage-no-false-identity-receipt",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-vault-outage-not-invalid-response",
+        "status": "PASS"
+      },
+      {
+        "name": "independent-vault-outage-no-false-invalid-receipt",
+        "status": "PASS"
+      }
+    ],
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0
+  },
+  "resolved_findings": [
+    {
+      "id": "342-L1",
+      "severity": "MEDIUM",
+      "problem": "Ready-state reseed advanced a credential revision without reconnect/binding generation change.",
+      "evidence": "lifecycle-probes-e2.log",
+      "resolved": "independent-ready-reseed-denied"
+    },
+    {
+      "id": "342-L2",
+      "severity": "HIGH",
+      "problem": "Identity access token was delivered after explicit credential stop.",
+      "evidence": "stopped-identity-e2.log",
+      "resolved": "independent-explicit-stop-read-denied; root-directed fresh-seed/resume checks also pass"
+    },
+    {
+      "id": "342-L3",
+      "severity": "MEDIUM",
+      "problem": "Same provider/environment/company/stable-client grant was independently owned by two organizations. Root required global ownership exclusion.",
+      "evidence": "lifecycle-probes-e2.log",
+      "resolved": "independent-global-grant-denial-sanitized"
+    },
+    {
+      "id": "342-L4",
+      "severity": "MEDIUM",
+      "problem": "Vault outage was falsely classified as invalid credential/response, including candidate_invalid receipt.",
+      "evidence": "vault-outage-identity-d1.log; vault-outage-install-d1.log",
+      "source_lines_d1": [
+        396,
+        532,
+        534
+      ],
+      "resolved": "independent-vault-outage-not-invalid-identity; independent-vault-outage-not-invalid-response; no false invalid receipts"
+    }
+  ],
+  "root_findings_independently_verified": [
+    "Explicit resume before initial/reconnect seed, rather than stale-candidate fencing alone.",
+    "Prior hard cap preserved through routine refresh; explicit reconnect alone may establish a new cap."
+  ],
+  "remaining_findings": [],
+  "test_provenance": "Final83 suite rerun after test-only entry guard moved. Ten independent probes used unchanged dc62 migration with preceding909f fixture prefix; no app schema changed.",
+  "limitations": [
+    "Interrupted worker-auth/privilege/lock security lane has no completed final approval; this verdict does not replace it.",
+    "No real Vault encryption/key-lifecycle or full decrypted-view privilege proof.",
+    "No real issuer/JWT signature, gateway role-routing or HTTP credential-delivery proof.",
+    "No provider calls, actual grant/company verification, restore reconciliation, financial dispatch or F03/business acceptance."
+  ],
+  "evidence_files": {
+    "candidate-d1-migration.sql": "d1e66fea45e64bb70f493f4e56e83a92a4fede6f44f54f004887ab5c5364a043",
+    "candidate-e2-migration.sql": "e2c4f94036aa9d2972ba903ffc4a732fc7732eca671c332628415263f313eba5",
+    "setup-final.log": "02e8dc04484cc71ab9af053d6bebea072dbd47f0d5ea8c7286f7f6540e2b7ee7",
+    "base-review.log": "fd2ef591fe715816337b3739f259bbe77cbca6c9f59cc4d227269e04b4ae6a43",
+    "negative-fixes-d1.sql": "b81b07dccade5af2231760e644b06d0d952a40a37e36a235c31f22a0ab1e5e42",
+    "candidate-d1-review.sql": "effc754be56063dcb3013b908c6e448f9a3cdc67e9f1c9777f8122600b986610",
+    "vault-outage-install-d1.sql": "19da313ee09d1e0285ae458cf5b8321de398cd02dece5db4987c6fc1ffad6fbd",
+    "independent-cases-final.json": "94a5bc583ec96e66b71b65cc16619dce74eef641f82c3a96fcd1bcfc47b34514",
+    "stopped-identity-e2.sql": "3a5602d2427ef5096a7c637e265326f6f7db8cc454a2678dc186cd02a0333c1f",
+    "candidate-e2-F03-CREDENTIAL-CONTRACT.md": "73c50958cb29937e31f9532b91eb2bf538e225642daa856a4a7aef0a321286ae",
+    "base-review-final.log": "642f6fa5b33de9356c71318e8e3e82f8a59af48ad74540bd0819fa40189daea3",
+    "negative-fixes-d1.log": "1d40a00116799d7383be576d21b7dba07c21dc4a535e7b85b3089d8098ecda62",
+    "vault-outage-install-d1.log": "eee0f971a633140e004c9d5f883161d1a3388ee4cd26838b83cd885693ace148",
+    "stopped-identity-e2.log": "fcb4e832ad4002c191c739ee3f428940219371d848236bfad4c46d3812026ee3",
+    "candidate-e2-review.sql": "4e4f18b062982c792448bf8e92a5ea4338190aa7260c8856ae16e448c1c9fa4c",
+    "setup.log": "c1fb2b3e31913c5465df5804dc1a8299cdfd553d66892a55283ecab105643fde",
+    "vault-identity-final.log": "17ef4752db8958edec4c97b12730efa5d8014f02aee9c69be69032f3052d9b88",
+    "candidate-final-review-entry-guard.sql": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8",
+    "lifecycle-probes-e2.sql": "c4453a271e993b9db5d6fe53b995d032be79075b08f26ef8c2547d9547eb7264",
+    "lifecycle-final.log": "903b3dfd944672ae6c171c3a51ff59eb2fabe105a581b463b55a7d09d9545573",
+    "vault-outage-identity-d1.sql": "2d5ab8c26f2d4291c6175f78e3f047ecb60c5e1bf0bfa88799dd1252ef5d5528",
+    "vault-install-final.sql": "309b605964044a8b688dcc4e87fb3e64e303632ebe8712df49b46cf484bd2381",
+    "base-review-final-entry-guard.log": "4a8cf944e3dbca303a7d0bf4f0f97a98e8a4fdb18fd86475b8f392f514c65851",
+    "vault-identity-final.sql": "c45e96f76779209fd73ba27d24764825502ea6976d1c0fae54f6d883e91d609d",
+    "lifecycle-probes-e2.log": "820c23206fa8385360c0d77e59cd88908e7a2a6b469186b58598b223e46a7e20",
+    "candidate-d1-F03-CREDENTIAL-CONTRACT.md": "8e409f3d2140939b9cbcd192d4b5c97cf97657da3bb2c91f328937f6a48cf224",
+    "base-review-e2.log": "86b6a98cfdefa525fc9804c4a0341b9982336fe96a7c1468ef9eee6e0032ba6b",
+    "candidate-final-migration.sql": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+    "setup-d1.log": "c1fb2b3e31913c5465df5804dc1a8299cdfd553d66892a55283ecab105643fde",
+    "candidate-final-review.sql": "909f7bc177d23545176c1aea632475c41f00ed64f34edafe676027c461a46c77",
+    "lifecycle-final.sql": "92effe558b33ac635836b3fb48755d352ce5f51e1ed710ab9911a91a15a39e69",
+    "candidate-final-F03-CREDENTIAL-CONTRACT.md": "28abcc7625cc387069d622309ea2f5112d9f2d668206c0f46949abee9c869842",
+    "vault-outage-identity-d1.log": "02b5f9998081b752068534fdc8050467e2e4bd77c786d6673cf5822ac8d489fe",
+    "vault-install-final.log": "53dc3b37d37d37e668fe46d9b270bdb8217139a67086240493df057e5220ede6",
+    "setup-e2.log": "c1fb2b3e31913c5465df5804dc1a8299cdfd553d66892a55283ecab105643fde",
+    "base-review-d1.log": "087e472ab22d430f5e150cd5309ccdb24d52d87389ab2058be3f214f68975598"
+  }
+}

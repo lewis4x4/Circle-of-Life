@@ -224,6 +224,7 @@ export default function AdminInvoiceGeneratePage() {
             </div>
             <div className="flex items-center gap-2">
               <select
+                aria-label="Billing month"
                 value={`${billingYear}-${billingMonth}`}
                 onChange={(e) => {
                   const [y, m] = e.target.value.split("-").map(Number);
@@ -248,6 +249,7 @@ export default function AdminInvoiceGeneratePage() {
                 type="button"
                 variant="ghost"
                 size="icon"
+                aria-label="Refresh invoice preview"
                 className="h-8 w-8"
                 onClick={() => {
                   void buildPreview();

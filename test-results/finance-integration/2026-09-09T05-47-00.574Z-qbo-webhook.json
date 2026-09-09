@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "suite": "qbo-webhook",
+  "status": "PASS",
+  "evidence_layer": "Edge-unit",
+  "target_identity": "synthetic-local-no-network",
+  "command": [
+    "deno",
+    "test",
+    "--reporter=junit",
+    "supabase/functions/_shared/qbo-webhook.test.ts"
+  ],
+  "commit": "4c13470c496b5608110021f266584f812dcd66c2",
+  "exit_code": 0,
+  "signal": null,
+  "spawn_error": null,
+  "fixture_sha256": "d376f3c722c39ec4169aab64a8651374b601bac61370a9b3d89772eba6f002c2",
+  "source_sha256": "7ec61aeba462e6d9395e1fda617f3c00e00e0ed9eddc74f73b7c02c470a27449",
+  "started_at": "2026-09-09T05:47:00.574Z",
+  "completed_at": "2026-09-09T05:47:03.555Z",
+  "duration_ms": 2981,
+  "cases": [
+    {
+      "name": "HFA-024: RFC4231 known HMAC vector authenticates before JSON rejection",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: exact whitespace and nonASCII bytes use independent HMAC and digest oracles",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: documented content types and header casing authenticate",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: invalid or absent verifier configuration never exposes secrets",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: missing malformed and noncanonical signatures fail closed",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: duplicate security headers and injection characters rejected",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: unsupported missing and merged content types are not authenticated",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: oversized bodies fail before authentication and parsing",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: authentication precedes corrupt UTF8 and JSON parsing",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: malformed JSON duplicate decoded keys and trailing bytes are rejected",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: current array shape required without fabricated legacy IDs",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: all required fields must exist and unsupported extensions fail closed",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: wrong metadata types and malformed current event fields rejected",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: nanosecond provider time retained without freshness or checkpoints",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: mixed companies and opaque private identifiers are not tenant bindings",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: same provider identity with changed exact bytes is a conflict",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: byte-identical repeated events remain hints for future durable dedup",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: large JSON numbers and lexical representations cannot collide via float rounding",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: caller mutation cannot swap authenticated bytes after await",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: bounded event count depth and JSON nodes fail without dropping authenticated evidence",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: all error diagnostics exclude body signature and verifier canaries",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: validly formatted wrong verifier has no authenticated evidence",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: all events at the local batch bound are returned without truncation",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "HFA-024: envelope whitespace does not change exact event slice identity",
+      "acceptance_ids": [
+        "HFA-024"
+      ],
+      "status": "PASS"
+    }
+  ],
+  "counts": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0
+  },
+  "raw_artifact": "test-results/finance-integration/2026-09-09T05-47-00.574Z-qbo-webhook.xml",
+  "limits": [
+    "Synthetic cryptographic/schema checks only; not an actual Intuit signature, receiver, durable inbox, tenant authorization, ACK or processed-event proof."
+  ]
+}

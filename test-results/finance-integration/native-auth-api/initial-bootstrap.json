@@ -1,0 +1,11 @@
+{
+  "status": "SCHEMA_LOADED_PARITY_PENDING",
+  "layer": "native GoTrue migrations plus schema-only public/haven current source",
+  "auth_version": "v2.188.1-f3425cf",
+  "postgrest_version": "14.10",
+  "source_schema_sha256": "24ee851e6a12b22610c863a4c61d23a9c0cfb052da008420a53b9905f5682af4",
+  "auth_helpers_source_sha256": "1c09122e82d14f71890000a79fe79bb5fec733c892f6d444bd301e4b54ca58da",
+  "auth_helpers_source": "Read-only current hosted auth uid/jwt/role definitions; no null-returning auth stubs",
+  "table_data_copied": false,
+  "source_probe_sha256": "bd32d4dfb580cad37f1d08bea6ae686e94491a27957984b987b24cb045f9af9b"
+}

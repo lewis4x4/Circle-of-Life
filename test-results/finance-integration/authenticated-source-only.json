@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "scope": "authenticated smoke runner source-only validation",
+  "evidence_layer": "source-and-tooling",
+  "verified_at": "2026-09-09T02:18:05.008643+00:00",
+  "commit": "1e0a36eec5542d537b15c20f20b50b533d819a82",
+  "file": "scripts/finance-integration/authenticated-smoke.mjs",
+  "sha256": "7891892c096ca296950fe068fe792c19ba13cc965cab78c4a5116b7cf3eeb414",
+  "checks": [
+    "node --check passed",
+    "eslint --no-ignore passed",
+    "no-config invocation emitted BLOCKED_EXTERNAL JSON and exit2",
+    "runtime target restricted to exact owned local project/ports/container labels and optionalownedproxyPID",
+    "same-body/final-receipt/cancellation oracles retain concrete counts and exact errors"
+  ],
+  "runtime_status": "BLOCKED_EXTERNAL; source-only pass is not full Auth/API acceptance",
+  "pending_independent_final_revision_review": false,
+  "independent_followup_review": {
+    "verdict": "APPROVE",
+    "reviewer": "f00_independent_review",
+    "scope": "Root-authored denial mappings and exact invalid-invoice oracle; source-only followup",
+    "files_sha256": {
+      "scripts/finance-integration/authenticated-smoke.mjs": "7891892c096ca296950fe068fe792c19ba13cc965cab78c4a5116b7cf3eeb414",
+      "supabase/functions/export-audit-log/handler.ts": "54b928e26c0d72e6fe98b3ea092dff14346450473e47ea12456e7583c6458133",
+      "supabase/functions/export-audit-log/handler.test.ts": "337883958a1a444ed68c63ff02034002aaf73aecf8efb9bd86e6ac33bc6483f9"
+    },
+    "findings": [],
+    "edge_tests": {
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    "checks": [
+      "Deno Edge test compilation and all15 behavior tests passed",
+      "Node syntax check passed",
+      "ESLint --no-ignore passed",
+      "HAVEN_AUTHORIZATION_STALE and PGRST301/302/303 map to401;42501 remains403",
+      "Invalid-invoice oracle requires400/P0001/exact resident-scope error; arbitrary failures cannot satisfy it"
+    ],
+    "runtime": "BLOCKED_EXTERNAL; no infrastructure or authenticated runtime attempts in this followup"
+  }
+}

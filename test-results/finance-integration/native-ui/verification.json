@@ -1,0 +1,44 @@
+{
+  "verdict": "APPROVE",
+  "timestamp": "2026-09-09T13:55:24.862763+00:00",
+  "source": {
+    "src/components/layout/AppShell.tsx": "ae9dec1fbdc6217ab466dfd7403698ce12c2bd824808310670c9b607c0af77b2",
+    "src/components/finance/FinanceReviewQueueClient.tsx": "0d6401498bcfa4647460d768ec422b4d8c1d7eb79d0b5af789509ae5c6fda501"
+  },
+  "scope": "Two-file header text contrast and named keyboard-scrollable queue tables",
+  "browser": {
+    "runtime_verified": true,
+    "four_modes_axe_violations": 0,
+    "no_page_overflow": true,
+    "readonly": true,
+    "rpc_calls": [
+      "haven_current_shell_actor",
+      "finance_review_queue"
+    ],
+    "focus": [
+      {
+        "mode": "light-mobile",
+        "changed_pixels": 1448,
+        "ring_color_pixels": 1418
+      },
+      {
+        "mode": "dark-mobile",
+        "changed_pixels": 1448,
+        "ring_color_pixels": 1418
+      }
+    ]
+  },
+  "component_tests": {
+    "passed": 26,
+    "failed": 0
+  },
+  "diagnostics": "Both source files LSP0errors; scopedESLintPASS",
+  "resolved_finding": "Outward+2px outline clipped to2cornerpixels; inward-2px produces1418ring-colorpixels and visiblefocus in both themes, ArrowRight still pans",
+  "retained_failure": "Initialcomponent run25/26 dynamic all-sections timeout; retry and final26/26",
+  "limits": [
+    "Native synthetic owner Chrome only, existing private session reused",
+    "No new actors, provider/prod calls or financial mutations",
+    "Populated Sourceevents tested; otherqueue table labels/styles checkedsource andcomponenttests",
+    "Not a full accessibility certification or broader release approval"
+  ]
+}

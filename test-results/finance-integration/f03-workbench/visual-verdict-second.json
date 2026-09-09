@@ -1,0 +1,14 @@
+{
+  "score": 89,
+  "verdict": "revise",
+  "category_match": true,
+  "differences": [
+    "Inactive record tabs have measured 4.06:1 text contrast, below WCAG AA 4.5:1 for their small normal text.",
+    "On the 390px long-entity fixture, the native entity selector extends beyond the card content and its dropdown arrow is clipped."
+  ],
+  "suggestions": [
+    "Set a sufficiently dark inactive text color on these workbench tabs without changing shared primitives globally.",
+    "Constrain scope labels/selects with min-width:0 and max-width:100% so long options retain the native dropdown arrow inside the card."
+  ],
+  "reasoning": "The Card grouping, Eastern timestamps and external-posting copy now fit the Finance style and review hierarchy. Two focused accessibility/responsive details still need correction; this is a synthetic actual-component review, not real route or Auth acceptance."
+}

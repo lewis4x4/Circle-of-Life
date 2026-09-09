@@ -18,11 +18,13 @@ import {
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { checkPeriodOpenForPosting } from "@/lib/finance/gl-period-close";
-import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
+import { postInvoiceToGl, postPaymentToGl } from "@/lib/finance/post-to-gl";
+import { formatCents } from "@/lib/finance/format-cents";
+import { parseJournalFormLines } from "@/lib/finance/journal-form-lines";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canCreateDraftFinance, canPostFinance } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
 
 type JournalRow = Database["public"]["Tables"]["journal_entries"]["Row"];
@@ -46,20 +48,6 @@ function nextLineKey() {
   return `line-${++_lineSeq}-${Date.now()}`;
 }
 
-function parseFormLines(formLines: LineForm[]) {
-  return formLines
-    .map((l) => {
-      const dc = parseDollarsToCents(l.debit);
-      const cc = parseDollarsToCents(l.credit);
-      return {
-        gl_account_id: l.gl_account_id,
-        debit_cents: dc && dc > 0 ? dc : 0,
-        credit_cents: cc && cc > 0 ? cc : 0,
-      };
-    })
-    .filter((l) => l.gl_account_id && (l.debit_cents > 0 || l.credit_cents > 0))
-    .map((l, i) => ({ ...l, line_number: i + 1 }));
-}
 
 export default function JournalEntryDetailPage() {
   const params = useParams();
@@ -76,6 +64,9 @@ export default function JournalEntryDetailPage() {
   const [posting, setPosting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [reversing, setReversing] = useState(false);
+  const [reversalDate, setReversalDate] = useState(todayFacilityDateIso);
+  const [reversalReason, setReversalReason] = useState("");
 
   const [entityName, setEntityName] = useState("");
   const [facilities, setFacilities] = useState<FacilityMini[]>([]);
@@ -128,7 +119,7 @@ export default function JournalEntryDetailPage() {
       }));
       setLines(rowsWithAccounts);
 
-      if (organizationId && canCreateDraftFinance(role) && hRow.status === "draft") {
+      if (organizationId && canCreateDraftFinance(role) && hRow.status === "draft" && hRow.source_type === "manual") {
         const [{ data: fac }, { data: accs }] = await Promise.all([
           supabase
             .from("facilities")
@@ -187,7 +178,12 @@ export default function JournalEntryDetailPage() {
 
   async function saveDraft() {
     if (!header || header.status !== "draft" || !organizationId || !canCreateDraftFinance(role)) return;
-    const parsed = parseFormLines(formLines);
+    const result = parseJournalFormLines(formLines);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    const parsed = result.lines;
     if (parsed.length < 2) {
       setError("Add at least two lines with accounts and a debit or credit amount.");
       return;
@@ -241,28 +237,19 @@ export default function JournalEntryDetailPage() {
         setError("Not signed in");
         return;
       }
-      const periodCheck = await checkPeriodOpenForPosting(supabase, {
-        organizationId: header.organization_id,
-        entityId: header.entity_id,
-        entryDate: header.entry_date,
-      });
-      if (!periodCheck.ok) {
-        setError(periodCheck.error);
-        return;
-      }
-      const { error: upErr } = await supabase
-        .from("journal_entries")
-        .update({
-          status: "posted",
-          posted_at: new Date().toISOString(),
-          posted_by: user.id,
-          gl_period_close_id: periodCheck.glPeriodCloseId,
-        })
-        .eq("id", header.id)
-        .eq("status", "draft");
-      if (upErr) {
-        setError(upErr.message);
-        return;
+      if (header.source_type === "invoice" || header.source_type === "payment") {
+        if (!header.source_id) throw new Error("Journal source identity is missing.");
+        const result = await (header.source_type === "invoice" ? postInvoiceToGl : postPaymentToGl)(supabase, header.source_id);
+        if (!result.ok) { setError(result.error); return; }
+      } else {
+        const { data, error: upErr } = await supabase.rpc("post_finance_journal", {
+          p_id: header.id,
+          p_expected_updated_at: header.updated_at,
+        });
+        if (upErr) { setError(upErr.message); return; }
+        if (!data || typeof data !== "object" || Array.isArray(data) || data.journal_entry_id !== header.id) {
+          setError("Posting receipt unavailable. Reload and retry."); return;
+        }
       }
       await load();
       router.refresh();
@@ -271,25 +258,56 @@ export default function JournalEntryDetailPage() {
     }
   }
 
-  const canEditDraft = Boolean(organizationId && canCreateDraftFinance(role) && header?.status === "draft");
-  const canPostEntry = Boolean(organizationId && canPostFinance(role) && header?.status === "draft");
-
-  let debitSum = 0;
-  let creditSum = 0;
-  if (canEditDraft) {
-    for (const l of formLines) {
-      const dc = parseDollarsToCents(l.debit) ?? 0;
-      const cc = parseDollarsToCents(l.credit) ?? 0;
-      debitSum += dc;
-      creditSum += cc;
-    }
-  } else {
-    for (const l of lines) {
-      debitSum += l.debit_cents;
-      creditSum += l.credit_cents;
+  async function reverseEntry() {
+    if (!header || !user?.id || !canPostFinance(role) || reversing || !reversalReason.trim()) return;
+    setReversing(true);
+    setError(null);
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getClaims();
+      const sessionId = authData?.claims.session_id;
+      if (authError || authData?.claims.sub !== user.id || typeof sessionId !== "string") throw new Error("Sign in before reversing a journal.");
+      const identityKey = `haven:finance:reversal:${user.id}:${header.id}`;
+      const stored = sessionStorage.getItem(identityKey);
+      const pending = stored ? JSON.parse(stored) as { id: string; date: string; reason: string } : {
+        id: crypto.randomUUID(), date: reversalDate, reason: reversalReason.trim(),
+      };
+      if (typeof pending.id !== "string" || typeof pending.date !== "string" || typeof pending.reason !== "string") {
+        throw new Error("Stored reversal needs reconciliation. Keep this tab open.");
+      }
+      if (pending.date !== reversalDate || pending.reason !== reversalReason.trim()) {
+        setReversalDate(pending.date);
+        setReversalReason(pending.reason);
+        throw new Error("Restored the unresolved reversal details. Retry this request before entering a different reversal.");
+      }
+      const commandId = pending.id;
+      sessionStorage.setItem(identityKey, JSON.stringify(pending));
+      const { data, error: commandError } = await supabase.rpc("reverse_finance_journal", {
+        p_id: commandId, p_journal_id: header.id, p_entry_date: reversalDate, p_reason: reversalReason.trim(),
+      });
+      if (commandError) throw commandError;
+      if (!data || typeof data !== "object" || Array.isArray(data) || data.journal_entry_id !== commandId) {
+        throw new Error("Reversal receipt unavailable. Retry to recover the result.");
+      }
+      sessionStorage.removeItem(identityKey);
+      router.push(`/admin/finance/journal-entries/${commandId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : (err as { message?: string })?.message ?? "Could not reverse journal.");
+    } finally {
+      setReversing(false);
     }
   }
-  const balanced = debitSum === creditSum && debitSum > 0;
+
+  const canEditDraft = Boolean(organizationId && canCreateDraftFinance(role) && header?.status === "draft" && header.source_type === "manual");
+  const canPostEntry = Boolean(organizationId && canPostFinance(role) && header?.status === "draft");
+
+  const parsedDraft = parseJournalFormLines(formLines);
+  const debitSum = canEditDraft ? (parsedDraft.ok ? parsedDraft.debitCents : null) : lines.reduce((sum, line) => sum + line.debit_cents, 0);
+  const creditSum = canEditDraft ? (parsedDraft.ok ? parsedDraft.creditCents : null) : lines.reduce((sum, line) => sum + line.credit_cents, 0);
+  const balanced = debitSum !== null && creditSum !== null && debitSum === creditSum && debitSum > 0;
+  const draftHasChanges = canEditDraft && header && (
+    !parsedDraft.ok || formEntryDate !== header.entry_date || formMemo !== (header.memo ?? "") || formFacilityId !== (header.facility_id ?? "") ||
+    JSON.stringify(parsedDraft.lines) !== JSON.stringify(lines.map((line) => ({ gl_account_id: line.gl_account_id, debit_cents: line.debit_cents, credit_cents: line.credit_cents, line_number: line.line_number })))
+  );
 
   const headerSubtitle = loading
     ? "Loading…"
@@ -359,7 +377,7 @@ export default function JournalEntryDetailPage() {
                     <Input id="je-memo-edit" value={formMemo} onChange={(e) => setFormMemo(e.target.value)} placeholder="Optional" />
                   </div>
                   <div className="md:col-span-2 text-sm text-foreground">
-                    Line totals: debit {formatCents(debitSum)} · credit {formatCents(creditSum)}{" "}
+                    Line totals: debit {(debitSum === null ? "Invalid amount" : formatCents(debitSum))} · credit {(creditSum === null ? "Invalid amount" : formatCents(creditSum))}{" "}
                     {balanced ? (
                       <span className="text-emerald-700 dark:text-emerald-400">(balanced)</span>
                     ) : (
@@ -380,7 +398,8 @@ export default function JournalEntryDetailPage() {
                         <Label>Account</Label>
                         <select
                           className={selectCls}
-                          value={line.gl_account_id}
+                          aria-label={`Account, line ${i + 1}`}
+                  value={line.gl_account_id}
                           onChange={(e) => setLine(i, { gl_account_id: e.target.value })}
                         >
                           <option value="">Select…</option>
@@ -395,7 +414,8 @@ export default function JournalEntryDetailPage() {
                         <Label>Debit $</Label>
                         <Input
                           inputMode="decimal"
-                          value={line.debit}
+                          aria-label={`Debit dollars, line ${i + 1}`}
+                  value={line.debit}
                           onChange={(e) => setLine(i, { debit: e.target.value, credit: "" })}
                         />
                       </div>
@@ -403,7 +423,8 @@ export default function JournalEntryDetailPage() {
                         <Label>Credit $</Label>
                         <Input
                           inputMode="decimal"
-                          value={line.credit}
+                          aria-label={`Credit dollars, line ${i + 1}`}
+                  value={line.credit}
                           onChange={(e) => setLine(i, { credit: e.target.value, debit: "" })}
                         />
                       </div>
@@ -435,12 +456,13 @@ export default function JournalEntryDetailPage() {
                   {deleting ? "Removing…" : "Remove draft"}
                 </Button>
                 {canPostEntry ? (
-                  <Button type="button" onClick={() => void postEntry()} disabled={posting || !balanced}>
+                  <Button type="button" onClick={() => void postEntry()} disabled={posting || !balanced || Boolean(draftHasChanges)}>
                     {posting ? "Posting…" : "Post entry"}
                   </Button>
                 ) : (
                   <span className="text-sm text-muted-foreground">Only owner / org admin can post entries.</span>
                 )}
+                {canPostEntry && draftHasChanges ? <p className="text-sm text-muted-foreground">Save draft changes before posting.</p> : null}
                 {canPostEntry && !balanced ? (
                   <span className="text-sm text-amber-800 dark:text-amber-300">
                     Debits must equal credits with a non-zero total to post.
@@ -456,7 +478,7 @@ export default function JournalEntryDetailPage() {
                   <p>Status: {header.status}</p>
                   {header.posted_at ? <p>Posted: {header.posted_at}</p> : null}
                   <p className="mt-2">
-                    Line totals: debit {formatCents(debitSum)} · credit {formatCents(creditSum)}{" "}
+                    Line totals: debit {(debitSum === null ? "Invalid amount" : formatCents(debitSum))} · credit {(creditSum === null ? "Invalid amount" : formatCents(creditSum))}{" "}
                     {balanced ? (
                       <span className="text-emerald-700 dark:text-emerald-400">(balanced)</span>
                     ) : (
@@ -504,10 +526,26 @@ export default function JournalEntryDetailPage() {
               </RecordDetailSection>
 
               {header.status === "posted" ? (
-                <p className="text-sm text-muted-foreground">Posted entries are read-only.</p>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Posted entries are read-only. Corrections create a linked reversing journal.</p>
+                  {canPostFinance(role) && header.source_type !== "reversal" ? (
+                    <div className="grid max-w-lg gap-3">
+                      <Label htmlFor="reversal-date">Reversal date</Label>
+                      <Input id="reversal-date" type="date" value={reversalDate} onChange={(event) => setReversalDate(event.target.value)} />
+                      <Label htmlFor="reversal-reason">Reason for reversal</Label>
+                      <Input id="reversal-reason" value={reversalReason} onChange={(event) => setReversalReason(event.target.value)} />
+                      <Button variant="outline" disabled={reversing || !reversalDate || !reversalReason.trim()} onClick={() => void reverseEntry()}>
+                        {reversing ? "Posting reversal…" : "Post reversing journal"}
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
               {header.status === "voided" ? (
                 <p className="text-sm text-muted-foreground">Voided entries are read-only.</p>
+              ) : null}
+              {header.status === "draft" && canPostEntry && (header.source_type === "invoice" || header.source_type === "payment") ? (
+                <Button type="button" onClick={() => void postEntry()} disabled={posting}>{posting ? "Posting…" : "Recover source posting"}</Button>
               ) : null}
               {header.status === "draft" && !canEditDraft ? (
                 <p className="text-sm text-muted-foreground">Draft (read-only for your role).</p>

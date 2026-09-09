@@ -87,7 +87,7 @@ import { cn } from "@/lib/utils";
 
 /** Controls on `--background` top strips (Mercury: canvas workspace rail, distinct from dark sidebar chrome). */
 const WORKSPACE_WELL =
-  "border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground";
+  "border border-border bg-muted/50 text-foreground transition-colors hover:bg-muted/70";
 const WORKSPACE_KBD =
   "rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground";
 const WORKSPACE_ICON_LG =
@@ -624,13 +624,13 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         // Semantic danger, but lower-temperature than `variant="destructive"`:
         // a soft tint + ring so it reads as a global action, not an alert.
         "flex h-9 items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2.5",
-        "text-[12px] font-medium text-destructive transition-colors",
+        "text-[12px] font-medium text-foreground transition-colors",
         "hover:border-destructive/50 hover:bg-destructive/10",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive",
       )}
       aria-label="Report incident"
     >
-      <ShieldAlert className="size-3.5" aria-hidden />
+      <ShieldAlert className="size-3.5 text-destructive" aria-hidden />
       <span className="hidden sm:inline">Report incident</span>
     </HavenNavLink>
   ) : null;
@@ -1052,7 +1052,7 @@ function PillarTabWithDropdown({
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           active
             ? "font-medium text-foreground"
-            : "text-muted-foreground hover:text-foreground",
+            : "text-foreground",
         )}
       >
         <span className="whitespace-nowrap">{pillar.label}</span>

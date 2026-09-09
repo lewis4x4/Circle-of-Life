@@ -1,0 +1,294 @@
+[
+  {
+    "name": "future-June-payer-May-private",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2026-06-01",
+        "end": null
+      }
+    ],
+    "decision": "private",
+    "billable_days": 31,
+    "monthly_cents": 372000,
+    "expected_cents": 372000
+  },
+  {
+    "name": "May16-admission-May16-Medicaid",
+    "year": 2026,
+    "month": 5,
+    "admission": "2026-05-16",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2026-05-16",
+        "end": null
+      }
+    ],
+    "decision": "single",
+    "billable_days": 16,
+    "monthly_cents": 100000,
+    "expected_cents": 51613
+  },
+  {
+    "name": "discharge-inclusive-payer-end",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": "2026-05-15",
+    "payers": [
+      {
+        "start": "2025-01-01",
+        "end": "2026-05-15"
+      }
+    ],
+    "decision": "single",
+    "billable_days": 15,
+    "monthly_cents": 100000,
+    "expected_cents": 48387
+  },
+  {
+    "name": "wholly-ended-April-primary",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2025-01-01",
+        "end": "2026-04-30"
+      }
+    ],
+    "decision": "private",
+    "billable_days": 31,
+    "monthly_cents": 372000,
+    "expected_cents": 372000
+  },
+  {
+    "name": "primary-ends-before-billable-end",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2025-01-01",
+        "end": "2026-05-15"
+      }
+    ],
+    "decision": "review",
+    "billable_days": 31,
+    "expected_cents": null
+  },
+  {
+    "name": "primary-starts-after-billable-start",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2026-05-16",
+        "end": null
+      }
+    ],
+    "decision": "review",
+    "billable_days": 31,
+    "expected_cents": null
+  },
+  {
+    "name": "mid-month-primary-transition",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2025-01-01",
+        "end": "2026-05-15"
+      },
+      {
+        "start": "2026-05-16",
+        "end": null
+      }
+    ],
+    "decision": "review",
+    "billable_days": 31,
+    "expected_cents": null
+  },
+  {
+    "name": "multiple-covering-primaries",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2025-01-01",
+        "end": null
+      },
+      {
+        "start": "2026-01-01",
+        "end": null
+      }
+    ],
+    "decision": "review",
+    "billable_days": 31,
+    "expected_cents": null
+  },
+  {
+    "name": "partially-overlapping-primaries",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2025-01-01",
+        "end": "2026-05-20"
+      },
+      {
+        "start": "2026-05-16",
+        "end": null
+      }
+    ],
+    "decision": "review",
+    "billable_days": 31,
+    "expected_cents": null
+  },
+  {
+    "name": "reversed-payer-interval",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2026-05-20",
+        "end": "2026-05-10"
+      }
+    ],
+    "decision": "review",
+    "billable_days": 31,
+    "expected_cents": null
+  },
+  {
+    "name": "invalid-payer-calendar-date",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2026-02-30",
+        "end": null
+      }
+    ],
+    "decision": "review",
+    "billable_days": 31,
+    "expected_cents": null
+  },
+  {
+    "name": "reversed-resident-interval",
+    "year": 2026,
+    "month": 5,
+    "admission": "2026-05-20",
+    "discharge": "2026-05-10",
+    "payers": [],
+    "decision": "review",
+    "expected_cents": null
+  },
+  {
+    "name": "unknown-admission-window",
+    "year": 2026,
+    "month": 5,
+    "admission": null,
+    "discharge": null,
+    "payers": [],
+    "decision": "review",
+    "expected_cents": null
+  },
+  {
+    "name": "leap-February-admission",
+    "year": 2024,
+    "month": 2,
+    "admission": "2024-02-15",
+    "discharge": "2024-02-29",
+    "payers": [
+      {
+        "start": "2024-02-15",
+        "end": "2024-02-29"
+      }
+    ],
+    "decision": "single",
+    "billable_days": 15,
+    "monthly_cents": 100000,
+    "expected_cents": 51724
+  },
+  {
+    "name": "DST-March-admission",
+    "year": 2026,
+    "month": 3,
+    "admission": "2026-03-08",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2026-03-08",
+        "end": null
+      }
+    ],
+    "decision": "single",
+    "billable_days": 24,
+    "monthly_cents": 100000,
+    "expected_cents": 77419
+  },
+  {
+    "name": "future-admission-no-May-days",
+    "year": 2026,
+    "month": 5,
+    "admission": "2026-06-01",
+    "discharge": null,
+    "payers": [
+      {
+        "start": "2026-06-01",
+        "end": null
+      }
+    ],
+    "decision": "no_days",
+    "billable_days": 0,
+    "monthly_cents": 100000,
+    "expected_cents": 0
+  },
+  {
+    "name": "single-inclusive-day",
+    "year": 2026,
+    "month": 5,
+    "admission": "2026-05-16",
+    "discharge": "2026-05-16",
+    "payers": [
+      {
+        "start": "2026-05-16",
+        "end": "2026-05-16"
+      }
+    ],
+    "decision": "single",
+    "billable_days": 1,
+    "monthly_cents": 100000,
+    "expected_cents": 3226
+  },
+  {
+    "name": "no-current-payer-private-default",
+    "year": 2026,
+    "month": 5,
+    "admission": "2025-01-01",
+    "discharge": null,
+    "payers": [],
+    "decision": "private",
+    "billable_days": 31,
+    "monthly_cents": 372000,
+    "expected_cents": 372000
+  }
+]

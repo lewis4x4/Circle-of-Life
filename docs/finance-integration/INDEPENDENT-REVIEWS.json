@@ -1,0 +1,519 @@
+{
+  "schema_version": 1,
+  "reviews": [
+    {
+      "scope": "F00 foundation payload/tests/CI/dependency compatibility plus audit337 and read-only QBO identity smoke",
+      "verdict": "APPROVE",
+      "reviewer": "f00_independent_review",
+      "code_commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba plus uncommitted reviewed files",
+      "audit_migration_sha256": "0a7448bbc48458f40d96440f66918e2cd83332a8b8e60bbc5fb636de4d4db41c",
+      "tests": {
+        "finance_unit": 10,
+        "csv_unit": 7,
+        "qbo_contract": 4,
+        "audit_edge": 11,
+        "audit_page": 6,
+        "independent_audit_sql": 38
+      },
+      "limits": [
+        "F01 finance336 excluded from this review",
+        "Company identity contracts use simulated transport; actual provider smoke blocked",
+        "Native SQL is not hosted Auth/PostgREST",
+        "Full platform audit/independent anchoring/retention/live acceptance remain open"
+      ],
+      "corrections": [
+        "Required Deno Edge tests added to unconditional CI",
+        "Router effect dependency preserved",
+        "Runner artifacts retain argv, exit, signal, and fixture hashes"
+      ]
+    },
+    {
+      "scope": "F01 finance336 local commands, current authority, UI recovery and period serialization",
+      "verdict": "APPROVE",
+      "reviewer": "audit_boundary_review",
+      "migration_sha256": "57d5164db0f0195d6926617feb393336534dc39d836b454240582ebd16c35c1f",
+      "evidence": [
+        "25 targeted UI/helper assertions passed",
+        "Full finance SQL regression exit0",
+        "Independent concurrent same/different payment, command/invoice lock revocation and close/post ordering probes passed"
+      ],
+      "limits": [
+        "Real Auth/PostgREST proof remains separate",
+        "Cross-tab/browser-loss recovery, full correction/remittance/payroll/provider reconciliation not accepted"
+      ]
+    },
+    {
+      "scope": "F02 read alignment only",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "migration_sha256": "44abf0be26386d51d938e5736d472ed941b83af61a85de986385d5f9f582f069",
+      "evidence": [
+        "Independent338 replay/snapshot regression passed",
+        "Three facility-admin scope assertions passed",
+        "Three forecast/display tests passed",
+        "Scoped source diagnostics and lint passed"
+      ],
+      "corrections": [
+        "Legacy-only and mixed/mismatched facilities render review required instead of a fabricated zero"
+      ],
+      "limits": [
+        "Historical classification, transfers, cutover and bank/book reconciliation remain open"
+      ]
+    },
+    {
+      "scope": "F03 durable source event/outbox staging only",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "migration_sha256": "ffb4f41d3454b4d8d89c90be538edeef894b8689ce0a16ecee9e431f602e65b3",
+      "evidence": [
+        "56 independently executedSQL assertions",
+        "Fresh342 migration/23probe replay",
+        "Four controlled source/stop/worker concurrency cases"
+      ],
+      "corrections": [
+        "Stale unattempted commands can receive immutable supersession",
+        "UUID primary keys retain separate unique identity hashes",
+        "Summary uses stable source snapshot"
+      ],
+      "limits": [
+        "No approved payload/membership/connection binding",
+        "No operationaldispatcher/provider/independentrecovery/liveacceptance"
+      ]
+    },
+    {
+      "scope": "CSP and PostgreSQL UUID/server formatter boundary corrections",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "evidence": [
+        "10CSP cases",
+        "2mapped-UUID cases",
+        "5formatter comparisons",
+        "Scopedlint/type diagnostics"
+      ],
+      "limits": [
+        "Protected-routeaxe stillfailed unchanged20s loadbudget duringDocker failures"
+      ]
+    },
+    {
+      "scope": "Cash read response and post-completion callback scope",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "source_sha256": {
+        "src/app/(admin)/admin/cash/page.tsx": "70855ef6b0a92dc4bbf9b535686257b4beede3c2a4c925f12ef5bb45853bad7d",
+        "src/app/(admin)/admin/cash/page.test.tsx": "3f23e58e42b3fba6cf1cb0c6c78b266d432394292525359277044466ad507420",
+        "scripts/finance-integration/run-tests.mjs": "d8dfc930c605d6ba2b255a7d549b43be5fb426d64a42b9b3baabd92d791d25e3"
+      },
+      "evidence": [
+        "test-results/finance-integration/cash-scope-review.json"
+      ],
+      "limits": [
+        "Synthetic rendered component assertions; not live API/browser acceptance",
+        "Durable cash command recovery and full F02 remain open"
+      ]
+    },
+    {
+      "scope": "Exact currency input and journal caller validation",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "source_sha256": {
+        "src/lib/finance/format-cents.ts": "347bf82df1305177d16196b74457d54232d6d115d4da9ef7f44167f3e1ebf84b",
+        "src/lib/finance/format-cents.test.ts": "048a52a465375ad77ebd459f9e1cb49ff87a4e50fb2ae020ef634f431464cc0a",
+        "src/lib/finance/journal-form-lines.ts": "a767647427c7a025c9976b4077ddfd9bf5931ad442d3807c95d2860d69900fa9",
+        "src/lib/finance/journal-form-lines.test.ts": "01797069a59b459ae3e2f4b1a2cb17a107a09a29d15ce5938c5d08ce28ffa0dc",
+        "src/app/(admin)/finance/journal-entries/new/page.tsx": "27c52ba6897fe36a008758d2f02b0d937ffd19ad2d5ec73c955899cbd4484f0a",
+        "src/app/(admin)/finance/journal-entries/new/money-input.test.tsx": "a7e04d79811190bae0dd01b13c79ab14741386f2fb66b48f8f060fc50bfc2a7e",
+        "src/app/(admin)/finance/journal-entries/[id]/page.tsx": "b9ae9228468530f38a1783db68a2d98085bcae75e0c90cb1cb67f699be6309f5",
+        "scripts/finance-integration/run-tests.mjs": "4eb310b1763f267ce13f987e8639cf2f44640cf3c756589a42fd4ada644dd704"
+      },
+      "evidence": [
+        "test-results/finance-integration/money-input-review.json"
+      ],
+      "limits": [
+        "No provider or hosted Auth/API proof",
+        "Other monetary producers, mappings and financial workflows remain open"
+      ]
+    },
+    {
+      "scope": "F03 local batch preparation, exact membership and independent review only",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "finance_source_inventory",
+        "audit_boundary_review"
+      ],
+      "source_sha256": {
+        "supabase/migrations/340_finance_batch_approval.sql": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+        "supabase/tests/review_finance_batch_approval.sql": "2a3aff69d7a79c84e279a095a385b1c093fbd91161e27e49754533c2a3ffc974",
+        "docs/finance-integration/F03-BATCH-APPROVAL-CONTRACT.md": "df92d3e1dad9d67534e4df5fd44720af69ad98c52fb5461c37e5148fc476d02d"
+      },
+      "evidence": [
+        "test-results/finance-integration/f03-batch/review-verdicts.json",
+        "test-results/agent-gates/2026-09-09T03-14-41-815Z-HFA-F03-BATCH.json"
+      ],
+      "limits": [
+        "Accounting classification unverified and business release ineligible by immutable constraint.",
+        "Dispatch and provider recovery disabled.",
+        "Native Auth test adaptations only; real GoTrue/PostgREST, hosted and UI proof absent for340.",
+        "Root-owned341 discovery/workbench integration separate.",
+        "Full F03/F05 and original handoff acceptance remain open."
+      ]
+    },
+    {
+      "scope": "F03 scoped live-page discovery and read-only workbench",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "finance_source_inventory",
+        "audit_boundary_review"
+      ],
+      "source_sha256": {
+        "src/lib/finance-integration/review-queue.ts": "476ed784b389a4883c6bc1fac24bad4b43a004b1a5d58c144665d7d8bbe22ccd",
+        "src/components/finance/FinanceReviewQueueClient.tsx": "845a4f2ba2e37f7dcc920af9b2c166018c8d0ceb62d4f8572a2a7846fc43ca97",
+        "src/lib/finance-integration/review-queue.test.ts": "18d8a67b0ef01aaccb9fe0312f32ade9e118f35c33262b39bf6f74fb7154133d",
+        "src/components/finance/FinanceReviewQueueClient.test.tsx": "6b277aef6beacedbd25c3c0ab068a9ddacc28dd394fa43823ddbe84c2829c220",
+        "src/app/(admin)/finance/integration/page.tsx": "93ec6b36522926b698e6a56ec4c6ee81c14e7281ac3672a11e41b049d6184888",
+        "src/app/(admin)/admin/finance/integration/page.tsx": "a6a66e2b8c4fa9eb9c73c68a9fce08b49989cf035e40959c092aa96a4961bdef",
+        "src/app/(admin)/finance/finance-hub-nav.tsx": "4306855af2aeba59f059e4b51c60dcac03dc6da1593ff0502e9c9ea564a13a82",
+        "src/types/database.ts": "2ef9e8a3c8055cdc442e367113ca7d336d6b84e5ff52f29f45faae4932d67f91"
+      },
+      "evidence": [
+        "test-results/finance-integration/f03-workbench/verification.json",
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json",
+        "test-results/agent-gates/2026-09-09T04-15-35-939Z-HFA-F03-WORKBENCH.json"
+      ],
+      "limits": [
+        "No real Next route navigation, live Supabase Auth, hosted RLS, provider, dispatch, accounting policy or business acceptance proof.",
+        "Fixture uses synthetic Auth/RPC data and actual component/CSS/primitives; production app chrome is intentionally omitted.",
+        "Axe coverage is the captured light-theme actual-component detail state; it is not exhaustive assistive-technology or full-application accessibility certification."
+      ]
+    },
+    {
+      "scope": "F03 private QBO webhook authentication and exact-byte schema primitive",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "root (independent of helper author f00_independent_review)"
+      ],
+      "source_sha256": {
+        "supabase/functions/_shared/qbo-webhook.ts": "7ec61aeba462e6d9395e1fda617f3c00e00e0ed9eddc74f73b7c02c470a27449",
+        "supabase/functions/_shared/qbo-webhook.test.ts": "d376f3c722c39ec4169aab64a8651374b601bac61370a9b3d89772eba6f002c2"
+      },
+      "reviewed_at": "2026-09-09T06:06:44.929740+00:00",
+      "evidence": [
+        "test-results/finance-integration/2026-09-09T05-47-00.574Z-qbo-webhook.json",
+        "test-results/finance-integration/f03-webhook/independent-corpus.json",
+        "test-results/finance-integration/f03-webhook/independent-probe.mjs"
+      ],
+      "checks": {
+        "deno_assertions": 24,
+        "independent_corpus_assertions": 314,
+        "skipped": 0,
+        "typecheck": "PASS",
+        "deno_lint": "PASS"
+      },
+      "limits": [
+        "Synthetic keys and payloads only; no actual Intuit signature or delivery.",
+        "No receiver, durable inbox, tenant binding, acknowledgment, catch-up, processed-event or business proof.",
+        "Root authored the small suite-runner extension; its syntax/lint and both audit15 and webhook24 executions passed separately. The helper review is independent.",
+        "The copied independent driver records the exact original run paths; execution writes only to its private run-owned output."
+      ]
+    },
+    {
+      "scope": "342 sandbox credential lifecycle source and native transaction behavior",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "f00_independent_review"
+      ],
+      "source_sha256": {
+        "supabase/migrations/342_finance_credential_lifecycle.sql": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+        "supabase/tests/review_finance_credential_lifecycle.sql": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8"
+      },
+      "evidence": [
+        "test-results/finance-integration/f03-credentials/lifecycle-review.json",
+        "test-results/finance-integration/f03-credentials/verification.json",
+        "test-results/finance-integration/f03-credentials/concurrency.json"
+      ],
+      "limits": [
+        "Interrupted worker-auth/privilege/lock security lane has no completed final approval; this verdict does not replace it.",
+        "No real Vault encryption/key-lifecycle or full decrypted-view privilege proof.",
+        "No real issuer/JWT signature, gateway role-routing or HTTP credential-delivery proof.",
+        "No provider calls, actual grant/company verification, restore reconciliation, financial dispatch or F03/business acceptance."
+      ]
+    },
+    {
+      "scope": "342 independent worker-auth/security dynamic review",
+      "verdict": "INCOMPLETE",
+      "reviewers": [
+        "audit_boundary_review"
+      ],
+      "reason": "Automatic safety filter blocked the review turn, citing possible cybersecurity risk; no final verdict emitted",
+      "evidence": [
+        "test-results/finance-integration/f03-credentials/root-source-review.json"
+      ],
+      "limits": [
+        "Separate lifecycle approval and root source inspection do not replace this unfinished review."
+      ]
+    },
+    {
+      "scope": "Bounded F06 monthly source completeness/draft-rate guards and truthful partial-progress/telemetry response repairs",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "f00_independent_review"
+      ],
+      "source_sha256": {
+        "src/lib/billing/generate-monthly-invoices.ts": "8bb8f636ba77ce38c3250e219b66a9b0246ce31f58aca28cc09dad98cff127ac",
+        "supabase/functions/_shared/billing/generate-monthly-invoices.ts": "9348579072d7b6b44f5cc34fcc71ede7c883b3fe7787cd5fdf78479ee2ad863d",
+        "supabase/functions/generate-monthly-invoices/index.ts": "9877826411b54fa6d1504925b295f911e6181c8af656392fd374a5f486451616",
+        "supabase/functions/_shared/cors.ts": "b9aef573def741647d164585c1a38a50f8dc593ca45c527a8d18705bf5360ab4",
+        "supabase/functions/_shared/structured-log.ts": "f1ce9faa7d7a912e5f35fc50444098534acc6b0b01cee7135f5bd9330008c527",
+        "supabase/functions/_shared/redact-pii.ts": "322f19217aa7cf85e5e6c6cd058cde84f9d98bfccc76f68ab2f902184e1ebf6b",
+        "src/lib/observability/redact.ts": "00c9cf369ff2d0fc61c9ca20afffe237e6758a31d458a5990a17ca5237a53889"
+      },
+      "evidence": [
+        "test-results/finance-integration/f06-source-guards/independent-review.json",
+        "test-results/finance-integration/f06-source-guards/independent-cases.json",
+        "test-results/agent-gates/2026-09-09T06-57-32-030Z-HFA-F06-SOURCE-GUARDS.json",
+        "test-results/finance-integration/full-unit-billing-guards-complete.json"
+      ],
+      "limits": [
+        "Actual source executed with TypeScript/CommonJS VM and synthetic Supabase query/RPC transport, not hosted Deno/Auth/database/cron/provider proof.",
+        "Per-query count equality is not one immutable multi-source billing snapshot.",
+        "Existing read/REST caps remain fail-closed; no complete large-source pagination was implemented.",
+        "No full F06, historical billing, cutover or business acceptance claimed.",
+        "No application source/shared runner edits made by this review lane."
+      ],
+      "remaining_source_work": [
+        {
+          "problem": "Future-effective primary payer is selected for an earlier billing period.",
+          "status": "OPEN_SOURCE_WORK_NEXT_F06_SEGMENT",
+          "column": "public.resident_payers.effective_date (NOT NULL), migration027 line64",
+          "producer_lines": "src/lib/billing/generate-monthly-invoices.ts:298-303; same Edge shared query",
+          "fixture": "May2026, private-default level2 resident, published rate310000+62000; Medicaid override100000 effective2026-06-01/endNULL is incorrectlyselected.",
+          "observed_both_producers": 100000,
+          "expected_without_future_payer": 372000,
+          "report_observations": [
+            {
+              "name": "app future-effective payer influences earlier billing period",
+              "period": "2026-05",
+              "payer_effective_date": "2026-06-01",
+              "billing_source": "medicaid_resident_override",
+              "total": 100000,
+              "expected_without_future_payer": 372000,
+              "scope": "Concrete F06 source-selection defect for next bounded fix; not an external blocker or policy waiver"
+            },
+            {
+              "name": "edge-shared future-effective payer influences earlier billing period",
+              "period": "2026-05",
+              "payer_effective_date": "2026-06-01",
+              "billing_source": "medicaid_resident_override",
+              "total": 100000,
+              "expected_without_future_payer": 372000,
+              "scope": "Concrete F06 source-selection defect for next bounded fix; not an external blocker or policy waiver"
+            }
+          ],
+          "not_an_external_blocker": true
+        }
+      ]
+    },
+    {
+      "scope": "Native F01 harness and bounded workflow evidence, with HFA007/HFA012 engineering acceptance recommendations; broader F01/F09 remain open",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "f00_independent_review"
+      ],
+      "handler_sha256": "54b928e26c0d72e6fe98b3ea092dff14346450473e47ea12456e7583c6458133",
+      "evidence": [
+        "test-results/finance-integration/native-auth-api/acceptance-review.json",
+        "test-results/finance-integration/native-auth-api/runtime-identity.json",
+        "test-results/finance-integration/native-auth-api/coverage-followup.json"
+      ],
+      "counts": {
+        "audit_api": 26,
+        "finance_api": 25,
+        "actual_deno_http": 12,
+        "independent_runtime_identity": 29,
+        "additional_allocation_and_scope_checks": 34
+      },
+      "limits": [
+        "Native pinned GoTrue/PostgREST and standalone Deno, not deployed Supabase Edge gateway, production or provider proof.",
+        "Schema parity compares schema-only native source baseline, not hosted production; Auth helpers separately match previously captured hosted definitions.",
+        "Synthetic fixture setup uses local privileged SQL/admin Auth; tested business operations use real signed HTTP and genuine sessions.",
+        "Promise.all HTTP requests prove concurrent caller outcome but are not controlled lock-wait race orchestration.",
+        "Actual Deno handler file mtime precedes recorded current process start; current on-disk hash matches the tested source. No claim of arbitrary runtime memory attestation.",
+        "342 interrupted security review remains incomplete; this lane is separate.",
+        "No application source, shared runner/register, existing container or hosted mutation by independent reviewer. Existing probes create only authorized synthetic fixture rows and revoke their synthetic sessions."
+      ],
+      "source_files": [
+        {
+          "path": "native-authenticated-smoke.mjs",
+          "sha256": "63664b25c256abedb1b83fcabf6acd11686af05356f0e41385756ff5d3f3bee4"
+        },
+        {
+          "path": "audit-http-probe.mjs",
+          "sha256": "f4e3359421305f715f3e8ff992c6bd14e54315e21d10b23871a1272e1cef1900"
+        },
+        {
+          "path": "native-runtime-identity.mjs",
+          "sha256": "f118007f0f1329b9253e9eba9e9f7f3f71488d402ba1e7f4b65e2ac091015425"
+        },
+        {
+          "path": "gateway.mjs",
+          "sha256": "14bf39c9f88b60e3a5cbafc1fa2d34362ddda4b5bb62d468d50f64b570e79a02"
+        },
+        {
+          "path": "standalone-audit-gateway.ts",
+          "sha256": "55b05eb276459f27855a4942f93132de8462d9b3b395097bee80028df77fd9f1"
+        }
+      ]
+    },
+    {
+      "scope": "Frozen temporal primary payer selection; read-only source review and independent synthetic producer/handler execution",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "f00_independent_review"
+      ],
+      "source_files": [
+        {
+          "path": "src/lib/billing/generate-monthly-invoices.ts",
+          "sha256": "df86fbcda1991e3f0a0d8df0d9b6de605a441ca1e9e9bb3230c9abc77e6d0b25"
+        },
+        {
+          "path": "supabase/functions/_shared/billing/generate-monthly-invoices.ts",
+          "sha256": "09bc62372da4214cd68c003e1fe4315efc1f3ccca94695f4f61cae44844a10df"
+        },
+        {
+          "path": "src/lib/billing/generate-monthly-temporal-payers.test.ts",
+          "sha256": "1bb5102d71ffc8ce51d27daacd2cf86a2e2f8a0acd20093f8823751a05a6ada4"
+        }
+      ],
+      "evidence": [
+        "test-results/finance-integration/f06-temporal/independent-review.json",
+        "test-results/finance-integration/f06-temporal/reference-results.json",
+        "test-results/finance-integration/full-unit-billing-temporal.json",
+        "test-results/agent-gates/2026-09-09T12-51-04-745Z-HFA-F06-TEMPORAL.json"
+      ],
+      "limits": [
+        "No actual database/Auth/hosted/provider requests; VM query transport is synthetic.",
+        "The actual app and Edge producer files and actual registered Edge handler were executed, not lexical presence checks.",
+        "No application/shared source, migrations, shared runners/registers or external systems modified."
+      ],
+      "remaining_engineering": [
+        "HFA039 remains IN_PROGRESS: broader approved contractual charge, transfer/history/rates/concessions and browser criteria remain.",
+        "HFA040 remains IN_PROGRESS: true split payer/patient responsibility/secondary responsibility, expired and retroactive authorizations require coherent implementation and independent tests.",
+        "Mutable payer history, current resident-status filtering and historical rate/agreement eligibility remain source provenance gaps.",
+        "Existing Medicaid override rate-unit handling is unchanged and remains unresolved engineering; no unit semantics invented."
+      ]
+    },
+    {
+      "scope": "Two-file header text contrast and named keyboard-scrollable queue tables",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "finance_source_inventory"
+      ],
+      "source_files": [
+        {
+          "path": "src/components/layout/AppShell.tsx",
+          "sha256": "ae9dec1fbdc6217ab466dfd7403698ce12c2bd824808310670c9b607c0af77b2"
+        },
+        {
+          "path": "src/components/finance/FinanceReviewQueueClient.tsx",
+          "sha256": "0d6401498bcfa4647460d768ec422b4d8c1d7eb79d0b5af789509ae5c6fda501"
+        }
+      ],
+      "evidence": [
+        "test-results/finance-integration/native-ui/verification.json",
+        "test-results/finance-integration/native-ui/browser.json",
+        "test-results/finance-integration/native-ui/pixels-final.json",
+        "test-results/agent-gates/2026-09-09T13-46-43-908Z-HFA-NATIVE-UI.json"
+      ],
+      "limits": [
+        "Native synthetic owner Chrome only, existing private session reused",
+        "No new actors, provider/prod calls or financial mutations",
+        "Populated Sourceevents tested; otherqueue table labels/styles checkedsource andcomponenttests",
+        "Not a full accessibility certification or broader release approval",
+        "Broad gate preceded final inward-outline-only change; final focused browser/component/lint/diagnostic evidence covers the final source."
+      ]
+    },
+    {
+      "scope": "GET capture/config/stream bounds/exact JSON/schema/privacy boundary only; no network/provider/authorization acceptance",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "finance_source_inventory"
+      ],
+      "source_files": [
+        {
+          "path": "supabase/functions/_shared/qbo-read.ts",
+          "sha256": "ed72b25ef3a452cd870bcb2806b0583c54371432445cc893654e9a0655305faf"
+        },
+        {
+          "path": "supabase/functions/_shared/qbo-read.test.ts",
+          "sha256": "9b51f9f4a6ab58fa369f2c75e34a5f8f7c2d211a87686d4855557bc3e6a6c6b1"
+        },
+        {
+          "path": "docs/finance-integration/F04-QBO-READ-CONTRACT.md",
+          "sha256": "720e50034b0d515448b66542a5ba2282f714844ff10b38a638f10c92fbbf347b"
+        }
+      ],
+      "evidence": [
+        "test-results/finance-integration/f04-qbo-read/verification.json",
+        "test-results/finance-integration/f04-qbo-read/probe-final.json",
+        "test-results/finance-integration/f04-qbo-read/extended-final.json",
+        "test-results/finance-integration/f04-qbo-read/abort-aware-final.json"
+      ],
+      "limits": [
+        "Capture primitive only; no live provider/network calls or actual provider compatibility proof",
+        "Compressed wire-length integrity delegated to platform fetch; retained decoded bytes remain bounded",
+        "Digest follows validation outsideI/O deadline; no CPU preemption claim",
+        "No current-actor authorization, encryption/durable storage, complete scan/import, snapshot or reconciliation acceptance",
+        "Production enablement only trusted configuration; actualbinding/auth/dispatch guards remain common-engine responsibility"
+      ]
+    },
+    {
+      "scope": "QBO read shared test runner, package command, unconditional CI and scoped acceptance records; excludes reviewer-authored transport source",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "qbo_read_contract"
+      ],
+      "source_files": [
+        {
+          "path": "scripts/finance-integration/run-edge-tests.mjs",
+          "sha256": "3872821684887fad949eccece21020712ec4647af61471710d9b526a46438955"
+        },
+        {
+          "path": "package.json",
+          "sha256": "5d9291334a7266292fa578f3812cbd63b23cc2ec0cbdb6406beda12d6427ae9b"
+        },
+        {
+          "path": ".github/workflows/finance-integration.yml",
+          "sha256": "a271c346647c85bfede2c9d8b833876450e9d311fb18738fa2b364298acd69d7"
+        }
+      ],
+      "checks": {
+        "independent_runner_cases": 9,
+        "matched_json_junit_cases": 98,
+        "skipped": 0
+      },
+      "evidence": [
+        "test-results/finance-integration/f04-qbo-read/integration-checks.json",
+        "test-results/finance-integration/f04-qbo-read/integration-independent-review.json"
+      ],
+      "limits": [
+        "In-memory runner orchestration only; no CI execution or provider/release approval.",
+        "Transport source independently reviewed by finance_source_inventory."
+      ]
+    },
+    {
+      "scope": "Pinned Gitleaks installation and two existing invoice control labels",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "qbo_read_contract"
+      ],
+      "evidence": [
+        "test-results/finance-integration/f04-qbo-read/ci-gitleaks-label-review.json",
+        "test-results/finance-integration/native-ui/billing-controls.json",
+        "test-results/finance-integration/f04-qbo-read/ci-scanner-repair.json"
+      ],
+      "limits": [
+        "Source and Bash syntax review; actual Linux CI rerun remains pending.",
+        "Control labels only; no complete billing workflow or release approval."
+      ]
+    }
+  ]
+}

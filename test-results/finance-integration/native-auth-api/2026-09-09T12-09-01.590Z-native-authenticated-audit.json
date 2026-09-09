@@ -1,0 +1,362 @@
+{
+  "schema_version": 1,
+  "run_id": "52fe9176-452b-4a02-8f04-c2371084dd8c",
+  "suite": "audit",
+  "status": "PASS",
+  "evidence_layer": "native-real-GoTrue-PostgREST",
+  "target_identity": {
+    "project_id": "hfa-native-01a08335",
+    "api_url": "http://127.0.0.1:59831",
+    "database_port": 55448,
+    "transport": "native-services",
+    "services": [
+      {
+        "service": "auth",
+        "pid": 17228,
+        "port": 59833,
+        "executable_sha256": "1f0f24492845ae411e409eebaddc790b97324f5b398f881dbd493fda34a183e5"
+      },
+      {
+        "service": "rest",
+        "pid": 14357,
+        "port": 59832,
+        "executable_sha256": "3e2beec9c4103f5d97524b01ba892156cf993ffc18e6fc0858b8131bc7be6730"
+      },
+      {
+        "service": "gateway",
+        "pid": 14361,
+        "port": 59831,
+        "executable_sha256": "08dad0581f00a0cabf4d49ec92ca1f25fdfd01c2c18fa8e92b35f04d4c24c164",
+        "source_sha256": "14bf39c9f88b60e3a5cbafc1fa2d34362ddda4b5bb62d468d50f64b570e79a02"
+      },
+      {
+        "service": "native-postgres",
+        "database": "hfa_native_01a08335",
+        "data_directory": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/postgres-data",
+        "port": "55448",
+        "listen_addresses": "",
+        "system_identifier": "7683421186487785039"
+      }
+    ]
+  },
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/native-authenticated-smoke.mjs",
+    "--config=<run-private-configuration>",
+    "--suite=audit"
+  ],
+  "exit_code": 0,
+  "commit": "d1023d147db2dc29480fa418222b94a47c679123",
+  "source_sha256": "63664b25c256abedb1b83fcabf6acd11686af05356f0e41385756ff5d3f3bee4",
+  "runtime_identity_helper_sha256": "f118007f0f1329b9253e9eba9e9f7f3f71488d402ba1e7f4b65e2ac091015425",
+  "schema_bootstrap_sha256": "a20432e496fe09ab788a4c9bd043d043ff385d3ef6ebd7ce89f41da69a8d7ad7",
+  "fixture_seed_sha256": "0151c1264554334488bcd3fd329137f9672139e9615062ceb47a9ff8fef49455",
+  "cases": [
+    {
+      "name": "native processes, loopback listeners and database identity verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "genuine GoTrue auth schema exists",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "restricted: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "owner: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "outsider: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "real REST row cap is exercised",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "status": 206,
+        "rows": 1000,
+        "count": 2505
+      },
+      "actual": {
+        "status": 206,
+        "rows": 1000,
+        "range": "0-999/2505"
+      }
+    },
+    {
+      "name": "restricted B export denied by PostgREST RLS",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "401 or 403",
+      "actual": 403
+    },
+    {
+      "name": "restricted null export denied by PostgREST RLS",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "401 or 403",
+      "actual": 403
+    },
+    {
+      "name": "restricted other-organization export denied by PostgREST RLS",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "401 or 403",
+      "actual": 403
+    },
+    {
+      "name": "authorized A job created through PostgREST",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "name": "authorized materialization RPC succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "complete 2505-row snapshot exceeds actual REST cap",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "status": 200,
+        "rows": 2505
+      },
+      "actual": {
+        "status": 200,
+        "rows": 2505
+      }
+    },
+    {
+      "name": "retrieved CSV SHA256 verifies exact UTF8 bytes",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "35a8a68be56cb330f9ee0c89448793e34e02aa0e3fdc39b9f02be4eb589d3d37",
+      "actual": "35a8a68be56cb330f9ee0c89448793e34e02aa0e3fdc39b9f02be4eb589d3d37"
+    },
+    {
+      "name": "independently calculated exact source membership",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "ce76df85ccc011ce61f6e35f9369773e3dda96a5062b3dfaaf79af62cd73ca1c",
+      "actual": "ce76df85ccc011ce61f6e35f9369773e3dda96a5062b3dfaaf79af62cd73ca1c"
+    },
+    {
+      "name": "other organization cannot retrieve known job UUID",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "401 or 403",
+      "actual": 403
+    },
+    {
+      "name": "retry preserves original bytes after source changes",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "35a8a68be56cb330f9ee0c89448793e34e02aa0e3fdc39b9f02be4eb589d3d37",
+      "actual": "35a8a68be56cb330f9ee0c89448793e34e02aa0e3fdc39b9f02be4eb589d3d37"
+    },
+    {
+      "name": "owner can request organization-wide export",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "name": "real GoTrue global logout succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 204,
+      "actual": 204
+    },
+    {
+      "name": "GoTrue removed the current session",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 0,
+      "actual": 0
+    },
+    {
+      "name": "still-signed token cannot retrieve after session revocation",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "401 or 403",
+      "actual": 401
+    }
+  ],
+  "counts": {
+    "total": 26,
+    "passed": 26,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "failure": null,
+  "started_at": "2026-09-09T12:09:01.590Z",
+  "completed_at": "2026-09-09T12:09:02.996Z",
+  "duration_ms": 1406,
+  "limits": [
+    "Real pinned GoTrue and PostgREST on a run-owned native PostgreSQL cluster; synthetic fixtures only. Native proxy is not Kong or a deployed Edge gateway. No hosted production/provider/business or completed342 dynamic-security review proof."
+  ]
+}

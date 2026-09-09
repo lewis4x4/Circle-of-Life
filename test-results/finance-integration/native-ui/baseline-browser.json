@@ -1,0 +1,96 @@
+{
+  "source": {
+    "src/components/layout/AppShell.tsx": "ae9dec1fbdc6217ab466dfd7403698ce12c2bd824808310670c9b607c0af77b2",
+    "src/components/finance/FinanceReviewQueueClient.tsx": "78bab7ddef4147cfa5c20522a90c7a94e7a0f2d8160d8ab2039f2203d1e4886b"
+  },
+  "runtimeVerified": true,
+  "runtimeServices": [
+    {
+      "service": "auth",
+      "port": 59833
+    },
+    {
+      "service": "rest",
+      "port": 59832
+    },
+    {
+      "service": "gateway",
+      "port": 59831
+    }
+  ],
+  "modes": [
+    {
+      "mode": "light-desktop",
+      "violations": [],
+      "metrics": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "readonly": true,
+      "focus": null
+    },
+    {
+      "mode": "light-mobile",
+      "violations": [],
+      "metrics": {
+        "viewport": 390,
+        "document": 390
+      },
+      "readonly": true,
+      "focus": {
+        "focusVisible": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineOffset": "2px",
+        "outlineColor": "rgb(78, 112, 136)",
+        "wrapperOverflowX": "auto",
+        "wrapperOverflowY": "auto",
+        "tableWidth": 524.9375,
+        "wrapperWidth": 317,
+        "focusPixelsChanged": true,
+        "scrollBefore": 0,
+        "scrollAfter": 38
+      }
+    },
+    {
+      "mode": "dark-desktop",
+      "violations": [],
+      "metrics": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "readonly": true,
+      "focus": null
+    },
+    {
+      "mode": "dark-mobile",
+      "violations": [],
+      "metrics": {
+        "viewport": 390,
+        "document": 390
+      },
+      "readonly": true,
+      "focus": {
+        "focusVisible": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineOffset": "2px",
+        "outlineColor": "rgb(106, 143, 169)",
+        "wrapperOverflowX": "auto",
+        "wrapperOverflowY": "auto",
+        "tableWidth": 524.9375,
+        "wrapperWidth": 317,
+        "focusPixelsChanged": true,
+        "scrollBefore": 0,
+        "scrollAfter": 38
+      }
+    }
+  ],
+  "failure": null,
+  "deniedOrigins": [],
+  "rpcCalls": [
+    "haven_current_shell_actor",
+    "finance_review_queue"
+  ],
+  "limits": "Existing private synthetic owner session only; no new actors or financial mutations; local fixture, not provider/production approval"
+}

@@ -1,0 +1,151 @@
+{
+  "verdict": "APPROVE",
+  "scope": "Native F01 harness and bounded workflow evidence, with HFA007/HFA012 engineering acceptance recommendations; broader F01/F09 remain open",
+  "created_at": "2026-09-09T12:16:43.277766+00:00",
+  "reviewer": "/root/f00_independent_review",
+  "sources": {
+    "native-authenticated-smoke.mjs": "63664b25c256abedb1b83fcabf6acd11686af05356f0e41385756ff5d3f3bee4",
+    "audit-http-probe.mjs": "f4e3359421305f715f3e8ff992c6bd14e54315e21d10b23871a1272e1cef1900",
+    "native-runtime-identity.mjs": "f118007f0f1329b9253e9eba9e9f7f3f71488d402ba1e7f4b65e2ac091015425",
+    "gateway.mjs": "14bf39c9f88b60e3a5cbafc1fa2d34362ddda4b5bb62d468d50f64b570e79a02",
+    "standalone-audit-gateway.ts": "55b05eb276459f27855a4942f93132de8462d9b3b395097bee80028df77fd9f1"
+  },
+  "handler_sha256": "54b928e26c0d72e6fe98b3ea092dff14346450473e47ea12456e7583c6458133",
+  "identity_checks": 29,
+  "runtime_results": [
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/independent-f01-review/test-results/finance-integration/2026-09-09T12-09-01.590Z-native-authenticated-audit.json",
+      "sha256": "cdb71d4bd1d8735df09df5a58a65248c6431fddb48866e9e1470f072a7659891",
+      "counts": {
+        "total": 26,
+        "passed": 26,
+        "failed": 0,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/independent-f01-review/test-results/finance-integration/2026-09-09T12-09-21.935Z-native-authenticated-finance.json",
+      "sha256": "54f2d819307c1d3f223741fcad55ce4b245fb130fc3fe2012da8ad0c6212592c",
+      "counts": {
+        "total": 25,
+        "passed": 25,
+        "failed": 0,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "status": "PASS"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/independent-f01-review/test-results/finance-integration/2026-09-09T12-09-43.430Z-native-audit-http.json",
+      "sha256": "acf58fc09d8c873911d665ce92a419e9ae4227f65056e254fb6303b23e5af2ac",
+      "counts": {
+        "total": 12,
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0
+      },
+      "status": "PASS"
+    }
+  ],
+  "schema_parity": {
+    "status": "PASS",
+    "source_sha256": "9e4c0f09b5e47ab6acdb3235d768c1745b5fcf92d2cde980856658a38c899da0",
+    "current_sha256": "9e4c0f09b5e47ab6acdb3235d768c1745b5fcf92d2cde980856658a38c899da0",
+    "diff_lines": 0,
+    "normalization": "remove random pg_dump restrict tokens; documented IF NOT EXISTS public only",
+    "source": "schema-only native baseline application-schema.sql, not production schema parity"
+  },
+  "secret_report_scan": "PASS: known private credential values absent from new reports",
+  "issues": [],
+  "resolved_findings": [
+    {
+      "file": "native-authenticated-smoke.mjs",
+      "line": 21,
+      "issue": "Historical command pointed to original repository Docker runner",
+      "resolution": "import.meta.filename now records exact native runner; old reports preserved with parent errata"
+    },
+    {
+      "file": "audit-http-probe.mjs",
+      "line": 1,
+      "issue": "Original driver checked only Deno process and followed redirects",
+      "resolution": "Shared verified target helper validates complete native process/listener/backend identity; all HTTP requests reject redirects"
+    }
+  ],
+  "acceptance_recommendations": [
+    {
+      "id": "HFA-007",
+      "status": "PASS",
+      "reason": "Engineering criterion now directly observed on the genuine native Auth/PostgREST layer: exact allocation-write failure after payment insertion rolls back all complete organization payments/allocations/invoices/receipts/source events/intents plus exact failed-command rows; prior concurrent identical API requests return one receipt/allocation effect. Post-test schema parity verifies complete injection cleanup. Pair this exact API evidence with the existing reviewed SQL suite in the shared register; no hosted/provider/business acceptance implied."
+    },
+    {
+      "id": "HFA-008",
+      "status": "IN_PROGRESS",
+      "reason": "Native payment subcase PASS: same content gives identical concurrent receipt, changed content returns409, later independent control totals remain unchanged. This evidence alone does not complete required unit/SQL/API verification across the broader F01 journal/source/reversal command identities. Combine exact relevant unit/SQL records before promoting the full row."
+    },
+    {
+      "id": "HFA-009",
+      "status": "IN_PROGRESS",
+      "reason": "No native API journal header/lines/post/source receipt failure or abandoned-draft recovery cases here."
+    },
+    {
+      "id": "HFA-010",
+      "status": "IN_PROGRESS",
+      "reason": "No actual UI/import/job posted-write or closed-period route matrix or simultaneous close/post race in these probes."
+    },
+    {
+      "id": "HFA-011",
+      "status": "IN_PROGRESS",
+      "reason": "Native payment probes cover cross-organization resident/invoice scope and revoked facility authority. Wrong accounts/entities, finance stale/revoked-session and execution-authority variants remain outside this native matrix."
+    },
+    {
+      "id": "HFA-012",
+      "status": "PASS",
+      "reason": "Engineering authorization criterion now directly observed on native real Auth/API plus actual standalone Deno: A-only actor cannot create B/null/other-org jobs, cannot process/retrieve existing completed owner-created B/all-org jobs through either RPC or actual handler, no content escapes and snapshots remain identical. Own A export works; revoked genuine session cannot retrieve and other-org actor is denied. This is standalone handler/runtime proof, not deployed Supabase Edge gateway acceptance."
+    },
+    {
+      "id": "HFA-059",
+      "status": "IN_PROGRESS",
+      "reason": "Native 2505-row snapshot, independent exact membership/checksum, before changes, source-mutation-stable retry, header and retrieval authorization pass. Permitted evidence refs/full manifest and explicit CSV formula safety oracle are not demonstrated by these HTTP assertions; full F09 acceptance remains open."
+    }
+  ],
+  "diagnostics": {
+    "node_check": "PASS on three runner/helper JS files",
+    "lsp": "Zero diagnostics reported for all five files; backend invoked tsc project command, so this is not claimed as isolated Deno/JavaScript type checking",
+    "ast_grep": "Unavailable; manually inspected logs, error handling and fixed-target routing instead"
+  },
+  "limitations": [
+    "Native pinned GoTrue/PostgREST and standalone Deno, not deployed Supabase Edge gateway, production or provider proof.",
+    "Schema parity compares schema-only native source baseline, not hosted production; Auth helpers separately match previously captured hosted definitions.",
+    "Synthetic fixture setup uses local privileged SQL/admin Auth; tested business operations use real signed HTTP and genuine sessions.",
+    "Promise.all HTTP requests prove concurrent caller outcome but are not controlled lock-wait race orchestration.",
+    "Actual Deno handler file mtime precedes recorded current process start; current on-disk hash matches the tested source. No claim of arbitrary runtime memory attestation.",
+    "342 interrupted security review remains incomplete; this lane is separate.",
+    "No application source, shared runner/register, existing container or hosted mutation by independent reviewer. Existing probes create only authorized synthetic fixture rows and revoke their synthetic sessions."
+  ],
+  "reviewer_fixture_setup_corrections": "Retained initial diagnostic reports document corrected reviewer assumptions: resolved Homebrew path, socket URI parser, actual pre-request function name, idle Auth pool, version suffix, archive relative paths, and pg_dump ACL flag. These were reviewer harness setup errors, not application failures.",
+  "prior_snapshot": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/independent-f01-review/verdict.json",
+    "sha256": "686599251bbc618af3bb0e9866805cf8fe2d2de08463cfb2b3809e10863dee3d"
+  },
+  "coverage_followup": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/independent-f01-review/coverage-followup/result.json",
+    "sha256": "4be5fde7c63b606caff88a7f1282669d3009b51662013368feea25942e9b2039",
+    "counts": {
+      "total": 34,
+      "passed": 34,
+      "failed": 0,
+      "skipped": 0
+    },
+    "post_test_schema_parity": {
+      "status": "PASS",
+      "source_sha256": "9e4c0f09b5e47ab6acdb3235d768c1745b5fcf92d2cde980856658a38c899da0",
+      "current_sha256": "9e4c0f09b5e47ab6acdb3235d768c1745b5fcf92d2cde980856658a38c899da0",
+      "diff_lines": 0,
+      "normalization": "remove random pg_dump restrict tokens; documented IF NOT EXISTS public only",
+      "scope": "native baseline public/haven including ACLs"
+    },
+    "driver_sha256": "d3e39bd3429caed8709300b9745ef0c4ffbeabcfc9573666954070ef4214633a"
+  }
+}

@@ -26,6 +26,24 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { BillingHubNav } from "../../billing-hub-nav";
 import { billingCurrency } from "../../billing-invoice-ledger";
 
+type PaymentCommand = {
+  p_id: string; p_resident_id: string; p_invoice_id: string | null; p_payment_date: string;
+  p_amount_cents: number; p_method: string; p_reference: string | null; p_payer_name: string | null; p_notes: string | null;
+};
+type PendingPayment = { actorId: string; originatingSessionId: string; payload: PaymentCommand };
+
+function readPendingPayment(raw: string, actorId: string): PendingPayment {
+  const value = JSON.parse(raw) as PendingPayment;
+  const p = value?.payload;
+  if (value?.actorId !== actorId || !p || typeof p !== "object" || Array.isArray(p) ||
+    typeof p.p_id !== "string" || typeof p.p_resident_id !== "string" || typeof p.p_payment_date !== "string" ||
+    !Number.isSafeInteger(p.p_amount_cents) || p.p_amount_cents <= 0 || typeof p.p_method !== "string" ||
+    ![p.p_invoice_id, p.p_reference, p.p_payer_name, p.p_notes].every((field) => field === null || typeof field === "string")) {
+    throw new Error("Stored payment needs reconciliation. Keep this tab open and contact finance support.");
+  }
+  return value;
+}
+
 const PAYMENT_METHODS = [
   { value: "check", label: "Check" },
   { value: "ach", label: "ACH / EFT" },
@@ -96,6 +114,9 @@ export default function AdminNewPaymentPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [committedPayment, setCommittedPayment] = useState<PaymentCommand | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
+  const [allocation, setAllocation] = useState<{ allocated: number; unapplied: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadResidents = useCallback(async () => {
@@ -206,97 +227,90 @@ export default function AdminNewPaymentPage() {
     };
   }, [loadInvoices, requestedInvoiceId, requestedResidentId, residentId]);
 
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getClaims().then(({ data, error: authError }) => {
+      if (!active || authError || !data?.claims.sub) return;
+      const actorId = data.claims.sub;
+      const raw = sessionStorage.getItem(`haven:finance:payment:${actorId}`);
+      if (raw) {
+        try { setPendingPayment(readPendingPayment(raw, actorId)); }
+        catch { setError("Stored payment needs reconciliation. Keep this tab open and contact finance support."); }
+      }
+    });
+    return () => { active = false; };
+  }, [supabase]);
+
   const selectedInvoice = invoices.find((i) => i.id === invoiceId);
   const amountCents = Math.round(parseFloat(amountDollars || "0") * 100);
   const isValid =
     residentId && amountCents > 0 && paymentMethod && paymentDate;
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!isValid || submitting) return;
+  async function commitPayment(pending: PendingPayment, resolveOnly = false) {
+    const { data: authData, error: authError } = await supabase.auth.getClaims();
+    if (authError || authData?.claims.sub !== pending.actorId || typeof authData?.claims.session_id !== "string") {
+      throw new Error("Sign in as the original payment operator to recover this request.");
+    }
+    const { data: receipt, error: commandError } = await supabase.rpc(resolveOnly ? "resolve_finance_payment" : "record_finance_payment", pending.payload);
+    if (commandError) throw new Error(commandError.message);
+    if (resolveOnly && receipt && typeof receipt === "object" && !Array.isArray(receipt) && receipt.status === "cancelled" && receipt.payment_id === pending.payload.p_id) {
+      sessionStorage.removeItem(`haven:finance:payment:${pending.actorId}`);
+      setPendingPayment(null);
+      setError("Earlier request cancelled with no payment recorded. Correct the details and submit a new payment.");
+      return;
+    }
+    if (!receipt || typeof receipt !== "object" || Array.isArray(receipt) || receipt.payment_id !== pending.payload.p_id ||
+      typeof receipt.allocated_cents !== "number" || typeof receipt.unapplied_cents !== "number" ||
+      receipt.allocated_cents + receipt.unapplied_cents !== pending.payload.p_amount_cents) {
+      throw new Error("Payment receipt unavailable. Recover the earlier payment before recording another.");
+    }
+    setCommittedPayment(pending.payload);
+    setAllocation({ allocated: receipt.allocated_cents, unapplied: receipt.unapplied_cents });
+    sessionStorage.removeItem(`haven:finance:payment:${pending.actorId}`);
+    setPendingPayment(null);
+    setSuccess(true);
+  }
 
-      setSubmitting(true);
-      setError(null);
+  async function recoverPayment(resolveOnly = false) {
+    if (!pendingPayment || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try { await commitPayment(pendingPayment, resolveOnly); }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not recover payment. Keep this request for reconciliation."); }
+    finally { setSubmitting(false); }
+  }
 
-      try {
-        const resRow = (await supabase
-          .from("residents" as never)
-          .select("facility_id, organization_id")
-          .eq("id", residentId)
-          .maybeSingle()) as {
-          data: {
-            facility_id: string;
-            organization_id: string;
-          } | null;
-          error: QueryError | null;
-        };
-
-        if (resRow.error) throw resRow.error;
-        if (!resRow.data) throw new Error("Resident not found.");
-
-        const entityRow = (await supabase
-          .from("facilities" as never)
-          .select("entity_id")
-          .eq("id", resRow.data.facility_id)
-          .maybeSingle()) as {
-          data: { entity_id: string } | null;
-          error: QueryError | null;
-        };
-
-        if (entityRow.error) throw entityRow.error;
-        if (!entityRow.data) throw new Error("Facility entity not found.");
-
-        const payload = {
-          resident_id: residentId,
-          facility_id: resRow.data.facility_id,
-          organization_id: resRow.data.organization_id,
-          entity_id: entityRow.data.entity_id,
-          invoice_id: selectedInvoice ? invoiceId : null,
-          payment_date: paymentDate,
-          amount: amountCents,
-          payment_method: paymentMethod,
-          reference_number: referenceNumber.trim() || null,
-          payer_name: payerName.trim() || null,
-          notes: notes.trim() || null,
-        };
-
-        const { error: insErr } = await supabase
-          .from("payments" as never)
-          .insert(payload as never);
-        if (insErr) throw insErr;
-
-        if (invoiceId && selectedInvoice) {
-          // Apply atomically server-side (row lock + live balance) so concurrent
-          // payments can't lose an update. RLS still applies (SECURITY INVOKER).
-          await supabase.rpc("apply_invoice_payment" as never, {
-            p_invoice_id: invoiceId,
-            p_amount_cents: amountCents,
-          } as never);
-        }
-
-        setSuccess(true);
-      } catch (err) {
-        setError(formatLiveDataLoadError(err, "Failed to record payment."));
-      } finally {
-        setSubmitting(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isValid || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getClaims();
+      const actorId = authData?.claims.sub;
+      const sessionId = authData?.claims.session_id;
+      if (authError || !actorId || typeof sessionId !== "string") throw new Error("Sign in before recording payment.");
+      const identityKey = `haven:finance:payment:${actorId}`;
+      const raw = sessionStorage.getItem(identityKey);
+      const existing = raw ? readPendingPayment(raw, actorId) : null;
+      const payload: PaymentCommand = {
+        p_id: existing?.payload.p_id ?? crypto.randomUUID(), p_resident_id: residentId,
+        p_invoice_id: selectedInvoice ? invoiceId : null, p_payment_date: paymentDate, p_amount_cents: amountCents,
+        p_method: paymentMethod, p_reference: referenceNumber.trim() || null, p_payer_name: payerName.trim() || null, p_notes: notes.trim() || null,
+      };
+      const pending = existing ?? { actorId, originatingSessionId: sessionId, payload };
+      setPendingPayment(pending);
+      if (existing && JSON.stringify(existing.payload) !== JSON.stringify(payload)) {
+        throw new Error("An earlier payment is unresolved. Recover that exact request before recording another payment.");
       }
-    },
-    [
-      isValid,
-      submitting,
-      supabase,
-      residentId,
-      invoiceId,
-      paymentDate,
-      amountCents,
-      paymentMethod,
-      referenceNumber,
-      payerName,
-      notes,
-      selectedInvoice,
-    ],
-  );
+      // Only this actor's unresolved request is retained, in this tab. Keep its
+      // exact content and identity across timeouts, reloads and reauthentication.
+      sessionStorage.setItem(identityKey, JSON.stringify(pending));
+      await commitPayment(pending);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to record payment. Recover the pending request before retrying.");
+    } finally { setSubmitting(false); }
+  };
 
   if (success) {
     return (
@@ -311,10 +325,9 @@ export default function AdminNewPaymentPage() {
               </CardTitle>
             </div>
             <CardDescription>
-              {billingCurrency.format(amountCents / 100)} applied
-              {selectedInvoice
-                ? ` to ${formatInvoiceRowNumberForDisplay(selectedInvoice)}`
-                : " (unapplied)"}
+              {billingCurrency.format((allocation?.allocated ?? 0) / 100)} applied
+              {" to invoices"}.
+              {" "}{billingCurrency.format((allocation?.unapplied ?? 0) / 100)} remains unapplied.
               .
             </CardDescription>
           </CardHeader>
@@ -337,10 +350,10 @@ export default function AdminNewPaymentPage() {
               Record another
             </Button>
             <Link
-              href={residentId ? `/admin/residents/${residentId}/billing` : "/admin/billing/invoices"}
+              href={committedPayment ? `/admin/residents/${committedPayment.p_resident_id}/billing` : "/admin/billing/invoices"}
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
-              {residentId ? "Resident billing" : "Back to invoices"}
+              {committedPayment ? "Resident billing" : "Back to invoices"}
             </Link>
           </CardContent>
         </Card>
@@ -365,6 +378,18 @@ export default function AdminNewPaymentPage() {
         </Link>
       </div>
 
+      {pendingPayment ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment awaiting a confirmed result</CardTitle>
+            <CardDescription>{billingCurrency.format(pendingPayment.payload.p_amount_cents / 100)} dated {pendingPayment.payload.p_payment_date}. Recovery uses the original details and cannot create a second payment.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            <Button type="button" variant="outline" disabled={submitting} onClick={() => void recoverPayment()}>Recover earlier payment</Button>
+            <Button type="button" variant="outline" disabled={submitting} onClick={() => void recoverPayment(true)}>Check outcome and cancel if unrecorded</Button>
+          </CardContent>
+        </Card>
+      ) : null}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">

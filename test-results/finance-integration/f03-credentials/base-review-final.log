@@ -1,0 +1,1238 @@
+BEGIN
+CREATE FUNCTION
+ALTER TABLE
+SELECT 1
+CREATE TABLE
+INSERT 0 4
+CREATE TABLE
+INSERT 0 22
+CREATE TABLE
+CREATE SEQUENCE
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+INSERT 0 2
+INSERT 0 2
+INSERT 0 3
+INSERT 0 4
+INSERT 0 4
+INSERT 0 4
+INSERT 0 1
+INSERT 0 3
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+                                           record_finance_payment                                            
+-------------------------------------------------------------------------------------------------------------
+ {"payment_id": "92e85af3-71b3-4c99-af98-a8557656e266", "allocated_cents": 0, "unapplied_cents": 2000000000}
+ {"payment_id": "f169d772-893c-4da4-afc3-6740e3aee905", "allocated_cents": 0, "unapplied_cents": 2000000000}
+ {"payment_id": "973f3520-24da-48be-a025-c31e9245ff5f", "allocated_cents": 0, "unapplied_cents": 100}
+ {"payment_id": "afaa08f5-330d-4a51-9366-9a4c94a3e274", "allocated_cents": 0, "unapplied_cents": 100}
+(4 rows)
+
+                                        record_finance_payment                                        
+------------------------------------------------------------------------------------------------------
+ {"payment_id": "5faf7a26-a3a3-4e8e-93b5-8b8b886fcea0", "allocated_cents": 0, "unapplied_cents": 100}
+(1 row)
+
+                                                 set_finance_staging_control                                                 
+-----------------------------------------------------------------------------------------------------------------------------
+ {"stopped": false, "entity_id": "366c4092-f280-42ab-bbe2-2ecadf01fa11", "dispatch_enabled": false, "staging_generation": 1}
+(1 row)
+
+                                                                                     register_finance_batch_rules                                                                                      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "declared_draft", "content_sha256": "33c78ed37d9d6a5596db5671c950a8434eabf8c0e19648e57b3d10fc52f79c12", "rules_generation": 1, "rules_version_id": "64075629-7e45-4065-a654-0efee29b86fc"}
+(1 row)
+
+ batch_login 
+-------------
+ 
+(1 row)
+
+                                        record_finance_payment                                        
+------------------------------------------------------------------------------------------------------
+ {"payment_id": "9719bf72-d7d9-452e-beec-164473c85deb", "allocated_cents": 0, "unapplied_cents": 100}
+(1 row)
+
+ batch_login 
+-------------
+ 
+(1 row)
+
+RESET
+SELECT 1
+INSERT 0 2
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ batch_login 
+-------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:88: NOTICE:  BATCH PASS: physical-grant-cannot-have-second-organization-owner
+ batch_error 
+-------------
+ 
+(1 row)
+
+ batch_login 
+-------------
+ 
+(1 row)
+
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:91: NOTICE:  BATCH PASS: same-client-shared-lineage
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:92: NOTICE:  BATCH PASS: distinct-client-distinct-lineage
+ batch_assert 
+--------------
+ 
+(1 row)
+
+                                                                                                                                         finance_credential_control                                                                                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "no_credential", "stopped": true, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "4", "worker_epoch": "1", "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:94: NOTICE:  BATCH PASS: fresh-seed-while-stopped-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+                                                                                                                                          finance_credential_control                                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "no_credential", "stopped": false, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "5", "worker_epoch": null, "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:96: NOTICE:  BATCH PASS: missing-vault-fails-closed
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+DO
+CREATE SCHEMA
+CREATE TABLE
+CREATE VIEW
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+CREATE FUNCTION
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:112: NOTICE:  BATCH PASS: unobserved-candidate-cannot-install
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:115: NOTICE:  BATCH PASS: identity-read-access-only-fixed-sandbox-host
+ batch_assert 
+--------------
+ 
+(1 row)
+
+                                              observe_finance_credential_identity                                               
+--------------------------------------------------------------------------------------------------------------------------------
+ {"status": "worker_observed_unverified", "observation_id": "7ccbcc7f-4391-43b9-a741-d58a0e9b25ea", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:118: NOTICE:  BATCH PASS: observed-seed-installed
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:123: NOTICE:  BATCH PASS: claim-no-credential
+ batch_assert 
+--------------
+ 
+(1 row)
+
+SAVEPOINT
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+                                                                                                                                                                finance_credential_control                                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "reauthorization_required", "stopped": true, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "6", "worker_epoch": null, "connection_id": "1019a54c-a805-45de-a81f-a8e58d755587", "binding_verified": false, "connection_epoch": "2", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:127: NOTICE:  BATCH PASS: reconnect-releases-never-started-claim
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:128: NOTICE:  BATCH PASS: reconnect-fresh-seed-needs-explicit-resume
+ batch_error 
+-------------
+ 
+(1 row)
+
+                                                                                                                                               finance_credential_control                                                                                                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "reauthorization_required", "stopped": false, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "7", "worker_epoch": null, "connection_id": null, "binding_verified": false, "connection_epoch": "2", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:130: NOTICE:  BATCH PASS: reconnect-unstarted-can-stage-fresh-candidate
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+SAVEPOINT
+RESET
+ALTER TABLE
+UPDATE 1
+ALTER TABLE
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:138: NOTICE:  BATCH PASS: expired-known-hard-cap-blocks-start
+ batch_error 
+-------------
+ 
+(1 row)
+
+ROLLBACK
+SAVEPOINT
+RESET
+ inject_observer_loss 
+----------------------
+ 
+(1 row)
+
+CREATE TRIGGER
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:145: NOTICE:  BATCH PASS: identity-observer-loss-at-final-start-receipt-rolls-back
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:147: NOTICE:  BATCH PASS: failed-final-start-delivery-does-not-mark-started
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:150: NOTICE:  BATCH PASS: start-first-delivery
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:151: NOTICE:  BATCH PASS: credential-no-store
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:154: NOTICE:  BATCH PASS: capture-wrong-completion-proof
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+CREATE FUNCTION
+CREATE TRIGGER
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:159: NOTICE:  BATCH PASS: capture-final-write-injected-abort
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:161: NOTICE:  BATCH PASS: capture-abort-rolls-back-vault-and-metadata
+ batch_assert 
+--------------
+ 
+(1 row)
+
+DROP TRIGGER
+SET
+SAVEPOINT
+                                           capture_finance_refresh_candidate                                            
+------------------------------------------------------------------------------------------------------------------------
+ {"status": "captured_quarantined", "candidate_id": "2384387a-02e5-4633-bf60-ff60694ba86b", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+                                              observe_finance_credential_identity                                               
+--------------------------------------------------------------------------------------------------------------------------------
+ {"status": "worker_observed_unverified", "observation_id": "92eeb088-04c6-4306-bf63-3e015a6043ad", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+                                                                install_finance_credential_candidate                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "installed_sandbox", "revision": "2", "candidate_id": "2384387a-02e5-4633-bf60-ff60694ba86b", "provider_verified": false, "credential_returned": false}
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:172: NOTICE:  BATCH PASS: later-reported-hard-cap-conservative-bound
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+SAVEPOINT
+                                           capture_finance_refresh_candidate                                            
+------------------------------------------------------------------------------------------------------------------------
+ {"status": "captured_quarantined", "candidate_id": "2384387a-02e5-4633-bf60-ff60694ba86b", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+                                              observe_finance_credential_identity                                               
+--------------------------------------------------------------------------------------------------------------------------------
+ {"status": "worker_observed_unverified", "observation_id": "56939705-1c2a-486a-ba26-e81f6a0366dd", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+                                                                install_finance_credential_candidate                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "installed_sandbox", "revision": "2", "candidate_id": "2384387a-02e5-4633-bf60-ff60694ba86b", "provider_verified": false, "credential_returned": false}
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:182: NOTICE:  BATCH PASS: earlier-reported-hard-cap-conservative-bound
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:185: NOTICE:  BATCH PASS: capture-identical-replay-retains
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:186: NOTICE:  BATCH PASS: capture-changed-response-conflict
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:189: NOTICE:  BATCH PASS: wrong-company-observation-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:190: NOTICE:  BATCH PASS: wrong-client-observation-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:191: NOTICE:  BATCH PASS: production-host-observation-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+                                              observe_finance_credential_identity                                               
+--------------------------------------------------------------------------------------------------------------------------------
+ {"status": "worker_observed_unverified", "observation_id": "d7b17a3d-3e64-47c0-a08f-37c10a2e05ce", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+SAVEPOINT
+RESET
+CREATE FUNCTION
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:198: NOTICE:  BATCH PASS: vault-outage-identity-read-is-storage-failure
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:200: NOTICE:  BATCH PASS: vault-outage-install-is-storage-failure
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:202: NOTICE:  BATCH PASS: vault-outage-does-not-write-invalid-provider-evidence
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+SAVEPOINT
+RESET
+ALTER TABLE
+UPDATE 1
+ALTER TABLE
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:210: NOTICE:  BATCH PASS: expired-known-hard-cap-blocks-install
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+SAVEPOINT
+RESET
+ inject_observer_loss 
+----------------------
+ 
+(1 row)
+
+CREATE TRIGGER
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:217: NOTICE:  BATCH PASS: identity-observer-loss-at-final-install-receipt-rolls-back
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:219: NOTICE:  BATCH PASS: failed-final-install-does-not-advance-revision
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:221: NOTICE:  BATCH PASS: normal-refresh-install-CAS-revision
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:222: NOTICE:  BATCH PASS: install-replay-no-double-revision
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:224: NOTICE:  BATCH PASS: omitted-hard-cap-preserves-prior-deadline
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:225: NOTICE:  BATCH PASS: single-active-revision-and-cleared-claim
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:226: NOTICE:  BATCH PASS: no-canary-in-lifecycle-receipts
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:227: NOTICE:  BATCH PASS: no-canary-in-candidate-metadata
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:229: NOTICE:  BATCH PASS: completed-start-replay-preserves-known-installed-outcome
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:232: NOTICE:  BATCH PASS: ready-credential-replacement-needs-explicit-reconnect
+ batch_error 
+-------------
+ 
+(1 row)
+
+SAVEPOINT
+                                                         stage_stop                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ {"stopped": true, "entity_id": "366c4092-f280-42ab-bbe2-2ecadf01fa11", "dispatch_enabled": false, "staging_generation": 6}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:236: NOTICE:  BATCH PASS: existing-staging-stop-fences-identity-read-by-context
+ batch_error 
+-------------
+ 
+(1 row)
+
+ROLLBACK
+SAVEPOINT
+                                                                                                                                     finance_credential_control                                                                                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "ready", "stopped": true, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "6", "worker_epoch": null, "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:241: NOTICE:  BATCH PASS: stop-fences-preexisting-identity-access-read
+ batch_error 
+-------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:242: NOTICE:  BATCH PASS: stop-fences-preexisting-identity-observation
+ batch_error 
+-------------
+ 
+(1 row)
+
+ROLLBACK
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:246: NOTICE:  BATCH PASS: worker-no-table-or-vault-grants
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:247: NOTICE:  BATCH PASS: worker-not-human-or-service-member
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:249: NOTICE:  BATCH PASS: worker-table-read-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:250: NOTICE:  BATCH PASS: worker-human-status-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+ set_config |         set_config         
+------------+----------------------------
+ POST       | /rpc/claim_finance_refresh
+(1 row)
+
+ haven_assert_authorized_request 
+---------------------------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:253: NOTICE:  BATCH PASS: worker-exact-post-guard
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ set_config 
+------------
+ GET
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:255: NOTICE:  BATCH PASS: worker-get-guard-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+ set_config |         set_config          
+------------+-----------------------------
+ POST       | /rpc/record_finance_payment
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:257: NOTICE:  BATCH PASS: worker-financial-dispatch-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+         set_config         
+----------------------------
+ /rpc/claim_finance_refresh
+(1 row)
+
+                                                                                                                                               set_config                                                                                                                                                
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"aud": "haven-finance-credentials", "exp": "not-a-number", "iat": 1788934621, "iss": "urn:haven:finance-worker:v1", "sub": "040e4844-b45d-472f-860d-098f68c22e86", "role": "haven_finance_worker", "hfa_org": "b14a15ba-72e7-49c7-ad51-1da43090bc2a", "purpose": "finance_refresh", "worker_epoch": 1}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:260: NOTICE:  BATCH PASS: malformed-exp-safe-denial
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+                                                                                                                                set_config                                                                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"aud": "haven-finance-credentials", "exp": 1788934861, "iat": 1788934621, "iss": "urn:haven:finance-worker:v1", "sub": "malformed", "role": "haven_finance_worker", "hfa_org": "b14a15ba-72e7-49c7-ad51-1da43090bc2a", "purpose": "finance_refresh", "worker_epoch": 1}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:263: NOTICE:  BATCH PASS: malformed-sub-safe-denial
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+                                                                                                                                                                           set_config                                                                                                                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"aud": "haven-finance-credentials", "exp": 1788934861, "iat": 1788934621, "iss": "urn:haven:finance-worker:v1", "sub": "040e4844-b45d-472f-860d-098f68c22e86", "role": "haven_finance_worker", "hfa_org": "b14a15ba-72e7-49c7-ad51-1da43090bc2a", "purpose": "finance_refresh", "worker_epoch": 1, "organization_id": "b14a15ba-72e7-49c7-ad51-1da43090bc2a"}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:266: NOTICE:  BATCH PASS: human-scope-claims-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+                                                                                                                                         set_config                                                                                                                                         
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"aud": "haven-finance-credentials", "exp": 1, "iat": 1788934621, "iss": "urn:haven:finance-worker:v1", "sub": "040e4844-b45d-472f-860d-098f68c22e86", "role": "haven_finance_worker", "hfa_org": "b14a15ba-72e7-49c7-ad51-1da43090bc2a", "purpose": "finance_refresh", "worker_epoch": 1}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:269: NOTICE:  BATCH PASS: expired-worker-jwt-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+                                                                                                                                             set_config                                                                                                                                              
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"aud": "haven-finance-credentials", "exp": 1788934861, "iat": 1788934621, "iss": "urn:haven:finance-worker:v1", "sub": "040e4844-b45d-472f-860d-098f68c22e86", "role": "haven_finance_worker", "hfa_org": "5f858f44-de6c-47ea-ba03-fee57144d6b5", "purpose": "finance_refresh", "worker_epoch": 1}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:272: NOTICE:  BATCH PASS: wrong-worker-org-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+SAVEPOINT
+                                                                                                                                                                finance_credential_control                                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "reauthorization_required", "stopped": true, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "6", "worker_epoch": null, "connection_id": "11d583b6-7266-4316-b125-82223ccf5cec", "binding_verified": false, "connection_epoch": "2", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+                                                                                                                                               finance_credential_control                                                                                                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "reauthorization_required", "stopped": false, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "7", "worker_epoch": null, "connection_id": null, "binding_verified": false, "connection_epoch": "2", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+UPDATE 1
+                                           seed_finance_credential_candidate                                            
+------------------------------------------------------------------------------------------------------------------------
+ {"status": "captured_quarantined", "candidate_id": "9ad3ddc6-0b53-4ffa-a6dd-757282fef9ae", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+                                              observe_finance_credential_identity                                               
+--------------------------------------------------------------------------------------------------------------------------------
+ {"status": "worker_observed_unverified", "observation_id": "510b22d0-6396-445d-b96e-33dc62b91e7b", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+                                                                install_finance_credential_candidate                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "installed_sandbox", "revision": "3", "candidate_id": "9ad3ddc6-0b53-4ffa-a6dd-757282fef9ae", "provider_verified": false, "credential_returned": false}
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:285: NOTICE:  BATCH PASS: explicit-reconnect-may-establish-new-grant-cap
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+SAVEPOINT
+RESET
+ALTER TABLE
+UPDATE 2
+ALTER TABLE
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:293: NOTICE:  BATCH PASS: expired-known-hard-cap-blocks-claim
+ batch_error 
+-------------
+ 
+(1 row)
+
+ROLLBACK
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+UPDATE 1
+INSERT 0 1
+RESET
+UPDATE 1
+SET
+UPDATE 1
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:303: NOTICE:  BATCH PASS: unstarted-expired-lease-reclaim
+ batch_assert 
+--------------
+ 
+(1 row)
+
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:305: NOTICE:  BATCH PASS: start-replay-never-returns-credential
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:306: NOTICE:  BATCH PASS: lost-start-blocks-automatic-refresh
+ batch_assert 
+--------------
+ 
+(1 row)
+
+SAVEPOINT
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+UPDATE 1
+INSERT 0 1
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+                                              observe_finance_credential_identity                                               
+--------------------------------------------------------------------------------------------------------------------------------
+ {"status": "worker_observed_unverified", "observation_id": "70a503bb-bf1d-4961-be7a-42d0412d81fd", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:315: NOTICE:  BATCH PASS: start-replay-unknown-capture-cannot-activate
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+RESET
+UPDATE 1
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+                                                                                                                                              finance_credential_control                                                                                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "refresh_outcome_unknown", "stopped": true, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "6", "worker_epoch": "2", "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:322: NOTICE:  BATCH PASS: revoked-worker-capture-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:323: NOTICE:  BATCH PASS: worker-trusted-preserve-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+                 set_config                  
+---------------------------------------------
+ {"exp": 1788934861, "role": "service_role"}
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:327: NOTICE:  BATCH PASS: trusted-preserve-needs-start-proof
+ batch_error 
+-------------
+ 
+(1 row)
+
+INSERT 0 1
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:329: NOTICE:  BATCH PASS: trusted-late-capture-preserves-without-secret-return
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:330: NOTICE:  BATCH PASS: service-preserver-cannot-install
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:332: NOTICE:  BATCH PASS: trusted-candidate-provenance-immutable
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+                                                                                                                                              finance_credential_control                                                                                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "refresh_outcome_unknown", "stopped": true, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "7", "worker_epoch": "3", "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:336: NOTICE:  BATCH PASS: trusted-late-candidate-cannot-release-access
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:338: NOTICE:  BATCH PASS: reactivated-worker-cannot-install-trusted-late
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+                                                                                                                                                                finance_credential_control                                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "reauthorization_required", "stopped": true, "lineage_id": "d401b855-3776-4fb3-9d03-f36f29e8d837", "fence_epoch": "8", "worker_epoch": null, "connection_id": "8261998e-5266-4456-9d29-80d520eb4696", "binding_verified": false, "connection_epoch": "2", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:342: NOTICE:  BATCH PASS: reconnect-preserves-distributed-unknown
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:343: NOTICE:  BATCH PASS: reconnect-updates-only-shared-client-lineage
+ batch_assert 
+--------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:344: NOTICE:  BATCH PASS: unresolved-attempt-cannot-be-hidden-by-reseed
+ batch_error 
+-------------
+ 
+(1 row)
+
+SAVEPOINT
+                                                                                                                                                          finance_credential_control                                                                                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "no_credential", "stopped": true, "lineage_id": "26d39963-6fdd-4c54-b846-ecd0d0dcee17", "fence_epoch": "2", "worker_epoch": null, "connection_id": "3e1fb4fe-61cb-4f37-9347-8ed103f3a6a7", "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:348: NOTICE:  BATCH PASS: production-seed-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:349: NOTICE:  BATCH PASS: production-resume-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+ROLLBACK
+                                                                                                                                         finance_credential_control                                                                                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "no_credential", "stopped": true, "lineage_id": "ba8316c8-88d9-4be0-a622-7dd5c2607f6e", "fence_epoch": "3", "worker_epoch": "4", "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+                                                                                                                                          finance_credential_control                                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "no_credential", "stopped": false, "lineage_id": "ba8316c8-88d9-4be0-a622-7dd5c2607f6e", "fence_epoch": "4", "worker_epoch": null, "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+UPDATE 1
+                                           seed_finance_credential_candidate                                            
+------------------------------------------------------------------------------------------------------------------------
+ {"status": "captured_quarantined", "candidate_id": "1a698e33-7054-4651-be04-d2768991104a", "provider_verified": false}
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:356: NOTICE:  BATCH PASS: invalid-json-sanitized-reconnect-state
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+UPDATE 1
+                                           seed_finance_credential_candidate                                            
+------------------------------------------------------------------------------------------------------------------------
+ {"status": "captured_quarantined", "candidate_id": "bfc744e1-bb73-47fc-8d39-0c789c1fece6", "provider_verified": false}
+(1 row)
+
+RESET
+ALTER TABLE
+UPDATE 1
+ALTER TABLE
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:365: NOTICE:  BATCH PASS: expired-access-never-blind-refresh
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:367: NOTICE:  BATCH PASS: human-status-no-raw-secret-or-body
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:369: NOTICE:  BATCH PASS: wrong-organization-human-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:371: NOTICE:  BATCH PASS: facility-admin-credential-control-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:373: NOTICE:  BATCH PASS: raw-token-metadata-field-denied
+ batch_error 
+-------------
+ 
+(1 row)
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:374: NOTICE:  BATCH PASS: dispatch-and-production-default-disabled
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/candidate-final-review.sql:376: NOTICE:  BATCH PASS: all-secrets-have-durable-candidates
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ passed_assertions 
+-------------------
+                83
+(1 row)
+
+ROLLBACK

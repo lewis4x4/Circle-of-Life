@@ -1,0 +1,96 @@
+{
+  "started_at": "2026-09-09T00:37:10.326Z",
+  "target": "http://127.0.0.1:4317",
+  "api": "http://127.0.0.1:59331",
+  "layer": "browser-real-local-Auth-via-owned-proxy",
+  "status": "FAIL",
+  "responses": [
+    {
+      "path": "/auth/v1/token",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/rpc/haven_current_shell_actor",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/exec_metric_snapshots",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/resident_observation_escalations",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/facilities",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/resident_watch_instances",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/resident_observation_integrity_flags",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/resident_observation_escalations",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/facilities",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/resident_observation_integrity_flags",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/resident_watch_instances",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/exec_metric_snapshots",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/resident_safety_scores",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/residents",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/exec_alerts",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/facilities",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/facilities",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/beds",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/resident_safety_scores",
+      "status": 200
+    },
+    {
+      "path": "/rest/v1/rpc/haven_current_shell_actor",
+      "status": 200
+    }
+  ],
+  "login": "PASS",
+  "error": "TimeoutError",
+  "alerts": [
+    "Unable to load this pageThe section did not finish loading. Try refreshing or return to the dashboard. Contact support if the issue persists.Reference: 1759234710RetryDashboard",
+    ""
+  ],
+  "completed_at": "2026-09-09T00:38:06.929Z"
+}

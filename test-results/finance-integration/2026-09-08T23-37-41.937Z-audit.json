@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "suite": "audit",
+  "status": "PASS",
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/lib/platform-audit",
+    "--reporter=json",
+    "--outputFile=/Users/brianlewis/Circle of Life/Haven Finance Integration/test-results/finance-integration/2026-09-08T23-37-41.937Z-audit-vitest.json"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "spawn_error": null,
+  "fixture": {
+    "kind": "inline-synthetic-test-source",
+    "sha256": {
+      "src/lib/platform-audit/export-safety.test.ts": "f768f62b6ca31eaf828b2c5080e769ce0a541398e5ecb91cd14bc37eafbae16f"
+    }
+  },
+  "evidence_layer": "unit",
+  "target_identity": "synthetic-local-no-network",
+  "commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "changed_file_sha256": {
+    ".github/workflows/finance-integration.yml": "e957fb2d4142aea11d41e1ba2a1ab5aaeea99b01385cb8e14e2b30eb4d640910",
+    "deno.lock": "3dce650106ccb56de18efe42f3925617521f7470faa8a3a6bd11180b30ff25b4",
+    "docs/finance-integration/ACCEPTANCE-MATRIX.json": "0d92c3a0ea805ef7e67702cb5e412a76dcc7027436d1b9470ecdd40df05d5ef6",
+    "docs/finance-integration/ARCHITECTURE.md": "d07697b1cb4e9727eb4555538164c370a2069920ac6af82021b8d51a8da56840",
+    "docs/finance-integration/AUDIT-COVERAGE.json": "ef97d46acce7c6bcda39eeba85514d6e235e18a42c6d1eab174cd9136226f31d",
+    "docs/finance-integration/BASELINE.md": "64037e45bbe25e4a6ac6b18aba35a387f0026f5874279d694d680f71f58ff570",
+    "docs/finance-integration/DECISIONS.md": "6d86219f516d55429d4b284ea2e3b43d37442790f9010f759a3a5e841b81a698",
+    "docs/finance-integration/FINAL-ACCEPTANCE.md": "8c971eed6d0ba29c2097f28efe14033ab77f959db99e723fac9f116e96097a21",
+    "docs/finance-integration/HOSTED-DEPLOYMENT.json": "80c7af38af3ffd9b43aff3b72da4035f12bd9a021b222d63a26d37658a87178c",
+    "docs/finance-integration/HOSTED-INVENTORY.json": "a334fa370071c6e5897e16f56ef5a1db4a4b43125936a44b482d25e32c720076",
+    "docs/finance-integration/HOSTED-MIGRATIONS.json": "89f40e59a0f7c8d72167e3e2f6797d2a965b5e9ac375cadfb2f30b0f423ad2ae",
+    "docs/finance-integration/IMPLEMENTATION-STATUS.md": "6c704bdc66f013b773ba2d1d7b22e0e629a72d0604c3b1d29a56dd3527685474",
+    "docs/finance-integration/INDEPENDENT-REVIEWS.json": "89f6a07e408125ad84b42a20f35fc95ff9bb1ec2fd25b838ed7fff0f45a7c7ff",
+    "docs/finance-integration/MIGRATION-CUTOVER.md": "8b684d946b8591b37360da8209cc4b1b048161a41e4a769d91621bbe447821b1",
+    "docs/finance-integration/OWNERSHIP-MATRIX.md": "0037f064930bc61d342c14d554dab58cfea360c7c8ee7cd6baafac87af61b999",
+    "docs/finance-integration/PROVIDER-CAPABILITIES.md": "5af1f76f1739d0a524303fe8ee1d661d77310973c0fe621ef895f17e43840d07",
+    "docs/finance-integration/RELEASE-MANIFEST.json": "a393f5fc8d93a9cd22fdf69360ba5cc7fd27bed242baa3531cb14347a0a86f25",
+    "docs/finance-integration/RUNBOOK.md": "55c78a30f37324af27b48c070fd8238053bd48f9cdfaaddc15d2c4cdf4787db5",
+    "docs/finance-integration/SECURITY-BASELINE.md": "078365dd0f26488684f975c8cd704438ac5bd2388928cc6d56904c69def84914",
+    "docs/finance-integration/SOURCE-INVENTORY.md": "880159ed2ed05e7da16036d7452477f5ac5a3c2732e8455fe9f0ff37ee9dac40",
+    "docs/finance-integration/TEST-PLAN.md": "490538c26435c5ee93131499a16592de613c491e99d171e7b1499569a0213175",
+    "docs/finance-integration/UNRELATED-PRESERVATION.json": "8033ef09885d75a5521130beacef8a8fe73c937a3b97cb4401047ccff46afc57",
+    "next.config.ts": "712bdc7007118377f148f3a1be1895e50e824cdb5d1603eea854e2ae7b6d5a0f",
+    "package-lock.json": "b241ab5b5277ab01028869b0542d5e379efc65cc7862f71926ecda059789da2b",
+    "package.json": "dd26b542360622538bbe7d4d24df5d37581651a01c2c0ba70746817173b01737",
+    "scripts/finance-integration/authenticated-smoke.mjs": "943373b50b37cd49b0cdd59176ad526ff5735605e91293eb9dd20691ca76f0ef",
+    "scripts/finance-integration/provider-smoke.mjs": "7e815f455affd77e44056161c0cc00abc37b92849b8c4660272fce3abe2b5f0d",
+    "scripts/finance-integration/qbo-identity.mjs": "48b786bc6143ab4e3a918f330612b0a21bc97729f89be84462afac4afa819f3d",
+    "scripts/finance-integration/qbo-identity.test.mjs": "1250540aa2e903272f2a09736e58fc94314bb37fbd0cfddbb319a754d29e4e1e",
+    "scripts/finance-integration/run-edge-tests.mjs": "ee51d194a264d5f85729d09b71af11e34358a09cc558442a63c16bcc8f826971",
+    "scripts/finance-integration/run-tests.mjs": "2ea139c5d453d873c1d4baac1f16d168f9d881ec13ff0b0d080bae7fed90a4bd",
+    "src/app/(admin)/admin/compliance/audit-export/page.test.tsx": "0c9f19709a7c12d8125157e1506d80f60ef510818ff617749f361e39e60a73c4",
+    "src/app/(admin)/admin/compliance/audit-export/page.tsx": "56d34143fc2c40885bca7ea068cce77a1740fee6358607bde54aa0f4149cabc0",
+    "src/app/(admin)/admin/compliance/rules/new/page.tsx": "366c2914a5dbc21edf627b1c5dc0e0dfed6e353f05bebf2e626cd95a975f27f7",
+    "src/app/(admin)/admin/operations/assets/page.tsx": "3a3521d72d69e9a51f5402dec68d86db3daf1f84675b04652863d072bae5178a",
+    "src/app/(admin)/billing/billing-invoice-ledger.tsx": "eef22dba2a08d1b6752b7f1e87635eae8fbcf2e4df1ced3b4b92d51e636663e5",
+    "src/app/(admin)/billing/invoices/[id]/page.test.tsx": "ab2e58a5b4836c13ade871baf7ddd4c777685e46516537a5be9a10a6fadaed17",
+    "src/app/(admin)/billing/invoices/[id]/page.tsx": "f201c94d59c20a57eafc2ccd3979cb0983a83a825434c205a447d3a93d381f87",
+    "src/app/(admin)/billing/invoices/opening-balance/page.test.tsx": "46a647d8862d6b7b6037d6d99c4d5535487c44f46c5ae8cb9f876a71cf1b02af",
+    "src/app/(admin)/billing/invoices/opening-balance/page.tsx": "fc98062470e6a02183ca84aa11daa6f2f8778bd1071e9c2054e77899f28d73fd",
+    "src/app/(admin)/billing/payments/new/page.test.tsx": "587ae3b364e5ad574c1e33c8de784de1d29448b2cb13e8d972036aaf4b606edd",
+    "src/app/(admin)/billing/payments/new/page.tsx": "9215726bf2d5c9690e32bad95722a4bdcc2996aa2957aa624e5b4fc7f856eda1",
+    "src/app/(admin)/finance/journal-entries/[id]/page.test.tsx": "fe7c0e9136d5581700fd1396e5de330bf4c254d859ac5e22642e77a8b61b84a2",
+    "src/app/(admin)/finance/journal-entries/[id]/page.tsx": "ef903fe92dafa7582d2557856eeb0f339bc4cdc6f8c91345b8bcb0ea31c74321",
+    "src/app/(admin)/finance/trust/page.tsx": "65296e239ceb41606e645987d5a80d5b603c55ea46ea36e703c9e1b2a2ed03fa",
+    "src/app/(admin)/vendors/directory/page.tsx": "4bd63b9296822a431cc6158828b0946f21671b4c8971c495620fbd32de7f8e86",
+    "src/app/(admin)/vendors/purchase-orders/new/page.tsx": "644d4c900c071fd40c52ab4b6dd594cf17b0056f2930ea5c65232e28751de2a5",
+    "src/components/finance/FinanceForecastPageClient.tsx": "b862582ddafe56009d77a4ae0bbfc38104e976e3db47f98c72af51ab919f605f",
+    "src/components/v2/W2ListClient.tsx": "e8556a13870329755f1f4bd821e26c8da461f17898741f9b1414f6c0017ae48b",
+    "src/lib/audit-export.ts": "b3dd55437f2254252d9fcd83d1e7cce9b3ea62e8b15c0d4b5e71f58bee67d078",
+    "src/lib/finance-integration/payload.test.ts": "af9ae34749fac49896e1bb621b34280beeaafc2e793ed7e1389b6f9cd56f27cb",
+    "src/lib/finance-integration/payload.ts": "edccccb89c7cdf5b6c43a06ddb3878c3dfb53166adc2179fbb6b9566b8377bb7",
+    "src/lib/finance/forecast.test.ts": "7ca6fe2ef92f9d279955808aed22262e61c7874041b8745cd4c826c9882acb8c",
+    "src/lib/finance/forecast.ts": "07f0dfac97d2f889a5277e31ad9c411868edd87d9ab63b56e8076cdccd5983f7",
+    "src/lib/finance/load-forecast-data.ts": "ba0dfb2a11677180cbeb03eb71f1535d35c75f59eac95e6f23b2d0564885bc0d",
+    "src/lib/finance/load-trust-data.ts": "8605be55626e67b582a9483cffdd9ecb0b0c9870d10d72d3f73b7c55a0691aad",
+    "src/lib/finance/post-to-gl.test.ts": "cd9ad682f3c670533ec3f85aa334bd727a2e61521f143aeb5dad453fee7dbda8",
+    "src/lib/finance/post-to-gl.ts": "4a2140b7d9146b9d55419459a92f22fee2ee7bd7d905578ae5f6c9548c442513",
+    "src/lib/finance/resident-money.ts": "d2ef5242933714be8c93207d25cdfb4af43e97305bcf0054ce51751b1a15d696",
+    "src/lib/platform-audit/export-safety.test.ts": "f768f62b6ca31eaf828b2c5080e769ce0a541398e5ecb91cd14bc37eafbae16f",
+    "src/types/database.ts": "1830962c945d88994e648fddee678956611060fb8e80c95e4f56068ea7333176",
+    "supabase/functions/export-audit-log/handler.test.ts": "d3e45d9688628a1e5e9b05aeb6cb7c2ab0e91eaba21321a0bb50cca77652b9f5",
+    "supabase/functions/export-audit-log/handler.ts": "4a522dd5fa457dcedf43fd112d5ac76291489a77f9fd9746be7ed418a5ce3bfc",
+    "supabase/functions/export-audit-log/index.ts": "ae6adae627a6f46038052aab5d0c076ef7e13ac4eb3c4324ce95959c7ae6e0cc",
+    "supabase/migrations/336_finance_source_commands.sql": "57d5164db0f0195d6926617feb393336534dc39d836b454240582ebd16c35c1f",
+    "supabase/migrations/337_audit_export_scope_and_snapshot.sql": "0a7448bbc48458f40d96440f66918e2cd83332a8b8e60bbc5fb636de4d4db41c",
+    "supabase/migrations/338_resident_money_snapshot.sql": "44abf0be26386d51d938e5736d472ed941b83af61a85de986385d5f9f582f069",
+    "supabase/tests/review_audit_export_authorization.sql": "8dc71af1461ea547251a9fe504d0732065451dfb101597e22f837c9a5a366ed4",
+    "supabase/tests/review_finance_source_integrity.sql": "5b6007fb70e3a34dcf6e98404cf0c991586dfd704c0238bcebff830392dee6b2",
+    "supabase/tests/review_resident_money_snapshot.sql": "6e75531162bc36dd7d136e6abc9d675ba873294a53bfe1900165cfa723f41d8f"
+  },
+  "tracked_diff_sha256": "4df9f0127636f25f6a07b2f6ccc24780814ca507965b24e071df36dd160aabe7",
+  "started_at": "2026-09-08T23:37:41.937Z",
+  "completed_at": "2026-09-08T23:37:42.895Z",
+  "duration_ms": 958,
+  "counts": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"=1+1\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 1.785708999999997,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"+123\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.40075000000001637,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"-123\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.10029199999996763,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"@SUM(A1)\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.16970800000001418,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"\\tformula\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.21383400000001984,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"\\rformula\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.09741700000000719,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety escapes quotes, commas and newlines without losing evidence bytes",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.11241699999999355,
+      "failures": []
+    }
+  ],
+  "limits": [
+    "Unit assertions only; does not satisfy provider, Auth/PostgREST, complete financial workflow or business acceptance."
+  ],
+  "raw_artifact": "test-results/finance-integration/2026-09-08T23-37-41.937Z-audit-vitest.json"
+}

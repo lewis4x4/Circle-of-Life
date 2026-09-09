@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "suite": "audit",
+  "status": "PASS",
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/lib/platform-audit",
+    "--reporter=json",
+    "--outputFile=/Users/brianlewis/Circle of Life/Haven Finance Integration/test-results/finance-integration/2026-09-08T23-02-30.863Z-audit-vitest.json"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "spawn_error": null,
+  "fixture": {
+    "kind": "inline-synthetic-test-source",
+    "sha256": {
+      "src/lib/platform-audit/export-safety.test.ts": "f768f62b6ca31eaf828b2c5080e769ce0a541398e5ecb91cd14bc37eafbae16f"
+    }
+  },
+  "evidence_layer": "unit",
+  "target_identity": "synthetic-local-no-network",
+  "commit": "3dec84bbdc216d1c58e7296568b007ebe6f101be",
+  "changed_file_sha256": {
+    ".github/workflows/finance-integration.yml": "4a0309511f2c77a3bdf19a864266d431d334d023f2c04a580a9dec0ee314ec04",
+    "docs/finance-integration/ACCEPTANCE-MATRIX.json": "2d50f66e48075c17f27494e41531fa12b72f13973fde7fe3e9711828ddc27506",
+    "docs/finance-integration/ARCHITECTURE.md": "d07697b1cb4e9727eb4555538164c370a2069920ac6af82021b8d51a8da56840",
+    "docs/finance-integration/AUDIT-COVERAGE.json": "63f56bc34ea05d9603a3a7529d7208a3c334e4050247d2349bfc64e8f4660682",
+    "docs/finance-integration/BASELINE.md": "14c4aade8fe75c941af10584b3d92001640bec2ae22376b7232fd9ec64294353",
+    "docs/finance-integration/DECISIONS.md": "be8650dd8ad110197b073a551c8cc4ffe58d5a14b88bc0cb221a76825c4d888a",
+    "docs/finance-integration/FINAL-ACCEPTANCE.md": "8c971eed6d0ba29c2097f28efe14033ab77f959db99e723fac9f116e96097a21",
+    "docs/finance-integration/HOSTED-INVENTORY.json": "a334fa370071c6e5897e16f56ef5a1db4a4b43125936a44b482d25e32c720076",
+    "docs/finance-integration/HOSTED-MIGRATIONS.json": "89f40e59a0f7c8d72167e3e2f6797d2a965b5e9ac375cadfb2f30b0f423ad2ae",
+    "docs/finance-integration/MIGRATION-CUTOVER.md": "8b684d946b8591b37360da8209cc4b1b048161a41e4a769d91621bbe447821b1",
+    "docs/finance-integration/OWNERSHIP-MATRIX.md": "df6ee39f6534d3864b0015e5bfcb6b42d703b37707265ec6a414f15582e5c4aa",
+    "docs/finance-integration/PROVIDER-CAPABILITIES.md": "987188bd8475bd6dc7691a6ca94824581e26420b4b2402960bf382b68ef0139d",
+    "docs/finance-integration/RELEASE-MANIFEST.json": "a393f5fc8d93a9cd22fdf69360ba5cc7fd27bed242baa3531cb14347a0a86f25",
+    "docs/finance-integration/RUNBOOK.md": "f5c186e3a2d1fa13af8c2440bfcf8a177ec997ff809a7b3c741ff3b01269b396",
+    "docs/finance-integration/SECURITY-BASELINE.md": "b2afda96187c7f47b39480775f20b4593597722256f9a48d098b6dd71832d577",
+    "docs/finance-integration/SOURCE-INVENTORY.md": "829e5b8ccbea0278a0cdd6e01d53debc8a9dadd0d7cf5c0b958eca9976a5929b",
+    "docs/finance-integration/TEST-PLAN.md": "ac692dd9776719a4852c8c12beaf843c6f46bac0b5223b61c547185648ba94f9",
+    "package-lock.json": "b241ab5b5277ab01028869b0542d5e379efc65cc7862f71926ecda059789da2b",
+    "package.json": "2ec18f0dc47ae677e0576e34a3895b84054b9986948de20b2c0375f8b8cbed45",
+    "scripts/finance-integration/run-tests.mjs": "c8427ee274c8c4102b8b8e08603948ba2e63e5d21f81a2ef7d662ffd934b3f82",
+    "src/app/(admin)/billing/payments/new/page.tsx": "2e59746b4df2d4f94a8028af3fb460338e3a977cf0eb263a9ea9cc660a8a26a1",
+    "src/app/(admin)/finance/journal-entries/[id]/page.tsx": "311d7a4f987c47d4fd7e8e6e040dacf029cddebb45ae213f7d23330c44a5e8af",
+    "src/lib/finance-integration/payload.test.ts": "af9ae34749fac49896e1bb621b34280beeaafc2e793ed7e1389b6f9cd56f27cb",
+    "src/lib/finance-integration/payload.ts": "edccccb89c7cdf5b6c43a06ddb3878c3dfb53166adc2179fbb6b9566b8377bb7",
+    "src/lib/finance/post-to-gl.ts": "4a2140b7d9146b9d55419459a92f22fee2ee7bd7d905578ae5f6c9548c442513",
+    "src/lib/platform-audit/export-safety.test.ts": "f768f62b6ca31eaf828b2c5080e769ce0a541398e5ecb91cd14bc37eafbae16f",
+    "src/types/database.ts": "68d4228a23f9e3eb13ccffd9e1b3d93a70ce102609b310d2ee996f37ade3bcf2",
+    "supabase/functions/export-audit-log/handler.ts": "c1930015794772f9401374c7ac55375cebce01f19f1774bbfd4dc07605e29eae",
+    "supabase/functions/export-audit-log/index.ts": "ae6adae627a6f46038052aab5d0c076ef7e13ac4eb3c4324ce95959c7ae6e0cc",
+    "supabase/migrations/334_finance_source_commands.sql": "bab9528f45e1828546f89deca07f2c2cba640fb34a8a8da220c5bfd70807a976",
+    "supabase/migrations/335_audit_export_scope_and_snapshot.sql": "0a7448bbc48458f40d96440f66918e2cd83332a8b8e60bbc5fb636de4d4db41c",
+    "supabase/tests/review_finance_source_integrity.sql": "237fe5ba23caba7d40bc8ef4e3ff9ed58e054ab04e0873cda50ea525a7f14f9b"
+  },
+  "tracked_diff_sha256": "cb175c76382dc4aa35a3d3bd4511fa5e03cdd0fc0b1bd49600a5ba0fd46a258f",
+  "started_at": "2026-09-08T23:02:30.863Z",
+  "completed_at": "2026-09-08T23:02:31.949Z",
+  "duration_ms": 1086,
+  "counts": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"=1+1\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 1.7289589999999748,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"+123\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.4869579999999587,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"-123\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.22079199999996035,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"@SUM(A1)\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2725419999999872,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"\\tformula\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.25679200000001856,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"\\rformula\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.10379100000000108,
+      "failures": []
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety escapes quotes, commas and newlines without losing evidence bytes",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.12916699999999537,
+      "failures": []
+    }
+  ],
+  "limits": [
+    "Unit assertions only; does not satisfy provider, Auth/PostgREST, complete financial workflow or business acceptance."
+  ],
+  "raw_artifact": "test-results/finance-integration/2026-09-08T23-02-30.863Z-audit-vitest.json"
+}

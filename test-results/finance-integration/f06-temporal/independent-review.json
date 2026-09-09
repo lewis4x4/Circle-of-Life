@@ -1,0 +1,77 @@
+{
+  "verdict": "APPROVE",
+  "scope": "Frozen temporal primary payer selection; read-only source review and independent synthetic producer/handler execution",
+  "created_at": "2026-09-09T12:25:45.300933+00:00",
+  "sources": {
+    "src/lib/billing/generate-monthly-invoices.ts": "df86fbcda1991e3f0a0d8df0d9b6de605a441ca1e9e9bb3230c9abc77e6d0b25",
+    "supabase/functions/_shared/billing/generate-monthly-invoices.ts": "09bc62372da4214cd68c003e1fe4315efc1f3ccca94695f4f61cae44844a10df",
+    "supabase/functions/generate-monthly-invoices/index.ts": "9877826411b54fa6d1504925b295f911e6181c8af656392fd374a5f486451616"
+  },
+  "dedicated_test_sha256": "1bb5102d71ffc8ce51d27daacd2cf86a2e2f8a0acd20093f8823751a05a6ada4",
+  "driver_sha256": "3aa6cbcd3c0462ad886d30e07698872d24bacfda0430fe61cabb50c8607d3768",
+  "independent_results": [
+    {
+      "timezone": "UTC",
+      "status": "PASS",
+      "counts": {
+        "total": 133,
+        "passed": 133,
+        "failed": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "timezone": "America/New_York",
+      "status": "PASS",
+      "counts": {
+        "total": 133,
+        "passed": 133,
+        "failed": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "regression": {
+    "status": "PASS",
+    "passed": 166,
+    "failed": 0
+  },
+  "findings": [],
+  "policy_and_schema": {
+    "payer_dates": "027_billing_and_collections_schema.sql effective_date DATE NOT NULL and nullable end_date; boolean is_primary; no uniqueness across time windows inferred",
+    "resident_window": "COL interim policy full private monthly rent until discharge; admission/discharge-day proration is inclusive; Medicaid begins on admission",
+    "historical_source_limit": "Current status, payer in-place edits and rate/agreement history are not an immutable approved history; source selection repair does not reconstruct them",
+    "responsibility_limit": "Old split-payer non-goal superseded by full handoff. Blocking ambiguous periods is a safe interim behavior, not fulfillment of split or authorization lifecycle requirements."
+  },
+  "oracles": {
+    "future_june_payer_may_cents": 372000,
+    "may16_admission_medicaid_cents": 51613,
+    "may15_discharge_medicaid_cents": 48387,
+    "leap_feb15_29_cents": 51724,
+    "spring_dst_march8_31_cents": 77419,
+    "fall_dst_nov1_cents": 3333,
+    "provider_daily_spring_three_days_cents": 3000,
+    "provider_daily_fall_two_days_cents": 2200,
+    "calculation": "Independent UTC civil calendar day counts and BigInt rational half-up cents; producer date/rounding helpers not used",
+    "row_order": "Every app/Edge scenario executed in original and reversed payer row order",
+    "blocked_transport": "13 invalid/ambiguous scenarios exercised actual registered Edge handler:422/okfalse/completefalse/created0/outcome_unknownfalse and zeroRPC"
+  },
+  "remaining_engineering": [
+    "HFA039 remains IN_PROGRESS: broader approved contractual charge, transfer/history/rates/concessions and browser criteria remain.",
+    "HFA040 remains IN_PROGRESS: true split payer/patient responsibility/secondary responsibility, expired and retroactive authorizations require coherent implementation and independent tests.",
+    "Mutable payer history, current resident-status filtering and historical rate/agreement eligibility remain source provenance gaps.",
+    "Existing Medicaid override rate-unit handling is unchanged and remains unresolved engineering; no unit semantics invented."
+  ],
+  "limits": [
+    "No actual database/Auth/hosted/provider requests; VM query transport is synthetic.",
+    "The actual app and Edge producer files and actual registered Edge handler were executed, not lexical presence checks.",
+    "No application/shared source, migrations, shared runners/registers or external systems modified."
+  ],
+  "diagnostics": {
+    "app": "zero diagnostics",
+    "edge_shared": "zero diagnostics reported by project tsc; not claimed as standalone Deno typecheck",
+    "new_tests": "zero diagnostics",
+    "command": "npx tsc --noEmit --pretty false --project tsconfig.json",
+    "manual_patterns": "Reviewed new selector for silent error swallowing, private identifiers in error text, and order-dependent selection; no findings"
+  }
+}

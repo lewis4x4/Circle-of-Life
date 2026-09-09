@@ -35,6 +35,7 @@ async function main() {
   const report = {
     timestamp: new Date().toISOString(),
     baseUrl,
+    authenticatedContextProvided: Boolean(process.env.HAVEN_UI_STORAGE_STATE),
     routes,
     viewports: viewports.map((v) => v.name),
     shots: [],
@@ -47,6 +48,7 @@ async function main() {
       for (const vp of viewports) {
         const context = await browser.newContext({
           viewport: { width: vp.width, height: vp.height },
+          storageState: process.env.HAVEN_UI_STORAGE_STATE || undefined,
         });
         const page = await context.newPage();
         try {

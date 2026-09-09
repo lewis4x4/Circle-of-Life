@@ -225,4 +225,14 @@ describe("AuditLogExportPage auth hydration", () => {
     expect(await screen.findByText(AUDIT_EXPORT_OPEN_DATE_RANGE_COPY)).toBeInTheDocument();
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
   });
+  it("requires a selected facility for restricted facility administrators", async () => {
+    authMock.organizationId = "00000000-0000-4000-8000-000000000001";
+    authMock.user = { id: "00000000-0000-4000-8000-000000000002" };
+    authMock.appRole = "facility_admin";
+    render(<AuditLogExportPage />);
+    expect(screen.getByText("Choose a facility in the header before exporting.")).toBeInTheDocument();
+    expect(await screen.findByText(AUDIT_EXPORT_NO_JOBS_COPY)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Download CSV" })).toBeDisabled();
+  });
+
 });
