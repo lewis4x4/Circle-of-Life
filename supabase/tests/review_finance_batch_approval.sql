@@ -1,0 +1,211 @@
+-- Rollback-only, synthetic native PostgreSQL replay. Never target production.
+BEGIN;
+CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
+ALTER TABLE auth.sessions ADD COLUMN IF NOT EXISTS not_after timestamptz;
+CREATE TEMP TABLE bf AS SELECT gen_random_uuid() org,gen_random_uuid() other_org,gen_random_uuid() entity,gen_random_uuid() other_entity,
+ gen_random_uuid() a,gen_random_uuid() b,gen_random_uuid() c,gen_random_uuid() resident_a,gen_random_uuid() resident_b,gen_random_uuid() resident_c;
+CREATE TEMP TABLE ba(label text PRIMARY KEY,id uuid NOT NULL DEFAULT gen_random_uuid(),session_id uuid NOT NULL DEFAULT gen_random_uuid());
+INSERT INTO ba(label) VALUES('owner'),('approver'),('preparer'),('outsider');
+CREATE TEMP TABLE bi(label text PRIMARY KEY,id uuid NOT NULL DEFAULT gen_random_uuid());
+INSERT INTO bi(label) VALUES('rules'),('rules2'),('rules3'),('control'),('connection'),('p1'),('p2'),('p3'),('p4'),('pb'),('pc'),('main'),('small'),('approval'),('successor'),('free'),('loss'),('loss_approval'),('loss_new'),('manual'),('reversal'),('gross_batch');
+CREATE TEMP TABLE bd(label text PRIMARY KEY,document jsonb);
+CREATE TEMP SEQUENCE batch_assertions;
+GRANT SELECT ON bf,ba TO authenticated;
+-- Native stubs do not provision existing Supabase application table grants.
+GRANT SELECT,INSERT,UPDATE ON public.gl_period_closes TO authenticated;
+GRANT ALL ON bi,bd TO authenticated;
+GRANT USAGE,SELECT ON SEQUENCE batch_assertions TO authenticated;
+CREATE FUNCTION pg_temp.batch_assert(ok boolean,label text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN
+ IF ok IS DISTINCT FROM true THEN RAISE EXCEPTION 'BATCH assertion failed: %',label; END IF;
+ PERFORM nextval('pg_temp.batch_assertions'); RAISE NOTICE 'BATCH PASS: %',label;
+END $$;
+CREATE FUNCTION pg_temp.batch_error(statement text,code text,label text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN
+ BEGIN EXECUTE statement; EXCEPTION WHEN OTHERS THEN
+  IF SQLSTATE<>code THEN RAISE EXCEPTION 'BATCH unexpected %: % (wanted %)',SQLSTATE,SQLERRM,code; END IF;
+  PERFORM pg_temp.batch_assert(true,label); RETURN;
+ END; RAISE EXCEPTION 'BATCH expected rejection: %',label;
+END $$;
+CREATE FUNCTION pg_temp.batch_login(label text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$ DECLARE a record; BEGIN
+ SELECT actor.id,actor.session_id,p.auth_claim_version INTO a FROM ba actor JOIN public.user_profiles p ON p.id=actor.id WHERE actor.label=batch_login.label;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',a.id,'session_id',a.session_id,'auth_claim_version',a.auth_claim_version)::text,true);
+END $$;
+CREATE FUNCTION pg_temp.batch_mapping() RETURNS jsonb LANGUAGE sql AS $$ SELECT jsonb_build_object('companyReference','123','accountReferences',jsonb_build_array('100','200'),'accountingBasis','accrual','effectiveFrom','2000-01-01','effectiveTo','2199-12-31') $$;
+CREATE FUNCTION pg_temp.batch_members(labels text[]) RETURNS jsonb LANGUAGE sql SECURITY DEFINER AS $$
+ SELECT jsonb_agg(jsonb_build_object('eventId',e.id,'lines',jsonb_build_array(
+  jsonb_build_object('accountReference','100','side','debit','amountCents',e.control_total_cents::text),
+  jsonb_build_object('accountReference','200','side','credit','amountCents',e.control_total_cents::text))) ORDER BY e.id)
+ FROM bi i JOIN public.finance_source_events e ON e.receipt_id=i.id WHERE i.label=ANY(labels)
+$$;
+INSERT INTO public.organizations(id,name) SELECT org,'Synthetic batch organization' FROM bf UNION ALL SELECT other_org,'Synthetic other batch organization' FROM bf;
+INSERT INTO public.entities(id,organization_id,name) SELECT entity,org,'Synthetic batch entity' FROM bf UNION ALL SELECT other_entity,other_org,'Synthetic other batch entity' FROM bf;
+INSERT INTO public.facilities(id,organization_id,entity_id,name,address_line_1,city,zip,total_licensed_beds)
+ SELECT a,org,entity,'Batch A','Synthetic','Synthetic','00000',1 FROM bf UNION ALL SELECT b,org,entity,'Batch B','Synthetic','Synthetic','00000',1 FROM bf UNION ALL SELECT c,other_org,other_entity,'Batch C','Synthetic','Synthetic','00000',1 FROM bf;
+INSERT INTO auth.users(id,email) SELECT id,id||'@batch.invalid' FROM ba;
+INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
+ SELECT ba.id,CASE WHEN label='outsider' THEN bf.other_org ELSE bf.org END,ba.id||'@batch.invalid','Synthetic batch actor',CASE WHEN label='preparer' THEN 'facility_admin' ELSE 'owner' END::public.app_role,true FROM ba CROSS JOIN bf;
+INSERT INTO auth.sessions(id,user_id) SELECT session_id,id FROM ba;
+INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT ba.id,bf.a,bf.org FROM ba CROSS JOIN bf WHERE label='preparer';
+INSERT INTO public.residents(id,organization_id,facility_id,first_name,last_name,date_of_birth,gender)
+ SELECT resident_a,org,a,'Synthetic','A',date '1940-01-01','female'::public.gender FROM bf UNION ALL SELECT resident_b,org,b,'Synthetic','B',date '1940-01-01','female'::public.gender FROM bf UNION ALL SELECT resident_c,other_org,c,'Synthetic','C',date '1940-01-01','female'::public.gender FROM bf;
+SELECT pg_temp.batch_login('owner');
+SET LOCAL ROLE authenticated;
+SELECT public.record_finance_payment(i.id,f.resident_a,NULL,current_date,CASE WHEN i.label IN('p1','p2') THEN 2000000000 ELSE 100 END,'check') FROM bi i CROSS JOIN bf f WHERE i.label IN('p1','p2','p3','p4');
+SELECT public.record_finance_payment(i.id,f.resident_b,NULL,current_date,100,'check') FROM bi i CROSS JOIN bf f WHERE i.label='pb';
+SELECT public.set_finance_staging_control((SELECT id FROM bi WHERE label='control'),entity,0,false,(SELECT id FROM bi WHERE label='connection'),repeat('a',64),NULL) FROM bf;
+SELECT public.register_finance_batch_rules((SELECT id FROM bi WHERE label='rules'),entity,pg_temp.batch_mapping(),repeat('b',64),0) FROM bf;
+SELECT pg_temp.batch_login('outsider');
+SELECT public.record_finance_payment(i.id,f.resident_c,NULL,current_date,100,'check') FROM bi i CROSS JOIN bf f WHERE i.label='pc';
+SELECT pg_temp.batch_login('owner');
+-- ASSERTIONS_BEGIN (private concurrency harness reuses only the synthetic setup above)
+SELECT pg_temp.batch_assert((SELECT bool_and(provolatile='s') FROM pg_proc WHERE oid IN('public.finance_batch_snapshot(uuid)'::regprocedure,'haven.finance_batch_snapshot(uuid)'::regprocedure)),'coherent-stable-snapshot');
+SELECT pg_temp.batch_error($q$SELECT public.register_finance_batch_rules(gen_random_uuid(),entity,pg_temp.batch_mapping()||'{"memo":null}',repeat('b',64),1) FROM bf$q$,'P0001','rules-unknown-null-field-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.register_finance_batch_rules(gen_random_uuid(),entity,pg_temp.batch_mapping()||'{"accountingBasis":null}',repeat('b',64),1) FROM bf$q$,'P0001','null-basis-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.register_finance_batch_rules(gen_random_uuid(),entity,pg_temp.batch_mapping()||'{"effectiveFrom":"2026-02-30"}',repeat('b',64),1) FROM bf$q$,'22008','invalid-calendar-date-rejected');
+SELECT pg_temp.batch_login('preparer');
+SELECT pg_temp.batch_error($q$SELECT public.register_finance_batch_rules(gen_random_uuid(),entity,pg_temp.batch_mapping(),repeat('b',64),1) FROM bf$q$,'42501','restricted-preparer-cannot-register-entity-rules');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,b,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['pb'])) FROM bf$q$,'42501','preparer-wrong-facility-denied');
+SELECT pg_temp.batch_login('owner');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),jsonb_set(pg_temp.batch_members(ARRAY['p1']),'{0,lines,1,side}','null')) FROM bf$q$,'P0001','null-line-side-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),jsonb_set(pg_temp.batch_members(ARRAY['p1']),'{0,lines,0,memo}','null',true)) FROM bf$q$,'P0001','nested-unknown-null-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),jsonb_set(pg_temp.batch_members(ARRAY['p1']),'{0,lines,0,amountCents}','2000000000')) FROM bf$q$,'P0001','numeric-json-amount-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),jsonb_set(pg_temp.batch_members(ARRAY['p1']),'{0,lines,0,amountCents}','"02000000000"')) FROM bf$q$,'P0001','noncanonical-cents-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),jsonb_set(pg_temp.batch_members(ARRAY['p1']),'{0,lines,0,amountCents}','"9223372036854775808"')) FROM bf$q$,'P0001','signed64-overflow-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch('00000000-0000-0000-0000-000000000001',entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p1'])) FROM bf$q$,'P0001','non-v4-batch-reference-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date+1,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p1'])) FROM bf$q$,'P0001','economic-date-cannot-silently-shift');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p1'])||pg_temp.batch_members(ARRAY['p1'])) FROM bf$q$,'P0001','duplicate-event-rejected');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p1','pc'])) FROM bf$q$,'42501','cross-organization-member-denied');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p1','pb'])) FROM bf$q$,'42501','batch-scope-excludes-other-facility');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),jsonb_set(jsonb_set(pg_temp.batch_members(ARRAY['p1']),'{0,lines,0,amountCents}','"1"'),'{0,lines,1,amountCents}','"1"')) FROM bf$q$,'P0001','balanced-wrong-source-gross-rejected');
+INSERT INTO bd SELECT 'prepared',public.prepare_finance_batch((SELECT id FROM bi WHERE label='main'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p1','p2'])) FROM bf;
+INSERT INTO bd SELECT 'snapshot',public.finance_batch_snapshot(id) FROM bi WHERE label='main';
+SELECT pg_temp.batch_assert(document#>>'{batch,payload,lines,0,amountCents}'='4000000000' AND document#>>'{batch,source_controls,0,grossCents}'='4000000000' AND jsonb_array_length(document->'members')=2,'four-billion-cents-and-complete-member-control') FROM bd WHERE label='snapshot';
+SELECT pg_temp.batch_assert(document#>>'{batch,accounting_classification}'='unverified' AND document#>>'{batch,business_release_eligible}'='false' AND document#>>'{batch,dispatch_enabled}'='false','review-does-not-approve-accounting-or-dispatch') FROM bd WHERE label='snapshot';
+SELECT pg_temp.batch_assert(document#>>'{batch,payload,accountingDate}'=to_char(current_date,'YYYY-MM-DD') AND document#>>'{members,0,economicDate}'=to_char(current_date,'YYYY-MM-DD'),'separate-canonical-source-and-accounting-date') FROM bd WHERE label='snapshot';
+SET LOCAL DateStyle='German, DMY';
+SELECT pg_temp.batch_assert((public.prepare_finance_batch((SELECT id FROM bi WHERE label='main'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p2','p1']))->>'binding_sha256')=(SELECT document->>'binding_sha256' FROM bd WHERE label='prepared'),'timezone-datestyle-order-independent-retry') FROM bf;
+SET LOCAL DateStyle='ISO, MDY';
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='main'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),jsonb_set(jsonb_set(pg_temp.batch_members(ARRAY['p1','p2']),'{0,lines,0,accountReference}','"200"'),'{0,lines,1,accountReference}','"100"')) FROM bf$q$,'23505','changed-balanced-content-replay-conflicts');
+SELECT pg_temp.batch_error($q$SELECT public.decide_finance_batch(gen_random_uuid(),(SELECT id FROM bi WHERE label='main'),'approve',(SELECT document->>'binding_sha256' FROM bd WHERE label='prepared'))$q$,'42501','same-user-cannot-approve-own-batch');
+SELECT pg_temp.batch_error($q$SELECT * FROM public.finance_batches$q$,'42501','raw-stale-status-table-read-denied');
+SELECT pg_temp.batch_login('approver');
+SELECT pg_temp.batch_error($q$SELECT public.decide_finance_batch(gen_random_uuid(),(SELECT id FROM bi WHERE label='main'),'approve',repeat('0',64))$q$,'P0001','approval-wrong-binding-rejected');
+INSERT INTO bd SELECT 'approved',public.decide_finance_batch((SELECT id FROM bi WHERE label='approval'),(SELECT id FROM bi WHERE label='main'),'approve',(SELECT document->>'binding_sha256' FROM bd WHERE label='prepared'));
+SELECT pg_temp.batch_assert(document->>'status'='locally_approved_dispatch_disabled' AND document->>'business_release_eligible'='false','independent-local-review-remains-business-blocked') FROM bd WHERE label='approved';
+SELECT pg_temp.batch_assert(public.decide_finance_batch((SELECT id FROM bi WHERE label='approval'),(SELECT id FROM bi WHERE label='main'),'approve',(SELECT document->>'binding_sha256' FROM bd WHERE label='prepared'))->>'status'='locally_approved_dispatch_disabled','approval-retry-idempotent');
+SELECT pg_temp.batch_error($q$SELECT public.decide_finance_batch((SELECT id FROM bi WHERE label='approval'),(SELECT id FROM bi WHERE label='main'),'reject',(SELECT document->>'binding_sha256' FROM bd WHERE label='prepared'))$q$,'23505','decision-content-conflict');
+SELECT pg_temp.batch_login('outsider');
+SELECT pg_temp.batch_error($q$SELECT public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))$q$,'42501','outside-organization-snapshot-denied');
+SELECT pg_temp.batch_login('owner');
+SAVEPOINT authority_test;
+RESET ROLE;
+UPDATE auth.sessions SET not_after=clock_timestamp()-interval '1 second' WHERE id=(SELECT session_id FROM ba WHERE label='approver');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.batch_assert(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))#>>'{batch,status}'='invalidated','expired-approver-session-invalidates-effective-status');
+RESET ROLE;
+SELECT pg_temp.batch_assert((SELECT status FROM public.finance_batches WHERE id=(SELECT id FROM bi WHERE label='main'))='locally_approved_dispatch_disabled','snapshot-read-does-not-mutate-history');
+ROLLBACK TO authority_test;
+RESET ROLE;
+UPDATE auth.sessions SET not_after=clock_timestamp()-interval '1 second' WHERE id=(SELECT session_id FROM ba WHERE label='owner');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.batch_error($q$SELECT public.set_finance_staging_control(gen_random_uuid(),entity,1,true,NULL,NULL,NULL) FROM bf$q$,'42501','expired-current-session-cannot-change-staging-control');
+ROLLBACK TO authority_test;
+RESET ROLE;
+UPDATE public.user_profiles SET is_active=false WHERE id=(SELECT id FROM ba WHERE label='approver');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.batch_assert(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))#>>'{batch,status}'='invalidated','inactive-approver-invalidates-effective-status');
+ROLLBACK TO authority_test;
+RESET ROLE;
+UPDATE public.facilities SET entity_id=(SELECT other_entity FROM bf) WHERE id=(SELECT a FROM bf);
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.batch_error($q$SELECT public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))$q$,'42501','moved-facility-denies-scoped-read');
+ROLLBACK TO authority_test;
+RELEASE authority_test;
+SELECT pg_temp.batch_login('preparer');
+SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='small'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p3'])) FROM bf;
+SELECT pg_temp.batch_login('owner');
+SELECT public.register_finance_batch_rules((SELECT id FROM bi WHERE label='rules2'),entity,pg_temp.batch_mapping()||'{"companyReference":"456"}',repeat('c',64),1) FROM bf;
+SELECT pg_temp.batch_assert(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))#>>'{batch,status}'='invalidated','new-rules-invalidate-old-local-approval');
+SELECT pg_temp.batch_assert(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))#>>'{batch,payload_sha256}'=(SELECT document#>>'{batch,payload_sha256}' FROM bd WHERE label='snapshot'),'rule-change-retains-original-payload');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,a,current_date,(SELECT id FROM bi WHERE label='rules2'),pg_temp.batch_members(ARRAY['p1'])) FROM bf$q$,'23505','invalidated-batch-still-reserves-members');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='successor'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules2'),pg_temp.batch_members(ARRAY['p1','p3']),(SELECT id FROM bi WHERE label='main')) FROM bf$q$,'23505','partial-overlap-supersession-cannot-steal-other-claim');
+RESET ROLE;
+SELECT pg_temp.batch_assert((SELECT count(*) FROM public.finance_batch_event_claims WHERE batch_id=(SELECT id FROM bi WHERE label='main'))=2 AND (SELECT status FROM public.finance_batches WHERE id=(SELECT id FROM bi WHERE label='main'))='invalidated','failed-supersession-rolls-back-old-state-and-claims');
+SET LOCAL ROLE authenticated;
+SELECT public.decide_finance_batch(gen_random_uuid(),(SELECT id FROM bi WHERE label='small'),'reject',(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='small'))#>>'{batch,binding_sha256}'));
+SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='successor'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules2'),pg_temp.batch_members(ARRAY['p1','p3']),(SELECT id FROM bi WHERE label='main')) FROM bf;
+SELECT pg_temp.batch_assert(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))#>>'{batch,status}'='superseded','explicit-supersession-retains-old-status-history');
+RESET ROLE;
+SELECT pg_temp.batch_assert((SELECT count(*) FROM public.finance_batch_members WHERE batch_id=(SELECT id FROM bi WHERE label='main'))=2 AND (SELECT count(*) FROM public.finance_batch_decisions WHERE batch_id=(SELECT id FROM bi WHERE label='main') AND action='approve')=1 AND NOT EXISTS(SELECT 1 FROM public.finance_batch_event_claims WHERE batch_id=(SELECT id FROM bi WHERE label='main')),'old-members-approval-retained-claims-released-only-unsent');
+SELECT pg_temp.batch_error($q$UPDATE public.finance_batches SET business_release_eligible=true WHERE id=(SELECT id FROM bi WHERE label='successor')$q$,'42501','opaque-policy-cannot-clear-business-blocker');
+SELECT pg_temp.batch_error($q$DELETE FROM public.finance_batch_members WHERE batch_id=(SELECT id FROM bi WHERE label='main')$q$,'42501','historical-members-immutable');
+SET LOCAL ROLE authenticated;
+SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='free'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules2'),pg_temp.batch_members(ARRAY['p2'])) FROM bf;
+SELECT pg_temp.batch_login('preparer');
+SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='loss'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules2'),pg_temp.batch_members(ARRAY['p4'])) FROM bf;
+SAVEPOINT revoke_preparer;
+RESET ROLE;
+UPDATE public.user_facility_access SET revoked_at=clock_timestamp() WHERE user_id=(SELECT id FROM ba WHERE label='preparer');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.batch_login('approver');
+SELECT pg_temp.batch_assert(public.decide_finance_batch(gen_random_uuid(),(SELECT id FROM bi WHERE label='loss'),'approve',public.finance_batch_snapshot((SELECT id FROM bi WHERE label='loss'))#>>'{batch,binding_sha256}')->>'status'='invalidated','revoked-preparer-cannot-gain-approval');
+ROLLBACK TO revoke_preparer;
+RELEASE revoke_preparer;
+SELECT pg_temp.batch_login('owner');
+SAVEPOINT actor_loss_test;
+SELECT public.decide_finance_batch(gen_random_uuid(),(SELECT id FROM bi WHERE label='loss'),'reject',public.finance_batch_snapshot((SELECT id FROM bi WHERE label='loss'))#>>'{batch,binding_sha256}');
+RESET ROLE;
+CREATE FUNCTION pg_temp.batch_lose_actor_after_claim() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+ IF NEW.batch_id=(SELECT id FROM bi WHERE label='loss_new') THEN DELETE FROM auth.sessions WHERE id=(auth.jwt()->>'session_id')::uuid; END IF; RETURN NEW;
+END $$;
+CREATE TRIGGER batch_test_actor_loss AFTER INSERT ON public.finance_batch_event_claims FOR EACH ROW EXECUTE FUNCTION pg_temp.batch_lose_actor_after_claim();
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='loss_new'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules2'),pg_temp.batch_members(ARRAY['p4'])) FROM bf$q$,'42501','silent-actor-loss-after-claims-aborts-prepare');
+RESET ROLE;
+SELECT pg_temp.batch_assert(NOT EXISTS(SELECT 1 FROM public.finance_batches WHERE id=(SELECT id FROM bi WHERE label='loss_new')) AND EXISTS(SELECT 1 FROM auth.sessions WHERE id=(SELECT session_id FROM ba WHERE label='owner')),'actor-loss-rolls-back-batch-claims-and-authority-change');
+ROLLBACK TO actor_loss_test;
+RELEASE actor_loss_test;
+SAVEPOINT late_approval_test;
+RESET ROLE;
+CREATE FUNCTION pg_temp.batch_expire_preparer_after_decision() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+ IF NEW.action='approve' AND NEW.batch_id=(SELECT id FROM bi WHERE label='loss') THEN UPDATE auth.sessions SET not_after=clock_timestamp()-interval '1 second' WHERE id=(SELECT session_id FROM ba WHERE label='preparer'); END IF; RETURN NEW;
+END $$;
+CREATE TRIGGER batch_test_late_preparer AFTER INSERT ON public.finance_batch_decisions FOR EACH ROW EXECUTE FUNCTION pg_temp.batch_expire_preparer_after_decision();
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.batch_login('approver');
+SELECT pg_temp.batch_error($q$SELECT public.decide_finance_batch((SELECT id FROM bi WHERE label='loss_approval'),(SELECT id FROM bi WHERE label='loss'),'approve',public.finance_batch_snapshot((SELECT id FROM bi WHERE label='loss'))#>>'{batch,binding_sha256}')$q$,'42501','preparer-expiry-after-decision-aborts-approval');
+RESET ROLE;
+SELECT pg_temp.batch_assert(NOT EXISTS(SELECT 1 FROM public.finance_batch_decisions WHERE id=(SELECT id FROM bi WHERE label='loss_approval')) AND (SELECT status FROM public.finance_batches WHERE id=(SELECT id FROM bi WHERE label='loss'))='prepared','late-approval-failure-retains-no-successful-decision');
+ROLLBACK TO late_approval_test;
+RELEASE late_approval_test;
+SELECT pg_temp.batch_login('owner');
+SAVEPOINT period_test;
+INSERT INTO public.gl_period_closes(organization_id,entity_id,period_year,period_month,status) SELECT org,entity,extract(year FROM current_date)::integer,extract(month FROM current_date)::integer,'closed' FROM bf;
+SELECT pg_temp.batch_assert(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='free'))#>>'{batch,status}'='invalidated','period-close-invalidates-local-reviews');
+SELECT pg_temp.batch_error($q$SELECT public.prepare_finance_batch(gen_random_uuid(),entity,b,current_date,(SELECT id FROM bi WHERE label='rules2'),pg_temp.batch_members(ARRAY['pb'])) FROM bf$q$,'P0001','closed-accounting-period-blocks-prepare');
+ROLLBACK TO period_test;
+RELEASE period_test;
+SAVEPOINT gross_journal_test;
+RESET ROLE;
+INSERT INTO public.gl_accounts(id,organization_id,entity_id,code,name,account_type) SELECT (SELECT id FROM bi WHERE label='manual'),org,entity,'batch-debit','Synthetic debit','asset'::public.gl_account_type FROM bf UNION ALL SELECT (SELECT id FROM bi WHERE label='reversal'),org,entity,'batch-credit','Synthetic credit','asset'::public.gl_account_type FROM bf;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; stamp timestamptz; BEGIN
+ SELECT * INTO f FROM bf;
+ PERFORM public.save_journal_draft((SELECT id FROM bi WHERE label='manual'),f.entity,f.a,current_date,'Synthetic',jsonb_build_array(jsonb_build_object('line_number',1,'gl_account_id',(SELECT id FROM bi WHERE label='manual'),'debit_cents',100,'credit_cents',0),jsonb_build_object('line_number',2,'gl_account_id',(SELECT id FROM bi WHERE label='reversal'),'debit_cents',0,'credit_cents',100)));
+ -- Header is protected; use a test-owner helper only for its version stamp.
+END $$;
+RESET ROLE;
+INSERT INTO bd SELECT 'manual_stamp',to_jsonb(updated_at) FROM public.journal_entries WHERE id=(SELECT id FROM bi WHERE label='manual');
+SET LOCAL ROLE authenticated;
+SELECT public.post_finance_journal((SELECT id FROM bi WHERE label='manual'),(SELECT document #>> '{}' FROM bd WHERE label='manual_stamp')::timestamptz);
+SELECT public.reverse_finance_journal((SELECT id FROM bi WHERE label='reversal'),(SELECT id FROM bi WHERE label='manual'),current_date,'Synthetic correction');
+SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='gross_batch'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules2'),pg_temp.batch_members(ARRAY['manual','reversal'])) FROM bf;
+SELECT pg_temp.batch_assert(jsonb_array_length(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='gross_batch'))#>'{batch,source_controls}')=2 AND public.finance_batch_snapshot((SELECT id FROM bi WHERE label='gross_batch'))#>>'{batch,payload,lines,0,amountCents}'='200','original-and-reversal-gross-controls-stay-distinct-not-net');
+ROLLBACK TO gross_journal_test;
+RELEASE gross_journal_test;
+SELECT pg_temp.batch_login('owner');
+SELECT public.set_finance_staging_control(gen_random_uuid(),entity,1,false,gen_random_uuid(),repeat('d',64),NULL) FROM bf;
+SELECT pg_temp.batch_assert(public.finance_batch_snapshot((SELECT id FROM bi WHERE label='successor'))#>>'{batch,status}'='invalidated','connection-generation-change-invalidates-current-batch');
+SELECT pg_temp.batch_assert(public.decide_finance_batch(gen_random_uuid(),(SELECT id FROM bi WHERE label='free'),'approve',public.finance_batch_snapshot((SELECT id FROM bi WHERE label='free'))#>>'{batch,binding_sha256}')->>'status'='invalidated','stale-binding-never-becomes-approved');
+RESET ROLE;
+SELECT jsonb_build_object('suite','F03-batch-approval','status','PASS','assertions',(SELECT last_value FROM batch_assertions),'skips',0,'layer','native-PostgreSQL-with-Auth-stubs');
+ROLLBACK;

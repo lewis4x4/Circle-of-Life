@@ -1,0 +1,252 @@
+{
+  "status": "PASS",
+  "layer": "native PostgreSQL 17 with Auth stubs; synthetic fixtures",
+  "source_sha256": {
+    "supabase/migrations/340_finance_batch_approval.sql": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+    "supabase/tests/review_finance_batch_approval.sql": "2a3aff69d7a79c84e279a095a385b1c093fbd91161e27e49754533c2a3ffc974",
+    "docs/finance-integration/F03-BATCH-APPROVAL-CONTRACT.md": "df92d3e1dad9d67534e4df5fd44720af69ad98c52fb5461c37e5148fc476d02d"
+  },
+  "exit_code": 0,
+  "passed": 53,
+  "failed": 0,
+  "skipped": 0,
+  "cases": [
+    {
+      "name": "coherent-stable-snapshot",
+      "status": "PASS"
+    },
+    {
+      "name": "rules-unknown-null-field-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "null-basis-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-calendar-date-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "restricted-preparer-cannot-register-entity-rules",
+      "status": "PASS"
+    },
+    {
+      "name": "preparer-wrong-facility-denied",
+      "status": "PASS"
+    },
+    {
+      "name": "null-line-side-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "nested-unknown-null-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "numeric-json-amount-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "noncanonical-cents-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "signed64-overflow-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "non-v4-batch-reference-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "economic-date-cannot-silently-shift",
+      "status": "PASS"
+    },
+    {
+      "name": "duplicate-event-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "cross-organization-member-denied",
+      "status": "PASS"
+    },
+    {
+      "name": "batch-scope-excludes-other-facility",
+      "status": "PASS"
+    },
+    {
+      "name": "balanced-wrong-source-gross-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "four-billion-cents-and-complete-member-control",
+      "status": "PASS"
+    },
+    {
+      "name": "review-does-not-approve-accounting-or-dispatch",
+      "status": "PASS"
+    },
+    {
+      "name": "separate-canonical-source-and-accounting-date",
+      "status": "PASS"
+    },
+    {
+      "name": "timezone-datestyle-order-independent-retry",
+      "status": "PASS"
+    },
+    {
+      "name": "changed-balanced-content-replay-conflicts",
+      "status": "PASS"
+    },
+    {
+      "name": "same-user-cannot-approve-own-batch",
+      "status": "PASS"
+    },
+    {
+      "name": "raw-stale-status-table-read-denied",
+      "status": "PASS"
+    },
+    {
+      "name": "approval-wrong-binding-rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-local-review-remains-business-blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "approval-retry-idempotent",
+      "status": "PASS"
+    },
+    {
+      "name": "decision-content-conflict",
+      "status": "PASS"
+    },
+    {
+      "name": "outside-organization-snapshot-denied",
+      "status": "PASS"
+    },
+    {
+      "name": "expired-approver-session-invalidates-effective-status",
+      "status": "PASS"
+    },
+    {
+      "name": "snapshot-read-does-not-mutate-history",
+      "status": "PASS"
+    },
+    {
+      "name": "expired-current-session-cannot-change-staging-control",
+      "status": "PASS"
+    },
+    {
+      "name": "inactive-approver-invalidates-effective-status",
+      "status": "PASS"
+    },
+    {
+      "name": "moved-facility-denies-scoped-read",
+      "status": "PASS"
+    },
+    {
+      "name": "new-rules-invalidate-old-local-approval",
+      "status": "PASS"
+    },
+    {
+      "name": "rule-change-retains-original-payload",
+      "status": "PASS"
+    },
+    {
+      "name": "invalidated-batch-still-reserves-members",
+      "status": "PASS"
+    },
+    {
+      "name": "partial-overlap-supersession-cannot-steal-other-claim",
+      "status": "PASS"
+    },
+    {
+      "name": "failed-supersession-rolls-back-old-state-and-claims",
+      "status": "PASS"
+    },
+    {
+      "name": "explicit-supersession-retains-old-status-history",
+      "status": "PASS"
+    },
+    {
+      "name": "old-members-approval-retained-claims-released-only-unsent",
+      "status": "PASS"
+    },
+    {
+      "name": "opaque-policy-cannot-clear-business-blocker",
+      "status": "PASS"
+    },
+    {
+      "name": "historical-members-immutable",
+      "status": "PASS"
+    },
+    {
+      "name": "revoked-preparer-cannot-gain-approval",
+      "status": "PASS"
+    },
+    {
+      "name": "silent-actor-loss-after-claims-aborts-prepare",
+      "status": "PASS"
+    },
+    {
+      "name": "actor-loss-rolls-back-batch-claims-and-authority-change",
+      "status": "PASS"
+    },
+    {
+      "name": "preparer-expiry-after-decision-aborts-approval",
+      "status": "PASS"
+    },
+    {
+      "name": "late-approval-failure-retains-no-successful-decision",
+      "status": "PASS"
+    },
+    {
+      "name": "period-close-invalidates-local-reviews",
+      "status": "PASS"
+    },
+    {
+      "name": "closed-accounting-period-blocks-prepare",
+      "status": "PASS"
+    },
+    {
+      "name": "original-and-reversal-gross-controls-stay-distinct-not-net",
+      "status": "PASS"
+    },
+    {
+      "name": "connection-generation-change-invalidates-current-batch",
+      "status": "PASS"
+    },
+    {
+      "name": "stale-binding-never-becomes-approved",
+      "status": "PASS"
+    }
+  ],
+  "raw_log_private_path": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/f03-batch-340/fresh-final-replay.log",
+  "raw_log_sha256": "9a5ac0ea1bd54853dde11055d729d650c21bb8b1cf3c8aa05d6436b59d5c4911",
+  "replay_source_manifest_sha256": "cfa75ea577333f19a3ee2d9016f3bebeac4d538b8ff4ce76b31d9bc4e758929e",
+  "limitations": [
+    "Auth helpers are native test adaptations, not GoTrue/PostgREST proof.",
+    "No hosted, provider, UI, accounting-classification, privacy or business acceptance.",
+    "No dispatch or recovery acknowledgment; full F03/F05 remain open."
+  ],
+  "reproduction_command": [
+    "psql",
+    "-X",
+    "-h",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335",
+    "-p",
+    "55447",
+    "-U",
+    "postgres",
+    "-d",
+    "hfa_batch_340_final_20260909",
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-f",
+    "supabase/tests/review_finance_batch_approval.sql"
+  ],
+  "command_note": "Standalone invocation for the same rollback-only probe; successful execution was part of the fresh replay log, whose individual process argv was not retained."
+}

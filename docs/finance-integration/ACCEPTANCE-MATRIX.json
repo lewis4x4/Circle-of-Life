@@ -238,9 +238,11 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "integration engineering / security",
-      "evidence": [],
+      "evidence": [
+        "test-results/finance-integration/f03-batch/review-verdicts.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []
@@ -372,9 +374,11 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "integration engineering / security",
-      "evidence": [],
+      "evidence": [
+        "test-results/finance-integration/f03-batch/review-verdicts.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []
@@ -478,7 +482,9 @@
       "na_permitted": false,
       "status": "IN_PROGRESS",
       "owner": "integration engineering / security",
-      "evidence": [],
+      "evidence": [
+        "test-results/finance-integration/f03-batch/review-verdicts.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []

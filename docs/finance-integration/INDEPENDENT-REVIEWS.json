@@ -132,6 +132,30 @@
         "No provider or hosted Auth/API proof",
         "Other monetary producers, mappings and financial workflows remain open"
       ]
+    },
+    {
+      "scope": "F03 local batch preparation, exact membership and independent review only",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "finance_source_inventory",
+        "audit_boundary_review"
+      ],
+      "source_sha256": {
+        "supabase/migrations/340_finance_batch_approval.sql": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+        "supabase/tests/review_finance_batch_approval.sql": "2a3aff69d7a79c84e279a095a385b1c093fbd91161e27e49754533c2a3ffc974",
+        "docs/finance-integration/F03-BATCH-APPROVAL-CONTRACT.md": "df92d3e1dad9d67534e4df5fd44720af69ad98c52fb5461c37e5148fc476d02d"
+      },
+      "evidence": [
+        "test-results/finance-integration/f03-batch/review-verdicts.json",
+        "test-results/agent-gates/2026-09-09T03-14-41-815Z-HFA-F03-BATCH.json"
+      ],
+      "limits": [
+        "Accounting classification unverified and business release ineligible by immutable constraint.",
+        "Dispatch and provider recovery disabled.",
+        "Native Auth test adaptations only; real GoTrue/PostgREST, hosted and UI proof absent for340.",
+        "Root-owned341 discovery/workbench integration separate.",
+        "Full F03/F05 and original handoff acceptance remain open."
+      ]
     }
   ]
 }

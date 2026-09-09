@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "migration_files": 343,
+  "sql_probes": 24,
+  "batch_assertions": 53,
+  "source_sha256": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+  "started_at": "2026-09-09T03:08:43.751661+00:00",
+  "completed_at": "2026-09-09T03:09:13.290963+00:00",
+  "target": "hfa_batch_340_final_20260909",
+  "layer": "native PostgreSQL17 with Auth stubs",
+  "exit_code": 0
+}

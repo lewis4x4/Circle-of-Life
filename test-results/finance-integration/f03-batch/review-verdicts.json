@@ -1,0 +1,34 @@
+{
+  "status": "APPROVE",
+  "scope": "Migration340 local exact batch review engine only",
+  "source_sha256": {
+    "supabase/migrations/340_finance_batch_approval.sql": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+    "supabase/tests/review_finance_batch_approval.sql": "2a3aff69d7a79c84e279a095a385b1c093fbd91161e27e49754533c2a3ffc974",
+    "docs/finance-integration/F03-BATCH-APPROVAL-CONTRACT.md": "df92d3e1dad9d67534e4df5fd44720af69ad98c52fb5461c37e5148fc476d02d"
+  },
+  "independent_reviews": [
+    {
+      "reviewer": "audit_boundary_review",
+      "verdict": "APPROVE",
+      "evidence": "independent-auth-review.json",
+      "coverage": "53 regression assertions;18 controlled races;3 invalidation-receipt rollbacks;72 privilege checks"
+    },
+    {
+      "reviewer": "finance_source_inventory",
+      "verdict": "APPROVE",
+      "evidence_private_paths": [
+        "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/batch-340-review.log",
+        "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/batch-340-review-manifest.json"
+      ],
+      "coverage": "Reviewer reports53 final SQL assertions,12 SQL/Zod corpus cases, actual2-event4-billion-cent RPC payload parsed by summaryPayloadSchema, member-order/DMY replay identity; separate parity driver packaging pending.",
+      "evidence_origin": "Independent reviewer final message; full SQL log retained privately."
+    }
+  ],
+  "remaining": [
+    "Accounting classification unverified and business release ineligible by immutable constraint.",
+    "Dispatch and provider recovery disabled.",
+    "Native Auth test adaptations only; real GoTrue/PostgREST, hosted and UI proof absent for340.",
+    "Root-owned341 discovery/workbench integration separate.",
+    "Full F03/F05 and original handoff acceptance remain open."
+  ]
+}
