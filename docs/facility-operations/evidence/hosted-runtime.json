@@ -1,0 +1,901 @@
+{
+  "checked_at": "2026-09-09T21:57:31.004394+00:00",
+  "project": "manfqmasfqppukpobpld",
+  "functions": [
+    {
+      "id": "4e8dce5b-8f25-4b9f-9dcf-20e9033e4e67",
+      "slug": "export-audit-log",
+      "name": "export-audit-log",
+      "status": "ACTIVE",
+      "version": 48,
+      "updated_at": 1786814911587,
+      "verify_jwt": true
+    },
+    {
+      "id": "5c8ca58c-5ba3-4fb6-8599-d038c6055ad3",
+      "slug": "dispatch-push",
+      "name": "dispatch-push",
+      "status": "ACTIVE",
+      "version": 46,
+      "updated_at": 1788798577260,
+      "verify_jwt": false
+    },
+    {
+      "id": "be878db4-3b75-49a3-b9ed-57172afc4e23",
+      "slug": "generate-monthly-invoices",
+      "name": "generate-monthly-invoices",
+      "status": "ACTIVE",
+      "version": 46,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "2ae0341c-831f-4dd2-8c48-9f58b6512e43",
+      "slug": "exec-kpi-snapshot",
+      "name": "exec-kpi-snapshot",
+      "status": "ACTIVE",
+      "version": 45,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "f935aa25-992f-4d6c-9de0-e50d2152c9db",
+      "slug": "report-scheduler",
+      "name": "report-scheduler",
+      "status": "ACTIVE",
+      "version": 42,
+      "updated_at": 1788732582641,
+      "verify_jwt": false
+    },
+    {
+      "id": "89028986-b5d3-4f78-842f-59eeb90eeac7",
+      "slug": "ar-aging-check",
+      "name": "ar-aging-check",
+      "status": "ACTIVE",
+      "version": 36,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "bb052906-ce69-4d9d-9ad9-af621bc71dbf",
+      "slug": "generate-emar-schedule",
+      "name": "generate-emar-schedule",
+      "status": "ACTIVE",
+      "version": 36,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "0925f005-d1f4-4a9b-8d84-d5cb6f86777e",
+      "slug": "emar-missed-dose-check",
+      "name": "emar-missed-dose-check",
+      "status": "ACTIVE",
+      "version": 36,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "2d8735c2-eba6-43a5-a6fe-f05a210e71a5",
+      "slug": "exec-alert-evaluator",
+      "name": "exec-alert-evaluator",
+      "status": "ACTIVE",
+      "version": 38,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "7ca174c5-4dfb-400a-b402-060e3911347f",
+      "slug": "process-referral-hl7-inbound",
+      "name": "process-referral-hl7-inbound",
+      "status": "ACTIVE",
+      "version": 36,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "85a67ef7-000b-4bbb-a9b4-c2f7069b01ed",
+      "slug": "ingest",
+      "name": "ingest",
+      "status": "ACTIVE",
+      "version": 38,
+      "updated_at": 1788798611915,
+      "verify_jwt": true
+    },
+    {
+      "id": "8605fba9-f19a-4dc8-be68-f49b3cbce507",
+      "slug": "knowledge-agent",
+      "name": "knowledge-agent",
+      "status": "ACTIVE",
+      "version": 63,
+      "updated_at": 1788798617538,
+      "verify_jwt": true
+    },
+    {
+      "id": "1d379810-913b-45da-a233-d9284eb70623",
+      "slug": "document-admin",
+      "name": "document-admin",
+      "status": "ACTIVE",
+      "version": 36,
+      "updated_at": 1788798578688,
+      "verify_jwt": true
+    },
+    {
+      "id": "d96b3a28-3d7c-445b-a5f6-3b2e3390da0f",
+      "slug": "facility-expiration-scanner",
+      "name": "facility-expiration-scanner",
+      "status": "ACTIVE",
+      "version": 26,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "9c0c7a53-ec27-48e9-bc4f-35e1cadf3ced",
+      "slug": "grace-execute-flow-step",
+      "name": "grace-execute-flow-step",
+      "status": "ACTIVE",
+      "version": 27,
+      "updated_at": 1788798596902,
+      "verify_jwt": true
+    },
+    {
+      "id": "09a627de-cd7d-4ff0-82d8-132cd025ca56",
+      "slug": "grace-orchestrator",
+      "name": "grace-orchestrator",
+      "status": "ACTIVE",
+      "version": 26,
+      "updated_at": 1788798598638,
+      "verify_jwt": true
+    },
+    {
+      "id": "39fb030d-7838-402e-8ddf-b7115355e6fb",
+      "slug": "grace-redteam-nightly",
+      "name": "grace-redteam-nightly",
+      "status": "ACTIVE",
+      "version": 23,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "0523cafc-6c39-4019-bc19-d6b505aa4313",
+      "slug": "grace-transcribe",
+      "name": "grace-transcribe",
+      "status": "ACTIVE",
+      "version": 27,
+      "updated_at": 1788798600883,
+      "verify_jwt": true
+    },
+    {
+      "id": "7fbbeeb6-337d-4c0b-867e-a40ddc245deb",
+      "slug": "grace-tts",
+      "name": "grace-tts",
+      "status": "ACTIVE",
+      "version": 27,
+      "updated_at": 1788798602430,
+      "verify_jwt": true
+    },
+    {
+      "id": "8a40ba96-c374-48a4-b954-a0d31c41c29d",
+      "slug": "grace-undo-flow-run",
+      "name": "grace-undo-flow-run",
+      "status": "ACTIVE",
+      "version": 27,
+      "updated_at": 1788798604527,
+      "verify_jwt": true
+    },
+    {
+      "id": "73af651d-41c4-40f3-9e57-34032789814c",
+      "slug": "exec-nlq-executor",
+      "name": "exec-nlq-executor",
+      "status": "ACTIVE",
+      "version": 23,
+      "updated_at": 1788798583223,
+      "verify_jwt": true
+    },
+    {
+      "id": "b3e501f1-a7f4-462a-8dac-7e498005091b",
+      "slug": "exec-report-generator",
+      "name": "exec-report-generator",
+      "status": "ACTIVE",
+      "version": 23,
+      "updated_at": 1788798584765,
+      "verify_jwt": true
+    },
+    {
+      "id": "a255d698-4b25-4844-8a6b-292a005f58b0",
+      "slug": "exec-scenario-solver",
+      "name": "exec-scenario-solver",
+      "status": "ACTIVE",
+      "version": 23,
+      "updated_at": 1788798586193,
+      "verify_jwt": true
+    },
+    {
+      "id": "467fd367-c9bf-4b0c-a96f-9db2e20595a3",
+      "slug": "observation-task-generator",
+      "name": "observation-task-generator",
+      "status": "ACTIVE",
+      "version": 23,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "40ed6bc5-443a-4dcb-a404-35547de0a7ba",
+      "slug": "observation-escalation-engine",
+      "name": "observation-escalation-engine",
+      "status": "ACTIVE",
+      "version": 23,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "d071a0fd-acc4-4204-81f0-bb4c3509333a",
+      "slug": "resident-safety-scorer",
+      "name": "resident-safety-scorer",
+      "status": "ACTIVE",
+      "version": 23,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "291266dc-ec35-4511-91f5-483b00fdf9a4",
+      "slug": "resident-assurance-ai",
+      "name": "resident-assurance-ai",
+      "status": "ACTIVE",
+      "version": 24,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "7b2d829e-c8ab-4c67-a2e2-2bc6ef63b126",
+      "slug": "oce-task-scheduler",
+      "name": "oce-task-scheduler",
+      "status": "ACTIVE",
+      "version": 24,
+      "updated_at": 1788732581075,
+      "verify_jwt": false
+    },
+    {
+      "id": "e2b42e34-7a8d-44b0-a419-9e04ae42dc72",
+      "slug": "oce-escalation-scanner",
+      "name": "oce-escalation-scanner",
+      "status": "ACTIVE",
+      "version": 15,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "02e5deb8-12c0-4ed1-bb7d-b4a8ccb2912b",
+      "slug": "oce-staffing-adequacy-computer",
+      "name": "oce-staffing-adequacy-computer",
+      "status": "ACTIVE",
+      "version": 15,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "e6609f24-d3a8-404e-b411-1ee1a057acd2",
+      "slug": "risk-nightly-scorer",
+      "name": "risk-nightly-scorer",
+      "status": "ACTIVE",
+      "version": 13,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "ec81f377-7e4d-41ea-b4c0-ebcd75c44d6d",
+      "slug": "facility-launch-parser",
+      "name": "facility-launch-parser",
+      "status": "ACTIVE",
+      "version": 13,
+      "updated_at": 1788798591743,
+      "verify_jwt": true
+    },
+    {
+      "id": "ce485873-f3d3-40de-bdae-2c2a3b4f60b8",
+      "slug": "boldsign-send-contract",
+      "name": "boldsign-send-contract",
+      "status": "ACTIVE",
+      "version": 11,
+      "updated_at": 1788798574019,
+      "verify_jwt": true
+    },
+    {
+      "id": "7886d5ce-653b-40c2-b7a7-ace37f65879d",
+      "slug": "boldsign-webhook",
+      "name": "boldsign-webhook",
+      "status": "ACTIVE",
+      "version": 11,
+      "updated_at": 1786814911587,
+      "verify_jwt": false
+    },
+    {
+      "id": "abb9a59b-1b78-442c-b71a-49c057976904",
+      "slug": "facility-launch-import",
+      "name": "facility-launch-import",
+      "status": "ACTIVE",
+      "version": 11,
+      "updated_at": 1788798589965,
+      "verify_jwt": true
+    },
+    {
+      "id": "338563ce-ba3f-4543-8f86-ad7facc97b97",
+      "slug": "facility-launch-promote",
+      "name": "facility-launch-promote",
+      "status": "ACTIVE",
+      "version": 18,
+      "updated_at": 1788798593166,
+      "verify_jwt": true
+    },
+    {
+      "id": "2fcc2925-c882-4834-a349-454d61dc0b50",
+      "slug": "haven-ai-router",
+      "name": "haven-ai-router",
+      "status": "ACTIVE",
+      "version": 22,
+      "updated_at": 1788798606553,
+      "verify_jwt": true
+    }
+  ],
+  "deployed_function_count": 37,
+  "source_only_slugs": [],
+  "deployed_only_slugs": [],
+  "auth": {
+    "site_url": "https://circleoflifealf.com",
+    "hook_custom_access_token_enabled": true,
+    "hook_custom_access_token_uri": "pg-functions://postgres/public/haven_custom_access_token_hook"
+  },
+  "backups": {
+    "pitr_enabled": true,
+    "physical_backup_data": {
+      "earliest_physical_backup_date_unix": 1788386228,
+      "latest_physical_backup_date_unix": 1788991028
+    }
+  },
+  "security_advisor": {
+    "count": 52,
+    "by_level": {
+      "INFO": 6,
+      "ERROR": 1,
+      "WARN": 45
+    },
+    "by_name": {
+      "rls_enabled_no_policy": 6,
+      "security_definer_view": 1,
+      "function_search_path_mutable": 11,
+      "extension_in_public": 3,
+      "anon_security_definer_function_executable": 3,
+      "authenticated_security_definer_function_executable": 27,
+      "auth_leaked_password_protection": 1
+    },
+    "findings": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "schema": "public",
+          "name": "ingest_authorization_runs",
+          "type": "table"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "schema": "public",
+          "name": "reputation_google_oauth_credentials",
+          "type": "table"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "schema": "public",
+          "name": "rounding_completion_receipts",
+          "type": "table"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "schema": "public",
+          "name": "user_auth_sync_jobs",
+          "type": "table"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "schema": "public",
+          "name": "user_auth_sync_targets",
+          "type": "table"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "schema": "public",
+          "name": "vendor_po_sequences",
+          "type": "table"
+        }
+      },
+      {
+        "name": "security_definer_view",
+        "level": "ERROR",
+        "metadata": {
+          "schema": "public",
+          "name": "resident_billable_status",
+          "type": "view"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_csc_discrepancy_defaults",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "document_role_can_view_audience",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "haven",
+          "name": "can_manage_user",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "auto_trigger_watch_protocol",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "seed_admission_case_form_1823",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "_ai_tool_role_allowed",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_exec_nlq_messages_touch_session",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "increment_usage",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "normalize_alias_term",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "_kb_seed_targets_touch",
+          "type": "function"
+        }
+      },
+      {
+        "name": "function_search_path_mutable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "apply_invoice_payment",
+          "type": "function"
+        }
+      },
+      {
+        "name": "extension_in_public",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "vector",
+          "type": "extension"
+        }
+      },
+      {
+        "name": "extension_in_public",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "pg_trgm",
+          "type": "extension"
+        }
+      },
+      {
+        "name": "extension_in_public",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "btree_gist",
+          "type": "extension"
+        }
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_assert_authorized_request",
+          "language": "plpgsql",
+          "arguments": "",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_payroll_batch_guard",
+          "language": "plpgsql",
+          "arguments": "",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_payroll_line_guard",
+          "language": "plpgsql",
+          "arguments": "",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "allocate_incident_number",
+          "language": "plpgsql",
+          "arguments": "p_facility_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "allocate_vendor_po_number",
+          "language": "plpgsql",
+          "arguments": "p_organization_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "apply_col_discovery_round_observation_plan",
+          "language": "plpgsql",
+          "arguments": "p_resident_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "apply_plantation_wing_observation_plan",
+          "language": "plpgsql",
+          "arguments": "p_resident_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "delete_nlq_thread",
+          "language": "plpgsql",
+          "arguments": "p_session_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "exclude_payroll_draft_punch",
+          "language": "plpgsql",
+          "arguments": "p_batch_id uuid, p_line_id uuid, p_expected_actor uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "execute_compliance_rule",
+          "language": "plpgsql",
+          "arguments": "p_rule_id uuid, p_facility_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "get_compliance_rule_status",
+          "language": "plpgsql",
+          "arguments": "p_rule_id uuid, p_facility_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "grace_top_flows",
+          "language": "sql",
+          "arguments": "p_user_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_assert_authorized_request",
+          "language": "plpgsql",
+          "arguments": "",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_create_invoice_with_line_items",
+          "language": "plpgsql",
+          "arguments": "p_facility_id uuid, p_resident_id uuid, p_invoice_number text, p_invoice_date date, p_due_date date, p_period_start date, p_period_end date, p_subtotal integer, p_adjustments integer, p_tax integer, p_total integer, p_amount_paid integer, p_balance_due integer, p_payer_type text, p_payer_name text, p_notes text, p_line_items jsonb",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_current_edge_actor",
+          "language": "sql",
+          "arguments": "",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_current_shell_actor",
+          "language": "sql",
+          "arguments": "",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_employee_file_command",
+          "language": "plpgsql",
+          "arguments": "p_staff_id uuid, p_action text, p_payload jsonb",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_employee_file_staff",
+          "language": "sql",
+          "arguments": "p_staff_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_employee_requirement_command",
+          "language": "plpgsql",
+          "arguments": "p_facility_id uuid, p_action text, p_payload jsonb",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_payroll_batch_guard",
+          "language": "plpgsql",
+          "arguments": "",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_payroll_line_guard",
+          "language": "plpgsql",
+          "arguments": "",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_publish_rate_schedule",
+          "language": "plpgsql",
+          "arguments": "p_facility_id uuid, p_organization_id uuid, p_name text, p_effective_date date, p_base_rate_private integer, p_base_rate_semi_private integer, p_care_surcharge_level_1 integer, p_care_surcharge_level_2 integer, p_care_surcharge_level_3 integer, p_community_fee integer, p_notes text",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "haven_replace_active_resident_rate_agreement",
+          "language": "plpgsql",
+          "arguments": "p_resident_id uuid, p_facility_id uuid, p_organization_id uuid, p_effective_date date, p_rate_schedule_id uuid, p_room_class public.rate_room_class, p_standard_base_rate_at_signing integer, p_standard_care_surcharge_at_signing integer, p_standard_monthly_total_at_signing integer, p_negotiated_base_rate integer, p_care_charge_mode public.care_charge_mode, p_negotiated_care_surcharge integer, p_negotiated_monthly_total integer, p_concession_amount_at_signing integer, p_concession_pct_at_signing numeric, p_concession_reason public.concession_reason, p_concession_notes text, p_concession_expires_on date, p_notes text",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "payroll_export_snapshot",
+          "language": "plpgsql",
+          "arguments": "p_batch_id uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "refresh_payroll_time_records",
+          "language": "plpgsql",
+          "arguments": "p_batch_id uuid, p_expected_actor uuid",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "rename_nlq_thread",
+          "language": "plpgsql",
+          "arguments": "p_session_id uuid, p_title text",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "search_nlq_threads",
+          "language": "plpgsql",
+          "arguments": "p_query text, p_limit integer",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "set_nlq_message_feedback",
+          "language": "plpgsql",
+          "arguments": "p_message_id uuid, p_feedback text",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "set_nlq_thread_archived",
+          "language": "plpgsql",
+          "arguments": "p_session_id uuid, p_archived boolean",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "metadata": {
+          "schema": "public",
+          "name": "set_nlq_thread_pinned",
+          "language": "plpgsql",
+          "arguments": "p_session_id uuid, p_pinned boolean",
+          "security_definer": true
+        }
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "level": "WARN",
+        "metadata": {
+          "entity": "Auth",
+          "type": "auth"
+        }
+      }
+    ],
+    "scope": "Live provider advisor; not clinical or full authorization acceptance."
+  }
+}

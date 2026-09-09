@@ -1,0 +1,3632 @@
+{
+  "checked_at": "2026-09-09T21:57:31.004394+00:00",
+  "project": "manfqmasfqppukpobpld",
+  "read_only_transaction": true,
+  "ledger_count": 344,
+  "ledger": [
+    {
+      "version": "001",
+      "name": "enum_types",
+      "statement_count": 31,
+      "statement_sha256": "296b4dc87cb1784c59dcb2fa4f6d2998e4711320f9eed9582d28cb12f6115b3a",
+      "local_candidates": [
+        "001_enum_types.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "002",
+      "name": "core_hierarchy",
+      "statement_count": 19,
+      "statement_sha256": "59c6541eacc0d8ddd4e98d8ccfc839cc3861ffb001be1f7dd1dd7a9117d49779",
+      "local_candidates": [
+        "002_core_hierarchy.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "003",
+      "name": "user_rbac",
+      "statement_count": 11,
+      "statement_sha256": "c9cce328269bb04beaadf784c5bcb330364248d8449e05c41b2139f0042c143f",
+      "local_candidates": [
+        "003_user_rbac.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "004",
+      "name": "haven_rls_helpers",
+      "statement_count": 12,
+      "statement_sha256": "8e97affff92b7379a1626dac2b72ce0abba6a0b039d84c792b019fb7358dbcdf",
+      "local_candidates": [
+        "004_haven_rls_helpers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "005",
+      "name": "rls_policies",
+      "statement_count": 29,
+      "statement_sha256": "069912bb2f6a47e00ab7fbcf06d71e08c1a6f9fe117c9d0d98a4215726da43ca",
+      "local_candidates": [
+        "005_rls_policies.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "006",
+      "name": "audit_triggers",
+      "statement_count": 25,
+      "statement_sha256": "d21cc6bdaa47b779f19ea9b931f2d45c221bc593d0332ddaf4880cc4bc73e561",
+      "local_candidates": [
+        "006_audit_triggers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "007",
+      "name": "census_daily_log",
+      "statement_count": 6,
+      "statement_sha256": "16322107d47ad1559aae2704ccedbfa5c199cc849f17a34d168554588b52bb02",
+      "local_candidates": [
+        "007_census_daily_log.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "008",
+      "name": "seed_col_organization",
+      "statement_count": 3,
+      "statement_sha256": "61c73df3763ea05524659b17903ef06e892363617045c5f7e47e44cdc2a73965",
+      "local_candidates": [
+        "008_seed_col_organization.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "009",
+      "name": "residents",
+      "statement_count": 9,
+      "statement_sha256": "57109510af5c84cf9db24019c530978f32785a41f3b2b3bc2679533f2b7e0dc4",
+      "local_candidates": [
+        "009_residents.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "010",
+      "name": "care_plans",
+      "statement_count": 8,
+      "statement_sha256": "79a4e6416bea9ced3aca33d03bcabfcb1b473e9901ca9d1b0cd2fffc2bfef501",
+      "local_candidates": [
+        "010_care_plans.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "011",
+      "name": "resident_clinical_assets",
+      "statement_count": 6,
+      "statement_sha256": "9e51155260b4f0be338082b4e48c811b90f8d44685a0da764dafb74329b5a357",
+      "local_candidates": [
+        "011_resident_clinical_assets.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "012",
+      "name": "assessment_templates",
+      "statement_count": 5,
+      "statement_sha256": "b664aebb392c3d146a59eda7b0857f3359aad6c65db8410e2347c8283be0b455",
+      "local_candidates": [
+        "012_assessment_templates.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "013",
+      "name": "resident_profile_rls",
+      "statement_count": 29,
+      "statement_sha256": "2a051b2ce1a1c7ca6a55c84fe2c367cedf5963b31ce9dcddba9ba673415ce144",
+      "local_candidates": [
+        "013_resident_profile_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "014",
+      "name": "resident_profile_audit_triggers",
+      "statement_count": 12,
+      "statement_sha256": "509c3a3ba46c7bb25caeb3a0759c2989f70a05033b63dafa43a5d9d24f6a6ff8",
+      "local_candidates": [
+        "014_resident_profile_audit_triggers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "015",
+      "name": "daily_logs_and_adl",
+      "statement_count": 9,
+      "statement_sha256": "2112b0f67c1e86c576a41b41992091c5f3d001141e45800249fb4a2fe3a41392",
+      "local_candidates": [
+        "015_daily_logs_and_adl.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "016",
+      "name": "resident_medications_emar",
+      "statement_count": 9,
+      "statement_sha256": "d62fae692f47bdb64d6cc6b104034d12902f1011c50ec77806f6d54ed837246f",
+      "local_candidates": [
+        "016_resident_medications_emar.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "017",
+      "name": "behavioral_condition_handoff",
+      "statement_count": 12,
+      "statement_sha256": "187b6916fc138dca18bdb25a12f3f02fa48fde82c7ecec609cd0240eec27f893",
+      "local_candidates": [
+        "017_behavioral_condition_handoff.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "018",
+      "name": "activities",
+      "statement_count": 5,
+      "statement_sha256": "c53d3bff5721d985bacd8523daed3f6f35503bc016dc790a8db8f3c6aa1a2e0e",
+      "local_candidates": [
+        "018_activities.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "019",
+      "name": "daily_operations_rls",
+      "statement_count": 36,
+      "statement_sha256": "fb1b6b24002dcc347a8d0bb18d28ac5082c7ac29f2fda8a76497bd420b38271f",
+      "local_candidates": [
+        "019_daily_operations_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "020",
+      "name": "daily_operations_audit_triggers",
+      "statement_count": 15,
+      "statement_sha256": "6c402c9f91f6d11bab83c2d12e38810feaa3ef3236d7f49c28dd86f5395360b5",
+      "local_candidates": [
+        "020_daily_operations_audit_triggers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "021",
+      "name": "incident_reporting_schema",
+      "statement_count": 16,
+      "statement_sha256": "b0415a8e2242bbaf164630a8ae0b2e3ff83fc33144c24e0b7820d430155b0c3c",
+      "local_candidates": [
+        "021_incident_reporting_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "022",
+      "name": "incident_reporting_rls",
+      "statement_count": 14,
+      "statement_sha256": "ea23083404e63be59e4a57d6f250e9019b43e47bcffb342582a7bb08ea65febf",
+      "local_candidates": [
+        "022_incident_reporting_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "023",
+      "name": "incident_reporting_audit_triggers",
+      "statement_count": 6,
+      "statement_sha256": "45c1e4ef8ebe0553175491a866abcd8f90dad5bde7d229dd608d3c6272e138d0",
+      "local_candidates": [
+        "023_incident_reporting_audit_triggers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "024",
+      "name": "staff_management_schema",
+      "statement_count": 29,
+      "statement_sha256": "89c00ab9eeb48341793ceacd067006d107eaf29e3fd642ffbd5e8366dc6443c2",
+      "local_candidates": [
+        "024_staff_management_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "025",
+      "name": "staff_management_rls",
+      "statement_count": 24,
+      "statement_sha256": "74278091b2c91cc15651b6aa94bf247c3422cee78b7fce6ea1cb8d578ceed7a3",
+      "local_candidates": [
+        "025_staff_management_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "026",
+      "name": "staff_management_audit_triggers",
+      "statement_count": 13,
+      "statement_sha256": "2ebcde8e5fb80eed0767cc397132e3bad4a0ca7536414e4a87fc865b4fda5761",
+      "local_candidates": [
+        "026_staff_management_audit_triggers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "027",
+      "name": "billing_and_collections_schema",
+      "statement_count": 26,
+      "statement_sha256": "0fc8b1864f293db3c2c5096f9f6e177e006f2f53afbfe6899ff2cdc5db3e15a5",
+      "local_candidates": [
+        "027_billing_and_collections_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "028",
+      "name": "billing_and_collections_rls",
+      "statement_count": 23,
+      "statement_sha256": "823d05db3d7ce3afd25609373509d5fa4d7272251c6693ace0b93b283b237a6d",
+      "local_candidates": [
+        "028_billing_and_collections_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "029",
+      "name": "billing_and_collections_audit_triggers",
+      "statement_count": 11,
+      "statement_sha256": "d0dc4825a356cce01e615e1a5972a348a9eadc8e52d7f39cae63d51c69edc6e1",
+      "local_candidates": [
+        "029_billing_and_collections_audit_triggers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "030",
+      "name": "allocate_incident_number",
+      "statement_count": 4,
+      "statement_sha256": "dda8a37ae7bb78ea5815881cceea859af27045e936d12accf17b75c28d85fc0d",
+      "local_candidates": [
+        "030_allocate_incident_number.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "031",
+      "name": "family_calendar_rls",
+      "statement_count": 3,
+      "statement_sha256": "243d7ca4132295d46c866f8fb58e02395f880763038c95977c7cb82e2a05d0fc",
+      "local_candidates": [
+        "031_family_calendar_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "032",
+      "name": "family_portal_messages",
+      "statement_count": 11,
+      "statement_sha256": "56da198adf1c496631bdbffbf3987047c9ac270edacd3af465a7d31f32ba656d",
+      "local_candidates": [
+        "032_family_portal_messages.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "033",
+      "name": "seed_oakridge_demo_data",
+      "statement_count": 42,
+      "statement_sha256": "b2c5eda015768f22e504a1dc306a8faaec6f8c85e3647ff69aa15de1091090fd",
+      "local_candidates": [
+        "033_seed_oakridge_demo_data.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "034",
+      "name": "tighten_resident_profile_rls",
+      "statement_count": 4,
+      "statement_sha256": "41c7f4ef3dc40b827dc97fedb68c27fc7cfc30aac40f463adca42feb628ed764",
+      "local_candidates": [
+        "034_tighten_resident_profile_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "035",
+      "name": "care_planning_advanced",
+      "statement_count": 21,
+      "statement_sha256": "6e07c239989e7c414ab815545bc0d1ba52e29f4f03c963718dd4d57e3d6f6ee3",
+      "local_candidates": [
+        "035_care_planning_advanced.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "036",
+      "name": "care_plan_review_alerts_insert_policy",
+      "statement_count": 1,
+      "statement_sha256": "d171025ac5f8e3430218dd3f718c23a2b6503ae3d9c9457edbd4b6639bf88f00",
+      "local_candidates": [
+        "036_care_plan_review_alerts_insert_policy.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "037",
+      "name": "medication_management_advanced",
+      "statement_count": 33,
+      "statement_sha256": "ecd97bcc393ba30d69e7a3389252f6222156cf8dd07129cb4391812dfc3f01c2",
+      "local_candidates": [
+        "037_medication_management_advanced.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "038",
+      "name": "infection_control",
+      "statement_count": 55,
+      "statement_sha256": "9d07056bcbd194c5f589759a3feb45f1332bc953a9eaf9c9babeafcca7bc2ab6",
+      "local_candidates": [
+        "038_infection_control.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "039",
+      "name": "compliance_engine",
+      "statement_count": 51,
+      "statement_sha256": "535c1991a5cbf3817c8d237db3a658b6e4bb212990397c7563f53fac5e3b8be4",
+      "local_candidates": [
+        "039_compliance_engine.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "040",
+      "name": "entity_facility_finance",
+      "statement_count": 40,
+      "statement_sha256": "b3e5e7c0a72b185c584c1d097f2a35d473b73eec453e5dc838da223328077dd3",
+      "local_candidates": [
+        "040_entity_facility_finance.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "041",
+      "name": "journal_draft_soft_delete",
+      "statement_count": 4,
+      "statement_sha256": "cab511fc97d01b1df7fff3d36258936be784795e0a18b665e445e2a3510f6b11",
+      "local_candidates": [
+        "041_journal_draft_soft_delete.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "042",
+      "name": "enhanced_finance_gl_settings",
+      "statement_count": 14,
+      "statement_sha256": "ae48bb084d3f7bba9624e199da4599df8b0e7a6e3383600149c72faf7bcc072e",
+      "local_candidates": [
+        "042_enhanced_finance_gl_settings.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "043",
+      "name": "gl_budget_lines",
+      "statement_count": 11,
+      "statement_sha256": "48f92c151970f4ef03797c0c468cfeba4c5b1b3d0ce8ad6e6a4fdfcd6246aeb5",
+      "local_candidates": [
+        "043_gl_budget_lines.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "044",
+      "name": "insurance_risk_finance",
+      "statement_count": 90,
+      "statement_sha256": "bde69528c21229f2c79e15351f4689cf9e5c6d4fb960bd086dad550f015ddc47",
+      "local_candidates": [
+        "044_insurance_risk_finance.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "045",
+      "name": "insurance_date_integrity",
+      "statement_count": 6,
+      "statement_sha256": "ba06df7aa250ca7279b4ee4b513efe815626449cb7e2e4465a63ca0a703686e3",
+      "local_candidates": [
+        "045_insurance_date_integrity.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "046",
+      "name": "vendor_contract_management",
+      "statement_count": 138,
+      "statement_sha256": "4e033106935b2a8409ef82411397c67b5a4f2c57821305a1a06a5e9eaccd9343",
+      "local_candidates": [
+        "046_vendor_contract_management.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "047",
+      "name": "executive_intelligence",
+      "statement_count": 44,
+      "statement_sha256": "e7b20175d7f4d8df047e8d56e290f9bdb565d77245bb9c7fad564e786f1aafec",
+      "local_candidates": [
+        "047_executive_intelligence.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "048",
+      "name": "finance_enhanced",
+      "statement_count": 14,
+      "statement_sha256": "5ad567ac0778589d56553a11074761a3eaa81f12c9051d4f996d33bcce24f1fb",
+      "local_candidates": [
+        "048_finance_enhanced.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "049",
+      "name": "insurance_enhanced",
+      "statement_count": 7,
+      "statement_sha256": "0ca2c15afe7f2f7ecdca4dd59e75a637601c6e3827b9aac0b9a659bf8aa9788e",
+      "local_candidates": [
+        "049_insurance_enhanced.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "050",
+      "name": "platform_audit_log_access",
+      "statement_count": 10,
+      "statement_sha256": "dd54a46cbf10d86128267c746050342813268b9b89e5b03e466514198211c5ed",
+      "local_candidates": [
+        "050_platform_audit_log_access.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "051",
+      "name": "platform_auth_role_reconciliation",
+      "statement_count": 4,
+      "statement_sha256": "c60e9b736509b79dccee2d08a5e08d0d91212518dae8980387c17eaa5deda670",
+      "local_candidates": [
+        "051_platform_auth_role_reconciliation.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "052",
+      "name": "platform_regulatory_jurisdiction",
+      "statement_count": 14,
+      "statement_sha256": "8c5c6994bbdc6855c8405dc95a6d0e6f1fe8a8387dcba06fd75ee905ca402a2c",
+      "local_candidates": [
+        "052_platform_regulatory_jurisdiction.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "053",
+      "name": "platform_search_index",
+      "statement_count": 10,
+      "statement_sha256": "d68b908b5b50900de95ed6749b99439fc2816378f4e5372471390abf6d568522",
+      "local_candidates": [
+        "053_platform_search_index.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "054",
+      "name": "pwa_offline_emar",
+      "statement_count": 3,
+      "statement_sha256": "b9fd2ee4faa8f244a3a5da1bbfa1621ee87de8744ed6acbced42f2e8a8724f9d",
+      "local_candidates": [
+        "054_pwa_offline_emar.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "055",
+      "name": "pwa_push_notifications",
+      "statement_count": 4,
+      "statement_sha256": "3c0cbf1c18e496c48793f3500f3ee71e1fdb253d77782de4855d24d168ca4e06",
+      "local_candidates": [
+        "055_pwa_push_notifications.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "056",
+      "name": "resident_advance_directives",
+      "statement_count": 7,
+      "statement_sha256": "89d77a9946dd458297a2810ff3e65edf16995a24cb1941a27f11a0d5f0f3466f",
+      "local_candidates": [
+        "056_resident_advance_directives.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "057",
+      "name": "emar_witness_device",
+      "statement_count": 9,
+      "statement_sha256": "997cf179814a26bf952f89e502966fa5d89c93c1cf94fb7634e8cd348935c878",
+      "local_candidates": [
+        "057_emar_witness_device.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "058",
+      "name": "incident_regulatory_timers",
+      "statement_count": 24,
+      "statement_sha256": "94ade2f8c820520520ac12c79d53fca793c6467b25e3ecaff6f825a80912ccd8",
+      "local_candidates": [
+        "058_incident_regulatory_timers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "059",
+      "name": "staff_credentials_background",
+      "statement_count": 11,
+      "statement_sha256": "af102210a6f07f25d878f68ecf338569d90c0951c8c40f734af24f0aef83630c",
+      "local_candidates": [
+        "059_staff_credentials_background.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "060",
+      "name": "billing_trust_ar_matview",
+      "statement_count": 12,
+      "statement_sha256": "16d45e084ef8a95f6e78fea1a19bf9290e7c446a58da5e7fa877e6f95849a38a",
+      "local_candidates": [
+        "060_billing_trust_ar_matview.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "061",
+      "name": "care_plan_billing_version_lock",
+      "statement_count": 8,
+      "statement_sha256": "7d154a74f520677edd824c7adbb01d7a91cc3e0904c4fe8f88567a1235b197b9",
+      "local_candidates": [
+        "061_care_plan_billing_version_lock.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "062",
+      "name": "medication_rxnorm_witness",
+      "statement_count": 11,
+      "statement_sha256": "746f8eb16c87f29d82555d5dc03c10ff66dd539a359fc07389f5179030dd915e",
+      "local_candidates": [
+        "062_medication_rxnorm_witness.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "063",
+      "name": "infection_jurisdiction_labs",
+      "statement_count": 17,
+      "statement_sha256": "f45fa4d0acae3a775e79d252cce52676b78635f67bc2d2147e674223905e1d3f",
+      "local_candidates": [
+        "063_infection_jurisdiction_labs.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "064",
+      "name": "compliance_citation_keys",
+      "statement_count": 19,
+      "statement_sha256": "9b16c95e362a13c96ee2d8786df171bf57aab080f95b68695f9fc27997c49519",
+      "local_candidates": [
+        "064_compliance_citation_keys.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "065",
+      "name": "finance_intercompany",
+      "statement_count": 6,
+      "statement_sha256": "2e3002a28f1b22e7ac717395cb26fa46ee7244f5d289d367ac2672f1974c8bdc",
+      "local_candidates": [
+        "065_finance_intercompany.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "066",
+      "name": "insurance_osha_allocation",
+      "statement_count": 10,
+      "statement_sha256": "8dfb2ebb1c3b90469249dfd83be1769eb3e8bc7f48aa537508c5937f030f41d4",
+      "local_candidates": [
+        "066_insurance_osha_allocation.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "067",
+      "name": "vendor_match_storage_scorecard",
+      "statement_count": 11,
+      "statement_sha256": "6fb875800ef03726eb43b941883a6ea91e7e96e2dc213545147b487fe73f2d19",
+      "local_candidates": [
+        "067_vendor_match_storage_scorecard.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "068",
+      "name": "ai_invocation_framework",
+      "statement_count": 11,
+      "statement_sha256": "38dfaf4c1f73496a719969a8a1229418b820a894b0f6b97b86d2ddf09cabdd47",
+      "local_candidates": [
+        "068_ai_invocation_framework.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "069",
+      "name": "shift_swap_requests_rls_tighten",
+      "statement_count": 2,
+      "statement_sha256": "ae1d6acb5f2ea305686e612e5702a3fb8e354e30848e965ddfc88af1dc740009",
+      "local_candidates": [
+        "069_shift_swap_requests_rls_tighten.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "070",
+      "name": "incident_rca",
+      "statement_count": 9,
+      "statement_sha256": "03428c26c902876669d0620f11751da4e04524a960dfb92ebac87eb316f685c7",
+      "local_candidates": [
+        "070_incident_rca.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "071",
+      "name": "invoices_facility_resident_period_unique",
+      "statement_count": 2,
+      "statement_sha256": "91fa3243692f4a0934cd7f0291720e798b31122dffe6845a591ddbd1f3c389b6",
+      "local_candidates": [
+        "071_invoices_facility_resident_period_unique.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "072",
+      "name": "staffing_ratio_snapshots_insert_policy",
+      "statement_count": 1,
+      "statement_sha256": "7d400bc947b6bcf93adf3e58d24ebcb2c7aa9a18b416b1a52dc43c0c6f2f058f",
+      "local_candidates": [
+        "072_staffing_ratio_snapshots_insert_policy.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "073",
+      "name": "time_records_admin_rls",
+      "statement_count": 2,
+      "statement_sha256": "131d81e7f8e8e98ed409e32e0a3e92369f659a02094ca7837d6bdd66ef101e38",
+      "local_candidates": [
+        "073_time_records_admin_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "074",
+      "name": "incident_rca_investigation_status",
+      "statement_count": 4,
+      "statement_sha256": "b3fe32aafa3519dd4c416bcace10b8d6bbb7f6ef6d6900b2623b63906392926a",
+      "local_candidates": [
+        "074_incident_rca_investigation_status.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "075",
+      "name": "referral_inquiry_schema",
+      "statement_count": 11,
+      "statement_sha256": "3d44876ae84b6518d4f4c1c2c971c395e68eb7350dc3a0924a5495491996f476",
+      "local_candidates": [
+        "075_referral_inquiry_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "076",
+      "name": "referral_inquiry_rls_audit",
+      "statement_count": 12,
+      "statement_sha256": "e199498c9f1762a5714271372abd9640ca15bcfc63e6c8bf76b0eaaf2785510f",
+      "local_candidates": [
+        "076_referral_inquiry_rls_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "077",
+      "name": "admissions_move_in_schema",
+      "statement_count": 10,
+      "statement_sha256": "1103530668e66e9044fe862fec5cafc711a27bac7a624f104739ee3ace3b3c30",
+      "local_candidates": [
+        "077_admissions_move_in_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "078",
+      "name": "admissions_move_in_rls_audit",
+      "statement_count": 12,
+      "statement_sha256": "0035033782489f7fc5dc011de994185190ad0a5a9af85d7e38b3c5ebabc00f97",
+      "local_candidates": [
+        "078_admissions_move_in_rls_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "079",
+      "name": "discharge_transition_schema",
+      "statement_count": 9,
+      "statement_sha256": "0ec6bf13ca15f72644384d41cfc2137035a864c8fd86a14ae83f2ea0a3203ae0",
+      "local_candidates": [
+        "079_discharge_transition_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "080",
+      "name": "discharge_transition_rls_audit",
+      "statement_count": 6,
+      "statement_sha256": "faecddf44af29eabb4d018970ccb65792c38a36fcdb4b79a30ba1e8d30bb361b",
+      "local_candidates": [
+        "080_discharge_transition_rls_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "081",
+      "name": "quality_metrics_schema",
+      "statement_count": 14,
+      "statement_sha256": "d281c1f537333920a7d131dc6dd8728888a4059a374376018f3e1a8ac35a6941",
+      "local_candidates": [
+        "081_quality_metrics_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "082",
+      "name": "quality_metrics_rls_audit",
+      "statement_count": 20,
+      "statement_sha256": "11906174de30060a4c0de46deaad06e53f6bb06776a87bfeb706e7793e33e469",
+      "local_candidates": [
+        "082_quality_metrics_rls_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "083",
+      "name": "family_portal_module_schema",
+      "statement_count": 14,
+      "statement_sha256": "2105be638efc372268448eae0f53f97973756bc4128bb5642f8277b5777e24ff",
+      "local_candidates": [
+        "083_family_portal_module_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "084",
+      "name": "family_portal_module_rls_audit",
+      "statement_count": 19,
+      "statement_sha256": "598d119f4b168c0ae5adbcba97534c662258f33a23e73ab3fa395ae103a87082",
+      "local_candidates": [
+        "084_family_portal_module_rls_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "085",
+      "name": "executive_intelligence_v2",
+      "statement_count": 21,
+      "statement_sha256": "704ec98425ce0e5c512cd5cfaf24526db8b3d398e39d330d8b0472cba22b1c37",
+      "local_candidates": [
+        "085_executive_intelligence_v2.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "086",
+      "name": "competency_demonstrations_schema",
+      "statement_count": 6,
+      "statement_sha256": "86eecc719ee586da47635562000b430cb355e41474382de94c8f8946f388bffb",
+      "local_candidates": [
+        "086_competency_demonstrations_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "087",
+      "name": "competency_demonstrations_rls_audit",
+      "statement_count": 6,
+      "statement_sha256": "2d761f663458ec63496172827f5bc17e6253fdcbaa4006a7ab84d3d1cf9e297d",
+      "local_candidates": [
+        "087_competency_demonstrations_rls_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "088",
+      "name": "payroll_integration",
+      "statement_count": 20,
+      "statement_sha256": "f063d839a71d3e740460af5ffc4318d8b3a6118960d36136b8d30ee89545ae6d",
+      "local_candidates": [
+        "088_payroll_integration.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "089",
+      "name": "dietary_nutrition",
+      "statement_count": 14,
+      "statement_sha256": "2ed7fde9a50a056e439eb25a0a1f1d840cc9f9ffb457620d955126d475381dd1",
+      "local_candidates": [
+        "089_dietary_nutrition.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "090",
+      "name": "transportation",
+      "statement_count": 28,
+      "statement_sha256": "6eca59255f2fbaf2a41651d2a2be0c89070ea4ccf90d5c0e669a6ef4ebd0d791",
+      "local_candidates": [
+        "090_transportation.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "091",
+      "name": "referral_hl7_inbound",
+      "statement_count": 11,
+      "statement_sha256": "0fd9630f1d36c1e4e38c91983df030a53950f6a0ff0bfbbc7b855cf7140868e2",
+      "local_candidates": [
+        "091_referral_hl7_inbound.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "092",
+      "name": "reputation",
+      "statement_count": 19,
+      "statement_sha256": "03a421b7de99fec1175329d47e0128e3504a1fc741f41af5e1c14de7ff1df2b2",
+      "local_candidates": [
+        "092_reputation.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "093",
+      "name": "backfill_oakridge_demo_auth_users",
+      "statement_count": 2,
+      "statement_sha256": "a0bf393ac1509dfe8079259e053140217a9e6fc5d466e55638c01280a33c2dfb",
+      "local_candidates": [
+        "093_backfill_oakridge_demo_auth_users.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "094",
+      "name": "normalize_oakridge_demo_emails",
+      "statement_count": 1,
+      "statement_sha256": "2e0786422cb3191f8f4ff2406863dcfa82f80009cd5b4d08ed67787069b6cc7d",
+      "local_candidates": [
+        "094_normalize_oakridge_demo_emails.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "095",
+      "name": "restore_default_auth_instance",
+      "statement_count": 1,
+      "statement_sha256": "de9e5301d2b8a2a5c155f3dfe431f2483cd3b8673d7af7c0f97ed8e85715a4f6",
+      "local_candidates": [
+        "095_restore_default_auth_instance.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "096",
+      "name": "executive_intelligence_v3",
+      "statement_count": 26,
+      "statement_sha256": "dce69fae27a025e0f871dd7419b855d57f366b8eb861b307ceb5efd07254bb2e",
+      "local_candidates": [
+        "096_executive_intelligence_v3.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "097",
+      "name": "fix_exec_intelligence_audit",
+      "statement_count": 2,
+      "statement_sha256": "755b05128302a53806fc5b1b1cd6acba24290f2d51fc4a29ed7d855c4c1019dc",
+      "local_candidates": [
+        "097_fix_exec_intelligence_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "098",
+      "name": "resident_assurance_schema",
+      "statement_count": 42,
+      "statement_sha256": "f01d4a62a1b53d96dae3ffb3ddca7438b49941504d985fed7f1c56da3ae43b10",
+      "local_candidates": [
+        "098_resident_assurance_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "099",
+      "name": "resident_assurance_rls",
+      "statement_count": 52,
+      "statement_sha256": "11cd2e36561fcf4450dacf0db758f7a914eb9f1bb3e97342bfb975605dc2f586",
+      "local_candidates": [
+        "099_resident_assurance_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "100",
+      "name": "resident_assurance_audit",
+      "statement_count": 22,
+      "statement_sha256": "d5e77f218aa14353bc6d310dfbce45fff800ad26e2617a3c136431e0fba1fc25",
+      "local_candidates": [
+        "100_resident_assurance_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "101",
+      "name": "resident_assurance_seed",
+      "statement_count": 10,
+      "statement_sha256": "f7807efaae2c466e5b301da5adaa19c941daf21349a2a98236bf69f63584be4d",
+      "local_candidates": [
+        "101_resident_assurance_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "102",
+      "name": "reporting_module_schema",
+      "statement_count": 33,
+      "statement_sha256": "3834d547baeacc7031754296247eda2180e69ac029efa811fb18af716cb0c9a7",
+      "local_candidates": [
+        "102_reporting_module_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "103",
+      "name": "reporting_module_rls",
+      "statement_count": 37,
+      "statement_sha256": "cee01ffb2208fe6bb5bf20f0ac4b5430c7725ef669eade68035078d61cc9ac78",
+      "local_candidates": [
+        "103_reporting_module_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "104",
+      "name": "reporting_module_audit",
+      "statement_count": 14,
+      "statement_sha256": "c05559f3db3cde03a1aff89868876da6e025e7b765c949690a9e08fd65d65a9f",
+      "local_candidates": [
+        "104_reporting_module_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "105",
+      "name": "reporting_module_seed",
+      "statement_count": 3,
+      "statement_sha256": "b20f596df4bc0bc698273232196fc190dec69909b422cb9aea92a454b81e09ca",
+      "local_candidates": [
+        "105_reporting_module_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "106",
+      "name": "reporting_saved_views_backfill",
+      "statement_count": 1,
+      "statement_sha256": "0672de4ef96a339c1d68c712f37925c53ff8d008b0872af55a5e5203c8e83447",
+      "local_candidates": [
+        "106_reporting_saved_views_backfill.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "107",
+      "name": "resident_assurance_indexes_rls_patch",
+      "statement_count": 13,
+      "statement_sha256": "4bbb5d028ca79832c51948c8b105f4ea85c956eb9349cfb77d4284427a130503",
+      "local_candidates": [
+        "107_resident_assurance_indexes_rls_patch.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "108",
+      "name": "onboarding_responses",
+      "statement_count": 27,
+      "statement_sha256": "86816d03f8fe44170465cff4328c5daa971faaca38142a4e7d7f22d2d474eab0",
+      "local_candidates": [
+        "108_onboarding_responses.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "109",
+      "name": "onboarding_question_tiers",
+      "statement_count": 79,
+      "statement_sha256": "9a832095dbe0f6a4264dfb8676a2fcf209ce19df5366df56f1e0b084f5ac2964",
+      "local_candidates": [
+        "109_onboarding_question_tiers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "110",
+      "name": "oakridge_demo_auth_app_role_metadata",
+      "statement_count": 2,
+      "statement_sha256": "3c31fd021070104ba962c4446bc9946c49582942017b87a7c7aec8cf0bd076ac",
+      "local_candidates": [
+        "110_oakridge_demo_auth_app_role_metadata.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "111",
+      "name": "user_profiles_updated_by_and_email_sync",
+      "statement_count": 3,
+      "statement_sha256": "7afd1d450c5aca017b905ea75994656d86fb911f1acc439156e96700903962e6",
+      "local_candidates": [
+        "111_user_profiles_updated_by_and_email_sync.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "112",
+      "name": "resident_transport_requests",
+      "statement_count": 11,
+      "statement_sha256": "ef754eeb32a27b1675bc626fe09c542624f1a5d9fed6141ce056ac78a1d3bd66",
+      "local_candidates": [
+        "112_resident_transport_requests.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "113",
+      "name": "mileage_logs_and_fleet_wheelchair",
+      "statement_count": 13,
+      "statement_sha256": "ee8c35fb4bf64922703f8fb130bef5120d8ffcfb4a00c778cb7a506629281063",
+      "local_candidates": [
+        "113_mileage_logs_and_fleet_wheelchair.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "114",
+      "name": "organization_transport_settings",
+      "statement_count": 9,
+      "statement_sha256": "ef966650af0b41d7137a69fc86e408f869dc04d8c6d47146455df5356d23498a",
+      "local_candidates": [
+        "114_organization_transport_settings.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "115",
+      "name": "competency_certificate_storage",
+      "statement_count": 9,
+      "statement_sha256": "a46ae2df853d111eafe0111ee4c4493727bac1e3588c1df6dfecc672fe045fbe",
+      "local_candidates": [
+        "115_competency_certificate_storage.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "116",
+      "name": "training_programs_staff_completions",
+      "statement_count": 26,
+      "statement_sha256": "47812ddec264b00d35a13883cca9c8c55eb1ccaa2f639d507d0455588fd82074",
+      "local_candidates": [
+        "116_training_programs_staff_completions.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "117",
+      "name": "training_completion_certificate_storage_rls",
+      "statement_count": 2,
+      "statement_sha256": "db8ac5259b3f98bbf1269b64cf7a8f8e254e9137ee90779282e3bb431998c963",
+      "local_candidates": [
+        "117_training_completion_certificate_storage_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "118",
+      "name": "inservice_log_sessions",
+      "statement_count": 21,
+      "statement_sha256": "15283c818e478dc8a44b85b8b55561e8d2fce86df4a156c500fb1f6774ab734a",
+      "local_candidates": [
+        "118_inservice_log_sessions.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "119",
+      "name": "reputation_google_oauth_credentials",
+      "statement_count": 5,
+      "statement_sha256": "4635ce3ec63a40f74c0a8ffea518e1ee9f25d9b263f88b78dd5cda0da6031377",
+      "local_candidates": [
+        "119_reputation_google_oauth_credentials.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "120",
+      "name": "col_multi_facility_demo_seed",
+      "statement_count": 109,
+      "statement_sha256": "6d06c6c8332e5eb2da84bbcd3534a85e5b56b2409ad6078c961e1a76c6457a48",
+      "local_candidates": [
+        "120_col_multi_facility_demo_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "121",
+      "name": "user_management_enum_columns",
+      "statement_count": 9,
+      "statement_sha256": "cc1b30440639ecd6b2f6e804f65d3a7c7a8ef545cffd9bbb354d772cbe162df4",
+      "local_candidates": [
+        "121_user_management_enum_columns.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "122",
+      "name": "role_permissions_audit_log",
+      "statement_count": 15,
+      "statement_sha256": "323497ca754b4454a328cca892eb8c22f07382cc26636033b8e31a28e6c925d9",
+      "local_candidates": [
+        "122_role_permissions_audit_log.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "123",
+      "name": "user_management_rls_updates",
+      "statement_count": 10,
+      "statement_sha256": "2156b0e746e12ba9d19ff55702371236eb93ef595a5a3b6ebc0a22ef8f60d2e0",
+      "local_candidates": [
+        "123_user_management_rls_updates.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "124",
+      "name": "compliance_rules",
+      "statement_count": 31,
+      "statement_sha256": "72dc99582f2409be221ad6e8f96cd3bc5cbddcd9189cb1b61954bcfc3cede345",
+      "local_candidates": [
+        "124_compliance_rules.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "125",
+      "name": "emergency_preparedness",
+      "statement_count": 16,
+      "statement_sha256": "4d249ccb0b55e86141c28938f93865b8915eb3e0e0ee75eb7e886c7bbc33d9c9",
+      "local_candidates": [
+        "125_emergency_preparedness.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "126",
+      "name": "knowledge_base",
+      "statement_count": 71,
+      "statement_sha256": "1a7b6c067fd6b621073c68141f606b443a98e1df6a33febd5fb7a78264d895cc",
+      "local_candidates": [
+        "126_knowledge_base.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "127",
+      "name": "compliance_rule_executor",
+      "statement_count": 6,
+      "statement_sha256": "1a57a96f476e720cce26eeff4663883dc560de81fb81093bcb027b795857b363",
+      "local_candidates": [
+        "127_compliance_rule_executor.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "128",
+      "name": "compliance_rules_expanded",
+      "statement_count": 12,
+      "statement_sha256": "95930b77de9c464876bb26ee29507423243666e0b71c3893122229464f8fce2c",
+      "local_candidates": [
+        "128_compliance_rules_expanded.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "129",
+      "name": "resident_assurance_seed",
+      "statement_count": 10,
+      "statement_sha256": "f7807efaae2c466e5b301da5adaa19c941daf21349a2a98236bf69f63584be4d",
+      "local_candidates": [
+        "129_resident_assurance_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "130",
+      "name": "kb_security_and_schema_reconciliation",
+      "statement_count": 23,
+      "statement_sha256": "4afa62f63c9285c9a1d9fcf607b81ae472b9dd4156f7ee2e66a419306985031f",
+      "local_candidates": [
+        "130_kb_security_and_schema_reconciliation.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "131",
+      "name": "facility_admin_portal",
+      "statement_count": 72,
+      "statement_sha256": "ce260d7e2964f46c5ac713884f1062280a051fc7c9d718486f356507626182ef",
+      "local_candidates": [
+        "131_facility_admin_portal.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "132",
+      "name": "kb_markdown_column",
+      "statement_count": 3,
+      "statement_sha256": "52cb76ad5cefc16485884b51cdd24db88f93c42a006b90cd8f8fc194c1f94ec8",
+      "local_candidates": [
+        "132_kb_markdown_column.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "133",
+      "name": "reporting_module_schema",
+      "statement_count": 33,
+      "statement_sha256": "66d827ba4cfb2975753b2ba9c66cc2b211e160283a7a71690fadaf96d1efbc64",
+      "local_candidates": [
+        "133_reporting_module_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "134",
+      "name": "reporting_module_rls",
+      "statement_count": 62,
+      "statement_sha256": "297045b62d6f59dab12c387c51e47961bc477b690c480f99ab39781c2483be9e",
+      "local_candidates": [
+        "134_reporting_module_rls.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "135",
+      "name": "reporting_module_audit",
+      "statement_count": 28,
+      "statement_sha256": "5608630cf5ac4827a42dbb306d68438fc61117e2e66f16c433d777fd817a219d",
+      "local_candidates": [
+        "135_reporting_module_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "136",
+      "name": "kb_compliance_integration",
+      "statement_count": 15,
+      "statement_sha256": "6cb250806955ff37277105f6a08c742c9726eb0a833d0192aa6894d708f4dc3e",
+      "local_candidates": [
+        "136_kb_compliance_integration.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "137",
+      "name": "track_e_col_seed_corrections",
+      "statement_count": 3,
+      "statement_sha256": "620986d5c48938893fc93588b85727c9e7041e8258697994acf58b792d93a41e",
+      "local_candidates": [
+        "137_track_e_col_seed_corrections.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "138",
+      "name": "track_e_facility_alf_license_type",
+      "statement_count": 3,
+      "statement_sha256": "3103b047d7c72de30783a61897353095a6f2474336e21fc3d617e3296b5fa4f6",
+      "local_candidates": [
+        "138_track_e_facility_alf_license_type.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "139",
+      "name": "track_e_adl_assessments",
+      "statement_count": 16,
+      "statement_sha256": "a3184bfd98b618575625a7521af4017f886cf0d94ce10cb531c17ba8ab8cc844",
+      "local_candidates": [
+        "139_track_e_adl_assessments.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "140",
+      "name": "track_e_rate_confirmed",
+      "statement_count": 3,
+      "statement_sha256": "6731328b3f1b457996f5efc6cf9114ff4c4641085c91f6d43930a06f4c6e6c13",
+      "local_candidates": [
+        "140_track_e_rate_confirmed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "141",
+      "name": "track_e_form_1823_and_admission_docs",
+      "statement_count": 31,
+      "statement_sha256": "fe03110f8fefafea129e59e5a2ae7e4b070ec4f59b9b125338482d59790437ae",
+      "local_candidates": [
+        "141_track_e_form_1823_and_admission_docs.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "142",
+      "name": "track_e_discharge_reason_expansion",
+      "statement_count": 4,
+      "statement_sha256": "c3e1105a479c6fb93c939f6dfa50b53e080c3213b02838ec2dfe90e8b09730f0",
+      "local_candidates": [
+        "142_track_e_discharge_reason_expansion.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "143",
+      "name": "track_e_staff_discipline_records",
+      "statement_count": 16,
+      "statement_sha256": "910ebd455a190d820cf8e2b51464643c22e667b76ba8b82358a8eb2b7fb6d8c9",
+      "local_candidates": [
+        "143_track_e_staff_discipline_records.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "144",
+      "name": "track_e_enum_parity_batch",
+      "statement_count": 39,
+      "statement_sha256": "116c4691657ababc1d60b69d286811712c8771c219ac0c3671c5616617406db9",
+      "local_candidates": [
+        "144_track_e_enum_parity_batch.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "145",
+      "name": "track_e_fl_statutes_module_links",
+      "statement_count": 18,
+      "statement_sha256": "6465b1716d45b4d813543efa2e7b3f0a290da57f76324ea8f64e40941eff5157",
+      "local_candidates": [
+        "145_track_e_fl_statutes_module_links.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "146",
+      "name": "kb_seed_getting_started",
+      "statement_count": 2,
+      "statement_sha256": "1ae2b84ad3a04a67122360551346d63b6139efa55bc01812886b77208d3eeaba",
+      "local_candidates": [
+        "146_kb_seed_getting_started.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "147",
+      "name": "grace_foundation",
+      "statement_count": 43,
+      "statement_sha256": "edeba62373c1f4946a220dfa9a680ddf5f5cca4fe93ad423dcbcf2d39a53e7b7",
+      "local_candidates": [
+        "147_grace_foundation.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "148",
+      "name": "grace_flow_engine",
+      "statement_count": 35,
+      "statement_sha256": "a59d117a33ab78650cae542196338e5eb27a431de54e7e599c1e46827b6db939",
+      "local_candidates": [
+        "148_grace_flow_engine.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "149",
+      "name": "search_tool_dashboard",
+      "statement_count": 24,
+      "statement_sha256": "a73e7e998f9eb1e63dd95d87b5a1f8e68f1b40a27191867e5df31e941d9a9457",
+      "local_candidates": [
+        "149_search_tool_dashboard.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "150",
+      "name": "seed_search_tool_policy_defaults",
+      "statement_count": 1,
+      "statement_sha256": "4f7af94a351151beed2babc1366dc77e82953cd5b5b105f0ea83964b8879d156",
+      "local_candidates": [
+        "150_seed_search_tool_policy_defaults.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "151",
+      "name": "seed_col_executive_metrics",
+      "statement_count": 4,
+      "statement_sha256": "b600eeb25677ecb345fa65e40be6fefffa3d1fd60b1111754cd377391fe1a1f8",
+      "local_candidates": [
+        "151_seed_col_executive_metrics.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "152",
+      "name": "seed_col_payroll_and_assurance_facilities",
+      "statement_count": 4,
+      "statement_sha256": "1c191839eb7732e14b296baec01cbd880cc1d9165cf9a3edc7c75f607ad6f7ff",
+      "local_candidates": [
+        "152_seed_col_payroll_and_assurance_facilities.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "153",
+      "name": "care_plan_signature",
+      "statement_count": 3,
+      "statement_sha256": "5ecca99b3adad3f72d3a9f61ca5cb0c4d42b668e7285ccd64275201f8cb43ae8",
+      "local_candidates": [
+        "153_care_plan_signature.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "154",
+      "name": "exec_alert_threshold_rules",
+      "statement_count": 9,
+      "statement_sha256": "8bb0b0a38dbbe6a652435187d648c2ff535aa98d77cdc1f1db3aa6c180287106",
+      "local_candidates": [
+        "154_exec_alert_threshold_rules.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "155",
+      "name": "resident_assurance_intelligence",
+      "statement_count": 21,
+      "statement_sha256": "3bdf83c84185ad01fdfb3031fb860d8281aaec3807aec5240b23898bfce2bdf0",
+      "local_candidates": [
+        "155_resident_assurance_intelligence.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "156",
+      "name": "watch_protocol_auto_trigger",
+      "statement_count": 4,
+      "statement_sha256": "1b5aee0e9a5a910abd8945bee6b7221cfc940388ed62528df6c993e3e2946c5d",
+      "local_candidates": [
+        "156_watch_protocol_auto_trigger.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "157",
+      "name": "resident_assurance_alert_rules",
+      "statement_count": 1,
+      "statement_sha256": "b2ae44031273a313ad9193f5d651f7ff3a346cbf04ecb9afd1077ab06dbd0997",
+      "local_candidates": [
+        "157_resident_assurance_alert_rules.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "158",
+      "name": "fix_watch_trigger_race_condition",
+      "statement_count": 4,
+      "statement_sha256": "c3971b94dab08a21f1d330efe0e091832efb51ed28ff40c6bfee85f647e0a20e",
+      "local_candidates": [
+        "158_fix_watch_trigger_race_condition.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "159",
+      "name": "col_licensure_survey_data",
+      "statement_count": 7,
+      "statement_sha256": "ae2d8e1791777b5399f0bb42190036e069c1fc2372469de53e816660ea623c9e",
+      "local_candidates": [
+        "159_col_licensure_survey_data.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "160",
+      "name": "reset_demo_user_passwords",
+      "statement_count": 2,
+      "statement_sha256": "0a20eb508ae846594441eaf73fadd251056feb6d5ff3076cfab93adc305bb6be",
+      "local_candidates": [
+        "160_reset_demo_user_passwords.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "161",
+      "name": "seed_missing_role_demo_users",
+      "statement_count": 4,
+      "statement_sha256": "85bcf1483b82cd4fcc16000c1fe81b5fdaee7b0701a5e02e1a970648db861058",
+      "local_candidates": [
+        "161_seed_missing_role_demo_users.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "162",
+      "name": "reload_postgrest_schema_cache",
+      "statement_count": 1,
+      "statement_sha256": "2eb871ff52ac4f63e34cfc18fd01a0b44d9f98c4123eab9beae0a14e0b856212",
+      "local_candidates": [
+        "162_reload_postgrest_schema_cache.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "163",
+      "name": "force_postgrest_schema_reload",
+      "statement_count": 11,
+      "statement_sha256": "63757a67f0c15b081a501599ab00cd61fd8eb0ddd79b97259324edeb102b3384",
+      "local_candidates": [
+        "163_force_postgrest_schema_reload.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "164",
+      "name": "fix_demo_auth_identities",
+      "statement_count": 3,
+      "statement_sha256": "7f43a9a968988066a77e7b1bab5aa9da95f2590485794b88e98666e4209758bb",
+      "local_candidates": [
+        "164_fix_demo_auth_identities.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "165",
+      "name": "nuke_and_rebuild_broken_demo_auth",
+      "statement_count": 3,
+      "statement_sha256": "6963f1e557ee2d8c22e792223b628d3da953135bc1cec83bb2e211887b6734c4",
+      "local_candidates": [
+        "165_nuke_and_rebuild_broken_demo_auth.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "166",
+      "name": "rebuild_demo_auth_with_triggers",
+      "statement_count": 2,
+      "statement_sha256": "55bac8cad77f7fff4d9e9b0531809e97a135680bb7d58f46a0ecfd62833d945e",
+      "local_candidates": [
+        "166_rebuild_demo_auth_with_triggers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "167",
+      "name": "diagnose_auth_schema",
+      "statement_count": 1,
+      "statement_sha256": "752356da139acd91d94b604efa9a887696278b60956a964b040f34e850af57d4",
+      "local_candidates": [
+        "167_diagnose_auth_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "168",
+      "name": "fix_null_token_columns",
+      "statement_count": 1,
+      "statement_sha256": "a6238410dc5fcb4a8339ee96886ab0cd5bd2cdaa927611f4a5376137202b7d93",
+      "local_candidates": [
+        "168_fix_null_token_columns.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "169",
+      "name": "add_med_tech_role",
+      "statement_count": 1,
+      "statement_sha256": "5485deef540e54014f3cbe1a93e9319503a987024885fb01fa933bd7f26d481b",
+      "local_candidates": [
+        "169_add_med_tech_role.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "170",
+      "name": "seed_med_tech_demo_user",
+      "statement_count": 4,
+      "statement_sha256": "76c38fdf1932d928bfe4154c344628101002f46040e4dda167506da12147b562",
+      "local_candidates": [
+        "170_seed_med_tech_demo_user.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "171",
+      "name": "med_tech_cockpit_tables",
+      "statement_count": 66,
+      "statement_sha256": "c352cf2b15e76549d7256b69b6df093e5c4ce478ca4e576435aeb6d1353b42ec",
+      "local_candidates": [
+        "171_med_tech_cockpit_tables.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "172",
+      "name": "extend_emar_for_med_passes",
+      "statement_count": 4,
+      "statement_sha256": "d72dbe7da647f2bf519dda0dc69fc079fc771adf9a3a4e855273fa804f303b02",
+      "local_candidates": [
+        "172_extend_emar_for_med_passes.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "173",
+      "name": "seed_med_tech_cockpit_demo",
+      "statement_count": 1,
+      "statement_sha256": "5857d5c6f21a6e407d295b118c1bcf584d85a280038254e7bdef70e26df9b0d4",
+      "local_candidates": [
+        "173_seed_med_tech_cockpit_demo.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "174",
+      "name": "dietary_command_deck_tables",
+      "statement_count": 43,
+      "statement_sha256": "9bf5411fad48d2b040c619ecd57c1856f425303b97eecfaca32c97953d8f164f",
+      "local_candidates": [
+        "174_dietary_command_deck_tables.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "175",
+      "name": "seed_dietary_demo",
+      "statement_count": 2,
+      "statement_sha256": "57bc2eebc48ad6584b47cba979d3d84f9125ee4b79f1bf8079003b250ca8c8ae",
+      "local_candidates": [
+        "175_seed_dietary_demo.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "176",
+      "name": "grace_memory_compiler",
+      "statement_count": 76,
+      "statement_sha256": "7ea8ea09bb9284083368cad0ec00ff2620935ae939e7cda3df7e87e0cb7c6959",
+      "local_candidates": [
+        "176_grace_memory_compiler.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "177",
+      "name": "pilot_feedback_submissions",
+      "statement_count": 16,
+      "statement_sha256": "006b6e1ae557acf5d253fe84729678e52b1ddf64656c8fd38d18928acac7f7b4",
+      "local_candidates": [
+        "177_pilot_feedback_submissions.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "178",
+      "name": "promote_demo_admin_to_owner",
+      "statement_count": 1,
+      "statement_sha256": "ccbc37566d15c051be98ee30e76956b7ebcfeab0e5d61484d93b79eda7c62958",
+      "local_candidates": [
+        "178_promote_demo_admin_to_owner.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "179",
+      "name": "update_col_admin_contacts",
+      "statement_count": 10,
+      "statement_sha256": "ccea62b794d3e7643eacb67c25e5396dd4f7a242b45ba0020cdf07c8947fdbdb",
+      "local_candidates": [
+        "179_update_col_admin_contacts.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "180",
+      "name": "allow_med_tech_incident_capture",
+      "statement_count": 4,
+      "statement_sha256": "ce4ec966537eae615bb684754ef55013817cfda316cf91efcffa147f85a6501d",
+      "local_candidates": [
+        "180_allow_med_tech_incident_capture.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "181",
+      "name": "fix_watch_auto_trigger_for_current_incident_schema",
+      "statement_count": 1,
+      "statement_sha256": "1d1af5865fab28396022f287f758642228f0b05ffe7627ce2bae632ae297b3c0",
+      "local_candidates": [
+        "181_fix_watch_auto_trigger_for_current_incident_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "182",
+      "name": "seed_specialist_role_demo_users",
+      "statement_count": 2,
+      "statement_sha256": "0bbf4be3fb5abd563906ae28b3d5da498b789ae00fb482f724299e3d9cc6fdd8",
+      "local_candidates": [
+        "182_seed_specialist_role_demo_users.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "183",
+      "name": "fix_incident_sequence_audit_trigger",
+      "statement_count": 1,
+      "statement_sha256": "7a8a432ac3b1dd6242a67f010e1ccc16ea01b342966a724be2b564ac6e076d7d",
+      "local_candidates": [
+        "183_fix_incident_sequence_audit_trigger.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "184",
+      "name": "harden_incident_number_allocator_against_seeded_data",
+      "statement_count": 1,
+      "statement_sha256": "166d84715d59bf81b99afe57223bf74b17133d2af57227366fe739d81d77272f",
+      "local_candidates": [
+        "184_harden_incident_number_allocator_against_seeded_data.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "185",
+      "name": "executive_standup_metric_registry",
+      "statement_count": 5,
+      "statement_sha256": "ec30b3b16509b3f95e143da32681e152b8864bf61f503eabf6f25d8b0f114fa2",
+      "local_candidates": [
+        "185_executive_standup_metric_registry.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "186",
+      "name": "executive_standup_snapshots",
+      "statement_count": 11,
+      "statement_sha256": "96e5338c58290945cd15f59b124ddd8dfd8d605465ed88085ecab498461e8507",
+      "local_candidates": [
+        "186_executive_standup_snapshots.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "187",
+      "name": "executive_standup_rls_audit",
+      "statement_count": 55,
+      "statement_sha256": "53d1f320a4a88a26af521c2c39fcdae6d4e7fc1e6c5c33d1bc693d476c8a5147",
+      "local_candidates": [
+        "187_executive_standup_rls_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "188",
+      "name": "executive_standup_import_jobs",
+      "statement_count": 11,
+      "statement_sha256": "6a50d8fafe0ac492804daea7d6493814b2b60847f4fe51dea21fe72d4c7e9b8e",
+      "local_candidates": [
+        "188_executive_standup_import_jobs.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "189",
+      "name": "staff_attendance_callouts",
+      "statement_count": 13,
+      "statement_sha256": "1325341762b904ab04b86e8ff21b04f770285c7c32f58df751d2718ac927f1fb",
+      "local_candidates": [
+        "189_staff_attendance_callouts.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "190",
+      "name": "staff_requisitions",
+      "statement_count": 12,
+      "statement_sha256": "6ab675d7c6cc68e1372c5980bc8dde4454b318f765803f6902b57238cea9cf50",
+      "local_candidates": [
+        "190_staff_requisitions.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "191",
+      "name": "referral_outreach_activities",
+      "statement_count": 14,
+      "statement_sha256": "e2038bc0c76f88e3f27d27c117964ff57b494237e39ce1ca836ab663479ecc32",
+      "local_candidates": [
+        "191_referral_outreach_activities.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "192",
+      "name": "bed_inventory_classification",
+      "statement_count": 5,
+      "statement_sha256": "2fd6b6ff0c33c1c2373587deb8be4b8b0a011ce752c640aab1285e687e317e46",
+      "local_candidates": [
+        "192_bed_inventory_classification.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "193",
+      "name": "report_export_storage_bucket",
+      "statement_count": 9,
+      "statement_sha256": "5ca914f3fde92b6cde56b91ddb2f572183a16d291fa5051f14592499e0a51e38",
+      "local_candidates": [
+        "193_report_export_storage_bucket.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "194",
+      "name": "resident_assurance_integrity_assignment",
+      "statement_count": 4,
+      "statement_sha256": "569e2b3ae624b600cbbc0fcf8c424fe3e27dc51552ca3defe5bbbaa4beb8a454",
+      "local_candidates": [
+        "194_resident_assurance_integrity_assignment.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "195",
+      "name": "operation_task_templates",
+      "statement_count": 13,
+      "statement_sha256": "8dc903bab31b4c01af6b244045f3ca3305400d03976aa03d42a202b0d77586f1",
+      "local_candidates": [
+        "195_operation_task_templates.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "196",
+      "name": "operation_task_instances",
+      "statement_count": 16,
+      "statement_sha256": "d7779ca902473c2efdb5bc86e1af86ced7721d045666ff3345a114adf876c5d3",
+      "local_candidates": [
+        "196_operation_task_instances.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "197",
+      "name": "facility_assets",
+      "statement_count": 12,
+      "statement_sha256": "c1a36581cc1260608ff0e0a6ee790943763dea4f5bddc83aa8fa65b9b21e0daf",
+      "local_candidates": [
+        "197_facility_assets.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "198",
+      "name": "staffing_adequacy_snapshots",
+      "statement_count": 10,
+      "statement_sha256": "6e182adfce098012b05dc6b0975507dfe6642e61171739fdddb812e51152a5b5",
+      "local_candidates": [
+        "198_staffing_adequacy_snapshots.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "199",
+      "name": "operation_audit_log",
+      "statement_count": 10,
+      "statement_sha256": "251995c8853fdf06c37f18ccb4e8653b3e2e9f01b4b63203e04c7d4addd4214f",
+      "local_candidates": [
+        "199_operation_audit_log.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "200",
+      "name": "oce_seed_data",
+      "statement_count": 21,
+      "statement_sha256": "7e477db2d50b7b595ffb700abddfc43e033dbc5ef0278621b78ce366a73ee5ec",
+      "local_candidates": [
+        "200_oce_seed_data.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "201",
+      "name": "oce_reconciliation_and_generation_guard",
+      "statement_count": 20,
+      "statement_sha256": "f4c473cf5611f671e4194ba136c1f4c7afdd7626e5a316f993bf24322567f400",
+      "local_candidates": [
+        "201_oce_reconciliation_and_generation_guard.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "202",
+      "name": "workflow_events",
+      "statement_count": 13,
+      "statement_sha256": "065f7f5f376b5eb5689b9e45ff5506a6f27de0d3eac302c42b8017c6bd360a64",
+      "local_candidates": [
+        "202_workflow_events.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260514180000",
+      "name": "staff_role_enum_values",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "20260514180000_staff_role_enum_values.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260514180707",
+      "name": "homewood_round2_employee_seed",
+      "statement_count": 1,
+      "statement_sha256": "bb88896187ee7db8895c85e00500e26b58d514f8b17854d694f1498737cfa4a7",
+      "local_candidates": [
+        "20260514180707_homewood_round2_employee_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260514203302",
+      "name": "homewood_round2_ar_intake_may_2026",
+      "statement_count": 1,
+      "statement_sha256": "9d52bd14d1aea7317e75a55334b1dbdb4553b2d9d728b6ddc7a90b2961aefdd3",
+      "local_candidates": [
+        "20260514203302_homewood_round2_ar_intake_may_2026.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260814153636",
+      "name": "revoke_anon_security_definer_rpc_execute",
+      "statement_count": 1,
+      "statement_sha256": "2ccb433c419341899ef2b3bf31b281fd332ca105cdd9d73a7d691cc0d0f45b8b",
+      "local_candidates": [],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260814200926",
+      "name": "family_portal_messages_one_way",
+      "statement_count": 1,
+      "statement_sha256": "c60cda8a5e528f0b7b2f09a144427bbbd1229e0a321d01b0c29b531b176ecd1b",
+      "local_candidates": [],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260814201004",
+      "name": "col_discovery_round_cadence_jessica_2026_08_14",
+      "statement_count": 1,
+      "statement_sha256": "17fbd86346983dadffaf6be48be3ae476414d7726372ad3845f7e463606d5faf",
+      "local_candidates": [],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260814201013",
+      "name": "snack_logs_time_and_passer_only",
+      "statement_count": 1,
+      "statement_sha256": "7c64476f83ad0ee2a83e599ac48575077648c21f245498e8e315a3191c269208",
+      "local_candidates": [],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260814201022",
+      "name": "revoke_anon_col_discovery_round_rpcs",
+      "statement_count": 1,
+      "statement_sha256": "be903b62410efe4eecd7b41ac4723c4dc669590b3994b46dd8e06606a5cb2b58",
+      "local_candidates": [],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "20260814201741",
+      "name": "pin_col_discovery_helper_search_path",
+      "statement_count": 1,
+      "statement_sha256": "46130f170ee347fa5571770172a7de3373e3b31cd98849ed847963a8758e2810",
+      "local_candidates": [],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "203",
+      "name": "admission_case_form_1823_seed",
+      "statement_count": 6,
+      "statement_sha256": "5e89dc9634ceaba7f253d1bcf3962f2af61dba1e377652d7e0b6efe7a5d8bf64",
+      "local_candidates": [
+        "203_admission_case_form_1823_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "204",
+      "name": "operations_escalation_deliveries",
+      "statement_count": 10,
+      "statement_sha256": "63202f641d2a4069f78061a95e2f3cf9133c9bd0c16283080d977a8d843e6749",
+      "local_candidates": [
+        "204_operations_escalation_deliveries.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "205",
+      "name": "risk_score_snapshots",
+      "statement_count": 21,
+      "statement_sha256": "3d60fe9dc0ff1aa4ebb8045ab47f8e2344b3de18e203b5be03b4d8c81769c52e",
+      "local_candidates": [
+        "205_risk_score_snapshots.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "206",
+      "name": "cross_operator_benchmark_settings",
+      "statement_count": 12,
+      "statement_sha256": "7d0bbb1c51cd086cc78b68661f6fc1ae9636de2295069da27b29358fbfa248c2",
+      "local_candidates": [
+        "206_cross_operator_benchmark_settings.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "207",
+      "name": "user_dashboard_preferences",
+      "statement_count": 9,
+      "statement_sha256": "2fd8410f790315332dca191f2629c2e3db64a9a2ebcb53a16061786558757873",
+      "local_candidates": [
+        "207_user_dashboard_preferences.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "208",
+      "name": "facility_metric_targets",
+      "statement_count": 10,
+      "statement_sha256": "c5aa76eccbdeaf07a5577318f2a6bff58dce5cf037af3d18efaa611e90dd9ae6",
+      "local_candidates": [
+        "208_facility_metric_targets.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "209",
+      "name": "alert_audit_log",
+      "statement_count": 8,
+      "statement_sha256": "35934c31e63450253630c77e68e0cc4eb412baccdd3abf5cf7208e6e52f64369",
+      "local_candidates": [
+        "209_alert_audit_log.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "210",
+      "name": "rollback_ui_v2",
+      "statement_count": 1,
+      "statement_sha256": "26afc2fffd4285dc2338aa8cec4ae1fcfdb1f40b97daa3f77f2bcf067ff762c7",
+      "local_candidates": [
+        "210_rollback_ui_v2.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "211",
+      "name": "v2_facility_rollup_view",
+      "statement_count": 4,
+      "statement_sha256": "3c146f190b210ea6fe61ccb3d46ad9e39ad963d05dcf3524ac30b5d38b75fa9a",
+      "local_candidates": [
+        "211_v2_facility_rollup_view.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "212",
+      "name": "v2_residents_list_view",
+      "statement_count": 3,
+      "statement_sha256": "10c32ada811562a64a27d7a48c8d8a2e5276a91113921e5f1e89c5859645bfb2",
+      "local_candidates": [
+        "212_v2_residents_list_view.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "213",
+      "name": "v2_incidents_list_view",
+      "statement_count": 3,
+      "statement_sha256": "4af9efbb507c275d42ae9d61bea40a0b9bd1d34037e55bd62a9b63bf6eb61265",
+      "local_candidates": [
+        "213_v2_incidents_list_view.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "214",
+      "name": "v2_alerts_list_view",
+      "statement_count": 3,
+      "statement_sha256": "afd6fd98c8ee3abb505d060528e9ed08d404d4b31800048a41cba40a20e5250e",
+      "local_candidates": [
+        "214_v2_alerts_list_view.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "215",
+      "name": "v2_admissions_list_view",
+      "statement_count": 3,
+      "statement_sha256": "c805727445e05b3d01544e1c2a16535fef1a08b82dd20afb5dfa2e815ba6dd33",
+      "local_candidates": [
+        "215_v2_admissions_list_view.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "216",
+      "name": "facility_launch_document_parser",
+      "statement_count": 39,
+      "statement_sha256": "813acb07c90d6a2b907dc4d6be3af0f75ebb512fa8610c84128dd63696d3a6bb",
+      "local_candidates": [
+        "216_facility_launch_document_parser.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "217",
+      "name": "col_v2_status_and_medicaid_provider_foundation",
+      "statement_count": 36,
+      "statement_sha256": "eaecf25f1ccddb5db1f3510a2427d0b0cd09e06990aa8140226c46d94dc75440",
+      "local_candidates": [
+        "217_col_v2_status_and_medicaid_provider_foundation.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "218",
+      "name": "col_v2_physical_plant_and_posted_rates",
+      "statement_count": 9,
+      "statement_sha256": "0e3a92899a48e7fc2aedbe0b89612902a5d41b4afffa62b3a2531308fdc3f701",
+      "local_candidates": [
+        "218_col_v2_physical_plant_and_posted_rates.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "219",
+      "name": "col_v2_observation_vocab_and_templates",
+      "statement_count": 19,
+      "statement_sha256": "78eb459e6ff3d8583e818aa310b5079b59c53fd0d415ff010e023d7f2efbcb0c",
+      "local_candidates": [
+        "219_col_v2_observation_vocab_and_templates.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "220",
+      "name": "col_v2_operational_logs",
+      "statement_count": 37,
+      "statement_sha256": "ebcbd283eeccff73b8a079ebd606f241d376f7aeb8c18f4505439173d0fb2458",
+      "local_candidates": [
+        "220_col_v2_operational_logs.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "221",
+      "name": "col_v2_staff_compliance_and_notifications",
+      "statement_count": 35,
+      "statement_sha256": "f483ea9ef6b1f5616606fc8e2f236d0b601675a70f72c24fc14163856290bba1",
+      "local_candidates": [
+        "221_col_v2_staff_compliance_and_notifications.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "222",
+      "name": "col_v2_resident_contracts_boldsign_schema",
+      "statement_count": 27,
+      "statement_sha256": "31d76bee5210b29b2bbdddf3fd7ccbf3f69e948cb7b639cd010845078c2ffdd1",
+      "local_candidates": [
+        "222_col_v2_resident_contracts_boldsign_schema.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "223",
+      "name": "col_v2_boldsign_events",
+      "statement_count": 11,
+      "statement_sha256": "45427cd61cdb2fa55f477c3c80e7989cadd558ddde7672e23625fced1dc99ec5",
+      "local_candidates": [
+        "223_col_v2_boldsign_events.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "224",
+      "name": "col_v2_admissions_medicaid_pipeline",
+      "statement_count": 8,
+      "statement_sha256": "efe1b554ce70ca18eb5bdfb2f05b5b91356b934ecce7727e49bd0f308b6d2725",
+      "local_candidates": [
+        "224_col_v2_admissions_medicaid_pipeline.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "225",
+      "name": "col_v2_activity_and_family_message_metadata",
+      "statement_count": 5,
+      "statement_sha256": "fcaab8ea1417391bf8b64ee7bac858941af0bf69283ebe6d64ee861868508b39",
+      "local_candidates": [
+        "225_col_v2_activity_and_family_message_metadata.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "226",
+      "name": "facility_launch_promotion_runs",
+      "statement_count": 15,
+      "statement_sha256": "e6419478340be79c811f70986aaf137ead048a4064f963d72fe3d646a9f78b7e",
+      "local_candidates": [
+        "226_facility_launch_promotion_runs.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "227",
+      "name": "facility_launch_promotion_run_items",
+      "statement_count": 13,
+      "statement_sha256": "ca78e977c3adecbe549d8200ba3c22b207622ce07031f3cc9ba9313a35cd31a0",
+      "local_candidates": [
+        "227_facility_launch_promotion_run_items.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "228",
+      "name": "facility_launch_promotion_run_links",
+      "statement_count": 14,
+      "statement_sha256": "8ab35f61d1b88ff7b40f83e776bdb28f9459ce917a8f3b0758602fae74c84eee",
+      "local_candidates": [
+        "228_facility_launch_promotion_run_links.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "229",
+      "name": "facility_launch_tier1_promoters",
+      "statement_count": 12,
+      "statement_sha256": "2bb1f709a8192fb18ed389d5f96baf07c879b343d9a7d01defbe842a732a3122",
+      "local_candidates": [
+        "229_facility_launch_tier1_promoters.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "230",
+      "name": "facility_launch_promotion_runs_updated_by",
+      "statement_count": 1,
+      "statement_sha256": "ae0aea6b8457c442ac9821ec4adff2b93d0089f70634bc0799a9f26b2daf0959",
+      "local_candidates": [
+        "230_facility_launch_promotion_runs_updated_by.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "231",
+      "name": "retire_legacy_executive_demo_data",
+      "statement_count": 3,
+      "statement_sha256": "fb141b3e3e21ab54e4fffb0b94f14947d7dafd52a626ade18f2cbcaf2fc67c7a",
+      "local_candidates": [
+        "231_retire_legacy_executive_demo_data.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "232",
+      "name": "facility_launch_round2_config_promoters",
+      "statement_count": 35,
+      "statement_sha256": "1fbfadf6eeeda04ecbbbb5710414a40dacf71ff7f4a11668caf233a3ebf1b23f",
+      "local_candidates": [
+        "232_facility_launch_round2_config_promoters.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "233",
+      "name": "audit_p1_db_remediation",
+      "statement_count": 1,
+      "statement_sha256": "810e79cd8bc8d3c676a283529a62cd6f0b025e7b99c0c3250da5b90e9407ce02",
+      "local_candidates": [
+        "233_audit_p1_db_remediation.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "234",
+      "name": "ai_tool_layer_v1",
+      "statement_count": 1,
+      "statement_sha256": "d3046a5981b190a07013b953c058dfb8be1aca07e4c15119d735e41592dcf18e",
+      "local_candidates": [
+        "234_ai_tool_layer_v1.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "235",
+      "name": "restore_legal_entities_and_background_screenings",
+      "statement_count": 1,
+      "statement_sha256": "aceba2fd54faaf1fb008752b900044c18c1162f50cec3cf1f69da3acb8ccab8b",
+      "local_candidates": [
+        "235_restore_legal_entities_and_background_screenings.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "236",
+      "name": "restore_transport_vendor_seed",
+      "statement_count": 1,
+      "statement_sha256": "68775077e1b432d6e7d826a3ff5dddf930e1d23bfcc7835b7e73513697923872",
+      "local_candidates": [
+        "236_restore_transport_vendor_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "237",
+      "name": "restore_dietary_command_deck",
+      "statement_count": 1,
+      "statement_sha256": "33f91a8c2ed5c68af4d09c5c124c908833acfb1b2e757b5de89c3b8f8b9fcec3",
+      "local_candidates": [
+        "237_restore_dietary_command_deck.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "238",
+      "name": "restore_089_columns_on_diet_orders",
+      "statement_count": 1,
+      "statement_sha256": "a554bcb1435ae51e5a789010e8639e204309181677bbc0d690173f9a2ce0c04e",
+      "local_candidates": [
+        "238_restore_089_columns_on_diet_orders.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "239",
+      "name": "ai_governance_closeout",
+      "statement_count": 1,
+      "statement_sha256": "156552912fc9a05bf32c76990885822656a620611393555cea8f930c4539f9c9",
+      "local_candidates": [
+        "239_ai_governance_closeout.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "240",
+      "name": "kb_rrf_hybrid_retrieval",
+      "statement_count": 1,
+      "statement_sha256": "b4eb942c27df68703652c49cb65519af552a6c5faac1510ed14f106dbd0cd417",
+      "local_candidates": [
+        "240_kb_rrf_hybrid_retrieval.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "241",
+      "name": "kb_metadata_filters",
+      "statement_count": 1,
+      "statement_sha256": "06638644ac6410f3ea17729e8947a477205bcf1e98db5f7029e9648fd1e8107c",
+      "local_candidates": [
+        "241_kb_metadata_filters.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "242",
+      "name": "kb_citation_anchors",
+      "statement_count": 1,
+      "statement_sha256": "c32d60084ffd11b62e4d7ac9576520530d4a745c21000d074d9728664397b00a",
+      "local_candidates": [
+        "242_kb_citation_anchors.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "243",
+      "name": "kb_seed_targets",
+      "statement_count": 1,
+      "statement_sha256": "f7edb1ef4eb91cab04ef9ddefe8df2e66870de2af9c1b4b5095ea68174844ec9",
+      "local_candidates": [
+        "243_kb_seed_targets.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "244",
+      "name": "kb_ingestion_upgrades",
+      "statement_count": 1,
+      "statement_sha256": "545f0e89ceab1951202148ba6bb6fcf1c6cf25831102fa4792db7118561a0364",
+      "local_candidates": [
+        "244_kb_ingestion_upgrades.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "245",
+      "name": "exec_nlq_feedback",
+      "statement_count": 1,
+      "statement_sha256": "0276f1d2ce0d9d6dec12c7edba7be32ad6cceaa58fffe548c81e55b4d8e4fa9b",
+      "local_candidates": [
+        "245_exec_nlq_feedback.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "246",
+      "name": "kb_gaps_loop_coverage",
+      "statement_count": 1,
+      "statement_sha256": "7ffc9d80bc8f30ff321343201177fe675d8a5654f44e1fb9fefa06da59217da5",
+      "local_candidates": [
+        "246_kb_gaps_loop_coverage.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "247",
+      "name": "facility_license_scope_coll_enhanced_alf_homewood",
+      "statement_count": 4,
+      "statement_sha256": "34b16769d88a2fef0ee33d2a1ee55803d463746c8d752749b9acf17b8bb15b18",
+      "local_candidates": [
+        "247_facility_license_scope_coll_enhanced_alf_homewood.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "248",
+      "name": "facility_document_vault_taxonomy",
+      "statement_count": 38,
+      "statement_sha256": "390b6244e4cf6c20f129148cfec27944f9adc65c90a70368dcc2c213c7984d21",
+      "local_candidates": [
+        "248_facility_document_vault_taxonomy.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "249",
+      "name": "vendor_facility_compliance_and_categories",
+      "statement_count": 13,
+      "statement_sha256": "1009f122395bc84ee9a3de8236f1dcde2d0b611323d50731df7ad22bf2d2da23",
+      "local_candidates": [
+        "249_vendor_facility_compliance_and_categories.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "250",
+      "name": "operational_threshold_org_defaults",
+      "statement_count": 8,
+      "statement_sha256": "908abe45f9b6065278274a9e1372669fd1df9c733e4ae9a25b1808690f9940c1",
+      "local_candidates": [
+        "250_operational_threshold_org_defaults.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "251",
+      "name": "staffing_ratio_threshold_org_facility_seed",
+      "statement_count": 2,
+      "statement_sha256": "30dc4a17cc2ccd114cfa40d4a1f6bf6d2a86ffd1fb98924d07f35a76797a39e0",
+      "local_candidates": [
+        "251_staffing_ratio_threshold_org_facility_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "252",
+      "name": "facility_audit_log_trigger_null_actor",
+      "statement_count": 5,
+      "statement_sha256": "228a9aeec377aa0531a4b3188bf34af46524ab290c63dcbb4acb3c17a9671657",
+      "local_candidates": [
+        "252_facility_audit_log_trigger_null_actor.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "253",
+      "name": "referral_leads_preferred_contact_inquiry",
+      "statement_count": 8,
+      "statement_sha256": "7fcf06bbb989a8aa3aace46313ce8073d9ad691e3f4217baf511cad00fdbc24f",
+      "local_candidates": [
+        "253_referral_leads_preferred_contact_inquiry.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "254",
+      "name": "admission_intake_program_and_resident_dob_nullable",
+      "statement_count": 3,
+      "statement_sha256": "051f7a74f293d661daeb016bb0a562e29dab3bb64d251ab5a0c0009e80b1b5ce",
+      "local_candidates": [
+        "254_admission_intake_program_and_resident_dob_nullable.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "255",
+      "name": "discharge_med_reconciliation_plan_fields",
+      "statement_count": 4,
+      "statement_sha256": "f654385b422084e59031ed0bf48db84cf82aa3685c9bf0847dd20c2968b8bc41",
+      "local_candidates": [
+        "255_discharge_med_reconciliation_plan_fields.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "256",
+      "name": "admission_case_draft_and_anticipated_payer",
+      "statement_count": 6,
+      "statement_sha256": "939e81a1b1a5c7f45556422c4cba95619cd272e79b52189a334f06276e2f0fdd",
+      "local_candidates": [
+        "256_admission_case_draft_and_anticipated_payer.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "257",
+      "name": "residents_override_audit_columns",
+      "statement_count": 3,
+      "statement_sha256": "93c19deac6297c67c526861c6458f3ff12232557cec7c87528f1b8f2dba7f560",
+      "local_candidates": [
+        "257_residents_override_audit_columns.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "258",
+      "name": "admissions_direct_intake_fields",
+      "statement_count": 9,
+      "statement_sha256": "4c24e7f8f32b65f3e489f7cf8d03750ac405b0164db12616115f9d2e4a435050",
+      "local_candidates": [
+        "258_admissions_direct_intake_fields.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "259",
+      "name": "residents_clinical_verification_audit",
+      "statement_count": 7,
+      "statement_sha256": "fe3c6677ba273a9fd13b337bb7b76beb8e60571e54a55575a81e51aac46232a0",
+      "local_candidates": [
+        "259_residents_clinical_verification_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "260",
+      "name": "observation_plan_form_hardening",
+      "statement_count": 11,
+      "statement_sha256": "60af25be3b4e3b4abf15db115796638c49e5f16f5fd4156172a0f55418064da5",
+      "local_candidates": [
+        "260_observation_plan_form_hardening.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "261",
+      "name": "escalation_resolution_rationale",
+      "statement_count": 3,
+      "statement_sha256": "76ab824f15e594242e2ac34464f231a3f2c36800d3b7302902f1bb324168f20e",
+      "local_candidates": [
+        "261_escalation_resolution_rationale.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "262",
+      "name": "exec_intelligence_updated_by_alignment",
+      "statement_count": 5,
+      "statement_sha256": "1f8ce193eeabe135ad5a2c44744f41f8159f35cb6439229d7e01b13157cb329c",
+      "local_candidates": [
+        "262_exec_intelligence_updated_by_alignment.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "263",
+      "name": "exec_metric_snapshots_atomic_replace",
+      "statement_count": 7,
+      "statement_sha256": "59433e1b6b46bbd6e4e42c5691113a3cc9a6d0764bbb7f7900c51596508b6eb5",
+      "local_candidates": [
+        "263_exec_metric_snapshots_atomic_replace.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "264",
+      "name": "operation_bulk_complete_atomic_rpc",
+      "statement_count": 3,
+      "statement_sha256": "57fc6865828eeb780c02159ad79e209d53bb479e909a65ddafb67163b12a5a26",
+      "local_candidates": [
+        "264_operation_bulk_complete_atomic_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "265",
+      "name": "upsert_facility_operational_thresholds_rpc",
+      "statement_count": 5,
+      "statement_sha256": "997321dedc50c2462e037b652e592a228bbcf34fa8cbf98ae9c0d157c77dc3df",
+      "local_candidates": [
+        "265_upsert_facility_operational_thresholds_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "266",
+      "name": "persist_monthly_invoices_from_preview_rpc",
+      "statement_count": 5,
+      "statement_sha256": "7da8e289c6011352ad0104303110bfac576eec3a0a9186d49bef52bb2554ff82",
+      "local_candidates": [
+        "266_persist_monthly_invoices_from_preview_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "267",
+      "name": "survey_deficiencies_facility_tag_survey_date_active_idx",
+      "statement_count": 1,
+      "statement_sha256": "4b002207bdd79fc616513c6b63e0ae3c4b883bdad827cd0fdd46bb0de0b70396",
+      "local_candidates": [
+        "267_survey_deficiencies_facility_tag_survey_date_active_idx.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "268",
+      "name": "facility_launch_m3_transaction_rpc",
+      "statement_count": 5,
+      "statement_sha256": "18ab0b3f9d28eab0cf0afb3fd6070021d6cdf3abfd75e9fbbd09513d57c398d3",
+      "local_candidates": [
+        "268_facility_launch_m3_transaction_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "269",
+      "name": "facility_launch_scalar_config_rpc",
+      "statement_count": 4,
+      "statement_sha256": "ef2c77444a9668bfb6bf39f8ddbdbdcc96e729fbefce85ae4c41318202fcc867",
+      "local_candidates": [
+        "269_facility_launch_scalar_config_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "270",
+      "name": "facility_launch_simple_collection_rpc",
+      "statement_count": 4,
+      "statement_sha256": "add48d02e702bb57649603386e5b3c796afdf6a968147f6b92437393dc50d473",
+      "local_candidates": [
+        "270_facility_launch_simple_collection_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "271",
+      "name": "facility_launch_vendor_contacts_rpc",
+      "statement_count": 4,
+      "statement_sha256": "327d17b47d29ac555288ab4a6cbe404c84b570ca623f81f4b12eb23c7080c02e",
+      "local_candidates": [
+        "271_facility_launch_vendor_contacts_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "272",
+      "name": "facility_launch_m6_rates_rpc",
+      "statement_count": 4,
+      "statement_sha256": "7c1e96abfc811d2ea2f96824766364a8c9cf20fc8a71e834893d2ebdaccf3391",
+      "local_candidates": [
+        "272_facility_launch_m6_rates_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "273",
+      "name": "slice1_p1_security_hardening",
+      "statement_count": 27,
+      "statement_sha256": "a7fd57d46deb199ad73d1b0b9883957188837f4c966eb1ba44773950a3f7c8d5",
+      "local_candidates": [
+        "273_slice1_p1_security_hardening.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "274",
+      "name": "exec_nlq_threads",
+      "statement_count": 27,
+      "statement_sha256": "7ba5cd7e2ec6e966c86884268e641069dfa6dadbd8a0d2b92c9519a7d7688384",
+      "local_candidates": [
+        "274_exec_nlq_threads.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "275",
+      "name": "exec_nlq_threads_rpc",
+      "statement_count": 57,
+      "statement_sha256": "04a84f3d420d3fefa060469fc49a719d96773032cee023a9bc57783a607b2883",
+      "local_candidates": [
+        "275_exec_nlq_threads_rpc.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "276",
+      "name": "exec_nlq_threads_hardening",
+      "statement_count": 66,
+      "statement_sha256": "3d48f8044a52a101207ead80e9019d1a63c69aaf6b9f2fc3ae11af9ca529f201",
+      "local_candidates": [
+        "276_exec_nlq_threads_hardening.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "277",
+      "name": "p2_cleanup",
+      "statement_count": 27,
+      "statement_sha256": "048e3b20b76f39f994cf8da292f30de7da42c7222645f6de58fb87018dbcd00d",
+      "local_candidates": [
+        "277_p2_cleanup.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "278",
+      "name": "round2_hotfixes",
+      "statement_count": 40,
+      "statement_sha256": "55850044343b6b047ee2d21aeaf4bf0a60dc636d057aeb2978bcb5c6e4046119",
+      "local_candidates": [
+        "278_round2_hotfixes.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "279",
+      "name": "p2_sweep",
+      "statement_count": 23,
+      "statement_sha256": "e5315a7beda7a510aa72921bf6dfb42d93a3f122adcbe4550ae7a27d1c2f3847",
+      "local_candidates": [
+        "279_p2_sweep.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "280",
+      "name": "phase1_facilities_enhancement",
+      "statement_count": 16,
+      "statement_sha256": "bb90d300f1fb4556e783deb41170d26233aeb93c6d406a13e0048f68532022c4",
+      "local_candidates": [
+        "280_phase1_facilities_enhancement.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "281",
+      "name": "phase1_staff_seed",
+      "statement_count": 21,
+      "statement_sha256": "5fc2dbecc297a4fbbb1e4e9459937ae04ca4fe98d9efc15031c24dfda27911e9",
+      "local_candidates": [
+        "281_phase1_staff_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "282",
+      "name": "phase1_vendor_seed",
+      "statement_count": 22,
+      "statement_sha256": "eb6f57493763cc92ba9e5995742591a5dacbd3ea4bb4189147ae52ddf3632f55",
+      "local_candidates": [
+        "282_phase1_vendor_seed.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "283",
+      "name": "phase1_compliance_skeleton",
+      "statement_count": 36,
+      "statement_sha256": "1d51693c97729f5890135d0d850a88e9d9408807d0e38ac690bc78ccf9db1efc",
+      "local_candidates": [
+        "283_phase1_compliance_skeleton.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "284",
+      "name": "user_management_audit_password_reset_action",
+      "statement_count": 2,
+      "statement_sha256": "c69ed2453e1b34e927646cf3f2ca70dbdb32fd39e8cb67595c667827983b18e5",
+      "local_candidates": [
+        "284_user_management_audit_password_reset_action.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "285",
+      "name": "round3_hardening",
+      "statement_count": 42,
+      "statement_sha256": "2554a31cd5f8d0bce1af86d6d0457e499f4e2d1f71db42364c8ea531c8bfe9b2",
+      "local_candidates": [
+        "285_round3_hardening.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "286",
+      "name": "hard_delete_audit",
+      "statement_count": 7,
+      "statement_sha256": "0c6ba250ba85145bc6250636abf1e6b27c2031f489678caf89916a0528850dad",
+      "local_candidates": [
+        "286_hard_delete_audit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "287",
+      "name": "align_facilities_ahca_expiration_to_date",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "287_align_facilities_ahca_expiration_to_date.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "288",
+      "name": "apply_invoice_payment",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "288_apply_invoice_payment.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "289",
+      "name": "office_meetings",
+      "statement_count": 29,
+      "statement_sha256": "f8dc7a97fdf4e254ea629d94fb45effc54e6187197cc4aa7b8b06d4519d601f9",
+      "local_candidates": [
+        "289_office_meetings.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "290",
+      "name": "office_letters",
+      "statement_count": 20,
+      "statement_sha256": "5c62208d3d1035cf71258846dd9437d618ab3cc7fbfd565548e57e9a3f9d8a71",
+      "local_candidates": [
+        "290_office_letters.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "291",
+      "name": "office_internal_forms",
+      "statement_count": 20,
+      "statement_sha256": "f9191e2d01ea3705046c5cc4ac1cac7e6ae39aebe7b4d5d43786978bea21348c",
+      "local_candidates": [
+        "291_office_internal_forms.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "292",
+      "name": "office_document_acknowledgments",
+      "statement_count": 19,
+      "statement_sha256": "b0c4125384dbdf285070389dc804c9cb6a177f741002aab056321fa97251779b",
+      "local_candidates": [
+        "292_office_document_acknowledgments.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "293",
+      "name": "office_contact_directory",
+      "statement_count": 18,
+      "statement_sha256": "3e3ca3b4417e7f9e356cc499f80686f861c1e737e7c4587a165601372ff6b6a0",
+      "local_candidates": [
+        "293_office_contact_directory.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "294",
+      "name": "office_front_desk_kit",
+      "statement_count": 30,
+      "statement_sha256": "8471e3b6451f077bb0b3f16e6091f038c01e1a3961ab3a94091490e9b0ebef46",
+      "local_candidates": [
+        "294_office_front_desk_kit.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "295",
+      "name": "office_cash_trust_ledgers",
+      "statement_count": 33,
+      "statement_sha256": "bcc028f61fc2e3e7703f5426fc013c4af0a739728f66afadc04ea04033b58f1b",
+      "local_candidates": [
+        "295_office_cash_trust_ledgers.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "296",
+      "name": "workspace_pages",
+      "statement_count": 25,
+      "statement_sha256": "f52d003a5348f4366e2c7addec14a4529b47c51e41d1aa5614dc3169a6611f41",
+      "local_candidates": [
+        "296_workspace_pages.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "297",
+      "name": "workspace_files",
+      "statement_count": 17,
+      "statement_sha256": "56c2f3e67461494cd872d2ef93b65b94835383e93c94761b8b358736d73560ee",
+      "local_candidates": [
+        "297_workspace_files.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "298",
+      "name": "workspace_publish_requests",
+      "statement_count": 10,
+      "statement_sha256": "709543ede7b9e275272a7604e6bb53af461ed226b026610a669d5370f23b26d4",
+      "local_candidates": [
+        "298_workspace_publish_requests.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "299",
+      "name": "workspace_team_spaces",
+      "statement_count": 21,
+      "statement_sha256": "532d07d202be8c19702f436ebe4bd7ea60f378c0fbec7c6a8617440fab49dd76",
+      "local_candidates": [
+        "299_workspace_team_spaces.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "300",
+      "name": "workspace_cards",
+      "statement_count": 9,
+      "statement_sha256": "0643c7f8c8b0f4fa607334e33dc8e8a4b4c7db5b3f1d3f86fb77fe92bf05ab19",
+      "local_candidates": [
+        "300_workspace_cards.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "301",
+      "name": "shift_handoff_notes",
+      "statement_count": 10,
+      "statement_sha256": "5a69e531cc6617552d63c3e12d7573b13f3b0079f9a1e22b535710fce7af7ae6",
+      "local_candidates": [
+        "301_shift_handoff_notes.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "302",
+      "name": "workspace_comments",
+      "statement_count": 10,
+      "statement_sha256": "3fa30c3513fdfafd6d66ce6a259968875e604b3d945a5cdc7e221c7caaddb752",
+      "local_candidates": [
+        "302_workspace_comments.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "303",
+      "name": "survey_binder_items",
+      "statement_count": 9,
+      "statement_sha256": "49db16e896a889db8fd6fbb02998fd90dd9c54fec0bd4dc49efe84c99ca7dc33",
+      "local_candidates": [
+        "303_survey_binder_items.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "304",
+      "name": "drive_import",
+      "statement_count": 18,
+      "statement_sha256": "88b43d89cc612b253ac87d0e5477d4a4e43dd58147528ab15c21ebb296849491",
+      "local_candidates": [
+        "304_drive_import.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "305",
+      "name": "drive_cutover",
+      "statement_count": 7,
+      "statement_sha256": "fa309755d0162d74030f16053db2392ab530cae325ec91f02eaa5091f648820f",
+      "local_candidates": [
+        "305_drive_cutover.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "306",
+      "name": "resident_rate_agreements_concessions",
+      "statement_count": 60,
+      "statement_sha256": "25c7ccad5835e6e08b21ed6e33f882816f6c01ea426e58956c800440370615a5",
+      "local_candidates": [
+        "306_resident_rate_agreements_concessions.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "307",
+      "name": "michelle_bed_hold_medicaid_catalog",
+      "statement_count": 11,
+      "statement_sha256": "52de895fef634d4da21f6b5a0eafa9dba8e44e8689e92bccfc148f0e4049db60",
+      "local_candidates": [
+        "307_michelle_bed_hold_medicaid_catalog.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "308",
+      "name": "revoke_anon_security_definer_rpc_execute",
+      "statement_count": 8,
+      "statement_sha256": "ae97c5610a65bdf3e381f9fcfab936298fb550022a2876eebf2f441c097c375f",
+      "local_candidates": [
+        "308_revoke_anon_security_definer_rpc_execute.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "309",
+      "name": "family_portal_messages_one_way",
+      "statement_count": 2,
+      "statement_sha256": "ac6b9c6aff391ec1243d20820b8343be7559c1c39871df9e0ec0eaa430365942",
+      "local_candidates": [
+        "309_family_portal_messages_one_way.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "310",
+      "name": "col_discovery_round_cadence_jessica_2026_08_14",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "310_col_discovery_round_cadence_jessica_2026_08_14.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "311",
+      "name": "snack_logs_time_and_passer_only",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "311_snack_logs_time_and_passer_only.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "312",
+      "name": "revoke_anon_col_discovery_round_rpcs",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "312_revoke_anon_col_discovery_round_rpcs.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "313",
+      "name": "admin_command_center_projection",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "313_admin_command_center_projection.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "314",
+      "name": "fix_team_space_members_rls_recursion",
+      "statement_count": 2,
+      "statement_sha256": "f0bab9a27ec97730b2f8c55832ad72d38978293ecccb0d6f31065294f7dfa07b",
+      "local_candidates": [
+        "314_fix_team_space_members_rls_recursion.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "315",
+      "name": "admin_command_center_projection_workspace_cast",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "315_admin_command_center_projection_workspace_cast.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "316",
+      "name": "admin_command_center_manager_access",
+      "statement_count": 0,
+      "statement_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_candidates": [
+        "316_admin_command_center_manager_access.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "317",
+      "name": "referral_lead_closure_reasons",
+      "statement_count": 1,
+      "statement_sha256": "53344c0d1e415d90b6a86293c2acf73e5cb70ca58d8f79e20ac9085e15da173e",
+      "local_candidates": [
+        "317_referral_lead_closure_reasons.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "318",
+      "name": "col_facility_entity_names",
+      "statement_count": 1,
+      "statement_sha256": "ea4fd06b778c48df8734c332c34487f71680cf1f2e148cdfd78c87725d4f0dd7",
+      "local_candidates": [
+        "318_col_facility_entity_names.sql"
+      ],
+      "exact_joined_statement_match": []
+    },
+    {
+      "version": "319",
+      "name": "review_access_boundaries",
+      "statement_count": 1,
+      "statement_sha256": "6a1c95a70220c07a7365644a33d144888aabd59392e87c691e43a3b4174f0ae3",
+      "local_candidates": [
+        "319_review_access_boundaries.sql"
+      ],
+      "exact_joined_statement_match": [
+        "319_review_access_boundaries.sql"
+      ]
+    },
+    {
+      "version": "320",
+      "name": "september_business_integrity",
+      "statement_count": 1,
+      "statement_sha256": "09ca9b6678042d4b3ec2a10ae6ca5093302dad67244d673a7c470207fb86a109",
+      "local_candidates": [
+        "320_september_business_integrity.sql"
+      ],
+      "exact_joined_statement_match": [
+        "320_september_business_integrity.sql"
+      ]
+    },
+    {
+      "version": "321",
+      "name": "clinical_review_integrity",
+      "statement_count": 1,
+      "statement_sha256": "c188ae28f108370d1e5c040c45f05ee158807d474a4817178ba8d496af81ab16",
+      "local_candidates": [
+        "321_clinical_review_integrity.sql"
+      ],
+      "exact_joined_statement_match": [
+        "321_clinical_review_integrity.sql"
+      ]
+    },
+    {
+      "version": "322",
+      "name": "dietary_verified_actions",
+      "statement_count": 1,
+      "statement_sha256": "ced8fe14b658f16a40ad39a63107e54610c1882c3408f221480fb35c65f96ccc",
+      "local_candidates": [
+        "322_dietary_verified_actions.sql"
+      ],
+      "exact_joined_statement_match": [
+        "322_dietary_verified_actions.sql"
+      ]
+    },
+    {
+      "version": "323",
+      "name": "review_report_outputs",
+      "statement_count": 1,
+      "statement_sha256": "13b1c66fa79da8198fa1b705ff01a3a80f25bf80166368f41ebf2cffec299272",
+      "local_candidates": [
+        "323_review_report_outputs.sql"
+      ],
+      "exact_joined_statement_match": [
+        "323_review_report_outputs.sql"
+      ]
+    },
+    {
+      "version": "324",
+      "name": "september_office_integrity",
+      "statement_count": 1,
+      "statement_sha256": "8be63a13efeda2905ec00a7f78e1061d216db4c6e2e79bfdd29336199c948c50",
+      "local_candidates": [
+        "324_september_office_integrity.sql"
+      ],
+      "exact_joined_statement_match": [
+        "324_september_office_integrity.sql"
+      ]
+    },
+    {
+      "version": "325",
+      "name": "review_med_tech_controlled_count_access",
+      "statement_count": 1,
+      "statement_sha256": "66e98b30996c4bd1fd74ddf3e995ef6e7378d7966d89c759203dd66d35d67d07",
+      "local_candidates": [
+        "325_review_med_tech_controlled_count_access.sql"
+      ],
+      "exact_joined_statement_match": [
+        "325_review_med_tech_controlled_count_access.sql"
+      ]
+    },
+    {
+      "version": "326",
+      "name": "sys_001_authoritative_actor_state",
+      "statement_count": 1,
+      "statement_sha256": "1ce412ff33690ee7deee064489bd063874f51e4cc3397997a39e577dab8b3869",
+      "local_candidates": [
+        "326_sys_001_authoritative_actor_state.sql"
+      ],
+      "exact_joined_statement_match": [
+        "326_sys_001_authoritative_actor_state.sql"
+      ]
+    },
+    {
+      "version": "327",
+      "name": "sys_001e_lifecycle_authorization",
+      "statement_count": 1,
+      "statement_sha256": "b96c188c3255f5940e29210e0afac67b5408e7385e1e3a29fde56078d2538b5f",
+      "local_candidates": [
+        "327_sys_001e_lifecycle_authorization.sql"
+      ],
+      "exact_joined_statement_match": [
+        "327_sys_001e_lifecycle_authorization.sql"
+      ]
+    },
+    {
+      "version": "328",
+      "name": "ingest_generation_integrity",
+      "statement_count": 1,
+      "statement_sha256": "4978f452fda7ceb9210d126284f2b9efabf24bfa00e52d1050f0b5e250f467aa",
+      "local_candidates": [
+        "328_ingest_generation_integrity.sql"
+      ],
+      "exact_joined_statement_match": [
+        "328_ingest_generation_integrity.sql"
+      ]
+    },
+    {
+      "version": "329",
+      "name": "authorization_error_http_contract",
+      "statement_count": 1,
+      "statement_sha256": "53d804717389e4371f6b7a3a052784022b2fb9d34e78e75b2d1d4cdc4d473b8d",
+      "local_candidates": [
+        "329_authorization_error_http_contract.sql"
+      ],
+      "exact_joined_statement_match": [
+        "329_authorization_error_http_contract.sql"
+      ]
+    },
+    {
+      "version": "330",
+      "name": "quality_caller_scope_and_corrections",
+      "statement_count": 1,
+      "statement_sha256": "a25ec94ff790a7e74f3faf7fb1c65a0eeaccf31da88fe8e4a2722fbee3653555",
+      "local_candidates": [
+        "330_quality_caller_scope_and_corrections.sql"
+      ],
+      "exact_joined_statement_match": [
+        "330_quality_caller_scope_and_corrections.sql"
+      ]
+    },
+    {
+      "version": "331",
+      "name": "rounding_completion_receipts",
+      "statement_count": 1,
+      "statement_sha256": "d44826a2916d532d93c1daf4641250a8a1d0d830001f5321cb3314c86677b3cf",
+      "local_candidates": [
+        "331_rounding_completion_receipts.sql"
+      ],
+      "exact_joined_statement_match": [
+        "331_rounding_completion_receipts.sql"
+      ]
+    },
+    {
+      "version": "332",
+      "name": "resident_search_current_scope",
+      "statement_count": 1,
+      "statement_sha256": "ee54c94f6d99fffe23c780376e778cca91d453c614b4ed8ae7fabc93c10dda77",
+      "local_candidates": [
+        "332_resident_search_current_scope.sql"
+      ],
+      "exact_joined_statement_match": [
+        "332_resident_search_current_scope.sql"
+      ]
+    },
+    {
+      "version": "333",
+      "name": "rounding_javascript_whitespace",
+      "statement_count": 1,
+      "statement_sha256": "40fc92aef7b2d0ec0d6b4055400421dc41cedfc7e7fbba3f4d61ed44c46c660e",
+      "local_candidates": [
+        "333_rounding_javascript_whitespace.sql"
+      ],
+      "exact_joined_statement_match": [
+        "333_rounding_javascript_whitespace.sql"
+      ]
+    },
+    {
+      "version": "334",
+      "name": "payroll_source_freshness",
+      "statement_count": 1,
+      "statement_sha256": "4801112cc77b0922807bf81685aa40908e3b6887a74a93cb0749d14d970ef285",
+      "local_candidates": [
+        "334_payroll_source_freshness.sql"
+      ],
+      "exact_joined_statement_match": [
+        "334_payroll_source_freshness.sql"
+      ]
+    },
+    {
+      "version": "335",
+      "name": "employee_file_lifecycle",
+      "statement_count": 1,
+      "statement_sha256": "354f881b8ab0eac085e8dcccfc8261fe3ad34139bbe8ada17832482a94c7f126",
+      "local_candidates": [
+        "335_employee_file_lifecycle.sql"
+      ],
+      "exact_joined_statement_match": [
+        "335_employee_file_lifecycle.sql"
+      ]
+    }
+  ],
+  "core_catalog": {
+    "tables": [
+      {
+        "table": "operation_task_templates",
+        "rls": true,
+        "forced_rls": false
+      },
+      {
+        "table": "operation_task_instances",
+        "rls": true,
+        "forced_rls": false
+      },
+      {
+        "table": "facility_assets",
+        "rls": true,
+        "forced_rls": false
+      },
+      {
+        "table": "operation_audit_log",
+        "rls": true,
+        "forced_rls": false
+      },
+      {
+        "table": "operation_escalation_deliveries",
+        "rls": true,
+        "forced_rls": false
+      },
+      {
+        "table": "employee_file_records",
+        "rls": true,
+        "forced_rls": false
+      },
+      {
+        "table": "employee_file_requirements",
+        "rls": true,
+        "forced_rls": false
+      }
+    ],
+    "functions": [
+      {
+        "schema": "public",
+        "name": "bulk_complete_operation_tasks",
+        "definition_md5": "dfef576e151721fe58c3af906113354b"
+      },
+      {
+        "schema": "public",
+        "name": "complete_operation_task_review",
+        "definition_md5": "48ac332e751bf0e8c754038e3a746744"
+      },
+      {
+        "schema": "public",
+        "name": "create_meeting_action",
+        "definition_md5": "13d1387ad492b235863a34e974004de7"
+      },
+      {
+        "schema": "public",
+        "name": "defer_operation_task_review",
+        "definition_md5": "861c38f427f38287150fffd5d5f8dade"
+      },
+      {
+        "schema": "haven",
+        "name": "has_facility_access",
+        "definition_md5": "38db26c4f99c022cbc87ac9978bf99e5"
+      },
+      {
+        "schema": "public",
+        "name": "haven_current_shell_actor",
+        "definition_md5": "02903699d6a1a598d25cd80038dacf6a"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "equipment-photos",
+        "public": true,
+        "file_size_limit": 20971520,
+        "allowed_mime_types": [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "image/heic",
+          "image/heif"
+        ]
+      },
+      {
+        "id": "competency-certificates",
+        "public": false,
+        "file_size_limit": 15728640,
+        "allowed_mime_types": [
+          "application/pdf"
+        ]
+      },
+      {
+        "id": "documents",
+        "public": false,
+        "file_size_limit": null,
+        "allowed_mime_types": null
+      },
+      {
+        "id": "facility-documents",
+        "public": false,
+        "file_size_limit": 26214400,
+        "allowed_mime_types": [
+          "application/pdf",
+          "image/png",
+          "image/jpeg",
+          "image/webp",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/vnd.ms-excel",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ]
+      },
+      {
+        "id": "report-exports",
+        "public": false,
+        "file_size_limit": 26214400,
+        "allowed_mime_types": [
+          "application/pdf"
+        ]
+      },
+      {
+        "id": "workspace-files",
+        "public": false,
+        "file_size_limit": 52428800,
+        "allowed_mime_types": [
+          "application/pdf",
+          "image/png",
+          "image/jpeg",
+          "image/webp",
+          "image/gif",
+          "text/plain",
+          "text/csv",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/vnd.ms-excel",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/vnd.ms-powerpoint",
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        ]
+      },
+      {
+        "id": "employee-personnel",
+        "public": false,
+        "file_size_limit": 20971520,
+        "allowed_mime_types": [
+          "application/pdf",
+          "image/jpeg",
+          "image/png"
+        ]
+      },
+      {
+        "id": "employee-medical",
+        "public": false,
+        "file_size_limit": 20971520,
+        "allowed_mime_types": [
+          "application/pdf",
+          "image/jpeg",
+          "image/png"
+        ]
+      }
+    ]
+  }
+}

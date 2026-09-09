@@ -1,0 +1,52 @@
+{
+  "checked_at": "2026-09-09T22:03:40.638281+00:00",
+  "issue": "COL-18",
+  "scope": "Read-only baseline/readiness reconciliation; no application or schema changes",
+  "source_head": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+  "baseline_evidence_complete": true,
+  "release_ready": false,
+  "mission_alignment": "pass",
+  "full_segment_gate": {
+    "verdict": "FAIL",
+    "artifact": "test-results/agent-gates/2026-09-09T21-55-49-320Z-COL-18-HFO-BASELINE.json",
+    "artifact_sha256": "41e90db1c6c047fa8b98b4420e8516963ac08afa7c2d5164caeede508db64313",
+    "overrides": []
+  },
+  "focused_operations_tests": {
+    "exit_code": 0,
+    "files": 8,
+    "tests": 52
+  },
+  "typecheck": {
+    "exit_code": 0
+  },
+  "native_utf8_replay": {
+    "exit_code": 0,
+    "migrations": 338,
+    "sql_probes": 19,
+    "supabase_services": "stubbed",
+    "initial_failure": "SQL_ASCII scratch cluster cannot represent migration 333 Unicode; original gate retained"
+  },
+  "head_history_gitleaks": {
+    "exit_code": 0,
+    "commits_scanned": 1724,
+    "findings": 0,
+    "command": "gitleaks detect --source . --config .gitleaks.toml --log-opts=HEAD --redact=100"
+  },
+  "shared_ref_gitleaks": {
+    "original_verdict": "FAIL",
+    "finding_commit": "2973ca39e00d2848137ad547463fa3fd13702cac",
+    "ancestor_of_source_head": false,
+    "classification": "Two independently verified source SHA-256 values and one synthetic rollback-only rejection fixture in Finance history",
+    "allowlists_changed": false
+  },
+  "production_mutations": false,
+  "authenticated_production_workflow_tested": false,
+  "positive_storage_transport_tested": false,
+  "staff_acceptance": false,
+  "operating_cycle_acceptance": false,
+  "next_issue": "COL-132",
+  "also_dependency_ready_after_closure": [
+    "COL-133"
+  ]
+}

@@ -1,0 +1,39 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "url": "https://circleoflifealf.com/login",
+    "elapsed_ms": 14188,
+    "content_type": "text/html; charset=utf-8",
+    "netlify_request_id": "01M242S9DSVVK3MH5CFS2GSCDJ",
+    "bytes": 21063
+  },
+  {
+    "path": "/login",
+    "status": 200,
+    "url": "https://circleoflifealf.com/login",
+    "elapsed_ms": 798,
+    "content_type": "text/html; charset=utf-8",
+    "netlify_request_id": "01M242SA2JMRH39C95Z2PQWJYW",
+    "bytes": 21063
+  },
+  {
+    "path": "/api/admin/operations/tasks",
+    "status": 401,
+    "url": "https://circleoflifealf.com/api/admin/operations/tasks",
+    "elapsed_ms": 237,
+    "content_type": "application/json",
+    "netlify_request_id": "01M242SARR9PKFHVE75EZF7C21",
+    "bytes": 29,
+    "error": "Not authenticated"
+  },
+  {
+    "path": "/api/admin/employee-files/catalog",
+    "status": 404,
+    "url": "https://circleoflifealf.com/api/admin/employee-files/catalog",
+    "elapsed_ms": 358,
+    "content_type": "text/html; charset=utf-8",
+    "netlify_request_id": "01M242SB1CK0TE59KJPBN72B9Y",
+    "bytes": 12836
+  }
+]

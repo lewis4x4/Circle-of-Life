@@ -1,0 +1,845 @@
+{
+  "checked_at": "2026-09-09T21:57:31.004394+00:00",
+  "issues": [
+    {
+      "id": "f076a102-a210-472a-985c-0e3fa7704f36",
+      "identifier": "COL-18",
+      "title": "Reconcile Haven repository state against production readiness for Homewood",
+      "url": "https://linear.app/jarvislewis/issue/COL-18/reconcile-haven-repository-state-against-production-readiness-for",
+      "updatedAt": "2026-09-09T21:53:59.376Z",
+      "description": "## September 9 \u2014 facility operations direction\n\nReuse this existing Todo as the first ready baseline/readiness issue for the shared facility-operations build, Homewood first. Deliver a current source/branch/migration/runtime manifest and classify necessary core prerequisites separately from later adapters. GitHub main was observed at fad17dcc on September 9; released employee-file work must be reused. OCE receipt/storage/history gaps are scoped in the new section issues. Preserve dirty/concurrent work and overlapping migration-number evidence. Reconcile the older 309-migration/add-on statements below against later owner confirmations and release evidence; do not reopen already satisfied prerequisites from stale text. Closing this issue requires its actual updated readiness evidence, not this planning update.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nRead in this order: AGENTS.md, CODEX.md, docs/specs/UNIFIED-ROADMAP.md, TRACK-A-CLOSEOUT-ROADMAP.md plus acceptance records, numbered module specs, supabase/migrations and runtime code, then verified environment evidence. HAVEN_BRAIN.md is domain supplement, never build authority.\n\n309 migrations, 37 edge functions at last reconciliation. Confirm what is actually deployable for a single building with real staff.\n\nBlocked by the Supabase HIPAA add-on ([COL-5](https://linear.app/jarvislewis/issue/COL-5/enable-the-supabase-hipaa-add-on-and-execute-the-baa)).",
+      "state": {
+        "id": "04843145-120c-4879-85ea-2d2370ca45a4",
+        "name": "In Progress",
+        "type": "started"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-133",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-132",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-5",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-37",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "4ca3eabe-07a3-4d4d-9ee9-5250e548f77e",
+      "identifier": "COL-5",
+      "title": "Enable the Supabase HIPAA add-on and execute the BAA",
+      "url": "https://linear.app/jarvislewis/issue/COL-5/enable-the-supabase-hipaa-add-on-and-execute-the-baa",
+      "updatedAt": "2026-09-04T21:50:15.656Z",
+      "description": "Haven does not hold a single resident record until this is done.\n\nThe HIPAA add-on is not on by default. Team plan plus HIPAA plus point-in-time recovery, budgeted at about $1,000 a month. The add-on price is quoted by Supabase sales. Move billing from Brian's personal card to the company.\n\nThis blocks every Haven milestone.\n\n---\n\n## Verified 2026-09-04 against the live account and Supabase docs\n\n**What exists today**\n\n* Organization: Circle of Life, id `macizkpxodsegtptaytu`, plan **Pro**. Owner login is [blewis@lewisinsurance.com](<mailto:blewis@lewisinsurance.com>).\n* Project: `manfqmasfqppukpobpld`, region us-west-2, Postgres 17.6, status healthy. Still named \"[blewis@lewisinsurance.com](<mailto:blewis@lewisinsurance.com>)'s Project\"; rename it Haven Production in Settings > General.\n* HIPAA add-on: **not enabled**. It cannot be enabled on Pro.\n\n**What Supabase requires for a BAA** (docs: /guides/security/hipaa-compliance, /guides/platform/hipaa-projects, /guides/deployment/shared-responsibility-model)\n\n1. Organization on the **Team plan** or higher. Team is from $599/month (Pro is $25). BAA is not offered below Team.\n2. Submit the HIPAA add-on request at [https://forms.supabase.com/hipaa2](<https://forms.supabase.com/hipaa2>). The add-on is a paid add-on on Team and Enterprise; price is not published, it comes back with the form.\n3. Once the add-on is on, mark the project **High Compliance** in Settings > General. The Security Advisor then runs the HIPAA checks continuously.\n4. Project configuration the BAA obligates us to keep:\n   * Point in Time Recovery on: $100/month per 7 days of retention, and it requires at least the Small compute add-on ($15/month).\n   * SSL enforcement on.\n   * Network restrictions on (allowlist Netlify egress and the office).\n   * MFA enforced at the organization level for every Supabase login.\n   * No PHI in public Storage buckets.\n   * Never transfer the project to a non-HIPAA organization.\n\n**Cost delta to put in front of Darren**: Pro to Team is +$574/month, plus PITR $100, plus Small compute $15 if the project is below Small today, plus the HIPAA add-on fee. Call it roughly $700/month before the add-on, against the $200 to $500 quoted in the room and the ~$1,000 in the written budget. The written budget was closer.\n\n**Sequence**\n\n1. [COL-3](https://linear.app/jarvislewis/issue/COL-3/create-management-mailboxes-on-the-circle-of-life-domain) first: a company mailbox exists.\n2. Transfer organization ownership to that company login and put the company card on billing ([COL-15](https://linear.app/jarvislewis/issue/COL-15/move-haven-hosting-and-tooling-from-brians-personal-card-to-the)). The BAA counterparty must be the company, not Brian.\n3. Upgrade to Team. Submit the HIPAA form in the company's name. Sign.\n4. Enable High Compliance, PITR, SSL enforcement, network restrictions, org MFA.\n5. Clear the Security Advisor (COL-37) so the High Compliance checks come up clean.\n\n**Security Advisor today** (run 2026-09-04): 2 errors, ~30 warnings, 2 info. Detail and the fix list are in COL-37. None of it blocks the plan upgrade; all of it has to be clean before Homewood goes live.",
+      "state": {
+        "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-15",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-3",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-6",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-37",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-18",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "5cb50da1-db8f-49b5-9606-724e46527864",
+      "identifier": "COL-19",
+      "title": "Homewood Lodge: tablets purchased, MDM enrolled, locked to Haven",
+      "url": "https://linear.app/jarvislewis/issue/COL-19/homewood-lodge-tablets-purchased-mdm-enrolled-locked-to-haven",
+      "updatedAt": "2026-09-09T21:42:30.605Z",
+      "description": "Five tablets plus a spare for Homewood. Decide iPad with Mosyle (the written budget) versus Samsung at $249 (what was said in the meeting). Kiosk mode locked to Haven. Enrolled before they leave the Home Office.",
+      "state": {
+        "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "relations": {
+        "nodes": []
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-140",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-163",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "0485404c-8f8e-4c99-8278-68113d6ad504",
+      "identifier": "COL-20",
+      "title": "Homewood Lodge: staff training, on site, every shift",
+      "url": "https://linear.app/jarvislewis/issue/COL-20/homewood-lodge-staff-training-on-site-every-shift",
+      "updatedAt": "2026-09-09T21:42:32.006Z",
+      "description": "## September 9 \u2014 facility operations direction\n\nRetain this actual staff-training and acceptance task. Once the new core release gate is proven, name the Homewood tester/role/device/deployed SHA and walk staff completion \u2192 required evidence \u2192 corporate activity history \u2192 reported problem \u2192 resolution/correction/retry. Record which paper/email step is replaced. Keep clinical UAT separate; no source test or synthetic browser closes this staff task. Reviewer names are not a prerequisite to engineering.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nMilton: \"you're not going to be able to do it without being able to be here with them, working through them.\" Sit with each shift. Fix what breaks in five minutes, capture what generates questions. This is where adoption happens or does not.",
+      "state": {
+        "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-21",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-161",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-30",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "e9808601-f31d-4314-a308-60d118344c26",
+      "identifier": "COL-21",
+      "title": "Homewood Lodge: go live and first month of clean checks",
+      "url": "https://linear.app/jarvislewis/issue/COL-21/homewood-lodge-go-live-and-first-month-of-clean-checks",
+      "updatedAt": "2026-09-09T21:42:32.433Z",
+      "description": "## September 9 \u2014 facility operations direction\n\nRetain Homewood's controlled live rollout and first-month evidence milestone. The new facility operating loop and named training/acceptance are prerequisites. Record actual dated checks, truthful missing/late evidence and unresolved issues; clean checks cannot mean hiding honest problem reports. Core technical release alone does not close this issue. Keep applicable existing security, device, clinical and operating approvals explicit and use later verified evidence to resolve stale blockers.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nThe milestone closes when the building is live, staff are trained, and the first month of checks is clean. This is the first of five pieces of six-month review evidence.",
+      "state": {
+        "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-162",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-134",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-20",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-140",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-161",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-37",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-30",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "9b63bc5c-000e-4cf9-9262-7af9b3a85cc3",
+      "identifier": "COL-30",
+      "title": "HIPAA training for Brian and management before Homewood Lodge goes live on Haven",
+      "url": "https://linear.app/jarvislewis/issue/COL-30/hipaa-training-for-brian-and-management-before-homewood-lodge-goes",
+      "updatedAt": "2026-09-09T21:42:30.010Z",
+      "description": "Workforce training is required under 45 CFR 164.530(b) for anyone whose work touches PHI, paid or not. Brian is workforce under the W-2 letter and will hold admin access to every resident record in Haven. Nobody can be handed a Haven login before their training is on file.\n\nScope:\n\n* Brian: full privacy and security rule training, documented with date and content.\n* Management: Darren, Michelle, Jessica Murphy, the five administrators.\n* Homewood Lodge floor staff: covered inside the on-site Haven training ([COL-20](https://linear.app/jarvislewis/issue/COL-20/homewood-lodge-staff-training-on-site-every-shift)), with the HIPAA module recorded separately.\n\nDeliverables:\n\n* Training record per person (name, date, content, who delivered it), stored in the Notion People database, never in Haven and never in this issue.\n* The training deck and the acknowledgment form filed under Compliance & Standards in Notion.\n* Confirm with Jessica Murphy whether COL already has a HIPAA training program and who the designated Privacy Officer and Security Officer are today. If nobody is named, that is a Darren Decision.\n\nBlocks Homewood go-live.",
+      "state": {
+        "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-21",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-20",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-161",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "e29f6457-bca0-46b9-a0bb-4432db913970",
+      "identifier": "COL-37",
+      "title": "Clear the Supabase Security Advisor findings before Homewood goes live",
+      "url": "https://linear.app/jarvislewis/issue/COL-37/clear-the-supabase-security-advisor-findings-before-homewood-goes-live",
+      "updatedAt": "2026-09-09T21:42:29.620Z",
+      "description": "Security Advisor run against project `manfqmasfqppukpobpld` on 2026-09-04. Every fix ships as a migration in the repository under `supabase/migrations/`, never by hand in the dashboard. Build authority is the repo.\n\n**Errors (2)**\n\n* View `public.quality_latest_facility_measures` is SECURITY DEFINER. Recreate with `security_invoker = true` (`CREATE OR REPLACE VIEW ... WITH (security_invoker = true)`), or move it to a non-exposed schema.\n* View `public.resident_billable_status` is SECURITY DEFINER. Same fix. This one reads resident data, so it is the first to fix.\n\n**Warnings: SECURITY DEFINER functions callable by the** `authenticated` **role over** `/rest/v1/rpc/` **(14)**\nDecide per function: keep SECURITY DEFINER and `REVOKE EXECUTE ON FUNCTION ... FROM authenticated, anon;` (then call it only from Edge Functions with the service role), or switch to `SECURITY INVOKER` and let RLS do the work.\n\n* `public.allocate_incident_number(uuid)`\n* `public.allocate_vendor_po_number(uuid)`\n* `public.apply_col_discovery_round_observation_plan(uuid)`\n* `public.apply_plantation_wing_observation_plan(uuid)`\n* `public.delete_nlq_thread(uuid)`\n* `public.execute_compliance_rule(uuid, uuid)`\n* `public.get_compliance_rule_status(uuid, uuid)`\n* `public.grace_top_flows(uuid)`\n* `public.haven_create_invoice_with_line_items(...)`\n* `public.haven_publish_rate_schedule(...)`\n* `public.haven_replace_active_resident_rate_agreement(...)`\n* `public.rename_nlq_thread(uuid, text)`\n* `public.search_nlq_threads(text, integer)`\n* `public.set_nlq_message_feedback(uuid, text)`, `public.set_nlq_thread_archived(uuid, boolean)`, `public.set_nlq_thread_pinned(uuid, boolean)`\n\n**Warnings: mutable search_path (12)**\nAdd `SET search_path = ''` (or the explicit schema list) to each: `public.haven_csc_discrepancy_defaults`, `public.document_role_can_view_audience`, `haven.role_tier`, `haven.can_manage_user`, `public.auto_trigger_watch_protocol`, `public.seed_admission_case_form_1823`, `public._ai_tool_role_allowed`, `public.haven_exec_nlq_messages_touch_session`, `public.increment_usage`, `public.normalize_alias_term`, `public._kb_seed_targets_touch`, `public.apply_invoice_payment`.\n\n**Warnings: extensions in** `public` **(3)**\n`vector`, `pg_trgm`, `btree_gist`. Create schema `extensions` if missing and `ALTER EXTENSION ... SET SCHEMA extensions;` then fix any unqualified references.\n\n**Warning: Auth**\nLeaked password protection is off. Turn on in Authentication > Providers > Email (HaveIBeenPwned check). Dashboard setting, no migration.\n\n**Info (2)**\nRLS enabled with no policies on `public.reputation_google_oauth_credentials` and `public.vendor_po_sequences`. Either intentional (service role only, document it) or add policies.\n\n**Exit criteria**: Security Advisor shows zero errors and zero warnings with High Compliance enabled ([COL-5](https://linear.app/jarvislewis/issue/COL-5/enable-the-supabase-hipaa-add-on-and-execute-the-baa)). Re-run `get_advisors` after each migration batch.\n\nNo resident data appears in this issue; object names only.",
+      "state": {
+        "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-18",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-21",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-5",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-161",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "3c5ef69d-f1d9-4c6c-b38f-fd18c0ab9cd9",
+      "identifier": "COL-117",
+      "title": "Seed Haven training_programs with the 26-item AHCA training matrix",
+      "url": "https://linear.app/jarvislewis/issue/COL-117/seed-haven-training-programs-with-the-26-item-ahca-training-matrix",
+      "updatedAt": "2026-09-09T21:42:36.306Z",
+      "description": "## September 9 \u2014 facility operations direction\n\nReconcile this retained HR requirement with the employee-file release already present on GitHub main fad17dcc and the later September 8 RELEASE.md. Earlier 'schema deltas/none exist' statements below are historical assumptions to inspect, not authority to build duplicate tables or bypass current commands. HFO-20 links the accepted existing records into facility operations; this original issue retains its policy/source-specific scope. Templates and unknown role/site/deadline rules require explicit approval before activation; no automatic employment/disciplinary decision is authorized. Positive employee Storage HTTP transport remains a declared verification gap. For supervised cart training, reconcile three sessions versus a two-day/five-slot form (COL-120/123) and the interview's 'like six' before enforcing a count. Keep LMH applicability and medical-record access separate. This update does not mark any requirement implemented or accepted.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nSource: COL Employee File packet, Section 5, Staff Training Information audit form. Full matrix in `claude/COL_Employee_File_Extraction_2026-09-08.md` \u00a74.\n\nThe audit form Jessica uses across all five buildings is the AHCA training matrix. Twenty-six items. Nine recur.\n\n**Verify table and column names against** `supabase/migrations` **before writing the migration.** HAVEN_BRAIN reports `training_programs`, `staff_training_completions`, `staff_certifications` as implemented.\n\n**Two hard gates that must block, not warn:**\n\n* Item 1, Pre-service orientation \u2014 blocks resident interaction\n* Item 2, Infection Control and Universal Precautions \u2014 blocks personal care\n\nThe audit form's \"1st day on the floor\" field is the enforcement point and is handwritten today. In Haven `staff.first_day_on_floor` should be computed and unsettable by hand while items 1 and 2 are open.\n\n**Nine recurring items drive the expiration engine:** assistance with self-administration of medications (annual), food handling (annual, 1 hr), Food Service Manager course (renewal), 4-hour Alzheimer's annual update (annual), 6-hour LMH (renewal), 3-hour LMH CE (annual), CPR and First Aid (cert-driven), Communicable Disease Statement (renewal), TB test (renewal).\n\n**Facility-scoped:** items 22 and 23 (LMH) apply only at Limited Mental Health facilities. Needs `facility_lmh_designation`. Which of the five carry the designation is TBD \u2014 ask Jessica. Same pattern as the per-facility 1823 / Service Plan / Community Support Plan split.\n\n**Audit header fields to capture per employee:** DOH, 1st day on the floor, Background Screening Eligibility Date, AHCA Roster Update, Attestation Signed, Job Description on file, Employee Application with 2 References.",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "relations": {
+        "nodes": []
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-123",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-122",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-120",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "e6156abd-aa19-40c0-bb25-e49045a08c74",
+      "identifier": "COL-118",
+      "title": "Seed policy_documents with the 21-signature new hire acknowledgment set",
+      "url": "https://linear.app/jarvislewis/issue/COL-118/seed-policy-documents-with-the-21-signature-new-hire-acknowledgment",
+      "updatedAt": "2026-09-09T21:42:36.856Z",
+      "description": "## September 9 \u2014 facility operations direction\n\nReconcile this retained HR requirement with the employee-file release already present on GitHub main fad17dcc and the later September 8 RELEASE.md. Earlier 'schema deltas/none exist' statements below are historical assumptions to inspect, not authority to build duplicate tables or bypass current commands. HFO-20 links the accepted existing records into facility operations; this original issue retains its policy/source-specific scope. Templates and unknown role/site/deadline rules require explicit approval before activation; no automatic employment/disciplinary decision is authorized. Positive employee Storage HTTP transport remains a declared verification gap. For supervised cart training, reconcile three sessions versus a two-day/five-slot form (COL-120/123) and the interview's 'like six' before enforcing a count. Keep LMH applicability and medical-record access separate. This update does not mark any requirement implemented or accepted.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nSource: COL Employee File packet, Sections 3 through 6. Full table in `claude/COL_Employee_File_Extraction_2026-09-08.md` \u00a73.\n\nCompleting one employee file today takes **21 wet-ink signature events** across five buildings with no cross-building view. These seed `policy_documents` and `document_acknowledgment_requirements`.\n\n**Verify table and column names against** `supabase/migrations` **first.**\n\n**Schema delta required \u2014 signer role.** `document_acknowledgment_requirements` must distinguish `employee`, `supervisor`, `witness`, `administrator`, `trainer`. Three documents require a **witness** signature specifically, not a supervisor:\n\n* Drug-Free Workplace Program acknowledgment\n* Workplace Safety Program acknowledgment\n* Direct Primary Care Plan election\n\n**Recurrence is not uniform.** Most are on-hire only. These recur:\n\n* Employee Acknowledgement of Handbook \u2014 on every handbook revision\n* Attendance policy \u2014 on revision\n* Emergency Contact Form \u2014 on change\n* DPC election \u2014 on hire, at 90 days eligibility, on change\n* **AHCA Attestation of Compliance (Form 3100-0008) \u2014 on hire and on any arrest.** Signed under penalty of perjury with a standing duty to report. This one needs an affirmative periodic re-attestation prompt, not a one-time capture.\n\n**Conditional:** JCT Primary Care Consent to Treat fires only if the employee elects JCT as their DPC provider.\n\n**Page-level initials:** the Community Policies and Procedures document requires initials on each page plus signatures at the end. Model as page-level acknowledgment, not document-level.",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "relations": {
+        "nodes": []
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-122",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-121",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "e0870471-4385-42d7-8225-3d2c36acbe82",
+      "identifier": "COL-119",
+      "title": "Build the attendance rules engine in Haven M4",
+      "url": "https://linear.app/jarvislewis/issue/COL-119/build-the-attendance-rules-engine-in-haven-m4",
+      "updatedAt": "2026-09-09T21:42:39.023Z",
+      "description": "## September 9 \u2014 facility operations direction\n\nReconcile this retained HR requirement with the employee-file release already present on GitHub main fad17dcc and the later September 8 RELEASE.md. Earlier 'schema deltas/none exist' statements below are historical assumptions to inspect, not authority to build duplicate tables or bypass current commands. HFO-20 links the accepted existing records into facility operations; this original issue retains its policy/source-specific scope. Templates and unknown role/site/deadline rules require explicit approval before activation; no automatic employment/disciplinary decision is authorized. Positive employee Storage HTTP transport remains a declared verification gap. For supervised cart training, reconcile three sessions versus a two-day/five-slot form (COL-120/123) and the interview's 'like six' before enforcing a count. Keep LMH applicability and medical-record access separate. This update does not mark any requirement implemented or accepted.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nSource: COL attendance policy, effective 05/01/2021. Full rule set in `claude/COL_Employee_File_Extraction_2026-09-08.md` \u00a77.\n\nHighest-value automation target in the packet. Every threshold is numeric and deterministic. Today it is a paper attendance calendar per building, hand-counted rolling 12-month windows, hand-tracked 90-day good-citizen periods.\n\n**Definitions**\n\n* Rolling 12-month lookback. Occurrences expire at 12 months and one day.\n* Tardy: clock in 7+ minutes past scheduled start.\n* Leave early: clock out 7+ minutes before scheduled end.\n* Absence: one full scheduled workday. Consecutive days each count separately.\n* Hospitalization admitted overnight does not count. **ER visits do count.** Employee produces admission paperwork.\n\n**Eight non-counting categories:** approved FMLA, ADAAA, bereavement, military, personal leave; jury duty; PTO scheduled in advance; workers' comp time off; hospitalization with doctor's statement; late or early with prior supervisor approval.\n\n**Notification rules to enforce:** direct conversation with supervisor or designee only. No text. No voicemail. No message left with a third party. No call from anyone but the employee unless medically incapacitated. Minimum 2 hours advance. Under 2 hours without reasonable explanation may itself be assessed as an occurrence.\n\n**Escalation, 12-month rolling**\n\n| Absences | Action |\n| -- | -- |\n| 3rd | Verbal coaching and counseling |\n| 4th | Written |\n| 5th | Final written |\n| 6th | Termination |\n\nFour tardies or early departures = one absence. Tardy ladder: 4 written, 8 final written, 12 termination.\n\n**Probationary rule, separate evaluation path.** First 90 days: two absences allowed, **third absence is termination**.\n\n**No call / no show** = voluntary resignation, immediate termination. Sole exception is medical incapacity, and the Executive Director determines in sole discretion **before** return is permitted.\n\n**Good Citizen Clause.** 90 consecutive clean days earns the option to retract the last attendance coaching event, with a \"good citizen credit\" noted. ED approves before the supervisor marks it. Employee must notify the supervisor within 30 days of reaching the milestone and request a review meeting attended by both.\n\n**Schema deltas \u2014 none of these exist:**\n\n1. `attendance_occurrences` \u2014 type enum, `occurred_on`, `excluded_reason` enum over the eight categories, `notification_method`, `notification_minutes_before`.\n2. `attendance_corrective_actions` \u2014 `level`, `triggered_by_occurrence_id`, `coaching_form_document_id`, `issued_at`, `copy_given_to_employee_at`, `retracted_at`, `retracted_by`, `retraction_approved_by`.\n3. `good_citizen_credits` \u2014 qualifying window, `employee_notified_supervisor_at` (30-day gate), `review_meeting_at`, `executive_director_approved_by`, `retracted_corrective_action_id`.\n4. `probationary_periods` \u2014 separate evaluation path for the 90-day rule.\n\n**Build law:** the rolling 12-month evaluation is a derived view, never a stored counter. The Good Citizen Clause retracts the coaching event, it does not delete the occurrence. Same principle as out-of-compliance being an immutable event rather than a resettable boolean.\n\n**Blocked on:** the Coaching & Counseling form itself, referenced throughout the policy and not in the packet. Requested from Jessica.",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "relations": {
+        "nodes": []
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-123",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "8e990ce1-1b3e-4dd9-ab6a-d062bac19328",
+      "identifier": "COL-120",
+      "title": "Build onboarding checklist templates and the floor-access gate",
+      "url": "https://linear.app/jarvislewis/issue/COL-120/build-onboarding-checklist-templates-and-the-floor-access-gate",
+      "updatedAt": "2026-09-09T21:42:39.530Z",
+      "description": "## September 9 \u2014 facility operations direction\n\nReconcile this retained HR requirement with the employee-file release already present on GitHub main fad17dcc and the later September 8 RELEASE.md. Earlier 'schema deltas/none exist' statements below are historical assumptions to inspect, not authority to build duplicate tables or bypass current commands. HFO-20 links the accepted existing records into facility operations; this original issue retains its policy/source-specific scope. Templates and unknown role/site/deadline rules require explicit approval before activation; no automatic employment/disciplinary decision is authorized. Positive employee Storage HTTP transport remains a declared verification gap. For supervised cart training, reconcile three sessions versus a two-day/five-slot form (COL-120/123) and the interview's 'like six' before enforcing a count. Keep LMH applicability and medical-record access separate. This update does not mark any requirement implemented or accepted.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nSource: COL Orientation & Training Checklist, Section 5. Full list in `claude/COL_Employee_File_Extraction_2026-09-08.md` \u00a75.\n\nThirty orientation items, retained per the form itself in the Education & Training section of the personnel file. These are onboarding artifacts, not training programs, and need their own tables.\n\n**Schema deltas:** `onboarding_checklist_templates`, `onboarding_checklist_items`, `staff_onboarding_progress`. Per item capture `completed_on`, `employee_initial_by`, `trainer_initial_by`, `sequence`. Facility-scoped template so a building can add items.\n\n**The thirty items:** new hire packet, employee handbook, employee ID badge, chain-of-command, time clock, overtime, scheduled pay periods and scheduling, requesting time off, breaks and meal periods, attendance and tardiness / call-in policy, finding a replacement worker, reporting staff incidents, performance improvement plan, staff meetings, telephone / fax / walkie talkie etiquette, personal phone calls, housekeeping and laundry, food service, resident care, reporting incidents, resident emergency packet, AED location, elopement procedure, generator procedure and alarms, location of SDS, emergency procedures and evacuations, emergency contact numbers, adverse weather conditions, reporting unsafe conditions and equipment, assistance with medication hands-on training \u00d7 3.\n\n**Last item is a counter, not a checkbox.**\n\n**Conflict to resolve before seeding:** the orientation checklist says medication hands-on training \u00d7 3. The separate Acknowledgement of Completion of Medication Assistance Training says all new employees get **two days** of hands-on training and provides **five** dated signature slots. Three, two, or five. Ask Jessica.\n\n**Floor-access gate.** Add `staff.first_day_on_floor` with a constraint that it cannot be set while AHCA training items 1 (pre-service orientation) and 2 (infection control and universal precautions) are incomplete. On the paper form this is a handwritten date with nothing stopping it. See [COL-117](https://linear.app/jarvislewis/issue/COL-117/seed-haven-training-programs-with-the-26-item-ahca-training-matrix).\n\n**Note:** item reads \"Location of MSDS\" on the paper form. Seed it as SDS. See [COL-116](https://linear.app/jarvislewis/issue/COL-116/repair-policy-defects-attendance-policy-wording-and-hep-b-declination).",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-117",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-116",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-123",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "5591e434-5a19-4b4f-bc63-8250989b7e67",
+      "identifier": "COL-123",
+      "title": "Collect the seven missing HR forms and answer seven open packet questions",
+      "url": "https://linear.app/jarvislewis/issue/COL-123/collect-the-seven-missing-hr-forms-and-answer-seven-open-packet",
+      "updatedAt": "2026-09-09T21:41:09.080Z",
+      "description": "Source: COL Employee File packet gaps. See `claude/COL_Employee_File_Extraction_2026-09-08.md` \u00a714. For Jessica Murphy.\n\n**Forms declared or referenced but not delivered:**\n\n1. **Workers' Compensation forms** \u2014 declared in the packet's own Section 2 TOC, absent.\n2. **FMLA forms** \u2014 declared in Section 2 TOC, absent. See [COL-112](https://linear.app/jarvislewis/issue/COL-112/entity-name-mismatch-employee-forms-name-rising-oaks-across-all-five) note on whether FMLA even applies.\n3. **Time Off Request form** \u2014 declared in Section 2 TOC, absent. Feeds the attendance engine's \"PTO scheduled in advance\" exclusion, so [COL-119](https://linear.app/jarvislewis/issue/COL-119/build-the-attendance-rules-engine-in-haven-m4) needs it.\n4. **Coaching & Counseling form** \u2014 referenced throughout the attendance policy as the required documentation vehicle at every corrective level. Not in the packet. **Blocks** [COL-119](https://linear.app/jarvislewis/issue/COL-119/build-the-attendance-rules-engine-in-haven-m4)**.**\n5. **Grievance Report form** \u2014 the Grievance Procedure describes receiving one. Form not included.\n6. **Accident Investigation Report form** \u2014 the Workplace Safety Program says forms and instructions are in the front office. Need to know whether it is OSHA 301 or a COL form.\n7. **Employee Handbook itself** \u2014 the acknowledgment is in the packet, the handbook is not.\n\n**Open questions:**\n\n1. Which of the five communities carry **Limited Mental Health** designation? Gates AHCA training items 22 and 23. Blocks [COL-117](https://linear.app/jarvislewis/issue/COL-117/seed-haven-training-programs-with-the-26-item-ahca-training-matrix).\n2. Medication hands-on training: orientation checklist says **three** sessions, the acknowledgment form says **two days** and gives **five** dated slots. Which is the rule? Blocks [COL-120](https://linear.app/jarvislewis/issue/COL-120/build-onboarding-checklist-templates-and-the-floor-access-gate).\n3. Which job descriptions exist beyond the four in the packet? See [COL-121](https://linear.app/jarvislewis/issue/COL-121/write-the-missing-job-descriptions-and-split-dietary-manager-from).\n4. Is the attendance policy still at the 05/01/2021 effective date with no revision, or is there a newer version in use?\n5. Is the safety committee still constituted as written (Michelle Norris, Milton Smith, Lead Food Services, Facility Administrator, Lead Housekeeping, Lead Maintenance), and are quarterly minutes kept?\n6. Are accident investigation reports actually reaching the safety coordinator within the stated 24 hours, and where do the OSHA 300 / 300A / 301 logs live?\n7. Is Caitlyn Morgan RN still administering and reading PPDs in-house at all five, or per building?",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-121",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-112",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-119",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-120",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "relatedIssue": {
+              "identifier": "COL-117",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "5f41b5f2-0dc2-4cca-8172-b3e304eaf80f",
+      "identifier": "COL-132",
+      "title": "[HFO-01] Create the stable activity catalog and map all 91 Admin Log items",
+      "url": "https://linear.app/jarvislewis/issue/COL-132/hfo-01-create-the-stable-activity-catalog-and-map-all-91-admin-log",
+      "updatedAt": "2026-09-09T21:41:21.257Z",
+      "description": "A repeated template or generic checkbox cannot preserve reliable activity identity across revisions and subjects.\n\n**Scope**\nExtend OCE with stable activity identity and source mapping. Classify attestation, structured observation, review, event task, data field and linked record. Preserve composite/split provenance and all 91 AL IDs; provide the canonical repository spec entry.\n\n**Acceptance**\n\n- [ ] All 91 AL IDs map exactly once to at least one supported activity/data-field/source path or explicit unresolved disposition; no missing-header task is invented.\n- [ ] A template revision keeps the same activity history; subject kind uses validated facility/resident/employee/asset identity.\n- [ ] No source template values or historical Y/N options are imported as performed work.\n\n**Dependencies:** [COL-18](https://linear.app/jarvislewis/issue/COL-18/reconcile-haven-repository-state-against-production-readiness-for)\n**Related existing work:** See source pointers below\n**Release:** Core. Implementation not started; this issue is not proof of deployment or staff acceptance.\n**Source items:** Shared core contract across all applicable Admin Log items\n**Source/code pointers:** `195_operation_task_templates.sql:13, 201_oce_reconciliation_and_generation_guard.sql:183, SOURCE-INVENTORY.json, R01`. Migration filenames are under `supabase/migrations/`; source paths are relative to Circle-of-Life unless explicitly named otherwise. Reconcile current main before editing.\n**Open configuration questions:** Q01, Q11 See [Haven Facility Operations \u2014 Source Coverage and Open Decisions](https://linear.app/jarvislewis/document/haven-facility-operations-source-coverage-and-open-decisions-0bf9ab4bebce).\n\n**Build contract:** [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). **Sequence:** [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\nOne bounded implementation segment at a time. Record exact source/commit, focused behavioral tests, applicable repository segment gates, review and rollback/handoff evidence. Preserve current authority after waits and on retries, existing dirty/concurrent work, source truth and unknown rules. No new dependency, external transmission, clinical/employment decision or policy activation is implied. Keep source/local/hosted/provider/staff/operating-cycle acceptance distinct. No named assignee, estimate or date has been invented.\n\nRoadmap key: HFO-01 / HAVEN-ADMIN-20260909",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-135",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-18",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "b9cfc15d-fe85-4c6e-b3e5-24ae948a3932",
+      "identifier": "COL-133",
+      "title": "[HFO-05] Enforce site, subject and current-person authority on every operations surface",
+      "url": "https://linear.app/jarvislewis/issue/COL-133/hfo-05-enforce-site-subject-and-current-person-authority-on-every",
+      "updatedAt": "2026-09-09T21:41:48.985Z",
+      "description": "Facility selection is not an authorization boundary, and site access does not grant all sensitive record access.\n\n**Scope**\nExtend current-actor/facility controls to activity/subject reads, commands, counts, corrections, attachments, export and replay. Enforce ordinary site scope and explicit corporate/temporary coverage; preserve historical identity and live revocation.\n\n**Acceptance**\n\n- [ ] Site A staff cannot retrieve or infer Site B or restricted subject data through identifiers, counts, search, files, export or replay.\n- [ ] A corporate actor sees only permitted sites and subject/evidence fields; coverage expires correctly.\n- [ ] Revocation during a blocking lock and before retry/attachment download denies under current authority; attribution uses authenticated server identity.\n\n**Dependencies:** [COL-18](https://linear.app/jarvislewis/issue/COL-18/reconcile-haven-repository-state-against-production-readiness-for)\n**Related existing work:** See source pointers below\n**Release:** Core. Implementation not started; this issue is not proof of deployment or staff acceptance.\n**Source items:** Shared core contract across all applicable Admin Log items\n**Source/code pointers:** `src/lib/operations/auth.ts:74, 326_sys_001_authoritative_actor_state.sql:681, 327_sys_001e_lifecycle_authorization.sql:808, R02`. Migration filenames are under `supabase/migrations/`; source paths are relative to Circle-of-Life unless explicitly named otherwise. Reconcile current main before editing.\n**Open configuration questions:** Q02, Q03 See [Haven Facility Operations \u2014 Source Coverage and Open Decisions](https://linear.app/jarvislewis/document/haven-facility-operations-source-coverage-and-open-decisions-0bf9ab4bebce).\n\n**Build contract:** [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). **Sequence:** [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\nOne bounded implementation segment at a time. Record exact source/commit, focused behavioral tests, applicable repository segment gates, review and rollback/handoff evidence. Preserve current authority after waits and on retries, existing dirty/concurrent work, source truth and unknown rules. No new dependency, external transmission, clinical/employment decision or policy activation is implied. Keep source/local/hosted/provider/staff/operating-cycle acceptance distinct. No named assignee, estimate or date has been invented.\n\nRoadmap key: HFO-05 / HAVEN-ADMIN-20260909",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-143",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-142",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-139",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-18",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
