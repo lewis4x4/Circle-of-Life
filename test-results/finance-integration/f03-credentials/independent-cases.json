@@ -1,0 +1,48 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "name": "independent-ready-reseed-denied",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-explicit-stop-read-denied",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-new-seed-while-reconnect-stopped-denied",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-explicit-resume-reconnect-bootstrap-succeeds",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-hard-cap-preserved-until-explicit-reconnect",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-global-grant-denial-sanitized",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-vault-outage-not-invalid-identity",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-vault-outage-no-false-identity-receipt",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-vault-outage-not-invalid-response",
+      "status": "PASS"
+    },
+    {
+      "name": "independent-vault-outage-no-false-invalid-receipt",
+      "status": "PASS"
+    }
+  ],
+  "passed": 10,
+  "failed": 0,
+  "skipped": 0
+}

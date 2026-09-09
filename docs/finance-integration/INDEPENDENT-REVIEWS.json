@@ -214,6 +214,42 @@
         "Root authored the small suite-runner extension; its syntax/lint and both audit15 and webhook24 executions passed separately. The helper review is independent.",
         "The copied independent driver records the exact original run paths; execution writes only to its private run-owned output."
       ]
+    },
+    {
+      "scope": "342 sandbox credential lifecycle source and native transaction behavior",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "f00_independent_review"
+      ],
+      "source_sha256": {
+        "supabase/migrations/342_finance_credential_lifecycle.sql": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+        "supabase/tests/review_finance_credential_lifecycle.sql": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8"
+      },
+      "evidence": [
+        "test-results/finance-integration/f03-credentials/lifecycle-review.json",
+        "test-results/finance-integration/f03-credentials/verification.json",
+        "test-results/finance-integration/f03-credentials/concurrency.json"
+      ],
+      "limits": [
+        "Interrupted worker-auth/privilege/lock security lane has no completed final approval; this verdict does not replace it.",
+        "No real Vault encryption/key-lifecycle or full decrypted-view privilege proof.",
+        "No real issuer/JWT signature, gateway role-routing or HTTP credential-delivery proof.",
+        "No provider calls, actual grant/company verification, restore reconciliation, financial dispatch or F03/business acceptance."
+      ]
+    },
+    {
+      "scope": "342 independent worker-auth/security dynamic review",
+      "verdict": "INCOMPLETE",
+      "reviewers": [
+        "audit_boundary_review"
+      ],
+      "reason": "Automatic safety filter blocked the review turn, citing possible cybersecurity risk; no final verdict emitted",
+      "evidence": [
+        "test-results/finance-integration/f03-credentials/root-source-review.json"
+      ],
+      "limits": [
+        "Separate lifecycle approval and root source inspection do not replace this unfinished review."
+      ]
     }
   ]
 }

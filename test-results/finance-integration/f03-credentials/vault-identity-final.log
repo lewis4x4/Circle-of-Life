@@ -1,0 +1,198 @@
+BEGIN
+CREATE FUNCTION
+ALTER TABLE
+SELECT 1
+CREATE TABLE
+INSERT 0 4
+CREATE TABLE
+INSERT 0 22
+CREATE TABLE
+CREATE SEQUENCE
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+INSERT 0 2
+INSERT 0 2
+INSERT 0 3
+INSERT 0 4
+INSERT 0 4
+INSERT 0 4
+INSERT 0 1
+INSERT 0 3
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+                                           record_finance_payment                                            
+-------------------------------------------------------------------------------------------------------------
+ {"payment_id": "d98e4a24-426b-47fc-b82d-b1b2fbd7e539", "allocated_cents": 0, "unapplied_cents": 2000000000}
+ {"payment_id": "ddc5350a-53a6-47b3-98bc-27a5126f1a18", "allocated_cents": 0, "unapplied_cents": 2000000000}
+ {"payment_id": "0c7d01c8-f01f-43e5-88cd-3aa2b456944c", "allocated_cents": 0, "unapplied_cents": 100}
+ {"payment_id": "7d0a02d5-703f-4c9f-b0bb-ddd54eeb3173", "allocated_cents": 0, "unapplied_cents": 100}
+(4 rows)
+
+                                        record_finance_payment                                        
+------------------------------------------------------------------------------------------------------
+ {"payment_id": "6f20475d-7ef6-489a-9241-f324cebae592", "allocated_cents": 0, "unapplied_cents": 100}
+(1 row)
+
+                                                 set_finance_staging_control                                                 
+-----------------------------------------------------------------------------------------------------------------------------
+ {"stopped": false, "entity_id": "8e1f9ed9-4943-4475-84fe-4c4b8c3855fc", "dispatch_enabled": false, "staging_generation": 1}
+(1 row)
+
+                                                                                     register_finance_batch_rules                                                                                      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "declared_draft", "content_sha256": "7d90a362520c510f7aa879c255d7db659ebcf24f33247943d00e220b937a8d1b", "rules_generation": 1, "rules_version_id": "becd4a76-706d-4c2b-9c73-9e625a1df57b"}
+(1 row)
+
+ batch_login 
+-------------
+ 
+(1 row)
+
+                                        record_finance_payment                                        
+------------------------------------------------------------------------------------------------------
+ {"payment_id": "85aa8b0c-52a0-4dec-a872-f2b0cce86f66", "allocated_cents": 0, "unapplied_cents": 100}
+(1 row)
+
+ batch_login 
+-------------
+ 
+(1 row)
+
+RESET
+SELECT 1
+INSERT 0 2
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ batch_login 
+-------------
+ 
+(1 row)
+
+ batch_error 
+-------------
+ 
+(1 row)
+
+ batch_login 
+-------------
+ 
+(1 row)
+
+INSERT 0 1
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ batch_assert 
+--------------
+ 
+(1 row)
+
+                                                                                                                                         finance_credential_control                                                                                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "no_credential", "stopped": true, "lineage_id": "710ffb1c-c951-4366-84c6-862bdc9fc4f7", "fence_epoch": "4", "worker_epoch": "1", "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+ batch_error 
+-------------
+ 
+(1 row)
+
+                                                                                                                                          finance_credential_control                                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "no_credential", "stopped": false, "lineage_id": "710ffb1c-c951-4366-84c6-862bdc9fc4f7", "fence_epoch": "5", "worker_epoch": null, "connection_id": null, "binding_verified": false, "connection_epoch": "1", "financial_dispatch_enabled": false, "production_credential_starts_enabled": false}
+(1 row)
+
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+DO
+CREATE SCHEMA
+CREATE TABLE
+CREATE VIEW
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+CREATE FUNCTION
+ batch_login 
+-------------
+ 
+(1 row)
+
+SET
+INSERT 0 1
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+ batch_assert 
+--------------
+ 
+(1 row)
+
+RESET
+ worker_login 
+--------------
+ 
+(1 row)
+
+SET
+RESET
+CREATE FUNCTION
+SET
+ batch_error 
+-------------
+ 
+(1 row)
+
+RESET
+ batch_assert 
+--------------
+ 
+(1 row)
+
+ROLLBACK
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/vault-identity-final.sql:88: NOTICE:  BATCH PASS: physical-grant-cannot-have-second-organization-owner
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/vault-identity-final.sql:91: NOTICE:  BATCH PASS: same-client-shared-lineage
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/vault-identity-final.sql:92: NOTICE:  BATCH PASS: distinct-client-distinct-lineage
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/vault-identity-final.sql:94: NOTICE:  BATCH PASS: fresh-seed-while-stopped-denied
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/vault-identity-final.sql:96: NOTICE:  BATCH PASS: missing-vault-fails-closed
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/vault-identity-final.sql:112: NOTICE:  BATCH PASS: unobserved-candidate-cannot-install
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/vault-identity-final.sql:117: NOTICE:  BATCH PASS: independent-vault-outage-not-invalid-identity
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/vault-identity-final.sql:118: NOTICE:  BATCH PASS: independent-vault-outage-no-false-identity-receipt
