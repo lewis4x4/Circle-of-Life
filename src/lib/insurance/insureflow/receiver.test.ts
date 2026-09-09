@@ -375,3 +375,26 @@ it("quarantines omitted released snapshot while applying unrelated withdrawal", 
     fixtures.fault_injection_cases[0].expected_outcome.visible_policy_ids,
   );
 });
+
+it("gives a new recovery episode its own retry budget after successful scope-return recovery", () => {
+  let state = apply(initialReceiverState(), first());
+  const removed = first();
+  removed.data.events = [];
+  removed.data.current_authorized_releases = [];
+  const returned = first();
+  returned.data.events = [];
+  for (let cycle = 0; cycle < 4; cycle++) {
+    state = apply(state, removed);
+    state = apply(state, returned);
+    expect(state.recovery[release1].status).toBe("pending");
+    state = requestRecovery(state);
+    expect(state.recovery_active).toBe(true);
+    state = applyFeedPage(state, first(), {
+      ...options,
+      mode: "recovery",
+      after: "0",
+    });
+    state = apply(state, returned);
+    expect(state.health).toBe("healthy");
+  }
+});

@@ -6,7 +6,7 @@ The source ZIP hashes verified. Its authoring files are uncommitted source from 
 
 ## Verification
 
-- **3,657 Vitest tests passed**, zero failed, two existing skips.
+- **3,658 Vitest tests passed**, zero failed, two existing skips.
 - **10 packaged provider transport tests passed** with Deno's default permissions.
 - Final segment gate **PASS**: `test-results/agent-gates/2026-09-09T12-28-46-623Z-INSUREFLOW-RECEIVER-VERIFIED.json` (security, lint, migration replay, production build, generic UI/a11y).
 - Actual local worker → reducer → PostgreSQL RPC → authenticated projection passed initial publication, mixed validity with unrelated withdrawal, and invalid-controls unchanged-state scenarios. Final migration hashes are pinned in `test-results/insurance/insureflow/1788957204675-local-integration.json`.
@@ -25,3 +25,7 @@ Staging origin/credentials, provider namespace, approved real account mappings, 
 Mission alignment: **pass** for this bounded synthetic implementation. See `receiver-contract.md`, `runbook.md`, `../insureflow-database-contract.md`, and `changed-files.txt` for details.
 
 Final follow-up verification replayed **341 migrations and 22 SQL probes** after the last SQL audit/expiry changes; hashes are retained in `test-results/insurance/insureflow/migration-replay.json`. The staged patch secret scan passed. All run-owned database/browser processes stopped, and 1,713 exact temporary artifacts were removed through the cleanup manifest validation; private provenance records remain. Source ZIPs, Downloads, worktrees and environments were preserved.
+
+A final four-cycle scope-return regression also reproduced and fixed retry-budget carryover from completed recoveries. New episodes reset their retry budget; unresolved episodes remain capped at three attempts. The follow-up has 92 focused passing tests and independent review.
+
+Recovery follow-up segment gate: **PASS**, `test-results/agent-gates/2026-09-09T12-44-50-863Z-INSUREFLOW-RECOVERY-EPISODES.json`. It reran security, lint, all migration/probe checks and the production build; the unchanged UI retains its earlier browser evidence. The follow-up scratch cluster stopped and its 1,005 exact temporary artifacts were removed.

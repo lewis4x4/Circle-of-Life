@@ -8,7 +8,7 @@ Reviewed September 9, 2026 against the supplied provider implementation and its 
 
 The reviewer did not author `src/lib/insurance/insureflow/receiver.ts`, migration `338_insureflow_synthetic_receiver.sql`, or its SQL probe. Those files are the independent review scope. The reviewer authored the separate transport/worker lane; that lane requires the parent reviewer’s assessment and is not self-approved here. Its tests are included below as supporting integration evidence.
 
-Final reviewed file hashes (SHA-256):
+Initial reviewed file hashes (SHA-256):
 
 | File | SHA-256 |
 | --- | --- |
@@ -64,3 +64,18 @@ Results: **91 tests passed**, scoped ESLint passed with zero warnings, and full 
 ## Limits
 
 The database run used local PostgreSQL with Supabase stubs. It does not prove deployed gateway behavior or production authorization configuration. Real source-account mappings, staging credentials/origin, production freshness and retention decisions, production readers, and live rollout approval remain unresolved. This review authorizes no deployment or live connection.
+
+
+## Follow-up: independent recovery-episode verification
+
+**Verdict reaffirmed: APPROVE for the same bounded synthetic scope.** The initial hash table above remains the evidence snapshot for the preceding review. The subsequently reviewed reducer hash is:
+
+`src/lib/insurance/insureflow/receiver.ts` — SHA-256 `526176e8c6dc0ff91363729de578acdab4d78dc5cc358406d0668483123519fd`.
+
+The parent reviewer identified a recovery-episode defect, which this reviewer independently reproduced. After three successful move-out/back recoveries of one immutable release, the reducer retained attempts `1`, `2`, and `3` even after each episode reached `resolved`. A fourth scope return became exhausted without attempting recovery and left an authorized summary unavailable.
+
+The narrow correction resets the attempt count when newly queued recovery work previously had status `resolved`. Pending, awaiting-confirmation, and exhausted unresolved work retain their counts. It does not alter source receipts, immutable hashes, membership validation, SQL, APIs, or UI.
+
+Independent execution against the corrected reducer used the supplied move-out/back and replay fixtures for four complete episodes. All four started a replay, required a separate normal confirmation, ended `resolved` and `healthy`, and had attempt count `1`. A separate continuously invalid-body reproduction performed exactly three replays, then stayed exhausted/degraded with no visible body. The retry bound therefore remains enforced for unresolved work.
+
+The same three-file focused Vitest command listed above was rerun against this reducer: **92 tests passed**. No unresolved finding remains from the follow-up. All prior live/staging/production limitations remain in force.

@@ -332,12 +332,13 @@ export function initialReceiverState(): ReceiverState {
 }
 function queue(s: ReceiverState, m: ManifestEntry, reason: string) {
   const prior = s.recovery[m.release_id];
+  // A completed incident must not consume the retry budget of a later scope return.
+  const attempts = prior?.status === "resolved" ? 0 : (prior?.attempts ?? 0);
   s.recovery[m.release_id] = {
     policy_id: m.policy_id,
     reason,
-    attempts: prior?.attempts ?? 0,
-    status:
-      (prior?.attempts ?? 0) >= MAX_RECOVERY_ATTEMPTS ? "exhausted" : "pending",
+    attempts,
+    status: attempts >= MAX_RECOVERY_ATTEMPTS ? "exhausted" : "pending",
   };
 }
 /** Returns a new complete state for ONE atomic, fenced persistence operation. */
