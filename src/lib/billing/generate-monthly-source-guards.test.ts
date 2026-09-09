@@ -29,7 +29,7 @@ function fixture() {
       { ...rate, id: "draft", status: "draft", effective_date: "2026-05-01", created_at: "2026-05-01", base_rate_private: 999000 },
       { ...rate, id: "published", status: "published", effective_date: "2026-04-01", created_at: "2026-04-01" },
     ],
-    resident_payers: [{ ...common, resident_id: "medicaid", payer_type: "medicaid_oss", payer_name: "Synthetic payer", facility_medicaid_provider_id: "provider", medicaid_rate: null, is_primary: true, end_date: null }],
+    resident_payers: [{ ...common, id: "payer-medicaid", effective_date: "2025-01-01", resident_id: "medicaid", payer_type: "medicaid_oss", payer_name: "Synthetic payer", facility_medicaid_provider_id: "provider", medicaid_rate: null, is_primary: true, end_date: null }],
     facility_medicaid_providers: [{ ...common, id: "provider", active: true, default_rate_cents: 12000, rate_unit: "daily", provider_name: "Synthetic provider" }],
     resident_rate_agreements: [{ ...common, id: "agreement-1", resident_id: "agreement", status: "active", room_class: "companion", negotiated_base_rate: 217000, negotiated_care_surcharge: 15500, negotiated_monthly_total: 232500, care_charge_mode: "flat", concession_reason: "family_discount", effective_date: "2026-01-01", created_at: "2026-01-01", end_date: null }],
     invoices: [],

@@ -52,7 +52,7 @@
     "/finance/integration"
   ],
   "candidate_verification": {
-    "full_unit_passed": 3665,
+    "full_unit_passed": 3712,
     "full_unit_skipped": 0,
     "native_migrations": 345,
     "native_sql_probes": 26,
@@ -73,8 +73,9 @@
       "status": "PASS"
     },
     "billing_gate": "test-results/agent-gates/2026-09-09T06-57-32-030Z-HFA-F06-SOURCE-GUARDS.json",
-    "focused_finance_passed": 225,
-    "native_api_evidence": "test-results/finance-integration/native-auth-api/acceptance-review.json"
+    "focused_finance_passed": 272,
+    "native_api_evidence": "test-results/finance-integration/native-auth-api/acceptance-review.json",
+    "temporal_gate": "test-results/agent-gates/2026-09-09T12-51-04-745Z-HFA-F06-TEMPORAL.json"
   },
   "open_credential_review": "Independent dynamic security review blocked by automatic possible-cybersecurity-risk filter; no final verdict",
   "engineering_acceptance_passed": [

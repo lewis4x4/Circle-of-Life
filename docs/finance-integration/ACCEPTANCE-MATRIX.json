@@ -704,9 +704,11 @@
       "evidence": [
         "docs/finance-integration/F06-BILLING-SOURCE-GUARDS.md",
         "test-results/finance-integration/f06-source-guards/independent-review.json",
-        "test-results/finance-integration/full-unit-billing-guards-complete.json"
+        "test-results/finance-integration/full-unit-billing-guards-complete.json",
+        "docs/finance-integration/F06-TEMPORAL-PAYERS.md",
+        "test-results/finance-integration/f06-temporal/independent-review.json"
       ],
-      "reviewer": "f00_independent_review: bounded source guard/reporting APPROVE only",
+      "reviewer": "f00_independent_review: temporal selection scope APPROVE only",
       "verified_at": null,
       "blocked_by": []
     },
@@ -719,10 +721,13 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "billing engineering / billing operator",
-      "evidence": [],
-      "reviewer": null,
+      "evidence": [
+        "docs/finance-integration/F06-TEMPORAL-PAYERS.md",
+        "test-results/finance-integration/f06-temporal/independent-review.json"
+      ],
+      "reviewer": "f00_independent_review: temporal selection scope APPROVE only",
       "verified_at": null,
       "blocked_by": []
     },

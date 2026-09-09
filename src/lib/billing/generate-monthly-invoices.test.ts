@@ -331,6 +331,9 @@ describe("buildMonthlyInvoicePreview", () => {
         {
           data: [
             {
+              id: "payer-resident-nolink",
+              effective_date: "2020-01-01",
+              end_date: null,
               resident_id: "resident-nolink",
               payer_type: "medicaid_oss",
               payer_name: "Medicaid",
@@ -406,6 +409,9 @@ describe("buildMonthlyInvoicePreview", () => {
         {
           data: [
             {
+              id: "payer-resident-m",
+              effective_date: "2020-01-01",
+              end_date: null,
               resident_id: "resident-m",
               payer_type: "medicaid_oss",
               payer_name: "Florida Community Care",

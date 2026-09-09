@@ -37,6 +37,9 @@ export type RateSchedule = {
 };
 
 export type ResidentPayer = {
+  id: string;
+  effective_date: string;
+  end_date: string | null;
   resident_id: string;
   payer_type: string;
   payer_name: string | null;
@@ -235,6 +238,49 @@ export function isMedicaidPayer(payerType: string | null | undefined): boolean {
   return payerType === "medicaid_oss";
 }
 
+function canonicalCivilDate(value: unknown): string | null {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : null;
+}
+
+/** Select a primary only when it covers every known billable civil day. */
+function selectBillablePrimary(
+  resident: Pick<Resident, "admission_date" | "discharge_date">,
+  payers: ResidentPayer[],
+  periodStart: string,
+  periodEnd: string,
+): { payer?: ResidentPayer; noBillableDays?: boolean; error?: string } {
+  const admission = canonicalCivilDate(resident.admission_date);
+  const discharge = resident.discharge_date === null ? null : canonicalCivilDate(resident.discharge_date);
+  if (!admission || (resident.discharge_date !== null && !discharge) || (discharge && discharge < admission)) {
+    return { error: "A resident admission/discharge interval is missing, invalid, or reversed. Review the billable dates before generating invoices." };
+  }
+  const start = admission > periodStart ? admission : periodStart;
+  const end = discharge && discharge < periodEnd ? discharge : periodEnd;
+  if (start > end) return { noBillableDays: true };
+
+  const overlapping: ResidentPayer[] = [];
+  for (const payer of payers) {
+    const effective = canonicalCivilDate(payer.effective_date);
+    const expires = payer.end_date === null ? null : canonicalCivilDate(payer.end_date);
+    if (!effective || (payer.end_date !== null && !expires) || (expires && expires < effective)) {
+      return { error: "A primary payer interval is missing, invalid, or reversed. Review payer effective dates before generating invoices." };
+    }
+    if (effective <= end && (!expires || expires >= start)) overlapping.push(payer);
+  }
+  // No overlapping primary retains the established private-rate default.
+  if (overlapping.length === 0) return {};
+  if (overlapping.length > 1) {
+    return { error: "Multiple primary payer periods intersect a resident's billable interval. Split billing or payer-date correction is required before generating invoices." };
+  }
+  const payer = overlapping[0];
+  if (payer.effective_date > start || (payer.end_date !== null && payer.end_date < end)) {
+    return { error: "A primary payer covers only part of a resident's billable interval. Review gaps or responsibility changes for split billing before generating invoices." };
+  }
+  return { payer };
+}
+
 export type BuildPreviewResult = {
   preview: PreviewLine[];
   error: string | null;
@@ -296,10 +342,9 @@ export async function buildMonthlyInvoicePreview(
 
   const payerP = supabase
     .from("resident_payers" as never)
-    .select("resident_id, payer_type, payer_name, medicaid_rate, facility_medicaid_provider_id", { count: "exact" })
+    .select("id, resident_id, payer_type, payer_name, medicaid_rate, facility_medicaid_provider_id, effective_date, end_date", { count: "exact" })
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
-    .or(`end_date.is.null,end_date.gte.${periodStart}`)
     .eq("is_primary", true);
 
   const medicaidP = supabase
@@ -396,7 +441,23 @@ export async function buildMonthlyInvoicePreview(
     };
   }
 
-  const payerMap = new Map(payers.map((p) => [p.resident_id, p]));
+  const payerRows = new Map<string, ResidentPayer[]>();
+  for (const payer of payers) {
+    const rows = payerRows.get(payer.resident_id) ?? [];
+    rows.push(payer);
+    payerRows.set(payer.resident_id, rows);
+  }
+  const payerMap = new Map<string, ResidentPayer>();
+  const noBillableDays = new Set<string>();
+  for (const resident of residents) {
+    if (alreadyInvoiced.has(resident.id)) continue;
+    const selection = selectBillablePrimary(resident, payerRows.get(resident.id) ?? [], periodStart, periodEnd);
+    if (selection.error) {
+      return { preview: [], error: selection.error, billingLabel, days, periodStart, periodEnd, dueDate };
+    }
+    if (selection.noBillableDays) noBillableDays.add(resident.id);
+    else if (selection.payer) payerMap.set(resident.id, selection.payer);
+  }
   const medicaidById = new Map(medicaidProviders.map((p) => [p.id, p]));
   const agreementMap = new Map<string, ResidentRateAgreement>();
   for (const agreement of agreements) {
@@ -408,7 +469,7 @@ export async function buildMonthlyInvoicePreview(
   const medicaidRateMissing: string[] = [];
 
   const preview: PreviewLine[] = residents
-    .filter((r) => !alreadyInvoiced.has(r.id))
+    .filter((r) => !alreadyInvoiced.has(r.id) && !noBillableDays.has(r.id))
     .map((r): PreviewLine | null => {
       const name = `${(r.last_name ?? "").trim()}, ${(r.first_name ?? "").trim()}`.replace(
         /^, |, $/,
