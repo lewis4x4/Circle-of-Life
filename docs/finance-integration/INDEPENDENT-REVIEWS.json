@@ -59,6 +59,40 @@
       "limits": [
         "Historical classification, transfers, cutover and bank/book reconciliation remain open"
       ]
+    },
+    {
+      "scope": "F03 durable source event/outbox staging only",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "migration_sha256": "ffb4f41d3454b4d8d89c90be538edeef894b8689ce0a16ecee9e431f602e65b3",
+      "evidence": [
+        "56 independently executedSQL assertions",
+        "Fresh342 migration/23probe replay",
+        "Four controlled source/stop/worker concurrency cases"
+      ],
+      "corrections": [
+        "Stale unattempted commands can receive immutable supersession",
+        "UUID primary keys retain separate unique identity hashes",
+        "Summary uses stable source snapshot"
+      ],
+      "limits": [
+        "No approved payload/membership/connection binding",
+        "No operationaldispatcher/provider/independentrecovery/liveacceptance"
+      ]
+    },
+    {
+      "scope": "CSP and PostgreSQL UUID/server formatter boundary corrections",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "evidence": [
+        "10CSP cases",
+        "2mapped-UUID cases",
+        "5formatter comparisons",
+        "Scopedlint/type diagnostics"
+      ],
+      "limits": [
+        "Protected-routeaxe stillfailed unchanged20s loadbudget duringDocker failures"
+      ]
     }
   ]
 }
