@@ -19,7 +19,8 @@ import { RecordDetailHeader, RecordDetailSection } from "@/design-system/compone
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { postInvoiceToGl, postPaymentToGl } from "@/lib/finance/post-to-gl";
-import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
+import { formatCents } from "@/lib/finance/format-cents";
+import { parseJournalFormLines } from "@/lib/finance/journal-form-lines";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canCreateDraftFinance, canPostFinance } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
@@ -47,20 +48,6 @@ function nextLineKey() {
   return `line-${++_lineSeq}-${Date.now()}`;
 }
 
-function parseFormLines(formLines: LineForm[]) {
-  return formLines
-    .map((l) => {
-      const dc = parseDollarsToCents(l.debit);
-      const cc = parseDollarsToCents(l.credit);
-      return {
-        gl_account_id: l.gl_account_id,
-        debit_cents: dc && dc > 0 ? dc : 0,
-        credit_cents: cc && cc > 0 ? cc : 0,
-      };
-    })
-    .filter((l) => l.gl_account_id && (l.debit_cents > 0 || l.credit_cents > 0))
-    .map((l, i) => ({ ...l, line_number: i + 1 }));
-}
 
 export default function JournalEntryDetailPage() {
   const params = useParams();
@@ -191,7 +178,12 @@ export default function JournalEntryDetailPage() {
 
   async function saveDraft() {
     if (!header || header.status !== "draft" || !organizationId || !canCreateDraftFinance(role)) return;
-    const parsed = parseFormLines(formLines);
+    const result = parseJournalFormLines(formLines);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    const parsed = result.lines;
     if (parsed.length < 2) {
       setError("Add at least two lines with accounts and a debit or credit amount.");
       return;
@@ -308,25 +300,13 @@ export default function JournalEntryDetailPage() {
   const canEditDraft = Boolean(organizationId && canCreateDraftFinance(role) && header?.status === "draft" && header.source_type === "manual");
   const canPostEntry = Boolean(organizationId && canPostFinance(role) && header?.status === "draft");
 
-  let debitSum = 0;
-  let creditSum = 0;
-  if (canEditDraft) {
-    for (const l of formLines) {
-      const dc = parseDollarsToCents(l.debit) ?? 0;
-      const cc = parseDollarsToCents(l.credit) ?? 0;
-      debitSum += dc;
-      creditSum += cc;
-    }
-  } else {
-    for (const l of lines) {
-      debitSum += l.debit_cents;
-      creditSum += l.credit_cents;
-    }
-  }
-  const balanced = debitSum === creditSum && debitSum > 0;
+  const parsedDraft = parseJournalFormLines(formLines);
+  const debitSum = canEditDraft ? (parsedDraft.ok ? parsedDraft.debitCents : null) : lines.reduce((sum, line) => sum + line.debit_cents, 0);
+  const creditSum = canEditDraft ? (parsedDraft.ok ? parsedDraft.creditCents : null) : lines.reduce((sum, line) => sum + line.credit_cents, 0);
+  const balanced = debitSum !== null && creditSum !== null && debitSum === creditSum && debitSum > 0;
   const draftHasChanges = canEditDraft && header && (
-    formEntryDate !== header.entry_date || formMemo !== (header.memo ?? "") || formFacilityId !== (header.facility_id ?? "") ||
-    JSON.stringify(parseFormLines(formLines)) !== JSON.stringify(lines.map((line) => ({ gl_account_id: line.gl_account_id, debit_cents: line.debit_cents, credit_cents: line.credit_cents, line_number: line.line_number })))
+    !parsedDraft.ok || formEntryDate !== header.entry_date || formMemo !== (header.memo ?? "") || formFacilityId !== (header.facility_id ?? "") ||
+    JSON.stringify(parsedDraft.lines) !== JSON.stringify(lines.map((line) => ({ gl_account_id: line.gl_account_id, debit_cents: line.debit_cents, credit_cents: line.credit_cents, line_number: line.line_number })))
   );
 
   const headerSubtitle = loading
@@ -397,7 +377,7 @@ export default function JournalEntryDetailPage() {
                     <Input id="je-memo-edit" value={formMemo} onChange={(e) => setFormMemo(e.target.value)} placeholder="Optional" />
                   </div>
                   <div className="md:col-span-2 text-sm text-foreground">
-                    Line totals: debit {formatCents(debitSum)} · credit {formatCents(creditSum)}{" "}
+                    Line totals: debit {(debitSum === null ? "Invalid amount" : formatCents(debitSum))} · credit {(creditSum === null ? "Invalid amount" : formatCents(creditSum))}{" "}
                     {balanced ? (
                       <span className="text-emerald-700 dark:text-emerald-400">(balanced)</span>
                     ) : (
@@ -418,7 +398,8 @@ export default function JournalEntryDetailPage() {
                         <Label>Account</Label>
                         <select
                           className={selectCls}
-                          value={line.gl_account_id}
+                          aria-label={`Account, line ${i + 1}`}
+                  value={line.gl_account_id}
                           onChange={(e) => setLine(i, { gl_account_id: e.target.value })}
                         >
                           <option value="">Select…</option>
@@ -433,7 +414,8 @@ export default function JournalEntryDetailPage() {
                         <Label>Debit $</Label>
                         <Input
                           inputMode="decimal"
-                          value={line.debit}
+                          aria-label={`Debit dollars, line ${i + 1}`}
+                  value={line.debit}
                           onChange={(e) => setLine(i, { debit: e.target.value, credit: "" })}
                         />
                       </div>
@@ -441,7 +423,8 @@ export default function JournalEntryDetailPage() {
                         <Label>Credit $</Label>
                         <Input
                           inputMode="decimal"
-                          value={line.credit}
+                          aria-label={`Credit dollars, line ${i + 1}`}
+                  value={line.credit}
                           onChange={(e) => setLine(i, { credit: e.target.value, debit: "" })}
                         />
                       </div>
@@ -495,7 +478,7 @@ export default function JournalEntryDetailPage() {
                   <p>Status: {header.status}</p>
                   {header.posted_at ? <p>Posted: {header.posted_at}</p> : null}
                   <p className="mt-2">
-                    Line totals: debit {formatCents(debitSum)} · credit {formatCents(creditSum)}{" "}
+                    Line totals: debit {(debitSum === null ? "Invalid amount" : formatCents(debitSum))} · credit {(creditSum === null ? "Invalid amount" : formatCents(creditSum))}{" "}
                     {balanced ? (
                       <span className="text-emerald-700 dark:text-emerald-400">(balanced)</span>
                     ) : (

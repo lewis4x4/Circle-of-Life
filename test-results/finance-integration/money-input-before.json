@@ -1,0 +1,390 @@
+{
+  "numTotalTestSuites": 2,
+  "numPassedTestSuites": 0,
+  "numFailedTestSuites": 2,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 27,
+  "numPassedTests": 17,
+  "numFailedTests": 10,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1788922345250,
+  "success": false,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 12.34 as exact cents",
+          "status": "passed",
+          "title": "parses 12.34 as exact cents",
+          "duration": 1.505583999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 1234 as exact cents",
+          "status": "passed",
+          "title": "parses 1234 as exact cents",
+          "duration": 0.16599999999999682,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses  $1,234.56  as exact cents",
+          "status": "passed",
+          "title": "parses  $1,234.56  as exact cents",
+          "duration": 0.06366600000001199,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses .29 as exact cents",
+          "status": "passed",
+          "title": "parses .29 as exact cents",
+          "duration": 0.083500000000015,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 0.01 as exact cents",
+          "status": "passed",
+          "title": "parses 0.01 as exact cents",
+          "duration": 0.08695799999998144,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 12. as exact cents",
+          "status": "passed",
+          "title": "parses 12. as exact cents",
+          "duration": 0.050874999999962256,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 12.3 as exact cents",
+          "status": "passed",
+          "title": "parses 12.3 as exact cents",
+          "duration": 0.03641599999997425,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses -$1,234.56 as exact cents",
+          "status": "passed",
+          "title": "parses -$1,234.56 as exact cents",
+          "duration": 0.03404199999999946,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses +12.34 as exact cents",
+          "status": "passed",
+          "title": "parses +12.34 as exact cents",
+          "duration": 0.301208000000031,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 0 as exact cents",
+          "status": "passed",
+          "title": "parses 0 as exact cents",
+          "duration": 0.06937499999997954,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 90071992547409.91 as exact cents",
+          "status": "passed",
+          "title": "parses 90071992547409.91 as exact cents",
+          "duration": 0.033833000000015545,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses -90071992547409.91 as exact cents",
+          "status": "passed",
+          "title": "parses -90071992547409.91 as exact cents",
+          "duration": 0.023541000000022905,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1.005 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 1.005 without rounding or reinterpretation",
+          "duration": 1.8097080000000005,
+          "failureMessages": [
+            "AssertionError: expected 100 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 0.009 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 0.009 without rounding or reinterpretation",
+          "duration": 0.2867919999999913,
+          "failureMessages": [
+            "AssertionError: expected 1 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1.999 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 1.999 without rounding or reinterpretation",
+          "duration": 0.21758299999999053,
+          "failureMessages": [
+            "AssertionError: expected 200 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1e3 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 1e3 without rounding or reinterpretation",
+          "duration": 0.1675000000000182,
+          "failureMessages": [
+            "AssertionError: expected 100000 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 0x10 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 0x10 without rounding or reinterpretation",
+          "duration": 0.23487500000004502,
+          "failureMessages": [
+            "AssertionError: expected 1600 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1,2,3 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 1,2,3 without rounding or reinterpretation",
+          "duration": 0.16458299999999326,
+          "failureMessages": [
+            "AssertionError: expected 12300 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 12,34.56 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 12,34.56 without rounding or reinterpretation",
+          "duration": 0.10608300000001236,
+          "failureMessages": [
+            "AssertionError: expected 123456 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1$2 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 1$2 without rounding or reinterpretation",
+          "duration": 0.10762499999998454,
+          "failureMessages": [
+            "AssertionError: expected 1200 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 90071992547409.92 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects 90071992547409.92 without rounding or reinterpretation",
+          "duration": 0.2787920000000099,
+          "failureMessages": [
+            "AssertionError: expected 9007199254740992 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects -90071992547409.92 without rounding or reinterpretation",
+          "status": "failed",
+          "title": "rejects -90071992547409.92 without rounding or reinterpretation",
+          "duration": 0.11375000000003865,
+          "failureMessages": [
+            "AssertionError: expected -9007199254740992 to be null\n    at /Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts:16:40\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2027:60\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Finance%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)"
+          ],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects  without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects  without rounding or reinterpretation",
+          "duration": 0.08962500000001228,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects $ without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects $ without rounding or reinterpretation",
+          "duration": 0.036791999999991276,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects . without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects . without rounding or reinterpretation",
+          "duration": 0.02645799999999099,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects NaN without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects NaN without rounding or reinterpretation",
+          "duration": 0.022959000000014385,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects Infinity without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects Infinity without rounding or reinterpretation",
+          "duration": 0.020291000000042914,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922345807,
+      "endTime": 1788922345813.2788,
+      "status": "failed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts"
+    }
+  ],
+  "acceptance_mapping_correction": {
+    "HFA-006": "HFA-036",
+    "HFA-011": "HFA-036",
+    "reason": "Early new-money test labels were incorrect; exact monetary representation is HFA-036. Preserve actual run case names; use corrected final report for acceptance mapping."
+  },
+  "superseded_by": "2026-09-09T03-06-27.061Z-finance.json"
+}

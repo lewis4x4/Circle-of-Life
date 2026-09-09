@@ -622,7 +622,9 @@
       "na_permitted": false,
       "status": "IN_PROGRESS",
       "owner": "finance engineering / controller",
-      "evidence": [],
+      "evidence": [
+        "test-results/finance-integration/money-input-review.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []
@@ -1150,9 +1152,11 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "independent reviewers / release operator",
-      "evidence": [],
+      "evidence": [
+        "INDEPENDENT-REVIEWS.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []
