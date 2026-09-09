@@ -1,0 +1,103 @@
+{
+  "verdict": "APPROVE",
+  "reviewer": "qbo_read_contract",
+  "recorded_at": "2026-09-09T14:12:39.155683+00:00",
+  "scope": "Root-authored QBO suite runner/package/CI integration and evidence records only; not a self-review of QBO source",
+  "reviewed_files": [
+    {
+      "path": "scripts/finance-integration/run-edge-tests.mjs",
+      "sha256": "3872821684887fad949eccece21020712ec4647af61471710d9b526a46438955"
+    },
+    {
+      "path": "package.json",
+      "sha256": "5d9291334a7266292fa578f3812cbd63b23cc2ec0cbdb6406beda12d6427ae9b"
+    },
+    {
+      "path": ".github/workflows/finance-integration.yml",
+      "sha256": "a271c346647c85bfede2c9d8b833876450e9d311fb18738fa2b364298acd69d7"
+    },
+    {
+      "path": "docs/finance-integration/ACCEPTANCE-MATRIX.json",
+      "sha256": "8b2add048a980ba7802996630af3f7fc60e1063058ae6f146947e58979ed1984"
+    },
+    {
+      "path": "docs/finance-integration/INDEPENDENT-REVIEWS.json",
+      "sha256": "81b2e7a32eec42dd541f950dab380a55fb7e2ed3a01b9bf88dbb2f09a38bbb31"
+    },
+    {
+      "path": "docs/finance-integration/RELEASE-MANIFEST.json",
+      "sha256": "e315244e95d5fd14664cf7b231689417b5e7172ea6afab4de5bde5dedb9a733a"
+    },
+    {
+      "path": "docs/finance-integration/IMPLEMENTATION-STATUS.md",
+      "sha256": "9a72f1c83c82356dc7283f233c187b9bb549eb40eefd6ede33bc3e824db6524b"
+    },
+    {
+      "path": "docs/finance-integration/RESUMPTION.md",
+      "sha256": "2aadc69fcd6386ea5168a9f6ed02bba3b7846a2fb84e1e6f7223f890ba01d8a8"
+    }
+  ],
+  "verification": {
+    "syntax": "node --check scripts/finance-integration/run-edge-tests.mjs PASS",
+    "orchestration_harness": "Executed runner text in isolated Node VM; filesystem writes intercepted in memory; subprocess outputs injected from retained Deno JUnit fixture; no source files changed",
+    "checks": [
+      {
+        "name": "new suite exact no-permission command and98 cases",
+        "status": "PASS"
+      },
+      {
+        "name": "default audit remains only scoped environment permission",
+        "status": "PASS"
+      },
+      {
+        "name": "webhook remains no permissions",
+        "status": "PASS"
+      },
+      {
+        "name": "subprocess failure cannot pass",
+        "status": "PASS"
+      },
+      {
+        "name": "empty evidence cannot pass",
+        "status": "PASS"
+      },
+      {
+        "name": "skipped case cannot pass",
+        "status": "PASS"
+      },
+      {
+        "name": "failure element cannot pass",
+        "status": "PASS"
+      },
+      {
+        "name": "reject unsupported suite __proto__",
+        "status": "PASS"
+      },
+      {
+        "name": "reject unsupported suite unknown",
+        "status": "PASS"
+      }
+    ],
+    "counts": {
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "artifact_consistency": {
+      "report": "test-results/finance-integration/2026-09-09T14-06-37.538Z-qbo-read.json",
+      "json_cases": 98,
+      "junit_cases": 98,
+      "skipped": 0,
+      "source_hash_matches_approved_file": true,
+      "test_hash_matches_approved_file": true
+    },
+    "claims_review": "Unconditional CI step matches package command; HFA028/036 remain IN_PROGRESS; explicit no provider/import/snapshot/reconciliation/release claims"
+  },
+  "limits": [
+    "No additional QBO source review; independently approved separately by finance_source_inventory",
+    "No actual CI run approval in this review",
+    "Nine orchestration checks exercise runner wiring and failure handling, not provider behavior",
+    "No database, network, provider or application source writes"
+  ]
+}

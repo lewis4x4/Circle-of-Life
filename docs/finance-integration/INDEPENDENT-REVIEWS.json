@@ -491,11 +491,28 @@
         "skipped": 0
       },
       "evidence": [
-        "test-results/finance-integration/f04-qbo-read/integration-checks.json"
+        "test-results/finance-integration/f04-qbo-read/integration-checks.json",
+        "test-results/finance-integration/f04-qbo-read/integration-independent-review.json"
       ],
       "limits": [
         "In-memory runner orchestration only; no CI execution or provider/release approval.",
         "Transport source independently reviewed by finance_source_inventory."
+      ]
+    },
+    {
+      "scope": "Pinned Gitleaks installation and two existing invoice control labels",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "qbo_read_contract"
+      ],
+      "evidence": [
+        "test-results/finance-integration/f04-qbo-read/ci-gitleaks-label-review.json",
+        "test-results/finance-integration/native-ui/billing-controls.json",
+        "test-results/finance-integration/f04-qbo-read/ci-scanner-repair.json"
+      ],
+      "limits": [
+        "Source and Bash syntax review; actual Linux CI rerun remains pending.",
+        "Control labels only; no complete billing workflow or release approval."
       ]
     }
   ]
