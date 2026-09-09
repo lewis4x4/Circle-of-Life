@@ -1,0 +1,60 @@
+[
+  {
+    "mode": "light-desktop",
+    "violations": [],
+    "width": {
+      "viewport": 1440,
+      "document": 1440
+    }
+  },
+  {
+    "mode": "light-mobile",
+    "violations": [
+      {
+        "id": "scrollable-region-focusable",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "div[data-slot=\"table-container\"]"
+            ],
+            "summary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+          }
+        ]
+      }
+    ],
+    "width": {
+      "viewport": 390,
+      "document": 390
+    }
+  },
+  {
+    "mode": "dark-desktop",
+    "violations": [],
+    "width": {
+      "viewport": 1440,
+      "document": 1440
+    }
+  },
+  {
+    "mode": "dark-mobile",
+    "violations": [
+      {
+        "id": "scrollable-region-focusable",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "div[data-slot=\"table-container\"]"
+            ],
+            "summary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+          }
+        ]
+      }
+    ],
+    "width": {
+      "viewport": 390,
+      "document": 390
+    }
+  }
+]

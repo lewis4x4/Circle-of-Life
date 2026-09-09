@@ -1,0 +1,46 @@
+[
+  {
+    "mode": "light-desktop",
+    "violations": [],
+    "width": {
+      "viewport": 1440,
+      "document": 1440
+    },
+    "keyboardScroll": null
+  },
+  {
+    "mode": "light-mobile",
+    "violations": [],
+    "width": {
+      "viewport": 390,
+      "document": 390
+    },
+    "keyboardScroll": {
+      "before": 0,
+      "after": 35,
+      "status": "PASS"
+    }
+  },
+  {
+    "mode": "dark-desktop",
+    "violations": [],
+    "width": {
+      "viewport": 1440,
+      "document": 1440
+    },
+    "keyboardScroll": null
+  },
+  {
+    "mode": "dark-mobile",
+    "violations": [],
+    "width": {
+      "viewport": 390,
+      "document": 390
+    },
+    "keyboardScroll": {
+      "before": 0,
+      "after": 40,
+      "status": "PASS"
+    }
+  }
+]

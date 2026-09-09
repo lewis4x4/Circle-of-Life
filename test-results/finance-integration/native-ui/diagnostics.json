@@ -1,0 +1,24 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"file\": \"/Users/brianlewis/Circle of Life/Haven Finance Integration/src/components/layout/AppShell.tsx\",\n  \"diagnosticCount\": 0,\n  \"diagnostics\": [],\n  \"command\": \"npx tsc --noEmit --pretty false --project /Users/brianlewis/Circle of Life/Haven Finance Integration/tsconfig.json\"\n}"
+        }
+      ]
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"file\": \"/Users/brianlewis/Circle of Life/Haven Finance Integration/src/components/finance/FinanceReviewQueueClient.tsx\",\n  \"diagnosticCount\": 0,\n  \"diagnostics\": [],\n  \"command\": \"npx tsc --noEmit --pretty false --project /Users/brianlewis/Circle of Life/Haven Finance Integration/tsconfig.json\"\n}"
+        }
+      ]
+    }
+  }
+]

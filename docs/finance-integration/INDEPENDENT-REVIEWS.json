@@ -400,6 +400,36 @@
         "Mutable payer history, current resident-status filtering and historical rate/agreement eligibility remain source provenance gaps.",
         "Existing Medicaid override rate-unit handling is unchanged and remains unresolved engineering; no unit semantics invented."
       ]
+    },
+    {
+      "scope": "Two-file header text contrast and named keyboard-scrollable queue tables",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "finance_source_inventory"
+      ],
+      "source_files": [
+        {
+          "path": "src/components/layout/AppShell.tsx",
+          "sha256": "ae9dec1fbdc6217ab466dfd7403698ce12c2bd824808310670c9b607c0af77b2"
+        },
+        {
+          "path": "src/components/finance/FinanceReviewQueueClient.tsx",
+          "sha256": "0d6401498bcfa4647460d768ec422b4d8c1d7eb79d0b5af789509ae5c6fda501"
+        }
+      ],
+      "evidence": [
+        "test-results/finance-integration/native-ui/verification.json",
+        "test-results/finance-integration/native-ui/browser.json",
+        "test-results/finance-integration/native-ui/pixels-final.json",
+        "test-results/agent-gates/2026-09-09T13-46-43-908Z-HFA-NATIVE-UI.json"
+      ],
+      "limits": [
+        "Native synthetic owner Chrome only, existing private session reused",
+        "No new actors, provider/prod calls or financial mutations",
+        "Populated Sourceevents tested; otherqueue table labels/styles checkedsource andcomponenttests",
+        "Not a full accessibility certification or broader release approval",
+        "Broad gate preceded final inward-outline-only change; final focused browser/component/lint/diagnostic evidence covers the final source."
+      ]
     }
   ]
 }

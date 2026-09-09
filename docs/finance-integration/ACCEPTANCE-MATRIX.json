@@ -1108,7 +1108,9 @@
       "owner": "finance UX engineering / role testers",
       "evidence": [
         "F03-REVIEW-WORKBENCH.md",
-        "test-results/finance-integration/f03-workbench/browser-independent-review.json"
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json",
+        "docs/finance-integration/NATIVE-UI-VERIFICATION.md",
+        "test-results/finance-integration/native-ui/verification.json"
       ],
       "reviewer": null,
       "verified_at": null,
@@ -1144,7 +1146,9 @@
       "evidence": [
         "test-results/finance-integration/cash-scope-review.json",
         "F03-REVIEW-WORKBENCH.md",
-        "test-results/finance-integration/f03-workbench/browser-independent-review.json"
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json",
+        "docs/finance-integration/NATIVE-UI-VERIFICATION.md",
+        "test-results/finance-integration/native-ui/verification.json"
       ],
       "reviewer": null,
       "verified_at": null,
