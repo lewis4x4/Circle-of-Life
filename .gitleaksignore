@@ -64,3 +64,10 @@ a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic
 631309587cc278b48f21c10deabed4eabf815f92:docs/remediation/2026-09-review/hosted-preflight.json:generic-api-key:4
 631309587cc278b48f21c10deabed4eabf815f92:docs/remediation/2026-09-review/hosted-preflight.json:generic-api-key:10
 631309587cc278b48f21c10deabed4eabf815f92:scripts/run-gitleaks.mjs:generic-api-key:66
+
+# Verified SHA256 values of migration342 and its SQL test, plus the literal
+# SYNTHETIC_CANARY_342 used to assert that metadata rejects a raw_token field.
+# Exact historical fingerprints only; generic-api-key remains active.
+2973ca39e00d2848137ad547463fa3fd13702cac:docs/finance-integration/INDEPENDENT-REVIEWS.json:generic-api-key:225
+2973ca39e00d2848137ad547463fa3fd13702cac:docs/finance-integration/INDEPENDENT-REVIEWS.json:generic-api-key:226
+2973ca39e00d2848137ad547463fa3fd13702cac:supabase/tests/review_finance_credential_lifecycle.sql:generic-api-key:374

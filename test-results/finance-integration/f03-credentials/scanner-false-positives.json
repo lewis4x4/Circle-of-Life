@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "scope": "Exact historical secret-scanner false positives",
+  "failed_ci_run": 34319028937,
+  "commit": "2973ca39e00d2848137ad547463fa3fd13702cac",
+  "verified_matches": [
+    {
+      "path": "docs/finance-integration/INDEPENDENT-REVIEWS.json",
+      "line": 225,
+      "kind": "SHA256 of migration342",
+      "sha256": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8"
+    },
+    {
+      "path": "docs/finance-integration/INDEPENDENT-REVIEWS.json",
+      "line": 226,
+      "kind": "SHA256 of reviewed SQL probe",
+      "sha256": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8"
+    },
+    {
+      "path": "supabase/tests/review_finance_credential_lifecycle.sql",
+      "line": 374,
+      "kind": "Literal SYNTHETIC_CANARY_342 in raw-token-field rejection assertion; never an actual credential"
+    }
+  ],
+  "exception_scope": "Three exact commit/path/rule/line fingerprints only",
+  "verification": {
+    "command": "npm run secrets:gitleaks",
+    "exit_code": 0,
+    "generic_api_key_regression": "PASS",
+    "commits_scanned": 1944,
+    "leaks_found": 0
+  },
+  "limits": [
+    "Source detector evidence only; no other review/acceptance gate changed."
+  ]
+}
