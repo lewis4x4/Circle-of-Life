@@ -14,6 +14,7 @@ const LINKS = [
   { href: "/admin/insurance/policies/new", label: "New policy" },
   { href: "/admin/insurance/renewals", label: "Renewals" },
   { href: "/admin/insurance/servicing", label: "Servicing" },
+  { href: "/admin/insurance/agency-summaries", label: "Agency summaries" },
   { href: "/admin/insurance/renewal-packages", label: "Renewal packages" },
   { href: "/admin/insurance/claims", label: "Claims" },
   { href: "/admin/insurance/loss-runs", label: "Loss runs" },
@@ -33,7 +34,9 @@ export function InsuranceHubNav() {
     >
       {LINKS.filter(
         (item) =>
-          !["New policy", "Servicing"].includes(item.label) || canManage,
+          !["New policy", "Servicing", "Agency summaries"].includes(
+            item.label,
+          ) || canManage,
       ).map((item) => {
         const active = pathname === item.href;
         return (

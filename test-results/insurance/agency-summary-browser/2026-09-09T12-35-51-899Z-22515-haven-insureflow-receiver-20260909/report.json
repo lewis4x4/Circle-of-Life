@@ -1,0 +1,70 @@
+{
+  "run_id": "haven-insureflow-receiver-20260909",
+  "started_at": "2026-09-09T12:35:51.899Z",
+  "synthetic_only": true,
+  "boundary": "Real unchanged source component and Haven CSS in Chromium; mocked auth/Next navigation/API. No provider, SQL, hosted permission or live connection verification.",
+  "checks": [
+    {
+      "name": "truthful disabled empty state",
+      "passed": true
+    },
+    {
+      "name": "source wording, unconverted premium and provenance",
+      "passed": true
+    },
+    {
+      "name": "mobile layout has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "degraded body completeness with only allowed current summary",
+      "passed": true
+    },
+    {
+      "name": "authorization deadline hides source values",
+      "passed": true
+    },
+    {
+      "name": "offline event hides summaries without cached fallback",
+      "passed": true
+    },
+    {
+      "name": "failed recheck cannot restore old data or expose raw errors",
+      "passed": true
+    }
+  ],
+  "axe": [
+    {
+      "name": "disabled-empty",
+      "violations": []
+    },
+    {
+      "name": "source-stated-desktop",
+      "violations": []
+    },
+    {
+      "name": "source-stated-mobile",
+      "violations": []
+    },
+    {
+      "name": "degraded",
+      "violations": []
+    },
+    {
+      "name": "expired-hidden",
+      "violations": []
+    }
+  ],
+  "screenshots": [
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/2026-09-09T12-35-51-899Z-22515-haven-insureflow-receiver-20260909/disabled-empty.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/2026-09-09T12-35-51-899Z-22515-haven-insureflow-receiver-20260909/source-stated-desktop.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/2026-09-09T12-35-51-899Z-22515-haven-insureflow-receiver-20260909/source-stated-mobile.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/2026-09-09T12-35-51-899Z-22515-haven-insureflow-receiver-20260909/degraded.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/2026-09-09T12-35-51-899Z-22515-haven-insureflow-receiver-20260909/expired-hidden.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/2026-09-09T12-35-51-899Z-22515-haven-insureflow-receiver-20260909/offline-hidden.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/2026-09-09T12-35-51-899Z-22515-haven-insureflow-receiver-20260909/failure-hidden.png"
+  ],
+  "errors": [],
+  "browser": "147.0.7727.15",
+  "passed": true
+}

@@ -1,0 +1,26 @@
+{
+  "verdict": "pass",
+  "basis": "Manual inspection against requested functional and responsive criteria; no visual reference image was supplied.",
+  "inspected": [
+    "disabled-empty.png",
+    "source-stated-desktop.png",
+    "source-stated-mobile.png",
+    "degraded.png",
+    "expired-hidden.png"
+  ],
+  "findings": [
+    "Live-disabled and synthetic-only scope is prominent; empty state does not claim absence of insurance.",
+    "Raw premium90000.75 is displayed without dollars/cents conversion; currency, units and basis are explicitly unconfirmed.",
+    "Source wording and mapped entity are distinct, and provenance is available without quarantine/raw fields.",
+    "Degraded status retains the valid summary and separately identifies unavailable summaries.",
+    "Expired state contains no source policy fields; mobile layout wraps without horizontal overflow."
+  ],
+  "verification": {
+    "component_api_tests": 25,
+    "browser_checks": 7,
+    "axe_views": 5,
+    "axe_violations": 0,
+    "page_errors": 0
+  },
+  "limits": "Browser auth/navigation/API are mocked. Real current-actor SQL/API/provider/hosted acceptance remains separate."
+}

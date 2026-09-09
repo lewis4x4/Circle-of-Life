@@ -1,0 +1,68 @@
+{
+  "synthetic_only": true,
+  "boundary": "Real unchanged source component and Haven CSS in Chromium; mocked auth/Next navigation/API. No provider, SQL, hosted permission or live connection verification.",
+  "checks": [
+    {
+      "name": "truthful disabled empty state",
+      "passed": true
+    },
+    {
+      "name": "source wording, unconverted premium and provenance",
+      "passed": true
+    },
+    {
+      "name": "mobile layout has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "degraded body completeness with only allowed current summary",
+      "passed": true
+    },
+    {
+      "name": "authorization deadline hides source values",
+      "passed": true
+    },
+    {
+      "name": "offline event hides summaries without cached fallback",
+      "passed": true
+    },
+    {
+      "name": "failed recheck cannot restore old data or expose raw errors",
+      "passed": true
+    }
+  ],
+  "axe": [
+    {
+      "name": "disabled-empty",
+      "violations": []
+    },
+    {
+      "name": "source-stated-desktop",
+      "violations": []
+    },
+    {
+      "name": "source-stated-mobile",
+      "violations": []
+    },
+    {
+      "name": "degraded",
+      "violations": []
+    },
+    {
+      "name": "expired-hidden",
+      "violations": []
+    }
+  ],
+  "screenshots": [
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/disabled-empty.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/source-stated-desktop.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/source-stated-mobile.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/degraded.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/expired-hidden.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/offline-hidden.png",
+    "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver/test-results/insurance/agency-summary-browser/failure-hidden.png"
+  ],
+  "errors": [],
+  "browser": "147.0.7727.15",
+  "passed": true
+}
