@@ -1,0 +1,151 @@
+{
+  "timestamp": "2026-09-09T06:23:43.742Z",
+  "source": {
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/billing/generate-monthly-invoices.ts": "1eb9df8fd90f061a9d89fd6ae5e2fac40a4a081d612463bc9a43fe65daa0b3cb",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/billing/generate-monthly-invoices.ts": "079ecbba5397dd6cb8d0438930606ff7caa96424b93aeed443c06c68a0a9da22",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/generate-monthly-invoices/index.ts": "22dd10fd382909d28fb728dd90dbf5d3b5d44191037c235a537a700f312a5cd9"
+  },
+  "scope": "Executed exact app/Edge producer and actual registered Edge handler through TypeScript transpilation with synthetic Supabase transport; no Deno hosting or live database proof",
+  "cases": [
+    {
+      "name": "app excludes latest draft rate",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 1061000\n- 372000\n"
+    },
+    {
+      "name": "app rejects incomplete residents",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects null residents",
+      "status": "FAIL",
+      "message": "The expression evaluated to a falsy value:\n\n  assert.ok(r.error)\n"
+    },
+    {
+      "name": "app rejects incomplete resident_payers",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects null resident_payers",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects incomplete facility_medicaid_providers",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects null facility_medicaid_providers",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects incomplete resident_rate_agreements",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects null resident_rate_agreements",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects incomplete invoices",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects null invoices",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "app rejects incomplete facility list",
+      "status": "FAIL",
+      "message": "Missing expected rejection."
+    },
+    {
+      "name": "app rejects fractional billing month",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared excludes latest draft rate",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 1061000\n- 372000\n"
+    },
+    {
+      "name": "edge-shared rejects incomplete residents",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects null residents",
+      "status": "FAIL",
+      "message": "The expression evaluated to a falsy value:\n\n  assert.ok(r.error)\n"
+    },
+    {
+      "name": "edge-shared rejects incomplete resident_payers",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects null resident_payers",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects incomplete facility_medicaid_providers",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects null facility_medicaid_providers",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects incomplete resident_rate_agreements",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects null resident_rate_agreements",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects incomplete invoices",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects null invoices",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "edge-shared rejects incomplete facility list",
+      "status": "FAIL",
+      "message": "Missing expected rejection."
+    },
+    {
+      "name": "edge-shared rejects fractional billing month",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    {
+      "name": "actual Edge organization handler returns configured cap",
+      "status": "FAIL",
+      "message": "max_facilities is not defined"
+    },
+    {
+      "name": "actual Edge incomplete preview never writes",
+      "status": "FAIL",
+      "message": "Expected values to be strictly equal:\n\n200 !== 422\n"
+    }
+  ]
+}

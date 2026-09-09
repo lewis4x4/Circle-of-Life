@@ -1,0 +1,66 @@
+{
+  "status": "AUTHOR_PASS_INDEPENDENT_SCOPED_APPROVE",
+  "timestamp": "2026-09-09T07:02:49.537564+00:00",
+  "files": {
+    "src/lib/billing/generate-monthly-invoices.ts": "8bb8f636ba77ce38c3250e219b66a9b0246ce31f58aca28cc09dad98cff127ac",
+    "src/lib/billing/generate-monthly-invoices.test.ts": "280d5b0c04e132f607200cbb00a9ae7691e94e97d6cda39c4404110e820831ce",
+    "src/lib/billing/generate-monthly-source-guards.test.ts": "56b871fe0acf4d51592720bad839eee3bcad685b6dc4dd96e1c4f5f06236065b",
+    "supabase/functions/_shared/billing/generate-monthly-invoices.ts": "9348579072d7b6b44f5cc34fcc71ede7c883b3fe7787cd5fdf78479ee2ad863d",
+    "supabase/functions/generate-monthly-invoices/index.ts": "9877826411b54fa6d1504925b295f911e6181c8af656392fd374a5f486451616",
+    "docs/finance-integration/F06-BILLING-SOURCE-GUARDS.md": "8ae2c4698ead0c4ce5922da6c0ff7f38ac7700e1261debbcba5230aadfd0ff14"
+  },
+  "baseline": {
+    "targeted_cases": 28,
+    "failed": 28,
+    "artifact": "baseline.json"
+  },
+  "after": {
+    "same_targeted_cases_passed": 28,
+    "vitest_passed": 119,
+    "vitest_failed": 0,
+    "vitest_artifact": "after-vitest.json",
+    "source_typecheck": "PASS",
+    "both_touched_test_files_strict_tsc": "PASS",
+    "app_and_forced_Edge_ESLint": "PASS zero warnings",
+    "diff_check": "PASS"
+  },
+  "limits": [
+    "Per-query counts are not a multi-source snapshot",
+    "500/REST caps unchanged; large complete retrieval not implemented",
+    "No hosted Deno, scheduler or production calls",
+    "Historical/retroactive billing and mid-month business policy remain open"
+  ],
+  "partial_reporting": "Known acknowledged counts retained; failed/missing RPC acknowledgement remains unknown with unchanged invoice identity; capped/business-warning results explicitly partial",
+  "exact_shared_copy": true,
+  "commands": [
+    "npx vitest run src/lib/billing/generate-monthly-invoices.test.ts src/lib/billing/generate-monthly-source-guards.test.ts --reporter=json --outputFile=<owned>/after-vitest.json",
+    "npm run typecheck",
+    "npx tsc --noEmit --skipLibCheck --strict --target ES2022 --module ESNext --moduleResolution bundler --esModuleInterop <both touched billing test files>",
+    "npx eslint --no-warn-ignored <app billing source and both tests>",
+    "npx eslint --no-ignore <Edge shared producer and actual Edge index>",
+    "git diff --check"
+  ],
+  "independent_partial_failure_evidence": "billing-f06-independent/2026-09-09T06-36-31.788Z-report.json",
+  "mixed_facility_regression": {
+    "before": "mixed-before.json",
+    "before_failed": 2,
+    "after": "after-vitest.json",
+    "after_passed": 2
+  },
+  "privacy_guard": "Unresolved identity only typed property/authorized JSON; generic errors exclude IDs/raw provider text; actual handler telemetry fixed code/message/known counts tested",
+  "independent_review": {
+    "verdict": "APPROVE",
+    "executed_cases": 131,
+    "evidence": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/billing-f06-independent/verdict.json",
+    "scope": "Bounded source completeness, rate publication filter, truthful partial/unknown outcomes and log privacy",
+    "remaining_source_item": "Future-effective payer selection not repaired in this segment"
+  },
+  "root_verification_addendum": {
+    "full_unit_passed": 3665,
+    "full_unit_skipped": 0,
+    "focused_finance_passed": 225,
+    "gate": "test-results/agent-gates/2026-09-09T06-57-32-030Z-HFA-F06-SOURCE-GUARDS.json",
+    "doc_addendum": "Root appended final verification counts and outstanding temporal-selection finding after author document snapshot; implementation hashes unchanged",
+    "current_doc_sha256": "6556bbd69ad2908b35d6f7e96be106aceb4de4f874f7f03ee4b1ca51882f0400"
+  }
+}

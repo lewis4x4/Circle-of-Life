@@ -7,12 +7,15 @@ import {
   type PreviewLine,
 } from "./generate-monthly-invoices";
 
-type MockQueryResult = { data: unknown; error: null };
+type MockQueryResult = { data: unknown; error: null; count?: number | null };
 
 class PreviewQueryMock {
   constructor(private readonly result: MockQueryResult) {}
 
-  select() {
+  select(_columns?: string, options?: { count?: string }) {
+    if (options?.count === "exact" && Array.isArray(this.result.data)) {
+      this.result.count = this.result.data.length;
+    }
     return this;
   }
 
@@ -523,7 +526,7 @@ describe("persistMonthlyInvoicesFromPreview", () => {
     expect(result).toEqual({ createdCount: 0, skippedDuplicates: 1 });
   });
 
-  it("propagates RPC errors", async () => {
+  it("reports RPC uncertainty without exposing provider error text", async () => {
     const supabase = {
       rpc: vi.fn().mockResolvedValue({
         data: null,
@@ -533,7 +536,7 @@ describe("persistMonthlyInvoicesFromPreview", () => {
     } as never;
 
     await expect(persistMonthlyInvoicesFromPreview(supabase, baseParams)).rejects.toThrow(
-      "rpc failed",
+      "The latest invoice outcome is unknown",
     );
   });
 });

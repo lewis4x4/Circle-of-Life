@@ -250,6 +250,67 @@
       "limits": [
         "Separate lifecycle approval and root source inspection do not replace this unfinished review."
       ]
+    },
+    {
+      "scope": "Bounded F06 monthly source completeness/draft-rate guards and truthful partial-progress/telemetry response repairs",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "f00_independent_review"
+      ],
+      "source_sha256": {
+        "src/lib/billing/generate-monthly-invoices.ts": "8bb8f636ba77ce38c3250e219b66a9b0246ce31f58aca28cc09dad98cff127ac",
+        "supabase/functions/_shared/billing/generate-monthly-invoices.ts": "9348579072d7b6b44f5cc34fcc71ede7c883b3fe7787cd5fdf78479ee2ad863d",
+        "supabase/functions/generate-monthly-invoices/index.ts": "9877826411b54fa6d1504925b295f911e6181c8af656392fd374a5f486451616",
+        "supabase/functions/_shared/cors.ts": "b9aef573def741647d164585c1a38a50f8dc593ca45c527a8d18705bf5360ab4",
+        "supabase/functions/_shared/structured-log.ts": "f1ce9faa7d7a912e5f35fc50444098534acc6b0b01cee7135f5bd9330008c527",
+        "supabase/functions/_shared/redact-pii.ts": "322f19217aa7cf85e5e6c6cd058cde84f9d98bfccc76f68ab2f902184e1ebf6b",
+        "src/lib/observability/redact.ts": "00c9cf369ff2d0fc61c9ca20afffe237e6758a31d458a5990a17ca5237a53889"
+      },
+      "evidence": [
+        "test-results/finance-integration/f06-source-guards/independent-review.json",
+        "test-results/finance-integration/f06-source-guards/independent-cases.json",
+        "test-results/agent-gates/2026-09-09T06-57-32-030Z-HFA-F06-SOURCE-GUARDS.json",
+        "test-results/finance-integration/full-unit-billing-guards-complete.json"
+      ],
+      "limits": [
+        "Actual source executed with TypeScript/CommonJS VM and synthetic Supabase query/RPC transport, not hosted Deno/Auth/database/cron/provider proof.",
+        "Per-query count equality is not one immutable multi-source billing snapshot.",
+        "Existing read/REST caps remain fail-closed; no complete large-source pagination was implemented.",
+        "No full F06, historical billing, cutover or business acceptance claimed.",
+        "No application source/shared runner edits made by this review lane."
+      ],
+      "remaining_source_work": [
+        {
+          "problem": "Future-effective primary payer is selected for an earlier billing period.",
+          "status": "OPEN_SOURCE_WORK_NEXT_F06_SEGMENT",
+          "column": "public.resident_payers.effective_date (NOT NULL), migration027 line64",
+          "producer_lines": "src/lib/billing/generate-monthly-invoices.ts:298-303; same Edge shared query",
+          "fixture": "May2026, private-default level2 resident, published rate310000+62000; Medicaid override100000 effective2026-06-01/endNULL is incorrectlyselected.",
+          "observed_both_producers": 100000,
+          "expected_without_future_payer": 372000,
+          "report_observations": [
+            {
+              "name": "app future-effective payer influences earlier billing period",
+              "period": "2026-05",
+              "payer_effective_date": "2026-06-01",
+              "billing_source": "medicaid_resident_override",
+              "total": 100000,
+              "expected_without_future_payer": 372000,
+              "scope": "Concrete F06 source-selection defect for next bounded fix; not an external blocker or policy waiver"
+            },
+            {
+              "name": "edge-shared future-effective payer influences earlier billing period",
+              "period": "2026-05",
+              "payer_effective_date": "2026-06-01",
+              "billing_source": "medicaid_resident_override",
+              "total": 100000,
+              "expected_without_future_payer": 372000,
+              "scope": "Concrete F06 source-selection defect for next bounded fix; not an external blocker or policy waiver"
+            }
+          ],
+          "not_an_external_blocker": true
+        }
+      ]
     }
   ]
 }

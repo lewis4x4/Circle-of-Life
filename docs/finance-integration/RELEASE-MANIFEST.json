@@ -52,7 +52,7 @@
     "/finance/integration"
   ],
   "candidate_verification": {
-    "full_unit_passed": 3557,
+    "full_unit_passed": 3665,
     "full_unit_skipped": 0,
     "native_migrations": 345,
     "native_sql_probes": 26,
@@ -71,7 +71,9 @@
       "run_id": 34317877537,
       "commit": "5c24e1d5b358bdc70483b609e5417d9593e26f1a",
       "status": "PASS"
-    }
+    },
+    "billing_gate": "test-results/agent-gates/2026-09-09T06-57-32-030Z-HFA-F06-SOURCE-GUARDS.json",
+    "focused_finance_passed": 225
   },
   "open_credential_review": "Independent dynamic security review blocked by automatic possible-cybersecurity-risk filter; no final verdict"
 }

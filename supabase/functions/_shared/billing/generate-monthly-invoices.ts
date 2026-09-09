@@ -97,6 +97,29 @@ export type PreviewLine = {
   presenceStatus: string;
 };
 
+/** Require an integer calendar month and a four-digit calendar year. */
+export function billingPeriodError(year: unknown, month: unknown): string | null {
+  if (typeof year !== "number" || !Number.isInteger(year) || year < 1000 || year > 9999) {
+    return "Billing year must be a four-digit integer (1000–9999).";
+  }
+  if (typeof month !== "number" || !Number.isInteger(month) || month < 1 || month > 12) {
+    return "Billing month must be an integer from 1 to 12.";
+  }
+  return null;
+}
+
+function incompleteSourceError(
+  result: { data: unknown; count?: number | null },
+  label: string,
+): string | null {
+  const { data, count } = result;
+  if (!Array.isArray(data) || typeof count !== "number" || !Number.isSafeInteger(count) ||
+      count < 0 || count !== data.length) {
+    return `The ${label} source is incomplete. Refresh and retry before generating invoices.`;
+  }
+  return null;
+}
+
 export function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
@@ -231,6 +254,11 @@ export async function buildMonthlyInvoicePreview(
   },
 ): Promise<BuildPreviewResult> {
   const { facilityId, billingYear, billingMonth } = params;
+  const periodError = billingPeriodError(billingYear, billingMonth);
+  if (periodError) {
+    return { preview: [], error: periodError, billingLabel: "", days: 0,
+      periodStart: "", periodEnd: "", dueDate: "" };
+  }
   const billingLabel = monthLabel(billingYear, billingMonth);
   const days = daysInMonth(billingYear, billingMonth);
   const billingMonthText = String(billingMonth).padStart(2, "0");
@@ -239,12 +267,13 @@ export async function buildMonthlyInvoicePreview(
   // Michelle: private-pay rent due by the 5th.
   const dueDate = `${billingYear}-${billingMonthText}-05`;
 
-  type QR<T> = { data: T | null; error: QueryError | null };
+  type QR<T> = { data: T | null; error: QueryError | null; count?: number | null };
 
   const resP = supabase
     .from("residents" as never)
     .select(
       "id, first_name, last_name, acuity_level, status, admission_date, discharge_date, facility_id, organization_id, monthly_base_rate, monthly_care_surcharge, monthly_total_rate, rate_effective_date",
+      { count: "exact" },
     )
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
@@ -256,6 +285,7 @@ export async function buildMonthlyInvoicePreview(
     .select(
       "id, base_rate_private, base_rate_semi_private, care_surcharge_level_1, care_surcharge_level_2, care_surcharge_level_3",
     )
+    .in("status", ["published", "superseded"])
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .lte("effective_date", periodStart)
@@ -266,7 +296,7 @@ export async function buildMonthlyInvoicePreview(
 
   const payerP = supabase
     .from("resident_payers" as never)
-    .select("resident_id, payer_type, payer_name, medicaid_rate, facility_medicaid_provider_id")
+    .select("resident_id, payer_type, payer_name, medicaid_rate, facility_medicaid_provider_id", { count: "exact" })
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .or(`end_date.is.null,end_date.gte.${periodStart}`)
@@ -274,7 +304,7 @@ export async function buildMonthlyInvoicePreview(
 
   const medicaidP = supabase
     .from("facility_medicaid_providers" as never)
-    .select("id, default_rate_cents, rate_unit, provider_name")
+    .select("id, default_rate_cents, rate_unit, provider_name", { count: "exact" })
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .eq("active", true);
@@ -283,6 +313,7 @@ export async function buildMonthlyInvoicePreview(
     .from("resident_rate_agreements" as never)
     .select(
       "id, resident_id, room_class, negotiated_base_rate, negotiated_care_surcharge, negotiated_monthly_total, care_charge_mode, concession_reason, effective_date, end_date",
+      { count: "exact" },
     )
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
@@ -295,7 +326,7 @@ export async function buildMonthlyInvoicePreview(
 
   const existingP = supabase
     .from("invoices" as never)
-    .select("resident_id")
+    .select("resident_id", { count: "exact" })
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .eq("period_start", periodStart)
@@ -330,6 +361,19 @@ export async function buildMonthlyInvoicePreview(
         dueDate,
       };
     }
+  }
+
+  for (const [label, result] of [
+    ["residents", resResult], ["payers", payerResult],
+    ["Medicaid providers", medicaidResult], ["rate agreements", agreementResult],
+    ["existing invoices", existingResult],
+  ] as const) {
+    const error = incompleteSourceError(result, label);
+    if (error) return { preview: [], error, billingLabel, days, periodStart, periodEnd, dueDate };
+  }
+  if (!Array.isArray(rateResult.data)) {
+    return { preview: [], error: "The rate schedule source is incomplete. Refresh and retry before generating invoices.",
+      billingLabel, days, periodStart, periodEnd, dueDate };
   }
 
   const residents = resResult.data ?? [];
@@ -504,6 +548,22 @@ export type PersistResult = {
   skippedDuplicates: number;
 };
 
+/** A missing acknowledgement is not evidence that an invoice rolled back. */
+export class MonthlyInvoicePersistenceError extends Error {
+  readonly outcomeUnknown = true;
+  readonly code = "MONTHLY_INVOICE_OUTCOME_UNKNOWN";
+
+  constructor(
+    readonly createdCount: number,
+    readonly skippedDuplicates: number,
+    readonly unresolvedInvoiceNumber: string,
+  ) {
+    super(`Invoice generation stopped. Confirmed created: ${createdCount}; confirmed duplicates: ${skippedDuplicates}. ` +
+      "The latest invoice outcome is unknown; reconcile it before retrying.");
+    this.name = "MonthlyInvoicePersistenceError";
+  }
+}
+
 export async function persistMonthlyInvoicesFromPreview(
   supabase: SupabaseClient,
   params: {
@@ -518,6 +578,8 @@ export async function persistMonthlyInvoicesFromPreview(
 ): Promise<PersistResult> {
   const { facilityId, billingYear, billingMonth, preview, periodStart, periodEnd, dueDate } =
     params;
+  const periodError = billingPeriodError(billingYear, billingMonth);
+  if (periodError) throw new Error(periodError);
 
   const facilityCode = facilityId.replace(/-/g, "").slice(0, 8).toUpperCase();
 
@@ -585,32 +647,44 @@ export async function persistMonthlyInvoicesFromPreview(
               ? "Generated while resident on bed hold — full monthly rent per COL policy."
               : null;
 
-    const rpcResult = (await supabase.rpc("haven_create_invoice_with_line_items" as never, {
-      p_facility_id: facilityId,
-      p_resident_id: line.residentId,
-      p_invoice_number: invoiceNumber,
-      p_invoice_date: periodStart,
-      p_due_date: dueDate,
-      p_period_start: periodStart,
-      p_period_end: periodEnd,
-      p_subtotal: line.standardTotal,
-      p_adjustments: -line.concessionAmount,
-      p_tax: 0,
-      p_total: line.total,
-      p_amount_paid: 0,
-      p_balance_due: line.total,
-      p_payer_type: line.payerType,
-      p_payer_name: line.payerName,
-      p_notes: notes,
-      p_line_items: lineItems,
-    } as never)) as unknown as {
+    let rpcResult: {
       data: { invoice_id: string | null; inserted: boolean }[] | null;
       error: QueryError | null;
     };
-
-    if (rpcResult.error) throw new Error(rpcResult.error.message);
-    const result = rpcResult.data?.[0];
-    if (!result) throw new Error("Invoice creation returned no result.");
+    try {
+      rpcResult = (await supabase.rpc("haven_create_invoice_with_line_items" as never, {
+        p_facility_id: facilityId,
+        p_resident_id: line.residentId,
+        p_invoice_number: invoiceNumber,
+        p_invoice_date: periodStart,
+        p_due_date: dueDate,
+        p_period_start: periodStart,
+        p_period_end: periodEnd,
+        p_subtotal: line.standardTotal,
+        p_adjustments: -line.concessionAmount,
+        p_tax: 0,
+        p_total: line.total,
+        p_amount_paid: 0,
+        p_balance_due: line.total,
+        p_payer_type: line.payerType,
+        p_payer_name: line.payerName,
+        p_notes: notes,
+        p_line_items: lineItems,
+      } as never)) as unknown as {
+        data: { invoice_id: string | null; inserted: boolean }[] | null;
+        error: QueryError | null;
+      };
+    } catch {
+      throw new MonthlyInvoicePersistenceError(createdCount, skippedDuplicates, invoiceNumber);
+    }
+    if (rpcResult.error) {
+      throw new MonthlyInvoicePersistenceError(createdCount, skippedDuplicates, invoiceNumber);
+    }
+    const result = Array.isArray(rpcResult.data) && rpcResult.data.length === 1 ? rpcResult.data[0] : null;
+    if (!result || typeof result.inserted !== "boolean" ||
+        (result.inserted && (typeof result.invoice_id !== "string" || !result.invoice_id))) {
+      throw new MonthlyInvoicePersistenceError(createdCount, skippedDuplicates, invoiceNumber);
+    }
     if (!result.inserted) {
       skippedDuplicates += 1;
       continue;
@@ -629,11 +703,13 @@ export async function listActiveFacilitiesForOrganization(
 ): Promise<{ id: string; name: string }[]> {
   const res = await supabase
     .from("facilities" as never)
-    .select("id, name")
+    .select("id, name", { count: "exact" })
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .eq("status", "active")
     .order("name", { ascending: true });
   if (res.error) throw new Error(res.error.message);
+  const incomplete = incompleteSourceError(res, "active facilities");
+  if (incomplete) throw new Error(incomplete);
   return (res.data ?? []) as { id: string; name: string }[];
 }

@@ -685,10 +685,14 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "billing engineering / billing operator",
-      "evidence": [],
-      "reviewer": null,
+      "evidence": [
+        "docs/finance-integration/F06-BILLING-SOURCE-GUARDS.md",
+        "test-results/finance-integration/f06-source-guards/independent-review.json",
+        "test-results/finance-integration/full-unit-billing-guards-complete.json"
+      ],
+      "reviewer": "f00_independent_review: bounded source guard/reporting APPROVE only",
       "verified_at": null,
       "blocked_by": []
     },
@@ -897,9 +901,12 @@
       "owner": "finance reporting engineering / controller",
       "evidence": [
         "F03-REVIEW-WORKBENCH.md",
-        "test-results/finance-integration/f03-workbench/browser-independent-review.json"
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json",
+        "docs/finance-integration/F06-BILLING-SOURCE-GUARDS.md",
+        "test-results/finance-integration/f06-source-guards/independent-review.json",
+        "test-results/finance-integration/full-unit-billing-guards-complete.json"
       ],
-      "reviewer": null,
+      "reviewer": "f00_independent_review: bounded source guard/reporting APPROVE only",
       "verified_at": null,
       "blocked_by": []
     },
@@ -932,9 +939,12 @@
       "owner": "finance reporting engineering / controller",
       "evidence": [
         "F03-REVIEW-WORKBENCH.md",
-        "test-results/finance-integration/f03-workbench/browser-independent-review.json"
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json",
+        "docs/finance-integration/F06-BILLING-SOURCE-GUARDS.md",
+        "test-results/finance-integration/f06-source-guards/independent-review.json",
+        "test-results/finance-integration/full-unit-billing-guards-complete.json"
       ],
-      "reviewer": null,
+      "reviewer": "f00_independent_review: bounded source guard/reporting APPROVE only",
       "verified_at": null,
       "blocked_by": []
     },
