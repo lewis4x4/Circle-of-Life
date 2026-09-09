@@ -1,0 +1,332 @@
+{
+  "schema_version": 1,
+  "suite": "finance",
+  "status": "PASS",
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "src/lib/finance-integration",
+    "src/lib/finance/post-to-gl.test.ts",
+    "src/lib/finance/forecast.test.ts",
+    "src/lib/finance/resident-money.test.ts",
+    "src/app/(admin)/admin/cash/page.test.tsx",
+    "--reporter=json",
+    "--outputFile=/Users/brianlewis/Circle of Life/Haven Finance Integration/test-results/finance-integration/2026-09-09T02-30-16.068Z-finance-vitest.json"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "spawn_error": null,
+  "fixture": {
+    "kind": "inline-synthetic-test-source",
+    "sha256": {
+      "src/lib/finance/forecast.test.ts": "7ca6fe2ef92f9d279955808aed22262e61c7874041b8745cd4c826c9882acb8c",
+      "src/lib/finance/post-to-gl.test.ts": "cd9ad682f3c670533ec3f85aa334bd727a2e61521f143aeb5dad453fee7dbda8",
+      "src/lib/finance/resident-money.test.ts": "b3279407648a29c7bbf90d5546b4d12c3ad0bb4198d120d9fcbfc24f1916214f",
+      "src/lib/finance-integration/payload.test.ts": "af9ae34749fac49896e1bb621b34280beeaafc2e793ed7e1389b6f9cd56f27cb",
+      "src/app/(admin)/admin/cash/page.test.tsx": "3f23e58e42b3fba6cf1cb0c6c78b266d432394292525359277044466ad507420"
+    }
+  },
+  "evidence_layer": "unit",
+  "target_identity": "synthetic-local-no-network",
+  "commit": "b7628650ead0a4b5dc3193c9a0b502960a978010",
+  "changed_file_sha256": {
+    "scripts/finance-integration/run-tests.mjs": "d8dfc930c605d6ba2b255a7d549b43be5fb426d64a42b9b3baabd92d791d25e3",
+    "src/app/(admin)/admin/cash/page.test.tsx": "3f23e58e42b3fba6cf1cb0c6c78b266d432394292525359277044466ad507420",
+    "src/app/(admin)/admin/cash/page.tsx": "70855ef6b0a92dc4bbf9b535686257b4beede3c2a4c925f12ef5bb45853bad7d"
+  },
+  "tracked_diff_sha256": "aaac4f9982e950834d832a2b5c89ceea4ff49e4a8273631880e6bc4eb55745ea",
+  "started_at": "2026-09-09T02:30:16.068Z",
+  "completed_at": "2026-09-09T02:30:18.153Z",
+  "duration_ms": 2085,
+  "counts": {
+    "total": 28,
+    "passed": 28,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "name": "HFA-014 HFA-016 resident funds remain separate from receivables does not offset open AR with trust money",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-016"
+      ],
+      "status": "passed",
+      "duration_ms": 2.1209160000000793,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting posts invoice through one command",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 1.843791999999894,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting posts payment through one command",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.30608300000005784,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting preserves a failed posting result instead of treating a draft as posted",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.15412500000002183,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt (null)",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.11279100000001563,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt ({})",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.11445800000001327,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt (undefined)",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.06733299999996234,
+      "failures": []
+    },
+    {
+      "name": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt ({\"journal_entry_id\":5})",
+      "acceptance_ids": [
+        "HFA-009",
+        "HFA-011"
+      ],
+      "status": "passed",
+      "duration_ms": 0.09608300000002146,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 mapped resident-money response contract accepts existing PostgreSQL portfolio UUIDs without inventing a canonical zero",
+      "acceptance_ids": [
+        "HFA-014"
+      ],
+      "status": "passed",
+      "duration_ms": 1.916708999999969,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 mapped resident-money response contract rejects malformed scope identities",
+      "acceptance_ids": [
+        "HFA-014"
+      ],
+      "status": "passed",
+      "duration_ms": 0.46233300000005784,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts accepts balanced non-identifying structural fixture beyond 32-bit cents",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 2.435416000000032,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts retains precision beyond JSON safe integer and rejects storage overflow",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.8375829999999951,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary residentId at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.5936670000000959,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary memo at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.21933400000000347,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary description at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.1798750000000382,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary filename at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.25379099999997834,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary attachments at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.19595799999990504,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary source at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.13429200000007313,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary error at top level and nested levels",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.28558300000008785,
+      "failures": []
+    },
+    {
+      "name": "HFA-027 HFA-036 structural privacy and exact amounts rejects invalid dates, amounts, identifiers, currency and unbalanced journals",
+      "acceptance_ids": [
+        "HFA-027",
+        "HFA-036"
+      ],
+      "status": "passed",
+      "duration_ms": 0.2972499999999627,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope hides the previous facility ledger immediately while the new facility loads",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 37.876125,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not replace the current facility with a late response from the prior facility",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 67.31666699999994,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not show another resident's late transaction response under the selected resident",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 130.43687499999987,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope clears previous transactions when the newly selected account fails to load",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 37.444083999999975,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: false)",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 111.7618329999998,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: true)",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 118.26041699999996,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope ignores a rejected ledger request after a different account has loaded",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 87.25258299999996,
+      "failures": []
+    },
+    {
+      "name": "HFA-014 HFA-065 Cash ledger response scope does not restart ledger requests when an outstanding mutation completes after unmount",
+      "acceptance_ids": [
+        "HFA-014",
+        "HFA-065"
+      ],
+      "status": "passed",
+      "duration_ms": 31.764958999999862,
+      "failures": []
+    }
+  ],
+  "limits": [
+    "Unit assertions only; does not satisfy provider, Auth/PostgREST, complete financial workflow or business acceptance."
+  ],
+  "raw_artifact": "test-results/finance-integration/2026-09-09T02-30-16.068Z-finance-vitest.json"
+}

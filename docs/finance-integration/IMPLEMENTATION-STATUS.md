@@ -9,3 +9,5 @@ In progress. No phase-level or engineering-complete marker is claimed.
 - F04 onward: selected-provider integration, remaining domain/reporting/audit/close workflows, release/recovery and business acceptance are still open.
 
 Security updates fix high/critical runtime advisories in existing packages, with six internal-navigation compatibility fixes. Two moderate Vitest/mocker advisories remain in development dependencies. Build uses existing strict source/generated-route TypeScript config; full default-config test-mock typing debt remains distinct from executed assertions.
+
+Cash response-scope repair: stale facility/account responses and post-completion callbacks cannot replace the selected ledger or clear another account form; error is separate from empty. Eight independent component regression cases passed. Durable cash command recovery remains open.

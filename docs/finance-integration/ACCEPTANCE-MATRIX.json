@@ -256,7 +256,9 @@
       "na_permitted": false,
       "status": "IN_PROGRESS",
       "owner": "finance engineering / controller",
-      "evidence": [],
+      "evidence": [
+        "test-results/finance-integration/cash-scope-review.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []
@@ -1082,9 +1084,11 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "finance UX engineering / role testers",
-      "evidence": [],
+      "evidence": [
+        "test-results/finance-integration/cash-scope-review.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []

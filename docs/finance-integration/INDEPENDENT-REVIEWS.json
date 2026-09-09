@@ -93,6 +93,23 @@
       "limits": [
         "Protected-routeaxe stillfailed unchanged20s loadbudget duringDocker failures"
       ]
+    },
+    {
+      "scope": "Cash read response and post-completion callback scope",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "source_sha256": {
+        "src/app/(admin)/admin/cash/page.tsx": "70855ef6b0a92dc4bbf9b535686257b4beede3c2a4c925f12ef5bb45853bad7d",
+        "src/app/(admin)/admin/cash/page.test.tsx": "3f23e58e42b3fba6cf1cb0c6c78b266d432394292525359277044466ad507420",
+        "scripts/finance-integration/run-tests.mjs": "d8dfc930c605d6ba2b255a7d549b43be5fb426d64a42b9b3baabd92d791d25e3"
+      },
+      "evidence": [
+        "test-results/finance-integration/cash-scope-review.json"
+      ],
+      "limits": [
+        "Synthetic rendered component assertions; not live API/browser acceptance",
+        "Durable cash command recovery and full F02 remain open"
+      ]
     }
   ]
 }

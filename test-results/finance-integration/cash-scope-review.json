@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "scope": "Cash read response and post-completion callback scope",
+  "status": "PASS",
+  "commit": "b7628650ead0a4b5dc3193c9a0b502960a978010",
+  "timestamp": "2026-09-09T02:32:52.419654+00:00",
+  "source_sha256": {
+    "src/app/(admin)/admin/cash/page.tsx": "70855ef6b0a92dc4bbf9b535686257b4beede3c2a4c925f12ef5bb45853bad7d",
+    "src/app/(admin)/admin/cash/page.test.tsx": "3f23e58e42b3fba6cf1cb0c6c78b266d432394292525359277044466ad507420",
+    "scripts/finance-integration/run-tests.mjs": "d8dfc930c605d6ba2b255a7d549b43be5fb426d64a42b9b3baabd92d791d25e3"
+  },
+  "before": {
+    "artifact": "cash-scope-before.json",
+    "passed": 1,
+    "failed": 3,
+    "skipped": 0
+  },
+  "after": {
+    "artifact": "2026-09-09T02-30-16.068Z-finance.json",
+    "finance_suite_passed": 28,
+    "cash_cases_passed": 8,
+    "failed": 0,
+    "skipped": 0
+  },
+  "independent_review": {
+    "reviewer": "finance_source_inventory",
+    "verdict": "APPROVE",
+    "executed_cash_cases": 8,
+    "source_unchanged_during_review": true,
+    "correction": "Old post completion cannot restart a stale ledger load or erase a different account form; mounted/current facility/account checks precede request generation changes"
+  },
+  "checks": [
+    "Source typecheck exit0",
+    "Scoped ESLint exit0",
+    "git diff --check exit0"
+  ],
+  "limits": [
+    "Synthetic rendered component assertions; not live API/browser acceptance",
+    "Durable cash command recovery and full F02 remain open"
+  ]
+}
