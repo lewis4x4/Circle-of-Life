@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "scope": "Native test service source and binary provenance, no credentials",
+  "runtime_versions": {
+    "postgrest": "14.10",
+    "auth": "2.188.1",
+    "auth_source_commit": "f3425cf742c69ad663776105e0363d81c5d4d731"
+  },
+  "downloads": [
+    {
+      "file": "postgrest.tar.xz",
+      "url": "https://github.com/PostgREST/postgrest/releases/download/v14.10/postgrest-v14.10-macos-aarch64.tar.xz",
+      "sha256": "90bf36a8f6c5fd4ef67be971fbbe5513f731a6b507c687ea19f835cae3f9e381",
+      "expected_sha256": "90bf36a8f6c5fd4ef67be971fbbe5513f731a6b507c687ea19f835cae3f9e381"
+    },
+    {
+      "file": "auth.tar.gz",
+      "url": "https://api.github.com/repos/supabase/auth/tarball/f3425cf742c69ad663776105e0363d81c5d4d731",
+      "sha256": "c0912a7f8b799dfa5ecce7d75e73a4f3e489864c4daea8577a78f2335fd5ee47",
+      "expected_sha256": null
+    }
+  ],
+  "auth_source_commit": "f3425cf742c69ad663776105e0363d81c5d4d731",
+  "auth_binary_sha256": "1f0f24492845ae411e409eebaddc790b97324f5b398f881dbd493fda34a183e5",
+  "postgrest_binary_sha256": "3e2beec9c4103f5d97524b01ba892156cf993ffc18e6fc0858b8131bc7be6730",
+  "schema_source": {
+    "source_database": "hfa_credentials_342_full",
+    "schema_only": true,
+    "auth_schema_copied": false,
+    "rows_copied": false,
+    "dump_sha256": "0b86c213464442f40106f3fa5dad9ea75d9669facc2f00121768ddaec7922aa9",
+    "bootstrap_sha256": "24ee851e6a12b22610c863a4c61d23a9c0cfb052da008420a53b9905f5682af4",
+    "transform": "CREATE SCHEMA public uses IF NOT EXISTS for precreated extension schema only"
+  },
+  "auth_helpers_sha256": "1c09122e82d14f71890000a79fe79bb5fec733c892f6d444bd301e4b54ca58da",
+  "private_runtime_manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/manifest.private.json",
+  "limits": [
+    "Runtime configuration, signing keys, user credentials, sessions, raw schema dumps and browser profiles remain private.",
+    "Native test service binaries do not change application dependencies or production runtime."
+  ]
+}

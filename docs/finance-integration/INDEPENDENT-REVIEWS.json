@@ -311,6 +311,57 @@
           "not_an_external_blocker": true
         }
       ]
+    },
+    {
+      "scope": "Native F01 harness and bounded workflow evidence, with HFA007/HFA012 engineering acceptance recommendations; broader F01/F09 remain open",
+      "verdict": "APPROVE",
+      "reviewers": [
+        "f00_independent_review"
+      ],
+      "handler_sha256": "54b928e26c0d72e6fe98b3ea092dff14346450473e47ea12456e7583c6458133",
+      "evidence": [
+        "test-results/finance-integration/native-auth-api/acceptance-review.json",
+        "test-results/finance-integration/native-auth-api/runtime-identity.json",
+        "test-results/finance-integration/native-auth-api/coverage-followup.json"
+      ],
+      "counts": {
+        "audit_api": 26,
+        "finance_api": 25,
+        "actual_deno_http": 12,
+        "independent_runtime_identity": 29,
+        "additional_allocation_and_scope_checks": 34
+      },
+      "limits": [
+        "Native pinned GoTrue/PostgREST and standalone Deno, not deployed Supabase Edge gateway, production or provider proof.",
+        "Schema parity compares schema-only native source baseline, not hosted production; Auth helpers separately match previously captured hosted definitions.",
+        "Synthetic fixture setup uses local privileged SQL/admin Auth; tested business operations use real signed HTTP and genuine sessions.",
+        "Promise.all HTTP requests prove concurrent caller outcome but are not controlled lock-wait race orchestration.",
+        "Actual Deno handler file mtime precedes recorded current process start; current on-disk hash matches the tested source. No claim of arbitrary runtime memory attestation.",
+        "342 interrupted security review remains incomplete; this lane is separate.",
+        "No application source, shared runner/register, existing container or hosted mutation by independent reviewer. Existing probes create only authorized synthetic fixture rows and revoke their synthetic sessions."
+      ],
+      "source_files": [
+        {
+          "path": "native-authenticated-smoke.mjs",
+          "sha256": "63664b25c256abedb1b83fcabf6acd11686af05356f0e41385756ff5d3f3bee4"
+        },
+        {
+          "path": "audit-http-probe.mjs",
+          "sha256": "f4e3359421305f715f3e8ff992c6bd14e54315e21d10b23871a1272e1cef1900"
+        },
+        {
+          "path": "native-runtime-identity.mjs",
+          "sha256": "f118007f0f1329b9253e9eba9e9f7f3f71488d402ba1e7f4b65e2ac091015425"
+        },
+        {
+          "path": "gateway.mjs",
+          "sha256": "14bf39c9f88b60e3a5cbafc1fa2d34362ddda4b5bb62d468d50f64b570e79a02"
+        },
+        {
+          "path": "standalone-audit-gateway.ts",
+          "sha256": "55b05eb276459f27855a4942f93132de8462d9b3b395097bee80028df77fd9f1"
+        }
+      ]
     }
   ]
 }

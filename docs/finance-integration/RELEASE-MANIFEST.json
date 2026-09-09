@@ -57,7 +57,7 @@
     "native_migrations": 345,
     "native_sql_probes": 26,
     "gate": "test-results/agent-gates/2026-09-09T04-15-35-939Z-HFA-F03-WORKBENCH.json",
-    "real_auth_api": "BLOCKED_EXTERNAL",
+    "real_auth_api": "BOUNDED_NATIVE_PASS_OTHER_RUNTIME_GATES_OPEN",
     "provider_and_business_acceptance": "OPEN",
     "workbench_ci": {
       "run_id": 34312150532,
@@ -73,7 +73,13 @@
       "status": "PASS"
     },
     "billing_gate": "test-results/agent-gates/2026-09-09T06-57-32-030Z-HFA-F06-SOURCE-GUARDS.json",
-    "focused_finance_passed": 225
+    "focused_finance_passed": 225,
+    "native_api_evidence": "test-results/finance-integration/native-auth-api/acceptance-review.json"
   },
-  "open_credential_review": "Independent dynamic security review blocked by automatic possible-cybersecurity-risk filter; no final verdict"
+  "open_credential_review": "Independent dynamic security review blocked by automatic possible-cybersecurity-risk filter; no final verdict",
+  "engineering_acceptance_passed": [
+    "HFA-001",
+    "HFA-007",
+    "HFA-012"
+  ]
 }

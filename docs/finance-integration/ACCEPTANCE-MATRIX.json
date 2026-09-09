@@ -142,12 +142,19 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "IN_PROGRESS",
+      "status": "PASS",
       "owner": "finance and authorization engineering",
-      "evidence": [],
-      "reviewer": null,
-      "verified_at": null,
-      "blocked_by": []
+      "evidence": [
+        "test-results/finance-integration/native-auth-api/acceptance-review.json",
+        "test-results/finance-integration/native-auth-api/coverage-followup.json",
+        "test-results/finance-integration/native-auth-api/post-test-schema-parity.json",
+        "test-results/finance-integration/f03-credentials/full-replay.json",
+        "docs/finance-integration/INDEPENDENT-REVIEWS.json"
+      ],
+      "reviewer": "f00_independent_review: native engineering scope only",
+      "verified_at": "2026-09-09T12:16:43.277766+00:00",
+      "blocked_by": [],
+      "evidence_scope": "Reviewed SQL plus genuine native GoTrue/PostgREST and actual standalone Deno; no hosted, provider,342 dynamic-security or business acceptance"
     },
     {
       "id": "HFA-008",
@@ -222,12 +229,19 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "IN_PROGRESS",
+      "status": "PASS",
       "owner": "finance and authorization engineering",
-      "evidence": [],
-      "reviewer": null,
-      "verified_at": null,
-      "blocked_by": []
+      "evidence": [
+        "test-results/finance-integration/native-auth-api/acceptance-review.json",
+        "test-results/finance-integration/native-auth-api/coverage-followup.json",
+        "test-results/finance-integration/native-auth-api/post-test-schema-parity.json",
+        "test-results/finance-integration/f03-credentials/full-replay.json",
+        "docs/finance-integration/INDEPENDENT-REVIEWS.json"
+      ],
+      "reviewer": "f00_independent_review: native engineering scope only",
+      "verified_at": "2026-09-09T12:16:43.277766+00:00",
+      "blocked_by": [],
+      "evidence_scope": "Reviewed SQL plus genuine native GoTrue/PostgREST and actual standalone Deno; no hosted, provider,342 dynamic-security or business acceptance"
     },
     {
       "id": "HFA-013",

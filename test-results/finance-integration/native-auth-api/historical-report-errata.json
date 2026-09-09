@@ -1,0 +1,16 @@
+{
+  "status": "SUPERSEDED_BY_INDEPENDENT_FINAL_RUNS",
+  "historical_reports": [
+    "2026-09-09T06-48-29.385Z-native-authenticated-audit.json",
+    "2026-09-09T06-50-13.440Z-native-authenticated-audit.json",
+    "2026-09-09T06-50-50.224Z-native-authenticated-finance.json",
+    "2026-09-09T07-00-50.414Z-native-audit-http.json"
+  ],
+  "details": [
+    "First native audit attempt failed because native GoTrue omitted its required authenticated default group; fixed only isolated service configuration.",
+    "Earlier native report argv named the old repository Docker runner; final source records its own filename.",
+    "Final shared guard consolidates four separate case labels into one stronger runtime check; independent review separately executed29 process/backend/provenance checks.",
+    "HTTP probes now reject redirects and verify core/standalone runtime identity before fixture actions.",
+    "Original failure/pass artifacts remain unchanged; final independent reports are authoritative for current driver hashes."
+  ]
+}

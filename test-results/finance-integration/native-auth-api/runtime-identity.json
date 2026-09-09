@@ -1,0 +1,166 @@
+{
+  "reviewer": "independent-f00-review",
+  "created_at": "2026-09-09T12:13:30.153Z",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "manifest identity",
+      "status": "PASS"
+    },
+    {
+      "name": "auth exact process and exclusive loopback listener",
+      "status": "PASS",
+      "pid": 17228,
+      "port": 59833
+    },
+    {
+      "name": "auth executable hash",
+      "status": "PASS"
+    },
+    {
+      "name": "auth loaded executable mapped",
+      "status": "PASS"
+    },
+    {
+      "name": "rest exact process and exclusive loopback listener",
+      "status": "PASS",
+      "pid": 14357,
+      "port": 59832
+    },
+    {
+      "name": "rest executable hash",
+      "status": "PASS"
+    },
+    {
+      "name": "rest loaded executable mapped",
+      "status": "PASS"
+    },
+    {
+      "name": "gateway exact process and exclusive loopback listener",
+      "status": "PASS",
+      "pid": 14361,
+      "port": 59831
+    },
+    {
+      "name": "gateway executable hash",
+      "status": "PASS"
+    },
+    {
+      "name": "gateway source hash",
+      "status": "PASS"
+    },
+    {
+      "name": "gateway loaded executable mapped",
+      "status": "PASS"
+    },
+    {
+      "name": "standalone-audit exact process and exclusive loopback listener",
+      "status": "PASS",
+      "pid": 23278,
+      "port": 59835
+    },
+    {
+      "name": "standalone-audit executable hash",
+      "status": "PASS"
+    },
+    {
+      "name": "standalone-audit source hash",
+      "status": "PASS"
+    },
+    {
+      "name": "standalone-audit loaded executable mapped",
+      "status": "PASS"
+    },
+    {
+      "name": "postgres master exact owned data directory",
+      "status": "PASS"
+    },
+    {
+      "name": "postgres backend identity",
+      "status": "PASS",
+      "backend": {
+        "db": "hfa_native_01a08335",
+        "dir": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/native-services/postgres-data",
+        "port": "55448",
+        "listen": "",
+        "system": "7683421186487785039"
+      }
+    },
+    {
+      "name": "auth configured owned database socket",
+      "status": "PASS"
+    },
+    {
+      "name": "rest configured owned database socket",
+      "status": "PASS"
+    },
+    {
+      "name": "auth/rest JWT verification configuration consistent",
+      "status": "PASS"
+    },
+    {
+      "name": "PostgREST managed pre-request configured",
+      "status": "PASS"
+    },
+    {
+      "name": "existing Auth/REST connections target owned database (idle Auth pool may be empty)",
+      "status": "PASS",
+      "connections": [
+        {
+          "role": "authenticator",
+          "db": "hfa_native_01a08335",
+          "local": true
+        },
+        {
+          "role": "authenticator",
+          "db": "hfa_native_01a08335",
+          "local": true
+        },
+        {
+          "role": "authenticator",
+          "db": "hfa_native_01a08335",
+          "local": true
+        }
+      ]
+    },
+    {
+      "name": "auth.jwt exact recorded hosted helper",
+      "status": "PASS"
+    },
+    {
+      "name": "auth.role exact recorded hosted helper",
+      "status": "PASS"
+    },
+    {
+      "name": "auth.uid exact recorded hosted helper",
+      "status": "PASS"
+    },
+    {
+      "name": "real Auth migrations present",
+      "status": "PASS"
+    },
+    {
+      "name": "live GoTrue health version",
+      "status": "PASS",
+      "version": "v2.188.1-f3425cf"
+    },
+    {
+      "name": "download source archive postgrest.tar.xz",
+      "status": "PASS"
+    },
+    {
+      "name": "download source archive auth.tar.gz",
+      "status": "PASS"
+    }
+  ],
+  "error": null,
+  "sources": {
+    "native-authenticated-smoke.mjs": "63664b25c256abedb1b83fcabf6acd11686af05356f0e41385756ff5d3f3bee4",
+    "audit-http-probe.mjs": "f4e3359421305f715f3e8ff992c6bd14e54315e21d10b23871a1272e1cef1900",
+    "native-runtime-identity.mjs": "f118007f0f1329b9253e9eba9e9f7f3f71488d402ba1e7f4b65e2ac091015425",
+    "gateway.mjs": "14bf39c9f88b60e3a5cbafc1fa2d34362ddda4b5bb62d468d50f64b570e79a02",
+    "standalone-audit-gateway.ts": "55b05eb276459f27855a4942f93132de8462d9b3b395097bee80028df77fd9f1",
+    "schema-parity.json": "1d8d9b3bc4e31945a9050e941f9d129119b5a26bd3818e40a3ff1ad23a957842",
+    "verified-host-auth-functions.json": "1c09122e82d14f71890000a79fe79bb5fec733c892f6d444bd301e4b54ca58da"
+  }
+}

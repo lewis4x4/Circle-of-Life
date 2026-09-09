@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "source_sha256": "9e4c0f09b5e47ab6acdb3235d768c1745b5fcf92d2cde980856658a38c899da0",
+  "current_sha256": "9e4c0f09b5e47ab6acdb3235d768c1745b5fcf92d2cde980856658a38c899da0",
+  "diff_lines": 0,
+  "normalization": "remove random pg_dump restrict tokens; documented IF NOT EXISTS public only",
+  "scope": "native baseline public/haven including ACLs"
+}

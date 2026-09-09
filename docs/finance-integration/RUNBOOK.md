@@ -37,3 +37,7 @@ Migration342 declares company/client lineages with separate connection generatio
 The dedicated worker role has no table/Vault grants. Verify actual gateway signature/role routing and Vault/key operation before using any worker. Never give workers project signing or service-role keys. Native tests install only a guarded rollback Vault stub and prove no encryption or real provider operation. Docker replay now creates a unique haven_verify_* database; the test guard refuses a generic postgres database or any real Vault schema/extension before fixture mutations. Local Docker creation remains inconclusive; no shared restart is authorized.
 
 The independent dynamic security review was blocked by an automatic safety filter citing possible cybersecurity risk. Its final verdict remains open; source inspection/lifecycle test evidence must not be presented as that missing review or as release approval.
+
+## Native Auth/API alternative
+
+The Docker-independent test runtime and safe fixed-target drivers are documented in NATIVE-AUTH-API-EVIDENCE.md. Their exact copies and final independent results are retained under test-results/finance-integration/native-auth-api. They require the original run-owned private configuration and live process/database verification; they are not portable production probes. Keep the original Docker failure evidence. A native API pass does not complete hosted Edge gateway,342 issuer/Vault, browser, provider or business gates.
