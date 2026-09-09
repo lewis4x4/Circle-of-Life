@@ -117,3 +117,22 @@ it("preserves manager claim drill-ins and distinct premium allocations", async (
     screen.getByText(/Carrier loss figures remain separate/),
   ).toBeInTheDocument();
 });
+
+it("does not present a legacy false sharing placeholder as a verified finding", async () => {
+  auth.appRole = "owner";
+  const workspace = workspaceFixture();
+  workspace.policies = [
+    {
+      ...draftFixture().payload,
+      id: policyId,
+      verification_status: "unverified",
+      version: 0,
+      status: "active",
+      shared_limit: false,
+    },
+  ];
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(workspace)));
+  render(<Page />);
+  expect(await screen.findByText("Awaiting review")).toBeInTheDocument();
+  expect(screen.queryByText("Not shared, as reviewed")).not.toBeInTheDocument();
+});

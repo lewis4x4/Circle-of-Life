@@ -1,0 +1,38 @@
+{
+  "pr": "https://github.com/lewis4x4/Circle-of-Life/pull/462",
+  "branch": "codex/haven-insurance-workspace",
+  "core_commit": "118356c6",
+  "vitest": {
+    "passed": 3541,
+    "failed": 0,
+    "skipped": 2
+  },
+  "release_gate": "test-results/agent-gates/2026-09-09T03-08-27-475Z-INSURANCE-RELEASE-VERIFIED.json",
+  "native_database": {
+    "migrations": 340,
+    "probes": 21,
+    "services": "Supabase stubs with real PostgreSQL authority/session logic"
+  },
+  "concurrency": {
+    "passed": 4,
+    "forbidden_mutations": 0,
+    "evidence": "test-results/insurance/authority-races/1788923308350-72147-85c74970.json"
+  },
+  "browser": {
+    "passed": 18,
+    "page_errors": 0,
+    "axe_violations": 0,
+    "views": 7,
+    "auth_api_next": "mocked",
+    "pdf": "real Chromium rendering and inspected print"
+  },
+  "independent_reviews": {
+    "sql": "APPROVE",
+    "consumer": "APPROVE",
+    "portfolio_export_boundary": "APPROVE"
+  },
+  "production_deployed": false,
+  "real_provider_evaluated": false,
+  "real_customer_data_imported": false,
+  "mission_alignment": "PASS engineering"
+}

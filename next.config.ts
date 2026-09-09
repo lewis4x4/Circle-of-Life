@@ -91,7 +91,7 @@ const nextConfig: NextConfig = {
     root: __dirname_resolved,
   },
   // Keep the production build aligned with Haven's existing application
-  // typecheck project. Vitest executes the separate test-source project.
+  // typecheck project. Vitest independently executes the test sources.
   typescript: {
     tsconfigPath: "tsconfig.typecheck.json",
   },

@@ -229,6 +229,11 @@ export function PolicyDraftEditor({
           effective_to: null,
         })),
       };
+    if (
+      initialKind === "verification" &&
+      basePolicy.verification_status !== "verified"
+    )
+      p.shared_limit = null;
     return p;
   });
   const [evidence, setEvidence] = useState<PolicyEvidence>(

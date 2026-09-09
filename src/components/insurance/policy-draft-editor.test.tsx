@@ -224,3 +224,23 @@ describe("Insurance draft review", () => {
     ).toBeInTheDocument();
   });
 });
+
+it("requires a fresh sharing choice when verifying a legacy false placeholder", () => {
+  const w = workspaceFixture();
+  const base = {
+    ...draftFixture().payload,
+    id: policyId,
+    verification_status: "unverified" as const,
+    version: 0,
+    status: "active",
+    shared_limit: false,
+  };
+  render(
+    <PolicyDraftEditor
+      workspace={w}
+      basePolicy={base}
+      initialKind="verification"
+    />,
+  );
+  expect(screen.getByLabelText("Limit sharing")).toHaveValue("unknown");
+});

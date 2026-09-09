@@ -1,4 +1,12 @@
 -- Transactional disposable replay probes. Real current-actor helper + live session rows.
+-- Multi-session authority regression also executed: hold the draft FOR UPDATE in A,
+-- start approval in B, wait until B is blocked, disable its actor and commit in C,
+-- release A. Approval must fail with Authentication required after waiting and
+-- leave zero published rows. The servicing probe has the corresponding org-lock case.
+-- Trusted processing counterpart: A holds the source document FOR UPDATE; B
+-- starts extraction as service_role; C disables the server-derived actor and
+-- commits; releasing A must reject Current insurance manager required after
+-- waiting and leave extraction pending. Service processing does not use a user JWT.
 BEGIN;
 GRANT USAGE ON SCHEMA auth,storage TO authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
@@ -191,6 +199,20 @@ SELECT pg_temp.insurance_actor(false);
 SET LOCAL ROLE authenticated;
 DO $$BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.facility_documents WHERE id=(SELECT (value->>'id')::uuid FROM insurance_receipts WHERE name='legacy_vault')) OR NOT EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='facility-documents' AND name=(SELECT facility::text||'/legacy_vault.txt' FROM insurance_fixture)) THEN RAISE EXCEPTION 'Manager lost legacy custody';END IF;
+END$$;
+RESET ROLE;
+-- Portfolio PDF copies obey the same manager-only insurance boundary.
+INSERT INTO storage.objects(bucket_id,name) SELECT 'report-exports',org::text||'/executive-league/render-insurance-probe/league.pdf' FROM insurance_fixture;
+SELECT pg_temp.insurance_actor(true);
+SET LOCAL ROLE authenticated;
+DO $$BEGIN
+ IF EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='report-exports' AND name=(SELECT org::text||'/executive-league/render-insurance-probe/league.pdf' FROM insurance_fixture)) THEN RAISE EXCEPTION 'Portfolio insurance PDF leaked through storage';END IF;
+END$$;
+RESET ROLE;
+SELECT pg_temp.insurance_actor(false);
+SET LOCAL ROLE authenticated;
+DO $$BEGIN
+ IF NOT EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='report-exports' AND name=(SELECT org::text||'/executive-league/render-insurance-probe/league.pdf' FROM insurance_fixture)) THEN RAISE EXCEPTION 'Manager lost portfolio export access';END IF;
 END$$;
 RESET ROLE;
 UPDATE public.user_profiles SET is_active=false WHERE id=(SELECT owner FROM insurance_fixture);

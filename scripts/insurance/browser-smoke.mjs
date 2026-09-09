@@ -124,7 +124,7 @@ const snapshot=()=>location.pathname+location.search;
 export function go(href:string){history.pushState({},'',href);window.dispatchEvent(new Event('harness-route'));window.scrollTo(0,0)}
 export function usePathname(){return useSyncExternalStore(subscribe,snapshot).split('?')[0]}
 export function useSearchParams(){useSyncExternalStore(subscribe,snapshot);return new URLSearchParams(location.search)}
-export function useParams(){const p=usePathname().split('/');return {id:p.at(-1)}}
+export function useParams(){const p=usePathname().split('/');return {id:p.at(-1)==='print'?p.at(-2):p.at(-1)}}
 export function useRouter(){return {push:go,replace:go,refresh:()=>window.dispatchEvent(new Event('harness-route'))}}`,
 );
 await harnessFile(
@@ -141,8 +141,8 @@ await harnessFile(
 );
 await harnessFile(
   "entry.tsx",
-  `import React from 'react';import {createRoot} from 'react-dom/client';import '@/app/globals.css';import {usePathname} from './navigation';import {InsuranceOverviewPage,InsurancePoliciesPage,InsuranceDocumentsPage,InsuranceDocumentPage,InsuranceNewPolicyPage,InsuranceDraftReviewPage,InsurancePolicyPage,InsuranceRenewalsPage,InsuranceCertificatesPage} from '@/components/insurance/workspace-pages';
-function Harness(){const route=usePathname();const Page=route.endsWith('/policies/new')?InsuranceNewPolicyPage:route.includes('/review/')?InsuranceDraftReviewPage:route.includes('/documents/')?InsuranceDocumentPage:route.endsWith('/documents')?InsuranceDocumentsPage:route.includes('/policies/')?InsurancePolicyPage:route.endsWith('/policies')?InsurancePoliciesPage:route.endsWith('/renewals')?InsuranceRenewalsPage:route.endsWith('/coi')?InsuranceCertificatesPage:InsuranceOverviewPage;return <><div role="note" className="border-b border-border bg-muted px-5 py-3 text-sm font-medium">Synthetic browser verification · API/auth/navigation mocked · No real insurance data</div><main className="mx-auto max-w-[1600px] p-4 md:p-8"><Page key={route}/></main></>};createRoot(document.getElementById('root')!).render(<Harness/>);`,
+  `import React from 'react';import {createRoot} from 'react-dom/client';import '@/app/globals.css';import {usePathname} from './navigation';import {InsuranceOverviewPage,InsurancePoliciesPage,InsuranceDocumentsPage,InsuranceDocumentPage,InsuranceNewPolicyPage,InsuranceDraftReviewPage,InsurancePolicyPage,InsuranceRenewalsPage,InsuranceCertificatesPage} from '@/components/insurance/workspace-pages';import {ServicingListPage,ServicingDetailPage,ServicingPrintPage} from '@/components/insurance/servicing-pages';
+function Harness(){const route=usePathname();const Page=route.includes('/servicing/')&&route.endsWith('/print')?ServicingPrintPage:route.includes('/servicing/')?ServicingDetailPage:route.endsWith('/servicing')?ServicingListPage:route.endsWith('/policies/new')?InsuranceNewPolicyPage:route.includes('/review/')?InsuranceDraftReviewPage:route.includes('/documents/')?InsuranceDocumentPage:route.endsWith('/documents')?InsuranceDocumentsPage:route.includes('/policies/')?InsurancePolicyPage:route.endsWith('/policies')?InsurancePoliciesPage:route.endsWith('/renewals')?InsuranceRenewalsPage:route.endsWith('/coi')?InsuranceCertificatesPage:InsuranceOverviewPage;return <><div role="note" className="border-b border-border bg-muted px-5 py-3 text-sm font-medium">Synthetic browser verification · API/auth/navigation mocked · No real insurance data</div><main className="mx-auto max-w-[1600px] p-4 md:p-8"><Page key={route}/></main></>};createRoot(document.getElementById('root')!).render(<Harness/>);`,
 );
 
 const aliases = [
@@ -228,6 +228,61 @@ try {
     run_id: null,
     created_at: "2026-09-09T01:00:00Z",
   };
+  const formerOwnerId = "88888888-8888-4888-8888-888888888888";
+  const servicingRecords = [];
+  let servicingOwners = [
+    ...workspace.owners,
+    { id: formerOwnerId, name: "Former insurance owner" },
+  ];
+  const unknownMetric = {
+    known_subtotal_cents: 0,
+    missing_count: 0,
+    total_cents: null,
+  };
+  const servicingWorkspace = () => ({
+    records: servicingRecords,
+    entities: workspace.entities,
+    facilities: workspace.facilities,
+    policies: workspace.policies,
+    documents: workspace.documents,
+    vendors: [{ id: entityId, name: "Synthetic vendor" }],
+    contracts: [],
+    owners: servicingOwners,
+    incidents: [
+      {
+        id: policyId,
+        facility_id: facilityId,
+        incident_type: "fall",
+        occurred_at: "2026-09-09T12:30:00Z",
+      },
+    ],
+    loss_totals: {
+      paid_cents: unknownMetric,
+      reserve_cents: unknownMetric,
+      recovery_cents: unknownMetric,
+      expense_cents: unknownMetric,
+      incurred_cents: unknownMetric,
+      claim_count: 0,
+      history_complete: false,
+    },
+  });
+  const { parseServicingCommand } = await server.ssrLoadModule(
+    path.join(repo, "src/lib/insurance/servicing-schema.ts"),
+  );
+  const saveServiceVersion = (record, event) => {
+    const { versions, ...snapshot } = record;
+    record.versions = [
+      ...(versions || []),
+      {
+        id: `${record.id}:${record.version}`,
+        record_id: record.id,
+        version: record.version,
+        snapshot: structuredClone(snapshot),
+        event,
+        created_at: "2026-09-09T12:00:00Z",
+      },
+    ];
+  };
   await context.route("**/api/insurance/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -237,6 +292,119 @@ try {
         contentType: "application/json",
         body: JSON.stringify(body),
       });
+    if (url.pathname.startsWith("/api/insurance/servicing")) {
+      if (method === "GET" && url.pathname.endsWith("/export")) {
+        const id = url.pathname.split("/").at(-2);
+        const record = servicingRecords.find((r) => r.id === id);
+        const version = Number(url.searchParams.get("version"));
+        const snapshot = record.versions.find(
+          (v) => v.version === version,
+        ).snapshot;
+        await route.fulfill({
+          contentType: "application/json",
+          headers: {
+            "Content-Disposition":
+              'attachment; filename="approved-package.json"',
+          },
+          body: JSON.stringify({ record: snapshot, version }),
+        });
+        return;
+      }
+      if (method === "GET") {
+        await json(servicingWorkspace());
+        return;
+      }
+      const command = parseServicingCommand(request.postDataJSON());
+      result.api_commands.push(command);
+      const input = command.payload;
+      let record = servicingRecords.find((r) => r.id === input.id);
+      if (command.action === "save") {
+        const index = servicingRecords.findIndex((r) => r.id === input.id);
+        record = {
+          ...input,
+          organization_id: entityId,
+          version: (input.version || 0) + 1,
+          status: record?.status || "draft",
+          source_record_id: null,
+          superseded_by: null,
+          event_metadata: {},
+          reviewed_by: null,
+          reviewed_at: null,
+          created_by: entityId,
+          created_at: "2026-09-09T12:00:00Z",
+          updated_at: "2026-09-09T12:00:00Z",
+          display_names: {
+            entity:
+              workspace.entities.find((e) => e.id === input.entity_id)?.name ||
+              "Unknown",
+            facility: input.facility_id ? "Example ALF" : null,
+            owner:
+              servicingOwners.find((o) => o.id === input.owner_id)?.name ||
+              null,
+          },
+          versions: record?.versions || [],
+        };
+        if (input.kind === "renewal_package")
+          record.payload = {
+            ...input.payload,
+            policy_snapshot: {
+              ...workspace.policies[0],
+              entity_name: "Example ALF LLC",
+              parties: workspace.policies[0].parties.map((p) => ({
+                ...p,
+                entity_name:
+                  workspace.entities.find((e) => e.id === p.entity_id)?.name ||
+                  "Unknown",
+              })),
+              facilities: workspace.policies[0].facilities.map((f) => ({
+                ...f,
+                facility_name: "Example ALF",
+              })),
+            },
+          };
+        if (index < 0) servicingRecords.push(record);
+        else servicingRecords[index] = record;
+        saveServiceVersion(record, { action: "save", actor: entityId });
+        await json({ record });
+        return;
+      }
+      assert(record, "Synthetic servicing record exists");
+      assert.equal(
+        input.version,
+        record.version,
+        "Servicing command uses current version",
+      );
+      if (command.action === "transition") {
+        record.version++;
+        record.status = input.status;
+        record.event_metadata = {
+          ...input,
+          action: "transition",
+          actor: entityId,
+        };
+        saveServiceVersion(record, record.event_metadata);
+        if (input.status === "approved")
+          servicingOwners = servicingOwners.filter(
+            (o) => o.id !== formerOwnerId,
+          );
+        await json({ record });
+        return;
+      }
+      if (command.action === "reassign") {
+        record.version++;
+        record.owner_id = input.owner_id;
+        record.due_date = input.due_date;
+        record.event_metadata = {
+          ...input,
+          action: "reassign",
+          actor: entityId,
+        };
+        saveServiceVersion(record, record.event_metadata);
+        await json({ record });
+        return;
+      }
+      throw new Error(`Unexpected servicing fixture action ${command.action}`);
+    }
     if (
       url.pathname === `/api/insurance/documents/${documentId}` &&
       method === "GET"
@@ -468,16 +636,14 @@ try {
     .frames()
     .filter((f) => f.url().startsWith("chrome-extension://"))) {
     result.native_pdf_inputs.push(
-      await frame
-        .locator("input")
-        .evaluateAll((nodes) =>
-          nodes.map((n) => ({
-            type: n.type,
-            value: n.value,
-            label: n.getAttribute("aria-label"),
-            title: n.title,
-          })),
-        ),
+      await frame.locator("input").evaluateAll((nodes) =>
+        nodes.map((n) => ({
+          type: n.type,
+          value: n.value,
+          label: n.getAttribute("aria-label"),
+          title: n.title,
+        })),
+      ),
     );
   }
   assert(
@@ -550,6 +716,317 @@ try {
       approvals: result.api_commands.filter((c) => c.action === "approve_draft")
         .length,
       premium_cents: lastSaved.payload.premium_cents,
+    },
+  );
+  async function openServicingForm(kind) {
+    await page.goto(`${base}admin/insurance/servicing?kind=${kind}`);
+    await page
+      .locator("summary")
+      .filter({ hasText: /^Create / })
+      .click();
+    await page
+      .getByLabel("Record title", { exact: true })
+      .fill(`Synthetic ${kind.replaceAll("_", " ")}`);
+    await page
+      .getByLabel("Legal entity", { exact: true })
+      .selectOption(entityId);
+  }
+  for (const kind of [
+    "vendor_evidence",
+    "loss_report",
+    "claim_matter",
+    "workforce_exposure",
+  ]) {
+    await openServicingForm(kind);
+    if (kind === "vendor_evidence") {
+      await page.getByLabel("Vendor", { exact: true }).selectOption(entityId);
+      await page
+        .getByLabel("Approved requirements to compare")
+        .fill("Review the signed contract requirements.");
+      await page
+        .getByRole("checkbox", { name: /requirements need supporting/ })
+        .check();
+      await page
+        .getByLabel("Supporting endorsement or policy")
+        .selectOption(documentId);
+      await page.getByLabel("Endorsement evidence page").fill("1");
+      await page
+        .getByLabel("Requirement assessment")
+        .fill("Supporting provisions await final review.");
+      await page.getByLabel("Evidence expiration date").fill("2027-09-01");
+    }
+    if (kind === "loss_report") {
+      await page.getByLabel("Reporting carrier").fill("Example carrier");
+      await page.getByLabel("Reported coverage line").fill("General liability");
+      await page.getByLabel("Report valuation date").fill("2026-09-09");
+      await page.getByLabel("Period start").fill("2026-01-01");
+      await page.getByLabel("Period end").fill("2026-09-09");
+      await page.getByRole("button", { name: "Add reported claim" }).click();
+      await page.getByLabel("Claim 1 reference").fill("SYNTHETIC-CLAIM-1");
+      await page.getByLabel("Claim 1 paid", { exact: true }).fill("1250.25");
+      await page.getByLabel("Claim 1 source page").fill("2");
+      await page.getByRole("table").scrollIntoViewIfNeeded();
+      await shot("servicing-loss-rows");
+    }
+    if (kind === "claim_matter") {
+      await page.getByLabel("Facility scope").selectOption(facilityId);
+      await page
+        .getByLabel("Proposed incident", { exact: true })
+        .selectOption(policyId);
+      await page.getByLabel("Date of loss", { exact: true }).fill("2026-09-09");
+      await page
+        .getByLabel("Insurance matter summary")
+        .fill(
+          "Administrative insurance inquiry only; no clinical notes copied.",
+        );
+      await page
+        .getByLabel("Next servicing action")
+        .fill("Request carrier reference through existing channel.");
+      assert(
+        (await page
+          .getByRole("option", { name: /fall.*Example ALF/ })
+          .count()) === 1,
+      );
+    }
+    if (kind === "workforce_exposure") {
+      await page.getByLabel("Period start").fill("2026-01-01");
+      await page.getByLabel("Period end").fill("2026-12-31");
+      await page
+        .getByLabel("Manual exposure source reason")
+        .fill("Synthetic aggregate payroll ledger reviewed by finance.");
+      await page.getByRole("button", { name: "Add exposure row" }).click();
+      await page.getByLabel("Exposure 1 state").selectOption("FL");
+      await page.getByLabel("Exposure 1 class code").fill("8810");
+      await page.getByLabel("Exposure 1 estimated payroll").fill("10000.25");
+      await page
+        .getByLabel("Exposure 1 basis note")
+        .fill("Forecast aggregate; actual payroll unknown.");
+      await page.getByRole("table").scrollIntoViewIfNeeded();
+      await shot("servicing-exposure-rows");
+    }
+    await page
+      .getByRole("button", { name: "Save servicing draft", exact: true })
+      .click();
+    await page
+      .getByRole("heading", {
+        name: `Synthetic ${kind.replaceAll("_", " ")}`,
+        exact: true,
+      })
+      .waitFor();
+    check(`servicing ${kind} form saves schema-valid draft`, {
+      record_count: servicingRecords.length,
+    });
+  }
+  const additionalEntityId = "99999999-9999-4999-8999-999999999999";
+  workspace.entities.push({
+    id: additionalEntityId,
+    name: "Approved additional insured LLC",
+  });
+  workspace.policies[0].insured_entity_ids = [entityId, additionalEntityId];
+  workspace.policies[0].covered_facility_ids = [facilityId];
+  workspace.policies[0].parties.push({
+    entity_id: additionalEntityId,
+    role: "additional_insured",
+    effective_from: "2026-09-01",
+    effective_to: null,
+  });
+  await openServicingForm("renewal_package");
+  await page
+    .getByLabel("Legal entity", { exact: true })
+    .selectOption(additionalEntityId);
+  await page
+    .getByLabel("Related policy", { exact: true })
+    .selectOption(policyId);
+  await page
+    .getByLabel("Facility scope", { exact: true })
+    .selectOption(facilityId);
+  await page
+    .getByLabel("Assigned record owner", { exact: true })
+    .selectOption(formerOwnerId);
+  await page.getByLabel("Period start").fill("2026-09-01");
+  await page.getByLabel("Period end").fill("2027-09-01");
+  await page
+    .getByLabel("Location changes")
+    .fill("Review the dated schedule; no assumed new locations.");
+  await page
+    .getByLabel("Exposure summary")
+    .fill("Approved aggregate exposure facts only.");
+  await page
+    .getByLabel("Intended package recipient")
+    .fill("Synthetic broker servicing desk");
+  await page
+    .getByRole("checkbox", { name: "synthetic-policy.pdf", exact: true })
+    .check();
+  await page
+    .getByRole("button", { name: "Save and request review", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Synthetic renewal package", exact: true })
+    .waitFor();
+  assert.equal(
+    servicingRecords.find((r) => r.kind === "renewal_package").entity_id,
+    additionalEntityId,
+  );
+  assert.equal(
+    servicingRecords.find((r) => r.kind === "renewal_package").facility_id,
+    facilityId,
+  );
+  check(
+    "additional insured selects approved shared policy and covered facility",
+    { entity_id: additionalEntityId, facility_id: facilityId },
+  );
+  await page
+    .getByLabel("Open questions for the broker", { exact: true })
+    .fill("Confirm the revised shared-location schedule.");
+  await page
+    .getByRole("button", { name: "Save and request review", exact: true })
+    .click();
+  await page
+    .locator("p:visible")
+    .filter({ hasText: "Renewal packages · review required · Version 3" })
+    .waitFor();
+  assert.equal(
+    result.api_commands.filter(
+      (c) =>
+        c.action === "transition" && c.payload.status === "review_required",
+    ).length,
+    1,
+  );
+  check("in-review editing avoids redundant request-review transition", {
+    version: 3,
+  });
+  await page.getByRole("checkbox", { name: /I checked the record/ }).check();
+  await page
+    .getByRole("button", { name: "Approve reviewed record", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Create new revision", exact: true })
+    .waitFor();
+  const packageRecord = servicingRecords.find(
+    (r) => r.kind === "renewal_package",
+  );
+  const frozenPayload = structuredClone(packageRecord.payload);
+  assert(
+    (await page
+      .getByText(/Former assignee is inactive or unavailable/)
+      .count()) === 1,
+  );
+  await page.getByLabel("Current operational owner").selectOption(entityId);
+  await page
+    .getByLabel("Assignment change reason")
+    .fill("Former assignee departed; active manager takes responsibility.");
+  await page
+    .getByRole("button", { name: "Record assignment change", exact: true })
+    .click();
+  await page
+    .getByText("Current owner: Insurance owner", { exact: true })
+    .waitFor();
+  assert.deepEqual(packageRecord.payload, frozenPayload);
+  assert.equal(packageRecord.display_names.owner, "Former insurance owner");
+  check(
+    "servicing approved record reassignment preserves frozen prepared facts",
+    { version: packageRecord.version },
+  );
+  await page.evaluate(() => scrollTo(0, 0));
+  await shot("servicing-package-desktop");
+  await axe("servicing-package-desktop");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot("servicing-package-mobile");
+  const servicingWidth = await page.evaluate(() => ({
+    viewport: innerWidth,
+    width: document.documentElement.scrollWidth,
+  }));
+  assert(
+    servicingWidth.width <= servicingWidth.viewport + 1,
+    "Servicing mobile page has no horizontal overflow",
+  );
+  check("servicing mobile summary stays within the viewport", servicingWidth);
+  await axe("servicing-package-mobile");
+  await page.setViewportSize({ width: 1512, height: 1100 });
+  const downloadPromise = page.waitForEvent("download");
+  await page
+    .getByRole("link", { name: "Download approved package file", exact: true })
+    .click();
+  const download = await downloadPromise;
+  const exportedPath = path.join(evidence, "approved-package.json");
+  await download.saveAs(exportedPath);
+  const exported = JSON.parse(await readFile(exportedPath, "utf8"));
+  assert.equal(exported.record.version, packageRecord.version);
+  assert.deepEqual(exported.record.payload, frozenPayload);
+  check("servicing export preserves the selected approved package version", {
+    version: exported.version,
+  });
+  await page
+    .getByRole("link", { name: "Open printable approved package", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Print approved package", exact: true })
+    .waitFor();
+  await shot("servicing-package-print");
+  await axe("servicing-package-print");
+  await page.pdf({
+    path: path.join(evidence, "approved-package-print.pdf"),
+    printBackground: true,
+    format: "A4",
+  });
+  check("servicing approved package printable view renders with frozen names", {
+    prepared_owner: packageRecord.display_names.owner,
+  });
+  const unassignedRecord = {
+    ...structuredClone(packageRecord),
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    title: "Synthetic unassigned-preparation package",
+    owner_id: null,
+    display_names: { ...packageRecord.display_names, owner: null },
+    version: 1,
+    event_metadata: {},
+    versions: [],
+  };
+  saveServiceVersion(unassignedRecord, { action: "approve", actor: entityId });
+  servicingRecords.push(unassignedRecord);
+  await page.goto(`${base}admin/insurance/servicing/${unassignedRecord.id}`);
+  await page
+    .getByLabel("Current operational owner", { exact: true })
+    .selectOption(entityId);
+  await page
+    .getByLabel("Assignment change reason", { exact: true })
+    .fill("Assign operational follow-up without altering prepared ownership.");
+  await page
+    .getByRole("button", { name: "Record assignment change", exact: true })
+    .click();
+  await page
+    .getByText("Current owner: Insurance owner", { exact: true })
+    .waitFor();
+  servicingOwners.find((owner) => owner.id === entityId).name =
+    "Renamed operational manager";
+  await page.goto(
+    `${base}admin/insurance/servicing/${unassignedRecord.id}/print?version=${unassignedRecord.version}`,
+  );
+  await page
+    .getByRole("button", { name: "Print approved package", exact: true })
+    .waitFor();
+  assert.equal(
+    await page
+      .getByText("Owner at preparation", { exact: true })
+      .locator("..")
+      .locator("dd")
+      .innerText(),
+    "Unassigned",
+  );
+  assert.equal(await page.getByText(/Renamed operational manager/).count(), 0);
+  await shot("servicing-null-owner-print");
+  await axe("servicing-null-owner-print");
+  await page.pdf({
+    path: path.join(evidence, "approved-unassigned-owner-print.pdf"),
+    printBackground: true,
+    format: "A4",
+  });
+  check(
+    "explicit null prepared owner stays unassigned after reassignment and directory rename",
+    {
+      prepared_owner: unassignedRecord.display_names.owner,
+      current_owner: unassignedRecord.owner_id,
+      version: unassignedRecord.version,
     },
   );
   result.browser =

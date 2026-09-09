@@ -135,6 +135,20 @@ BEGIN
  ELSE RAISE EXCEPTION 'Invalid evidence source: %',k USING ERRCODE='22023'; END IF;
  END LOOP;
 END $$;
+-- Waiting for domain locks must not preserve an actor who was revoked while
+-- queued. Lock the actual authority rows only after those waits, then resolve
+-- the current session again; the locks fence subsequent revocation until commit.
+CREATE FUNCTION haven.insurance_lock_actor(p_actor uuid,p_org uuid,p_roles text[]) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+DECLARE a record;
+BEGIN
+ PERFORM 1 FROM auth.users WHERE id=p_actor FOR SHARE;
+ PERFORM 1 FROM auth.sessions WHERE id=nullif(auth.jwt()->>'session_id','')::uuid AND user_id=p_actor FOR SHARE;
+ PERFORM 1 FROM public.user_profiles WHERE id=p_actor FOR SHARE;
+ SELECT * INTO a FROM haven.current_authorized_actor();
+ IF a.actor_user_id IS DISTINCT FROM p_actor OR a.actor_organization_id IS DISTINCT FROM p_org OR NOT coalesce(a.actor_role_text=ANY(p_roles),false) THEN RAISE EXCEPTION 'Authentication required after waiting; sign in again' USING ERRCODE='28000'; END IF;
+END $$;
+REVOKE ALL ON FUNCTION haven.insurance_lock_actor(uuid,uuid,text[]) FROM PUBLIC,anon,authenticated,service_role;
 CREATE FUNCTION haven.insurance_workspace_impl(p_action text,p_payload jsonb DEFAULT '{}') RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE a record; org uuid; actor uuid; manages boolean; d public.insurance_drafts; doc public.insurance_documents; pol public.insurance_policies; item public.insurance_work_items; cert public.insurance_certificate_requests;
  v_id uuid; v_facility uuid; v_entity uuid; v_owner uuid; v_payload jsonb; v_result jsonb; v_before jsonb; x jsonb; n integer; days integer; as_of date; v_change date;
@@ -161,6 +175,7 @@ BEGIN
  'work_items',coalesce((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.due_date,t.id) FROM public.insurance_work_items t WHERE organization_id=org AND deleted_at IS NULL AND (v_facility IS NULL OR facility_id=v_facility) AND (v_id IS NULL OR policy_id=v_id) AND (manages OR facility_id IN(SELECT haven.accessible_facility_ids()))),'[]'),
  'certificate_requests',coalesce((SELECT jsonb_agg(CASE WHEN manages THEN to_jsonb(t) ELSE to_jsonb(t)-'document_id' END ORDER BY t.created_at DESC,t.id) FROM public.insurance_certificate_requests t WHERE organization_id=org AND deleted_at IS NULL AND (v_facility IS NULL OR facility_id=v_facility) AND (manages OR facility_id IN(SELECT haven.accessible_facility_ids()))),'[]'),
  'versions',CASE WHEN manages THEN coalesce((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.created_at DESC,t.id) FROM public.insurance_policy_versions t WHERE organization_id=org AND (v_id IS NULL OR policy_id=v_id)),'[]') ELSE '[]'::jsonb END) INTO v_result;
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  RETURN v_result;
  END IF;
  IF p_action='create_certificate_request' THEN
@@ -169,6 +184,7 @@ BEGIN
  IF NOT manages AND v_owner IS NOT NULL AND v_owner<>actor THEN RAISE EXCEPTION 'Owner assignment forbidden' USING ERRCODE='42501'; END IF;
  IF manages THEN PERFORM haven.insurance_assert_owner(v_owner,org); END IF;
  IF length(btrim(coalesce(p_payload->>'holder_name','')))=0 THEN RAISE EXCEPTION 'Holder name required' USING ERRCODE='22023'; END IF;
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  INSERT INTO public.insurance_certificate_requests(id,organization_id,entity_id,facility_id,holder_name,holder_details,requirements,owner_id,due_date,created_by)
  VALUES(v_id,org,v_entity,v_facility,p_payload->>'holder_name',coalesce(p_payload->>'holder_details',''),coalesce(p_payload->>'requirements',''),v_owner,(p_payload->>'due_date')::date,actor) ON CONFLICT(id) DO NOTHING;
  SELECT * INTO cert FROM public.insurance_certificate_requests WHERE id=v_id AND organization_id=org AND deleted_at IS NULL;
@@ -180,6 +196,7 @@ BEGIN
  IF p_action='get_document' THEN
  SELECT * INTO doc FROM public.insurance_documents WHERE id=(p_payload->>'id')::uuid AND organization_id=org AND deleted_at IS NULL AND status='ready' AND scan_status IN('clean','not_configured');
  IF doc.id IS NULL THEN RAISE EXCEPTION 'Document not found or unavailable' USING ERRCODE='P0002'; END IF;
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  INSERT INTO public.insurance_document_access(organization_id,document_id,actor_id) VALUES(org,doc.id,actor);
  RETURN to_jsonb(doc);
  ELSIF p_action='save_draft' THEN
@@ -189,7 +206,7 @@ BEGIN
  IF d.id IS NOT NULL THEN
  IF d.organization_id<>org OR d.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Draft not found' USING ERRCODE='P0002'; END IF;
  IF d.status<>'draft' THEN RAISE EXCEPTION 'Draft is already finalized' USING ERRCODE='40001'; END IF;
- IF NOT p_payload?'revision' AND d.kind=p_payload->>'kind' AND d.document_id IS NOT DISTINCT FROM (p_payload->>'document_id')::uuid AND d.policy_id IS NOT DISTINCT FROM (p_payload->>'policy_id')::uuid AND d.expected_version IS NOT DISTINCT FROM (p_payload->>'expected_version')::integer AND d.payload=p_payload->'payload' AND d.evidence=p_payload->'evidence' THEN RETURN to_jsonb(d); END IF;
+ IF NOT p_payload?'revision' AND d.kind=p_payload->>'kind' AND d.document_id IS NOT DISTINCT FROM (p_payload->>'document_id')::uuid AND d.policy_id IS NOT DISTINCT FROM (p_payload->>'policy_id')::uuid AND d.expected_version IS NOT DISTINCT FROM (p_payload->>'expected_version')::integer AND d.payload=p_payload->'payload' AND d.evidence=p_payload->'evidence' THEN PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]); RETURN to_jsonb(d); END IF;
  IF (p_payload->>'revision')::integer IS DISTINCT FROM d.revision THEN RAISE EXCEPTION 'Stale draft revision' USING ERRCODE='40001'; END IF;
  END IF;
  IF jsonb_typeof(p_payload->'payload') IS DISTINCT FROM 'object' OR jsonb_typeof(p_payload->'evidence') IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'Payload and evidence objects required' USING ERRCODE='22023'; END IF;
@@ -199,6 +216,7 @@ BEGIN
  IF pol.id IS NULL THEN RAISE EXCEPTION 'Policy not found' USING ERRCODE='P0002'; END IF;
  IF (p_payload->>'expected_version')::integer IS DISTINCT FROM pol.version THEN RAISE EXCEPTION 'Stale policy version' USING ERRCODE='40001'; END IF;
  ELSIF p_payload->>'kind' IS DISTINCT FROM 'new_policy' OR p_payload->>'policy_id' IS NOT NULL THEN RAISE EXCEPTION 'Invalid draft kind' USING ERRCODE='22023'; END IF;
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  IF d.id IS NULL THEN
  INSERT INTO public.insurance_drafts(id,organization_id,document_id,kind,policy_id,expected_version,payload,evidence,created_by,updated_by)
  VALUES(v_id,org,(p_payload->>'document_id')::uuid,p_payload->>'kind',(p_payload->>'policy_id')::uuid,(p_payload->>'expected_version')::integer,p_payload->'payload',p_payload->'evidence',actor,actor) RETURNING * INTO d;
@@ -209,10 +227,11 @@ BEGIN
  ELSIF p_action IN('approve_draft','reject_draft') THEN
  SELECT * INTO d FROM public.insurance_drafts WHERE id=(p_payload->>'id')::uuid AND organization_id=org AND deleted_at IS NULL FOR UPDATE;
  IF d.id IS NULL THEN RAISE EXCEPTION 'Draft not found' USING ERRCODE='P0002'; END IF;
- IF d.status='approved' AND p_action='approve_draft' THEN RETURN d.result; END IF;
+ IF d.status='approved' AND p_action='approve_draft' THEN PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]); RETURN d.result; END IF;
  IF d.status<>'draft' OR (p_payload->>'revision')::integer IS DISTINCT FROM d.revision THEN RAISE EXCEPTION 'Stale or finalized draft' USING ERRCODE='40001'; END IF;
  IF p_action='reject_draft' THEN
  IF length(btrim(coalesce(p_payload->>'reason','')))=0 THEN RAISE EXCEPTION 'Rejection reason required' USING ERRCODE='22023'; END IF;
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  UPDATE public.insurance_drafts SET status='rejected',rejection_reason=p_payload->>'reason',updated_by=actor,updated_at=now() WHERE id=d.id RETURNING * INTO d; RETURN to_jsonb(d);
  END IF;
  IF p_payload->'confirm_evidence' IS DISTINCT FROM 'true'::jsonb THEN RAISE EXCEPTION 'Explicit evidence confirmation required' USING ERRCODE='22023'; END IF;
@@ -225,6 +244,7 @@ BEGIN
  SELECT snapshot INTO v_before FROM public.insurance_policy_versions WHERE policy_id=pol.id ORDER BY version DESC LIMIT 1;
  v_before:=coalesce(v_before,to_jsonb(pol));
  END IF;
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  IF d.kind='endorsement' THEN
  IF pol.verification_status<>'verified' THEN RAISE EXCEPTION 'Endorsement requires verified term' USING ERRCODE='22023'; END IF;
  IF (v_payload->>'entity_id')::uuid<>pol.entity_id OR (v_payload->>'policy_type')::public.insurance_policy_type<>pol.policy_type OR v_payload->>'carrier_name'<>pol.carrier_name OR v_payload->>'policy_number'<>pol.policy_number OR (v_payload->>'effective_date')::date<>pol.effective_date OR (v_payload->>'expiration_date')::date<>pol.expiration_date THEN RAISE EXCEPTION 'Endorsement cannot change term identity or dates; use renewal' USING ERRCODE='22023'; END IF;
@@ -271,6 +291,7 @@ BEGIN
  FOR x IN SELECT value FROM jsonb_array_elements(p_payload->'milestone_days') LOOP
  IF jsonb_typeof(x)<>'number' OR x::text !~'^[1-9][0-9]*$' OR x::numeric>730 THEN RAISE EXCEPTION 'Invalid renewal milestone' USING ERRCODE='22023'; END IF;
  END LOOP;
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  UPDATE public.insurance_work_items SET status='dismissed',note='Superseded renewal schedule',superseded_at=now(),version=version+1,updated_at=now() WHERE policy_id=pol.id AND kind='renewal' AND status='open' AND (term_expiration_date<>pol.expiration_date OR NOT (p_payload->'milestone_days') @> to_jsonb(milestone_days));
  FOR days IN SELECT DISTINCT value::integer FROM jsonb_array_elements_text(p_payload->'milestone_days') LOOP
  INSERT INTO public.insurance_work_items(organization_id,policy_id,kind,title,owner_id,due_date,milestone_days,term_expiration_date) VALUES(org,pol.id,'renewal','Renewal review: '||days||' days before expiration',v_owner,pol.expiration_date-days,days,pol.expiration_date)
@@ -287,6 +308,7 @@ BEGIN
  IF p_payload->>'status' NOT IN('open','completed','dismissed') OR p_payload->>'status' IS NULL THEN RAISE EXCEPTION 'Invalid work status' USING ERRCODE='22023'; END IF;
  IF p_payload->>'status' IN('completed','dismissed') AND length(btrim(coalesce(p_payload->>'note','')))=0 THEN RAISE EXCEPTION 'Completion or dismissal note required' USING ERRCODE='22023'; END IF;
  v_owner:=CASE WHEN p_payload?'owner_id' THEN (p_payload->>'owner_id')::uuid ELSE item.owner_id END;PERFORM haven.insurance_assert_owner(v_owner,org);
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  UPDATE public.insurance_work_items SET status=p_payload->>'status',superseded_at=NULL,owner_id=v_owner,due_date=CASE WHEN p_payload?'due_date' THEN (p_payload->>'due_date')::date ELSE due_date END,note=coalesce(p_payload->>'note',note),version=version+1,updated_at=now() WHERE id=item.id RETURNING * INTO item; RETURN to_jsonb(item);
  ELSIF p_action='update_certificate_request' THEN
  SELECT * INTO cert FROM public.insurance_certificate_requests WHERE id=(p_payload->>'id')::uuid AND organization_id=org AND deleted_at IS NULL FOR UPDATE;
@@ -297,6 +319,7 @@ BEGIN
  v_id:=coalesce((p_payload->>'document_id')::uuid,cert.document_id);
  IF v_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.insurance_documents WHERE id=v_id AND organization_id=org AND status='ready' AND scan_status IN('clean','not_configured') AND family='certificate' AND deleted_at IS NULL AND (facility_id IS NULL OR facility_id=cert.facility_id)) THEN RAISE EXCEPTION 'Certificate evidence unavailable or mismatched' USING ERRCODE='22023'; END IF;
  IF p_payload->>'status'='issued' AND v_id IS NULL THEN RAISE EXCEPTION 'Issued certificate requires stored certificate evidence' USING ERRCODE='22023'; END IF;
+ PERFORM haven.insurance_lock_actor(actor,org,ARRAY[a.actor_role_text]);
  UPDATE public.insurance_certificate_requests SET status=p_payload->>'status',document_id=v_id,note=coalesce(p_payload->>'note',note),version=version+1,updated_at=now() WHERE id=cert.id RETURNING * INTO cert; RETURN to_jsonb(cert);
  END IF;
  RAISE EXCEPTION 'Unknown insurance command' USING ERRCODE='22023';
@@ -311,6 +334,16 @@ REVOKE ALL ON FUNCTION public.insurance_workspace(text,jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.insurance_workspace(text,jsonb) TO authenticated;
 REVOKE ALL ON FUNCTION haven.insurance_workspace_impl(text,jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION haven.insurance_workspace_impl(text,jsonb) TO authenticated;
+-- Trusted processing uses a server-derived actor rather than an end-user JWT.
+-- Recheck that actor after document lock waits and retain authority row locks
+-- until the processing mutation commits.
+CREATE FUNCTION haven.insurance_lock_processing_actor(p_actor uuid,p_org uuid) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$ BEGIN
+ PERFORM 1 FROM auth.users WHERE id=p_actor FOR SHARE;
+ PERFORM 1 FROM public.user_profiles WHERE id=p_actor FOR SHARE;
+ IF NOT EXISTS(SELECT 1 FROM public.user_profiles p JOIN auth.users u ON u.id=p.id WHERE p.id=p_actor AND p.organization_id=p_org AND p.app_role IN('owner','org_admin') AND p.is_active AND p.deleted_at IS NULL AND u.deleted_at IS NULL AND (u.banned_until IS NULL OR u.banned_until<=now())) THEN RAISE EXCEPTION 'Current insurance manager required after waiting' USING ERRCODE='42501'; END IF;
+END $$;
+REVOKE ALL ON FUNCTION haven.insurance_lock_processing_actor(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
 CREATE FUNCTION haven.insurance_processing_impl(p_action text,p_payload jsonb) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE org uuid;actor uuid;v_id uuid;v_run uuid;v_facility uuid;doc public.insurance_documents;d public.insurance_drafts;v_status text;
 BEGIN
@@ -321,6 +354,7 @@ BEGIN
  IF v_id IS NULL OR nullif(btrim(p_payload->>'filename'),'') IS NULL THEN RAISE EXCEPTION 'Document identity and filename required' USING ERRCODE='22023'; END IF;
  IF p_payload->>'family' NOT IN('policy','declarations','endorsement','certificate','renewal','cancellation','nonrenewal','loss_run','other') OR p_payload->>'family' IS NULL THEN RAISE EXCEPTION 'Invalid document family' USING ERRCODE='22023'; END IF;
  IF v_facility IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.facilities WHERE id=v_facility AND organization_id=org AND deleted_at IS NULL) THEN RAISE EXCEPTION 'Invalid document facility' USING ERRCODE='22023'; END IF;
+ PERFORM haven.insurance_lock_processing_actor(actor,org);
  INSERT INTO public.insurance_documents(id,organization_id,facility_id,filename,sha256,mime_type,byte_size,family,storage_path,created_by)
  VALUES(v_id,org,v_facility,p_payload->>'filename',p_payload->>'sha256',p_payload->>'mime_type',(p_payload->>'byte_size')::integer,p_payload->>'family',org::text||'/'||v_id::text,actor)
  ON CONFLICT(organization_id,sha256) DO NOTHING;
@@ -337,6 +371,7 @@ BEGIN
  SELECT * INTO doc FROM public.insurance_documents WHERE id=v_id AND organization_id=org AND deleted_at IS NULL FOR UPDATE;
  IF doc.id IS NULL THEN RAISE EXCEPTION 'Document not found' USING ERRCODE='P0002'; END IF;
  IF doc.facility_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.facilities WHERE id=doc.facility_id AND organization_id=org AND deleted_at IS NULL) THEN RAISE EXCEPTION 'Document facility unavailable' USING ERRCODE='42501'; END IF;
+ PERFORM haven.insurance_lock_processing_actor(actor,org);
  IF p_action='finish_document' THEN
  IF doc.status='ready' THEN RETURN to_jsonb(doc); END IF;
  v_status:=p_payload->>'status';

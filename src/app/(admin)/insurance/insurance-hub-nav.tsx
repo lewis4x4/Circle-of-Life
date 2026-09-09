@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/admin/insurance/documents", label: "Documents" },
   { href: "/admin/insurance/policies/new", label: "New policy" },
   { href: "/admin/insurance/renewals", label: "Renewals" },
+  { href: "/admin/insurance/servicing", label: "Servicing" },
   { href: "/admin/insurance/renewal-packages", label: "Renewal packages" },
   { href: "/admin/insurance/claims", label: "Claims" },
   { href: "/admin/insurance/loss-runs", label: "Loss runs" },
@@ -30,26 +31,27 @@ export function InsuranceHubNav() {
       className="flex flex-wrap gap-2 rounded-xl border border-slate-200/80 bg-white/80 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70"
       aria-label="Insurance sections"
     >
-      {LINKS.filter((item) => item.label !== "New policy" || canManage).map(
-        (item) => {
-          const active = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                buttonVariants({
-                  variant: active ? "default" : "outline",
-                  size: "sm",
-                }),
-                active && "pointer-events-none",
-              )}
-            >
-              {item.label}
-            </Link>
-          );
-        },
-      )}
+      {LINKS.filter(
+        (item) =>
+          !["New policy", "Servicing"].includes(item.label) || canManage,
+      ).map((item) => {
+        const active = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              buttonVariants({
+                variant: active ? "default" : "outline",
+                size: "sm",
+              }),
+              active && "pointer-events-none",
+            )}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
       {canManage && (
         <Link
           href="/admin/insurance/documents#upload"

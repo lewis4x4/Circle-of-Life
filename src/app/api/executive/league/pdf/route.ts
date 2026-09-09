@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { requireAdminApiActor } from "@/lib/admin/api-auth";
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { buildExecutiveLeaguePrintHtml } from "@/lib/executive/league-print";
 import { loadExecutiveLeagueData } from "@/lib/executive/load-league-data";
 import { logError } from "@/lib/observability/logger";
@@ -10,16 +10,26 @@ import {
 } from "@/lib/reports/export-storage";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+const PORTFOLIO_ROLES = ["owner", "org_admin"] as const;
+
+function privateResponse(response: NextResponse) {
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
+}
 
 export async function GET() {
-  const auth = await requireAdminApiActor();
-  if ("response" in auth) return auth.response;
-
-  const data = await loadExecutiveLeagueData(auth.actor.admin, auth.actor.organization_id);
-  const html = buildExecutiveLeaguePrintHtml(data);
+  const auth = await requireCurrentApiActor({
+    allowedRoles: PORTFOLIO_ROLES,
+    scope: "executive.league.pdf",
+  });
+  if ("response" in auth) return privateResponse(auth.response);
+  const { actor } = auth;
 
   let browser;
   try {
+    const data = await loadExecutiveLeagueData(actor.admin, actor.organizationId);
+    const html = buildExecutiveLeaguePrintHtml(data);
     const { chromium } = await import("playwright");
     browser = await chromium.launch({
       headless: true,
@@ -39,8 +49,16 @@ export async function GET() {
       },
     });
 
-    const storagePath = executiveLeaguePdfStoragePath(auth.actor.organization_id);
-    const upload = await auth.actor.admin.storage
+    const storageAuth = await revalidateCurrentApiActor(actor, {
+      allowedRoles: PORTFOLIO_ROLES,
+      scope: "executive.league.pdf.storage-revalidate",
+    });
+    if ("response" in storageAuth) return privateResponse(storageAuth.response);
+    if (storageAuth.actor.organizationId !== actor.organizationId) {
+      return privateResponse(NextResponse.json({ error: "Report not found." }, { status: 404 }));
+    }
+    const storagePath = executiveLeaguePdfStoragePath(actor.organizationId);
+    const upload = await storageAuth.actor.admin.storage
       .from(REPORT_EXPORT_BUCKET)
       .upload(storagePath, pdf, {
         contentType: "application/pdf",
@@ -50,10 +68,20 @@ export async function GET() {
       logError("executive.league.pdf.storage", upload.error);
     }
 
+    const returnAuth = await revalidateCurrentApiActor(storageAuth.actor, {
+      allowedRoles: PORTFOLIO_ROLES,
+      scope: "executive.league.pdf.return-revalidate",
+    });
+    if ("response" in returnAuth) return privateResponse(returnAuth.response);
+    if (returnAuth.actor.organizationId !== actor.organizationId) {
+      return privateResponse(NextResponse.json({ error: "Report not found." }, { status: 404 }));
+    }
+
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
+        "X-Content-Type-Options": "nosniff",
         "Content-Disposition": 'attachment; filename="executive-league.pdf"',
         "Cache-Control": "private, no-store",
       },
@@ -62,7 +90,7 @@ export async function GET() {
     logError("executive.league.pdf.render", error);
     return NextResponse.json(
       { error: "Could not generate executive league PDF." },
-      { status: 500 },
+      { status: 500, headers: { "Cache-Control": "private, no-store" } },
     );
   } finally {
     await browser?.close();

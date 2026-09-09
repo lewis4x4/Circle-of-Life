@@ -12,6 +12,7 @@ import type {
   CertificateRequest,
   InsurancePolicy,
 } from "@/lib/insurance/workspace-types";
+import { ServicingContextLink } from "./servicing-client";
 import { PolicyDraftEditor } from "./policy-draft-editor";
 import {
   Field,
@@ -540,11 +541,13 @@ export function InsurancePolicyPage() {
                         Limit sharing
                       </dt>
                       <dd>
-                        {policy.shared_limit == null
-                          ? "Unknown"
-                          : policy.shared_limit
-                            ? "Shared across insured locations; not a separate limit per facility"
-                            : "Not shared, as reviewed"}
+                        {policy.verification_status !== "verified"
+                          ? "Awaiting review"
+                          : policy.shared_limit == null
+                            ? "Unknown"
+                            : policy.shared_limit
+                              ? "Shared across insured locations; not a separate limit per facility"
+                              : "Not shared, as reviewed"}
                       </dd>
                     </div>
                   </>
@@ -1048,9 +1051,10 @@ export function InsuranceCertificatesPage() {
               Our coverage: request a certificate
             </h2>
             <p className="text-sm">
-              A request records what the broker needs. It is not automatically
-              sent or issued. Only a manager can record issuance with the issued
-              certificate attached.
+              A request is recorded in Haven. The operator sends it through the
+              broker’s channel and records acknowledgment and issued evidence
+              here. It is not automatically sent or issued. Only a manager can
+              record issuance with the issued certificate attached.
             </p>
             <CertificateForm workspace={state.data} refresh={state.refresh} />
           </section>
@@ -1069,14 +1073,7 @@ export function InsuranceCertificatesPage() {
               ))
             )}
           </section>
-          <section className={panelClass}>
-            <h2 className="text-lg font-semibold">Vendor evidence</h2>
-            <p>
-              Vendor certificates are separate from our issued certificates.
-              Requirement acceptance, exceptions and vendor evidence workflows
-              remain in the subsequent servicing segment.
-            </p>
-          </section>
+          <ServicingContextLink kind="vendor_evidence" />
         </>
       )}
     </WorkspacePage>
