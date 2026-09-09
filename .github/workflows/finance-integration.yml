@@ -1,0 +1,49 @@
+name: Finance and platform audit verification
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+jobs:
+  deterministic-finance-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Full unit suite including optional benchmark fixtures
+        run: |
+          mkdir -p test-results/finance-integration/performance
+          npm test
+        env:
+          HAVEN_PERF_BENCH: test-results/finance-integration/performance
+      - run: npm run test:finance-integration
+      - run: npm run test:platform-audit
+      - run: npm run test:audit-edge
+      - run: npm run test:finance-provider-contract
+      - name: Required segment gates including SQL replay
+        run: npm run segment:gates -- --segment HFA-CI
+        env:
+          CI: 'true'
+          REQUIRE_PG_VERIFY: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: finance-audit-evidence
+          path: |
+            test-results/finance-integration/
+            test-results/agent-gates/
+          if-no-files-found: error
+# Provider/live tests require verified identities and separate activation authority.
+# No production credentials or writes belong in this deterministic PR job.

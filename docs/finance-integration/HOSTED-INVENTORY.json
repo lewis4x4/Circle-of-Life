@@ -1,0 +1,113 @@
+{
+  "target_identity": "manfqmasfqppukpobpld.supabase.co",
+  "observed_at": "2026-09-08T22:55:40.799Z",
+  "layer": "hosted-read-only-REST",
+  "inventory": {
+    "organizations": {
+      "rows": [
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "Circle of Life Assisted Living Communities",
+          "status": "active",
+          "timezone": "America/New_York"
+        }
+      ],
+      "count": 1,
+      "complete": true
+    },
+    "entities": {
+      "rows": [
+        {
+          "id": "00000000-0000-0000-0001-000000000001",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "Pine House, Inc.",
+          "status": "active"
+        },
+        {
+          "id": "00000000-0000-0000-0001-000000000002",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "Smith & Sorensen LLC",
+          "status": "active"
+        },
+        {
+          "id": "00000000-0000-0000-0001-000000000003",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "Sorensen, Smith & Bay LLC",
+          "status": "active"
+        },
+        {
+          "id": "00000000-0000-0000-0001-000000000004",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "The Plantation on Summers, LLC",
+          "status": "active"
+        },
+        {
+          "id": "00000000-0000-0000-0001-000000000005",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "Grande Cypress ALF LLC",
+          "status": "active"
+        }
+      ],
+      "count": 5,
+      "complete": true
+    },
+    "facilities": {
+      "rows": [
+        {
+          "id": "00000000-0000-0000-0002-000000000001",
+          "entity_id": "00000000-0000-0000-0001-000000000001",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "Oakridge ALF",
+          "status": "active",
+          "timezone": "America/New_York"
+        },
+        {
+          "id": "00000000-0000-0000-0002-000000000002",
+          "entity_id": "00000000-0000-0000-0001-000000000002",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "Rising Oaks ALF",
+          "status": "active",
+          "timezone": "America/New_York"
+        },
+        {
+          "id": "00000000-0000-0000-0002-000000000003",
+          "entity_id": "00000000-0000-0000-0001-000000000003",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "Homewood Lodge, ALF",
+          "status": "active",
+          "timezone": "America/New_York"
+        },
+        {
+          "id": "00000000-0000-0000-0002-000000000004",
+          "entity_id": "00000000-0000-0000-0001-000000000004",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "The Plantation on Summers",
+          "status": "active",
+          "timezone": "America/New_York"
+        },
+        {
+          "id": "00000000-0000-0000-0002-000000000005",
+          "entity_id": "00000000-0000-0000-0001-000000000005",
+          "organization_id": "00000000-0000-0000-0000-000000000001",
+          "name": "Grande Cypress ALF",
+          "status": "active",
+          "timezone": "America/New_York"
+        }
+      ],
+      "count": 5,
+      "complete": true
+    }
+  },
+  "counts": {
+    "invoices": 90,
+    "payments": 0,
+    "journal_entries": 0,
+    "journal_entry_lines": 0,
+    "audit_log": 10808,
+    "resident_trust_accounts": 0,
+    "resident_trust_transactions": 0,
+    "trust_account_entries": 0,
+    "payroll_export_batches": 0,
+    "vendor_invoices": 0
+  }
+}

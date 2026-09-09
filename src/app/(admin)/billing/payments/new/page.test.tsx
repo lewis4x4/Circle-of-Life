@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdminNewPaymentPage from "./page";
@@ -8,7 +8,9 @@ type AnyRow = Record<string, unknown>;
 const mocks = vi.hoisted(() => ({
   searchParams: new URLSearchParams(""),
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
-  client: { from: () => ({}) as unknown },
+  client: { from: (table: string) => ({ table }) as unknown },
+  rpc: vi.fn(),
+  sessionId: "session-1",
 }));
 
 vi.mock("next/navigation", () => ({
@@ -47,6 +49,8 @@ function makeClient(opts: {
     return q;
   };
   return {
+    rpc: mocks.rpc,
+    auth: { getClaims: async () => ({ data: { claims: { sub: "actor-1", session_id: mocks.sessionId } }, error: null }) },
     from: (table: string) => {
       if (table === "residents") return builder(opts.residentsList, opts.residentSingle);
       if (table === "invoices") return builder(opts.invoicesList, null);
@@ -55,8 +59,11 @@ function makeClient(opts: {
   };
 }
 
-describe("AdminNewPaymentPage prefill reconciliation", () => {
+describe("HFA-007 HFA-008 payment command and prefill reconciliation", () => {
   beforeEach(() => {
+    sessionStorage.clear();
+    mocks.sessionId = "session-1";
+    mocks.rpc.mockReset();
     mocks.searchParams = new URLSearchParams({
       residentId: "r-pre",
       invoiceId: "inv-closed",
@@ -79,6 +86,63 @@ describe("AdminNewPaymentPage prefill reconciliation", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("keeps the same actor/session command identity after a failed allocation and displays receipt allocation", async () => {
+    mocks.searchParams = new URLSearchParams({ residentId: "r-a", invoiceId: "inv-open", amount: "125.00" });
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "Allocation failed" } });
+    mocks.rpc.mockImplementationOnce(async (_name: string, args: { p_id: string }) => ({
+      data: { payment_id: args.p_id, allocated_cents: 5000, unapplied_cents: 7500 }, error: null,
+    }));
+    const { container } = render(<AdminNewPaymentPage />);
+    await waitFor(() => expect((container.querySelectorAll("select")[1] as HTMLSelectElement).value).toBe("inv-open"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Record payment" })).toBeEnabled());
+    fireEvent.submit(container.querySelector("form")!);
+    expect(await screen.findByText("Allocation failed")).toBeInTheDocument();
+    expect(screen.queryByText("Payment recorded")).not.toBeInTheDocument();
+    const firstId = mocks.rpc.mock.calls[0][1].p_id;
+    expect(JSON.parse(sessionStorage.getItem("haven:finance:payment:actor-1")!).payload.p_id).toBe(firstId);
+    mocks.sessionId = "session-after-reauth";
+    await waitFor(() => expect(screen.getByRole("button", { name: "Record payment" })).toBeEnabled());
+    fireEvent.submit(container.querySelector("form")!);
+    expect(await screen.findByText("Payment recorded")).toBeInTheDocument();
+    expect(mocks.rpc.mock.calls[1][1].p_id).toBe(firstId);
+    expect(mocks.rpc.mock.calls[0][0]).toBe("record_finance_payment");
+    expect(screen.getByText(/75.00 remains unapplied/)).toBeInTheDocument();
+    expect(sessionStorage.getItem("haven:finance:payment:actor-1")).toBeNull();
+  });
+
+  it("recovers frozen content after reload instead of sending edited fields under a fresh identity", async () => {
+    sessionStorage.setItem("haven:finance:payment:actor-1", JSON.stringify({ actorId: "actor-1", originatingSessionId: "expired-session", payload: {
+      p_id: "original-command", p_resident_id: "r-a", p_invoice_id: "inv-open", p_payment_date: "2026-09-08", p_amount_cents: 2500,
+      p_method: "check", p_reference: null, p_payer_name: null, p_notes: null,
+    } }));
+    mocks.searchParams = new URLSearchParams({ residentId: "r-a", invoiceId: "inv-open", amount: "125.00" });
+    mocks.rpc.mockResolvedValue({ data: { payment_id: "original-command", allocated_cents: 2500, unapplied_cents: 0 }, error: null });
+    const { container } = render(<AdminNewPaymentPage />);
+    await screen.findByRole("button", { name: "Recover earlier payment" });
+    await waitFor(() => expect((container.querySelectorAll("select")[1] as HTMLSelectElement).value).toBe("inv-open"));
+    fireEvent.submit(container.querySelector("form")!);
+    expect(await screen.findByText(/An earlier payment is unresolved/)).toBeInTheDocument();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Recover earlier payment" }));
+    expect(await screen.findByText("Payment recorded")).toBeInTheDocument();
+    expect(mocks.rpc).toHaveBeenCalledWith("record_finance_payment", expect.objectContaining({ p_id: "original-command", p_amount_cents: 2500 }));
+    expect(screen.getByRole("link", { name: "Resident billing" })).toHaveAttribute("href", "/admin/residents/r-a/billing");
+  });
+
+  it("clears a rejected request only after an authoritative cancellation tombstone", async () => {
+    sessionStorage.setItem("haven:finance:payment:actor-1", JSON.stringify({ actorId: "actor-1", originatingSessionId: "expired-session", payload: {
+      p_id: "rejected-command", p_resident_id: "r-a", p_invoice_id: "inv-closed", p_payment_date: "2026-09-08", p_amount_cents: 2500,
+      p_method: "check", p_reference: null, p_payer_name: null, p_notes: null,
+    } }));
+    mocks.rpc.mockResolvedValue({ data: { status: "cancelled", payment_id: "rejected-command" }, error: null });
+    render(<AdminNewPaymentPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Check outcome and cancel if unrecorded" }));
+    expect(await screen.findByText(/Earlier request cancelled with no payment recorded/)).toBeInTheDocument();
+    expect(mocks.rpc).toHaveBeenCalledWith("resolve_finance_payment", expect.objectContaining({ p_id: "rejected-command" }));
+    expect(sessionStorage.getItem("haven:finance:payment:actor-1")).toBeNull();
+    expect(screen.queryByText("Payment recorded")).not.toBeInTheDocument();
   });
 
   it("surfaces a deep-linked non-cohort resident and drops a closed prefilled invoice", async () => {

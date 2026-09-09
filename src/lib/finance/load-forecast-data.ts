@@ -1,3 +1,4 @@
+import { loadResidentMoneySnapshot } from "@/lib/finance/resident-money";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Tables } from "@/types/database";
@@ -18,6 +19,8 @@ import {
 
 export type ForecastSnapshot = {
   facilities: ForecastFacility[];
+  residentMoneyNeedsReview: boolean;
+  residentMoneyReviewFacilityIds: string[];
   dso: {
     summary: DsoSummary;
     rows: DsoFacilityRow[];
@@ -80,13 +83,6 @@ export async function loadFinanceForecastData(
     .is("deleted_at", null)
     .gte("payment_date", billedStart);
 
-  let trustEntriesQuery = supabase
-    .from("trust_account_entries")
-    .select("resident_id, facility_id, entry_date, balance_after_cents")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .order("entry_date", { ascending: false });
-
   let timeRecordsQuery = supabase
     .from("time_records")
     .select("staff_id, facility_id, clock_in, actual_hours, regular_hours, overtime_hours")
@@ -129,7 +125,6 @@ export async function loadFinanceForecastData(
     openInvoicesQuery = openInvoicesQuery.eq("facility_id", facilityId);
     billedInvoicesQuery = billedInvoicesQuery.eq("facility_id", facilityId);
     paymentsQuery = paymentsQuery.eq("facility_id", facilityId);
-    trustEntriesQuery = trustEntriesQuery.eq("facility_id", facilityId);
     timeRecordsQuery = timeRecordsQuery.eq("facility_id", facilityId);
     staffRatesQuery = staffRatesQuery.eq("facility_id", facilityId);
     vendorInvoicesQuery = vendorInvoicesQuery.eq("facility_id", facilityId);
@@ -142,7 +137,7 @@ export async function loadFinanceForecastData(
     openInvoicesRes,
     billedInvoicesRes,
     paymentsRes,
-    trustEntriesRes,
+    residentMoney,
     timeRecordsRes,
     staffRatesRes,
     vendorInvoicesRes,
@@ -153,7 +148,7 @@ export async function loadFinanceForecastData(
     openInvoicesQuery,
     billedInvoicesQuery,
     paymentsQuery,
-    trustEntriesQuery,
+    loadResidentMoneySnapshot(supabase, organizationId, facilityId),
     timeRecordsQuery,
     staffRatesQuery,
     vendorInvoicesQuery,
@@ -166,7 +161,6 @@ export async function loadFinanceForecastData(
     openInvoicesRes,
     billedInvoicesRes,
     paymentsRes,
-    trustEntriesRes,
     timeRecordsRes,
     staffRatesRes,
     vendorInvoicesRes,
@@ -186,9 +180,10 @@ export async function loadFinanceForecastData(
     Pick<Tables<"invoices">, "id" | "facility_id" | "resident_id" | "invoice_date" | "due_date" | "total" | "balance_due" | "status">
   >;
   const payments = (paymentsRes.data ?? []) as Array<Pick<Tables<"payments">, "facility_id" | "payment_date" | "amount">>;
-  const trustEntries = (trustEntriesRes.data ?? []) as Array<
-    Pick<Tables<"trust_account_entries">, "resident_id" | "facility_id" | "entry_date" | "balance_after_cents">
-  >;
+  const residentMoneyReviewFacilityIds = [...new Set(residentMoney.rows.filter(row => row.legacy_review_required || !row.ledger_matches_balance || row.balance_cents === null).map(row => row.facility_id))];
+  const residentMoneyNeedsReview = residentMoneyReviewFacilityIds.length > 0;
+  const trustEntries = residentMoney.rows.filter(row => row.balance_cents !== null).map(row => ({ resident_id: row.resident_id, facility_id: row.facility_id,
+    entry_date: residentMoney.as_of, balance_after_cents: row.balance_cents ?? 0 }));
   const timeRecords = (timeRecordsRes.data ?? []) as Array<
     Pick<Tables<"time_records">, "staff_id" | "facility_id" | "clock_in" | "actual_hours" | "regular_hours" | "overtime_hours">
   >;
@@ -205,6 +200,8 @@ export async function loadFinanceForecastData(
 
   return {
     facilities,
+    residentMoneyNeedsReview,
+    residentMoneyReviewFacilityIds,
     dso: buildDsoForecast({
       facilities,
       openInvoices,

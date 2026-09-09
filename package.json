@@ -83,7 +83,12 @@
     "import:homewood-residents": "node scripts/import-homewood-residents.mjs",
     "import:homewood-residents:dry": "node scripts/import-homewood-residents.mjs --dry-run",
     "promote:homewood-ar-live": "node scripts/promote-homewood-ar-live.mjs",
-    "promote:homewood-ar-live:dry": "node scripts/promote-homewood-ar-live.mjs --dry-run"
+    "promote:homewood-ar-live:dry": "node scripts/promote-homewood-ar-live.mjs --dry-run",
+    "test:finance-integration": "node scripts/finance-integration/run-tests.mjs finance",
+    "test:platform-audit": "node scripts/finance-integration/run-tests.mjs audit",
+    "test:finance-provider": "node scripts/finance-integration/provider-smoke.mjs",
+    "test:finance-provider-contract": "node --test scripts/finance-integration/qbo-identity.test.mjs",
+    "test:audit-edge": "node scripts/finance-integration/run-edge-tests.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
@@ -104,7 +109,7 @@
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "lucide-react": "^1.7.0",
-    "next": "16.2.11",
+    "next": "16.3.4",
     "next-themes": "^0.4.6",
     "playwright": "^1.59.1",
     "react": "19.2.4",
@@ -120,7 +125,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
-    "@next/bundle-analyzer": "^16.2.11",
+    "@next/bundle-analyzer": "16.3.4",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
@@ -131,7 +136,7 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9",
-    "eslint-config-next": "16.2.11",
+    "eslint-config-next": "16.3.4",
     "happy-dom": "^20.9.0",
     "pixelmatch": "^7.2.0",
     "pngjs": "^7.0.0",
@@ -144,6 +149,6 @@
   "overrides": {
     "hono": "^4.12.14",
     "postcss": "8.5.26",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4"
   }
 }

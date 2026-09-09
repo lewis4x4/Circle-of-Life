@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { formatCents } from "@/lib/finance/format-cents";
@@ -14,7 +14,7 @@ type AnyRow = Record<string, unknown>;
 const mocks = vi.hoisted(() => ({
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
   rpc: vi.fn(),
-  client: { from: () => ({}) as unknown, rpc: vi.fn() },
+  client: { from: (table: string) => ({ table }) as unknown, rpc: vi.fn() },
 }));
 
 vi.mock("next/navigation", () => ({
@@ -71,6 +71,16 @@ describe("AdminOpeningBalancePage", () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
+  });
+
+  it("creates an explicitly classified opening balance through its dedicated command", async () => {
+    const { container } = render(<AdminOpeningBalancePage />);
+    await screen.findByRole("option", { name: "Alpha, Alex" });
+    fireEvent.change(container.querySelector("select")!, { target: { value: "a0000000-0000-4000-8000-0000000000a1" } });
+    fireEvent.change(screen.getByLabelText(/due date/i), { target: { value: "2026-09-30" } });
+    fireEvent.change(container.querySelector('input[type="number"]')!, { target: { value: "123.45" } });
+    fireEvent.submit(container.querySelector("form")!);
+    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith("create_finance_opening_balance", expect.objectContaining({ p_amount_cents: 12345 })));
   });
 
   it("does not ship July 2026 launch copy or AR-report wording", () => {

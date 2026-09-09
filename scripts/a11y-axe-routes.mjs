@@ -27,7 +27,7 @@ async function main() {
 
   try {
     for (const route of routes) {
-      const context = await browser.newContext();
+      const context = await browser.newContext({ storageState: process.env.HAVEN_UI_STORAGE_STATE || undefined });
       const page = await context.newPage();
       const url = new URL(route, baseUrl).href;
       try {

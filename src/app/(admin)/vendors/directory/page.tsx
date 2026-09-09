@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,6 +23,7 @@ import type { Database } from "@/types/database";
 type VendorRow = Database["public"]["Tables"]["vendors"]["Row"];
 
 export default function VendorDirectoryPage() {
+  const router = useRouter();
   const supabase = createClient();
   const queryClient = useQueryClient();
   // Identity comes from the app-wide auth provider instead of a per-page
@@ -86,7 +89,7 @@ export default function VendorDirectoryPage() {
     setName("");
     await queryClient.invalidateQueries({ queryKey: ["vendors", "directory", organizationId] });
     if (data?.id) {
-      window.location.href = `/admin/vendors/${data.id}`;
+      router.push(`/admin/vendors/${data.id}`);
     }
   }
 

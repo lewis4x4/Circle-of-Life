@@ -114,7 +114,7 @@ export default function AdminOpeningBalancePage() {
 
     setSaving(true);
     try {
-      const rpcResult = (await supabase.rpc("haven_create_invoice_with_line_items" as never, {
+      const rpcResult = (await supabase.rpc("create_finance_opening_balance" as never, {
         p_facility_id: selectedFacilityId,
         p_resident_id: residentId,
         p_invoice_number: invoiceNumber,
@@ -122,25 +122,10 @@ export default function AdminOpeningBalancePage() {
         p_due_date: dueDate,
         p_period_start: periodStart,
         p_period_end: periodEnd,
-        p_subtotal: cents,
-        p_adjustments: 0,
-        p_tax: 0,
-        p_total: cents,
-        p_amount_paid: 0,
-        p_balance_due: cents,
+        p_amount_cents: cents,
         p_payer_type: payerType,
         p_payer_name: payerName,
         p_notes: notes.trim() || "Opening balance",
-        p_line_items: [
-          {
-            line_type: "room_and_board",
-            description: "Opening balance",
-            quantity: 1,
-            unit_price: cents,
-            total: cents,
-            sort_order: 1,
-          },
-        ],
       } as never)) as unknown as {
         data: { invoice_id: string | null; inserted: boolean }[] | null;
         error: { message: string } | null;

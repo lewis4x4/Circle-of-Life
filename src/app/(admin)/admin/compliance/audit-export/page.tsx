@@ -58,6 +58,7 @@ export default function AuditLogExportPage() {
   const role = appRole as AppRole;
   const roleOk = EXPORT_ROLES.has(role);
   const { selectedFacilityId } = useFacilityStore();
+  const facilityRequired = role === "facility_admin" && !isValidFacilityIdForQuery(selectedFacilityId);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -118,7 +119,7 @@ export default function AuditLogExportPage() {
   });
 
   const onExport = async () => {
-    if (authLoading) return;
+    if (authLoading || facilityRequired) return;
     setFetchError(null);
     setLoading(true);
     try {
@@ -256,7 +257,7 @@ export default function AuditLogExportPage() {
         <CardHeader>
           <CardTitle>New export</CardTitle>
           <CardDescription>
-            Exports include metadata columns (table, record id, action, user, org, facility, timestamp). Leave
+            Exports include event metadata, before/after values, and changed fields. Leave
             dates empty to include all rows in scope.
           </CardDescription>
         </CardHeader>
@@ -284,13 +285,16 @@ export default function AuditLogExportPage() {
             </div>
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Facility scope follows the header selector: choose a facility to filter audit rows to that site and
-            org-wide rows; choose &quot;All facilities&quot; for the full organization export.
+            Choose a facility in the header to export only that facility’s audit rows.
+            Owners and organization administrators can choose &quot;All facilities&quot; to include organization-wide history.
           </p>
+          {facilityRequired && (
+            <p role="status" className="text-sm text-slate-600 dark:text-slate-400">Choose a facility in the header before exporting.</p>
+          )}
           <Button
             type="button"
             onClick={() => void onExport()}
-            disabled={exportBlocked}
+            disabled={exportBlocked || facilityRequired}
             className="gap-2"
           >
             <Download className="h-4 w-4" aria-hidden />

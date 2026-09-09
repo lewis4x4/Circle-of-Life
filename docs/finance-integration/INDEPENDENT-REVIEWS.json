@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "reviews": [
+    {
+      "scope": "F00 foundation payload/tests/CI/dependency compatibility plus audit337 and read-only QBO identity smoke",
+      "verdict": "APPROVE",
+      "reviewer": "f00_independent_review",
+      "code_commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba plus uncommitted reviewed files",
+      "audit_migration_sha256": "0a7448bbc48458f40d96440f66918e2cd83332a8b8e60bbc5fb636de4d4db41c",
+      "tests": {
+        "finance_unit": 10,
+        "csv_unit": 7,
+        "qbo_contract": 4,
+        "audit_edge": 11,
+        "audit_page": 6,
+        "independent_audit_sql": 38
+      },
+      "limits": [
+        "F01 finance336 excluded from this review",
+        "Company identity contracts use simulated transport; actual provider smoke blocked",
+        "Native SQL is not hosted Auth/PostgREST",
+        "Full platform audit/independent anchoring/retention/live acceptance remain open"
+      ],
+      "corrections": [
+        "Required Deno Edge tests added to unconditional CI",
+        "Router effect dependency preserved",
+        "Runner artifacts retain argv, exit, signal, and fixture hashes"
+      ]
+    },
+    {
+      "scope": "F01 finance336 local commands, current authority, UI recovery and period serialization",
+      "verdict": "APPROVE",
+      "reviewer": "audit_boundary_review",
+      "migration_sha256": "57d5164db0f0195d6926617feb393336534dc39d836b454240582ebd16c35c1f",
+      "evidence": [
+        "25 targeted UI/helper assertions passed",
+        "Full finance SQL regression exit0",
+        "Independent concurrent same/different payment, command/invoice lock revocation and close/post ordering probes passed"
+      ],
+      "limits": [
+        "Real Auth/PostgREST proof remains separate",
+        "Cross-tab/browser-loss recovery, full correction/remittance/payroll/provider reconciliation not accepted"
+      ]
+    },
+    {
+      "scope": "F02 read alignment only",
+      "verdict": "APPROVE",
+      "reviewer": "finance_source_inventory",
+      "migration_sha256": "44abf0be26386d51d938e5736d472ed941b83af61a85de986385d5f9f582f069",
+      "evidence": [
+        "Independent338 replay/snapshot regression passed",
+        "Three facility-admin scope assertions passed",
+        "Three forecast/display tests passed",
+        "Scoped source diagnostics and lint passed"
+      ],
+      "corrections": [
+        "Legacy-only and mixed/mismatched facilities render review required instead of a fabricated zero"
+      ],
+      "limits": [
+        "Historical classification, transfers, cutover and bank/book reconciliation remain open"
+      ]
+    }
+  ]
+}

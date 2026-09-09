@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "status": "NOT_RELEASED",
+  "baseline_commit": "3dec84bbdc216d1c58e7296568b007ebe6f101be",
+  "branch": "codex/haven-finance-integration",
+  "expected_supabase_project": "manfqmasfqppukpobpld",
+  "production_outbound_enabled": false,
+  "production_schema_applied": false,
+  "netlify_site_id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+  "deployment_id": null,
+  "provider_company_ids": [],
+  "approvals": [],
+  "independent_reviews": [],
+  "baseline_refresh_commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "upstream_main_commit": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+  "observed_production_deployment_id": "6aa054790bc9d700089b72cb"
+}

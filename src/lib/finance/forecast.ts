@@ -9,10 +9,8 @@ export type ForecastInvoice = Pick<
 
 export type ForecastPayment = Pick<Tables<"payments">, "facility_id" | "payment_date" | "amount">;
 
-export type ForecastTrustEntry = Pick<
-  Tables<"trust_account_entries">,
-  "resident_id" | "facility_id" | "entry_date" | "balance_after_cents"
->;
+// Canonical current account snapshots supplied by resident_money_snapshot.
+export type ForecastTrustEntry = { resident_id: string; facility_id: string; entry_date: string; balance_after_cents: number };
 
 export type ForecastTimeRecord = Pick<
   Tables<"time_records">,
@@ -251,7 +249,7 @@ export function buildDsoForecast(input: {
         facilityName: facility?.facilityName ?? facilityId,
         openArCents,
         trustCoverageCents,
-        netExposureCents: Math.max(0, openArCents - trustCoverageCents),
+        netExposureCents: openArCents,
         trailing90BilledCents,
         trailing90CollectedCents,
         currentDsoDays: safeDays(openArCents, trailing90BilledCents, billedWindowDays),
