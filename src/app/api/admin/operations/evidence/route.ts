@@ -1,3 +1,4 @@
+import { readAllOperationRows } from "@/lib/operations/read-all";
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireOperationsActor, revalidateOperationsActor, type OperationsActor } from "@/lib/operations/auth";
@@ -112,12 +113,13 @@ export async function GET(request: NextRequest) {
   const scope = "admin.operations.evidence.list";
   const read = await readReceipt(auth.actor, receiptId, scope);
   if ("response" in read) return read.response;
-  const { data, error } = await auth.actor.currentActor.client
+  const { data, error } = await readAllOperationRows<EvidenceRow>(() => auth.actor.currentActor.client
     .from("operation_evidence" as never)
     .select(EVIDENCE_SELECT)
     .eq("organization_id", auth.actor.organizationId)
     .eq("receipt_id", receiptId)
-    .order("prepared_at", { ascending: true });
+    .order("prepared_at", { ascending: true })
+    .order("id", { ascending: true }));
   if (error) {
     logError(scope, error, { action: "list", receiptId });
     return NextResponse.json({ error: "Evidence unavailable", outcome: "uncertain" }, { status: 503 });

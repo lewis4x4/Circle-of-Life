@@ -14,6 +14,9 @@ const rpc = vi.fn();
 const isCalls: Array<ReturnType<typeof vi.fn>> = [];
 const maybeSingle = vi.fn();
 const order = vi.fn();
+let readCap = 1000;
+let failPageAt: number | null = null;
+const readRanges: number[] = [];
 let listResult: { data: unknown; error: unknown } = { data: [], error: null };
 const selects: string[] = [];
 const from = vi.fn(() => {
@@ -21,8 +24,13 @@ const from = vi.fn(() => {
   for (const method of ["eq", "is", "not"]) query[method] = vi.fn(() => query);
   query.select = vi.fn((columns: string) => { selects.push(columns); return query; });
   isCalls.push(query.is as ReturnType<typeof vi.fn>);
-  // The history is ordered by recorded_at and then by id; the last order call resolves the list.
-  query.order = vi.fn((column: string, options: unknown) => { order(column, options); return column === "id" ? Promise.resolve(listResult) : query; });
+  // The history uses recorded_at/id order and range reads until empty.
+  query.order = vi.fn((column: string, options: unknown) => { order(column, options); return query; });
+  query.range = async (start: number, end: number) => {
+    readRanges.push(start);
+    if (start === failPageAt) return { data: null, error: { message: "later page unavailable" } };
+    return Array.isArray(listResult.data) ? { ...listResult, data: listResult.data.slice(start, Math.min(end + 1, start + readCap)) } : listResult;
+  };
   query.maybeSingle = maybeSingle;
   return query;
 });
@@ -30,6 +38,7 @@ const actor = { id: "actor", organizationId: "org", appRole: "maintenance_role",
 const facilityId = "33333333-3333-4333-8333-333333333333";
 const occurrenceId = "55555555-5555-4555-8555-555555555555";
 const receiptId = "77777777-7777-4777-8777-777777777777";
+const occurrenceState = { id: occurrenceId, status: "pending", execution_state: "none", occurrence_revision: "a".repeat(64), effective_receipt_id: null, performed_at: null };
 const key = "record:2026-09-10:0001";
 const post = (body: unknown) => new Request("https://local.test/record", { method: "POST", body: JSON.stringify(body) }) as never;
 const params = (id: string) => ({ params: Promise.resolve({ id }) });
@@ -37,10 +46,14 @@ const receiptOutcome = { receipt: { id: receiptId, completion_state: "completed"
 
 beforeEach(() => {
   vi.clearAllMocks();
+  selects.length = 0;
+  readCap = 1000;
+  failPageAt = null;
+  readRanges.length = 0;
   vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
   vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor } as never);
   vi.mocked(actorCanAccessFacility).mockResolvedValue(true);
-  maybeSingle.mockResolvedValue({ data: { id: occurrenceId, facility_id: facilityId, organization_id: "org", occurrence_kind: "scheduled" }, error: null });
+  maybeSingle.mockResolvedValue({ data: { ...occurrenceState, facility_id: facilityId, organization_id: "org", occurrence_kind: "scheduled" }, error: null });
   listResult = { data: [], error: null };
 });
 
@@ -193,6 +206,69 @@ describe("receipts read", () => {
     expect((await RECEIPTS(new NextRequest("https://local.test/receipts") as never, params(occurrenceId))).status).toBe(404);
   });
 
+  it("returns the whole chain under a small provider cap and refuses a partial chain after a later failure", async () => {
+    readCap = 17;
+    const receipts = Array.from({ length: 1101 }, (_, i) => ({ id: `receipt-${i}`, receipt_kind: i % 2 ? "correction" : "performance" }));
+    listResult = { data: receipts, error: null };
+    const request = new NextRequest("https://local.test/receipts");
+    const response = await RECEIPTS(request, params(occurrenceId));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ receipts, occurrence: occurrenceState });
+    expect(readRanges.slice(0, 3)).toEqual([0, 17, 34]);
+    failPageAt = 17;
+    const failed = await RECEIPTS(request, params(occurrenceId));
+    expect(failed.status).toBe(503);
+    expect(await failed.json()).toEqual({ error: "Receipts unavailable" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("returns only safe current occurrence facts instead of inferring state from an immutable receipt", async () => {
+    const current = { id: occurrenceId, status: "completed", execution_state: "completed", occurrence_revision: "f".repeat(64), effective_receipt_id: receiptId, performed_at: "2026-09-10T15:00:00Z" };
+    maybeSingle.mockResolvedValue({ data: { ...current, facility_id: facilityId, organization_id: "org", occurrence_kind: "scheduled", subject_id: "private-subject", object_path: "private-object", completion_notes: "private-notes" }, error: null });
+    const receipts = [{ id: receiptId, completion_state: "performed_missing_evidence", evidence_status_current: "complete" }];
+    listResult = { data: receipts, error: null };
+    const response = await RECEIPTS(new NextRequest("https://local.test/receipts"), params(occurrenceId));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({ receipts, occurrence: current });
+    expect(Object.keys(body.occurrence).sort()).toEqual(["effective_receipt_id", "execution_state", "id", "occurrence_revision", "performed_at", "status"]);
+    expect(JSON.stringify(body)).not.toContain("private-");
+    expect(selects[0]).toBe("id, facility_id, organization_id, occurrence_kind, status, execution_state, occurrence_revision, effective_receipt_id, performed_at");
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("retries when a lost-answer command commits between target and receipt reads", async () => {
+    const before = { ...occurrenceState, facility_id: facilityId, organization_id: "org", occurrence_kind: "scheduled" };
+    const after = { ...before, status: "completed", execution_state: "completed", occurrence_revision: "b".repeat(64), effective_receipt_id: receiptId, performed_at: "2026-09-10T15:00:00Z" };
+    maybeSingle.mockResolvedValueOnce({ data: before, error: null }).mockResolvedValue({ data: after, error: null });
+    const receipts = [{ id: receiptId, completion_state: "completed" }];
+    listResult = { data: receipts, error: null };
+    const response = await RECEIPTS(new NextRequest("https://local.test/receipts"), params(occurrenceId));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ receipts, occurrence: { id: after.id, status: after.status, execution_state: after.execution_state, occurrence_revision: after.occurrence_revision, effective_receipt_id: after.effective_receipt_id, performed_at: after.performed_at } });
+    expect(maybeSingle).toHaveBeenCalledTimes(4);
+    expect(actorCanAccessFacility).toHaveBeenCalledTimes(4);
+    expect(readRanges).toEqual([0, 1, 0, 1]);
+  });
+
+  it("returns retryable 503 after a second lifecycle change rather than a mixed snapshot", async () => {
+    for (const revision of ["a", "b", "c", "d"]) maybeSingle.mockResolvedValueOnce({ data: { ...occurrenceState, occurrence_revision: revision.repeat(64), facility_id: facilityId, organization_id: "org", occurrence_kind: "scheduled" }, error: null });
+    listResult = { data: [{ id: receiptId }], error: null };
+    const response = await RECEIPTS(new NextRequest("https://local.test/receipts"), params(occurrenceId));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "Occurrence changed while reading receipts; retry", outcome: "uncertain" });
+    expect(maybeSingle).toHaveBeenCalledTimes(4);
+  });
+
+  it("fails closed if the occurrence or site authority disappears during the chain read", async () => {
+    const before = { ...occurrenceState, facility_id: facilityId, organization_id: "org", occurrence_kind: "scheduled" };
+    maybeSingle.mockResolvedValueOnce({ data: before, error: null }).mockResolvedValueOnce({ data: null, error: null });
+    expect((await RECEIPTS(new NextRequest("https://local.test/receipts"), params(occurrenceId))).status).toBe(404);
+    maybeSingle.mockResolvedValue({ data: before, error: null });
+    vi.mocked(actorCanAccessFacility).mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    expect((await RECEIPTS(new NextRequest("https://local.test/receipts"), params(occurrenceId))).status).toBe(404);
+  });
+
   it("lists the whole receipt history of a granted occurrence in recorded order through the session client", async () => {
     const correctionId = "88888888-8888-4888-8888-888888888888";
     const history = [
@@ -204,11 +280,12 @@ describe("receipts read", () => {
     const response = await RECEIPTS(new NextRequest("https://local.test/receipts") as never, params(occurrenceId));
     expect(response.status).toBe(200);
     // Every receipt of every chain is returned verbatim: recordings, corrections, reversals and reviews.
-    expect(await response.json()).toEqual({ receipts: history });
-    expect(from).toHaveBeenLastCalledWith("operation_execution_receipts");
+    expect(await response.json()).toEqual({ receipts: history, occurrence: occurrenceState });
+    expect(from).toHaveBeenCalledWith("operation_execution_receipts");
+    expect(from).toHaveBeenLastCalledWith("operation_task_instances");
     // Recorded order, with the id as a deterministic tiebreak for receipts written in the same instant.
-    expect(order.mock.calls).toEqual([["recorded_at", { ascending: true }], ["id", { ascending: true }]]);
-    const receiptSelect = (selects[selects.length - 1] ?? "").split(", ");
+    expect(order.mock.calls.slice(0, 2)).toEqual([["recorded_at", { ascending: true }], ["id", { ascending: true }]]);
+    const receiptSelect = (selects.find((columns) => columns.includes("evidence_status_current")) ?? "").split(", ");
     // COL-143: the current evidence status and satisfaction instant ride beside the immutable receipt columns.
     expect(receiptSelect).toContain("evidence_status_current");
     expect(receiptSelect).toContain("evidence_satisfied_at");

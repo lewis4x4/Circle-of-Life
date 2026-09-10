@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, AlertTriangle, Zap, Calendar, MoreHorizontal, Filter, BarChart3, Users, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, Zap, Calendar, ListTodo, MoreHorizontal, Filter, BarChart3, Users, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
@@ -337,6 +337,13 @@ export default function OperationsTodayPage() {
 
         <div className="flex items-center gap-3">
           {adequacy && getAdequacyBadge()}
+
+          <Link href="/admin/operations/work">
+            <Button variant="outline" size="sm">
+              <ListTodo className="h-4 w-4 mr-2" />
+              Site work
+            </Button>
+          </Link>
 
           <Link href="/admin/operations/calendar">
             <Button variant="outline" size="sm">
