@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  COMPLETION_STATES,
+  RECEIPT_KINDS,
+  RECEIPT_SELECT,
+  correctWorkBodySchema,
+  currentReceiptFields,
+  isCorrectionOutcome,
   isIssueOutcome,
   isReceiptOutcome,
+  isReversalOutcome,
   mapReceiptRpcError,
   payloadProblem,
   recordWorkBodySchema,
   reportIssueBodySchema,
+  reverseWorkBodySchema,
   verifyWorkBodySchema,
   withoutRequestHash,
 } from "./receipts";
@@ -14,8 +22,10 @@ import {
 const uuid = "11111111-1111-4111-8111-111111111111";
 const receiptId = "22222222-2222-4222-8222-222222222222";
 const key = "record:2026-09-10:0001";
+const revision = "a".repeat(64);
 const past = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 const future = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+const binding = { receipt_id: receiptId, receipt_revision: revision };
 
 describe("record work payload", () => {
   it("accepts a routine self record with flat typed values and refuses nested values or unknown fields", () => {
@@ -51,13 +61,70 @@ describe("record work payload", () => {
     expect(recordWorkBodySchema.safeParse({ request_key: key, payload: { outcome: "performed", issue: { kind: "problem", summary: "", severity: "high" } } }).success).toBe(false);
   });
 
-  it("keeps verification to a decision and a note, and issue reports to one scope", () => {
-    expect(verifyWorkBodySchema.safeParse({ request_key: key, payload: { decision: "verified", note: "Checked the panel photo" } }).success).toBe(true);
-    expect(verifyWorkBodySchema.safeParse({ request_key: key, payload: { decision: "rejected" } }).success).toBe(false);
+  it("keeps verification to a decision, a note and the reviewed receipt, and issue reports to one scope", () => {
+    expect(verifyWorkBodySchema.safeParse({ request_key: key, payload: { decision: "verified", note: "Checked the panel photo", ...binding } }).success).toBe(true);
+    expect(verifyWorkBodySchema.safeParse({ request_key: key, payload: { decision: "rejected", ...binding } }).success).toBe(false);
+    // COL-145: a review is bound to the exact receipt the reviewer read; the route refuses an unbound review.
+    expect(verifyWorkBodySchema.safeParse({ request_key: key, payload: { decision: "verified" } }).success).toBe(false);
+    expect(verifyWorkBodySchema.safeParse({ request_key: key, payload: { decision: "verified", receipt_id: receiptId } }).success).toBe(false);
+    expect(verifyWorkBodySchema.safeParse({ request_key: key, payload: { decision: "verified", receipt_id: receiptId, receipt_revision: "notahash" } }).success).toBe(false);
+    expect(verifyWorkBodySchema.safeParse({ request_key: key, payload: { decision: "verified", receipt_id: "nobody", receipt_revision: revision } }).success).toBe(false);
     expect(reportIssueBodySchema.safeParse({ request_key: key, payload: { task_instance_id: uuid, kind: "help_request", summary: "Need a ladder" } }).success).toBe(true);
     expect(reportIssueBodySchema.safeParse({ request_key: key, payload: { activity_id: uuid, facility_id: uuid, subject_id: uuid, kind: "problem", summary: "Leak under the sink" } }).success).toBe(true);
     expect(reportIssueBodySchema.safeParse({ request_key: key, payload: { activity_id: uuid, kind: "problem", summary: "Leak" } }).success).toBe(false);
     expect(reportIssueBodySchema.safeParse({ request_key: key, payload: { task_instance_id: uuid, facility_id: uuid, kind: "problem", summary: "Leak" } }).success).toBe(false);
+  });
+});
+
+describe("correction and reversal bodies", () => {
+  const expected = { expected_receipt_id: receiptId, expected_receipt_revision: revision };
+
+  it("requires the corrected receipt, its revision, a full work statement and a reason", () => {
+    const body = { request_key: key, ...expected, payload: { outcome: "performed", values: { run_minutes: 14 }, note: "Corrected the run time", reason: "Typed 12 instead of 14" } };
+    const parsed = correctWorkBodySchema.safeParse(body);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.payload).toEqual(body.payload);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed" } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed", reason: "  " } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed", reason: "x".repeat(2001) } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, expected_receipt_id: receiptId, payload: { outcome: "performed", reason: "Fix" } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, expected_receipt_id: receiptId, expected_receipt_revision: "stale", payload: { outcome: "performed", reason: "Fix" } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed", reason: "Fix", recorder_id: uuid } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed", reason: "Fix", values: { nested: { a: 1 } } } }).success).toBe(false);
+  });
+
+  it("applies the shared statement rules, letting the correction reason stand in for a late or on-behalf entry reason", () => {
+    const failed = correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "failed", reason: "Result was actually a failure" } });
+    expect(failed.success).toBe(false);
+    if (!failed.success) expect(payloadProblem(failed.error)).toBe("a failed outcome requires an issue");
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "failed", reason: "Result was actually a failure", issue: { kind: "failed_result", summary: "Generator stalled" } } }).success).toBe(true);
+    const futureCorrection = correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed", performed_at: future, reason: "Wrong time" } });
+    expect(futureCorrection.success).toBe(false);
+    if (!futureCorrection.success) expect(payloadProblem(futureCorrection.error)).toBe("Performed time cannot be in the future");
+    // The database takes the correction reason as the entry reason of a late entry; a recording still needs its own.
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed", performed_at: past, entry_kind: "late", reason: "Performed earlier than recorded" } }).success).toBe(true);
+    expect(recordWorkBodySchema.safeParse({ request_key: key, payload: { outcome: "performed", performed_at: past, entry_kind: "late" } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed", performer: { kind: "other_staff", user_id: uuid }, reason: "Wrong performer" } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "performed", performer: { kind: "other_staff", user_id: uuid }, entry_kind: "on_behalf", reason: "Wrong performer" } }).success).toBe(true);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "not_performed", reason: "Area was closed" } }).success).toBe(false);
+    expect(correctWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { outcome: "not_performed", entry_reason: "Area closed for repair", reason: "Recorded against the wrong day" } }).success).toBe(true);
+  });
+
+  it("keeps a reversal to the named receipt and a reason", () => {
+    expect(reverseWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { reason: "Recorded on the wrong occurrence" } }).success).toBe(true);
+    expect(reverseWorkBodySchema.safeParse({ request_key: key, ...expected, payload: {} }).success).toBe(false);
+    expect(reverseWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { reason: "" } }).success).toBe(false);
+    expect(reverseWorkBodySchema.safeParse({ request_key: key, ...expected, payload: { reason: "Wrong occurrence", outcome: "performed" } }).success).toBe(false);
+    expect(reverseWorkBodySchema.safeParse({ request_key: key, expected_receipt_id: receiptId, payload: { reason: "Wrong occurrence" } }).success).toBe(false);
+    expect(reverseWorkBodySchema.safeParse({ request_key: key, payload: { reason: "Wrong occurrence" } }).success).toBe(false);
+  });
+
+  it("reads the whole chain: kinds, states and the supersession and binding columns", () => {
+    expect(RECEIPT_KINDS).toContain("reversal");
+    expect(COMPLETION_STATES).toContain("reversed");
+    for (const column of ["chain_id", "corrects_receipt_id", "correction_reason", "correction_seq", "superseded_at", "superseded_by_receipt_id", "verifies_receipt_id", "verified_receipt_revision", "revision"]) {
+      expect(RECEIPT_SELECT.split(", ")).toContain(column);
+    }
   });
 });
 
@@ -93,6 +160,58 @@ describe("receipt outcome classes", () => {
     expect(mapReceiptRpcError({ code: "23505", message: "duplicate key value violates unique constraint operation_issues_request_key_key" }, "issue")).toEqual({ status: 409, outcome: "conflict", error: "Issue report conflicts with an existing issue" });
     expect(mapReceiptRpcError({ code: "P0001", message: "no governing requirement version" }, "verify")).toEqual({ status: 409, outcome: "conflict", error: "Verification request could not be completed. Refresh the occurrence and retry." });
     expect(mapReceiptRpcError({ code: "23514", message: "check constraint private_receipt_shape violated" })).toEqual({ status: 409, outcome: "conflict", error: "Record request could not be completed. Refresh the occurrence and retry." });
+  });
+
+  it("names the current receipt and its revision when a correction, reversal or review reads a stale receipt", () => {
+    const details = `current_receipt_id=${receiptId};current_receipt_revision=${revision}`;
+    const stale = { code: "P0001", message: "Receipt changed since it was read", details };
+    for (const command of ["correct", "reverse", "verify"] as const) {
+      const mapped = mapReceiptRpcError(stale, command);
+      expect(mapped).toEqual({ status: 409, outcome: "conflict", error: "Receipt changed since it was read", current_receipt_id: receiptId, current_receipt_revision: revision });
+      expect(currentReceiptFields(mapped)).toEqual({ current_receipt_id: receiptId, current_receipt_revision: revision });
+    }
+    // The 341 duplicate-work conflict still names only the receipt; a revision alone names nothing.
+    const legacy = mapReceiptRpcError({ code: "23505", message: "Work is already recorded for this occurrence", details: `current_receipt_id=${receiptId}` }, "record");
+    expect(legacy).toEqual({ status: 409, outcome: "conflict", error: "Work is already recorded for this occurrence", current_receipt_id: receiptId });
+    expect(currentReceiptFields(legacy)).toEqual({ current_receipt_id: receiptId });
+    expect(mapReceiptRpcError({ code: "P0001", message: "Receipt changed since it was read", details: `current_receipt_revision=${revision}` }, "correct")).toEqual({ status: 409, outcome: "conflict", error: "Receipt changed since it was read" });
+    expect(currentReceiptFields({ status: 500, outcome: "uncertain", error: "x" })).toEqual({});
+  });
+
+  it("classifies the correction and reversal refusals with their command nouns", () => {
+    expect(mapReceiptRpcError({ code: "22023", message: "Corrected performed time cannot be after the original recording" }, "correct")).toEqual({ status: 400, outcome: "validation", error: "Corrected performed time cannot be after the original recording" });
+    expect(mapReceiptRpcError({ code: "22023", message: "Work performed more than fifteen minutes before recording must be entered as late" }, "correct")).toMatchObject({ status: 400, outcome: "validation" });
+    expect(mapReceiptRpcError({ code: "22023", message: "reason is required" }, "correct")).toEqual({ status: 400, outcome: "validation", error: "reason is required" });
+    expect(mapReceiptRpcError({ code: "22023", message: "internal detail column x" }, "correct")).toEqual({ status: 400, outcome: "validation", error: "Correction request contains an invalid value" });
+    // 344 raises the same wording for a reversal without recorded work and for correcting or reversing a reversal.
+    expect(mapReceiptRpcError({ code: "P0001", message: "Occurrence has no recorded work" }, "reverse")).toEqual({ status: 409, outcome: "conflict", error: "Occurrence has no recorded work" });
+    expect(mapReceiptRpcError({ code: "P0001", message: "Occurrence has no recorded work" }, "correct")).toEqual({ status: 409, outcome: "conflict", error: "Occurrence has no recorded work" });
+    expect(mapReceiptRpcError({ code: "P0001", message: "Managed occurrences cannot be deferred by the legacy command" }, "correct")).toEqual({ status: 409, outcome: "conflict", error: "Managed occurrences cannot be deferred by the legacy command" });
+    expect(mapReceiptRpcError({ code: "P0001", message: "no governing requirement version" }, "reverse")).toEqual({ status: 409, outcome: "conflict", error: "Reversal request could not be completed. Refresh the occurrence and retry." });
+    expect(mapReceiptRpcError({ code: "23505", message: "duplicate key value violates unique constraint operation_execution_receipts_effective" }, "correct")).toEqual({ status: 409, outcome: "conflict", error: "Correction request conflicts with an existing receipt" });
+    expect(mapReceiptRpcError({ code: "42501", message: "Task actor is no longer authorized" }, "reverse")).toEqual({ status: 403, outcome: "denied", error: "Operation unavailable" });
+    expect(mapReceiptRpcError({ code: "57014", message: "statement timeout" }, "correct")).toEqual({ status: 500, outcome: "uncertain", error: "Correction could not be confirmed; check the occurrence before retrying" });
+    expect(mapReceiptRpcError({ code: "57014", message: "statement timeout" }, "reverse")).toEqual({ status: 500, outcome: "uncertain", error: "Reversal could not be confirmed; check the occurrence before retrying" });
+  });
+
+  it("recognises correction and reversal outcomes only with the receipt they superseded", () => {
+    const base = { receipt: { id: receiptId }, corrected: { id: uuid }, occurrence: { id: uuid }, replayed: false };
+    expect(isCorrectionOutcome({ ...base, issue: null, verification_superseded_receipt_id: null })).toBe(true);
+    expect(isCorrectionOutcome({ ...base, issue: { id: uuid }, verification_superseded_receipt_id: receiptId })).toBe(true);
+    expect(isCorrectionOutcome({ ...base, issue: null })).toBe(true);
+    expect(isCorrectionOutcome({ ...base, issue: null, verification_superseded_receipt_id: 7 })).toBe(false);
+    expect(isCorrectionOutcome({ receipt: { id: receiptId }, occurrence: { id: uuid }, issue: null, replayed: false })).toBe(false);
+    expect(isCorrectionOutcome({ ...base, corrected: {}, issue: null })).toBe(false);
+    const reversal = { receipt: { id: receiptId }, reversed: { id: uuid }, occurrence: { id: uuid }, verification_superseded_receipt_id: null, replayed: false };
+    expect(isReversalOutcome(reversal)).toBe(true);
+    expect(isReversalOutcome({ ...reversal, verification_superseded_receipt_id: receiptId })).toBe(true);
+    expect(isReversalOutcome({ ...reversal, verification_superseded_receipt_id: undefined })).toBe(true);
+    expect(isReversalOutcome({ ...reversal, verification_superseded_receipt_id: 7 })).toBe(false);
+    // A correction reply names the superseded receipt as `corrected`, never `reversed`.
+    expect(isReversalOutcome({ ...base, issue: null, verification_superseded_receipt_id: null })).toBe(false);
+    expect(isReversalOutcome({ ...reversal, reversed: {} })).toBe(false);
+    expect(isReversalOutcome({ ...reversal, replayed: "no" })).toBe(false);
+    expect(isReversalOutcome(null)).toBe(false);
   });
 
   it("classifies missing and uncertain outcomes without echoing detail", () => {

@@ -37,6 +37,22 @@ describe("operations locked task commands", () => {
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: "Task unavailable" });
   });
+  it("tells the operator that a managed occurrence cannot be reinstated by the legacy command, and keeps other refusals generic", async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: "P0001", message: "Managed occurrences cannot be reinstated by the legacy command" } });
+    const managed = await runOperationTaskCommand("task", "reinstate");
+    expect(managed.status).toBe(409);
+    expect(await managed.json()).toEqual({ error: "Managed occurrences cannot be reinstated by the legacy command" });
+    const sentinel = "private operation_task_instances constraint leaked";
+    rpc.mockResolvedValueOnce({ data: null, error: { code: "P0001", message: sentinel } });
+    const generic = await runOperationTaskCommand("task", "reinstate");
+    expect(generic.status).toBe(409);
+    const body = await generic.json();
+    expect(body).toEqual({ error: "Task could not be updated. Refresh and retry." });
+    expect(JSON.stringify(body)).not.toContain(sentinel);
+    // The trusted wording never turns a denial or a missing row into a conflict.
+    rpc.mockResolvedValueOnce({ data: null, error: { code: "42501", message: "Managed occurrences cannot be reinstated by the legacy command" } });
+    expect(await (await runOperationTaskCommand("task", "reinstate")).json()).toEqual({ error: "Task unavailable" });
+  });
   it.each([null, {}, []])("does not manufacture successful state from an unconfirmed receipt: %j", async (data) => {
     rpc.mockResolvedValue({ data, error: null });
     expect((await runOperationTaskCommand("task", "start")).status).toBe(500);

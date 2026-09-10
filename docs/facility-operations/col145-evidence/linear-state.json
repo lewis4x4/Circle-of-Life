@@ -1,0 +1,20 @@
+{
+  "issue": "COL-145",
+  "before": {
+    "checked_at": "2026-09-10T22:10:00Z",
+    "state": "Backlog",
+    "blockers": {"COL-142": "Done", "COL-143": "In Progress"},
+    "dependency_ready": false,
+    "exception": "owner-authorized limited dependency exception: source-only implementation against the reviewed COL-143 interface; COL-143 stays In Progress and its hosted acceptance is not marked complete",
+    "source": "live Linear GraphQL read at session start"
+  },
+  "started": {
+    "at": "2026-09-10T22:12:00Z",
+    "state": "In Progress",
+    "comment_id": "a3ed530e-3e43-4977-b894-51034c13f90e",
+    "comment": "start comment recording the exception, branch codex/hfo-col145-corrections, base 5367f6e7 (later fast-forwarded onto 45ea4ea9), provisional slot 344, contracts and the legacy-writer inventory"
+  },
+  "after": {
+    "state": "pending closure record"
+  }
+}

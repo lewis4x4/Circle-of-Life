@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 import { requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
 import { logError } from "@/lib/observability/logger";
 
+/**
+ * COL-145: the legacy command refuses managed occurrences rather than being
+ * translated into a receipt; the operator gets the trusted wording instead of
+ * the generic retry hint. Every other P0001 stays generic.
+ */
+const TRUSTED_COMMAND_CONFLICTS = new Set(["Managed occurrences cannot be reinstated by the legacy command"]);
+
 /** The database locks the task and rechecks current subject/actor authority, including replay. */
 export async function runOperationTaskCommand(
   taskId: string,
@@ -29,8 +36,9 @@ export async function runOperationTaskCommand(
   if (error) {
     logError(`admin.operations.tasks.${action}`, error, { taskId, action: "rpc" });
     const status = error.code === "42501" ? 403 : error.code === "P0002" ? 404 : 409;
+    const trusted = status === 409 && TRUSTED_COMMAND_CONFLICTS.has(error.message);
     return NextResponse.json(
-      { error: status === 403 || status === 404 ? "Task unavailable" : "Task could not be updated. Refresh and retry." },
+      { error: status === 403 || status === 404 ? "Task unavailable" : trusted ? error.message : "Task could not be updated. Refresh and retry." },
       { status },
     );
   }

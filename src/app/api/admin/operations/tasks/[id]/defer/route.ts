@@ -17,6 +17,8 @@ const TRUSTED_DEFER_CONFLICTS = new Set([
   "Deferred time must be in the future",
   "Task cannot be deferred from this state",
   "This defer request was already saved with different content. Refresh the task before retrying",
+  // COL-145: a managed occurrence keeps its period identity; the legacy defer is refused, not translated.
+  "Managed occurrences cannot be deferred by the legacy command",
 ]);
 
 function deferRequestKey(actorId: string, taskId: string) {

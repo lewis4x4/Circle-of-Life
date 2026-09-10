@@ -1,0 +1,116 @@
+{
+  "base_commit": "45ea4ea9",
+  "branch": "codex/hfo-col145-corrections",
+  "scope": "COL-145 source segment under the limited dependency exception",
+  "recorded_at": "2026-09-10T20:47:11.644Z",
+  "files": [
+    {
+      "path": "docs/facility-operations/HANDOFF.md",
+      "sha256": "24083285b4f82daeda8496771665f16b5a8de08173ea48d26b01effd740c98b2"
+    },
+    {
+      "path": "docs/facility-operations/OWNER-DECISIONS.md",
+      "sha256": "3b70a75230e373b551f86532535fb39f78a855dafcf02805c909cb8e3f59852b"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "81acd4d6c65303a50883aefadd25c4147661e8050a322ccd56ca4377759217c0"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/receipts/route.ts",
+      "sha256": "81fb5c1d4915d1bd86fa021c4488ba6d0f3de4d404366f15782e4bd2f7b55dd6"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/record/route.test.ts",
+      "sha256": "3fdcfd8725bf7405b6641f0627c2952f0178f67c00ad8f93b5b3d137801564c1"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/verify/route.ts",
+      "sha256": "85dbafd9eda186c321faa9416ff365a840812a48cfc585434fff11dd3b486277"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/defer/route.test.ts",
+      "sha256": "ff544f148f13c9cd7d8be86447b8cc48b71c9101052a67598c48cdbec7ed30fd"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/defer/route.ts",
+      "sha256": "6ac5894f286ea2875088e0cbbdceba709ffe1bdf59faa4f6339350caf4669fed"
+    },
+    {
+      "path": "src/lib/operations/receipts.test.ts",
+      "sha256": "d54717729cb3b4b752789eb2199cd1528c7cf95820c6d688fae151f562a8bd4c"
+    },
+    {
+      "path": "src/lib/operations/receipts.ts",
+      "sha256": "f780b91c18c0810b02886d69f944be01c43a2ef7aacdc6a48dd44c69816d70a4"
+    },
+    {
+      "path": "src/lib/operations/task-command.test.ts",
+      "sha256": "4c9536e6cda13b6962db35419de044c0e8c4b81e4eaeeb617c4073bda642821c"
+    },
+    {
+      "path": "src/lib/operations/task-command.ts",
+      "sha256": "429f593c9255c166edf0bf7f7519ed1a9f0c0e9aec501be46a4d425454631527"
+    },
+    {
+      "path": "docs/facility-operations/COL-145-HANDOFF.md",
+      "sha256": "55026457ffe9461a08d63a727792625f0d1bb73541c4fb48a9ab6a457c687f44"
+    },
+    {
+      "path": "docs/facility-operations/col145-evidence/concurrency.txt",
+      "sha256": "3ee8ae4bc581902ad73ae9c2d7b591f14b177ab820321b7180fef0f980d57b6c"
+    },
+    {
+      "path": "docs/facility-operations/col145-evidence/engineering-contracts.md",
+      "sha256": "5d34b0725bd7fd84e6fe521d9f64725ea6e57c0893fd74650ea4ae4b3f7551b8"
+    },
+    {
+      "path": "docs/facility-operations/col145-evidence/independent-review.json",
+      "sha256": "469541b04251d9f2f04159acef131a10c122a59d0aeffc1f7577cadbae108249"
+    },
+    {
+      "path": "docs/facility-operations/col145-evidence/legacy-writers.md",
+      "sha256": "defd6eb16dbde73f3d010b9ef913f632b532191ca2ed1108a0900fb8749c17be"
+    },
+    {
+      "path": "docs/facility-operations/col145-evidence/linear-state.json",
+      "sha256": "e67e88834e77026b6109cc770700fb578b01370d1da7ffe6fab9ffb4650c77f4"
+    },
+    {
+      "path": "docs/facility-operations/col145-evidence/verification.json",
+      "sha256": "6ca93d83be62b03bf1a0e562e85876a6f4cdd842d4d02687962f30761d72e450"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-corrections.md",
+      "sha256": "7defd5b91d29bbce5e5af2f34a8acd60ad27a51eed7b36171ea8454d4ec7504c"
+    },
+    {
+      "path": "scripts/facility-operations/test-correction-concurrency.py",
+      "sha256": "ce0863f03fd8456e4e591b7034e76b12f8c6d3da0ffee8e0a83f541cf1dbb7fd"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/correct/route.test.ts",
+      "sha256": "b16ffb68cb0538ed98a72df0a59a5500eb73de748ead83b75c35f8390f705a02"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/correct/route.ts",
+      "sha256": "719df61c8066b1d2fd8fb44b01bbd8d0b4febde75d09d76d596f82b7c8a36d86"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/reverse/route.ts",
+      "sha256": "357c9931251d3dba9399c0bbfaede4752d871de8d75c90711319064235f8cec7"
+    },
+    {
+      "path": "supabase/migrations/344_hfo_corrections.sql",
+      "sha256": "143e9ff676efa1d31a403015582e99dcc68470ab54bd93bb17c506b8bea92f63"
+    },
+    {
+      "path": "supabase/tests/review_hfo_corrections.sql",
+      "sha256": "6df14a9cc5bd4f186f8a51c606ba67d53c2f55b891048fc47e959bcba9b3ee69"
+    },
+    {
+      "path": "test-results/agent-gates/2026-09-10T20-40-49-826Z-COL-145-HFO-CORRECTIONS.json",
+      "sha256": "055fc1ec3ff64a4dcdd3dbd6d19983fdf2523b06c982d3a0a55f74c3e0992c96"
+    }
+  ]
+}

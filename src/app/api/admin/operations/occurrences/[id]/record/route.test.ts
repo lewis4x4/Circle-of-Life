@@ -14,13 +14,15 @@ const rpc = vi.fn();
 const isCalls: Array<ReturnType<typeof vi.fn>> = [];
 const maybeSingle = vi.fn();
 const order = vi.fn();
+let listResult: { data: unknown; error: unknown } = { data: [], error: null };
 const selects: string[] = [];
 const from = vi.fn(() => {
   const query: Record<string, unknown> = {};
   for (const method of ["eq", "is", "not"]) query[method] = vi.fn(() => query);
   query.select = vi.fn((columns: string) => { selects.push(columns); return query; });
   isCalls.push(query.is as ReturnType<typeof vi.fn>);
-  query.order = order;
+  // The history is ordered by recorded_at and then by id; the last order call resolves the list.
+  query.order = vi.fn((column: string, options: unknown) => { order(column, options); return column === "id" ? Promise.resolve(listResult) : query; });
   query.maybeSingle = maybeSingle;
   return query;
 });
@@ -39,7 +41,7 @@ beforeEach(() => {
   vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor } as never);
   vi.mocked(actorCanAccessFacility).mockResolvedValue(true);
   maybeSingle.mockResolvedValue({ data: { id: occurrenceId, facility_id: facilityId, organization_id: "org", occurrence_kind: "scheduled" }, error: null });
-  order.mockResolvedValue({ data: [], error: null });
+  listResult = { data: [], error: null };
 });
 
 describe("record work", () => {
@@ -139,22 +141,46 @@ describe("record work", () => {
 });
 
 describe("verify work", () => {
-  it("forwards the decision and returns the verification receipt", async () => {
-    rpc.mockResolvedValue({ data: { ...receiptOutcome, receipt: { id: receiptId, receipt_kind: "verification" } }, error: null });
-    const response = await VERIFY(post({ request_key: key, payload: { decision: "verified" } }), params(occurrenceId));
+  const reviewedRevision = "a".repeat(64);
+  const currentRevision = "b".repeat(64);
+  const currentReceiptId = "99999999-9999-4999-8999-999999999999";
+  const bound = { decision: "verified", receipt_id: receiptId, receipt_revision: reviewedRevision };
+
+  it("forwards the decision bound to the reviewed receipt and returns the verification receipt", async () => {
+    rpc.mockResolvedValue({ data: { ...receiptOutcome, receipt: { id: receiptId, receipt_kind: "verification", verifies_receipt_id: receiptId, verified_receipt_revision: reviewedRevision } }, error: null });
+    const response = await VERIFY(post({ request_key: key, payload: { ...bound, note: "Checked the panel photo" } }), params(occurrenceId));
     expect(response.status).toBe(200);
-    expect(rpc).toHaveBeenCalledExactlyOnceWith("verify_operation_work_review", { p_task: occurrenceId, p_request_key: key, p_payload: { decision: "verified" } });
-    expect((await response.json()).receipt.receipt_kind).toBe("verification");
+    expect(rpc).toHaveBeenCalledExactlyOnceWith("verify_operation_work_review", { p_task: occurrenceId, p_request_key: key, p_payload: { ...bound, note: "Checked the panel photo" } });
+    const body = await response.json();
+    expect(body.receipt.receipt_kind).toBe("verification");
+    expect(body.receipt.verifies_receipt_id).toBe(receiptId);
+  });
+
+  it("requires the reviewed receipt and its revision before any read (COL-145 binding)", async () => {
+    for (const payload of [{ decision: "verified" }, { decision: "verified", receipt_id: receiptId }, { decision: "verified", receipt_revision: reviewedRevision }, { decision: "verified", receipt_id: receiptId, receipt_revision: "stale" }]) {
+      const response = await VERIFY(post({ request_key: key, payload }), params(occurrenceId));
+      expect(response.status).toBe(400);
+      expect((await response.json()).outcome).toBe("validation");
+    }
+    expect(from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("reports a review of a superseded receipt as a conflict naming the current receipt and its revision", async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: "P0001", message: "Receipt changed since it was read", details: `current_receipt_id=${currentReceiptId};current_receipt_revision=${currentRevision}` } });
+    const stale = await VERIFY(post({ request_key: key, payload: bound }), params(occurrenceId));
+    expect(stale.status).toBe(409);
+    expect(await stale.json()).toEqual({ error: "Receipt changed since it was read", outcome: "conflict", current_receipt_id: currentReceiptId, current_receipt_revision: currentRevision });
   });
 
   it("refuses a decision other than verified and surfaces independence and evidence conflicts", async () => {
-    expect((await VERIFY(post({ request_key: key, payload: { decision: "rejected" } }), params(occurrenceId))).status).toBe(400);
+    expect((await VERIFY(post({ request_key: key, payload: { ...bound, decision: "rejected" } }), params(occurrenceId))).status).toBe(400);
     rpc.mockResolvedValueOnce({ data: null, error: { code: "42501", message: "A different authorized staff member must verify this task" } });
-    const independence = await VERIFY(post({ request_key: key, payload: { decision: "verified" } }), params(occurrenceId));
+    const independence = await VERIFY(post({ request_key: key, payload: bound }), params(occurrenceId));
     expect(independence.status).toBe(409);
     expect(await independence.json()).toEqual({ error: "A different authorized staff member must verify this task", outcome: "conflict" });
     rpc.mockResolvedValueOnce({ data: null, error: { code: "P0001", message: "Required evidence is missing" } });
-    expect(await (await VERIFY(post({ request_key: key, payload: { decision: "verified" } }), params(occurrenceId))).json()).toMatchObject({ outcome: "conflict", error: "Required evidence is missing" });
+    expect(await (await VERIFY(post({ request_key: key, payload: bound }), params(occurrenceId))).json()).toMatchObject({ outcome: "conflict", error: "Required evidence is missing" });
   });
 });
 
@@ -167,15 +193,29 @@ describe("receipts read", () => {
     expect((await RECEIPTS(new NextRequest("https://local.test/receipts") as never, params(occurrenceId))).status).toBe(404);
   });
 
-  it("lists receipts of a granted occurrence through the session client", async () => {
-    order.mockResolvedValue({ data: [{ id: receiptId, receipt_kind: "performance" }], error: null });
+  it("lists the whole receipt history of a granted occurrence in recorded order through the session client", async () => {
+    const correctionId = "88888888-8888-4888-8888-888888888888";
+    const history = [
+      { id: receiptId, receipt_kind: "performance", chain_id: receiptId, corrects_receipt_id: null, correction_seq: 0, superseded_by_receipt_id: correctionId, superseded_at: "2026-09-10T15:00:00Z" },
+      { id: correctionId, receipt_kind: "performance", chain_id: receiptId, corrects_receipt_id: receiptId, correction_reason: "Wrong reading", correction_seq: 1, superseded_by_receipt_id: null },
+      { id: "99999999-9999-4999-8999-999999999999", receipt_kind: "verification", verifies_receipt_id: correctionId, verified_receipt_revision: "b".repeat(64) },
+    ];
+    listResult = { data: history, error: null };
     const response = await RECEIPTS(new NextRequest("https://local.test/receipts") as never, params(occurrenceId));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ receipts: [{ id: receiptId, receipt_kind: "performance" }] });
+    // Every receipt of every chain is returned verbatim: recordings, corrections, reversals and reviews.
+    expect(await response.json()).toEqual({ receipts: history });
     expect(from).toHaveBeenLastCalledWith("operation_execution_receipts");
+    // Recorded order, with the id as a deterministic tiebreak for receipts written in the same instant.
+    expect(order.mock.calls).toEqual([["recorded_at", { ascending: true }], ["id", { ascending: true }]]);
+    const receiptSelect = (selects[selects.length - 1] ?? "").split(", ");
     // COL-143: the current evidence status and satisfaction instant ride beside the immutable receipt columns.
-    const receiptSelect = selects[selects.length - 1] ?? "";
     expect(receiptSelect).toContain("evidence_status_current");
     expect(receiptSelect).toContain("evidence_satisfied_at");
+    // COL-145: the chain, supersession and review-binding columns make the history readable.
+    for (const column of ["chain_id", "corrects_receipt_id", "correction_reason", "correction_seq", "superseded_by_receipt_id", "superseded_at", "verifies_receipt_id", "verified_receipt_revision", "revision"]) {
+      expect(receiptSelect).toContain(column);
+    }
+    expect(receiptSelect).not.toContain("request_hash");
   });
 });

@@ -19,7 +19,9 @@ export const ENTRY_KINDS = ["routine", "late", "on_behalf"] as const;
 export const WORK_OUTCOMES = ["performed", "failed", "not_performed"] as const;
 export const ISSUE_KINDS = ["problem", "help_request", "failed_result"] as const;
 export const ISSUE_SEVERITIES = ["low", "normal", "high"] as const;
-export const COMPLETION_STATES = ["completed", "performed_missing_evidence", "awaiting_verification", "failed", "not_performed"] as const;
+/** COL-145: a reversal is a receipt kind of its own; it ends a chain without replacing the work. */
+export const RECEIPT_KINDS = ["performance", "verification", "reversal"] as const;
+export const COMPLETION_STATES = ["completed", "performed_missing_evidence", "awaiting_verification", "failed", "not_performed", "reversed"] as const;
 /** Server-authoritative outcome classes the UI must distinguish. */
 export const OUTCOME_CLASSES = ["receipt", "validation", "denied", "missing", "conflict", "uncertain"] as const;
 export type OutcomeClass = (typeof OUTCOME_CLASSES)[number];
@@ -42,39 +44,73 @@ const performerSchema = z.discriminatedUnion("kind", [
 ]);
 
 const issueSchema = z.object({ kind: z.enum(ISSUE_KINDS), summary: text(2000), severity: z.enum(ISSUE_SEVERITIES).optional() }).strict();
+/** The receipt fingerprint the client read; the database refuses a stale one so a concurrent correction, review or upload conflicts safely. */
+export const receiptRevisionSchema = z.string().regex(/^[0-9a-f]{64}$/, "receipt revision must be 64 hex characters");
+
+const workStatementFields = {
+  performed_at: instant.optional(),
+  performer: performerSchema.optional(),
+  entry_kind: z.enum(ENTRY_KINDS).optional(),
+  entry_reason: text(2000).optional(),
+  outcome: z.enum(WORK_OUTCOMES),
+  values: valuesSchema.optional(),
+  note: z.string().trim().max(4000).optional(),
+  issue: issueSchema.optional(),
+};
+
+type WorkStatement = { performed_at?: string; performer?: { kind: string }; entry_kind?: string; entry_reason?: string; outcome: string; issue?: unknown };
+
+/**
+ * The statement rules a recording and a correction share (341, restated by
+ * 344 as one composite). A correction carries its own reason, which the
+ * database takes as the entry reason of a late or on-behalf entry, so only a
+ * recording insists on an explicit entry_reason for those entries.
+ */
+function refineWorkStatement(payload: WorkStatement, ctx: z.RefinementCtx, options: { reasonCarried: boolean }) {
+  if (payload.performed_at && new Date(payload.performed_at).getTime() > Date.now() + PERFORMED_AT_SKEW_MS) {
+    ctx.addIssue({ code: "custom", message: "Performed time cannot be in the future" });
+  }
+  const entryKind = payload.entry_kind ?? "routine";
+  if (entryKind !== "routine" && !payload.entry_reason && !options.reasonCarried) ctx.addIssue({ code: "custom", message: "entry_reason is required for a late or on-behalf entry" });
+  if (payload.performer && payload.performer.kind !== "self" && entryKind === "routine") {
+    ctx.addIssue({ code: "custom", message: "recording for another performer requires entry_kind on_behalf or late" });
+  }
+  if (payload.performer?.kind === "unknown_historical" && entryKind !== "late") {
+    ctx.addIssue({ code: "custom", message: "an unknown historical performer requires a late entry" });
+  }
+  if (payload.outcome === "failed" && !payload.issue) ctx.addIssue({ code: "custom", message: "a failed outcome requires an issue" });
+  if (payload.outcome === "not_performed" && !payload.entry_reason) ctx.addIssue({ code: "custom", message: "not_performed requires entry_reason" });
+}
 
 export const recordWorkPayloadSchema = z
-  .object({
-    performed_at: instant.optional(),
-    performer: performerSchema.optional(),
-    entry_kind: z.enum(ENTRY_KINDS).optional(),
-    entry_reason: text(2000).optional(),
-    outcome: z.enum(WORK_OUTCOMES),
-    values: valuesSchema.optional(),
-    note: z.string().trim().max(4000).optional(),
-    issue: issueSchema.optional(),
-  })
+  .object(workStatementFields)
   .strict()
-  .superRefine((payload, ctx) => {
-    if (payload.performed_at && new Date(payload.performed_at).getTime() > Date.now() + PERFORMED_AT_SKEW_MS) {
-      ctx.addIssue({ code: "custom", message: "Performed time cannot be in the future" });
-    }
-    const entryKind = payload.entry_kind ?? "routine";
-    if (entryKind !== "routine" && !payload.entry_reason) ctx.addIssue({ code: "custom", message: "entry_reason is required for a late or on-behalf entry" });
-    if (payload.performer && payload.performer.kind !== "self" && entryKind === "routine") {
-      ctx.addIssue({ code: "custom", message: "recording for another performer requires entry_kind on_behalf or late" });
-    }
-    if (payload.performer?.kind === "unknown_historical" && entryKind !== "late") {
-      ctx.addIssue({ code: "custom", message: "an unknown historical performer requires a late entry" });
-    }
-    if (payload.outcome === "failed" && !payload.issue) ctx.addIssue({ code: "custom", message: "a failed outcome requires an issue" });
-    if (payload.outcome === "not_performed" && !payload.entry_reason) ctx.addIssue({ code: "custom", message: "not_performed requires entry_reason" });
-  });
+  .superRefine((payload, ctx) => refineWorkStatement(payload, ctx, { reasonCarried: false }));
+
+/** COL-145: a correction is a full restatement of the work plus the reason it corrects the receipt it names. */
+export const correctWorkPayloadSchema = z
+  .object({ ...workStatementFields, reason: text(2000) })
+  .strict()
+  .superRefine((payload, ctx) => refineWorkStatement(payload, ctx, { reasonCarried: true }));
 
 export const recordWorkBodySchema = z.object({ request_key: requestKeySchema, payload: recordWorkPayloadSchema }).strict();
 
+/** The correction names the exact receipt it read; the database conflicts on identity, naming the current receipt. */
+export const correctWorkBodySchema = z
+  .object({ request_key: requestKeySchema, expected_receipt_id: uuid, expected_receipt_revision: receiptRevisionSchema, payload: correctWorkPayloadSchema })
+  .strict();
+
+/** A reversal supersedes the named receipt without replacing it; the occurrence returns to unrecorded. */
+export const reverseWorkBodySchema = z
+  .object({ request_key: requestKeySchema, expected_receipt_id: uuid, expected_receipt_revision: receiptRevisionSchema, payload: z.object({ reason: text(2000) }).strict() })
+  .strict();
+
+/** COL-145 binds a review to the exact performance receipt the reviewer read; the route requires both identifiers. */
 export const verifyWorkBodySchema = z
-  .object({ request_key: requestKeySchema, payload: z.object({ decision: z.literal("verified"), note: z.string().trim().max(4000).optional() }).strict() })
+  .object({
+    request_key: requestKeySchema,
+    payload: z.object({ decision: z.literal("verified"), note: z.string().trim().max(4000).optional(), receipt_id: uuid, receipt_revision: receiptRevisionSchema }).strict(),
+  })
   .strict();
 
 export const reportIssueBodySchema = z
@@ -101,6 +137,8 @@ export const reportIssueBodySchema = z
   .strict();
 
 export type RecordWorkBody = z.infer<typeof recordWorkBodySchema>;
+export type CorrectWorkBody = z.infer<typeof correctWorkBodySchema>;
+export type ReverseWorkBody = z.infer<typeof reverseWorkBodySchema>;
 export type VerifyWorkBody = z.infer<typeof verifyWorkBodySchema>;
 export type ReportIssueBody = z.infer<typeof reportIssueBodySchema>;
 
@@ -114,8 +152,9 @@ export function payloadProblem(error: z.ZodError): string | null {
   return path ? `${path}: ${first.message}` : first.message;
 }
 
+/** Receipt columns read through the session; COL-145 adds the chain, correction and review-binding columns. */
 export const RECEIPT_SELECT =
-  "id, organization_id, facility_id, task_instance_id, activity_id, subject_id, authority_class, requirement_version_id, facility_requirement_id, receipt_kind, recorder_id, recorder_role, recorded_at, performed_at, performer_kind, performer_user_id, performer_vendor_id, performer_label, entry_kind, entry_reason, outcome, values, note, evidence_status, missing_evidence, completion_state, issue_id, request_key, revision, superseded_by_receipt_id, created_at";
+  "id, organization_id, facility_id, task_instance_id, activity_id, subject_id, authority_class, requirement_version_id, facility_requirement_id, receipt_kind, recorder_id, recorder_role, recorded_at, performed_at, performer_kind, performer_user_id, performer_vendor_id, performer_label, entry_kind, entry_reason, outcome, values, note, evidence_status, missing_evidence, completion_state, issue_id, request_key, revision, superseded_by_receipt_id, superseded_at, chain_id, corrects_receipt_id, correction_reason, correction_seq, verifies_receipt_id, verified_receipt_revision, created_at";
 
 /** Database messages that are safe and useful to show the operator verbatim. */
 const TRUSTED_FRAGMENTS = [
@@ -145,6 +184,9 @@ const TRUSTED_FRAGMENTS = [
   "not awaiting verification",
   "Legacy",
   "Managed occurrence",
+  // COL-145 corrections, reversals and review binding.
+  "Corrected performed time",
+  "Occurrence has no recorded work",
 ];
 const CONFLICT_FRAGMENTS = [
   "Required evidence is missing",
@@ -155,36 +197,52 @@ const CONFLICT_FRAGMENTS = [
   "changed since",
   "cannot be recorded",
   "cannot be verified",
+  "Occurrence has no recorded work",
   "is cancelled",
   "not awaiting verification",
 ];
-const VALIDATION_FRAGMENTS = ["is required", "are required", "requires", "must be", "not editable", "is invalid", "carries no identifier", "Recorded values", "Performed time", "Performer"];
+const VALIDATION_FRAGMENTS = ["is required", "are required", "requires", "must be", "not editable", "is invalid", "carries no identifier", "Recorded values", "Performed time", "Corrected performed time", "Performer"];
 const INDEPENDENCE_WORDING = "A different authorized staff member must verify this task";
 
 export type ReceiptRpcError = { code?: string; message?: string; details?: string | null } | null | undefined;
-export type MappedReceiptError = { status: number; outcome: OutcomeClass; error: string; current_receipt_id?: string };
+export type MappedReceiptError = { status: number; outcome: OutcomeClass; error: string; current_receipt_id?: string; current_receipt_revision?: string };
 
 const UUID_IN_DETAILS = /current_receipt_id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+/** COL-145 conflicts also name the current receipt's revision so the client can re-read and retry against it. */
+const REVISION_IN_DETAILS = /current_receipt_revision=([0-9a-f]{64})/i;
 
 /**
  * Bounded outcome classes: validation (400), denied (403, hides existence),
- * missing (404), conflict (409, names the current receipt when the database
- * does), uncertain (500; the client must check the occurrence, never retry
- * blindly). Untrusted wording is never echoed.
+ * missing (404), conflict (409, names the current receipt and its revision
+ * when the database does), uncertain (500; the client must check the
+ * occurrence, never retry blindly). Untrusted wording is never echoed.
  */
-export type ReceiptCommand = "record" | "verify" | "issue";
+export type ReceiptCommand = "record" | "correct" | "reverse" | "verify" | "issue";
 const COMMAND_NOUN: Record<ReceiptCommand, { request: string; conflict: string; confirm: string }> = {
   record: { request: "Record request", conflict: "an existing receipt", confirm: "Record" },
+  correct: { request: "Correction request", conflict: "an existing receipt", confirm: "Correction" },
+  reverse: { request: "Reversal request", conflict: "an existing receipt", confirm: "Reversal" },
   verify: { request: "Verification request", conflict: "an existing verification", confirm: "Verification" },
   issue: { request: "Issue report", conflict: "an existing issue", confirm: "Issue report" },
 };
+
+/** The current-receipt fields of a mapped error, ready to spread into a response body. */
+export function currentReceiptFields(mapped: MappedReceiptError): { current_receipt_id?: string; current_receipt_revision?: string } {
+  return {
+    ...(mapped.current_receipt_id ? { current_receipt_id: mapped.current_receipt_id } : {}),
+    ...(mapped.current_receipt_revision ? { current_receipt_revision: mapped.current_receipt_revision } : {}),
+  };
+}
 
 export function mapReceiptRpcError(error: NonNullable<ReceiptRpcError>, command: ReceiptCommand = "record"): MappedReceiptError {
   const message = error.message ?? "";
   const noun = COMMAND_NOUN[command];
   const trusted = TRUSTED_FRAGMENTS.some((fragment) => message.includes(fragment));
-  const currentReceipt = UUID_IN_DETAILS.exec(`${error.details ?? ""} ${message}`)?.[1];
-  const withReceipt = (mapped: MappedReceiptError): MappedReceiptError => (currentReceipt ? { ...mapped, current_receipt_id: currentReceipt } : mapped);
+  const haystack = `${error.details ?? ""} ${message}`;
+  const currentReceipt = UUID_IN_DETAILS.exec(haystack)?.[1];
+  const currentRevision = currentReceipt ? REVISION_IN_DETAILS.exec(haystack)?.[1] : undefined;
+  const withReceipt = (mapped: MappedReceiptError): MappedReceiptError =>
+    currentReceipt ? { ...mapped, current_receipt_id: currentReceipt, ...(currentRevision ? { current_receipt_revision: currentRevision } : {}) } : mapped;
   // Independence is a state conflict the reviewer can act on, not a hidden denial, even though the database raises it as 42501.
   if (message.includes(INDEPENDENCE_WORDING)) return { status: 409, outcome: "conflict", error: INDEPENDENCE_WORDING };
   if (error.code === "42501") return { status: 403, outcome: "denied", error: "Operation unavailable" };
@@ -227,6 +285,35 @@ export function isReceiptOutcome(value: unknown): value is ReceiptOutcome {
   if (!value || typeof value !== "object") return false;
   const candidate = value as { receipt?: unknown; occurrence?: unknown; issue?: unknown; replayed?: unknown };
   return hasId(candidate.receipt) && hasId(candidate.occurrence) && typeof candidate.replayed === "boolean" && (candidate.issue === null || candidate.issue === undefined || hasId(candidate.issue));
+}
+
+export type CorrectionOutcome = ReceiptOutcome & {
+  corrected: Record<string, unknown> & { id: string };
+  verification_superseded_receipt_id: string | null;
+};
+
+/** The correct command returns the new receipt, the receipt it superseded, the occurrence, any issue and the review it superseded. */
+export function isCorrectionOutcome(value: unknown): value is CorrectionOutcome {
+  if (!isReceiptOutcome(value)) return false;
+  const candidate = value as ReceiptOutcome & { corrected?: unknown; verification_superseded_receipt_id?: unknown };
+  const superseded = candidate.verification_superseded_receipt_id;
+  return hasId(candidate.corrected) && (superseded === null || superseded === undefined || typeof superseded === "string");
+}
+
+export type ReversalOutcome = {
+  receipt: Record<string, unknown> & { id: string };
+  reversed: Record<string, unknown> & { id: string };
+  occurrence: Record<string, unknown> & { id: string };
+  verification_superseded_receipt_id: string | null;
+  replayed: boolean;
+};
+
+/** The reverse command returns the reversal receipt, the receipt it superseded, the occurrence returned to unrecorded and the review it superseded. */
+export function isReversalOutcome(value: unknown): value is ReversalOutcome {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as { receipt?: unknown; reversed?: unknown; occurrence?: unknown; verification_superseded_receipt_id?: unknown; replayed?: unknown };
+  const superseded = candidate.verification_superseded_receipt_id;
+  return hasId(candidate.receipt) && hasId(candidate.reversed) && hasId(candidate.occurrence) && typeof candidate.replayed === "boolean" && (superseded === null || superseded === undefined || typeof superseded === "string");
 }
 
 export function isIssueOutcome(value: unknown): value is { issue: Record<string, unknown> & { id: string }; replayed: boolean } {

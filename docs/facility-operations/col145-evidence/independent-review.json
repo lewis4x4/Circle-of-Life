@@ -1,0 +1,118 @@
+{
+  "issue": "COL-145",
+  "scope": "source-only; built under the owner's limited dependency exception against the reviewed COL-143 interface (hosted Storage proof open); hosted, provider, staff and operating acceptance outside this review",
+  "recorded_at": "2026-09-10T20:35:00Z",
+  "contract": "docs/facility-operations/col145-evidence/engineering-contracts.md",
+  "method": "Two independent read-only reviewers on the uncommitted tree of codex/hfo-col145-corrections. SQL: migration 344, its probe and the race script against the contract and the 340\u2013343 guarantees, with rolled-back experiments on the run-owned native cluster (deferred-constraint windows after caught failures, trigger-pause bounds, a cross-version replay-hash proof recording under the 341 body and replaying under the 344 body, a two-minute sleep experiment for the correction default instant). TypeScript: receipts library, correct/reverse/verify/receipts routes, legacy route mappings and tests against 344's reply shapes and RAISE wordings. Both ran the gates. Every finding was dispositioned and remediated; both reviewers re-verified on the tree fast-forwarded onto the COL-143 checksum amendment (45ea4ea9).",
+  "typescript_review": {
+    "verdict": "changes requested (one blocker, two should-fix, notes) \u2192 re-verified PASS",
+    "findings": [
+      {
+        "severity": "blocker",
+        "where": "reverse route and isReversalOutcome",
+        "claim": "344 returns the superseded receipt under `reversed` for a reversal while the route required `corrected`, so every committed reversal would have been reported as uncertain (500); the route test hand-built the reply and could not see it",
+        "disposition": "Fixed: the contract \u00a73.3 settles the reversal reply as { receipt, reversed, occurrence, verification_superseded_receipt_id, replayed } (no issue key); the guard, route and tests use `reversed`; the probe pins the exact key sets of both replies so a rename fails the replay."
+      },
+      {
+        "severity": "should-fix",
+        "where": "reverse route",
+        "claim": "dropped verification_superseded_receipt_id although 344 returns it",
+        "disposition": "Fixed and tested (uuid, null, absent \u2192 null)."
+      },
+      {
+        "severity": "should-fix",
+        "where": "receipts.ts trusted fragments",
+        "claim": "`cannot be corrected` / `cannot be reversed` matched no RAISE in 344; correcting or reversing a reversal raises `Occurrence has no recorded work`",
+        "disposition": "Fragments removed; that wording mapped to 409 conflict for both nouns and asserted; contract states no separate wording exists."
+      },
+      {
+        "severity": "note",
+        "where": "receipts GET ordering",
+        "claim": "no tiebreak after recorded_at",
+        "disposition": "Secondary order by id added and pinned in the test."
+      },
+      {
+        "severity": "note",
+        "where": "route tests mock the RPC reply",
+        "claim": "vitest cannot prove the DB reply matches the guards",
+        "disposition": "Accepted; the probe pins reply keys server-side."
+      }
+    ],
+    "clean": [
+      "strict bodies; recorder not nameable; other performer requires on_behalf or late; future performed_at refused",
+      "conflict mapping yields 409 with current_receipt_id and current_receipt_revision parsed by regex only; DETAIL never echoed",
+      "verify forwards receipt_id and receipt_revision unchanged and requires them",
+      "404-before-403 discipline; revalidation before every RPC; session client only; request_hash stripped",
+      "receipts GET keeps the 343 columns and returns the full history",
+      "legacy defer/reinstate/complete map the trusted refusals to 409; bulk-complete stays the dead 409",
+      "correction schema consistent with 344's inherited default performed_at and reason-carried entry rules",
+      "focused suite 32 files / 371 tests, typecheck, lint PASS on the rebased tree"
+    ]
+  },
+  "sql_review": {
+    "verdict": "no blocker; one should-fix and notes \u2192 remediated; re-verification on the rebased tree found the probe and race script not yet updated for the amended 343 (md5 required, MD5 eTags) and a NULL hole in the guard's insert pairing \u2192 both fixed; final re-verification recorded below",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "where": "344 correction default performed_at",
+        "claim": "a correction that omitted performed_at defaulted to the correction instant, which the chain-root bound refuses after two minutes and which silently moved the occurrence's performed time inside that window (verified with a two-minute sleep experiment)",
+        "disposition": "Fixed: the shared statement helper takes a default instant; record passes the server clock, correct passes the corrected receipt's performed_at; probe cases: omitted performed_at preserves the original instant and sla_met, the inherited instant is judged by the late rule, an explicit later instant is refused (22023)."
+      },
+      {
+        "severity": "blocker (gate)",
+        "where": "review_hfo_corrections.sql fixtures and test-correction-concurrency.py after the rebase onto 45ea4ea9",
+        "claim": "the amended 343 requires md5 in every object-kind prepare payload and verifies it against the Storage eTag, so the COL-145 probe (no md5, eTag 'etag-<id>') stopped the native replay at prepare and its fixture uploads could never finalize",
+        "disposition": "Fixed: probe obj() and put() helpers mirror the 343 probe (declared md5, quoted MD5 eTag, version); race script declares md5 and writes the same eTag; col145_base344 rebuilt at 45ea4ea9; replay PASS (347 files, 28 probes); probe 176 assertions."
+      },
+      {
+        "severity": "note",
+        "where": "receipt guard insert pairing (344:127-130)",
+        "claim": "the EXISTS that pairs a deferred superseded pointer with the inserted correction never matched when the inserted row had no corrects_receipt_id, so under the owner token with the FK deferred a plain recording could absorb the pointer",
+        "disposition": "Fixed: NEW.corrects_receipt_id IS NOT NULL is required before any row may point at NEW.id; probe DO block under the token proves the refusal (Supersession stays within one act of work) and that nothing sticks."
+      },
+      {
+        "severity": "note",
+        "where": "receipt guard supersession branch",
+        "claim": "under the token only same-occurrence was checked, not that the superseder corrects this receipt or the reviewed receipt; no reachable path, but procedural rather than structural",
+        "disposition": "Tightened: a performance receipt is superseded only by the correction or reversal that names it in its own chain; a review only by the existing correction or reversal of the receipt it reviewed; three refusal probes added."
+      },
+      {
+        "severity": "note",
+        "where": "haven.operation_receipt_conflict",
+        "claim": "declared IMMUTABLE while it only raises",
+        "disposition": "Marked VOLATILE."
+      },
+      {
+        "severity": "note",
+        "where": "probe",
+        "claim": "one vacuous IS NOT NULL clause",
+        "disposition": "Removed; sorted-array equality only."
+      },
+      {
+        "severity": "note",
+        "where": "343 finalize comment",
+        "claim": "stale 'correction moves the revision' wording",
+        "disposition": "Reworded on the COL-143 branch (45ea4ea9)."
+      },
+      {
+        "severity": "note",
+        "where": "design points for the owner ledger",
+        "claim": "cancellation after reversal allowed; an issue bound to a superseded receipt stays open; independence judged against the effective receipt; an upload in flight during a correction stays uploaded on the superseded receipt and must be re-prepared",
+        "disposition": "Recorded in OWNER-DECISIONS 3g (vi) and (iv)."
+      }
+    ],
+    "clean": [
+      "deferrable supersession FK: every window ends IMMEDIATE, including after a caught failure and a caller pre-setting ALL DEFERRED; guard pairs corrected and correcting rows at insert; 341 partial unique indexes keep one effective performance and one effective verification",
+      "trigger pause bounded to the two backfill statements; pre and post checks make a mis-bind impossible",
+      "record_operation_work refactor byte-identical: check order, messages, defaults; cross-version replay-hash proof with five payload shapes",
+      "corrected receipt verbatim except the two columns; chain-root anchor; chain evidence only; new recording after reversal is its own root",
+      "reversal clears every mirror, sets missed_at when missed, keeps started_at; re-record allowed; reversal never effective",
+      "review binding enforced at insert; stale id or revision conflicts with exact DETAIL; supersession only of the review bound to the corrected receipt",
+      "lock order and token windows as 341; other-site caller gets Operation unavailable before any fact",
+      "legacy writers executed and refused; generic reset, DELETE, TRUNCATE denied; forced audit failure leaves everything untouched; start still works",
+      "races real (two connections, observed lock waits) in five orderings",
+      "174 assertions; no earlier probe modified"
+    ],
+    "final_reverification": "PASS (2026-09-10T20:45Z): NULL-hole fix confirmed on the rebuilt col145_base344 (owner-token deferred-pointer case now refused 'Supersession stays within one act of work'; seven other mis-pairing cases still refused); migrations:verify:pg PASS (347 files, 28 probes) on the rebased tree; probe 176 assertions (91 assert, 56 expect, 32 denied); helpers mirror the 343 checksum convention; no remaining findings"
+  }
+}

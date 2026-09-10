@@ -8,8 +8,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Receipts of one managed occurrence (COL-142), read through the session so
- * the current subject and site authority governs every row. Performance and
- * verification receipts are returned in the order they were recorded.
+ * the current subject and site authority governs every row. The whole
+ * history is returned in the order it was recorded: recordings, corrections,
+ * reversals and reviews, each with its chain, supersession and review-binding
+ * columns (COL-145) beside the current evidence status (COL-143).
  */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -36,7 +38,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     .select(`${RECEIPT_SELECT}, evidence_status_current, evidence_satisfied_at`)
     .eq("organization_id", auth.actor.organizationId)
     .eq("task_instance_id", id)
-    .order("recorded_at", { ascending: true });
+    .order("recorded_at", { ascending: true })
+    .order("id", { ascending: true });
   if (error) {
     logError("admin.operations.occurrences.receipts", error, { action: "list", occurrenceId: id });
     return NextResponse.json({ error: "Receipts unavailable" }, { status: 503 });

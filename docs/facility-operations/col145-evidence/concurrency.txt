@@ -1,0 +1,60 @@
+COL-145 correction concurrency evidence
+run_at_utc: 2026-09-10T20:41:09Z
+baseline_database: col145_base344 (built from scripts/pg-verify-stub.sql + supabase/migrations 001..344 at git 45ea4ea9; clones per case, dropped by exact name)
+cluster: socket /Users/brianlewis/.hermes/tmp/agent-runs/hfo-col139-20260910-105544, port 55443, native PostgreSQL 17, run-owned scratch cluster (no Docker)
+command: HFO_CORRECTION_BASELINE_DB=col145_base344 python3 scripts/facility-operations/test-correction-concurrency.py
+
+{
+  "issue": "COL-145",
+  "baseline_database": "col145_base344",
+  "cases": [
+    {
+      "name": "two corrections with the same expected revision",
+      "outcome": "second correction refused after the wait with the conflict naming the winner",
+      "sqlstate": "P0001",
+      "corrections": 1,
+      "waited_on": "occurrence row"
+    },
+    {
+      "name": "correction racing an evidence finalization",
+      "orders": [
+        {
+          "order": "correction first",
+          "outcome": "finalization refused after the wait because its receipt was superseded; evidence stays uploaded; correction stays performed-with-missing-evidence",
+          "sqlstate": "P0001",
+          "finalized_events": 0,
+          "waited_on": "occurrence row"
+        },
+        {
+          "order": "finalization first",
+          "outcome": "correction landed after the finalization and carries the chain evidence as complete",
+          "finalized_events": 1,
+          "satisfied_events": 1,
+          "waited_on": "occurrence row"
+        }
+      ]
+    },
+    {
+      "name": "correction racing a verification",
+      "orders": [
+        {
+          "order": "verification first",
+          "outcome": "correction landed after the verification and superseded the review bound to the corrected receipt; occurrence awaits review again",
+          "verification_receipts": 1,
+          "superseded_reviews": 1,
+          "waited_on": "occurrence row"
+        },
+        {
+          "order": "correction first",
+          "outcome": "verification refused after the wait with the conflict naming the correction; no review written; occurrence awaits review of the correction",
+          "sqlstate": "P0001",
+          "verification_receipts": 0,
+          "waited_on": "occurrence row"
+        }
+      ]
+    }
+  ],
+  "boundary": "local PostgreSQL 17 with Supabase auth and storage stubs; run-owned socket-only cluster; no byte transferred"
+}
+COL-145 correction concurrency PASS
+exit_code: 0

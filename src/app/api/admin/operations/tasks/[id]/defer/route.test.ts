@@ -106,6 +106,15 @@ describe("operation task atomic defer route", () => {
     );
   });
 
+  it("tells the operator that a managed occurrence cannot be deferred by the legacy command", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "P0001", message: "Managed occurrences cannot be deferred by the legacy command" } });
+
+    const response = await PATCH(request() as never, { params: Promise.resolve({ id: task.id }) });
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "Managed occurrences cannot be deferred by the legacy command" });
+  });
+
   it("hides cross-organization task identifiers before RPC", async () => {
     query.maybeSingle.mockResolvedValue({ data: null, error: null });
 
