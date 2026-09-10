@@ -15,6 +15,9 @@ import { actorCanAccessFacility, requireOperationsActor, revalidateOperationsAct
 const rpc = vi.fn();
 const maybeSingle = vi.fn();
 const order = vi.fn();
+let readCap = 1000;
+let failPageAt: number | null = null;
+const readRanges: number[] = [];
 const fromCalls: string[] = [];
 const selects: string[] = [];
 const from = vi.fn((table: string) => {
@@ -22,7 +25,13 @@ const from = vi.fn((table: string) => {
   const query: Record<string, unknown> = {};
   for (const method of ["eq", "is", "not"]) query[method] = vi.fn(() => query);
   query.select = vi.fn((columns: string) => { selects.push(columns); return query; });
-  query.order = order;
+  query.order = vi.fn(() => query);
+  query.range = async (start: number, end: number) => {
+    readRanges.push(start);
+    if (start === failPageAt) return { data: null, error: { message: "later page unavailable" } };
+    const response = await order();
+    return Array.isArray(response.data) ? { ...response, data: response.data.slice(start, Math.min(end + 1, start + readCap)) } : response;
+  };
   query.maybeSingle = maybeSingle;
   return query;
 });
@@ -47,6 +56,9 @@ const prepared = { evidence: { id: evidenceId, state: "prepared", uploaded_by: "
 
 beforeEach(() => {
   vi.clearAllMocks();
+  readCap = 1000;
+  failPageAt = null;
+  readRanges.length = 0;
   fromCalls.length = 0;
   selects.length = 0;
   vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
@@ -278,6 +290,28 @@ describe("evidence commands", () => {
 });
 
 describe("evidence reads", () => {
+  it("reads all evidence under a small provider cap, preserves redaction and fails on a later-page error", async () => {
+    readCap = 17;
+    const evidence = Array.from({ length: 1101 }, (_, i) => ({ id: `evidence-${i}`, state: "finalized", uploaded_by: "other", object_path: `private/${i}`, request_hash: "private" }));
+    order.mockResolvedValue({ data: evidence, error: null });
+    const request = new NextRequest(`https://local.test/evidence?receipt_id=${receiptId}`);
+    const response = await LIST(request);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.evidence).toHaveLength(1101);
+    expect(JSON.stringify(body)).not.toContain("private");
+    expect(readRanges.slice(0, 3)).toEqual([0, 17, 34]);
+    const query = from.mock.results[1].value as { order: ReturnType<typeof vi.fn> };
+    expect(query.order).toHaveBeenCalledWith("prepared_at", { ascending: true });
+    expect(query.order).toHaveBeenCalledWith("id", { ascending: true });
+    failPageAt = 17;
+    const failed = await LIST(request);
+    expect(failed.status).toBe(503);
+    expect(await failed.json()).toEqual({ error: "Evidence unavailable", outcome: "uncertain" });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(storageFrom).not.toHaveBeenCalled();
+  });
+
   it("requires a receipt id and gates the site before listing", async () => {
     expect((await LIST(new NextRequest("https://local.test/evidence") as never)).status).toBe(400);
     vi.mocked(actorCanAccessFacility).mockResolvedValueOnce(false);
@@ -303,7 +337,7 @@ describe("evidence reads", () => {
         { id: "e-mine", state: "uploaded", uploaded_by: "actor", object_path: "f/e-mine/b.jpg" },
       ],
     });
-    expect(fromCalls).toEqual(["operation_execution_receipts", "operation_evidence"]);
+    expect(fromCalls).toEqual(["operation_execution_receipts", "operation_evidence", "operation_evidence"]);
   });
 
   it("signs a download only for finalized object evidence through the session client", async () => {

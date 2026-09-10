@@ -1,3 +1,4 @@
+import { readAllOperationRows } from "@/lib/operations/read-all";
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
@@ -21,14 +22,16 @@ export async function GET(request: NextRequest) {
   if (!(await actorCanAccessFacility(auth.actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
-  let query = auth.actor.currentActor.client
-    .from("operation_issues" as never)
-    .select(ISSUE_LIFECYCLE_SELECT)
-    .eq("organization_id", auth.actor.organizationId)
-    .eq("facility_id", facilityId);
-  if (taskId) query = query.eq("task_instance_id", taskId);
-  if (status) query = query.eq("status", status);
-  const { data, error } = await query.order("reported_at", { ascending: false });
+  const { data, error } = await readAllOperationRows(() => {
+    let query = auth.actor.currentActor.client
+      .from("operation_issues" as never)
+      .select(ISSUE_LIFECYCLE_SELECT)
+      .eq("organization_id", auth.actor.organizationId)
+      .eq("facility_id", facilityId);
+    if (taskId) query = query.eq("task_instance_id", taskId);
+    if (status) query = query.eq("status", status);
+    return query.order("reported_at", { ascending: false }).order("id", { ascending: false });
+  });
   if (error) {
     logError("admin.operations.issues.list", error, { action: "list", facilityId });
     return NextResponse.json({ error: "Issues unavailable" }, { status: 503 });

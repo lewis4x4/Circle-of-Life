@@ -1,3 +1,4 @@
+import { readAllOperationRows as readAll, type ReadResult } from "@/lib/operations/read-all";
 import { fromZonedTime } from "date-fns-tz";
 
 import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
@@ -22,6 +23,7 @@ export type WorkspaceView = (typeof WORKSPACE_VIEWS)[number];
 /** Engineering policy (OWNER-DECISIONS 3i): Upcoming spans fourteen days; History pages by fifty. */
 export const UPCOMING_DAYS = 14;
 export const HISTORY_PAGE_SIZE = 50;
+export const WORKSPACE_ID_BATCH_SIZE = 100;
 export const WORKSPACE_PARTIALS = ["rules", "receipts", "issues", "legacy", "total"] as const;
 export type WorkspacePartial = (typeof WORKSPACE_PARTIALS)[number];
 /** Statuses that leave a managed occurrence unfinished; the receipt commands own every other move. */
@@ -90,11 +92,11 @@ export type WorkspaceOccurrence = {
   authority_class: string;
 };
 
-export type EvidenceSummary = { required: number; finalized: number; missing: number };
+export type EvidenceSummary = { required_rules: number | null; satisfied: boolean };
 
 export type WorkspaceItem = {
   occurrence: WorkspaceOccurrence;
-  /** null only when the rules read failed (`partial` names it); the page must not offer to record without rules. */
+  /** null when the rules read failed or a pinned rule is unavailable (`partial` names it); the page must not offer to record without rules. */
   rules: WorkspaceRules | null;
   receipt: WorkspaceReceipt | null;
   /** null only when the issues read failed. */
@@ -107,6 +109,7 @@ export type WorkspaceActor = { id: string; name: string | null; role: string };
 export type WorkspaceReply = {
   view: WorkspaceView;
   facility_id: string;
+  facility_timezone: string;
   generated_at: string;
   actor: WorkspaceActor;
   partial: WorkspacePartial[];
@@ -163,11 +166,24 @@ export function decodeHistoryCursor(cursor: string): HistoryCursor | null {
     const { d, i } = parsed as { d?: unknown; i?: unknown };
     if (typeof i !== "string" || !UUID.test(i)) return null;
     if (d === null) return { due_at: null, id: i };
-    if (typeof d !== "string" || Number.isNaN(new Date(d).getTime())) return null;
+    if (typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/.test(d) || Number.isNaN(new Date(d).getTime())) return null;
     return { due_at: d, id: i };
   } catch {
     return null;
   }
+}
+
+/** Preserve PostgreSQL microsecond ordering when merging disjoint History sources. */
+function compareHistoryRows(left: OccurrenceRow, right: OccurrenceRow): number {
+  if (left.due_at === null || right.due_at === null) {
+    if (left.due_at !== right.due_at) return left.due_at === null ? 1 : -1;
+  } else {
+    const second = (value: string) => Date.parse(value.replace(/\.\d+(?=Z|[+-]\d{2}:\d{2}$)/, ""));
+    const micros = (value: string) => Number((value.match(/\.(\d+)/)?.[1] ?? "").padEnd(6, "0"));
+    const chronological = second(right.due_at) - second(left.due_at) || micros(right.due_at) - micros(left.due_at);
+    if (chronological) return chronological;
+  }
+  return right.id.localeCompare(left.id);
 }
 
 // ---------------------------------------------------------------------------
@@ -205,21 +221,20 @@ export function applicableEvidenceRules(rules: EvidenceRule[], outcome: string):
 }
 
 /**
- * Counts in rules. With a receipt the receipt is the truth: its
- * `missing_evidence` is the applicable list at record time and
- * `evidence_status_current` says whether it has since been satisfied.
- * Without a receipt the summary is what a performed outcome would need.
+ * Counts prospective rule kinds, never uploaded files or finalized attachments.
+ * A correction's immutable missing_evidence omits rules already satisfied by
+ * carried evidence. It cannot establish the total required count; only the
+ * current aggregate status establishes that all requirements are satisfied.
+ * Without a receipt this describes a prospective performed outcome.
  */
 export function summarizeEvidence(rules: RuleSet | null, receipt: WorkspaceReceipt | null): EvidenceSummary | null {
   if (receipt) {
-    const listed = Array.isArray(receipt.missing_evidence) ? receipt.missing_evidence.length : 0;
-    if (receipt.evidence_status_current === "not_required") return { required: 0, finalized: 0, missing: 0 };
-    if (receipt.evidence_status_current === "missing") return { required: listed, finalized: 0, missing: listed };
-    return { required: listed, finalized: listed, missing: 0 };
+    if (receipt.evidence_status_current === "not_required") return { required_rules: 0, satisfied: true };
+    return { required_rules: null, satisfied: receipt.evidence_status_current === "complete" };
   }
   if (!rules) return null;
   const required = applicableEvidenceRules(rules.evidence, "performed").length;
-  return { required, finalized: 0, missing: required };
+  return { required_rules: required, satisfied: required === 0 };
 }
 
 // ---------------------------------------------------------------------------
@@ -318,8 +333,18 @@ const LEGACY_TASK_SELECT =
   "id, organization_id, facility_id, template_id, activity_id, template_name, template_category, template_cadence_type, assigned_shift_date, assigned_shift, assigned_to, signed_by, requires_dual_sign, assigned_role, status, due_at, missed_at, deferred_until, priority, license_threatening, estimated_minutes, current_escalation_level, created_at, updated_at";
 
 type SessionClient = OperationsActor["currentActor"]["client"];
-type ReadResult<T> = { data: T | null; error: { message?: string } | null };
 type LegacyRow = Parameters<typeof buildOperationTaskResponse>[0]["rows"][number];
+
+async function readByIds<T>(ids: string[], query: (batch: string[]) => unknown): Promise<ReadResult<T[]>> {
+  const rows: T[] = [];
+  for (let offset = 0; offset < ids.length; offset += WORKSPACE_ID_BATCH_SIZE) {
+    const batch = ids.slice(offset, offset + WORKSPACE_ID_BATCH_SIZE);
+    const result = await readAll<T>(() => query(batch));
+    if (result.error) return { data: null, error: result.error };
+    rows.push(...(result.data ?? []));
+  }
+  return { data: rows, error: null };
+}
 
 export type ComposeWorkspaceArgs = {
   actor: OperationsActor;
@@ -359,12 +384,12 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
   // (1) Primary read: the view's managed occurrences.
   let reversedIds: string[] = [];
   if (view === "history") {
-    const reversals = (await client
+    const reversals = await readAll<{ task_instance_id: string }>(() => client
       .from("operation_execution_receipts" as never)
       .select("task_instance_id")
       .eq("organization_id", actor.organizationId)
       .eq("facility_id", facilityId)
-      .eq("receipt_kind", "reversal")) as ReadResult<Array<{ task_instance_id: string }>>;
+      .eq("receipt_kind", "reversal").order("id", { ascending: true }));
     if (reversals.error) {
       logError(scope, reversals.error, { action: "reversals", facilityId });
       return { status: 503, error: "Workspace unavailable" };
@@ -372,56 +397,63 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
     reversedIds = Array.from(new Set((reversals.data ?? []).map((row) => row.task_instance_id).filter(Boolean)));
   }
 
-  const base = () =>
+  const base = (count = false) =>
     client
       .from("operation_task_instances" as never)
-      .select(WORKSPACE_OCCURRENCE_SELECT)
+      .select(count ? "id" : WORKSPACE_OCCURRENCE_SELECT, count ? { count: "exact", head: true } : undefined)
       .eq("organization_id", actor.organizationId)
       .eq("facility_id", facilityId)
       .not("occurrence_kind", "is", null)
       .is("deleted_at", null);
-  const historyMembership = ["status.in.(completed,cancelled)", "effective_receipt_id.not.is.null", ...(reversedIds.length > 0 ? [`id.in.(${reversedIds.join(",")})`] : [])].join(",");
+  const historyMembership = "status.in.(completed,cancelled),effective_receipt_id.not.is.null";
 
   let occurrenceRead: ReadResult<OccurrenceRow[]>;
   let total: number | null = null;
   if (view === "today") {
-    occurrenceRead = (await base()
+    occurrenceRead = await readAll<OccurrenceRow>(() => base()
       .in("status", [...UNFINISHED_STATUSES])
       .or(`grace_ends_at.lt.${window.startOfTomorrow},and(grace_ends_at.is.null,due_at.lt.${window.startOfTomorrow}),due_at.is.null`)
       .order("due_at", { ascending: true, nullsFirst: false })
-      .order("id", { ascending: true })) as ReadResult<OccurrenceRow[]>;
+      .order("id", { ascending: true }));
   } else if (view === "upcoming") {
-    occurrenceRead = (await base()
+    occurrenceRead = await readAll<OccurrenceRow>(() => base()
       .in("status", [...UNFINISHED_STATUSES])
       .or(
         `and(grace_ends_at.gte.${window.startOfTomorrow},grace_ends_at.lt.${window.upcomingEnd}),and(grace_ends_at.is.null,due_at.gte.${window.startOfTomorrow},due_at.lt.${window.upcomingEnd})`,
       )
       .order("due_at", { ascending: true, nullsFirst: false })
-      .order("id", { ascending: true })) as ReadResult<OccurrenceRow[]>;
+      .order("id", { ascending: true }));
   } else {
-    let page = base().or(historyMembership);
-    if (cursor) {
-      page = cursor.due_at === null ? page.is("due_at", null).lt("id", cursor.id) : page.or(`due_at.lt.${cursor.due_at},and(due_at.eq.${cursor.due_at},id.lt.${cursor.id}),due_at.is.null`);
+    // Disjoint sources keep URL filters bounded without dropping reversed work:
+    // base finished/receipted rows, then reversal-id batches outside that base.
+    const sources: Array<(query: ReturnType<typeof base>) => ReturnType<typeof base>> = [(query) => query.or(historyMembership)];
+    for (let offset = 0; offset < reversedIds.length; offset += WORKSPACE_ID_BATCH_SIZE) {
+      const ids = reversedIds.slice(offset, offset + WORKSPACE_ID_BATCH_SIZE);
+      sources.push((query) => query.not("status", "in", "(completed,cancelled)").is("effective_receipt_id", null).in("id", ids));
     }
-    occurrenceRead = (await page
-      .order("due_at", { ascending: false, nullsFirst: false })
-      .order("id", { ascending: false })
-      .limit(HISTORY_PAGE_SIZE + 1)) as ReadResult<OccurrenceRow[]>;
-    // The complete count comes from its own query, never from the page length.
-    const countRead = (await client
-      .from("operation_task_instances" as never)
-      .select("id", { count: "exact", head: true })
-      .eq("organization_id", actor.organizationId)
-      .eq("facility_id", facilityId)
-      .not("occurrence_kind", "is", null)
-      .is("deleted_at", null)
-      .or(historyMembership)) as unknown as { count: number | null; error: { message?: string } | null };
-    if (countRead.error || typeof countRead.count !== "number") {
-      logError(scope, countRead.error ?? new Error("History count unavailable"), { action: "count", facilityId });
-      partial.add("total");
-    } else {
-      total = countRead.count;
+    const candidates: OccurrenceRow[] = [];
+    total = 0;
+    for (const source of sources) {
+      const result = await readAll<OccurrenceRow>(() => {
+        let page = source(base());
+        if (cursor) {
+          page = cursor.due_at === null ? page.is("due_at", null).lt("id", cursor.id) : page.or(`due_at.lt.${cursor.due_at},and(due_at.eq.${cursor.due_at},id.lt.${cursor.id}),due_at.is.null`);
+        }
+        return page.order("due_at", { ascending: false, nullsFirst: false }).order("id", { ascending: false }).limit(HISTORY_PAGE_SIZE + 1);
+      }, HISTORY_PAGE_SIZE + 1);
+      if (result.error) return { status: 503, error: "Workspace unavailable" };
+      candidates.push(...(result.data ?? []));
+      // Counts exclude cursor and mine: each source contributes disjoint site-wide rows.
+      const countRead = (await source(base(true))) as unknown as { count: number | null; error: { message?: string } | null };
+      if (countRead.error || typeof countRead.count !== "number") {
+        logError(scope, countRead.error ?? new Error("History count unavailable"), { action: "count", facilityId });
+        partial.add("total");
+        total = null;
+      } else if (total !== null) {
+        total += countRead.count;
+      }
     }
+    occurrenceRead = { data: candidates.sort(compareHistoryRows).slice(0, HISTORY_PAGE_SIZE + 1), error: null };
   }
   if (occurrenceRead.error) {
     logError(scope, occurrenceRead.error, { action: "occurrences", facilityId });
@@ -439,10 +471,8 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
   let rulesLoaded = true;
   if (versionIds.length > 0) {
     const [versionRead, facilityRuleRead] = await Promise.all([
-      client.from("operation_requirement_versions" as never).select(VERSION_RULE_SELECT).eq("organization_id", actor.organizationId).in("id", versionIds) as unknown as Promise<ReadResult<VersionRuleRow[]>>,
-      facilityRuleIds.length > 0
-        ? (client.from("operation_facility_requirements" as never).select(FACILITY_RULE_SELECT).eq("organization_id", actor.organizationId).in("id", facilityRuleIds) as unknown as Promise<ReadResult<FacilityRuleRow[]>>)
-        : Promise.resolve<ReadResult<FacilityRuleRow[]>>({ data: [], error: null }),
+      readByIds<VersionRuleRow>(versionIds, (ids) => client.from("operation_requirement_versions" as never).select(VERSION_RULE_SELECT).eq("organization_id", actor.organizationId).in("id", ids).order("id", { ascending: true })),
+      readByIds<FacilityRuleRow>(facilityRuleIds, (ids) => client.from("operation_facility_requirements" as never).select(FACILITY_RULE_SELECT).eq("organization_id", actor.organizationId).in("id", ids).order("id", { ascending: true })),
     ]);
     if (versionRead.error || facilityRuleRead.error) {
       logError(scope, versionRead.error ?? facilityRuleRead.error, { action: "rules", facilityId });
@@ -458,11 +488,11 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
   const receiptIds = Array.from(new Set(rows.map((row) => row.effective_receipt_id).filter((id): id is string => Boolean(id))));
   let receipts = new Map<string, WorkspaceReceipt>();
   if (receiptIds.length > 0) {
-    const receiptRead = (await client
+    const receiptRead = await readByIds<WorkspaceReceipt>(receiptIds, (ids) => client
       .from("operation_execution_receipts" as never)
       .select(WORKSPACE_RECEIPT_SELECT)
       .eq("organization_id", actor.organizationId)
-      .in("id", receiptIds)) as ReadResult<WorkspaceReceipt[]>;
+      .in("id", ids).order("id", { ascending: true }));
     if (receiptRead.error) {
       logError(scope, receiptRead.error, { action: "receipts", facilityId });
       partial.add("receipts");
@@ -475,13 +505,13 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
   const occurrenceIds = rows.map((row) => row.id);
   let issueCounts: Map<string, number> | null = new Map();
   if (occurrenceIds.length > 0) {
-    const issueRead = (await client
+    const issueRead = await readByIds<{ task_instance_id: string | null }>(occurrenceIds, (ids) => client
       .from("operation_issues" as never)
       .select("task_instance_id")
       .eq("organization_id", actor.organizationId)
       .eq("facility_id", facilityId)
-      .in("task_instance_id", occurrenceIds)
-      .neq("status", "resolved")) as ReadResult<Array<{ task_instance_id: string | null }>>;
+      .in("task_instance_id", ids)
+      .neq("status", "resolved").order("id", { ascending: true }));
     if (issueRead.error) {
       logError(scope, issueRead.error, { action: "issues", facilityId });
       partial.add("issues");
@@ -496,14 +526,20 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
 
   let items = rows.map((row): WorkspaceItem => {
     const version = row.requirement_version_id ? versions.get(row.requirement_version_id) : undefined;
-    const ruleSet = rulesLoaded && version ? resolveRules(version, row.facility_requirement_id ? facilityRules.get(row.facility_requirement_id) ?? null : null) : null;
+    const facilityRule = row.facility_requirement_id ? facilityRules.get(row.facility_requirement_id) : null;
+    // An unreadable pinned local row must never silently fall back to central rules.
+    const ruleSet = rulesLoaded && version && (!row.facility_requirement_id || facilityRule)
+      ? resolveRules(version, facilityRule ?? null)
+      : null;
+    if (!ruleSet) partial.add("rules");
     const receipt = row.effective_receipt_id ? receipts.get(row.effective_receipt_id) ?? null : null;
+    if (row.effective_receipt_id && !receipt) partial.add("receipts");
     return {
       occurrence: shapeOccurrence(row, facility.name),
       rules: ruleSet ? withRecordingAuthority(ruleSet, actor.appRole) : null,
       receipt,
       open_issues: issueCounts ? issueCounts.get(row.id) ?? 0 : null,
-      evidence_summary: summarizeEvidence(ruleSet, receipt),
+      evidence_summary: row.effective_receipt_id && !receipt ? null : summarizeEvidence(ruleSet, receipt),
     };
   });
   if (mine) items = narrowToMine(items, actor.appRole);
@@ -511,6 +547,7 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
   const reply = {
     view,
     facility_id: facilityId,
+    facility_timezone: window.timeZone,
     generated_at: now.toISOString(),
     actor: { id: actor.id, name: actor.currentActor.fullName ?? null, role: actor.appRole },
   };
@@ -522,7 +559,7 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
     return { status: 200, body: { ...reply, partial: Array.from(partial), groups: { history: items, next_cursor: nextCursor, total } } };
   }
 
-  // (5) Today only: legacy (unmanaged) tasks for the same facility day, through the existing list helpers.
+  // (5) Today only: all unfinished legacy tasks through the facility day, using the existing list helpers.
   let legacy: OperationTask[] = [];
   try {
     legacy = await readLegacyTasks(client, actor, facilityId, window, facility, now);
@@ -546,24 +583,26 @@ async function readLegacyTasks(
   // The window is the facility's own day. `parseOperationTaskFilters` is not
   // used for it: a date-only param goes through `new Date()` (UTC midnight)
   // and back through local formatting, which shifts the day on a non-UTC host.
-  let query = client
-    .from("operation_task_instances" as never)
-    .select(LEGACY_TASK_SELECT)
-    .eq("organization_id", actor.organizationId)
-    .eq("facility_id", facilityId)
-    .is("occurrence_kind", null)
-    .is("deleted_at", null)
-    .gte("assigned_shift_date", window.today)
-    .lte("assigned_shift_date", window.today)
-    .in("status", [...UNFINISHED_STATUSES]);
-  if (actor.appRole === "housekeeper") query = query.or(`assigned_to.eq.${actor.id},and(assigned_to.is.null,assigned_role.eq.housekeeper)`);
-  const taskRead = (await query.order("assigned_shift_date", { ascending: true }).order("created_at", { ascending: true })) as ReadResult<LegacyRow[]>;
+  const query = () => {
+    let scoped = client
+      .from("operation_task_instances" as never)
+      .select(LEGACY_TASK_SELECT)
+      .eq("organization_id", actor.organizationId)
+      .eq("facility_id", facilityId)
+      .is("occurrence_kind", null)
+      .is("deleted_at", null)
+      .lte("assigned_shift_date", window.today)
+      .in("status", [...UNFINISHED_STATUSES]);
+    if (actor.appRole === "housekeeper") scoped = scoped.or(`assigned_to.eq.${actor.id},and(assigned_to.is.null,assigned_role.eq.housekeeper)`);
+    return scoped.order("assigned_shift_date", { ascending: true }).order("created_at", { ascending: true }).order("id", { ascending: true });
+  };
+  const taskRead = await readAll<LegacyRow>(query);
   if (taskRead.error) throw new Error("Legacy tasks unavailable");
   const rows = taskRead.data ?? [];
   const assigneeIds = Array.from(new Set(rows.map((row) => row.assigned_to).filter((id): id is string => Boolean(id))));
   let assigneeNames = new Map<string, string>();
   if (assigneeIds.length > 0) {
-    const { data, error } = await client.from("user_profiles").select("id, full_name").in("id", assigneeIds).is("deleted_at", null);
+    const { data, error } = await readByIds<{ id: string; full_name: string }>(assigneeIds, (ids) => client.from("user_profiles").select("id, full_name").in("id", ids).is("deleted_at", null).order("id", { ascending: true }));
     if (error) throw new Error("Legacy task details unavailable");
     assigneeNames = new Map((data ?? []).map((profile) => [profile.id, profile.full_name]));
   }

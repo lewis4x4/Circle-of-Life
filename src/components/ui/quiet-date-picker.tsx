@@ -42,6 +42,8 @@ export type QuietDatePickerProps = {
    * `admission`, `move_in`, and `neutral` use a fixed sentinel month; `dob` anchors ~80yr ago for scanning.
    */
   initialVisibleMonthIso?: string;
+  /** Enlarge the trigger and portaled calendar controls for touch workspaces. */
+  touchTargets?: boolean;
   "aria-invalid"?: boolean;
   "aria-describedby"?: string;
   className?: string;
@@ -76,12 +78,13 @@ export function QuietDatePicker({
   mode = "neutral",
   calendarIconAlign = "start",
   initialVisibleMonthIso,
+  touchTargets = false,
   "aria-invalid": ariaInvalid,
   "aria-describedby": ariaDescribedBy,
   className,
 }: QuietDatePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const selected = parseIsoSafe(value);
+  const selected = React.useMemo(() => parseIsoSafe(value), [value]);
   const today = new Date();
   const todayDay = startOfDay(today);
   const maxDob = subYears(today, 18);
@@ -105,7 +108,8 @@ export function QuietDatePicker({
 
   React.useEffect(() => {
     if (open) return;
-    setVisibleMonth(resolveVisibleMonthStart(selected));
+    const nextMonth = resolveVisibleMonthStart(selected);
+    setVisibleMonth((current) => current.getTime() === nextMonth.getTime() ? current : nextMonth);
   }, [open, resolveVisibleMonthStart, selected]);
 
   function handleOpenChange(next: boolean) {
@@ -159,6 +163,7 @@ export function QuietDatePicker({
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
             "h-10 gap-2 px-3 font-normal",
+            touchTargets && "min-h-11",
             calendarIconAlign === "end" ? "w-[200px] justify-between pr-3" : "flex-1 justify-start",
             !selected && "text-muted-foreground",
           )}
@@ -180,13 +185,13 @@ export function QuietDatePicker({
           )}
         </PopoverTrigger>
       </div>
-      <PopoverContent className="w-auto min-w-[280px] flex-col p-3" align="start">
+      <PopoverContent className={cn("w-auto min-w-[280px] flex-col p-3", touchTargets && "p-1")} align="start" aria-label={touchTargets ? "Choose date" : undefined}>
         <div className="mb-3 flex items-center justify-between gap-2">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="size-8 shrink-0"
+            className={cn("size-8 shrink-0", touchTargets && "size-11")}
             aria-label="Previous month"
             onClick={() => setVisibleMonth((m) => addMonths(m, -1))}
           >
@@ -197,7 +202,7 @@ export function QuietDatePicker({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-8 shrink-0"
+            className={cn("size-8 shrink-0", touchTargets && "size-11")}
             aria-label="Next month"
             onClick={() => setVisibleMonth((m) => addMonths(m, 1))}
           >
@@ -211,7 +216,7 @@ export function QuietDatePicker({
             </div>
           ))}
         </div>
-        <div role="grid" className="mt-1 grid grid-cols-7 gap-1">
+        <div role={touchTargets ? "group" : "grid"} aria-label={touchTargets ? "Calendar days" : undefined} className={cn("mt-1 grid grid-cols-7 gap-1", touchTargets && "gap-0")}>
           {weeks.map((week) =>
             week.map((d) => {
               const inMonth = isSameMonth(d, visibleMonth);
@@ -221,7 +226,8 @@ export function QuietDatePicker({
                 <button
                   key={d.toISOString()}
                   type="button"
-                  role="gridcell"
+                  role={touchTargets ? undefined : "gridcell"}
+                  aria-label={touchTargets ? format(d, "MMMM d, yyyy") : undefined}
                   disabled={dim}
                   onClick={() => {
                     onValueChange(toIso(d));
@@ -229,6 +235,7 @@ export function QuietDatePicker({
                   }}
                   className={cn(
                     "flex h-9 items-center justify-center rounded-md text-sm transition-colors",
+                    touchTargets && "size-11",
                     !inMonth && "text-muted-foreground/40",
                     dim && "cursor-not-allowed opacity-30",
                     !dim && inMonth && "hover:bg-accent hover:text-accent-foreground",

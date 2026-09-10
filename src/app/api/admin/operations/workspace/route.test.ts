@@ -16,10 +16,12 @@ const from = vi.fn((table: string) => {
   const result = () => {
     const isCount = (calls.find((call) => call.method === "select")?.args[1] as { head?: boolean } | undefined)?.head;
     const isLegacy = calls.some((call) => call.method === "is" && call.args[0] === "occurrence_kind");
-    return (results[isCount ? `${table}:count` : isLegacy ? `${table}:legacy` : table] ?? (() => ({ data: [], error: null })))();
+    const response = (results[isCount ? `${table}:count` : isLegacy ? `${table}:legacy` : table] ?? (() => ({ data: [], error: null })))();
+    const range = calls.find((call) => call.method === "range")?.args as [number, number] | undefined;
+    return range && Array.isArray(response.data) ? { ...response, data: response.data.slice(range[0], range[1] + 1) } : response;
   };
   const chain: Record<string, unknown> = {};
-  for (const method of ["select", "eq", "neq", "is", "not", "in", "or", "gte", "lte", "lt", "order", "limit"]) {
+  for (const method of ["select", "eq", "neq", "is", "not", "in", "or", "gte", "lte", "lt", "order", "limit", "range"]) {
     chain[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return chain;
@@ -78,7 +80,7 @@ describe("workspace read", () => {
     const response = await get(`?facility_id=${facilityId}&view=today&mine=1`);
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body).toMatchObject({ view: "today", facility_id: facilityId, partial: [], actor: { id: "actor", name: "Sam Reyes", role: "admin_assistant" } });
+    expect(body).toMatchObject({ view: "today", facility_id: facilityId, facility_timezone: "America/New_York", partial: [], actor: { id: "actor", name: "Sam Reyes", role: "admin_assistant" } });
     expect(body.groups.due_today).toHaveLength(1);
     expect(body.groups.due_today[0]).toMatchObject({ occurrence: { id: occurrenceId, activity_name: "Generator test", subject_label: "Homewood Lodge" }, rules: { can_record: true, recorder_roles: ["admin_assistant"] }, receipt: null, open_issues: 0 });
     expect(body.groups).toMatchObject({ outstanding: [], unknown_schedule: [], legacy: [] });

@@ -1,4 +1,6 @@
-# COL-148 server read and navigation — independent review (recorded, not yet remediated)
+# COL-148 server read and navigation — original review (historical)
+
+The original report below is retained unchanged as history. All four findings, later provider-cap and receipt-consistency findings, and client findings are dispositioned in [independent-review.json](independent-review.json); final verification is in [verification.json](verification.json).
 
 Reviewed 2026-09-10 on the uncommitted tree that became commit `78f75f30` (WIP). Verdict: no blockers; acceptable for a bounded first release with four should-fixes. Gates run by the reviewer: vitest 43 files / 449 tests pass; `check:admin-shell` PASS; typecheck and lint clean. **Nothing below has been remediated; the next session applies these before the page lane's final gate.**
 

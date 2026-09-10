@@ -1,3 +1,4 @@
+import { readAllOperationRows } from "@/lib/operations/read-all";
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireOperationsActor } from "@/lib/operations/auth";
@@ -18,31 +19,63 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!UUID.test(id)) return NextResponse.json({ error: "Occurrence not found" }, { status: 404 });
   const auth = await requireOperationsActor({ allowedRoles: RECEIPT_VIEW_ROLES });
   if ("response" in auth) return auth.response;
-  const { data: row, error: readError } = await auth.actor.currentActor.client
-    .from("operation_task_instances" as never)
-    .select("id, facility_id, organization_id, occurrence_kind")
-    .eq("id", id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (readError) {
-    logError("admin.operations.occurrences.receipts", readError, { action: "read", occurrenceId: id });
-    return NextResponse.json({ error: "Occurrence unavailable" }, { status: 503 });
+  const actor = auth.actor;
+  type Target = {
+    id: string; facility_id: string; organization_id: string; occurrence_kind: string | null;
+    status: string; execution_state: string | null; occurrence_revision: string | null;
+    effective_receipt_id: string | null; performed_at: string | null;
+  };
+  const readTarget = async (): Promise<{ target: Target } | { response: NextResponse }> => {
+    const { data: row, error: readError } = await actor.currentActor.client
+      .from("operation_task_instances" as never)
+      .select("id, facility_id, organization_id, occurrence_kind, status, execution_state, occurrence_revision, effective_receipt_id, performed_at")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (readError) {
+      logError("admin.operations.occurrences.receipts", readError, { action: "read", occurrenceId: id });
+      return { response: NextResponse.json({ error: "Occurrence unavailable" }, { status: 503 }) };
+    }
+    const target = row as Target | null;
+    if (!target || !target.occurrence_kind || target.organization_id !== actor.organizationId || !(await actorCanAccessFacility(actor, target.facility_id))) {
+      return { response: NextResponse.json({ error: "Occurrence not found" }, { status: 404 }) };
+    }
+    return { target };
+  };
+  // A lost-answer command can commit during chain pagination. Bracket the chain
+  // with authorized lifecycle reads; retry it once rather than combine old state
+  // with a new receipt. Persistent movement is explicitly retryable.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const before = await readTarget();
+    if ("response" in before) return before.response;
+    const { data, error } = await readAllOperationRows(() => actor.currentActor.client
+      .from("operation_execution_receipts" as never)
+      .select(`${RECEIPT_SELECT}, evidence_status_current, evidence_satisfied_at`)
+      .eq("organization_id", actor.organizationId)
+      .eq("task_instance_id", id)
+      .order("recorded_at", { ascending: true })
+      .order("id", { ascending: true }));
+    if (error) {
+      logError("admin.operations.occurrences.receipts", error, { action: "list", occurrenceId: id });
+      return NextResponse.json({ error: "Receipts unavailable" }, { status: 503 });
+    }
+    const after = await readTarget();
+    if ("response" in after) return after.response;
+    const fields = ["id", "facility_id", "organization_id", "occurrence_kind", "status", "execution_state", "occurrence_revision", "effective_receipt_id", "performed_at"] as const;
+    if (!fields.every((field) => before.target[field] === after.target[field])) continue;
+    const target = after.target;
+    // Explicit projection lets reconciliation hydrate current state without exposing subject details.
+    return NextResponse.json({
+      receipts: data ?? [],
+      occurrence: {
+        id: target.id,
+        status: target.status,
+        execution_state: target.execution_state,
+        occurrence_revision: target.occurrence_revision,
+        effective_receipt_id: target.effective_receipt_id,
+        performed_at: target.performed_at,
+      },
+    });
   }
-  const target = row as { id: string; facility_id: string; organization_id: string; occurrence_kind: string | null } | null;
-  if (!target || !target.occurrence_kind || target.organization_id !== auth.actor.organizationId || !(await actorCanAccessFacility(auth.actor, target.facility_id))) {
-    return NextResponse.json({ error: "Occurrence not found" }, { status: 404 });
-  }
-  // COL-143 adds the current evidence status and the satisfaction instant beside the immutable receipt columns.
-  const { data, error } = await auth.actor.currentActor.client
-    .from("operation_execution_receipts" as never)
-    .select(`${RECEIPT_SELECT}, evidence_status_current, evidence_satisfied_at`)
-    .eq("organization_id", auth.actor.organizationId)
-    .eq("task_instance_id", id)
-    .order("recorded_at", { ascending: true })
-    .order("id", { ascending: true });
-  if (error) {
-    logError("admin.operations.occurrences.receipts", error, { action: "list", occurrenceId: id });
-    return NextResponse.json({ error: "Receipts unavailable" }, { status: 503 });
-  }
-  return NextResponse.json({ receipts: data ?? [] });
+  return NextResponse.json({ error: "Occurrence changed while reading receipts; retry", outcome: "uncertain" }, { status: 503 });
 }

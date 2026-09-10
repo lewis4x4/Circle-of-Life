@@ -10,10 +10,19 @@ import { actorCanAccessFacility, requireOperationsActor, revalidateOperationsAct
 const rpc = vi.fn();
 const maybeSingle = vi.fn();
 const order = vi.fn();
+let readCap = 1000;
+let failPageAt: number | null = null;
+const readRanges: number[] = [];
 const from = vi.fn(() => {
   const query: Record<string, unknown> = {};
   for (const method of ["select", "eq", "is"]) query[method] = vi.fn(() => query);
-  query.order = order;
+  query.order = vi.fn(() => query);
+  query.range = async (start: number, end: number) => {
+    readRanges.push(start);
+    if (start === failPageAt) return { data: null, error: { message: "later page unavailable" } };
+    const response = await order();
+    return Array.isArray(response.data) ? { ...response, data: response.data.slice(start, Math.min(end + 1, start + readCap)) } : response;
+  };
   query.maybeSingle = maybeSingle;
   return query;
 });
@@ -28,6 +37,9 @@ const post = (body: unknown) => new Request("https://local.test/issues", { metho
 
 beforeEach(() => {
   vi.clearAllMocks();
+  readCap = 1000;
+  failPageAt = null;
+  readRanges.length = 0;
   vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
   vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor } as never);
   vi.mocked(actorCanAccessFacility).mockResolvedValue(true);
@@ -36,6 +48,29 @@ beforeEach(() => {
 });
 
 describe("issue reads", () => {
+  it("returns all matching issues under a small provider cap and discards a failed later page", async () => {
+    readCap = 17;
+    const issues = Array.from({ length: 1101 }, (_, i) => ({ id: `issue-${i}`, status: "open" }));
+    order.mockResolvedValue({ data: issues, error: null });
+    const request = new NextRequest(`https://local.test/issues?facility_id=${facilityId}&task_instance_id=${occurrenceId}&status=open`);
+    const response = await GET(request);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ issues });
+    expect(readRanges.slice(0, 3)).toEqual([0, 17, 34]);
+    for (const result of from.mock.results) {
+      const query = result.value as { eq: ReturnType<typeof vi.fn>; order: ReturnType<typeof vi.fn> };
+      expect(query.eq).toHaveBeenCalledWith("facility_id", facilityId);
+      expect(query.eq).toHaveBeenCalledWith("task_instance_id", occurrenceId);
+      expect(query.eq).toHaveBeenCalledWith("status", "open");
+      expect(query.order).toHaveBeenCalledWith("id", { ascending: false });
+    }
+    failPageAt = 17;
+    const failed = await GET(request);
+    expect(failed.status).toBe(503);
+    expect(await failed.json()).toEqual({ error: "Issues unavailable" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("requires a granted site before listing", async () => {
     expect((await GET(new NextRequest("https://local.test/issues") as never)).status).toBe(400);
     vi.mocked(actorCanAccessFacility).mockResolvedValueOnce(false);

@@ -1,0 +1,126 @@
+{
+  "issue": "COL-148",
+  "branch": "codex/hfo-col148-workspace",
+  "base_branch": "codex/hfo-col146-recovery",
+  "base_commit": "d9f5ffb2bbb57effdff9d9a817e05263534ed28f",
+  "incoming_commit": "77ce6d2e7011a791ec61173bad6478639cec2e58",
+  "recorded_at": "2026-09-10T21:54:26.296603+00:00",
+  "runtime_and_test_files": [
+    {
+      "path": "src/app/(admin)/admin/operations/page.tsx",
+      "sha256": "33c92bc9fb79c24115c7edbb37c846f32b0d55f4a9149b7fdabfa3042a49ac15"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/evidence-panel.test.tsx",
+      "sha256": "7c22947e335e1a5625764ec88e6ff2683989534b253ab471e5041a291e1ec401"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/evidence-panel.tsx",
+      "sha256": "2eca0180d6bfba29b1e6278b5a494980a17b85b27353b58dc1fc8f4031e17bfc"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/legacy-row.tsx",
+      "sha256": "87cf8a8edd8553ec5ffe59777eb7aa4d7e3828d8045f4afa1234f761d85a911a"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/receipt-history.test.tsx",
+      "sha256": "3b9ee8c0ef3b2afa4aef4928fd941035af59e480a4aef2998f984d8c0a613ade"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/receipt-history.tsx",
+      "sha256": "bda087f0cd1b389e55e803de6c05be38ae7bd1e1eb2c390c1fae90e753b6a2f2"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/work-inputs.test.tsx",
+      "sha256": "cfb882f55193340c2c563933a7b2f8d8d3b74410935e2b979938f2915a7e803c"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/work-inputs.tsx",
+      "sha256": "fae814ad43c3ab28c2e44a3591833b71fab91555ea2f19b89090d6b9d4ca9890"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/work-row.tsx",
+      "sha256": "daf1ca1fa12acdac2f960f24c4929ae437849ec522e7b60c948ddd4c3a04dd98"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/page.test.tsx",
+      "sha256": "3b1ae5334be35343cff374191c4bf8f81603f19b024b652f87927583df075272"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/page.tsx",
+      "sha256": "07475c72757619b626734a2f3a58ce497d5fa76970b62fe27bf6a57fb97936c1"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/route.test.ts",
+      "sha256": "9850f53d2ff3e09b1fc24dd430b123cf4d9f8d55ebceac547f727ccec2c152b9"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/route.ts",
+      "sha256": "fa85ce8956bcb8d8330e9c3f9d01d00a07909a097e1e38792fae70505901318e"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/route.test.ts",
+      "sha256": "635ac715510a3d8c2caef7c7b5fcb01be743bd57a82655495a628bed785fcae8"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/route.ts",
+      "sha256": "f46611657de1ad61b13125b73636941bbcf9eb67662dcc5459dffb7290ea1a83"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/receipts/route.ts",
+      "sha256": "d818371d8a408b492af7feb7d2a49115ea6306bd7a2c7771c7e000619d569579"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/record/route.test.ts",
+      "sha256": "3c9966069005ea39372f279be022199201efeb002bd9aa73eadd0eac51278115"
+    },
+    {
+      "path": "src/app/api/admin/operations/workspace/route.test.ts",
+      "sha256": "943cfe7fa8bd834b152a29fa207625fd68d94715df0be0149e029b7b6f9095ef"
+    },
+    {
+      "path": "src/app/api/admin/operations/workspace/route.ts",
+      "sha256": "0ed5a7e2189d2eedde5942c1d3714c5da95f60170eaf4e79c36f71771df8bf9f"
+    },
+    {
+      "path": "src/components/layout/AdminShell.nav.test.tsx",
+      "sha256": "d278094395bcfd6addc45ed4cb17a4c5462a65b1ba75c179a431e0dcd6a1a43b"
+    },
+    {
+      "path": "src/components/layout/AdminShell.tsx",
+      "sha256": "c8abf7931c0a6db5d9b6153d21de16448920d2e3877dbc0a8851bec0d2fe700b"
+    },
+    {
+      "path": "src/components/ui/quiet-date-picker.touch.test.tsx",
+      "sha256": "0ec98ffc5a0da0d3adee576174f572cb303b737de7cf9786c50e255eb2798875"
+    },
+    {
+      "path": "src/components/ui/quiet-date-picker.tsx",
+      "sha256": "2bfc32ba7d34b9f256725f26f45003c54f18ba88139fed60420cfcdd6ba72141"
+    },
+    {
+      "path": "src/lib/auth/dashboard-routing.test.ts",
+      "sha256": "90c849a7d5c6c439a49d39eac514424ae527b5d672231442d1079057e04131af"
+    },
+    {
+      "path": "src/lib/auth/dashboard-routing.ts",
+      "sha256": "76f4cec272517416496cbc13923fb81e8eeba0b08bdac4ec768a5eb70453460f"
+    },
+    {
+      "path": "src/lib/operations/read-all.ts",
+      "sha256": "72f28676d19e7118df4fc447fc510651f96194eec1e77c3b6538a37df99b2058"
+    },
+    {
+      "path": "src/lib/operations/workspace.test.ts",
+      "sha256": "be60d9ee46a7be3714d8afebd1f41a675035d067a5418220b6af71fef9647f69"
+    },
+    {
+      "path": "src/lib/operations/workspace.ts",
+      "sha256": "987fc6274143bacb58d654575f858e375537bbd88e69a741270ba26e75e614ee"
+    }
+  ],
+  "migration": "none",
+  "dependencies_added": [],
+  "scope": "source only; no merge, hosted application, deployment or activation",
+  "rollback": "Revert only COL-148 changes or close the draft PR; retain COL-146 and earlier stack. No data rollback needed because nothing was applied to hosted systems."
+}
