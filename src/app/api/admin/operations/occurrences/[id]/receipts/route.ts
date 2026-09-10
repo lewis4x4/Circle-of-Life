@@ -30,9 +30,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!target || !target.occurrence_kind || target.organization_id !== auth.actor.organizationId || !(await actorCanAccessFacility(auth.actor, target.facility_id))) {
     return NextResponse.json({ error: "Occurrence not found" }, { status: 404 });
   }
+  // COL-143 adds the current evidence status and the satisfaction instant beside the immutable receipt columns.
   const { data, error } = await auth.actor.currentActor.client
     .from("operation_execution_receipts" as never)
-    .select(RECEIPT_SELECT)
+    .select(`${RECEIPT_SELECT}, evidence_status_current, evidence_satisfied_at`)
     .eq("organization_id", auth.actor.organizationId)
     .eq("task_instance_id", id)
     .order("recorded_at", { ascending: true });

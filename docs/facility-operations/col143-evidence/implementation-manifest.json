@@ -1,0 +1,107 @@
+{
+  "base_commit": "89ed6aca",
+  "branch": "codex/hfo-col143-evidence",
+  "scope": "source-only portion; hosted Storage proof open",
+  "files": [
+    {
+      "path": "docs/facility-operations/CHECKPOINT.md",
+      "sha256": "949f3005c29da51b9be2347a486b9b502647db23f335489df61524ba00dd3e94"
+    },
+    {
+      "path": "docs/facility-operations/COL-143-HANDOFF.md",
+      "sha256": "7fae7c2caa87fc59ae1a1ef0a990bc11d12f849e9a45f53ea60424dbed5f4db0"
+    },
+    {
+      "path": "docs/facility-operations/COL-143-PREPARATION.md",
+      "sha256": "93fc27f02c562f4d78c749292452bef68c3343a914752b72cf7c551dea541239"
+    },
+    {
+      "path": "docs/facility-operations/HANDOFF.md",
+      "sha256": "539e497b0284672e9f1019092c23a0ceadecd41040f2168d7cc55c2b8ee2e4d7"
+    },
+    {
+      "path": "docs/facility-operations/OWNER-DECISIONS.md",
+      "sha256": "82b0915a48026fac744ceafdce16093a0f589068e56a9a1a318892e6aed42194"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/concurrency.txt",
+      "sha256": "7603ddca4127a4e5f2e6dbe2ac2d69ca432322d59da629dfab3f3d6a62b67574"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/engineering-contracts.md",
+      "sha256": "a23589c8113b3d969b0e605498b395d59c42b094e0a793d5f5f621612eea2302"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/independent-review.json",
+      "sha256": "395a4050c61d27df3e7415118c58e5efdbc0a3bfdd8ead3171e9f78d131667ee"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/linear-state.json",
+      "sha256": "a8b3469f9f4014ba9547a54535ead042ba706d3e4cf14fab3e059ed3bf8a08ea"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/verification.json",
+      "sha256": "c98635d7e15907f5b7c363e772a17c2a45de3ecf6dd3ea3c48ab19f222530480"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-evidence.md",
+      "sha256": "f4bb40ff772c5bacc67ebae721fd91c6461317e3da01fafb5e66030bf3e90ff8"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "60d059e0c78b2ff43c022904cf7c3b8945168a8af6d72fb20c1c1a907eccd87d"
+    },
+    {
+      "path": "scripts/facility-operations/test-evidence-concurrency.py",
+      "sha256": "ed0035b7368a58297263a1fc8822a9597fabdd9e453bb1d510fd346db91ab6ef"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/[id]/download/route.ts",
+      "sha256": "18056fa30979003471445d52b16119c39b2716d4c562ebe369514a2bfa651035"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/[id]/fail/route.ts",
+      "sha256": "70dae38f146f2b5fc355d08739dc127944ff00ad42322727ce9a7004ba6d9d09"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/[id]/finalize/route.ts",
+      "sha256": "c37984274dd3cd2a8e9e895af2ef06a2d548f7cc97f4824cb677598c367c07ec"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/[id]/uploaded/route.ts",
+      "sha256": "b9eba9eb5f7b82a62359f9f6a1cc11f894270c2b2b9981d514b0c6631217289d"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/route.test.ts",
+      "sha256": "bc3eb06b50b8687657b979c551da6662b79fccd3381345dc9ab9c230ea2c2eb8"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/route.ts",
+      "sha256": "12bbf1baf23d7fae6e4581ce20c8474b59a73afa30812e14bdcd51fa9a1bf69e"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/receipts/route.ts",
+      "sha256": "fd6e8460affe585051e388e0d99cf4d1c2dde3145f26c626d7cb749a0986f4cd"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/record/route.test.ts",
+      "sha256": "21ea09578deec0c2f97cfb1f03e438df9380cbc35c8c90ca6a95f2604bab42a0"
+    },
+    {
+      "path": "src/lib/operations/evidence.test.ts",
+      "sha256": "12d030178b383d52062a3035fc40a50287de2f2ef9d86c27fabd8ea502544cbb"
+    },
+    {
+      "path": "src/lib/operations/evidence.ts",
+      "sha256": "fa0c73f87bc2cfdf78b19aac0a3b14a519253b738d914e912e41f085711d082b"
+    },
+    {
+      "path": "supabase/migrations/343_hfo_verified_evidence.sql",
+      "sha256": "53cb7b2bbc7d4544ee1f49c9c540ce188fea30731f2dc7b6a5da776e318ece40"
+    },
+    {
+      "path": "supabase/tests/review_hfo_verified_evidence.sql",
+      "sha256": "da13ed58659006c0f640477879c52a3bfd51b38f444e343d4031005a304b4b61"
+    }
+  ]
+}

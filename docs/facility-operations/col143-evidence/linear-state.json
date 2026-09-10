@@ -1,0 +1,26 @@
+{
+  "issue": "COL-143",
+  "before": {
+    "checked_at": "2026-09-10T19:30:00Z",
+    "state": "Backlog",
+    "blockers": {"COL-133": "Done", "COL-142": "Done"},
+    "dependency_ready": true,
+    "external_blocker": "acceptance item 3 needs positive hosted Storage HTTP proof (real upload, finalize, completion, corporate download) that source-only work cannot establish",
+    "source": "live Linear GraphQL read after COL-144 closed; COL-140 is the only other dependency-ready HFO issue and needs owner answers"
+  },
+  "started": {
+    "at": "2026-09-10T19:32:00Z",
+    "state": "In Progress",
+    "comment_id": "a11b328e-274c-42ed-b56e-c27b65f49036",
+    "comment": "start comment naming branch codex/hfo-col143-evidence, the shared worktree, base f97fb50f (closure docs 89ed6aca), provisional slot 343, the precise hosted-proof blocker (the issue stays In Progress, not Done, when the source segment closes) and the plan for the three source-verifiable acceptance items"
+  },
+  "after": {
+    "at": "2026-09-10T21:20:00Z",
+    "state": "In Progress (unchanged by design)",
+    "progress_comment_id": "480c525c-b62a-44f1-9071-821501cf6229",
+    "commit": "c7b5cc30",
+    "draft_pr": "#472",
+    "meaning": "source portion reviewed, gated, unmerged; acceptance item 3 (hosted Storage HTTP proof) open; the issue closes only after the owner or integrator retains that proof",
+    "dependency_ready_after_this": "live read: only COL-140 (needs owner answers to Q01, Q02, Q04–Q10, Q14, Q30); every other HFO issue waits on COL-143's hosted proof, COL-145, COL-147, COL-148, COL-149 or COL-21"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "issue": "COL-143",
+  "scope": "source-only portion; the hosted Storage proof (acceptance item 3) is outside this review",
+  "recorded_at": "2026-09-10T20:45:00Z",
+  "method": "Two independent read-only reviewers on the uncommitted tree (SQL: migration 343, its probe and the evidence race script against the settled contracts, the 335 Storage pattern and the 340\u2013342 guarantees, with rolled-back experiments on the run-owned native cluster; TypeScript: evidence library, six routes and tests against the 343 wrapper signatures, RAISE wordings and reply shapes, with attention to session-only Storage signing). Both ran the gates themselves. Every finding was verified against the source and dispositioned; remediations were applied before the commit and re-verified.",
+  "typescript_review": {
+    "verdict": "changes requested: no blockers, three should-fix, eight notes; should-fixes and the actionable notes remediated, the rest recorded",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "where": "prepare route reply",
+        "claim": "the prepare reply dropped satisfaction although a linked record finalizes at insert and may complete the receipt and move the occurrence",
+        "disposition": "Fixed: prepare returns satisfaction; route test with a linked-record satisfaction using the real reply shape."
+      },
+      {
+        "severity": "should-fix",
+        "where": "download route",
+        "claim": "the signed download URL was minted without revalidating the actor, unlike every other signer and command",
+        "disposition": "Fixed: revalidation before signing with the revalidated session client; test asserts no signing when revalidation fails."
+      },
+      {
+        "severity": "should-fix",
+        "where": "manager fail clause vs RLS",
+        "claim": "the contract's manager-may-fail clause was unreachable: RLS shows other uploaders' in-flight rows to nobody, so a manager could neither list nor target them",
+        "disposition": "Decided: failing is uploader-only; the clause was removed from the contract and the SQL; an abandoned in-flight row attaches to nothing and blocks nothing, and a fresh preparation proceeds (OWNER-DECISIONS 3f iii updated)."
+      },
+      {
+        "severity": "note",
+        "where": "phantom satisfaction shape in a test; unused event select export; unread receipt_kind in the receipt target select",
+        "disposition": "Fixed: real satisfaction keys; dead export removed; unread column dropped."
+      },
+      {
+        "severity": "note",
+        "where": "Storage refusal at prepare returns 200 with upload null and upload_error; the caller's own failed rows are listed; linked-record-unreadable wording as a conflict class; zod stricter than SQL on blank rule_label and sha256; P0002 mapping never raised",
+        "disposition": "Recorded design choices, now stated in the contract: the prepared row exists and replays to obtain a URL later; failed rows are listed with state failed and no path and are never attached; the wording reveals nothing."
+      }
+    ],
+    "clean": [
+      "RPC names and p_* arguments match the four wrappers; payload key sets identical to the SQL allow-lists in both directions; server-owned fields refused",
+      "request-key, revision, filename, MIME, size and sha256 rules identical to the SQL; reply shape validated; request_hash stripped; selects omit request columns",
+      "Storage touched only through the session client, never the service role; upload URL signed on the exact returned path only while the row is prepared; download signs only finalized object rows for 60 seconds; Storage refusal handled",
+      "object paths never returned for other uploaders' in-flight rows or through receipts or task lists; event details carry no path or filename",
+      "route order: uuid guard, actor, strict body, session read, organisation and site checks (404), revalidation, RPC, bounded mapping; no RPC or revalidation on 400/404/503",
+      "every 343 RAISE wording mapped: 22023 verbatim as validation, state and idempotency wordings verbatim as conflict, the two value mismatches as validation, 42501 hidden, guard wordings and unknown codes never echoed; no fragment overlap"
+    ]
+  },
+  "sql_review": {
+    "verdict": "changes required: one blocker, three should-fix, six notes; blocker, should-fixes and the actionable notes remediated, the rest recorded; re-verification recorded below",
+    "findings": [
+      {
+        "severity": "blocker",
+        "where": "343 linked-record preparation",
+        "claim": "a linked record was never checked against the receipt's subject, so another employee's file (or a medical record on a personnel receipt) attached to and could satisfy a linked-record rule (reproduced)",
+        "disposition": "Fixed: an employee file record must be the receipt subject's own staff record with a category compatible with the receipt's authority class; a facility document must be at the receipt's site and the subject must be the facility or an asset; refused with the existing non-disclosing wording; probed."
+      },
+      {
+        "severity": "should-fix",
+        "where": "343 lock_operation_evidence_authority lock order",
+        "claim": "receipt FOR SHARE, then task FOR UPDATE, then receipt FOR UPDATE in satisfaction deadlocked two overlapping evidence commands on one receipt (40P01 reproduced), which is not a mapped outcome",
+        "disposition": "Fixed: the receipt is read without a lock only to find the task, the task lock is taken first (341's verify order), then the receipt is re-read FOR NO KEY UPDATE; the race script gained the interleaving and both finalizations complete with one satisfaction."
+      },
+      {
+        "severity": "should-fix",
+        "where": "343 fail_operation_evidence actor rule",
+        "claim": "the lock ran without the governing recorder list and non-uploaders were gated by the legacy broad list, so a governing recorder was refused while a non-recorder nurse failed the row and received another uploader's object path in the reply",
+        "disposition": "Fixed: failing is uploader-only under the governing recorder list; no reply carries another uploader's path; probed for a non-uploader recorder and a non-recorder."
+      },
+      {
+        "severity": "should-fix",
+        "where": "race script case 1",
+        "claim": "the wait was mislabelled (receipt row, not evidence row) and the sequence never entered the deadlock window",
+        "disposition": "Fixed: label corrected and the truly concurrent interleaving added."
+      },
+      {
+        "severity": "note",
+        "where": "storage access function locking before authority; bucket insert without ON CONFLICT; a non-integer size raising an unmapped error; the receipt guard accepting a caller-supplied current status on insert",
+        "disposition": "Fixed: authority checks precede any row lock; ON CONFLICT DO NOTHING on the bucket; size cast via numeric; current status coerced from the recorded status on insert."
+      },
+      {
+        "severity": "note",
+        "where": "hosted stand-in differences (owner uuid vs owner_id text written by the Storage API; metadata keys; signed-upload-URL policy evaluated at signing time; storage.objects policy privileges); same-key concurrent prepares",
+        "disposition": "Recorded in COL-143-HANDOFF.md under the hosted proof to retain; the same-key race loser conflicts as in 341."
+      }
+    ],
+    "clean": [
+      "token gating on evidence, events and the two receipt columns; forged settings and service_role refused; the owner token cannot rewrite identity, move state backwards, delete history or move a receipt past complete",
+      "the evidence-authority lock discloses nothing before authority (one wording); the storage access function returns only booleans, admits writes only to the uploader's own prepared path and reads of finalized or own in-flight objects; restrictive policies pass through for every other bucket and block client update and delete on the evidence bucket",
+      "RLS finalized-or-uploader on evidence and events; the other site sees no row, event or object; restrictive audit policy; no policy name collisions",
+      "kind, state and path checks; forward-only states; unique finalized checksum per receipt with the dedupe reply; rule validation; MIME, size and filename limits; object verification with owner and declared size and type; unowned objects refused",
+      "satisfaction: supplementary never counts; the occurrence transition mirrors 341 with performer, performed_at, recorded_at and missing_evidence untouched; verification refuses when missing and passes when complete; expected receipt revision after replay; every function pins search_path"
+    ],
+    "re_verification": {
+      "verdict": "PASS",
+      "method": "the reviewer reproduced every original counter-example on a clone of the rebuilt 343 base: another employee's file, the subject's own medical file on a personnel receipt (with and without a medical grant), a vault document on an employee receipt and an employee file on facility and asset receipts all refused, while the subject's own personnel file and a site document on an asset receipt link; the exact overlapping-finalize interleaving completes without a deadlock with one satisfaction, and every command locks the occurrence before the receipt; fail is uploader-only under the governing list with no foreign path in any reply; the storage access function takes no lock and checks organisation and occurrence readability before the path; bucket insert idempotent; non-integer sizes refused with the mapped wording; the receipt guard coerces the current status on insert; three race cases and all eight earlier probes pass; no new finding in the changed code",
+      "notes": [
+        "hosted stand-in differences already recorded in COL-143-HANDOFF.md (owner uuid vs owner_id, metadata keys, signed-URL policy evaluation at signing time, storage.objects policy privileges)",
+        "concurrent identical-key prepares conflict rather than replay, as in 341",
+        "the evaluator probe signals PASS by exit status rather than a printed string"
+      ]
+    }
+  }
+}

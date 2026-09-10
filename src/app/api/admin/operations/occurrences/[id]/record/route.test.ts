@@ -14,9 +14,11 @@ const rpc = vi.fn();
 const isCalls: Array<ReturnType<typeof vi.fn>> = [];
 const maybeSingle = vi.fn();
 const order = vi.fn();
+const selects: string[] = [];
 const from = vi.fn(() => {
   const query: Record<string, unknown> = {};
-  for (const method of ["select", "eq", "is", "not"]) query[method] = vi.fn(() => query);
+  for (const method of ["eq", "is", "not"]) query[method] = vi.fn(() => query);
+  query.select = vi.fn((columns: string) => { selects.push(columns); return query; });
   isCalls.push(query.is as ReturnType<typeof vi.fn>);
   query.order = order;
   query.maybeSingle = maybeSingle;
@@ -171,5 +173,9 @@ describe("receipts read", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ receipts: [{ id: receiptId, receipt_kind: "performance" }] });
     expect(from).toHaveBeenLastCalledWith("operation_execution_receipts");
+    // COL-143: the current evidence status and satisfaction instant ride beside the immutable receipt columns.
+    const receiptSelect = selects[selects.length - 1] ?? "";
+    expect(receiptSelect).toContain("evidence_status_current");
+    expect(receiptSelect).toContain("evidence_satisfied_at");
   });
 });
