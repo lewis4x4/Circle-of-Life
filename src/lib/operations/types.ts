@@ -17,6 +17,8 @@ export type OperationTaskShift = (typeof OPERATION_TASK_SHIFTS)[number];
 
 export type OperationTask = {
   id: string;
+  /** Stable across template revisions; absent on older saved client responses. */
+  activity_id?: string | null;
   template_id: string | null;
   template_name: string;
   template_category: string;

@@ -13,6 +13,7 @@ import {
 
 const TEMPLATE_SELECT = `
   id,
+  activity_id,
   facility_id,
   name,
   description,
@@ -77,6 +78,14 @@ export async function PATCH(
   }
   if (existing.facility_id && !(await actorCanAccessFacility(actor, existing.facility_id))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
+  }
+  // A revision inherits its lineage's site; the database rejects a site change
+  // as invalid lineage scope, so say so before any command runs.
+  if (body.facility_id !== undefined && (body.facility_id?.trim() || null) !== existing.facility_id) {
+    return NextResponse.json(
+      { error: "A template keeps its site across revisions. Create a new template at the other site." },
+      { status: 400 },
+    );
   }
 
   const changingOnlyStatus =

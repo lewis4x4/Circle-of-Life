@@ -11,6 +11,7 @@ type OperationTaskRow = {
   organization_id: string;
   facility_id: string;
   template_id: string | null;
+  activity_id?: string | null;
   template_name: string;
   template_category: string;
   template_cadence_type: string;
@@ -75,6 +76,7 @@ export async function GET(request: Request) {
       organization_id,
       facility_id,
       template_id,
+      activity_id,
       template_name,
       template_category,
       template_cadence_type,

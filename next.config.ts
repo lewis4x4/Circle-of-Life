@@ -72,6 +72,8 @@ if (isProd) {
 }
 
 const nextConfig: NextConfig = {
+  // Match npm run typecheck; Vitest executes test fixtures independently.
+  typescript: { tsconfigPath: "tsconfig.typecheck.json" },
   experimental: {
     optimizePackageImports: [
       "lucide-react",
