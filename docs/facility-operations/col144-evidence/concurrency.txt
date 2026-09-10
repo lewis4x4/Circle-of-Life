@@ -1,0 +1,28 @@
+{
+  "issue": "COL-144",
+  "baseline_database": "col144_base342",
+  "cases": [
+    {
+      "name": "two managers assign one issue with the same revision",
+      "outcome": "second assignment refused by the moved revision after the wait",
+      "sqlstate": "P0001",
+      "events": 1,
+      "waited_on": "issue row"
+    },
+    {
+      "name": "two identical assignment replays",
+      "outcome": "same event replayed after the wait",
+      "events": 1,
+      "waited_on": "issue row"
+    },
+    {
+      "name": "two resolutions with the same revision",
+      "outcome": "second resolution refused by the moved revision after the wait",
+      "sqlstate": "P0001",
+      "events": 1,
+      "waited_on": "issue row"
+    }
+  ],
+  "boundary": "local PostgreSQL 17 with Supabase auth stubs; run-owned socket-only cluster"
+}
+COL-144 issue concurrency PASS

@@ -117,9 +117,6 @@ export function payloadProblem(error: z.ZodError): string | null {
 export const RECEIPT_SELECT =
   "id, organization_id, facility_id, task_instance_id, activity_id, subject_id, authority_class, requirement_version_id, facility_requirement_id, receipt_kind, recorder_id, recorder_role, recorded_at, performed_at, performer_kind, performer_user_id, performer_vendor_id, performer_label, entry_kind, entry_reason, outcome, values, note, evidence_status, missing_evidence, completion_state, issue_id, request_key, revision, superseded_by_receipt_id, created_at";
 
-export const ISSUE_SELECT =
-  "id, organization_id, facility_id, activity_id, subject_id, authority_class, task_instance_id, receipt_id, issue_kind, summary, severity, status, reported_by, reported_role, reported_at, request_key, created_at";
-
 /** Database messages that are safe and useful to show the operator verbatim. */
 const TRUSTED_FRAGMENTS = [
   "Recorded values",

@@ -1,0 +1,138 @@
+{
+  "base_commit": "0c61def2",
+  "branch": "codex/hfo-col144-issues",
+  "files": [
+    {
+      "path": "docs/facility-operations/CHECKPOINT.md",
+      "sha256": "e7a8feb307fd16684a7faa80622129f5e821d79dcbb0ddf36fccaf81e6d76027"
+    },
+    {
+      "path": "docs/facility-operations/COL-144-HANDOFF.md",
+      "sha256": "129a9033c126f91bea03895b250932f0a170a246a24023b3931c366418117d85"
+    },
+    {
+      "path": "docs/facility-operations/COL-144-PREPARATION.md",
+      "sha256": "34bd5240ee4036786a5c96044783e3154c7b3aa510ae2a07e30ac0f054c82fa8"
+    },
+    {
+      "path": "docs/facility-operations/HANDOFF.md",
+      "sha256": "1f5ef1894a9253b2b81c9c71bda5d9ce2eb56a73d97c38b740a792e77de54791"
+    },
+    {
+      "path": "docs/facility-operations/OWNER-DECISIONS.md",
+      "sha256": "62b08deff3d0f31b2df47310656bcc2cee06de09f27f1220c4a5dba158132a15"
+    },
+    {
+      "path": "docs/facility-operations/col144-evidence/concurrency.txt",
+      "sha256": "c712b55f445a5e1446e8d33042cad85c7203c4dfc0013bf74f6ce0c95c7dde62"
+    },
+    {
+      "path": "docs/facility-operations/col144-evidence/engineering-contracts.md",
+      "sha256": "ba18e08176f328b2899e2e5ed10757c7b01b2470a9b6ea4e4dc1eea3d75df97f"
+    },
+    {
+      "path": "docs/facility-operations/col144-evidence/independent-review.json",
+      "sha256": "4933d935ee5073516ea28270543df6f7de006991f67eeb8d754cb1271691f451"
+    },
+    {
+      "path": "docs/facility-operations/col144-evidence/linear-state.json",
+      "sha256": "291e7ea9f006ef7f7846ab5fe9c6d6502945a56bb18ac9dfe67f1f601aadc5a0"
+    },
+    {
+      "path": "docs/facility-operations/col144-evidence/verification.json",
+      "sha256": "a0985d1ce83d4eca190f9e2be5b419004cf126c137572850858a1ec24a2272bb"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-issues.md",
+      "sha256": "2c64c4c60ecdab579e4a6a6d8c4c97744058d0f73bf58dc8fdb24592056a862d"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "efa7bead6b79e737a60ca69e43b0d15225722cf0acd1507c7d7e9ef3dfe25851"
+    },
+    {
+      "path": "scripts/facility-operations/test-issue-concurrency.py",
+      "sha256": "590bc5ef7486e4e72a3522c706e5853097ac8836fd3ac58914c01855f918b3d0"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/accept/route.ts",
+      "sha256": "b7c9af5335632c936c50db757bba395df3067e480698fa4c4ce918a68bc8a1eb"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/assign/route.ts",
+      "sha256": "97f7b6a3fc71df3b7e1137718721b66039be9a11ea79c924157b0ebdd9ad31b6"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/link/route.ts",
+      "sha256": "32c999a7f1e523dcd2e896ffaf3842ef0335186b5efafe8f41be8ba5c00ff933"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/reopen/route.ts",
+      "sha256": "25db11a61b6463e1914162af1af7c2ef75fa81035ee29ecea1178bfd1392b08f"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/resolve/route.ts",
+      "sha256": "ec2891ca2d53940fde240ff34442a5db46be62bf3e5615346dc053442410aa30"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/resume/route.ts",
+      "sha256": "fd1bb107e4e852dcd437b82c41a9964ed997525467c3f28d02ebf5e15a97848a"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/route.test.ts",
+      "sha256": "6cb245b9cea421e18810fd7259fd8eef837c79904b246b574daf0a7c6537cb07"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/route.ts",
+      "sha256": "30feee0dc889013c650b1d86b4642e7deef3f9c421303d1d6722bd6ed6e8083c"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/[id]/wait/route.ts",
+      "sha256": "41261308b7b51f5ea77016a60cf04d76c3adca9173c5392bd827499518cedb00"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/backlog/route.ts",
+      "sha256": "651ebd7fd6273ecffae92d742f9b340237d979701d4499576bcc82f69b786252"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/route.test.ts",
+      "sha256": "150cbf608c8cd20caabcd36eb604923aa5209e0b9a1a015e58e9184e99944ed5"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/route.ts",
+      "sha256": "42778156cb95c0487be6444a97364e909fb66d383fd76c48ac77549df6853c4b"
+    },
+    {
+      "path": "src/lib/operations/issues.test.ts",
+      "sha256": "7b146479f85608af61902a1ee0d4c6bb0013699906888ea2987db4c56539b5ca"
+    },
+    {
+      "path": "src/lib/operations/issues.ts",
+      "sha256": "ce924cf659b3a3c6b4379e1da1ce180dc35eebd0706c62ea6103b294f8bf9aa8"
+    },
+    {
+      "path": "src/lib/operations/occurrences.test.ts",
+      "sha256": "fa85dd02c9d9ec6ee5f7d32370b5515e83babe3337ef2ed3b708de972bddb6da"
+    },
+    {
+      "path": "src/lib/operations/occurrences.ts",
+      "sha256": "d95e409902a5e0b3a94a85d7d3a2db97ad675e7bdedb0810e192530e41471317"
+    },
+    {
+      "path": "src/lib/operations/receipts.ts",
+      "sha256": "ae37556a290b010eb575a64f1a765b10aeaf6fbddf607a4c4ccafd75420ae5aa"
+    },
+    {
+      "path": "supabase/migrations/342_hfo_issue_lifecycle.sql",
+      "sha256": "fdcc4f6b6e8782ead4c4e7dcb827e2cbfc12d01177e9b61581ea88ca0d415ca3"
+    },
+    {
+      "path": "supabase/tests/review_hfo_execution_receipts.sql",
+      "sha256": "aed4bb9e5742e6e823947929d72fffa60094b1350925a6a536277fec30bde4f6"
+    },
+    {
+      "path": "supabase/tests/review_hfo_issue_lifecycle.sql",
+      "sha256": "7a0f156b4eab7f83c73b0388b90d4796263621308631d22ee14de8314b759368"
+    }
+  ]
+}

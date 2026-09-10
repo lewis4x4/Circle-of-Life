@@ -18,6 +18,7 @@ const revision = "a".repeat(64);
 describe("occurrence cancellation conflicts", () => {
   it("surfaces recorded work as a plain conflict rather than a hidden state", () => {
     expect(mapOccurrenceRpcError({ code: "P0001", message: "Occurrence has recorded work" })).toEqual({ status: 409, error: "Occurrence has recorded work" });
+    expect(mapOccurrenceRpcError({ code: "P0001", message: "Occurrence has an open issue" })).toEqual({ status: 409, error: "Occurrence has an open issue" });
   });
 });
 

@@ -45,6 +45,14 @@ describe("issue reads", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ issues: [] });
   });
+
+  it("filters by a known lifecycle status and refuses an unknown one", async () => {
+    expect((await GET(new NextRequest(`https://local.test/issues?facility_id=${facilityId}&status=closed`) as never)).status).toBe(400);
+    const response = await GET(new NextRequest(`https://local.test/issues?facility_id=${facilityId}&status=waiting`) as never);
+    expect(response.status).toBe(200);
+    const query = from.mock.results[0]?.value as { eq: ReturnType<typeof vi.fn> };
+    expect(query.eq).toHaveBeenCalledWith("status", "waiting");
+  });
 });
 
 describe("issue reports", () => {

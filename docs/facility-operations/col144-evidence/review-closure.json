@@ -1,0 +1,21 @@
+{
+  "issue": "COL-144",
+  "closed_at": "2026-09-10T19:25:00Z",
+  "reviewed_head": "f97fb50f",
+  "branch": "codex/hfo-col144-issues",
+  "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/471 (base codex/hfo-col142-receipts)",
+  "manifest": "docs/facility-operations/col144-evidence/implementation-manifest.json (33 files, hashed at commit)",
+  "strict_gate": "test-results/agent-gates/2026-09-10T17-22-18-024Z-COL-144-HFO-ISSUES.json",
+  "verdict": "PASS",
+  "independent_review": "docs/facility-operations/col144-evidence/independent-review.json (SQL and TypeScript reviews; every should-fix and actionable note remediated; SQL remediation re-verified PASS; the one re-verification note applied before the final replay and gate)",
+  "linear": {"state": "Done", "closing_comment_id": "00def7c4-0ad9-4c58-84f2-c2df5bd6886d"},
+  "completion_meaning": "reviewed, gated, unmerged source only; no hosted, provider, staff or operating acceptance; migration 342 provisional; Finance-first integration and a fresh hosted-ledger read precede final numbering",
+  "next_selection": {
+    "dependency_ready_after_close": ["COL-143 (HFO-07 verified evidence; blockers COL-133/142 Done)", "COL-140 (HFO-26 Homewood approved task profile; blockers COL-135/137 Done)"],
+    "selected": "COL-143, source-only portion",
+    "blockers_recorded": {
+      "COL-143": "acceptance item 3 (authorized admin/assistant performs a real upload, finalize, completion and corporate download with positive hosted Storage HTTP proof) requires hosted transport that source-only work cannot establish; the schema, commands, routes and local proofs are implemented and the issue stays In Progress, not Done, until that proof exists",
+      "COL-140": "entering approved schedules, evidence, roles, backups and procedure versions requires the owner's answers to Q01, Q02, Q04–Q10, Q14 and Q30, none of which is answered; nothing is guessed, so the issue cannot be started as configuration work"
+    }
+  }
+}
