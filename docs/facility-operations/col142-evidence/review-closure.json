@@ -1,0 +1,18 @@
+{
+  "issue": "COL-142",
+  "closed_at": "2026-09-10T17:55:00Z",
+  "reviewed_head": "006a12ff",
+  "branch": "codex/hfo-col142-receipts",
+  "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/470 (base codex/hfo-col139-occurrences)",
+  "manifest": "docs/facility-operations/col142-evidence/implementation-manifest.json (32 files, hashed at commit)",
+  "strict_gate": "test-results/agent-gates/2026-09-10T16-37-51-790Z-COL-142-HFO-RECEIPTS.json",
+  "verdict": "PASS",
+  "independent_review": "docs/facility-operations/col142-evidence/independent-review.json (SQL and TypeScript reviews; every should-fix and actionable note remediated; SQL remediation re-verified PASS by the reviewer)",
+  "linear": {"state": "Done", "closing_comment_id": "e7ade15c-983c-41ee-9705-b3a8cc385191"},
+  "completion_meaning": "reviewed, gated, unmerged source only; no hosted, provider, staff or operating acceptance; migration 341 provisional; Finance-first integration and a fresh hosted-ledger read precede final numbering",
+  "next_selection": {
+    "dependency_ready_after_close": ["COL-143 (HFO-07 verified evidence)", "COL-144 (HFO-14 issue lifecycle)"],
+    "selected": "COL-144",
+    "reason": "COL-143's acceptance requires a real upload, finalize, completion and corporate download with positive hosted Storage HTTP proof, which the source-only boundary of this work cannot establish; COL-144 is fully closable on source and extends the issue identity COL-142 owns"
+  }
+}

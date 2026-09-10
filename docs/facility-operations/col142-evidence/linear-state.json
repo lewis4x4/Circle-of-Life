@@ -13,5 +13,13 @@
     "comment_id": "855aa533-d95a-4057-beb4-c50d85789f46",
     "comment": "start comment naming branch codex/hfo-col142-receipts, the same worktree, base 120b7f03 (closure docs 335bd6c7), provisional slot 341 and the plan against the acceptance criteria"
   },
-  "after": "recorded once the segment is committed and pushed"
+  "after": {
+    "at": "2026-09-10T17:52:00Z",
+    "state": "Done",
+    "closing_comment_id": "e7ade15c-983c-41ee-9705-b3a8cc385191",
+    "commit": "006a12ff",
+    "draft_pr": "#470",
+    "meaning": "reviewed, gated, unmerged source; no hosted or operating acceptance",
+    "dependents_read_live": {"COL-143": "Backlog, blockers COL-133/142 Done: dependency-ready but its Storage HTTP proof acceptance needs hosted transport", "COL-144": "Backlog, blockers COL-133/142 Done: dependency-ready", "COL-145": "blocked by COL-143", "COL-146": "blocked by COL-143", "COL-147": "blocked by COL-145", "COL-148": "blocked by COL-143/144/145/146"}
+  }
 }

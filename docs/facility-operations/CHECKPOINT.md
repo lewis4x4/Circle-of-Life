@@ -4,6 +4,15 @@ Updated 2026-09-10 (late afternoon). Durable resume state for the HFO track. No 
 
 ## Current issue
 
+- **COL-144 / HFO-14** — problems, next actions, backup ownership and resolution. Selected from live Linear after COL-142 closed (blockers COL-133, COL-142 Done). COL-143 (HFO-07) is also dependency-ready but its acceptance needs positive hosted Storage HTTP proof, outside the source-only boundary; it stays Backlog with that reason recorded in `col142-evidence/review-closure.json`. Branch `codex/hfo-col144-issues` in this worktree, stacked on the COL-142 closure commit. Preparation and state: `COL-144-PREPARATION.md`, `col144-evidence/` once created.
+
+## Just closed
+
+- **COL-142 / HFO-06** — Done in Linear 2026-09-10T17:52Z as reviewed, gated, unmerged source; commit `006a12ff` on `codex/hfo-col142-receipts`, draft PR #470 (base COL-139). Closure `col142-evidence/review-closure.json`; handoff `COL-142-HANDOFF.md`.
+- **COL-139 / HFO-04** — Done 2026-09-10T16:18Z; commit `120b7f03` (+ closure docs `335bd6c7`), draft PR #469 (base COL-137).
+
+## Previous issue record
+
 - **COL-142 / HFO-06** — atomic, idempotent execution receipts. Selected from live Linear after COL-139 closed (blockers COL-133, COL-135, COL-139 all Done). Branch `codex/hfo-col142-receipts` in this same worktree, stacked on `335bd6c7` (COL-139 closure over `120b7f03`). Linear In Progress since 2026-09-10T16:24Z (`col142-evidence/linear-state.json`). Contracts settled in `col142-evidence/engineering-contracts.md`; preparation `COL-142-PREPARATION.md`. Both lanes delivered; independent reviews done (TypeScript: three should-fix remediated; SQL: three should-fix remediated, re-verification in progress); focused suite 307 tests / 29 files, typecheck, lint, native replay 344 files / 25 probes (133-assertion probe), four-case race script, strict gate PASS (`test-results/agent-gates/2026-09-10T16-37-51-790Z-COL-142-HFO-RECEIPTS.json`). Remaining: reviewer re-check, commit/push, draft PR against `codex/hfo-col139-occurrences`, Linear closing comment, closure record. Scratch cluster as below; `col139_base340` and `col142_base341` hold migrations through 340 and 341.
 
 ## Just closed
