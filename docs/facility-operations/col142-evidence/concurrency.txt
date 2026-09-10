@@ -1,0 +1,35 @@
+{
+  "issue": "COL-142",
+  "baseline_database": "col142_base341",
+  "cases": [
+    {
+      "name": "two differing record attempts for one occurrence",
+      "outcome": "conflict naming the winning receipt after the wait",
+      "sqlstate": "23505",
+      "receipts": 1,
+      "waited_on": "occurrence row"
+    },
+    {
+      "name": "two identical replays for one occurrence",
+      "outcome": "same receipt replayed after the wait",
+      "receipts": 1,
+      "waited_on": "occurrence row"
+    },
+    {
+      "name": "can_record revoked while the recorder waits",
+      "outcome": "denied after the wait",
+      "sqlstate": "42501",
+      "receipts": 0,
+      "waited_on": "occurrence row"
+    },
+    {
+      "name": "two reviewers verify the same occurrence",
+      "outcome": "second reviewer refused after the wait",
+      "sqlstate": "P0001",
+      "verification_receipts": 1,
+      "waited_on": "occurrence row"
+    }
+  ],
+  "boundary": "local PostgreSQL 17 with Supabase auth stubs; run-owned socket-only cluster"
+}
+COL-142 receipt concurrency PASS

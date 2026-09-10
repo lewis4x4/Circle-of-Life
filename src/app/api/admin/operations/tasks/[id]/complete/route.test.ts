@@ -98,6 +98,18 @@ describe("operation task completion error boundary", () => {
     expect(await response.json()).toEqual({ error: "Task cannot be completed from this state" });
   });
 
+  it("tells the operator that a managed occurrence is recorded through the receipt command", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "P0001", message: "Managed occurrences are recorded through the receipt command" } });
+
+    const response = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: "{}" }) as never,
+      { params: Promise.resolve({ id: task.id }) },
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "Managed occurrences are recorded through the receipt command" });
+  });
+
   it("does not call the RPC after an owner is demoted to caregiver with facility access retained", async () => {
     const demotedActor = { ...actor, appRole: "caregiver" };
     vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor: demotedActor } as never);

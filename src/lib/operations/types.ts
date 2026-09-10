@@ -60,6 +60,11 @@ export type OperationTask = {
   period_end_date?: string | null;
   /** Optimistic fingerprint echoed back by association commands. */
   occurrence_revision?: string | null;
+  /** COL-142 execution state of a managed occurrence: none, completed, performed_missing_evidence, awaiting_verification, failed, not_performed. */
+  execution_state?: string | null;
+  /** Recorder-supplied instant of the work from the effective receipt; distinct from completed_at (server record time). */
+  performed_at?: string | null;
+  effective_receipt_id?: string | null;
 };
 
 export type OperationTaskSummary = {

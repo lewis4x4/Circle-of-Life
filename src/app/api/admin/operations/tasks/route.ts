@@ -111,7 +111,10 @@ export async function GET(request: Request) {
       subject_id,
       period_start_date,
       period_end_date,
-      occurrence_revision
+      occurrence_revision,
+      execution_state,
+      performed_at,
+      effective_receipt_id
     `)
     .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)

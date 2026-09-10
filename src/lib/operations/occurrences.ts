@@ -88,6 +88,7 @@ const TRUSTED_FRAGMENTS = [
   "already associated",
   "already cancelled",
   "is cancelled",
+  "has recorded work",
   "cannot be deferred",
   "cannot be reinstated",
   "cannot be cancelled",
