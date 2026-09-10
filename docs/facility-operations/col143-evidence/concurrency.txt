@@ -1,0 +1,31 @@
+{
+  "issue": "COL-143",
+  "baseline_database": "col143_base343",
+  "cases": [
+    {
+      "name": "two finalizations of one uploaded evidence",
+      "outcome": "second finalization refused after the wait; one finalized event, one satisfaction",
+      "sqlstate": "P0001",
+      "finalized_events": 1,
+      "satisfied_events": 1,
+      "waited_on": "occurrence row (first lock in the command order)"
+    },
+    {
+      "name": "finalization racing a receipt correction",
+      "outcome": "finalization refused by the moved receipt revision after the wait; nothing satisfied",
+      "sqlstate": "P0001",
+      "finalized_events": 0,
+      "satisfied_events": 0,
+      "waited_on": "receipt row"
+    },
+    {
+      "name": "two finalizations on one receipt overlapping on the occurrence row",
+      "outcome": "both finalizations completed without a deadlock; one satisfaction",
+      "finalized_events": 2,
+      "satisfied_events": 1,
+      "waited_on": "occurrence row"
+    }
+  ],
+  "boundary": "local PostgreSQL 17 with Supabase auth and storage stubs; run-owned socket-only cluster; no byte transferred"
+}
+COL-143 evidence concurrency PASS
