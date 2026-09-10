@@ -424,7 +424,9 @@ SELECT pg_temp.o_assert((SELECT status='pending' AND occurrence_revision=(SELECT
 SELECT pg_temp.o_assert((SELECT status='pending' FROM public.operation_task_instances WHERE id=(SELECT id FROM of_ids WHERE label='m1')),'association changed the work');
 SELECT pg_temp.o_assert((SELECT count(*)=2 FROM public.operation_audit_log WHERE event_type='associated' AND event_data->>'association_id'=(SELECT result->>'id' FROM of_results WHERE label='as1')),'association audit rows missing');
 -- To a completed occurrence: allowed, implies nothing about completion of the work.
-SELECT pg_temp.o_assert((SELECT public.complete_operation_task_review(id,(SELECT admin_a FROM of),'facility_admin','Checked on the day','{}')='completed' FROM of_ids WHERE label='occ_a2_d2'),'completion of a managed occurrence failed');
+-- Since COL-142 a managed occurrence completes through the receipt command, never the legacy one.
+SELECT pg_temp.o_expect($q$SELECT public.complete_operation_task_review((SELECT id FROM of_ids WHERE label='occ_a2_d2'),(SELECT admin_a FROM of),'facility_admin','Checked on the day','{}')$q$,'recorded through the receipt command');
+SELECT pg_temp.o_assert((SELECT public.record_operation_work_review(id,'col139-a2d2-000001','{"outcome":"performed","note":"Checked on the day"}')->'occurrence'->>'status'='completed' FROM of_ids WHERE label='occ_a2_d2'),'completion of a managed occurrence failed');
 INSERT INTO of_results SELECT 'as2',public.associate_operation_occurrence_review((SELECT id FROM of_ids WHERE label='occ_a2_d2'),(SELECT id FROM of_ids WHERE label='m2'),'late',(SELECT occurrence_revision FROM public.operation_task_instances WHERE id=(SELECT id FROM of_ids WHERE label='occ_a2_d2')),'Late receipt reconciled','assoc-m2-000001') FROM of;
 SELECT pg_temp.o_assert((SELECT result->>'association_kind'='late' FROM of_results WHERE label='as2'),'association to a completed occurrence failed');
 SELECT pg_temp.o_assert((SELECT status='completed' AND signed_by=(SELECT admin_a FROM of) FROM public.operation_task_instances WHERE id=(SELECT id FROM of_ids WHERE label='occ_a2_d2')),'completed facts changed');

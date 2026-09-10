@@ -6,6 +6,8 @@ import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor }
 const TRUSTED_COMPLETION_ERRORS = new Set([
   "Task cannot be completed from this state",
   "A different authorized staff member must verify this task",
+  // COL-142: managed occurrences are recorded through the receipt command, not this legacy path.
+  "Managed occurrences are recorded through the receipt command",
 ]);
 
 type TaskRow = {

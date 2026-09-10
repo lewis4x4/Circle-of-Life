@@ -4,7 +4,7 @@ Updated 2026-09-10 (late afternoon). Durable resume state for the HFO track. No 
 
 ## Current issue
 
-- **COL-142 / HFO-06** — atomic, idempotent execution receipts. Selected from live Linear after COL-139 closed (blockers COL-133, COL-135, COL-139 all Done). Branch `codex/hfo-col142-receipts` in this same worktree, stacked on COL-139 `120b7f03`. Preparation and state: `COL-142-PREPARATION.md` and `col142-evidence/` once created.
+- **COL-142 / HFO-06** — atomic, idempotent execution receipts. Selected from live Linear after COL-139 closed (blockers COL-133, COL-135, COL-139 all Done). Branch `codex/hfo-col142-receipts` in this same worktree, stacked on `335bd6c7` (COL-139 closure over `120b7f03`). Linear In Progress since 2026-09-10T16:24Z (`col142-evidence/linear-state.json`). Contracts settled in `col142-evidence/engineering-contracts.md`; preparation `COL-142-PREPARATION.md`. Both lanes delivered; independent reviews done (TypeScript: three should-fix remediated; SQL: three should-fix remediated, re-verification in progress); focused suite 307 tests / 29 files, typecheck, lint, native replay 344 files / 25 probes (133-assertion probe), four-case race script, strict gate PASS (`test-results/agent-gates/2026-09-10T16-37-51-790Z-COL-142-HFO-RECEIPTS.json`). Remaining: reviewer re-check, commit/push, draft PR against `codex/hfo-col139-occurrences`, Linear closing comment, closure record. Scratch cluster as below; `col139_base340` and `col142_base341` hold migrations through 340 and 341.
 
 ## Just closed
 

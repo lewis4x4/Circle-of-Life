@@ -15,6 +15,12 @@ import {
 const uuid = "11111111-1111-4111-8111-111111111111";
 const revision = "a".repeat(64);
 
+describe("occurrence cancellation conflicts", () => {
+  it("surfaces recorded work as a plain conflict rather than a hidden state", () => {
+    expect(mapOccurrenceRpcError({ code: "P0001", message: "Occurrence has recorded work" })).toEqual({ status: 409, error: "Occurrence has recorded work" });
+  });
+});
+
 describe("occurrence request shapes", () => {
   it("accepts a complete binding enrolment and refuses server-owned or unknown fields", () => {
     const body = { activity_id: uuid, facility_id: uuid, subject_id: uuid, authority_class: "asset", shift: null, provenance: { source: "interview", reason: "Two generators on site" }, effective_from: "2026-10-01T04:00:00Z" };

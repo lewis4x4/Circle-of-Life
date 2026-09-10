@@ -1,6 +1,6 @@
 # Current handoff
 
-Read [COL-139-HANDOFF.md](COL-139-HANDOFF.md). Subject-scoped occurrence generation is implemented on `codex/hfo-col139-occurrences`, stacked on COL-137. COL-132, COL-133, COL-135 and COL-137 are Done in Linear as reviewed, gated, unmerged source (closure records under each `col13x-evidence/review-closure.json`); nothing is merged, applied or deployed, and [CHECKPOINT.md](CHECKPOINT.md) holds the resume state. [COL-137 history](COL-137-HANDOFF.md), [COL-135 history](COL-135-HANDOFF.md), [COL-133 history](COL-133-HANDOFF.md) and [COL-132 history](COL-132-HANDOFF.md) are retained.
+Read [COL-142-HANDOFF.md](COL-142-HANDOFF.md) (in progress on `codex/hfo-col142-receipts`, stacked on COL-139) and [COL-139-HANDOFF.md](COL-139-HANDOFF.md). Subject-scoped occurrence generation is implemented on `codex/hfo-col139-occurrences`, stacked on COL-137. COL-132, COL-133, COL-135 and COL-137 are Done in Linear as reviewed, gated, unmerged source (closure records under each `col13x-evidence/review-closure.json`); nothing is merged, applied or deployed, and [CHECKPOINT.md](CHECKPOINT.md) holds the resume state. [COL-137 history](COL-137-HANDOFF.md), [COL-135 history](COL-135-HANDOFF.md), [COL-133 history](COL-133-HANDOFF.md) and [COL-132 history](COL-132-HANDOFF.md) are retained.
 
 # Earlier COL-18 handoff
 

@@ -40,6 +40,9 @@ type OperationTaskRow = {
   period_start_date?: string | null;
   period_end_date?: string | null;
   occurrence_revision?: string | null;
+  execution_state?: string | null;
+  performed_at?: string | null;
+  effective_receipt_id?: string | null;
 };
 
 /**
@@ -258,6 +261,10 @@ function shapeOperationTask(
     ...(row.period_start_date !== undefined ? { period_start_date: row.period_start_date } : {}),
     ...(row.period_end_date !== undefined ? { period_end_date: row.period_end_date } : {}),
     ...(row.occurrence_revision !== undefined ? { occurrence_revision: row.occurrence_revision } : {}),
+    // COL-142 execution facts pass through untouched when the caller selected them.
+    ...(row.execution_state !== undefined ? { execution_state: row.execution_state } : {}),
+    ...(row.performed_at !== undefined ? { performed_at: row.performed_at } : {}),
+    ...(row.effective_receipt_id !== undefined ? { effective_receipt_id: row.effective_receipt_id } : {}),
   };
 }
 

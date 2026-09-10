@@ -1,0 +1,17 @@
+{
+  "issue": "COL-142",
+  "before": {
+    "checked_at": "2026-09-10T16:22:00Z",
+    "state": "Backlog",
+    "blockers": {"COL-133": "Done", "COL-135": "Done", "COL-139": "Done"},
+    "dependency_ready": true,
+    "source": "live Linear GraphQL read after COL-139 closed; COL-147 also names COL-139 but stays blocked by COL-142 and COL-145"
+  },
+  "started": {
+    "at": "2026-09-10T16:24:00Z",
+    "state": "In Progress",
+    "comment_id": "855aa533-d95a-4057-beb4-c50d85789f46",
+    "comment": "start comment naming branch codex/hfo-col142-receipts, the same worktree, base 120b7f03 (closure docs 335bd6c7), provisional slot 341 and the plan against the acceptance criteria"
+  },
+  "after": "recorded once the segment is committed and pushed"
+}
