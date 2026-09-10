@@ -6,6 +6,12 @@ import { buildOperationTaskResponse, parseOperationTaskFilters, summarizeOperati
 import type { OperationTaskResponse } from "@/lib/operations/types";
 import { logError } from "@/lib/observability/logger";
 
+const AUTHORIZED_TASK_COVERAGE = {
+  scope: "currently_authorized_classified_tasks",
+  legacy_classification_required: true,
+  evidence_scope: "classified_only",
+} as const;
+
 type OperationTaskRow = {
   id: string;
   organization_id: string;
@@ -46,7 +52,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const filters = parseOperationTaskFilters(searchParams);
 
-  let accessibleFacilityIds = await listActorAccessibleFacilityIds(actor);
+  let accessibleFacilityIds: string[];
+  try {
+    accessibleFacilityIds = await listActorAccessibleFacilityIds(actor);
+  } catch {
+    return NextResponse.json({ error: "Could not verify facility access" }, { status: 503 });
+  }
   if (filters.facilityId) {
     const canAccess = await actorCanAccessFacility(actor, filters.facilityId);
     if (!canAccess) {
@@ -56,7 +67,7 @@ export async function GET(request: Request) {
   }
 
   if (accessibleFacilityIds.length === 0) {
-    return NextResponse.json(emptyTaskResponse(filters.dateFrom, filters.dateTo));
+    return NextResponse.json({ ...emptyTaskResponse(filters.dateFrom, filters.dateTo), coverage: AUTHORIZED_TASK_COVERAGE });
   }
 
   // Bound the result set. Caller can request more via ?limit up to a hard ceiling.
@@ -68,7 +79,7 @@ export async function GET(request: Request) {
       ? Math.min(requestedLimit, MAX_TASK_LIMIT)
       : DEFAULT_TASK_LIMIT;
 
-  let query = actor.admin
+  let query = actor.currentActor.client
     .from("operation_task_instances" as never)
     .select(`
       id,
@@ -131,8 +142,14 @@ export async function GET(request: Request) {
   }
 
   const rows = ((data ?? []) as unknown as OperationTaskRow[]);
-  const facilityNames = await loadFacilityNames(actor, accessibleFacilityIds);
-  const assigneeNames = await loadAssigneeNames(actor, rows);
+  let facilityNames: Map<string, string>;
+  let assigneeNames: Map<string, string>;
+  try {
+    facilityNames = await loadFacilityNames(actor, accessibleFacilityIds);
+    assigneeNames = await loadAssigneeNames(actor, rows);
+  } catch {
+    return NextResponse.json({ error: "Failed to load task details" }, { status: 503 });
+  }
 
   const response = buildOperationTaskResponse({
     rows,
@@ -143,7 +160,7 @@ export async function GET(request: Request) {
   });
 
   if (!filters.overdueOnly) {
-    return NextResponse.json(response);
+    return NextResponse.json({ ...response, coverage: AUTHORIZED_TASK_COVERAGE });
   }
 
   const overdueTasks = response.tasks.filter((task) =>
@@ -152,6 +169,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     ...response,
+    coverage: AUTHORIZED_TASK_COVERAGE,
     tasks: overdueTasks,
     summary: summarizeOperationTasks(overdueTasks, filters.dateFrom, filters.dateTo),
     pagination: {
@@ -178,12 +196,13 @@ async function loadFacilityNames(
   actor: OperationsActor,
   facilityIds: string[],
 ) {
-  const { data } = await actor.admin
+  const { data, error } = await actor.currentActor.client
     .from("facilities")
     .select("id, name")
     .eq("organization_id", actor.organizationId)
     .in("id", facilityIds);
 
+  if (error) throw new Error("Task details unavailable");
   return new Map((data ?? []).map((facility) => [facility.id, facility.name]));
 }
 
@@ -196,11 +215,12 @@ async function loadAssigneeNames(
     return new Map<string, string>();
   }
 
-  const { data } = await actor.admin
+  const { data, error } = await actor.currentActor.client
     .from("user_profiles")
     .select("id, full_name")
     .in("id", assigneeIds)
     .is("deleted_at", null);
 
+  if (error) throw new Error("Task details unavailable");
   return new Map((data ?? []).map((profile) => [profile.id, profile.full_name]));
 }

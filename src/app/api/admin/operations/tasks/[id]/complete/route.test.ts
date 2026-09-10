@@ -21,11 +21,7 @@ const task = {
   due_at: null,
 };
 const rpc = vi.fn();
-const actor = {
-  id: "actor",
-  organizationId: "org",
-  appRole: "manager",
-  admin: {
+const client = {
     from: vi.fn(() => {
       const query = {
         select: vi.fn().mockReturnThis(),
@@ -36,7 +32,11 @@ const actor = {
       return query;
     }),
     rpc,
-  },
+};
+const actor = {
+  id: "actor", organizationId: "org", appRole: "manager",
+  currentActor: { client },
+  admin: { from: vi.fn(() => { throw new Error("Service reads forbidden"); }), rpc: vi.fn(() => { throw new Error("Service command forbidden"); }) },
 };
 
 describe("operation task completion error boundary", () => {
@@ -45,6 +45,26 @@ describe("operation task completion error boundary", () => {
     vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
     vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor } as never);
     vi.mocked(actorCanMutateTask).mockResolvedValue(true as never);
+  });
+
+  it("rejects arbitrary evidence paths before reading or calling a completion command", async () => {
+    const response = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: JSON.stringify({ completion_evidence_paths: ["resident-private/another-person.pdf"] }) }) as never,
+      { params: Promise.resolve({ id: task.id }) },
+    );
+    expect(response.status).toBe(409);
+    expect(client.from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("does not confirm completion without a server completion status", async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    const response = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: "{}" }) as never,
+      { params: Promise.resolve({ id: task.id }) },
+    );
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: "Task completion could not be confirmed" });
   });
 
   it("logs but does not return unexpected RPC schema details", async () => {
@@ -100,7 +120,7 @@ describe("operation task completion error boundary", () => {
       is: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
     };
-    actor.admin.from.mockReturnValueOnce(foreignQuery as never);
+    client.from.mockReturnValueOnce(foreignQuery as never);
 
     const response = await PATCH(
       new Request("https://local.test/task", { method: "PATCH", body: "{}" }) as never,

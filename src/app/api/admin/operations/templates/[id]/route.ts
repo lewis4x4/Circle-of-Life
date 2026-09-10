@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { actorCanAccessFacility, requireOperationsActor } from "@/lib/operations/auth";
 import { parseJsonBody } from "@/lib/http/json-body";
 import { logError } from "@/lib/observability/logger";
 import { OPERATIONS_TEMPLATE_AUTHOR_ROLES } from "@/lib/operations/constants";
@@ -47,7 +47,7 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdminApiActor({ allowedRoles: OPERATIONS_TEMPLATE_AUTHOR_ROLES });
+  const auth = await requireOperationsActor({ allowedRoles: OPERATIONS_TEMPLATE_AUTHOR_ROLES });
   if ("response" in auth) return auth.response;
 
   const { actor } = auth;
@@ -56,10 +56,10 @@ export async function PATCH(
   if ("response" in parsedBody) return parsedBody.response;
   const body = parsedBody.data;
 
-  const { data: existingData, error: existingError } = await actor.admin
+  const { data: existingData, error: existingError } = await actor.currentActor.client
     .from("operation_task_templates" as never)
     .select(TEMPLATE_SELECT)
-    .eq("organization_id", actor.organization_id)
+    .eq("organization_id", actor.organizationId)
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -86,13 +86,13 @@ export async function PATCH(
     typeof body.is_active === "boolean";
 
   if (changingOnlyStatus) {
-    const { data, error } = await actor.admin
+    const { data, error } = await actor.currentActor.client
       .from("operation_task_templates" as never)
       .update({
         is_active: body.is_active,
         updated_by: actor.id,
       } as never)
-      .eq("organization_id", actor.organization_id)
+      .eq("organization_id", actor.organizationId)
       .eq("id", id)
       .select(TEMPLATE_SELECT)
       .single();
@@ -147,7 +147,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data: inserted, error: insertError } = await actor.admin.rpc("publish_operation_template_review" as never, { p_previous_id: existing.id, p_payload: { ...normalized, updated_by: actor.id, created_by: actor.id } } as never);
+  const { data: inserted, error: insertError } = await actor.currentActor.client.rpc("publish_operation_template_review" as never, { p_previous_id: existing.id, p_payload: { ...normalized, updated_by: actor.id, created_by: actor.id } } as never);
   if (insertError) {
     logError("admin.operations.templates.update", insertError, {
       action: "publish-version",

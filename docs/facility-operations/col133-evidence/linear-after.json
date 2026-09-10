@@ -1,0 +1,15 @@
+{
+  "checked_at": "2026-09-10T00:35:53.496976+00:00",
+  "result": {
+    "issueUpdate": {
+      "success": true,
+      "issue": {
+        "identifier": "COL-133",
+        "state": {
+          "name": "In Review"
+        },
+        "updatedAt": "2026-09-10T00:35:53.367Z"
+      }
+    }
+  }
+}

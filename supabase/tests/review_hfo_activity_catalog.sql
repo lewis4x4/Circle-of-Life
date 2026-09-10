@@ -89,7 +89,8 @@ DO $$ BEGIN
   IF (SELECT count(*) FROM public.operation_activity_subjects WHERE facility_id=(SELECT facility FROM hfo_fixture))<>4 THEN RAISE EXCEPTION 'Four typed subject references not present'; END IF;
   IF (SELECT count(*) FROM public.operation_task_instances)<>(SELECT total+1 FROM hfo_baseline)
     OR (SELECT count(*) FROM public.operation_task_instances WHERE status='completed')<>(SELECT completed FROM hfo_baseline) THEN RAISE EXCEPTION 'Catalog changed task completion history'; END IF;
-  IF has_table_privilege('authenticated','public.operation_activity_subjects','SELECT')
+  IF NOT has_table_privilege('authenticated','public.operation_activity_subjects','SELECT')
+    OR has_table_privilege('authenticated','public.operation_activity_subjects','INSERT')
     OR has_table_privilege('authenticated','public.operation_activities','INSERT')
     OR has_table_privilege('authenticated','public.operation_activity_source_items','UPDATE')
     OR has_function_privilege('authenticated','haven.validate_operation_activity_subject()','EXECUTE')
@@ -116,9 +117,10 @@ SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.reader,'sessio
 SET LOCAL ROLE authenticated;
 DO $$ BEGIN
   IF EXISTS(SELECT 1 FROM public.operation_activities WHERE activity_key IN ('hfo-hidden','hfo-foreign')) THEN RAISE EXCEPTION 'Catalog scope leak'; END IF;
-  IF NOT EXISTS(SELECT 1 FROM public.operation_activities WHERE activity_key='legacy-template:'||(SELECT template FROM hfo_fixture)) THEN RAISE EXCEPTION 'Scoped catalog read missing'; END IF;
+  IF EXISTS(SELECT 1 FROM public.operation_activities WHERE activity_key='legacy-template:'||(SELECT template FROM hfo_fixture)) THEN RAISE EXCEPTION 'Unclassified legacy catalog leaked'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.operation_activities WHERE origin='admin_log') THEN RAISE EXCEPTION 'Reviewed source catalog missing'; END IF;
 END $$;
-SELECT pg_temp.hfo_expect('SELECT * FROM public.operation_activity_subjects','permission denied');
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.operation_activity_subjects WHERE subject_kind IN('resident','employee')) THEN RAISE EXCEPTION 'Protected subject without explicit domain grant leaked'; END IF; END $$;
 SELECT pg_temp.hfo_expect('INSERT INTO public.operation_activities(organization_id,activity_key,name,origin) SELECT org,''forbidden'',''Forbidden'',''admin_log'' FROM hfo_fixture','permission denied');
 RESET ROLE;
 UPDATE public.user_facility_access SET revoked_at=clock_timestamp() WHERE user_id=(SELECT reader FROM hfo_fixture);

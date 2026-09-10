@@ -1,0 +1,53 @@
+{
+  "issue": "COL-133",
+  "recorded_at": "2026-09-10T00:50:00Z",
+  "purpose": "Cross-branch reconciliation of unapplied migrations 336-337 before integration. Final numbers are assigned only at integration against the then-current main; nothing here is deployed.",
+  "integration_base": {
+    "origin_main": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+    "origin_main_last_numbered_migration": "335_employee_file_lifecycle.sql",
+    "branch_merge_base": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+    "local_main": "9db72d2d8a16e4206e2f62c68712c0775bf8c225",
+    "local_main_note": "Nine commits behind origin/main and an ancestor of it (last numbered migration 333). Not the build authority. Left untouched; do not reset or force-push."
+  },
+  "hosted_ledger": {
+    "project": "manfqmasfqppukpobpld",
+    "latest_readback": "docs/facility-operations/COL-18-BASELINE.md (September 9, 2026): 344 ledger records; every source migration 001-335 present; 319-335 content matched by SHA-256",
+    "reread_this_session": false,
+    "reason": "No .env.local or ledger credential in this worktree; the connected Supabase MCP account exposes a different project. Re-read the ledger with the linked CLI before assigning final numbers."
+  },
+  "this_branch": {
+    "branch": "codex/hfo-col133-authority",
+    "base": "64cc31b8ea7bf2f9cec69ad934cf619882eb1c39 (COL-132 catalog, committed, on origin)",
+    "migrations": [
+      {"file": "336_hfo_activity_catalog.sql", "owner": "COL-132", "state": "committed on codex/hfo-col132-catalog; unapplied"},
+      {"file": "337_hfo_current_authority.sql", "owner": "COL-133", "state": "local source; unapplied", "sha256": "b45506534158f6bb2bddbcec3b6c8b231b958478f8c04fc9bbeca837e080dbe5"}
+    ],
+    "ordering_constraint": "337 depends on 336 (catalog objects). Both must land together and in order; do not apply 337 alone."
+  },
+  "competing_claims_on_336_plus": [
+    {"branch": "codex/haven-finance-integration", "commits_ahead_of_origin_main": 20, "files": ["336_finance_source_commands.sql", "337_audit_export_scope_and_snapshot.sql", "338_resident_money_snapshot.sql", "339_finance_event_outbox.sql", "340_finance_batch_approval.sql", "341_finance_review_queue.sql", "342_finance_credential_lifecycle.sql"]},
+    {"branch": "codex/haven-insurance-workspace", "commits_ahead_of_origin_main": 2, "files": ["336_insurance_verified_workspace.sql", "337_insurance_servicing_records.sql"]},
+    {"branch": "codex/haven-insureflow-receiver", "commits_ahead_of_origin_main": 4, "files": ["336_insurance_verified_workspace.sql", "337_insurance_servicing_records.sql", "338_insureflow_synthetic_receiver.sql"]},
+    {"branch": "codex/haven-operating-evidence", "commits_ahead_of_origin_main": 9, "files": ["336_resident_return_followups.sql", "337_referral_next_actions.sql", "338_business_conflict_http_status.sql"]},
+    {"branch": "codex/haven-remaining-roadmap", "commits_ahead_of_origin_main": 9, "files": ["336_assessment_fall_risk_chronology.sql", "337_atomic_discharge_bed_release.sql", "338_operational_medication_shifts.sql", "339_atomic_payment_recording.sql", "340_atomic_purchase_order_creation.sql", "341_atomic_source_gl_posting.sql"]}
+  ],
+  "schema_object_overlap": {
+    "method": "CREATE/ALTER/DROP object-name intersection between 336_hfo_activity_catalog.sql + 337_hfo_current_authority.sql (93 named objects) and every competing 336+ file above",
+    "result": "none",
+    "caveat": "Name-level check only. Semantic conflicts (same table altered by different branches under different names, or policy behaviour changes) still require review at integration."
+  },
+  "source_file_overlap_with_unmerged_branches": [
+    {"branch": "codex/haven-finance-integration", "files": ["supabase/functions/export-audit-log/index.ts", "supabase/tests/review_clinical_integrity.sql", "package.json", "package-lock.json", ".gitleaksignore"], "three_way_dry_merge": "export-audit-log/index.ts: 2 conflict hunks (Finance rewrites the export path around its 337_audit_export_scope_and_snapshot; COL-133 adds per-page current-authority checks). review_clinical_integrity.sql: 2 conflict hunks. Whichever branch integrates second must re-derive both files so that Finance's snapshot scope and COL-133's session/current-authority checks are both preserved; neither side may be dropped to resolve the conflict."},
+    {"branch": "codex/haven-insurance-workspace", "files": ["package.json", "package-lock.json"], "note": "Same Next 16.3.4 / sharp 0.35.4 pins; expected to resolve cleanly or trivially."},
+    {"branch": "codex/haven-insureflow-receiver", "files": ["package.json", "package-lock.json", ".gitleaksignore"], "note": "Same pins; .gitleaksignore additions are append-only fingerprint lines."},
+    {"branch": "codex/haven-operating-evidence", "files": []},
+    {"branch": "codex/haven-remaining-roadmap", "files": []}
+  ],
+  "integration_rule": [
+    "Re-read origin/main and the hosted ledger immediately before integration.",
+    "Renumber 336_hfo_activity_catalog.sql and 337_hfo_current_authority.sql to the first two free numbers after whatever has merged by then, keeping their suffixes and relative order; update docs/specs/README.md and the two handoffs to the final numbers in the same commit.",
+    "Schema/RPC installation precedes the matching API/Edge release; the four changed Edge functions and the operations API routes must not be released ahead of the migration.",
+    "Never rewrite installed ledger history or drop classification/audit data; forward repair only.",
+    "Do not deploy this migration alone to an operating facility. Legacy classification, required scoped commands and affected consumers (see COL-133-HANDOFF.md, Material compatibility boundaries) are reconciled in a coordinated release."
+  ]
+}

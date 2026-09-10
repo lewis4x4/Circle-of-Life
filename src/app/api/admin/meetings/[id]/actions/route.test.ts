@@ -1,10 +1,10 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 const state=vi.hoisted(()=>({access:true,rpc:vi.fn(),actorId:'manager-session',organizationId:'org',meetingOrg:'org'}));
 const logError = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/admin/api-auth',()=>({
- requireAdminApiActor: async()=>({actor:{id:state.actorId,organization_id:state.organizationId,app_role:'manager',admin:{
+vi.mock('@/lib/operations/auth',()=>({
+ requireOperationsActor: async()=>({actor:{id:state.actorId,organizationId:state.organizationId,appRole:'manager',currentActor:{client:{
   from:()=>{const query={select:()=>query,eq:()=>query,is:()=>query,maybeSingle:async()=>({data:{facility_id:'facility',organization_id:state.meetingOrg},error:null})};return query;},rpc:state.rpc,
- }}}),
+ }}}}),
  actorCanAccessFacility:async()=>state.access,
 }));
 vi.mock('@/lib/observability/logger',()=>({logError}));

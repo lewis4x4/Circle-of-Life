@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { actorCanAccessFacility, requireOperationsActor } from "@/lib/operations/auth";
 import { parseJsonBody } from "@/lib/http/json-body";
 import { OPERATIONS_TEMPLATE_AUTHOR_ROLES } from "@/lib/operations/constants";
 import {
@@ -49,7 +49,7 @@ type AssetNameRow = { id: string; name: string };
 type VendorNameRow = { id: string; name: string };
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminApiActor({ allowedRoles: OPERATIONS_TEMPLATE_AUTHOR_ROLES });
+  const auth = await requireOperationsActor({ allowedRoles: OPERATIONS_TEMPLATE_AUTHOR_ROLES });
   if ("response" in auth) return auth.response;
 
   const { actor } = auth;
@@ -75,10 +75,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid scope filter" }, { status: 400 });
   }
 
-  let query = auth.actor.admin
+  let query = auth.actor.currentActor.client
     .from("operation_task_templates" as never)
     .select(TEMPLATE_SELECT)
-    .eq("organization_id", actor.organization_id)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query;
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Operation request could not be completed" }, { status: 500 });
   }
 
   const templates = (data ?? []) as unknown as OperationTemplateRecord[];
@@ -107,31 +107,34 @@ export async function GET(request: NextRequest) {
 
   const [facilityResult, assetResult, vendorResult] = await Promise.all([
     facilityIds.length > 0
-      ? actor.admin
+      ? actor.currentActor.client
           .from("facilities")
           .select("id, name")
           .in("id", facilityIds)
-          .eq("organization_id", actor.organization_id)
+          .eq("organization_id", actor.organizationId)
           .is("deleted_at", null)
-      : Promise.resolve({ data: [] as FacilityNameRow[] }),
+      : Promise.resolve({ data: [] as FacilityNameRow[], error: null }),
     assetIds.length > 0
-      ? actor.admin
+      ? actor.currentActor.client
           .from("facility_assets" as never)
           .select("id, name")
           .in("id", assetIds)
-          .eq("organization_id", actor.organization_id)
+          .eq("organization_id", actor.organizationId)
           .is("deleted_at", null)
-      : Promise.resolve({ data: [] as AssetNameRow[] }),
+      : Promise.resolve({ data: [] as AssetNameRow[], error: null }),
     vendorIds.length > 0
-      ? actor.admin
+      ? actor.currentActor.client
           .from("vendors" as never)
           .select("id, name")
           .in("id", vendorIds)
-          .eq("organization_id", actor.organization_id)
+          .eq("organization_id", actor.organizationId)
           .is("deleted_at", null)
-      : Promise.resolve({ data: [] as VendorNameRow[] }),
+      : Promise.resolve({ data: [] as VendorNameRow[], error: null }),
   ]);
 
+  if (facilityResult.error || assetResult.error || vendorResult.error) {
+    return NextResponse.json({ error: "Template details unavailable" }, { status: 503 });
+  }
   const facilityNameMap = new Map((facilityResult.data ?? []).map((facility) => [facility.id, facility.name]));
   const assetNameMap = new Map(((assetResult.data ?? []) as unknown as AssetNameRow[]).map((asset) => [asset.id, asset.name]));
   const vendorNameMap = new Map(
@@ -150,7 +153,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminApiActor({ allowedRoles: OPERATIONS_TEMPLATE_AUTHOR_ROLES });
+  const auth = await requireOperationsActor({ allowedRoles: OPERATIONS_TEMPLATE_AUTHOR_ROLES });
   if ("response" in auth) return auth.response;
 
   const { actor } = auth;
@@ -166,10 +169,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data, error } = await actor.admin
+  const { data, error } = await actor.currentActor.client
     .from("operation_task_templates" as never)
     .insert({
-      organization_id: actor.organization_id,
+      organization_id: actor.organizationId,
       ...normalized,
       version: 1,
       previous_version_id: null,
@@ -180,7 +183,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Operation request could not be completed" }, { status: 500 });
   }
 
   return NextResponse.json({ template: data });

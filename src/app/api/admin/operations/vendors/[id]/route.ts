@@ -1,45 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-import { requireAdminApiActor } from "@/lib/admin/api-auth";
-import { parseJsonBody } from "@/lib/http/json-body";
-import type { AppRole } from "@/lib/rbac";
+import { requireOperationsActor } from "@/lib/operations/auth";
 
-const MANAGE_ROLES = new Set<AppRole>(["owner", "org_admin", "facility_admin", "manager"]);
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const auth = await requireAdminApiActor();
+export async function PATCH() {
+  const auth = await requireOperationsActor({ allowedRoles: ["owner", "org_admin", "facility_admin", "manager"] });
   if ("response" in auth) return auth.response;
-  const { actor } = auth;
-  if (!MANAGE_ROLES.has(actor.app_role)) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-  }
-
-  const { id } = await params;
-  const parsedBody = await parseJsonBody<{
-    accepts_bookings?: boolean;
-    booking_confirmation_days_required?: number | null;
-  }>(request);
-  if ("response" in parsedBody) return parsedBody.response;
-  const body = parsedBody.data;
-
-  const { error } = await actor.admin
-    .from("vendors" as never)
-    .update({
-      accepts_bookings: body.accepts_bookings ?? false,
-      booking_confirmation_days_required: body.booking_confirmation_days_required ?? 0,
-      updated_at: new Date().toISOString(),
-      updated_by: actor.id,
-    } as never)
-    .eq("id", id)
-    .eq("organization_id", actor.organization_id)
-    .is("deleted_at", null);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
+  // Booking preferences alter an organization-wide vendor shared by multiple sites.
+  // This surface cannot authorize that mutation from a single site's task access.
+  return NextResponse.json({ error: "Vendor booking changes require a scoped vendor command" }, { status: 409 });
 }

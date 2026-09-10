@@ -1,6 +1,6 @@
 # Current handoff
 
-Read [COL-132-HANDOFF.md](COL-132-HANDOFF.md). COL-132 is implemented and independently reviewed, with strict gates still FAIL on existing audit/shared-history findings; leave it In Review. **COL-133 is next dependency-ready.** The earlier baseline handoff below is retained as history.
+Read [COL-133-HANDOFF.md](COL-133-HANDOFF.md). Current authority is implemented, independently reviewed, strict-gate PASS and committed/pushed on `codex/hfo-col133-authority`. COL-133 stays In Review until migrations 336–337 are reconciled and integrated; nothing is merged, applied or deployed. [COL-132 history](COL-132-HANDOFF.md) is retained.
 
 # Earlier COL-18 handoff
 

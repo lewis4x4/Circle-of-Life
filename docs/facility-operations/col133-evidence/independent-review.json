@@ -1,0 +1,94 @@
+{
+  "issue": "COL-133",
+  "reviewer": "independent authority reviewer",
+  "reviewed_at": "2026-09-10T00:32:25.751471+00:00",
+  "recommendation": "APPROVE_LOCAL_SOURCE_REVIEW",
+  "outstanding_source_findings": [],
+  "reviewed_migration": "supabase/migrations/337_hfo_current_authority.sql",
+  "reviewed_migration_sha256": "b45506534158f6bb2bddbcec3b6c8b231b958478f8c04fc9bbeca837e080dbe5",
+  "scope": [
+    "Current site and explicit corporate/temporary grants",
+    "Native resident, employee, medical, asset and financial task authority",
+    "Authenticated recorder attribution and specialized can_record permission",
+    "Public invoker/private implementation grant posture",
+    "After-lock and after-DML current authority",
+    "RLS linked cards, meetings, deliveries and historical audit payloads",
+    "Template document, asset and vendor link boundaries",
+    "Session-scoped complete export and replay",
+    "Derived snapshots and disabled unscoped transmissions",
+    "Service-only invoker view reuses current native subject and template-link predicates; raw population mismatch fails closed"
+  ],
+  "resolved_findings": [
+    "Linked cards and meeting items could expose revoked task identifiers",
+    "Asset FOR ALL policy bypassed current site scope; direct delete and attribution needed guards",
+    "Vendor booking PATCH lacked scoped mutation authority",
+    "Service-role audit CSV bypassed restricted rows and cached job counts could reveal old scope",
+    "Filtered staffing demand could produce a false all-clear",
+    "Legacy risk baselines could contaminate newly marked safe scores",
+    "Generic historical audit payloads retained raw evidence paths after task paths were cleared",
+    "Broad mutation roles needed separate specialized recording permission",
+    "Linked meeting AFTER-trigger wait could outlive grant expiry after initial authority check",
+    "Template document and asset/vendor references lacked current scope validation",
+    "Service aggregate input could include tasks quarantined after native asset or vendor link changes; shared current-authority projection now excludes them"
+  ],
+  "evidence": {
+    "strict_gate": "test-results/agent-gates/2026-09-10T00-23-57-980Z-COL-133-HFO-CURRENT-AUTHORITY.json",
+    "strict_gate_verdict": "FAIL",
+    "passed_gate_checks": [
+      "hygiene.env-example",
+      "hygiene.tracked-secrets-scan",
+      "qa.eslint",
+      "qa.migration-sequence",
+      "qa.migrations-apply-postgres",
+      "qa.root-build",
+      "hygiene.nextjs-deprecation-signal",
+      "chaos.stress-suite",
+      "cdo.design-review",
+      "cdo.a11y-axe"
+    ],
+    "failed_gate_checks": [
+      "hygiene.npm-audit",
+      "security.gitleaks"
+    ],
+    "concurrency": "docs/facility-operations/col133-evidence/concurrency.json",
+    "observed_lock_cases_passed": 7,
+    "focused_tests": {
+      "passed": 131,
+      "files": 17,
+      "source": "root and API executor final execution reports"
+    },
+    "latest_template_link_replay": {
+      "status": "PASS",
+      "migration_files": 340,
+      "sql_probes": 21,
+      "source": "SQL executor final fresh replay report after service projection addition"
+    },
+    "required_typecheck_and_four_edge_deno_check": {
+      "status": "PASS",
+      "source": "root execution report; final two changed Edge functions rechecked with no lockfile mutation after supplementary projection change"
+    },
+    "supplementary_projection_checks": {
+      "status": "PASS",
+      "sql": [
+        "authenticated view access denied",
+        "safe service task visible",
+        "unsafe links and raw evidence absent",
+        "native asset arrival and subsequent transfer changes projection immediately"
+      ],
+      "vm_cases": 4,
+      "source": "SQL executor and root execution reports; source assertions independently inspected"
+    }
+  },
+  "release_decision": "BLOCKED",
+  "release_blockers": [
+    "Existing dependency audit: 1 critical, 2 high, 3 moderate",
+    "Existing shared Finance-ref gitleaks: 3 matches"
+  ],
+  "limitations": [
+    "Approval covers inspected local source only; it does not waive strict gates",
+    "Local PostgreSQL evidence uses Supabase auth stubs; no hosted auth/storage/provider/staff acceptance is established",
+    "Unclassified legacy tasks, raw evidence/document links and unscoped transmissions remain unavailable pending their owning issues",
+    "No additional adversarial probes or application code edits were performed by this reviewer; only this authorized review artifact was written"
+  ],
+  "pending_local_verification": []
+}

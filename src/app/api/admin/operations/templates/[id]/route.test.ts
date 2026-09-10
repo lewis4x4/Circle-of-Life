@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/admin/api-auth", () => ({
-  requireAdminApiActor: vi.fn(),
+vi.mock("@/lib/operations/auth", () => ({
+  requireOperationsActor: vi.fn(),
   actorCanAccessFacility: vi.fn(),
 }));
 const logError = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/observability/logger", () => ({ logError }));
 
 import { PATCH } from "./route";
-import { requireAdminApiActor } from "@/lib/admin/api-auth";
+import { requireOperationsActor } from "@/lib/operations/auth";
 
 const rpc = vi.fn();
 const update = vi.fn();
@@ -47,7 +47,7 @@ const existingTemplate = {
 };
 const actor = {
   id: "actor",
-  organization_id: "org",
+  organizationId: "org",
   admin: {
     rpc,
     from: vi.fn(() => {
@@ -66,11 +66,12 @@ const actor = {
     }),
   },
 };
+Object.assign(actor, { currentActor: { client: actor.admin } });
 
 describe("operation template error boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireAdminApiActor).mockResolvedValue({ actor } as never);
+    vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
     lookup.mockResolvedValue({ data: null, error: { message: sentinel } });
     single.mockResolvedValue({ data: null, error: null });
     rpc.mockResolvedValue({ data: null, error: null });

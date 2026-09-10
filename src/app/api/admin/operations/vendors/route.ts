@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { actorCanAccessFacility, requireOperationsActor } from "@/lib/operations/auth";
 import type { AppRole } from "@/lib/rbac";
 
 const VIEW_ROLES: readonly AppRole[] = [
@@ -39,7 +39,7 @@ type TemplateSummaryRow = {
 };
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminApiActor({ allowedRoles: VIEW_ROLES });
+  const auth = await requireOperationsActor({ allowedRoles: VIEW_ROLES });
   if ("response" in auth) return auth.response;
   const { actor } = auth;
 
@@ -51,15 +51,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data: linksData, error: linksError } = await actor.admin
+  const { data: linksData, error: linksError } = await actor.currentActor.client
     .from("vendor_facilities")
     .select("vendor_id, is_primary")
     .eq("facility_id", facilityId)
-    .eq("organization_id", actor.organization_id)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null);
 
   if (linksError) {
-    return NextResponse.json({ error: linksError.message }, { status: 500 });
+    return NextResponse.json({ error: "Vendor links unavailable" }, { status: 500 });
   }
 
   const links = (linksData ?? []) as FacilityVendorLink[];
@@ -68,24 +68,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ vendors: [] });
   }
 
-  const [{ data: vendorsData, error: vendorsError }, { data: templateData }] = await Promise.all([
-    actor.admin
+  const [{ data: vendorsData, error: vendorsError }, { data: templateData, error: templateError }] = await Promise.all([
+    actor.currentActor.client
       .from("vendors" as never)
       .select("id, name, category, status, primary_contact_name, primary_contact_phone, primary_contact_email, notes, accepts_bookings, booking_confirmation_days_required")
       .in("id", vendorIds)
-      .eq("organization_id", actor.organization_id)
+      .eq("organization_id", actor.organizationId)
       .is("deleted_at", null),
-    actor.admin
+    actor.currentActor.client
       .from("operation_task_templates" as never)
       .select("id, vendor_booking_ref")
       .in("vendor_booking_ref", vendorIds)
-      .eq("organization_id", actor.organization_id)
+      .eq("organization_id", actor.organizationId)
       .eq("facility_id", facilityId)
       .is("deleted_at", null),
   ]);
 
-  if (vendorsError) {
-    return NextResponse.json({ error: vendorsError.message }, { status: 500 });
+  if (vendorsError || templateError) {
+    return NextResponse.json({ error: "Vendors unavailable" }, { status: 500 });
   }
 
   const templateCounts = new Map<string, number>();

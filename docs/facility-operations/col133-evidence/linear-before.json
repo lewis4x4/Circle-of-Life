@@ -1,0 +1,119 @@
+{
+  "data": {
+    "issue": {
+      "id": "b9cfc15d-fe85-4c6e-b3e5-24ae948a3932",
+      "identifier": "COL-133",
+      "title": "[HFO-05] Enforce site, subject and current-person authority on every operations surface",
+      "description": "Facility selection is not an authorization boundary, and site access does not grant all sensitive record access.\n\n**Scope**\nExtend current-actor/facility controls to activity/subject reads, commands, counts, corrections, attachments, export and replay. Enforce ordinary site scope and explicit corporate/temporary coverage; preserve historical identity and live revocation.\n\n**Acceptance**\n\n- [ ] Site A staff cannot retrieve or infer Site B or restricted subject data through identifiers, counts, search, files, export or replay.\n- [ ] A corporate actor sees only permitted sites and subject/evidence fields; coverage expires correctly.\n- [ ] Revocation during a blocking lock and before retry/attachment download denies under current authority; attribution uses authenticated server identity.\n\n**Dependencies:** [COL-18](https://linear.app/jarvislewis/issue/COL-18/reconcile-haven-repository-state-against-production-readiness-for)\n**Related existing work:** See source pointers below\n**Release:** Core. Implementation not started; this issue is not proof of deployment or staff acceptance.\n**Source items:** Shared core contract across all applicable Admin Log items\n**Source/code pointers:** `src/lib/operations/auth.ts:74, 326_sys_001_authoritative_actor_state.sql:681, 327_sys_001e_lifecycle_authorization.sql:808, R02`. Migration filenames are under `supabase/migrations/`; source paths are relative to Circle-of-Life unless explicitly named otherwise. Reconcile current main before editing.\n**Open configuration questions:** Q02, Q03 See [Haven Facility Operations \u2014 Source Coverage and Open Decisions](https://linear.app/jarvislewis/document/haven-facility-operations-source-coverage-and-open-decisions-0bf9ab4bebce).\n\n**Build contract:** [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). **Sequence:** [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\nOne bounded implementation segment at a time. Record exact source/commit, focused behavioral tests, applicable repository segment gates, review and rollback/handoff evidence. Preserve current authority after waits and on retries, existing dirty/concurrent work, source truth and unknown rules. No new dependency, external transmission, clinical/employment decision or policy activation is implied. Keep source/local/hosted/provider/staff/operating-cycle acceptance distinct. No named assignee, estimate or date has been invented.\n\nRoadmap key: HFO-05 / HAVEN-ADMIN-20260909",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog"
+      },
+      "team": {
+        "states": {
+          "nodes": [
+            {
+              "id": "f2309805-cd22-4e1b-8c0f-2c8123ae4e96",
+              "name": "In Review"
+            },
+            {
+              "id": "af3a460c-b120-4488-8523-0b2c35a94ee1",
+              "name": "Canceled"
+            },
+            {
+              "id": "83cab057-2557-4e0b-8267-366ad7066b9e",
+              "name": "Done"
+            },
+            {
+              "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+              "name": "Todo"
+            },
+            {
+              "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+              "name": "Backlog"
+            },
+            {
+              "id": "5b3cb55d-7bbd-44cf-b766-c6070137eabe",
+              "name": "Duplicate"
+            },
+            {
+              "id": "04843145-120c-4879-85ea-2d2370ca45a4",
+              "name": "In Progress"
+            }
+          ]
+        }
+      },
+      "relations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-143",
+              "state": {
+                "name": "Backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-142",
+              "state": {
+                "name": "Backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "relatedIssue": {
+              "identifier": "COL-139",
+              "state": {
+                "name": "Backlog"
+              }
+            }
+          }
+        ]
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-132",
+              "state": {
+                "name": "In Review"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-18",
+              "state": {
+                "name": "Done"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

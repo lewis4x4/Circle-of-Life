@@ -32,7 +32,7 @@ const query = {
   maybeSingle: vi.fn(),
 };
 const admin = { from: vi.fn(() => query), rpc };
-const actor = { id: "actor-1", organizationId: "org-1", appRole: "owner", admin };
+const actor = { id: "actor-1", organizationId: "org-1", appRole: "owner", currentActor: { client: admin }, admin: { from: vi.fn(() => { throw new Error("Service reads forbidden"); }), rpc: vi.fn(() => { throw new Error("Service command forbidden"); }) } };
 
 function request(reason = "Coverage gap") {
   return new Request("https://haven.test/api/admin/operations/tasks/task/defer", {

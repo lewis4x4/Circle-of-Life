@@ -387,6 +387,9 @@ Deno.serve(async (req) => {
 
   const dryRun = Boolean(body.dry_run);
   const notify = body.notify !== false;
+  if (notify) {
+    return jsonResponse({ error: "Risk notifications require current recipient authority; use notify:false for computation" }, 409, origin);
+  }
   const now = new Date();
   const yesterdayIso = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
   const organizations: OrgRow[] = [];
@@ -433,7 +436,7 @@ Deno.serve(async (req) => {
 
     const { data: facilityData, error: facilityError } = await facilityQuery;
     if (facilityError) {
-      results.push({ organization_id: org.id, error: facilityError.message });
+      results.push({ organization_id: org.id, error: "Facility data unavailable" });
       continue;
     }
 
@@ -450,10 +453,15 @@ Deno.serve(async (req) => {
       previousRes,
       alertRes,
       ownerRes,
+      taskPopulation,
+      staffingPopulation,
     ] = await Promise.all([
       admin
-        .from("operation_task_instances")
+        .from("operation_automation_tasks")
         .select("facility_id, status, due_at, license_threatening")
+        .eq("authority_class", "facility")
+        .not("subject_id", "is", null)
+        .or("completion_evidence_paths.is.null,completion_evidence_paths.eq.{}")
         .eq("organization_id", org.id)
         .is("deleted_at", null)
         .in("facility_id", facilityIds)
@@ -461,6 +469,7 @@ Deno.serve(async (req) => {
       admin
         .from("staffing_adequacy_snapshots" as never)
         .select("facility_id, is_compliant, adequacy_score, cannot_cover_count")
+        .eq("operation_authority_version", 1)
         .eq("organization_id", org.id)
         .in("facility_id", facilityIds)
         .gte("created_at" as never, yesterdayIso as never),
@@ -487,6 +496,7 @@ Deno.serve(async (req) => {
       admin
         .from("risk_score_snapshots" as never)
         .select("id, facility_id, risk_score, risk_level, owner_alert_triggered_at, snapshot_date")
+        .eq("operation_authority_version", 1)
         .eq("organization_id", org.id)
         .is("deleted_at", null)
         .in("facility_id", facilityIds)
@@ -507,7 +517,18 @@ Deno.serve(async (req) => {
         .eq("is_active", true)
         .is("deleted_at", null)
         .in("app_role", ["owner", "org_admin"]),
+      admin.from("operation_task_instances").select("id", { count: "exact", head: true })
+        .eq("organization_id", org.id).is("deleted_at", null).in("facility_id", facilityIds)
+        .in("status", ["pending", "in_progress", "missed"]),
+      admin.from("staffing_adequacy_snapshots" as never).select("id", { count: "exact", head: true })
+        .eq("organization_id", org.id).in("facility_id", facilityIds).gte("created_at" as never, yesterdayIso as never),
     ]);
+
+    if ([taskRes, staffingRes, deficiencyRes, incidentRes, safetyRes, previousRes, alertRes, ownerRes, taskPopulation, staffingPopulation].some((result) => result.error)
+      || taskPopulation.count === null || taskPopulation.count !== (taskRes.data ?? []).length
+      || staffingPopulation.count === null || staffingPopulation.count !== (staffingRes.data ?? []).length) {
+      return jsonResponse({ error: "Risk calculation requires complete authorized operations coverage" }, 503, origin);
+    }
 
     const tasks = (taskRes.data ?? []) as TaskRow[];
     const staffing = (staffingRes.data ?? []) as StaffingRow[];
@@ -564,6 +585,7 @@ Deno.serve(async (req) => {
             snapshot_date: snapshotDate,
             computed_at: now.toISOString(),
             score_version: 1,
+            operation_authority_version: 1,
             risk_score: score.riskScore,
             risk_level: score.riskLevel,
             score_delta: score.scoreDelta,
@@ -589,6 +611,7 @@ Deno.serve(async (req) => {
             const { error: updateAlertError } = await admin
               .from("exec_alerts")
               .update({
+                operation_authority_version: 1,
                 severity: severityForRisk(score.riskLevel),
                 title: score.alertTitle,
                 body: score.alertBody,
@@ -617,6 +640,7 @@ Deno.serve(async (req) => {
                 facility_id: facility.id,
                 entity_id: facility.entity_id,
                 source_module: "system",
+                operation_authority_version: 1,
                 severity: severityForRisk(score.riskLevel),
                 title: score.alertTitle,
                 body: score.alertBody,
@@ -651,6 +675,14 @@ Deno.serve(async (req) => {
 
         if (notify && score.notifyOwners && fallbackRecipients.length > 0) {
           for (const recipient of fallbackRecipients) {
+            const { data: grant, error: grantError } = await admin.from("user_facility_access")
+              .select("id").eq("organization_id", org.id).eq("facility_id", facility.id)
+              .eq("user_id", recipient.id).is("revoked_at", null)
+              .or(`operation_expires_at.is.null,operation_expires_at.gt.${new Date().toISOString()}`).maybeSingle();
+            const { data: currentProfile, error: profileError } = await admin.from("user_profiles")
+              .select("id").eq("id", recipient.id).eq("organization_id", org.id)
+              .eq("is_active", true).is("deleted_at", null).in("app_role", ["owner", "org_admin"]).maybeSingle();
+            if (grantError || profileError || !grant || !currentProfile) continue;
             const delivery = await deliverSms({
               phone: recipient.phone,
               facilityName: facility.name,
@@ -666,6 +698,7 @@ Deno.serve(async (req) => {
                 facility_id: facility.id,
                 entity_id: facility.entity_id,
                 risk_score_snapshot_id: snapshotId,
+                operation_authority_version: 1,
                 exec_alert_id: execAlertId,
                 recipient_user_id: recipient.id,
                 recipient_role: recipient.app_role,

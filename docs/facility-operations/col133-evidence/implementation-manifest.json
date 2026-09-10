@@ -1,0 +1,191 @@
+{
+  "base_commit": "64cc31b8ea7bf2f9cec69ad934cf619882eb1c39",
+  "branch": "codex/hfo-col133-authority",
+  "publication": "uncommitted local source",
+  "files": [
+    {
+      "path": "docs/specs/27-facility-operations-authority.md",
+      "sha256": "d7da873aa57b52f2d0f85e89c2c0964ec518663fb9cfa2931a6bab198cf88cde"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-catalog.md",
+      "sha256": "ea8a1af2b2dea573bdc16b3c507901ba83bc47fe65a6d423027c001d1c1c30e5"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "d319db25772777f8e29567a7d06356716e86bf92a8cf9dc89ad25123687a4978"
+    },
+    {
+      "path": "scripts/facility-operations/test-current-authority.py",
+      "sha256": "a46cd8807f7de585f06684e41290a540d0dfb48164d777b5ccb22fe0f12ad8cb"
+    },
+    {
+      "path": "src/app/(admin)/admin/kanban/page.tsx",
+      "sha256": "500157bfa99ed08f7db5ec3fa0118195deca6595c7450ccb414c5521f6ce31ce"
+    },
+    {
+      "path": "src/app/api/admin/facilities/[facilityId]/route.ts",
+      "sha256": "335b401364b7a915767df92022737ab7fdad17eade0086447fc7e56fe6e78b95"
+    },
+    {
+      "path": "src/app/api/admin/facilities/route.ts",
+      "sha256": "53d1dd886b0fa893cb244c71636e494e2bdfbddf0657b7cd05bb1d7d8659ec54"
+    },
+    {
+      "path": "src/app/api/admin/meetings/[id]/actions/route.test.ts",
+      "sha256": "4920b4964e1a63276e5afff5fccfbcb7f12675d040f7b4030f249ebc59ed0aa1"
+    },
+    {
+      "path": "src/app/api/admin/meetings/[id]/actions/route.ts",
+      "sha256": "64f0eca5910a8201deb4856f1a58ddf0e4231004d1ed1ac4bc825c8300a8ea0e"
+    },
+    {
+      "path": "src/app/api/admin/operations/assets/route.ts",
+      "sha256": "1e446ee1297424c4d6903722087dcd702d92b7f03f09c590f80372dd4ffc9d34"
+    },
+    {
+      "path": "src/app/api/admin/operations/maintenance-templates/route.ts",
+      "sha256": "65718758fb2b6a8b3eeb27f4c36ab59bab7a86cc6f8bc6d20c55f4f7da103057"
+    },
+    {
+      "path": "src/app/api/admin/operations/staffing-adequacy/route.test.ts",
+      "sha256": "4c856020b6b4a0d799810e729548058d9b6b3c36afa66b7815495ee1a437ed12"
+    },
+    {
+      "path": "src/app/api/admin/operations/staffing-adequacy/route.ts",
+      "sha256": "5cc8a8849315d81a6214ee0baa314427be1f0953bc3abb8678e149914446b297"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/complete/route.test.ts",
+      "sha256": "d168ecc76b75b341320f4a6b3773e7fd29a22e88991f5217373452988c595ae8"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/complete/route.ts",
+      "sha256": "fc4c242ecdfb658ac00b5a807aa242bfc7260f5bccc9d1bcb99cdcbb82ee6263"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/defer/route.test.ts",
+      "sha256": "bffce5c6c484c3db69da277426a79ab5051c1e90d19e8e819eb2716e7a537a9f"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/defer/route.ts",
+      "sha256": "1565cdfd3e0d2caece7a2513c3faece92b752388c0ea494ce3917f54d45ba635"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/escalate/route.ts",
+      "sha256": "fd7667fbcda09818a032ac3304700c2753ef3a7bcd699d534786cc5f276a670c"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/reinstate/route.ts",
+      "sha256": "074e5a4cc02d7dc127474099afe853cca7acc265c4b1b90d6282db93cb0bbdae"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/start/route.ts",
+      "sha256": "22fb8f1c742ff0eb346044e550432d0c0a06bbd04cd23d21bbc18c987480318a"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/bulk-complete/route.test.ts",
+      "sha256": "5afd805c1081ca802917996f942a28dd1f9860cf9c265279a42d73ed2a5feb1d"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/bulk-complete/route.ts",
+      "sha256": "6976c7db6a655b7064d4376d9f47d9b6e65f97aed1e2e23c1144e762dc2a54a6"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/route.test.ts",
+      "sha256": "0ddcfc3f3c9dac4c157306b4e39454f072bf2c0e98a41f2986cba7c7a5a0f073"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/route.ts",
+      "sha256": "3c68b930c116368abf40ecded5150b779b6eedd6596d0167f124de72d291b1c8"
+    },
+    {
+      "path": "src/app/api/admin/operations/templates/[id]/route.test.ts",
+      "sha256": "ffcd144b09811c5c2c8f3463019cd8a417db6c287fea8b31a1622d9f81411f17"
+    },
+    {
+      "path": "src/app/api/admin/operations/templates/[id]/route.ts",
+      "sha256": "8a4c8046a1bca50b7c930f22c2c8eee5b32deb1974ecf570ff73abfbba4052e2"
+    },
+    {
+      "path": "src/app/api/admin/operations/templates/route.ts",
+      "sha256": "a96cea720f5d133d442accb905c0c066486dd3e5d6d9d626ae2fbe695a05ceaa"
+    },
+    {
+      "path": "src/app/api/admin/operations/vendors/[id]/route.ts",
+      "sha256": "af0f036562861b44e0ee472bf2a127105a63f78442061f4d35e5b61e4cd6fe4e"
+    },
+    {
+      "path": "src/app/api/admin/operations/vendors/route.ts",
+      "sha256": "4e619176485005793099dbc46d98e59993a86a2a52805123c83ad2532bba5f57"
+    },
+    {
+      "path": "src/lib/operations/audit-export-authority.test.ts",
+      "sha256": "88123c91b8f1ddd32d285fd0f5c4f3b282019ada204628fd7a53a353d3d46dcb"
+    },
+    {
+      "path": "src/lib/operations/auth.test.ts",
+      "sha256": "1c809883388e4d6b3eae95ee3b9ed5a6c9d2e6e7271e5d5f5d139d47b5f71c0f"
+    },
+    {
+      "path": "src/lib/operations/auth.ts",
+      "sha256": "f205acefa623a76c020f2421925d865ae1b90b8d98153973d1e1f1695a492da1"
+    },
+    {
+      "path": "src/lib/operations/automation-authority.test.ts",
+      "sha256": "72b3975788cd8c4998b3fd25158eb8925e1378e16e454fed50fa43192678b1cf"
+    },
+    {
+      "path": "src/lib/operations/task-command.test.ts",
+      "sha256": "ca0214a0ae1ab09d6733d2214773de037a075304053c54d0c1e1ce0e3d5cc3cc"
+    },
+    {
+      "path": "src/lib/operations/task-command.ts",
+      "sha256": "d409065d2277acf8b20ac88b2bf762765d92d67cdaa4a240232e5d75e5054a5e"
+    },
+    {
+      "path": "supabase/functions/export-audit-log/index.ts",
+      "sha256": "fbfcd207eeee87bd6258547abb3d419789fa5c1b3ca8b316211c434c94b91224"
+    },
+    {
+      "path": "supabase/functions/oce-escalation-scanner/index.ts",
+      "sha256": "e8bd2523210050bfc0a25da53d3d5c161952bfb88860059517f253e15b5cbeff"
+    },
+    {
+      "path": "supabase/functions/oce-staffing-adequacy-computer/index.ts",
+      "sha256": "5f1722332acada9f50be37968ba12a8e9034b569bb2a339a1a3711535933fe57"
+    },
+    {
+      "path": "supabase/functions/risk-nightly-scorer/index.ts",
+      "sha256": "35d24f01d96bb0b617e06ef6422bc280a96bd41b4016267d4be44b03a18de193"
+    },
+    {
+      "path": "supabase/migrations/337_hfo_current_authority.sql",
+      "sha256": "b45506534158f6bb2bddbcec3b6c8b231b958478f8c04fc9bbeca837e080dbe5"
+    },
+    {
+      "path": "supabase/tests/review_authoritative_actor.sql",
+      "sha256": "e01ec50024452bd2728019c88d2032edf2401518d1c9d9a2da2a7ee5e9b96dc7"
+    },
+    {
+      "path": "supabase/tests/review_clinical_integrity.sql",
+      "sha256": "0d623802e7932a541f3380bbc22827fdafdc87d3a9c5b73106b241cfaaf7e697"
+    },
+    {
+      "path": "supabase/tests/review_hfo_activity_catalog.sql",
+      "sha256": "319def99c1433181b8c61375f834d73903296542dfe731341a49023ac1633c2f"
+    },
+    {
+      "path": "supabase/tests/review_hfo_current_authority.sql",
+      "sha256": "e7ce84ee2da912e8a9734474623c9663df90ae32b924e0e705d822df0c71e7a5"
+    },
+    {
+      "path": "supabase/tests/review_office_integrity.sql",
+      "sha256": "e616b6e6cd6c41d3e55962a588702a1844e699fe584728b3ddd0ae3368eae9cd"
+    },
+    {
+      "path": "supabase/tests/rpc_grant_posture.sql",
+      "sha256": "2c9efca3ed93ea1b9173f2ef4aa5094963ef6b1f3610bb7bb8bc253e3ef14138"
+    }
+  ]
+}

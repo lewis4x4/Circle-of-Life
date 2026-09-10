@@ -1,0 +1,96 @@
+{
+  "checked_at": "2026-09-10T00:35:14.188306+00:00",
+  "service_stopped": "run-owned PostgreSQL17 socket-only port55443",
+  "exact_files_removed": 8675,
+  "exact_empty_directories_removed": [
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_multixact/members",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_multixact/offsets",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_wal/archive_status",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_wal/summaries",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_logical/snapshots",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_logical/mappings",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/base/1",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/base/36166",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/base/36000",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/base/16384",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/base/4",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/base/5",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_multixact",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_wal",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_snapshots",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_commit_ts",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_stat",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_stat_tmp",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_logical",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_notify",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_subtrans",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_serial",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_replslot",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_tblspc",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_twophase",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_xact",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/pg_dynshmem",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/global",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata/base",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/pgdata"
+  ],
+  "steward_validation": [
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-0.json",
+      "sha256": "7ba9be8f996399028f223b935b3f072ab77edfe44f526607f3fc2d70c3a95dac",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-1.json",
+      "sha256": "32ca3a1855fda304e76d8a2950abc07646884f3e65842d398a6a12a75b78fa75",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-2.json",
+      "sha256": "eb2655fed582d403747041294cf2ea8442495469375dbb917788df8a726b720c",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-3.json",
+      "sha256": "4d186d67061610c3564b766eed456b5d3acd0e4a586889b081981ae0e894286e",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-4.json",
+      "sha256": "a5ddc8e83665a1e580879a8e27f94e92c5d7efda141be911dc8341701576c792",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-5.json",
+      "sha256": "ec78ca25228a662556c6cbe5db1ce4908db80bb042ddebd3d9a2b96013c39c93",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-6.json",
+      "sha256": "45490fd5bf83119d61deafc032274e37eac46f563fba125f0145cd22005af790",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-7.json",
+      "sha256": "ca71789bfe09c2fcf1cfa6e3558dbf363ba0c14ef6283b095bc64558a2216939",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-8.json",
+      "sha256": "c7c3574c47f139d63c6d7f3aaedb5c0939d4c1df9a826bba79f0cc1a788fc7c5",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col133-20260909-authority/cleanup-manifests/files-9.json",
+      "sha256": "c71b0b521237208d3ddedf95140e8361cc16e43a999d7b1e0ae2cf559bdd2b92",
+      "result": "{\"planned_count\": 575, \"removed_count\": 0, \"status\": \"planned\"}"
+    }
+  ],
+  "retained": [
+    "source worktree and dependency/build environment",
+    "durable evidence",
+    "private ownership and cleanup manifests",
+    "run-owned node_modules-link symlink to retained catalog environment"
+  ],
+  "unrelated_deleted": false
+}

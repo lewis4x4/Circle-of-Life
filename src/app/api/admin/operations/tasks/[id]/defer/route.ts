@@ -44,7 +44,7 @@ export async function PATCH(
     body = {};
   }
 
-  if (!body.deferred_until) {
+  if (!body || typeof body.deferred_until !== "string" || (body.cancellation_reason !== undefined && typeof body.cancellation_reason !== "string")) {
     return NextResponse.json({ error: "deferred_until is required" }, { status: 400 });
   }
 
@@ -53,7 +53,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid deferred_until" }, { status: 400 });
   }
 
-  const { data, error } = await actor.admin
+  const { data, error } = await actor.currentActor.client
     .from("operation_task_instances" as never)
     .select(`
       id,
@@ -85,7 +85,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Not authorized to defer this task" }, { status: 403 });
   }
 
-  const { data: rpcData, error: rpcError } = await currentActor.admin.rpc(
+  const { data: rpcData, error: rpcError } = await currentActor.currentActor.client.rpc(
     "defer_operation_task_review" as never,
     {
       p_task_id: id,

@@ -1,0 +1,164 @@
+{
+  "issue": "COL-133",
+  "recorded_at": "2026-09-10T00:56:43+00:00",
+  "purpose": "Resolve the two required release-gate blockers recorded in verification.json without waiving any check, then re-run the full strict gate on the unchanged COL-133 implementation.",
+  "implementation_manifest_unchanged": {
+    "files": 46,
+    "sha256_matches": 46
+  },
+  "blocker_resolution": {
+    "hygiene.npm-audit": {
+      "before": "1 critical (next), 2 high (sharp, js-yaml), 3 moderate (vitest, @vitest/mocker, hono)",
+      "change": "next 16.2.11->16.3.4, eslint-config-next and @next/bundle-analyzer 16.3.4, sharp override 0.35.3->0.35.4, vitest ^4.1.5->^4.1.11, overrides hono ^4.13.7 and js-yaml ^4.3.2. Mirrors the pins already carried by codex/haven-finance-integration and codex/haven-insurance-workspace.",
+      "install_note": "npm 10.9.8 arborist crashed (edgesOut) on update/install with the new declarations; the lockfile was resolved with npm 11.19.1 (lockfileVersion 3 retained). npm 10 audit reads the same lockfile.",
+      "after": "npm audit: found 0 vulnerabilities"
+    },
+    "security.gitleaks": {
+      "before": "3 shared-ref matches from Finance commit 2973ca39 (not in this branch's ancestry)",
+      "change": "Ported the three exact commit/path/rule/line fingerprints and their classification comment from the owning Finance branch (.gitleaksignore, cbd94135). No rule or path suppression; generic-api-key detector probe still active. No history rewritten.",
+      "after": "gitleaks: 1955 commits scanned, no leaks found"
+    },
+    "consequential_next_16.3_adaptations": {
+      "qa.eslint": "eslint-config-next 16.3.4 introduced @next/next/no-location-assign-relative-destination (warn) and the repo runs --max-warnings 0. Six pre-existing internal navigations were changed from window.location to useRouter().push(), identical to Finance commit 1e0a36ee (the Finance-only billingCurrency refactor in billing-invoice-ledger.tsx was not ported).",
+      "qa.root-build": "next build 16.3 type-checks *.test.* under tsconfig.json; next.config.ts now sets typescript.tsconfigPath to tsconfig.typecheck.json, matching npm run typecheck (same line as Finance and Insurance). Vitest still executes the test sources."
+    }
+  },
+  "chore_files": [
+    {
+      "path": "package.json",
+      "sha256": "b1e941199bbd9b5f72b172dccf7f1d4b87b87c44d59549a12241d8d05e9d2411"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "3d8d47579b5462b3cfe9d77d3563acd7e7d9e3a2fba6c3b7f896586510a47f5f"
+    },
+    {
+      "path": ".gitleaksignore",
+      "sha256": "fa3faf41dde677cc2a06b269e38e069b827a6cd0a0bcb62c67fd32049e323bfe"
+    },
+    {
+      "path": "next.config.ts",
+      "sha256": "712bdc7007118377f148f3a1be1895e50e824cdb5d1603eea854e2ae7b6d5a0f"
+    },
+    {
+      "path": "src/app/(admin)/admin/compliance/rules/new/page.tsx",
+      "sha256": "366c2914a5dbc21edf627b1c5dc0e0dfed6e353f05bebf2e626cd95a975f27f7"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/assets/page.tsx",
+      "sha256": "3a3521d72d69e9a51f5402dec68d86db3daf1f84675b04652863d072bae5178a"
+    },
+    {
+      "path": "src/app/(admin)/billing/billing-invoice-ledger.tsx",
+      "sha256": "eef22dba2a08d1b6752b7f1e87635eae8fbcf2e4df1ced3b4b92d51e636663e5"
+    },
+    {
+      "path": "src/app/(admin)/vendors/directory/page.tsx",
+      "sha256": "4bd63b9296822a431cc6158828b0946f21671b4c8971c495620fbd32de7f8e86"
+    },
+    {
+      "path": "src/app/(admin)/vendors/purchase-orders/new/page.tsx",
+      "sha256": "644d4c900c071fd40c52ab4b6dd594cf17b0056f2930ea5c65232e28751de2a5"
+    },
+    {
+      "path": "src/components/v2/W2ListClient.tsx",
+      "sha256": "e8556a13870329755f1f4bd821e26c8da461f17898741f9b1414f6c0017ae48b"
+    }
+  ],
+  "strict_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T00-51-37-592Z-COL-133-HFO-CURRENT-AUTHORITY.json",
+    "verdict": "PASS",
+    "summary": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "blocking_failures": []
+    },
+    "checks": [
+      {
+        "id": "hygiene.env-example",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.tracked-secrets-scan",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.npm-audit",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "security.gitleaks",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.eslint",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.migration-sequence",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.migrations-apply-postgres",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.root-build",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.nextjs-deprecation-signal",
+        "status": "passed",
+        "required": false
+      },
+      {
+        "id": "qa.web-build",
+        "status": "skipped",
+        "required": false
+      },
+      {
+        "id": "chaos.stress-suite",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "cdo.design-review",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "cdo.a11y-axe",
+        "status": "passed",
+        "required": true
+      }
+    ],
+    "migration_replay": "native run-owned PostgreSQL 17 (socket-only, port 55443); 340 migration files, 21 SQL probes",
+    "prior_failed_artifacts": [
+      "test-results/agent-gates/2026-09-10T00-23-57-980Z-COL-133-HFO-CURRENT-AUTHORITY.json",
+      "test-results/agent-gates/2026-09-10T00-47-19-937Z-COL-133-HFO-CURRENT-AUTHORITY.json"
+    ]
+  },
+  "re_verification_after_dependency_change": {
+    "typecheck": "PASS",
+    "focused_tests": {
+      "passed": 131,
+      "files": 17
+    },
+    "deno_check_changed_edge_functions": "PASS (4, --no-lock, no lockfile mutation)",
+    "adjacent_tests_for_ported_navigation_files": {
+      "passed": 37,
+      "files": 14
+    },
+    "eslint_six_ported_files": "0 warnings"
+  },
+  "not_established": "Hosted Auth/Storage, authenticated staff workflow, hosted migration, deployment and operating acceptance remain unproven; UI scope is the public login route only."
+}

@@ -37,7 +37,16 @@ export async function PATCH(
     body = {};
   }
 
-  const { data, error } = await actor.admin
+  if (!body || (body.completion_notes !== undefined && typeof body.completion_notes !== "string") ||
+      (body.completion_evidence_paths !== undefined && !Array.isArray(body.completion_evidence_paths))) {
+    return NextResponse.json({ error: "Invalid completion details" }, { status: 400 });
+  }
+  // Raw paths have no verified site/subject classification. COL-143 adds finalized evidence IDs.
+  if ((body.completion_evidence_paths?.length ?? 0) > 0) {
+    return NextResponse.json({ error: "Evidence must use a verified task attachment" }, { status: 409 });
+  }
+
+  const { data, error } = await actor.currentActor.client
     .from("operation_task_instances" as never)
     .select("id, organization_id, facility_id, assigned_to, assigned_role, status, due_at")
     .eq("id", id)
@@ -58,7 +67,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Not authorized to complete this task" }, { status: 403 });
   }
 
-  const result = await currentActor.admin.rpc("complete_operation_task_review" as never, { p_task_id: id, p_actor_id: currentActor.id, p_actor_role: currentActor.appRole, p_notes: body.completion_notes ?? "", p_evidence: body.completion_evidence_paths ?? [] } as never);
+  const result = await currentActor.currentActor.client.rpc("complete_operation_task_review" as never, { p_task_id: id, p_actor_id: currentActor.id, p_actor_role: currentActor.appRole, p_notes: body.completion_notes ?? "", p_evidence: body.completion_evidence_paths ?? [] } as never);
   if (result.error) {
     logError("admin.operations.tasks.complete", result.error, {
       action: "rpc",
@@ -70,5 +79,9 @@ export async function PATCH(
       : "Task could not be completed. Refresh the task and retry.";
     return NextResponse.json({ error }, { status: 409 });
   }
-  return NextResponse.json({ success: true, status: result.data });
+  const completionStatus: unknown = result.data;
+  if (completionStatus !== "completed" && completionStatus !== "awaiting_verification") {
+    return NextResponse.json({ error: "Task completion could not be confirmed" }, { status: 500 });
+  }
+  return NextResponse.json({ success: true, status: completionStatus });
 }

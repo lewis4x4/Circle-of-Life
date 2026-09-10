@@ -5,7 +5,7 @@ GRANT USAGE ON SCHEMA auth TO authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT UPDATE ON residents TO authenticated;
 GRANT INSERT,UPDATE ON daily_logs,resident_medications,care_plans,care_plan_items,emar_records,med_passes,shift_tape_events TO authenticated;
-CREATE TEMP TABLE clinical_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,gen_random_uuid() witness,gen_random_uuid() resident,gen_random_uuid() resident2,gen_random_uuid() med,gen_random_uuid() shift_id,gen_random_uuid() pass_id,gen_random_uuid() task_id,gen_random_uuid() checklist_id,gen_random_uuid() ticket_id,f.id facility,f.organization_id org FROM facilities f WHERE deleted_at IS NULL LIMIT 1;
+CREATE TEMP TABLE clinical_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,gen_random_uuid() witness,gen_random_uuid() witness_session,gen_random_uuid() resident,gen_random_uuid() resident2,gen_random_uuid() med,gen_random_uuid() shift_id,gen_random_uuid() pass_id,gen_random_uuid() task_id,gen_random_uuid() checklist_id,gen_random_uuid() ticket_id,f.id facility,f.organization_id org FROM facilities f WHERE deleted_at IS NULL LIMIT 1;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  SELECT actor,actor||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','owner'),'{"full_name":"Clinical reviewer"}'::jsonb FROM clinical_fixture
  UNION ALL SELECT witness,witness||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','nurse'),'{"full_name":"Clinical witness"}'::jsonb FROM clinical_fixture;
@@ -14,7 +14,7 @@ INSERT INTO user_profiles(id,email,full_name,app_role,organization_id,is_active)
  UNION ALL SELECT witness,witness||'@review.invalid','Clinical witness','nurse'::app_role,org,true FROM clinical_fixture
  ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
 INSERT INTO user_facility_access(user_id,facility_id,organization_id) SELECT actor,facility,org FROM clinical_fixture UNION ALL SELECT witness,facility,org FROM clinical_fixture;
-INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM clinical_fixture;
+INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM clinical_fixture UNION ALL SELECT witness_session,witness FROM clinical_fixture;
 SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
   'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
   'role','authenticated','app_role','owner','organization_id',f.org,
@@ -76,14 +76,26 @@ DO $$ DECLARE f record; receipt uuid; BEGIN
  IF receipt<>complete_med_pass_review(f.pass_id,'given','Observed actual administration',true) OR (SELECT count(*) FROM emar_records WHERE med_pass_id=f.pass_id)<>1 THEN RAISE EXCEPTION 'Pass retry duplicated MAR'; END IF;
 END $$;
 
-INSERT INTO operation_task_instances(id,organization_id,facility_id,template_name,template_category,template_cadence_type,assigned_shift_date,assigned_to,requires_dual_sign)
- SELECT task_id,org,facility,'Clinical dual task','safety','daily',current_date,actor,true FROM clinical_fixture;
+INSERT INTO public.operation_activity_subjects(organization_id,facility_id,subject_kind)
+ SELECT org,facility,'facility' FROM clinical_fixture ON CONFLICT DO NOTHING;
+INSERT INTO operation_task_instances(id,organization_id,facility_id,template_name,template_category,template_cadence_type,assigned_shift_date,assigned_to,requires_dual_sign,subject_id,authority_class)
+ SELECT task_id,org,facility,'Clinical dual task','safety','daily',current_date,actor,true,
+ (SELECT id FROM public.operation_activity_subjects WHERE facility_id=clinical_fixture.facility AND subject_kind='facility'),'facility' FROM clinical_fixture;
 DO $$ DECLARE f record; BEGIN
  SELECT * INTO f FROM clinical_fixture;
  IF complete_operation_task_review(f.task_id,f.actor,'owner','Performed task','{}')<>'awaiting_verification' THEN RAISE EXCEPTION 'Dual task falsely completed'; END IF;
  BEGIN PERFORM complete_operation_task_review(f.task_id,f.actor,'owner','Self verify','{}'); RAISE EXCEPTION 'Self verification accepted'; EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'A different authorized staff member must verify this task' THEN RAISE; END IF; END;
+ -- A witness must authenticate as themselves; actor arguments cannot impersonate them.
+ BEGIN PERFORM complete_operation_task_review(f.task_id,f.witness,'nurse','Forged witness','{}');
+ RAISE EXCEPTION 'Witness actor argument impersonated identity'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',f.witness,'session_id',f.witness_session,
+ 'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=f.witness),'role','authenticated')::text,true);
  IF complete_operation_task_review(f.task_id,f.witness,'nurse','Verified task','{}')<>'completed' THEN RAISE EXCEPTION 'Independent verification failed'; END IF;
 END $$;
+
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
+ 'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,'role','authenticated')::text,true)
+FROM clinical_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 
 INSERT INTO emergency_checklist_items(id,facility_id,organization_id,checklist_type,title,frequency_days,next_due_date)
  SELECT checklist_id,facility,org,'generator_test','Clinical fixture checklist',30,current_date FROM clinical_fixture;
@@ -127,13 +139,16 @@ DO $$ DECLARE f record; med_id uuid; scheduled timestamptz; pending_id uuid:=gen
  IF has_table_privilege('authenticated','operation_task_instances','UPDATE') OR has_table_privilege('authenticated','operation_task_instances','INSERT') THEN RAISE EXCEPTION 'Client can forge operation verification'; END IF;
 END $$;
 
-DO $$ DECLARE f record; payload jsonb; receipt jsonb; template_id uuid:=gen_random_uuid(); result jsonb; BEGIN
+DO $$ DECLARE f record; payload jsonb; receipt jsonb; template_id uuid:=gen_random_uuid(); activity_id uuid:=gen_random_uuid(); result jsonb; BEGIN
  SELECT * INTO f FROM clinical_fixture;
  payload:=jsonb_build_object('create_request_id',gen_random_uuid(),'organization_id',f.org,'facility_id',f.facility,'resident_id',f.resident2,'status','draft','medicaid_pipeline_stage','prospect','created_by',f.actor,'updated_by',f.actor);
  receipt:=create_admission_case_review(payload);
  IF receipt->>'id' IS DISTINCT FROM create_admission_case_review(payload)->>'id' THEN RAISE EXCEPTION 'Admission request retry duplicated case'; END IF;
  BEGIN PERFORM create_admission_case_review(payload||jsonb_build_object('status','pending_clearance')); RAISE EXCEPTION 'Draft submission returned false success'; EXCEPTION WHEN raise_exception THEN IF SQLERRM NOT LIKE 'An admission case already exists%' THEN RAISE; END IF; END;
- INSERT INTO operation_task_templates(id,organization_id,facility_id,name,description,category,cadence_type,assignee_role,created_by,updated_by) VALUES(template_id,f.org,f.facility,'Fixture template','Verified fixture','maintenance','monthly','maintenance',f.actor,f.actor);
+ -- Explicit synthetic facility activity; do not infer classification from template text.
+ INSERT INTO operation_activities(id,organization_id,facility_id,activity_key,name,activity_kind,subject_kind,origin)
+ VALUES(activity_id,f.org,f.facility,'clinical-fixture:'||activity_id,'Facility fixture','attestation','facility','admin_log');
+ INSERT INTO operation_task_templates(id,organization_id,facility_id,name,description,category,cadence_type,assignee_role,created_by,updated_by,activity_id) VALUES(template_id,f.org,f.facility,'Fixture template','Verified fixture','maintenance','monthly','maintenance',f.actor,f.actor,activity_id);
  result:=publish_operation_template_review(template_id,jsonb_build_object('name','Fixture version two','created_by',f.actor,'updated_by',f.actor));
  IF (SELECT is_active FROM operation_task_templates WHERE id=template_id) OR (SELECT previous_version_id FROM operation_task_templates WHERE id=(result->>'id')::uuid)<>template_id THEN RAISE EXCEPTION 'Template publication did not retire prior version'; END IF;
 END $$;

@@ -45,6 +45,7 @@ export default function AdminKanbanPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
+    setOceTasks([]);
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
@@ -67,7 +68,8 @@ export default function AdminKanbanPage() {
         .is("deleted_at", null)
         .order("due_at", { ascending: true, nullsFirst: false })
         .limit(100)) as unknown as QueryResult<OceTaskMini>;
-      if (!oceRes.error) setOceTasks(oceRes.data ?? []);
+      if (oceRes.error) throw new Error("Could not load operation tasks.");
+      setOceTasks(oceRes.data ?? []);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load your board.");
     } finally {

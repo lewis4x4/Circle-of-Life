@@ -67,8 +67,8 @@ BEGIN
   END IF;
 
   IF has_function_privilege('anon', 'public.defer_operation_task_review(uuid, uuid, text, timestamptz, text, text)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'public.defer_operation_task_review(uuid, uuid, text, timestamptz, text, text)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'rpc_grant_posture: browser roles can execute defer_operation_task_review';
+     OR NOT has_function_privilege('authenticated', 'public.defer_operation_task_review(uuid, uuid, text, timestamptz, text, text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: defer must allow only authenticated current-actor wrapper';
   END IF;
 
   IF has_function_privilege('anon', 'public._kb_record_gap(text, uuid, text, text, text, text, uuid, uuid)', 'EXECUTE') THEN
@@ -91,16 +91,16 @@ BEGIN
     RAISE EXCEPTION 'rpc_grant_posture: authenticated lost allocate_incident_number';
   END IF;
 
-  IF NOT has_function_privilege('service_role', 'public.bulk_complete_operation_tasks(uuid[], uuid, text, text, timestamptz)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'rpc_grant_posture: service_role lost bulk_complete_operation_tasks';
+  IF has_function_privilege('service_role', 'public.bulk_complete_operation_tasks(uuid[], uuid, text, text, timestamptz)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: bulk must stay disabled before scoped receipts';
   END IF;
 
   IF has_function_privilege('authenticated', 'public.bulk_complete_operation_tasks(uuid[], uuid, text, text, timestamptz)', 'EXECUTE') THEN
     RAISE EXCEPTION 'rpc_grant_posture: authenticated should not execute bulk_complete_operation_tasks';
   END IF;
 
-  IF NOT has_function_privilege('service_role', 'public.defer_operation_task_review(uuid, uuid, text, timestamptz, text, text)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'rpc_grant_posture: service_role lost defer_operation_task_review';
+  IF has_function_privilege('service_role', 'public.defer_operation_task_review(uuid, uuid, text, timestamptz, text, text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: service_role may not impersonate defer actor';
   END IF;
 END;
 $$;

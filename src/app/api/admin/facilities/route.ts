@@ -3,6 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { listActorAccessibleFacilityIds, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { listFacilitiesQuerySchema } from "@/lib/validation/facility-admin";
 
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
     return auth.response;
   }
   const { actor } = auth;
+  const sessionClient = await createClient();
   const admin = actor.admin;
   const untypedAdmin = asUntypedAdmin(admin);
 
@@ -167,8 +169,8 @@ export async function GET(request: NextRequest) {
       // consumed entirely by one high-frequency facility, starving others of
       // their survey_readiness_pct. Scope is already bounded to this page's
       // facilityIds + org + non-deleted rows.
-      untypedAdmin
-        .from("risk_score_snapshots")
+      sessionClient
+        .from("risk_score_snapshots" as never)
         .select("facility_id, computed_at, summary_json")
         .eq("organization_id", orgId)
         .in("facility_id", facilityIds)
