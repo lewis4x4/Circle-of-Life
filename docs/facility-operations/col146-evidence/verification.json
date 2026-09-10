@@ -1,0 +1,46 @@
+{
+  "issue": "COL-146",
+  "scope": "source-only; built under the owner's limited dependency exception against the reviewed COL-143 interface (COL-143 In Progress, hosted Storage proof open, not marked complete)",
+  "recorded_at": "2026-09-10T21:00:00Z",
+  "state": "local_source_implemented_reviewed_gated",
+  "base_commit": "c7dc9efc (codex/hfo-col145-corrections tip; branch started at 5367f6e7 and fast-forwarded)",
+  "branch": "codex/hfo-col146-recovery",
+  "contract": "docs/facility-operations/col146-evidence/engineering-contracts.md",
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/lib/operations src/hooks \"src/app/(admin)/admin/operations\"",
+    "files": 47,
+    "tests": 471,
+    "status": "PASS",
+    "note": "371 at the COL-145 tip; added: recovery library (draft schemas from the COL-145 exports, draft outcome classes, resume mapping with per-command nouns and current receipt fields), the framework-free save machine (lost answers of every kind reconcile and never discard; never saved without a record; two-tab resume ends saved; offline and unconfirmed states; 401 keeps the draft), the actor-keyed hook (state dropped on actor change and sign-out, in-flight answers ignored, relist on same-person re-sign-in), the accessible save-state notice with a real axe check, and the five draft routes (save, list, reconcile, resume, discard; other actors' drafts 404); a source-grep test proves no browser storage in any runtime file"
+  },
+  "typecheck": "PASS",
+  "lint": "PASS (eslint src --max-warnings 0 and constitution lint; ui-v2 token rules also run explicitly on the notice, hook and client)",
+  "native_replay": {
+    "migration_files": 348,
+    "numbered_through": "345",
+    "sql_probes": 29,
+    "probe": "supabase/tests/review_hfo_command_drafts.sql: 173 assertions (85 assert, 52 expect, 36 denied), rolls back; covers save replay and conflicts, another actor's key and draft, other organisation, revoked and expired grants, signed-out session, same person from a new session, reconcile before and after the command, key reused on another occurrence (unsaved), resume executes once and replays after commit, resume of correct/reverse/verify/issue drafts, resume propagating the command's own conflict with DETAIL, expired and discarded refusals, two resumes replaying, forged-setting DML, immutable identity and forward-only states, grant posture; every earlier probe passes unchanged",
+    "status": "PASS (SQL lane, SQL reviewer twice, and the strict gate's qa.migrations-apply-postgres on the rebased tree)",
+    "runtime": "native PostgreSQL 17.9, run-owned socket-only cluster under ~/.hermes/tmp/agent-runs (no Docker), Supabase stubs"
+  },
+  "lock_races": {
+    "script": "scripts/facility-operations/test-draft-concurrency.py",
+    "baseline": "col146_base345 (stub + migrations 001..345)",
+    "output": "docs/facility-operations/col146-evidence/concurrency.txt",
+    "cases": [
+      "two resumes of one draft: the second waits on the draft row and replays (replayed true); one receipt; the draft reconciled once",
+      "discard then resume: the resume waits and is refused Draft was discarded; no receipt",
+      "resume then discard: the discard waits and is refused Draft is not pending; the one receipt stands"
+    ],
+    "lock_waits": "observed from pg_locks on operation_command_drafts in all three cases",
+    "status": "PASS"
+  },
+  "independent_review": "docs/facility-operations/col146-evidence/independent-review.json (TypeScript: one blocker and four should-fix remediated, re-verified PASS against the final 345; SQL: one should-fix remediated, re-verified PASS)",
+  "strict_gate": {
+    "segment": "COL-146-HFO-RECOVERY",
+    "artifact": "test-results/agent-gates/2026-09-10T20-51-02-880Z-COL-146-HFO-RECOVERY.json",
+    "verdict": "PASS",
+    "ui": "design review and axe on the public route passed; the notice component is covered by its in-test axe check; no authenticated route was added by this segment"
+  },
+  "not_established": ["hosted migration", "device, staff and operating acceptance", "offline drafts and emergency packets (Q25 open)", "COL-143 hosted Storage proof (open, unaffected)"]
+}
