@@ -23,8 +23,14 @@ type TaskInstance = {
   license_threatening: boolean;
   estimated_minutes: number;
   facility_name: string;
-  days_overdue: number;
+  due_judgment?: "unknown" | "settled" | "not_due" | "overdue";
+  days_overdue: number | null;
 };
+
+/** A task without a due instant has no due date to show; the assigned date is never one. */
+function dueLabel(task: Pick<TaskInstance, "due_at">) {
+  return task.due_at ? new Date(task.due_at).toLocaleDateString() : "Schedule needs confirmation";
+}
 
 export default function OverdueTasksPage() {
   const { selectedFacilityId } = useFacilityStore();
@@ -101,7 +107,8 @@ export default function OverdueTasksPage() {
     night: "Night",
   };
 
-  const getOverdueSeverity = (days: number) => {
+  const getOverdueSeverity = (daysOverdue: number | null) => {
+    const days = daysOverdue ?? 0;
     if (days >= 7) return { color: "text-red-700", label: `${days}+ days overdue`, badge: "bg-red-600" };
     if (days >= 3) return { color: "text-orange-700", label: `${days} days overdue`, badge: "bg-orange-500" };
     return { color: "text-yellow-700", label: `${days} day overdue`, badge: "bg-yellow-500" };
@@ -229,7 +236,7 @@ export default function OverdueTasksPage() {
                     <p className="text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        Due: {new Date(task.due_at || task.assigned_shift_date).toLocaleDateString()}
+                        Due: {dueLabel(task)}
                       </span>
                     </p>
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -295,7 +302,7 @@ export default function OverdueTasksPage() {
 
                   <div className="text-sm space-y-1 mb-3">
                     <p className="text-muted-foreground">
-                      Due: {new Date(task.due_at || task.assigned_shift_date).toLocaleDateString()}
+                      Due: {dueLabel(task)}
                     </p>
                     <p className="text-muted-foreground">
                       {task.assigned_to_name || "Unassigned"} · {shiftLabels[task.assigned_shift]}

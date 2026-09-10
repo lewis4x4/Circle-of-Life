@@ -59,14 +59,49 @@ describe("facility requirement configurations", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  const weeklyRule = { rule_version: 1, timezone: "America/New_York", recurrence: { kind: "weekly", weekday: "tuesday" }, deadline: { time: "10:00" } };
+
   it("keeps the approver server-owned and forwards only editable fields", async () => {
     expect((await POST(post({ activity_id: activityId, facility_id: facilityId, payload: { applicability: "applicable", approved_by: "me" } }))).status).toBe(400);
     rpc.mockResolvedValue({ data: { id: draftId, status: "draft", applicability: "needs_confirmation" }, error: null });
-    const response = await POST(post({ activity_id: activityId, facility_id: facilityId, payload: { schedule_status: "confirmed", schedule_rule: { kind: "weekly" } } }));
+    const response = await POST(post({ activity_id: activityId, facility_id: facilityId, payload: { schedule_status: "confirmed", schedule_rule: weeklyRule } }));
     expect(response.status).toBe(200);
     expect(rpc).toHaveBeenCalledExactlyOnceWith("save_operation_facility_requirement_draft_review", {
-      p_activity_id: activityId, p_facility_id: facilityId, p_payload: { schedule_status: "confirmed", schedule_rule: { kind: "weekly" } },
+      p_activity_id: activityId, p_facility_id: facilityId, p_payload: { schedule_status: "confirmed", schedule_rule: weeklyRule },
     });
+  });
+
+  it("rejects a schedule rule the evaluator cannot interpret before any command, naming the problem", async () => {
+    const response = await POST(post({ activity_id: activityId, facility_id: facilityId, payload: { schedule_status: "confirmed", schedule_rule: { kind: "weekly", weekday: "tuesday" } } }));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "schedule rule has an unknown field: kind" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("maps the database's rule-shape rejection to a client error", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "22023", message: "Facility requirement draft contains an invalid value: schedule rule recurrence needs a calendar" } });
+    const response = await POST(post({ activity_id: activityId, facility_id: facilityId, payload: { applicability: "applicable" } }));
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toContain("schedule rule recurrence needs a calendar");
+  });
+
+  it("adds a next-due preview from the evaluator to a site preview", async () => {
+    rpc.mockResolvedValue({ data: { publishable: true, problems: [], proposed_schedule_status: "confirmed", proposed_schedule_rule: weeklyRule }, error: null });
+    const response = await PREVIEW(post({ effective_from: "2026-10-01T04:00:00Z" }), { params: Promise.resolve({ id: draftId }) });
+    expect(response.status).toBe(200);
+    const preview = (await response.json()).preview;
+    expect(preview.publishable).toBe(true);
+    expect(preview.schedule_preview.status).toBe("confirmed");
+    expect(preview.schedule_preview.next_occurrences.map((occurrence: { due_at: string }) => occurrence.due_at)).toEqual([
+      "2026-10-06T14:00:00.000Z", "2026-10-13T14:00:00.000Z", "2026-10-20T14:00:00.000Z", "2026-10-27T14:00:00.000Z", "2026-11-03T15:00:00.000Z", "2026-11-10T15:00:00.000Z",
+    ]);
+  });
+
+  it("previews an unknown schedule as needing confirmation, never as a date", async () => {
+    rpc.mockResolvedValue({ data: { publishable: true, problems: [], proposed_schedule_status: "needs_confirmation", proposed_schedule_rule: null }, error: null });
+    const response = await PREVIEW(post({ effective_from: "2026-10-01T04:00:00Z" }), { params: Promise.resolve({ id: draftId }) });
+    const preview = (await response.json()).preview;
+    expect(preview.schedule_preview).toMatchObject({ status: "needs_confirmation", next_occurrences: null, unresolved: "schedule needs confirmation", problems: [] });
   });
 
   it("surfaces the bounded subset rule as a conflict", async () => {
@@ -77,7 +112,7 @@ describe("facility requirement configurations", () => {
   });
 
   it("previews a site configuration through the facility preview command and returns the database preview", async () => {
-    rpc.mockResolvedValue({ data: { publishable: false, problems: ["schedule confirmation is not available until the evaluator defines rule shapes"] }, error: null });
+    rpc.mockResolvedValue({ data: { publishable: false, problems: ["schedule confirmation requires applicable"], proposed_schedule_status: "confirmed", proposed_schedule_rule: { kind: "weekly" } }, error: null });
     const response = await PREVIEW(post({ effective_from: "2026-10-01T04:00:00Z" }), { params: Promise.resolve({ id: draftId }) });
     expect(response.status).toBe(200);
     expect((await response.json()).preview.publishable).toBe(false);

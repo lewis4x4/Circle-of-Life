@@ -229,9 +229,9 @@ export function OperationsTaskRangePage({
                 <p>Assigned to: {task.assigned_to_name || "Unassigned"}</p>
                 <p>
                   {task.estimated_minutes ?? 0}m
-                  {task.due_at ? ` · Due ${new Date(task.due_at).toLocaleString()}` : ""}
+                  {task.due_at ? ` · Due ${new Date(task.due_at).toLocaleString()}` : " · Schedule needs confirmation"}
                 </p>
-                {task.days_overdue > 0 && (
+                {task.due_judgment === "overdue" && (
                   <p className="font-medium text-red-700">Overdue by {task.days_overdue} day{task.days_overdue === 1 ? "" : "s"}</p>
                 )}
               </div>

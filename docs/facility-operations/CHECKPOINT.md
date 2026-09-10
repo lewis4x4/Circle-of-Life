@@ -1,24 +1,23 @@
 # Facility Operations checkpoint
 
-Updated 2026-09-10 (morning). Durable resume state for the HFO track. No secrets. Local source state only; nothing merged, applied, deployed, scheduled or transmitted.
-
-## Review closures (this update)
-
-- **COL-133 / HFO-05** closed as Done on the recorded evidence: `col133-evidence/review-closure.json` maps each acceptance criterion to the independent review, the seven observed-lock concurrency cases and the PASS gates (01-22-58 remediation, 01-58-01 final branch, 02-37-46 stacked). Head stays `476f02d1` (pushed); draft PR #466 open. Done = reviewed, gated, unmerged source, exactly as COL-132.
-- **COL-135 / HFO-02** closed as Done on the recorded evidence: `col135-evidence/review-closure.json` maps each criterion to the applicability probe, the independent review and the 02-37-46 strict gate at `62d19cf4`. Later commits on the branch are documentation only. Draft PR #467 open.
-- No reviewer was re-run; no duplicate reviewer report was opened. Closure is not deployment: OWNER-DECISIONS.md items 1–6 stay open; Finance-first integration and a fresh correct-project hosted-ledger read precede final migration numbers.
+Updated 2026-09-10 (midday). Durable resume state for the HFO track. No secrets. Local source state only; nothing merged, applied, deployed, scheduled or transmitted.
 
 ## Current issue
 
-- **COL-137 / HFO-03** — one recurrence and due-date evaluator. Dependency COL-135 is Done in Linear, so COL-137 is dependency-ready. Worktree `/Users/brianlewis/Circle of Life/Haven Facility Evaluator`, branch `codex/hfo-col137-evaluator`, stacked on the COL-135 tip (this closure commit). Migration number 339 is provisional (hosted ledger numbered through 335 at last read; Finance holds 336–342 on its branch).
-- Handoff for this issue: `COL-137-HANDOFF.md` and `col137-evidence/` once written.
+- **COL-137 / HFO-03** — one recurrence and due-date evaluator. Worktree `/Users/brianlewis/Circle of Life/Haven Facility Evaluator`, branch `codex/hfo-col137-evaluator`, stacked on COL-135 `520ccbde`. Linear: In Progress at start; see `col137-evidence/linear-state.json` and the closing comment for the state after commit/push.
+- Owned files: `src/lib/operations/schedule-evaluator.ts` (+ test, fixtures, `due-judgment.test.ts`, `scheduler-evaluator.test.ts`), `src/lib/operations/server.ts`, `types.ts`, `miss-prediction.ts`, `requirements.ts` (+ test), `requirement-publication.ts`, `automation-authority.test.ts` (harness), `src/app/api/admin/operations/tasks/route.ts`, `facility-requirements/route.ts` (+ test), operator pages (`operations/page.tsx`, `overdue`, `pager`, `kanban`), `src/components/operations/OperationsCalendarPage.tsx`, `OperationsTaskRangePage.tsx`, `supabase/functions/oce-task-scheduler/index.ts`, `risk-nightly-scorer/index.ts` (one filter), `supabase/migrations/339_hfo_schedule_evaluator.sql`, `supabase/tests/review_hfo_schedule_evaluator.sql`, `review_hfo_applicability.sql` (schedule section), `docs/specs/27-facility-operations-evaluator.md`, `docs/specs/README.md` (one paragraph), `docs/facility-operations/COL-137-HANDOFF.md`, `HANDOFF.md` (pointer), `OWNER-DECISIONS.md` (3a, 3b, 5), `col137-evidence/`, this file.
+- Last completed step: implementation; two independent reviews (SQL blocker: missing `day` accepted by SQL, fixed; four SQL and two TypeScript should-fix items fixed; actionable notes fixed); focused suite 241 tests / 24 files, typecheck, lint, Deno checks, native replay 342 files / 23 probes PASS; first strict gate PASS (2026-09-10T12-24-46-085Z, pre-remediation); post-remediation gate re-run recorded in `col137-evidence/verification.json`. Then commit, push, draft PR (base codex/hfo-col135-applicability), Linear closing comment.
+
+## Review closures (earlier today)
+
+- COL-133 and COL-135 closed as Done on recorded evidence (`col133-evidence/review-closure.json`, `col135-evidence/review-closure.json`, commit `520ccbde` on the COL-135 branch). No reviewer re-run. Done = reviewed, gated, unmerged source.
 
 ## Sibling state
 
-- COL-132 `codex/hfo-col132-catalog` at `92dea9b9` (pushed): Done. Owner ruling pending on AL-Y02 / AL-C08 header labels.
-- COL-133 `codex/hfo-col133-authority` at `476f02d1` (pushed): Done (see above). Integration constraints unchanged: Finance's export-job column change applies before COL-133's policies; integrator decision on listing completed export jobs.
-- COL-135 `codex/hfo-col135-applicability`: Done (see above). Full-stack rehearsal recorded in `col135-evidence/stack-integration-rehearsal.json` (scratch branch local only).
-- Hosted ledger (project manfqmasfqppukpobpld) last read 2026-09-10 early: 344 records, numbered through 335. Migrations 336–339 are provisional.
+- COL-132 `codex/hfo-col132-catalog` `92dea9b9`: Done; owner ruling pending on AL-Y02 / AL-C08 header labels.
+- COL-133 `codex/hfo-col133-authority` `476f02d1`: Done; Finance-first ordering and the completed-export-list decision stay open.
+- COL-135 `codex/hfo-col135-applicability` `520ccbde`: Done; draft PR #467.
+- Hosted ledger (project manfqmasfqppukpobpld) read twice on 2026-09-10: 344 records, numbered through 335 (`col137-evidence/hosted-ledger.json`). Migrations 336–339 are provisional; rehearsed Finance-first placement is 343–346 with the evaluator after applicability.
 
 ## Resume commands
 
@@ -26,11 +25,13 @@ Updated 2026-09-10 (morning). Durable resume state for the HFO track. No secrets
 cd "/Users/brianlewis/Circle of Life/Haven Facility Evaluator"
 npm test -- src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts
 npm run typecheck
-# native replay needs a run-owned cluster under ~/.hermes/tmp/agent-runs/<run>/ with manifest.json created_by "codex"
+deno check --no-lock supabase/functions/oce-task-scheduler/index.ts supabase/functions/risk-nightly-scorer/index.ts
+# native replay needs a run-owned cluster under ~/.hermes/tmp/agent-runs/<run>/ with manifest.json created_by "codex"; never Docker on this Mac
 PG_VERIFY_NATIVE_SOCKET=<run dir> PG_VERIFY_NATIVE_BIN=/opt/homebrew/opt/postgresql@17/bin PG_VERIFY_NATIVE_PORT=55443 npm run migrations:verify:pg
-npm run segment:gates -- --segment COL-137-HFO-EVALUATOR --ui
+# pass the same three variables to the gate so qa.migrations-apply-postgres replays natively
+PG_VERIFY_NATIVE_SOCKET=<run dir> PG_VERIFY_NATIVE_BIN=/opt/homebrew/opt/postgresql@17/bin PG_VERIFY_NATIVE_PORT=55443 npm run segment:gates -- --segment COL-137-HFO-EVALUATOR --ui
 ```
 
 ## Next action
 
-Implement COL-137 under its Linear acceptance (unknown schedule → no due/overdue judgment and no assigned-date midnight fallback; DST, month end, leap day, two six-month meanings, holiday calendar and expiry anchors deterministic or explicitly unresolved; scheduler, next-due, history and exception views on one evaluator; fire/hood/MH ambiguities unactivated). Then focused tests, independent review, strict gate, commit and push. Integration stays separate.
+After COL-137 is committed and pushed: close its review the same way (Done = reviewed, gated, unmerged source) or leave In Review for the owner; then check live Linear for the next dependency-ready issue (COL-139 / HFO-04 occurrence generation needs COL-137 and COL-133). Integration stays separate: Finance-first, fresh correct-project hosted-ledger read before final numbering, owner decisions in `OWNER-DECISIONS.md` unanswered.

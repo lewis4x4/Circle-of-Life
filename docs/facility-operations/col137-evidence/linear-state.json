@@ -1,0 +1,17 @@
+{
+  "issue": "COL-137",
+  "before": {
+    "checked_at": "2026-09-10T11:49:00Z",
+    "state": "Backlog",
+    "dependencies_from_description": ["COL-135"],
+    "COL-135_state_at_check": "Done (closed 2026-09-10 on recorded evidence; col135-evidence/review-closure.json)",
+    "other_issues_naming_COL-137_as_blocker": "none found by search",
+    "dependency_ready": true
+  },
+  "started": {
+    "at": "2026-09-10T11:49:30Z",
+    "state": "In Progress",
+    "comment": "start comment posted naming branch codex/hfo-col137-evaluator, worktree, base 520ccbde, provisional number 339 and the plan under the acceptance criteria"
+  },
+  "after": "see the closing comment recorded in verification.json once the segment is committed and pushed"
+}

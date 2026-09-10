@@ -1,0 +1,15 @@
+{
+  "project": "manfqmasfqppukpobpld",
+  "read_at": "2026-09-10T11:52:56Z",
+  "method": "Supabase Management API database query with read_only=true, authenticated with the local Supabase CLI keyring token; single SELECT statements against supabase_migrations.schema_migrations. No statement mutated state. Correct-project check: the project reference matches AGENTS.md and CLAUDE.md for Haven.",
+  "totals": { "ledger_records": 344, "numbered_versions": 335, "max_numbered_version": "335", "other_versions": 9, "max_other_version": "20260814201741" },
+  "numbered_330_plus": [
+    { "version": "330", "name": "quality_caller_scope_and_corrections" },
+    { "version": "331", "name": "rounding_completion_receipts" },
+    { "version": "332", "name": "resident_search_current_scope" },
+    { "version": "333", "name": "rounding_javascript_whitespace" },
+    { "version": "334", "name": "payroll_source_freshness" },
+    { "version": "335", "name": "employee_file_lifecycle" }
+  ],
+  "consequence": "Unchanged from the COL-133 read earlier on 2026-09-10. Branch-local numbers 336 (catalog), 337 (authority), 338 (applicability) and 339 (evaluator) stay provisional; Finance holds 336–342 on its branch and the rehearsed Finance-first order places the HFO chain at 343–346 with the evaluator after the applicability migration. Final numbering requires another fresh read at integration; nothing here authorises apply."
+}

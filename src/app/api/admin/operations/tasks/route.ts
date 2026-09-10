@@ -143,10 +143,10 @@ export async function GET(request: Request) {
   }
 
   const rows = ((data ?? []) as unknown as OperationTaskRow[]);
-  let facilityNames: Map<string, string>;
+  let facilities: { names: Map<string, string>; timezones: Map<string, string | null> };
   let assigneeNames: Map<string, string>;
   try {
-    facilityNames = await loadFacilityNames(actor, accessibleFacilityIds);
+    facilities = await loadFacilityDetails(actor, accessibleFacilityIds);
     assigneeNames = await loadAssigneeNames(actor, rows);
   } catch {
     return NextResponse.json({ error: "Failed to load task details" }, { status: 503 });
@@ -154,7 +154,8 @@ export async function GET(request: Request) {
 
   const response = buildOperationTaskResponse({
     rows,
-    facilityNames,
+    facilityNames: facilities.names,
+    facilityTimezones: facilities.timezones,
     assigneeNames,
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
@@ -164,9 +165,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ ...response, coverage: AUTHORIZED_TASK_COVERAGE });
   }
 
-  const overdueTasks = response.tasks.filter((task) =>
-    task.days_overdue > 0 && (task.status === "pending" || task.status === "in_progress")
-  );
+  // Only the evaluator's judgment makes a task overdue; unknown schedules are excluded.
+  const overdueTasks = response.tasks.filter((task) => task.due_judgment === "overdue");
 
   return NextResponse.json({
     ...response,
@@ -193,18 +193,23 @@ function emptyTaskResponse(dateFrom: string, dateTo: string): OperationTaskRespo
   };
 }
 
-async function loadFacilityNames(
+/** Names for display and each facility's own timezone for the due judgment (COL-137). */
+async function loadFacilityDetails(
   actor: OperationsActor,
   facilityIds: string[],
 ) {
   const { data, error } = await actor.currentActor.client
     .from("facilities")
-    .select("id, name")
+    .select("id, name, timezone")
     .eq("organization_id", actor.organizationId)
     .in("id", facilityIds);
 
   if (error) throw new Error("Task details unavailable");
-  return new Map((data ?? []).map((facility) => [facility.id, facility.name]));
+  const facilities = data ?? [];
+  return {
+    names: new Map(facilities.map((facility) => [facility.id, facility.name])),
+    timezones: new Map(facilities.map((facility) => [facility.id, facility.timezone ?? null])),
+  };
 }
 
 async function loadAssigneeNames(

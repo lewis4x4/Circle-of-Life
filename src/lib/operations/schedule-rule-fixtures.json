@@ -1,0 +1,180 @@
+[
+  {
+    "name": "weekday set, business days at 09:00",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "weekday_set", "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday"]}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "weekly tuesday 10:00 with a one-day reminder",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "weekly", "weekday": "tuesday"}, "deadline": {"time": "10:00"}, "reminder": {"lead_minutes": 1440}}
+  },
+  {
+    "name": "monthly on the first with grace",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "monthly", "day": 1}, "deadline": {"time": "17:00", "grace_minutes": 120}}
+  },
+  {
+    "name": "monthly on the 31st, clamped in short months",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "monthly", "day": 31, "short_month": "clamp"}, "deadline": {"time": "12:00"}}
+  },
+  {
+    "name": "first business day of the month with a versioned calendar",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "monthly_business_day", "ordinal": 1, "from": "start"}, "deadline": {"time": "17:00"}, "calendar": {"key": "fixture-2026", "version": "2026.1", "covers_from": "2026-01-01", "covers_to": "2026-12-31", "weekend": ["saturday", "sunday"], "holidays": ["2026-01-01", "2026-07-03", "2026-11-26", "2026-12-25"]}}
+  },
+  {
+    "name": "quarterly on the 15th of fixed months",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "fixed_months", "months": [1, 4, 7, 10], "day": 15}, "deadline": {"time": "17:00"}}
+  },
+  {
+    "name": "fixed half-year windows ending on the last day",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "fixed_months", "months": [1, 7], "day": "last"}, "deadline": {"time": "17:00"}}
+  },
+  {
+    "name": "six-month interval from an anchor",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "interval_months", "every": 6, "anchor": "2026-03-15"}, "deadline": {"time": "17:00"}}
+  },
+  {
+    "name": "anniversary from a leap day, clamped",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "interval_months", "every": 12, "anchor": "2024-02-29", "short_month": "clamp"}, "deadline": {"time": "17:00"}}
+  },
+  {
+    "name": "every two years from an anchor",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "interval_months", "every": 24, "anchor": "2026-05-01"}, "deadline": {"time": "17:00"}}
+  },
+  {
+    "name": "expiry anchor",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "expiry", "expires_on": "2027-06-30"}, "deadline": {"time": "17:00"}}
+  },
+  {
+    "name": "event-created work due thirty days after the event",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "event", "event_key": "admission"}, "deadline": {"time": "17:00", "day_offset": 30}}
+  },
+  {
+    "name": "seven-day set skipping calendar holidays",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "weekday_set", "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"], "on_holiday": "skipped"}, "deadline": {"time": "20:00"}, "calendar": {"key": "fixture-2026", "version": "2026.1", "covers_from": "2026-01-01", "covers_to": "2026-12-31", "weekend": [], "holidays": ["2026-01-01", "2026-12-25"]}}
+  },
+  {
+    "name": "workbook text is not a rule",
+    "valid": false,
+    "first_problem": "schedule rule has an unknown field: kind",
+    "rule": {"kind": "text", "text": "Bi-Annual Facility License Renewal"}
+  },
+  {
+    "name": "missing rule version",
+    "valid": false,
+    "first_problem": "schedule rule version must be 1",
+    "rule": {"timezone": "America/New_York", "recurrence": {"kind": "weekly", "weekday": "monday"}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "abbreviated timezone",
+    "valid": false,
+    "first_problem": "schedule rule timezone must be an IANA zone name",
+    "rule": {"rule_version": 1, "timezone": "EST", "recurrence": {"kind": "weekly", "weekday": "monday"}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "day 31 without a short-month policy",
+    "valid": false,
+    "first_problem": "schedule rule recurrence needs a short_month policy",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "monthly", "day": 31}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "business-day rule without a calendar",
+    "valid": false,
+    "first_problem": "schedule rule recurrence needs a calendar",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "monthly_business_day", "ordinal": 1, "from": "start"}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "deadline time not HH:MM",
+    "valid": false,
+    "first_problem": "schedule rule deadline time must be HH:MM",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "weekly", "weekday": "monday"}, "deadline": {"time": "9:00"}}
+  },
+  {
+    "name": "duplicate weekdays",
+    "valid": false,
+    "first_problem": "schedule rule weekdays must be unique",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "weekday_set", "weekdays": ["monday", "monday"]}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "fixed months empty",
+    "valid": false,
+    "first_problem": "schedule rule months must be a non-empty list",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "fixed_months", "months": [], "day": 1}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "bi-annual is not a recurrence kind",
+    "valid": false,
+    "first_problem": "schedule rule recurrence kind is unknown",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "biannual"}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "calendar holiday outside its coverage",
+    "valid": false,
+    "first_problem": "schedule rule calendar holidays must lie inside the coverage",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "weekly", "weekday": "monday"}, "deadline": {"time": "09:00"}, "calendar": {"key": "fixture", "version": "1", "covers_from": "2026-01-01", "covers_to": "2026-12-31", "weekend": ["saturday", "sunday"], "holidays": ["2027-01-01"]}}
+  },
+  {
+    "name": "reminder without lead",
+    "valid": false,
+    "first_problem": "schedule rule reminder lead_minutes must be 1 to 86400",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "weekly", "weekday": "monday"}, "deadline": {"time": "09:00"}, "reminder": {"lead_minutes": 0}}
+  },
+  {
+    "name": "interval anchored on the 31st without a policy",
+    "valid": false,
+    "first_problem": "schedule rule recurrence needs a short_month policy",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "interval_months", "every": 6, "anchor": "2026-01-31"}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "unknown top-level field",
+    "valid": false,
+    "first_problem": "schedule rule has an unknown field: notes",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "weekly", "weekday": "monday"}, "deadline": {"time": "09:00"}, "notes": "monthly per interview"}
+  },
+  {
+    "name": "event key that is not a slug",
+    "valid": false,
+    "first_problem": "schedule rule event_key must be a slug",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "event", "event_key": "New Admission"}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "ordinal beyond the supported range",
+    "valid": false,
+    "first_problem": "schedule rule ordinal must be 1 to 15",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "monthly_business_day", "ordinal": 16, "from": "start"}, "deadline": {"time": "09:00"}, "calendar": {"key": "fixture", "version": "1", "covers_from": "2026-01-01", "covers_to": "2026-12-31", "weekend": ["saturday", "sunday"], "holidays": []}}
+  },
+  {
+    "name": "monthly without a day",
+    "valid": false,
+    "first_problem": "schedule rule day must be 1 to 31 or last",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "monthly"}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "fixed months without a day",
+    "valid": false,
+    "first_problem": "schedule rule day must be 1 to 31 or last",
+    "rule": {"rule_version": 1, "timezone": "America/New_York", "recurrence": {"kind": "fixed_months", "months": [1]}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "lower-case zone name is the same zone",
+    "valid": true,
+    "rule": {"rule_version": 1, "timezone": "america/new_york", "recurrence": {"kind": "weekly", "weekday": "monday"}, "deadline": {"time": "09:00"}}
+  },
+  {
+    "name": "two unknown fields name the shortest first",
+    "valid": false,
+    "first_problem": "schedule rule has an unknown field: kind",
+    "rule": {"text": "Bi-Annual", "kind": "text"}
+  }
+]

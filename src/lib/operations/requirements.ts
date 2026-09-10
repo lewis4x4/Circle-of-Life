@@ -1,9 +1,13 @@
 import { z } from "zod";
 
+import { validateScheduleRule } from "@/lib/operations/schedule-evaluator";
+
 /**
  * COL-135 requirement versions and facility configurations. The database owns
  * validation and authority; these helpers only shape requests and map database
  * outcomes to bounded HTTP responses without echoing internal detail.
+ * COL-137 adds the schedule rule shape: the evaluator validates it here and
+ * the database validates the same shape before a draft or publication.
  */
 
 export const REQUIREMENT_CENTRAL_ROLES = ["owner", "org_admin"] as const;
@@ -106,7 +110,20 @@ export const facilityRequirementDraftPayloadSchema = z
     if (payload.schedule_status === "confirmed" && payload.schedule_rule === null) {
       ctx.addIssue({ code: "custom", message: "a confirmed schedule requires a rule" });
     }
+    // The evaluator defines the rule shape (COL-137); the database validates the same shape.
+    if (payload.schedule_rule) {
+      const validated = validateScheduleRule(payload.schedule_rule);
+      if (!validated.ok) {
+        ctx.addIssue({ code: "custom", path: ["schedule_rule"], message: validated.problems[0] ?? "schedule rule is invalid" });
+      }
+    }
   });
+
+/** The first schedule-rule problem in a failed parse, for a bounded client error. */
+export function scheduleRuleProblem(error: z.ZodError): string | null {
+  const issue = error.issues.find((candidate) => candidate.path.includes("schedule_rule"));
+  return issue ? issue.message : null;
+}
 
 export const saveRequirementDraftBodySchema = z
   .object({ activity_id: uuid, payload: requirementDraftPayloadSchema })
@@ -136,6 +153,8 @@ const TRUSTED_FRAGMENTS = [
   "backup unavailable",
   "site unavailable",
   "requires a rule",
+  "schedule rule ",
+  "schedule confirmation requires",
 ];
 /** Database rejections of the request itself (not of the current state) are client errors. */
 const CLIENT_ERROR_FRAGMENTS = ["contains an invalid", "is not editable", "payload must be an object"];
