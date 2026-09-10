@@ -6,7 +6,8 @@ export type MissPredictorTask = {
   license_threatening: boolean;
   assigned_to_name: string | null;
   due_at: string | null;
-  days_overdue: number;
+  /** Null when the schedule is unknown; contributes nothing to the score. */
+  days_overdue: number | null;
   facility_name: string;
 };
 
@@ -54,7 +55,8 @@ export function scoreMissPrediction(task: MissPredictorTask, adequacy: MissPredi
   let score = priorityWeight(task.priority);
   if (task.status === "in_progress") score -= 10;
   if (task.license_threatening) score += 24;
-  if (task.days_overdue > 0) score += Math.min(30, task.days_overdue * 8);
+  const daysOverdue = task.days_overdue ?? 0;
+  if (daysOverdue > 0) score += Math.min(30, daysOverdue * 8);
 
   if (task.due_at) {
     const dueAt = new Date(task.due_at);
@@ -77,7 +79,7 @@ export function scoreMissPrediction(task: MissPredictorTask, adequacy: MissPredi
   const predictedBand = bandFor(predictedRisk);
   const rationaleParts = [
     task.license_threatening ? "license-threatening" : null,
-    task.days_overdue > 0 ? `${task.days_overdue}d overdue` : null,
+    daysOverdue > 0 ? `${daysOverdue}d overdue` : null,
     adequacy?.cannot_cover_count ? `${adequacy.cannot_cover_count} uncovered task(s)` : null,
     adequacy && adequacy.adequacy_score < 85 ? `adequacy ${adequacy.adequacy_score}%` : null,
   ].filter(Boolean);

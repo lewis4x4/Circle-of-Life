@@ -43,7 +43,9 @@ describe("requirement draft payload shaping", () => {
   it("keeps applicability, schedule status and override source explicit on site drafts", () => {
     expect(facilityRequirementDraftPayloadSchema.safeParse({ applicability: "maybe" }).success).toBe(false);
     expect(facilityRequirementDraftPayloadSchema.safeParse({ schedule_status: "confirmed", schedule_rule: null }).success).toBe(false);
-    expect(facilityRequirementDraftPayloadSchema.safeParse({ schedule_status: "confirmed", schedule_rule: { kind: "weekly" } }).success).toBe(true);
+    expect(facilityRequirementDraftPayloadSchema.safeParse({ schedule_status: "confirmed", schedule_rule: { kind: "weekly" } }).success).toBe(false);
+    expect(facilityRequirementDraftPayloadSchema.safeParse({ schedule_rule: { rule_version: 1, timezone: "America/New_York", recurrence: { kind: "weekly", weekday: "tuesday" }, deadline: { time: "10:00" } } }).success).toBe(true);
+    expect(facilityRequirementDraftPayloadSchema.safeParse({ schedule_rule: { rule_version: 1, timezone: "America/New_York", recurrence: { kind: "monthly", day: 31 }, deadline: { time: "10:00" } } }).success).toBe(false);
     expect(facilityRequirementDraftPayloadSchema.safeParse({ local_required_evidence: [{ kind: "photo", label: "Panel", min_count: 1, when: "always" }, { kind: "document", label: "Panel", min_count: 1, when: "always" }] }).success).toBe(false);
     expect(facilityRequirementDraftPayloadSchema.safeParse({ override_source: "guess" }).success).toBe(false);
     expect(facilityRequirementDraftPayloadSchema.safeParse({ approved_by: "someone" }).success).toBe(false);

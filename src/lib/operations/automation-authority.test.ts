@@ -3,6 +3,8 @@ import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
 
+import { judgeDue } from "./schedule-evaluator";
+
 const ts = createRequire(`${process.cwd()}/package.json`)("typescript") as typeof import("typescript");
 type Row = Record<string, unknown>;
 type Surface = "oce-escalation-scanner" | "oce-staffing-adequacy-computer" | "risk-nightly-scorer";
@@ -83,6 +85,8 @@ function harness(surface: Surface, options: { tables?: Record<string, Row[]>; fa
     Deno: { serve: (fn: typeof handler) => { handler = fn; }, env: { get: (key: string) => key === secrets[surface] ? "valid-secret" : key } },
     createClient, getCorsHeaders: () => ({}), jsonResponse: (body: unknown, status = 200) => new Response(JSON.stringify(body), { status }),
     withTiming: () => ({ log: vi.fn() }), Response, fetch: provider, URLSearchParams, btoa,
+    // COL-137: the surfaces judge due dates through the shared evaluator, not their own arithmetic.
+    judgeDue, Intl, Date,
   });
   return {
     from, createClient, provider, writes,

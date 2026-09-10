@@ -128,12 +128,17 @@ INSERT INTO af_results SELECT 'frprev3',public.preview_operation_facility_requir
 SELECT pg_temp.a_assert((result->>'publishable')::boolean AND result->>'latest_applicability'='not_applicable' AND result->>'proposed_applicability'='applicable','site preview did not show the applicability change') FROM af_results WHERE label='frprev3';
 INSERT INTO af_results SELECT 'frpub3',public.publish_operation_facility_requirement_review(id,clock_timestamp()+interval '2 minutes') FROM af_ids WHERE label='fr3';
 SELECT pg_temp.a_assert(result->>'status'='published' AND result->>'applicability'='applicable' AND (result->>'version')::int=3,'applicable configuration was not published') FROM af_results WHERE label='frpub3';
--- Schedule confirmation is independent, needs a rule to draft, and cannot be published yet.
+-- Schedule confirmation is independent and needs a rule to draft. Since COL-137 the
+-- rule must have the evaluator's shape; a valid confirmed draft previews as
+-- publishable here but is deliberately left unpublished (the evaluator probe
+-- covers publication), so this probe still confirms no schedule.
 SELECT pg_temp.a_expect($q$SELECT public.save_operation_facility_requirement_draft_review((SELECT act_fac FROM af),(SELECT site_a FROM af),'{"schedule_status":"confirmed"}')$q$,'a confirmed schedule requires a rule');
-INSERT INTO af_results SELECT 'fr4',public.save_operation_facility_requirement_draft_review(act_fac,site_a,'{"schedule_status":"confirmed","schedule_rule":{"kind":"weekly","weekday":"tuesday"}}') FROM af;
+SELECT pg_temp.a_expect($q$SELECT public.save_operation_facility_requirement_draft_review((SELECT act_fac FROM af),(SELECT site_a FROM af),'{"schedule_status":"confirmed","schedule_rule":{"kind":"weekly","weekday":"tuesday"}}')$q$,'contains an invalid value: schedule rule');
+INSERT INTO af_results SELECT 'fr4',public.save_operation_facility_requirement_draft_review(act_fac,site_a,'{"schedule_status":"confirmed","schedule_rule":{"rule_version":1,"timezone":"America/New_York","recurrence":{"kind":"weekly","weekday":"tuesday"},"deadline":{"time":"10:00"}}}') FROM af;
 INSERT INTO af_ids SELECT 'fr4',(result->>'id')::uuid FROM af_results WHERE label='fr4';
 SELECT pg_temp.a_assert(result->>'status'='draft' AND result->>'schedule_status'='confirmed' AND result->>'applicability'='applicable' AND (result->>'version')::int=4,'new site draft did not start from the latest configuration') FROM af_results WHERE label='fr4';
-SELECT pg_temp.a_expect($q$SELECT public.publish_operation_facility_requirement_review((SELECT id FROM af_ids WHERE label='fr4'),clock_timestamp()+interval '3 minutes')$q$,'schedule confirmation is not available');
+INSERT INTO af_results SELECT 'frprev4',public.preview_operation_facility_requirement_review(id,clock_timestamp()+interval '3 minutes') FROM af_ids WHERE label='fr4';
+SELECT pg_temp.a_assert((result->>'publishable')::boolean AND result->>'proposed_schedule_status'='confirmed','valid confirmed draft on an applicable configuration was not publishable') FROM af_results WHERE label='frprev4';
 SELECT pg_temp.a_assert((SELECT count(*) FROM public.operation_facility_requirements WHERE facility_id=(SELECT site_a FROM af) AND status='draft')=1,'site admin cannot see own site draft');
 RESET ROLE;
 SELECT pg_temp.a_assert(NOT EXISTS(SELECT 1 FROM public.operation_facility_requirements WHERE status='published' AND schedule_status='confirmed'),'a schedule was confirmed by publication');
@@ -190,7 +195,7 @@ SELECT pg_temp.a_expect($q$INSERT INTO public.operation_task_instances(organizat
 SELECT pg_temp.a_login('admin_a');
 SET LOCAL ROLE authenticated;
 INSERT INTO af_results SELECT 'prev4',public.preview_operation_facility_requirement_review(id,clock_timestamp()+interval '1 day') FROM af_ids WHERE label='fr4';
-SELECT pg_temp.a_assert((result->>'publishable')::boolean=false AND result->'problems' ? 'applicable must reference the central version in force at the effective time' AND result->'problems' ? 'schedule confirmation is not available until the evaluator defines rule shapes','stale central reference previewed as publishable') FROM af_results WHERE label='prev4';
+SELECT pg_temp.a_assert((result->>'publishable')::boolean=false AND result->'problems' ? 'applicable must reference the central version in force at the effective time' AND NOT (result->'problems' ? 'schedule confirmation requires applicable'),'stale central reference previewed as publishable') FROM af_results WHERE label='prev4';
 RESET ROLE;
 
 -- Actual work stays recordable within current permissions, with or without a version.

@@ -15,6 +15,13 @@ export type OperationTaskPriority = (typeof OPERATION_TASK_PRIORITIES)[number];
 export const OPERATION_TASK_SHIFTS = ["day", "evening", "night"] as const;
 export type OperationTaskShift = (typeof OPERATION_TASK_SHIFTS)[number];
 
+/**
+ * The evaluator's judgment of an open task (COL-137). `unknown` means the task
+ * has no due instant, so no due or overdue claim exists; it is never derived
+ * from the assigned date.
+ */
+export type OperationDueJudgment = "unknown" | "settled" | "not_due" | "overdue";
+
 export type OperationTask = {
   id: string;
   /** Stable across template revisions; absent on older saved client responses. */
@@ -42,7 +49,9 @@ export type OperationTask = {
   facility_name: string;
   created_at: string;
   updated_at: string;
-  days_overdue: number;
+  due_judgment: OperationDueJudgment;
+  /** Calendar days overdue in the facility timezone; null when the schedule is unknown. */
+  days_overdue: number | null;
 };
 
 export type OperationTaskSummary = {
@@ -56,6 +65,8 @@ export type OperationTaskSummary = {
   deferred: number;
   cancelled: number;
   overdue: number;
+  /** Open tasks with no due instant: schedule needs confirmation, not overdue. */
+  schedule_unknown: number;
   completion_rate: number;
 };
 

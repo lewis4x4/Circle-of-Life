@@ -7,6 +7,7 @@ import {
   isRequirementRecord,
   mapRequirementRpcError,
   saveFacilityRequirementDraftBodySchema,
+  scheduleRuleProblem,
 } from "@/lib/operations/requirements";
 import { logError } from "@/lib/observability/logger";
 
@@ -50,7 +51,8 @@ export async function POST(request: NextRequest) {
   }
   const parsed = saveFacilityRequirementDraftBodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Provide an activity, a facility and an editable site draft payload" }, { status: 400 });
+    const ruleProblem = scheduleRuleProblem(parsed.error);
+    return NextResponse.json({ error: ruleProblem ?? "Provide an activity, a facility and an editable site draft payload" }, { status: 400 });
   }
   if (!(await actorCanAccessFacility(auth.actor, parsed.data.facility_id))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });

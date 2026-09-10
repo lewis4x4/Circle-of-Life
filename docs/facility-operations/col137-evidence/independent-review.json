@@ -1,0 +1,88 @@
+{
+  "issue": "COL-137",
+  "recorded_at": "2026-09-10T12:50:00Z",
+  "method": "Two independent read-only reviewers on the uncommitted diff (SQL: migration 339, its probe and the 338 probe edit, against the evaluator's validator contract; TypeScript: evaluator, tests, server and route consumers, operator pages, scheduler and risk scorer). Both ran the focused suite, typecheck and Deno checks themselves; the SQL reviewer loaded the 339 helpers into a rolled-back local transaction and compared them with the TypeScript validator on divergence cases. Every finding was verified against the source and dispositioned; remediations were applied before the commit and re-verified (focused suite, typecheck, lint, Deno checks, native replay, strict gate).",
+  "sql_review": {
+    "verdict": "one blocker, four should-fix, seven notes; blocker and all should-fix remediated",
+    "findings": [
+      {
+        "severity": "blocker",
+        "where": "339 recurrence validator, day check",
+        "claim": "a monthly or fixed_months recurrence with no day key was valid in SQL (NULL comparison made the IF false) but invalid in TypeScript, so an uninterpretable rule could be drafted and published",
+        "disposition": "Fixed: the equality is coalesced to false so a missing day is rejected; fixtures 'monthly without a day' and 'fixed months without a day' added to the shared file and the probe so both validators lock it."
+      },
+      {
+        "severity": "should-fix",
+        "where": "339 timezone check vs Intl",
+        "claim": "TypeScript accepted a lower-case zone name (Intl is case-insensitive) while SQL required an exact match in pg_timezone_names",
+        "disposition": "Fixed: SQL compares case-insensitively and excludes posix/ and right/ prefixes that Intl rejects; fixture 'lower-case zone name is the same zone' added (valid in both)."
+      },
+      {
+        "severity": "should-fix",
+        "where": "unknown-key reporting",
+        "claim": "with two unknown keys the validators could name different fields (jsonb storage order vs insertion order)",
+        "disposition": "Fixed in TypeScript: unknown keys are sorted the jsonb way (length, then bytes); fixture 'two unknown fields name the shortest first' added."
+      },
+      {
+        "severity": "should-fix",
+        "where": "339 schedule-rule trigger",
+        "claim": "the guard re-validated the rule on every update, including the publish command's window-close of an immutable published row, so a later tightening could block succession",
+        "disposition": "Fixed: the guard validates on insert or when the rule changes; immutability stays with the 338 guard, which fires first."
+      },
+      {
+        "severity": "should-fix",
+        "where": "338 table comment",
+        "claim": "the table comment still said confirmation cannot be published until the evaluator defines rule shapes",
+        "disposition": "Fixed: 339 replaces the comment with the COL-137 state."
+      },
+      {
+        "severity": "note",
+        "where": "posix/ and right/ zone prefixes; year 0000; pg_timezone_names cost; immutability proven by grant in the probe; ambiguity check conditional on the seeded organisation; no pre-existing-row assertion",
+        "disposition": "Prefixes excluded with the timezone fix; year handling made consistent in TypeScript (no Date.UTC year remapping); pg_timezone_names cost accepted at this volume and recorded; the trigger path stays covered by the 135 probe; the seeded organisation exists on every replay of this repository; a DO block now fails the migration if any stored rule does not match the shape."
+      }
+    ],
+    "clean": [
+      "SECURITY DEFINER hygiene: only the trigger function is definer, search_path pinned on all functions, execute revoked from PUBLIC/anon/service_role, only the two problem/valid helpers granted to authenticated",
+      "RLS and immutability untouched; trigger order guard → schedule_rule → audit",
+      "error contract matches 338 (22023 'contains an invalid value: …'; publish 'not publishable: …')",
+      "publication gate: confirmed requires a non-null valid rule and applicable; nothing in 339 or the 336 seed confirms a schedule or stores a rule",
+      "numeric handling (1.0, 1.5, nulls) identical; regexes byte-identical",
+      "single transaction; plain CREATE for new objects, CREATE OR REPLACE for the two 338 replacements; number in sequence",
+      "probe assertions are value checks under SET LOCAL ROLE and roll back; the 338 probe edit preserves its intent (no schedule confirmed there)"
+    ]
+  },
+  "typescript_review": {
+    "verdict": "no blocker; two should-fix; nine notes; both should-fix and the actionable notes remediated",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "where": "tasks route",
+        "claim": "the only production caller never passed facility timezones, so every task was judged in the default zone and the seam was dead",
+        "disposition": "Fixed: the route selects each facility's timezone and passes the map to the response builder."
+      },
+      {
+        "severity": "should-fix",
+        "where": "evaluator periodFor, interval_months",
+        "claim": "with a clamped anchor the period end was computed from the clamped occurrence date, leaving gaps before the next occurrence",
+        "disposition": "Fixed: the period ends the day before the next occurrence computed from the anchor under the same policy (skipping months the policy produces none in); test added."
+      },
+      {
+        "severity": "note",
+        "where": "Date.UTC year remapping; array aliasing; late 400 in the scheduler; legacy SLA clamps; preview edge cases; kanban page fallback; docstring; scheduler untested end to end",
+        "disposition": "Fixed: date arithmetic no longer remaps years 0–99; validated weekday arrays are copied; the scheduler refuses an over-long range before any query; the site preview reports next-due unknown when an undecidable date precedes the first occurrence and drops an occurrence due before the effective instant; the kanban page shows 'schedule needs confirmation' instead of the assigned date; docstring corrected; a scheduler sandbox test now covers generation through the evaluator, unknown-schedule reporting, existing-occurrence skipping and the range refusal. Recorded, no change: legacy SLA values above seven days clamp to the deadline maximum (none exist in the seed); an invalid facility timezone falls back to UTC inside judgeDue."
+      }
+    ],
+    "clean": [
+      "evaluator purity: no imports, no Deno/process/console/Date.now/as any/toLocale; no facility names or source-item IDs (test-enforced)",
+      "DST: gap shifted forward, overlap first instant, ±24h offset approach covers real transitions",
+      "calendar arithmetic: leap years, clamp/skip/last, zero or negative interval diff, fixed-month period wraparound, business-day ordinals and uncovered months",
+      "validation strictness at every level; NaN/Infinity/string numbers rejected; bounded arrays; __proto__ rejected as unknown field",
+      "determinism: pure functions take now; new Date() only in handlers and the builder default",
+      "judgeDue never touches assigned_shift_date; settled for closed statuses; facility-local day counting",
+      "no consumer treats null days_overdue as overdue; overdue filter and calendar use due_judgment; 'No due time' replaced",
+      "risk scorer: only the overdue filter changed; fail-closed run behaviour untouched; harness injects the real judgeDue",
+      "logging carries counts, UUIDs and reasons only",
+      "tests assert the acceptance criteria directly; fixture parity with the SQL probe asserted by JSON equality"
+    ]
+  }
+}

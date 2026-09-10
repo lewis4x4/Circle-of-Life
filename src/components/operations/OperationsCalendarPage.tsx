@@ -117,12 +117,13 @@ export function OperationsCalendarPage() {
 
       <OperationsViewNav />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
         <CalendarStatCard label="Total" value={String(summary.total_tasks)} />
         <CalendarStatCard label="Pending" value={String(summary.pending)} className="bg-slate-100/50 border-slate-200 text-slate-800" />
         <CalendarStatCard label="In Progress" value={String(summary.in_progress)} className="bg-blue-100/50 border-blue-200 text-blue-800" />
         <CalendarStatCard label="Completed" value={String(summary.completed)} className="bg-green-100/50 border-green-200 text-green-800" />
         <CalendarStatCard label="Overdue" value={String(summary.overdue)} className="bg-red-100/50 border-red-200 text-red-800" />
+        <CalendarStatCard label="Schedule needs confirmation" value={String(summary.schedule_unknown ?? 0)} className="bg-amber-100/50 border-amber-200 text-amber-900" />
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-4">
@@ -160,7 +161,7 @@ export function OperationsCalendarPage() {
           <div className="grid grid-cols-7 gap-2">
             {calendarCells.map((cell) => {
               const dayTasks = groupedTasks.get(cell.date) ?? [];
-              const overdueCount = dayTasks.filter((task) => task.days_overdue > 0).length;
+              const overdueCount = dayTasks.filter((task) => task.due_judgment === "overdue").length;
               return (
                 <button
                   key={cell.date}

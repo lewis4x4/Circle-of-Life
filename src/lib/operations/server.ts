@@ -1,7 +1,6 @@
-import { differenceInCalendarDays } from "date-fns";
-
 import { formatDateOnly, getRangeForView, parseDateParam } from "@/lib/operations/dates";
 import { formatOperationsFacilityName } from "@/lib/operations/operations-display-copy";
+import { judgeDue } from "@/lib/operations/schedule-evaluator";
 import type {
   OperationTask,
   OperationTaskPriority,
@@ -37,6 +36,12 @@ type OperationTaskRow = {
   created_at: string;
   updated_at: string;
 };
+
+/**
+ * Every Circle of Life facility is in America/New_York (AGENTS.md); a
+ * facility row's own timezone wins whenever the caller supplies it.
+ */
+export const DEFAULT_FACILITY_TIMEZONE = "America/New_York";
 
 export type OperationTaskFilters = {
   facilityId: string | null;
@@ -99,12 +104,16 @@ export function buildOperationTaskResponse(args: {
   rows: OperationTaskRow[];
   facilityNames: Map<string, string>;
   assigneeNames: Map<string, string>;
+  /** Facility id → IANA timezone; missing entries use DEFAULT_FACILITY_TIMEZONE. */
+  facilityTimezones?: Map<string, string | null>;
   dateFrom: string;
   dateTo: string;
+  now?: Date;
 }): OperationTaskResponse {
-  const now = new Date();
+  const now = args.now ?? new Date();
+  const timezones = args.facilityTimezones ?? new Map<string, string | null>();
   const tasks = args.rows
-    .map((row) => shapeOperationTask(row, args.facilityNames, args.assigneeNames, now))
+    .map((row) => shapeOperationTask(row, args.facilityNames, args.assigneeNames, timezones, now))
     .sort(compareOperationTasks);
 
   return {
@@ -134,6 +143,7 @@ export function summarizeOperationTasks(
     deferred: 0,
     cancelled: 0,
     overdue: 0,
+    schedule_unknown: 0,
     completion_rate: 0,
   };
 
@@ -144,9 +154,8 @@ export function summarizeOperationTasks(
     if (task.status === "missed") summary.missed += 1;
     if (task.status === "deferred") summary.deferred += 1;
     if (task.status === "cancelled") summary.cancelled += 1;
-    if (task.days_overdue > 0 && (task.status === "pending" || task.status === "in_progress")) {
-      summary.overdue += 1;
-    }
+    if (task.due_judgment === "overdue") summary.overdue += 1;
+    if (task.due_judgment === "unknown") summary.schedule_unknown += 1;
   }
 
   summary.completion_rate = summary.total_tasks > 0
@@ -198,9 +207,17 @@ function shapeOperationTask(
   row: OperationTaskRow,
   facilityNames: Map<string, string>,
   assigneeNames: Map<string, string>,
+  facilityTimezones: Map<string, string | null>,
   now: Date,
 ): OperationTask {
-  const daysOverdue = calculateDaysOverdue(row, now);
+  // The evaluator is the only source of a due/overdue claim. A task without a
+  // due instant is "schedule unknown"; the assigned date is never a deadline.
+  const judged = judgeDue({
+    dueAt: row.due_at,
+    status: row.status,
+    now,
+    timeZone: facilityTimezones.get(row.facility_id) || DEFAULT_FACILITY_TIMEZONE,
+  });
 
   return {
     id: row.id,
@@ -228,20 +245,13 @@ function shapeOperationTask(
     facility_name: formatOperationsFacilityName(facilityNames.get(row.facility_id)),
     created_at: row.created_at,
     updated_at: row.updated_at,
-    days_overdue: daysOverdue,
+    due_judgment: judged.judgment,
+    days_overdue: judged.days_overdue,
   };
 }
 
-function calculateDaysOverdue(task: OperationTaskRow, now: Date) {
-  if (task.status !== "pending" && task.status !== "in_progress") return 0;
-
-  const reference = task.due_at ? new Date(task.due_at) : new Date(`${task.assigned_shift_date}T00:00:00Z`);
-  if (Number.isNaN(reference.getTime()) || reference >= now) return 0;
-  return Math.max(1, differenceInCalendarDays(now, reference));
-}
-
 function compareOperationTasks(left: OperationTask, right: OperationTask) {
-  const overdueDelta = right.days_overdue - left.days_overdue;
+  const overdueDelta = (right.days_overdue ?? 0) - (left.days_overdue ?? 0);
   if (overdueDelta !== 0) return overdueDelta;
 
   const licenseDelta = Number(right.license_threatening) - Number(left.license_threatening);

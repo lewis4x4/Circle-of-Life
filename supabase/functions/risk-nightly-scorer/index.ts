@@ -19,6 +19,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import { judgeDue } from "../../../src/lib/operations/schedule-evaluator.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACTIVE_DEFICIENCY_STATUSES = new Set(["open", "poc_submitted", "poc_accepted", "recited"]);
@@ -136,7 +137,13 @@ function buildFacilityRiskScore(args: {
   incidents: IncidentRow[];
   safetyRows: SafetyRow[];
 }): FacilityScoreResult {
-  const overdueTasks = args.tasks.filter((task) => task.status === "missed" || (task.due_at && task.due_at < new Date().toISOString()));
+  // COL-137: the shared evaluator is the only source of an overdue judgment; a
+  // task with no due instant is an unknown schedule, never overdue.
+  const now = new Date();
+  const timeZone = args.facility.timezone || "America/New_York";
+  const overdueTasks = args.tasks.filter((task) =>
+    task.status === "missed" || judgeDue({ dueAt: task.due_at, status: task.status, now, timeZone }).judgment === "overdue"
+  );
   const licenseThreateningTasks = overdueTasks.filter((task) => task.license_threatening);
 
   const nonCompliantStaffing = args.staffing.filter((snapshot) => !snapshot.is_compliant);

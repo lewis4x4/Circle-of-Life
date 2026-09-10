@@ -231,7 +231,7 @@ export default function AdminKanbanPage() {
                       <div className="flex items-center gap-2">
                         <StatusPill tone={priorityTone(t.priority)}>{t.priority}</StatusPill>
                         <span className="text-xs text-muted-foreground">
-                          {t.due_at ? `due ${DAY_FMT.format(new Date(t.due_at))}` : DAY_FMT.format(new Date(t.assigned_shift_date))}
+                          {t.due_at ? `due ${DAY_FMT.format(new Date(t.due_at))}` : "schedule needs confirmation"}
                         </span>
                       </div>
                     </div>
