@@ -1,29 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
-import { ISSUE_SELECT, RECEIPT_COMMAND_ROLES, RECEIPT_VIEW_ROLES, isIssueOutcome, mapReceiptRpcError, payloadProblem, reportIssueBodySchema, withoutRequestHash } from "@/lib/operations/receipts";
+import { ISSUE_LIFECYCLE_SELECT, ISSUE_STATUSES } from "@/lib/operations/issues";
+import { RECEIPT_COMMAND_ROLES, RECEIPT_VIEW_ROLES, isIssueOutcome, mapReceiptRpcError, payloadProblem, reportIssueBodySchema, withoutRequestHash } from "@/lib/operations/receipts";
 import { logError } from "@/lib/observability/logger";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Open issues for a site (COL-142 minimal identity; HFO-14 extends the lifecycle), read through the session. */
+/** Issues for a site (COL-142 identity with the COL-144 lifecycle projection), read through the session; optionally one status or one occurrence. */
 export async function GET(request: NextRequest) {
   const auth = await requireOperationsActor({ allowedRoles: RECEIPT_VIEW_ROLES });
   if ("response" in auth) return auth.response;
   const facilityId = request.nextUrl.searchParams.get("facility_id");
   const taskId = request.nextUrl.searchParams.get("task_instance_id");
+  const status = request.nextUrl.searchParams.get("status");
   if (!facilityId || !UUID.test(facilityId)) return NextResponse.json({ error: "facility_id is required" }, { status: 400 });
   if (taskId && !UUID.test(taskId)) return NextResponse.json({ error: "task_instance_id is invalid" }, { status: 400 });
+  if (status && !(ISSUE_STATUSES as readonly string[]).includes(status)) return NextResponse.json({ error: "status is invalid" }, { status: 400 });
   // Facility selection is not an authorization boundary; the current site grant is.
   if (!(await actorCanAccessFacility(auth.actor, facilityId))) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
   let query = auth.actor.currentActor.client
     .from("operation_issues" as never)
-    .select(ISSUE_SELECT)
+    .select(ISSUE_LIFECYCLE_SELECT)
     .eq("organization_id", auth.actor.organizationId)
     .eq("facility_id", facilityId);
   if (taskId) query = query.eq("task_instance_id", taskId);
+  if (status) query = query.eq("status", status);
   const { data, error } = await query.order("reported_at", { ascending: false });
   if (error) {
     logError("admin.operations.issues.list", error, { action: "list", facilityId });

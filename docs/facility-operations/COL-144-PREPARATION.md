@@ -1,0 +1,9 @@
+# COL-144 — in progress
+
+Worktree: `/Users/brianlewis/Circle of Life/Haven Facility Occurrences` (shared with COL-139 and COL-142). Branch: `codex/hfo-col144-issues`, base `0c61def2` (COL-142 closure docs over `006a12ff`).
+
+Selected 2026-09-10 from live Linear after COL-142 closed: blockers COL-133 and COL-142 are Done. COL-143 (HFO-07) is also dependency-ready but its acceptance requires a real upload, finalize, completion and corporate download with positive hosted Storage HTTP proof, which source-only work cannot establish; it stays Backlog with that reason recorded in `col142-evidence/review-closure.json`. Linear state and comments: `col144-evidence/linear-state.json`.
+
+Sources read: the live issue text (report-without-performance, owner/backup acceptance, waiting reason and follow-up, reassignment, resolve/reopen with resolution evidence, reachable in-app backlog; acceptance: failed check creates/links a visible issue without reversing the inspection; unassigned/waiting/reassigned work stays visible and an absent owner is covered with history; resolve/reopen need current authority and version, status independent of performance, audit survives retries); BUILD-SCOPE principle 8 and OPS-002; the source pointer `220_col_v2_operational_logs.sql` (`maintenance_tickets`: internal/vendor assignment, open/assigned/in_progress/completed/cancelled, resolution notes — reused as the shape reference, not extended, because the COL-142 issue identity already carries subject scope and receipt links); Q02 and Q29, which stay open.
+
+Settled contracts: `col144-evidence/engineering-contracts.md`. Provisional migration slot 342, stacked on 341. Finance-first integration, fresh hosted-ledger read before final numbering, existing owner decisions and source-only release boundaries remain in force.

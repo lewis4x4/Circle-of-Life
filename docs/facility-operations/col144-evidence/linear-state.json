@@ -1,0 +1,17 @@
+{
+  "issue": "COL-144",
+  "before": {
+    "checked_at": "2026-09-10T17:56:00Z",
+    "state": "Backlog",
+    "blockers": {"COL-133": "Done", "COL-142": "Done"},
+    "dependency_ready": true,
+    "source": "live Linear GraphQL read after COL-142 closed; COL-143 also dependency-ready but deferred (hosted Storage proof acceptance)"
+  },
+  "started": {
+    "at": "2026-09-10T17:58:00Z",
+    "state": "In Progress",
+    "comment_id": "a11476a4-b6a4-4ace-bbc3-78952932ce23",
+    "comment": "start comment naming branch codex/hfo-col144-issues, the shared worktree, base 006a12ff (closure docs 0c61def2), provisional slot 342, the COL-143 deferral reason and the plan against the acceptance criteria"
+  },
+  "after": "recorded once the segment is committed and pushed"
+}

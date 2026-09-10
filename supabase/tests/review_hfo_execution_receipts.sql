@@ -421,11 +421,11 @@ SELECT pg_temp.r_assert((SELECT public.haven_operation_task_command((SELECT id F
 RESET ROLE;
 SELECT pg_temp.r_login('admin_a');
 SET LOCAL ROLE authenticated;
-INSERT INTO rf_results SELECT 'cancel_a1_d4',public.cancel_operation_occurrence_review((SELECT id FROM rf_ids WHERE label='occ_a1_d4'),'Unit removed for service','cancel-a1d4-000001');
+INSERT INTO rf_results SELECT 'cancel_a1_d4',public.cancel_operation_occurrence_review((SELECT id FROM rf_ids WHERE label='occ_a1_d6'),'Unit removed for service','cancel-a1d4-000001');
 RESET ROLE;
 SELECT pg_temp.r_login('maint');
 SET LOCAL ROLE authenticated;
-SELECT pg_temp.r_expect($q$SELECT public.record_operation_work_review((SELECT id FROM rf_ids WHERE label='occ_a1_d4'),pg_temp.k('a1d4-000001'),'{"outcome":"performed","values":{"pads_ok":true,"battery_pct":50}}')$q$,'Occurrence is cancelled');
+SELECT pg_temp.r_expect($q$SELECT public.record_operation_work_review((SELECT id FROM rf_ids WHERE label='occ_a1_d6'),pg_temp.k('a1d4-000001'),'{"outcome":"performed","values":{"pads_ok":true,"battery_pct":50}}')$q$,'Occurrence is cancelled');
 RESET ROLE;
 -- A missed occurrence accepts a late entry and keeps its missed fact.
 SELECT pg_temp.r_clear();
