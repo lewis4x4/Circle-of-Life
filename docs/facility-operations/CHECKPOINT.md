@@ -6,7 +6,7 @@ Updated September 10, 2026 after COL-148 source completion. This stack remains u
 
 The owner requested completing COL-148, then stopping for a Fable 5.1 handoff before the next module. Read **[FABLE-5.1-HANDOFF.md](FABLE-5.1-HANDOFF.md)**. Next is **COL-147 / HFO-09 source adapters**, verified Backlog with COL-139, COL-142 and COL-145 Done as reviewed, gated, unmerged source. COL-147 implementation was not started here.
 
-Worktree: `/Users/brianlewis/Circle of Life/Haven Facility Workspace`, branch `codex/hfo-col148-workspace`, base `codex/hfo-col146-recovery` (`d9f5ffb2`). Final source commit, draft PR and Linear readback are in `col148-evidence/linear-state.json`. Incoming checkpoint was `77ce6d2e`; do not resume its unreviewed-WIP instructions.
+Worktree: `/Users/brianlewis/Circle of Life/Haven Facility Workspace`, branch `codex/hfo-col148-workspace`, base `codex/hfo-col146-recovery` (`d9f5ffb2`). Source commit **`97ac1457`**, draft **PR #475** against COL-146; **COL-148 Done** as reviewed/gated/unmerged source, confirmed by live readback. Final references are in `col148-evidence/linear-state.json`. Incoming checkpoint was `77ce6d2e`; do not resume its unreviewed-WIP instructions.
 
 ## Stack
 
@@ -15,7 +15,7 @@ Worktree: `/Users/brianlewis/Circle of Life/Haven Facility Workspace`, branch `c
 | COL-143 | Checksum amendment `45ea4ea9` | #472 | In Progress; hosted Storage proof open |
 | COL-145 | Reviewed/gated source `c7dc9efc` | #473 | Done as unmerged source |
 | COL-146 | Reviewed/gated source `d9f5ffb2` | #474 | Done as unmerged source |
-| COL-148 | Full workspace implemented, independently reviewed and strict UI gate PASS | See linear-state.json | Source only; authenticated browser/staff acceptance unestablished |
+| COL-148 | Full workspace implemented, independently reviewed and strict UI gate PASS | #475 | Done as source only; authenticated browser/staff acceptance unestablished |
 
 The owner’s limited dependency exception covers COL-145, COL-146 and COL-148 building against reviewed COL-143 interfaces. It does not mark COL-143 hosted acceptance complete. COL-140 remains unapproved; [HOMEWOOD-DECISION-SHEET.md](HOMEWOOD-DECISION-SHEET.md) holds the questions and does not block shared source development.
 
@@ -49,7 +49,7 @@ All pre-existing/concurrent work outside this worktree was retained. See `col148
 ## Open work and Linear references
 
 - COL-143 hosted proof: `STAGING-INTEGRATION-PACKAGE.md` is not executed proof; closes only with `col143-evidence/hosted-proof/RESULT.md`. Exposed-schema and Storage eTag facts still require confirmation.
-- COL-147: `17ccab14-f6d0-4b90-a525-d29e99e644ca` — next module for Fable5.1.
+- COL-147: `17ccab14-f6d0-4b90-a525-d29e99e644ca` — next module for Fable 5.1.
 - COL-148: `c9a4fbf8-76d3-49b9-9850-f7d8b19cccb4`.
 - COL-143: `9dfed100-0ef5-424d-bc0d-cbf6150a6609`; COL-145: `8a85c768-7d51-450f-9f69-9adff2fcd96b`; COL-146: `fb1404be-dc81-4272-ab81-3187f37d852c`.
 - COL-149: `84d81aba-b4c3-4434-8964-a0a949a70da2`; its COL-143 dependency is not silently waived.

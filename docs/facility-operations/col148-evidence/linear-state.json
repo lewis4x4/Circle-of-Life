@@ -1,8 +1,36 @@
 {
   "issue": "COL-148",
   "issue_id": "c9a4fbf8-76d3-49b9-9850-f7d8b19cccb4",
-  "observed_state": "In Progress",
-  "closeout": "Ready after619 tests, independent approval, strict UI gate PASS; awaiting source push and draft PR before final Linear update",
-  "owner_dependency_exception": "Source only against reviewed COL-143 interface; COL-143 remains In Progress with hosted proof open",
-  "next_module": "COL-147 remains Backlog and is handed to Fable5.1; not started"
+  "recorded_at": "2026-09-10T22:01:53.839325+00:00",
+  "state": "Done",
+  "meaning": "reviewed, gated, unmerged source only",
+  "source_commit": "97ac1457da8c5b67448559bb5c0c64b05d5810f3",
+  "branch": "codex/hfo-col148-workspace",
+  "pull_request": {
+    "number": 475,
+    "url": "https://github.com/lewis4x4/Circle-of-Life/pull/475",
+    "state": "OPEN",
+    "draft": true,
+    "base": "codex/hfo-col146-recovery"
+  },
+  "closing_comment": {
+    "id": "f2c7d830-e807-4bc0-9ad0-35b21c9f22c2",
+    "url": "https://linear.app/jarvislewis/issue/COL-148/hfo-10-build-the-staff-today-upcoming-and-history-workspace#comment-f2c7d830",
+    "body_file": "linear-closeout.md"
+  },
+  "readback": {
+    "COL-148": "Done",
+    "COL-143": "In Progress",
+    "COL-147": "Backlog"
+  },
+  "owner_dependency_exception": "Source only against reviewed COL-143 interface; hosted proof remains open and unmodified",
+  "next_module": "COL-147 for Fable 5.1; implementation not started",
+  "not_done": [
+    "merge",
+    "hosted migration",
+    "deployment",
+    "policy or schedule activation",
+    "hosted Storage proof",
+    "authenticated workspace browser or staff acceptance"
+  ]
 }

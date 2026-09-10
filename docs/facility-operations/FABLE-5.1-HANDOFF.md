@@ -2,6 +2,8 @@
 
 Resume the Haven Facility Operations build with **COL-147 / HFO-09: Link final source records to requirements with replay and invalidation handling**. Do not restart COL-148 or merge/deploy this stack. The owner requested this handoff after COL-148 closeout and explicitly reserved the next module for Fable 5.1.
 
+Completed source: **`97ac1457`**, **draft PR #475** against COL-146, **COL-148 Done as reviewed/gated/unmerged source**. Final strict UI gate and 619 tests passed. A later documentation-only commit records this closeout; follow the current branch tip. COL-143 remains In Progress and COL-147 remains Backlog, verified by live readback.
+
 ## Verify the closeout before starting
 
 Read `docs/facility-operations/CHECKPOINT.md`, `COL-148-HANDOFF.md`, `col148-evidence/verification.json`, `independent-review.json`, `implementation-manifest.json` and `linear-state.json` on `codex/hfo-col148-workspace`. They hold the final gate, commit/PR references and source-only acceptance. Use the live branch tip rather than the old incoming checkpoint `77ce6d2e`.

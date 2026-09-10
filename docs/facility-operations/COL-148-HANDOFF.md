@@ -2,6 +2,8 @@
 
 HFO-10 implements the shared Today, Upcoming and History workspace at `/admin/operations/work` on `codex/hfo-col148-workspace`, stacked on `codex/hfo-col146-recovery` (`d9f5ffb2`). Source-only delivery under the owner’s limited dependency exception. Nothing is merged, applied to hosted systems, deployed or activated.
 
+Source commit: **`97ac1457`**. [Draft PR #475](https://github.com/lewis4x4/Circle-of-Life/pull/475), base COL-146. Linear readback: **COL-148 Done as reviewed/gated/unmerged source**. The documentation-only closure commit does not change the verified runtime.
+
 ## Delivered
 
 - Both administrator entry points reach Site work. Today retains all prior unfinished and unknown-schedule work plus separate legacy actions. Upcoming and History preserve single-site/Mine/view/cursor URL state.
