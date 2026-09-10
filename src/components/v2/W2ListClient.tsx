@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { T2List } from "@/design-system/templates";
 import type { DataTableColumn, DataTableRow } from "@/design-system/components/DataTable";
 
@@ -81,6 +83,7 @@ export function W2ListClient({
   pagination,
   now,
 }: W2ListClientProps) {
+  const router = useRouter();
   const meta = LIST_TITLES[listId];
   const tableRows: DataTableRow<V2ListRow>[] = rows.map((row) => ({
     id: row.id,
@@ -130,7 +133,7 @@ export function W2ListClient({
         },
         onRowOpenPanel: (id) => {
           if (typeof window !== "undefined") {
-            window.location.assign(`${meta.basePath}/${id}`);
+            router.push(`${meta.basePath}/${id}`);
           }
         },
       }}
