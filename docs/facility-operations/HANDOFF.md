@@ -1,6 +1,6 @@
 # Current handoff
 
-Read [COL-137-HANDOFF.md](COL-137-HANDOFF.md). The recurrence and due-date evaluator is implemented on `codex/hfo-col137-evaluator`, stacked on COL-135. COL-132, COL-133 and COL-135 are Done in Linear as reviewed, gated, unmerged source (closure records: `col133-evidence/review-closure.json`, `col135-evidence/review-closure.json`); nothing is merged, applied or deployed, and [CHECKPOINT.md](CHECKPOINT.md) holds the resume state. [COL-135 history](COL-135-HANDOFF.md), [COL-133 history](COL-133-HANDOFF.md) and [COL-132 history](COL-132-HANDOFF.md) are retained.
+Read [COL-139-HANDOFF.md](COL-139-HANDOFF.md). Subject-scoped occurrence generation is implemented on `codex/hfo-col139-occurrences`, stacked on COL-137. COL-132, COL-133, COL-135 and COL-137 are Done in Linear as reviewed, gated, unmerged source (closure records under each `col13x-evidence/review-closure.json`); nothing is merged, applied or deployed, and [CHECKPOINT.md](CHECKPOINT.md) holds the resume state. [COL-137 history](COL-137-HANDOFF.md), [COL-135 history](COL-135-HANDOFF.md), [COL-133 history](COL-133-HANDOFF.md) and [COL-132 history](COL-132-HANDOFF.md) are retained.
 
 # Earlier COL-18 handoff
 

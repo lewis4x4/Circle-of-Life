@@ -35,6 +35,11 @@ type OperationTaskRow = {
   current_escalation_level: number | null;
   created_at: string;
   updated_at: string;
+  occurrence_kind?: "scheduled" | "event" | "manual" | null;
+  subject_id?: string | null;
+  period_start_date?: string | null;
+  period_end_date?: string | null;
+  occurrence_revision?: string | null;
 };
 
 /**
@@ -247,6 +252,12 @@ function shapeOperationTask(
     updated_at: row.updated_at,
     due_judgment: judged.judgment,
     days_overdue: judged.days_overdue,
+    // COL-139 identity passes through untouched when the caller selected it.
+    ...(row.occurrence_kind !== undefined ? { occurrence_kind: row.occurrence_kind } : {}),
+    ...(row.subject_id !== undefined ? { subject_id: row.subject_id } : {}),
+    ...(row.period_start_date !== undefined ? { period_start_date: row.period_start_date } : {}),
+    ...(row.period_end_date !== undefined ? { period_end_date: row.period_end_date } : {}),
+    ...(row.occurrence_revision !== undefined ? { occurrence_revision: row.occurrence_revision } : {}),
   };
 }
 

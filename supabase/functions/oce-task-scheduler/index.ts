@@ -19,16 +19,38 @@
  * timing; templates without a recurrence (on-demand, event-driven, weekly
  * without a weekday) are reported as unknown schedules and never receive an
  * invented date.
+ *
+ * COL-139: confirmed, applicable site configurations generate subject-scoped
+ * occurrences through the database command generate_operation_occurrences_service,
+ * which expands bindings, pins the governing versions at each due instant and
+ * converges duplicates. The scheduler evaluates the rule with the shared
+ * evaluator and reports the database's per-run outcomes truthfully; it never
+ * writes a managed row directly. A legacy template whose activity has such a
+ * configuration in force at a site is superseded there.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 import { jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
-import { addDays, legacyTemplateRule, listOccurrenceDates, localDateOf, MAX_ENUMERATION_DAYS, parseDateOnly, resolveOccurrence, SCHEDULE_EVALUATOR_VERSION } from "../../../src/lib/operations/schedule-evaluator.ts";
+import { addDays, legacyTemplateRule, listOccurrenceDates, localDateOf, MAX_ENUMERATION_DAYS, parseDateOnly, resolveOccurrence, SCHEDULE_EVALUATOR_VERSION, validateScheduleRule } from "../../../src/lib/operations/schedule-evaluator.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const COL_ORG_ID = "00000000-0000-0000-0000-000000000001";
 const DEFAULT_TIMEZONE = "America/New_York";
+const CONFIGURATION_PAGE_SIZE = 200;
+/** Existing legacy rows of the range; below PostgREST's default max_rows so no page is truncated. */
+const EXISTING_PAGE_SIZE = 500;
+
+type ExistingRow = {
+  organization_id: string;
+  facility_id: string;
+  template_id: string;
+  activity_id: string | null;
+  assigned_shift_date: string;
+  assigned_shift: string | null;
+};
+/** The generation command accepts at most this many evaluator outputs per call. */
+const GENERATION_BATCH_SIZE = 400;
 
 type AppRole =
   | "owner"
@@ -51,6 +73,7 @@ type TemplateRow = {
   id: string;
   organization_id: string;
   facility_id: string | null;
+  activity_id: string | null;
   name: string;
   category: string;
   cadence_type: string;
@@ -73,6 +96,17 @@ type FacilityRow = {
   timezone: string | null;
 };
 
+type ConfigurationRow = {
+  id: string;
+  organization_id: string;
+  facility_id: string;
+  activity_id: string;
+  requirement_version_id: string | null;
+  effective_from: string;
+  effective_to: string | null;
+  schedule_rule: unknown;
+};
+
 type CandidateInstance = {
   organization_id: string;
   facility_id: string;
@@ -93,7 +127,41 @@ type CandidateInstance = {
   due_at: string;
 };
 
-type UnknownSchedule = { template_id: string; facility_id: string; shift: string | null; reason: string };
+type UnknownSchedule = { template_id?: string; configuration_id?: string; facility_id: string; shift: string | null; reason: string };
+
+type ManagedOccurrenceInput = {
+  occurrence_date: string;
+  period: { start_date: string; end_date: string };
+  due_at: string;
+  grace_ends_at: string | null;
+  remind_at: string | null;
+  timezone: string;
+  adjustments: string[];
+};
+
+type ManagedCandidate = { configuration: ConfigurationRow; rule: unknown; occurrences: ManagedOccurrenceInput[] };
+
+type GenerationCounts = {
+  created: number;
+  existing: number;
+  conflict: number;
+  no_binding: number;
+  binding_not_current: number;
+  configuration_not_in_force: number;
+  invalid: number;
+};
+
+const GENERATION_COUNT_KEYS: Array<keyof GenerationCounts> = ["created", "existing", "conflict", "no_binding", "binding_not_current", "configuration_not_in_force", "invalid"];
+
+type ManagedSummary = GenerationCounts & {
+  configurations: number;
+  occurrences_evaluated: number;
+  rpc_failed: number;
+  rpc_failures: Array<{ configuration_id: string; facility_id: string; reason: string }>;
+  event_rules_awaiting_source: number;
+  superseded_templates: number;
+  reconciled: { facilities: number; bindings_closed: number; occurrences_cancelled: number; failed: number };
+};
 
 const assigneeCrosswalk: Record<string, AppRole[]> = {
   coo: ["org_admin", "owner"],
@@ -162,6 +230,12 @@ Deno.serve(async (req) => {
   }
   const admin = createClient(supabaseUrl, serviceRoleKey);
   const categoryFilter = normalizeCategories(body.category);
+  const runId = `oce-${dateRange.dateFrom}-${dateRange.dateTo}-${crypto.randomUUID()}`;
+  const emptyManaged = (): ManagedSummary => ({
+    configurations: 0, occurrences_evaluated: 0, created: 0, existing: 0, conflict: 0, no_binding: 0, binding_not_current: 0, configuration_not_in_force: 0, invalid: 0,
+    rpc_failed: 0, rpc_failures: [], event_rules_awaiting_source: 0, superseded_templates: 0,
+    reconciled: { facilities: 0, bindings_closed: 0, occurrences_cancelled: 0, failed: 0 },
+  });
 
   let facilityQuery = admin
     .from("facilities")
@@ -181,15 +255,108 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Failed to load facilities" }, 500, origin);
   }
   if (facilities.length === 0) {
-    return jsonResponse({ ok: true, dry_run: Boolean(body.dry_run), inserted: 0, generated: 0, skipped_existing: 0, unknown_schedules: 0, preview: [] }, 200, origin);
+    return jsonResponse({ ok: true, dry_run: Boolean(body.dry_run), run_id: runId, inserted: 0, generated: 0, skipped_existing: 0, unknown_schedules: 0, preview: [], managed: emptyManaged() }, 200, origin);
+  }
+  const facilityIds = facilities.map((facility) => facility.id);
+  const facilityTimezoneById = new Map(facilities.map((facility) => [facility.id, facility.timezone || DEFAULT_TIMEZONE]));
+
+  // ---------------------------------------------------------------------------
+  // COL-139 managed configurations: every published, applicable, confirmed site
+  // configuration whose window touches the range, read to the last page.
+  // ---------------------------------------------------------------------------
+  const configurations: ConfigurationRow[] = [];
+  for (let page = 0; ; page += 1) {
+    const from = page * CONFIGURATION_PAGE_SIZE;
+    const { data, error } = await admin
+      .from("operation_facility_requirements")
+      .select("id, organization_id, facility_id, activity_id, requirement_version_id, effective_from, effective_to, schedule_rule")
+      .eq("organization_id", COL_ORG_ID)
+      .eq("status", "published")
+      .eq("applicability", "applicable")
+      .eq("schedule_status", "confirmed")
+      .in("facility_id", facilityIds)
+      .order("id", { ascending: true })
+      .range(from, from + CONFIGURATION_PAGE_SIZE - 1);
+    if (error) {
+      t.log({ event: "configuration_query_failed", outcome: "error", error_message: error.message });
+      return jsonResponse({ error: "Failed to load facility configurations" }, 500, origin);
+    }
+    const rows = (data ?? []) as ConfigurationRow[];
+    configurations.push(...rows);
+    if (rows.length < CONFIGURATION_PAGE_SIZE) break;
   }
 
+  const managed = emptyManaged();
+  const unknownSchedules: UnknownSchedule[] = [];
+  const managedCandidates: ManagedCandidate[] = [];
+  /**
+   * facility|activity → local date intervals in which a confirmed, valid,
+   * non-event configuration is in force. A legacy template is superseded only
+   * for dates inside such an interval; a catch-up range before the
+   * configuration took effect still generates from the template.
+   */
+  const supersededIntervals = new Map<string, Array<{ from: string; to: string }>>();
+
+  for (const configuration of configurations) {
+    const window = configurationWindow(configuration, dateRange, facilityTimezoneById.get(configuration.facility_id) ?? DEFAULT_TIMEZONE);
+    if (!window) continue;
+    const validated = validateScheduleRule(configuration.schedule_rule);
+    if (!validated.ok) {
+      unknownSchedules.push({ configuration_id: configuration.id, facility_id: configuration.facility_id, shift: null, reason: validated.problems[0] ?? "schedule rule is invalid" });
+      continue;
+    }
+    if (validated.rule.recurrence.kind === "event") {
+      // Occurrences exist only from a source event instant; no adapter supplies one here.
+      managed.event_rules_awaiting_source += 1;
+      continue;
+    }
+    // The rule's own timezone decides which local dates the window covers; a
+    // configuration counts only when its window touches the range.
+    const clipped = clipToWindow(window, validated.rule.timezone);
+    if (!clipped) continue;
+    managed.configurations += 1;
+    const supersessionKey = `${configuration.facility_id}|${configuration.activity_id}`;
+    supersededIntervals.set(supersessionKey, [...(supersededIntervals.get(supersessionKey) ?? []), { from: clipped.dateFrom, to: clipped.dateTo }]);
+    const listed = listOccurrenceDates(validated.rule, clipped.dateFrom, clipped.dateTo);
+    if (listed.kind === "unresolved") {
+      unknownSchedules.push({ configuration_id: configuration.id, facility_id: configuration.facility_id, shift: null, reason: listed.reason });
+      continue;
+    }
+    for (const entry of listed.unresolved) {
+      unknownSchedules.push({ configuration_id: configuration.id, facility_id: configuration.facility_id, shift: null, reason: `${entry.date}: ${entry.reason}` });
+    }
+    const occurrences: ManagedOccurrenceInput[] = [];
+    for (const date of listed.dates) {
+      const occurrence = resolveOccurrence(validated.rule, date);
+      if (occurrence.kind === "unresolved") {
+        unknownSchedules.push({ configuration_id: configuration.id, facility_id: configuration.facility_id, shift: null, reason: `${date}: ${occurrence.reason}` });
+        continue;
+      }
+      occurrences.push({
+        occurrence_date: occurrence.occurrence_date,
+        period: occurrence.period,
+        due_at: occurrence.due_at,
+        grace_ends_at: occurrence.grace_ends_at,
+        remind_at: occurrence.remind_at,
+        timezone: occurrence.timezone,
+        adjustments: occurrence.adjustments,
+      });
+    }
+    managed.occurrences_evaluated += occurrences.length;
+    if (occurrences.length > 0) managedCandidates.push({ configuration, rule: validated.rule, occurrences });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Legacy templates (COL-137 translation), keyed on the stable activity so a
+  // revised template never duplicates a period already generated.
+  // ---------------------------------------------------------------------------
   let templateQuery = admin
     .from("operation_task_templates")
     .select(`
       id,
       organization_id,
       facility_id,
+      activity_id,
       name,
       category,
       cadence_type,
@@ -220,30 +387,45 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Failed to load templates" }, 500, origin);
   }
 
+  // Every legacy row of the range counts, including rows generated by a
+  // superseded template revision of the same activity. Paged to the last short
+  // page: a truncated list would silently drop the activity-keyed guarantee
+  // that the template-keyed database index does not back.
+  // Bounded to the loaded templates' stable activities (every template carries
+  // one since 336); the template-id bound is kept only for a template without one.
+  const activityIds = Array.from(new Set(templates.map((template) => template.activity_id).filter((id): id is string => Boolean(id))));
   const templateIds = templates.map((template) => template.id);
-  const facilityIds = facilities.map((facility) => facility.id);
-
-  const { data: existingData, error: existingError } = await admin
-    .from("operation_task_instances")
-    .select("organization_id, facility_id, template_id, assigned_shift_date, assigned_shift")
-    .eq("organization_id", COL_ORG_ID)
-    .gte("assigned_shift_date", dateRange.dateFrom)
-    .lte("assigned_shift_date", dateRange.dateTo)
-    .in("facility_id", facilityIds)
-    .in("template_id", templateIds)
-    .is("deleted_at", null);
-
-  if (existingError) {
-    t.log({ event: "existing_query_failed", outcome: "error", error_message: existingError.message });
-    return jsonResponse({ error: "Failed to load existing task instances" }, 500, origin);
+  const existingData: ExistingRow[] = [];
+  for (let page = 0; templates.length > 0; page += 1) {
+    const from = page * EXISTING_PAGE_SIZE;
+    let existingQuery = admin
+      .from("operation_task_instances")
+      .select("organization_id, facility_id, template_id, activity_id, assigned_shift_date, assigned_shift")
+      .eq("organization_id", COL_ORG_ID)
+      .gte("assigned_shift_date", dateRange.dateFrom)
+      .lte("assigned_shift_date", dateRange.dateTo)
+      .in("facility_id", facilityIds);
+    existingQuery = templates.every((template) => Boolean(template.activity_id)) ? existingQuery.in("activity_id", activityIds) : existingQuery.in("template_id", templateIds);
+    const { data, error: existingError } = await existingQuery
+      .not("template_id", "is", null)
+      .is("deleted_at", null)
+      .order("id", { ascending: true })
+      .range(from, from + EXISTING_PAGE_SIZE - 1);
+    if (existingError) {
+      t.log({ event: "existing_query_failed", outcome: "error", error_message: existingError.message });
+      return jsonResponse({ error: "Failed to load existing task instances" }, 500, origin);
+    }
+    const rows = (data ?? []) as ExistingRow[];
+    existingData.push(...rows);
+    if (rows.length < EXISTING_PAGE_SIZE) break;
   }
 
   const existingKeys = new Set(
-    (existingData ?? []).map((row) =>
+    existingData.map((row) =>
       buildInstanceKey(
         row.organization_id,
         row.facility_id,
-        row.template_id,
+        row.activity_id ?? row.template_id,
         row.assigned_shift_date,
         row.assigned_shift,
       )
@@ -251,7 +433,6 @@ Deno.serve(async (req) => {
   );
 
   const candidates: CandidateInstance[] = [];
-  const unknownSchedules: UnknownSchedule[] = [];
   let skippedExisting = 0;
 
   for (const facility of facilities) {
@@ -262,6 +443,8 @@ Deno.serve(async (req) => {
     );
 
     for (const template of facilityTemplates) {
+      const supersededOn = template.activity_id ? supersededIntervals.get(`${facility.id}|${template.activity_id}`) : undefined;
+      let supersededDates = 0;
       for (const shift of expandTemplateShifts(template)) {
         const translated = legacyTemplateRule(template, shift, facilityTimezone);
         if (translated.kind === "unresolved") {
@@ -278,7 +461,12 @@ Deno.serve(async (req) => {
         }
 
         for (const date of listed.dates) {
-          const instanceKey = buildInstanceKey(facility.organization_id, facility.id, template.id, date, shift);
+          if (supersededOn?.some((interval) => date >= interval.from && date <= interval.to)) {
+            // Managed generation owns this activity at this site on this date.
+            supersededDates += 1;
+            continue;
+          }
+          const instanceKey = buildInstanceKey(facility.organization_id, facility.id, template.activity_id ?? template.id, date, shift);
           if (existingKeys.has(instanceKey)) {
             skippedExisting += 1;
             continue;
@@ -314,6 +502,7 @@ Deno.serve(async (req) => {
           existingKeys.add(instanceKey);
         }
       }
+      if (supersededDates > 0) managed.superseded_templates += 1;
     }
   }
 
@@ -324,6 +513,17 @@ Deno.serve(async (req) => {
     (left.assigned_shift ?? "").localeCompare(right.assigned_shift ?? "")
   );
 
+  const managedPreview = managedCandidates.flatMap((candidate) =>
+    candidate.occurrences.map((occurrence) => ({
+      configuration_id: candidate.configuration.id,
+      facility_id: candidate.configuration.facility_id,
+      activity_id: candidate.configuration.activity_id,
+      occurrence_date: occurrence.occurrence_date,
+      period: occurrence.period,
+      due_at: occurrence.due_at,
+    }))
+  );
+
   if (body.dry_run) {
     t.log({
       event: "dry_run_complete",
@@ -331,6 +531,8 @@ Deno.serve(async (req) => {
       generated: candidates.length,
       skipped_existing: skippedExisting,
       unknown_schedules: unknownSchedules.length,
+      managed_configurations: managed.configurations,
+      managed_occurrences: managed.occurrences_evaluated,
       evaluator_version: SCHEDULE_EVALUATOR_VERSION,
       date_from: dateRange.dateFrom,
       date_to: dateRange.dateTo,
@@ -338,6 +540,7 @@ Deno.serve(async (req) => {
     return jsonResponse({
       ok: true,
       dry_run: true,
+      run_id: runId,
       inserted: 0,
       generated: candidates.length,
       skipped_existing: skippedExisting,
@@ -345,27 +548,80 @@ Deno.serve(async (req) => {
       evaluator_version: SCHEDULE_EVALUATOR_VERSION,
       preview: candidates.slice(0, 25),
       unknown_schedule_preview: unknownSchedules.slice(0, 25),
+      managed,
+      managed_preview: managedPreview.slice(0, 25),
     }, 200, origin);
   }
 
-  if (candidates.length > 0) {
-    const { error: insertError } = await admin
-      .from("operation_task_instances")
-      .insert(candidates);
-
-    if (insertError) {
-      t.log({ event: "insert_failed", outcome: "error", error_message: insertError.message, generated: candidates.length });
-      return jsonResponse({ error: "Failed to insert generated task instances" }, 500, origin);
+  // ---------------------------------------------------------------------------
+  // Managed generation: one command per configuration batch. A failing command
+  // is counted and reported; it never aborts the run or the legacy pass.
+  // ---------------------------------------------------------------------------
+  for (const candidate of managedCandidates) {
+    for (let offset = 0; offset < candidate.occurrences.length; offset += GENERATION_BATCH_SIZE) {
+      const batch = candidate.occurrences.slice(offset, offset + GENERATION_BATCH_SIZE);
+      const { data, error } = await admin.rpc("generate_operation_occurrences_service", {
+        p_facility: candidate.configuration.facility_id,
+        p_configuration: candidate.configuration.id,
+        p_occurrences: batch,
+        // The stored column is sent back verbatim: the database asserts jsonb
+        // equality with the rule it holds, which the evaluator's normalised
+        // copy (dropped null keys, sorted months) would not satisfy.
+        p_run: { run_id: runId, evaluator_version: SCHEDULE_EVALUATOR_VERSION, rule: candidate.configuration.schedule_rule, date_from: dateRange.dateFrom, date_to: dateRange.dateTo },
+      });
+      if (error) {
+        managed.rpc_failed += 1;
+        managed.rpc_failures.push({ configuration_id: candidate.configuration.id, facility_id: candidate.configuration.facility_id, reason: error.message });
+        t.log({ event: "managed_generation_failed", outcome: "error", error_message: error.message, configuration_id: candidate.configuration.id });
+        continue;
+      }
+      const counts = (data as { counts?: Partial<GenerationCounts> } | null)?.counts ?? {};
+      for (const key of GENERATION_COUNT_KEYS) {
+        managed[key] += Number(counts[key] ?? 0);
+      }
     }
+  }
+
+  // Native retirement or transfer is reconciled by the service after
+  // generation: open bindings close, only future pending work is cancelled.
+  for (const facility of facilities) {
+    const { data, error } = await admin.rpc("reconcile_operation_occurrences_service", { p_facility: facility.id, p_run: { run_id: runId } });
+    if (error) {
+      managed.reconciled.failed += 1;
+      t.log({ event: "managed_reconciliation_failed", outcome: "error", error_message: error.message, facility_id: facility.id });
+      continue;
+    }
+    // The command returns the closed/cancelled ids as arrays and the numbers under counts.
+    const result = (data as { counts?: { bindings_closed?: number; occurrences_cancelled?: number } } | null)?.counts ?? {};
+    managed.reconciled.facilities += 1;
+    managed.reconciled.bindings_closed += Number(result.bindings_closed ?? 0);
+    managed.reconciled.occurrences_cancelled += Number(result.occurrences_cancelled ?? 0);
+  }
+
+  let inserted = 0;
+  if (candidates.length > 0) {
+    const outcome = await insertLegacyCandidates(admin, candidates);
+    if (outcome.error) {
+      // Row-by-row convergence runs as separate statements, so rows inserted
+      // before the failure stay; report them so the run is never misread as empty.
+      t.log({ event: "insert_failed", outcome: "error", error_message: outcome.error, generated: candidates.length, inserted: outcome.inserted, skipped_existing: skippedExisting + outcome.converged });
+      return jsonResponse({ error: "Failed to insert generated task instances", run_id: runId, inserted: outcome.inserted, skipped_existing: skippedExisting + outcome.converged, managed }, 500, origin);
+    }
+    inserted = outcome.inserted;
+    skippedExisting += outcome.converged;
   }
 
   t.log({
     event: "complete",
     outcome: "success",
     generated: candidates.length,
-    inserted: candidates.length,
+    inserted,
     skipped_existing: skippedExisting,
     unknown_schedules: unknownSchedules.length,
+    managed_created: managed.created,
+    managed_existing: managed.existing,
+    managed_conflict: managed.conflict,
+    managed_rpc_failed: managed.rpc_failed,
     evaluator_version: SCHEDULE_EVALUATOR_VERSION,
     date_from: dateRange.dateFrom,
     date_to: dateRange.dateTo,
@@ -374,13 +630,39 @@ Deno.serve(async (req) => {
   return jsonResponse({
     ok: true,
     dry_run: false,
-    inserted: candidates.length,
+    run_id: runId,
+    inserted,
     generated: candidates.length,
     skipped_existing: skippedExisting,
     unknown_schedules: unknownSchedules.length,
     evaluator_version: SCHEDULE_EVALUATOR_VERSION,
+    managed,
   }, 200, origin);
 });
+
+/**
+ * PostgREST cannot target the legacy generation index (it is an expression
+ * index over COALESCE(assigned_shift,'all')), so an upsert with on_conflict is
+ * not available. The batch insert is attempted once; when a concurrent legacy
+ * run has already created some of the rows (23505), each candidate is inserted
+ * on its own and duplicates are counted as converged, never as a failure.
+ */
+type LegacyInsertClient = { from(table: "operation_task_instances"): { insert(rows: CandidateInstance[]): PromiseLike<{ error: { code?: string; message: string } | null }> } };
+
+async function insertLegacyCandidates(admin: LegacyInsertClient, candidates: CandidateInstance[]) {
+  const batch = await admin.from("operation_task_instances").insert(candidates);
+  if (!batch.error) return { inserted: candidates.length, converged: 0, error: null };
+  if (batch.error.code !== "23505") return { inserted: 0, converged: 0, error: batch.error.message };
+  let inserted = 0;
+  let converged = 0;
+  for (const candidate of candidates) {
+    const single = await admin.from("operation_task_instances").insert([candidate]);
+    if (!single.error) inserted += 1;
+    else if (single.error.code === "23505") converged += 1;
+    else return { inserted, converged, error: single.error.message };
+  }
+  return { inserted, converged, error: null };
+}
 
 function resolveDateRange(dateFrom?: string, dateTo?: string) {
   const defaultDate = localDateOf(new Date(), DEFAULT_TIMEZONE);
@@ -403,6 +685,28 @@ function normalizeCategories(category?: string | string[]) {
   if (Array.isArray(category)) return category.filter(Boolean);
   if (!category) return [];
   return [category];
+}
+
+/** The configuration window as instants, or null when it cannot touch the range in the facility zone. */
+function configurationWindow(configuration: ConfigurationRow, range: { dateFrom: string; dateTo: string }, facilityTimezone: string) {
+  const from = new Date(configuration.effective_from);
+  const to = configuration.effective_to ? new Date(configuration.effective_to) : null;
+  if (Number.isNaN(from.getTime()) || (to && Number.isNaN(to.getTime()))) return null;
+  // The window is intersected with the range only in the rule's own zone
+  // (clipToWindow); a facility-zone pre-check could drop a configuration whose
+  // rule-local start date is the range's last day. The facility zone is kept
+  // for the operator-facing reason wording only.
+  void facilityTimezone;
+  return { from, to, range };
+}
+
+function clipToWindow(window: { from: Date; to: Date | null; range: { dateFrom: string; dateTo: string } }, timezone: string) {
+  const startDate = localDateOf(window.from, timezone);
+  const endDate = window.to ? localDateOf(window.to, timezone) : null;
+  const dateFrom = startDate > window.range.dateFrom ? startDate : window.range.dateFrom;
+  const dateTo = endDate && endDate < window.range.dateTo ? endDate : window.range.dateTo;
+  if (dateFrom > dateTo) return null;
+  return { dateFrom, dateTo };
 }
 
 function expandTemplateShifts(template: TemplateRow): Array<"day" | "evening" | "night" | null> {
@@ -431,9 +735,9 @@ function resolveAssignee(template: TemplateRow) {
 function buildInstanceKey(
   organizationId: string,
   facilityId: string,
-  templateId: string,
+  activityOrTemplateId: string,
   assignedShiftDate: string,
   assignedShift: string | null,
 ) {
-  return `${organizationId}|${facilityId}|${templateId}|${assignedShiftDate}|${assignedShift ?? "all"}`;
+  return `${organizationId}|${facilityId}|${activityOrTemplateId}|${assignedShiftDate}|${assignedShift ?? "all"}`;
 }

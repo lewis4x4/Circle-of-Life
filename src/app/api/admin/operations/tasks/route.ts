@@ -106,7 +106,12 @@ export async function GET(request: Request) {
       estimated_minutes,
       current_escalation_level,
       created_at,
-      updated_at
+      updated_at,
+      occurrence_kind,
+      subject_id,
+      period_start_date,
+      period_end_date,
+      occurrence_revision
     `)
     .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)

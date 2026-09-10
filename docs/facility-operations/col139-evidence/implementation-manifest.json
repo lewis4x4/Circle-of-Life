@@ -1,0 +1,138 @@
+{
+  "base_commit": "caca9592",
+  "branch": "codex/hfo-col139-occurrences",
+  "files": [
+    {
+      "path": "docs/facility-operations/CHECKPOINT.md",
+      "sha256": "fc46398bdc1dfe50d1e1b141a400bb46d4cde9f01d91f2c2187dd06feb376df2"
+    },
+    {
+      "path": "docs/facility-operations/COL-139-HANDOFF.md",
+      "sha256": "fbf4804e59803bce10fabb1ac8281d839dcf9b5234c76c61dddd51ce831d0c53"
+    },
+    {
+      "path": "docs/facility-operations/COL-139-PREPARATION.md",
+      "sha256": "15da553c26c840210dcf571e8e12d8302f7cae454c4c627c5ca45befbdd210a8"
+    },
+    {
+      "path": "docs/facility-operations/HANDOFF.md",
+      "sha256": "74abb1a5111c0ba8bbcb6436bb86a9162b376b35bbc48b2f6d0d1c79235c09f1"
+    },
+    {
+      "path": "docs/facility-operations/OWNER-DECISIONS.md",
+      "sha256": "a874e7333c801005d9ebb4b0cffa0b01a1949916d024d48d17929c28dcc0d937"
+    },
+    {
+      "path": "docs/facility-operations/col137-evidence/review-closure.json",
+      "sha256": "55fa2a811a73cc884bc540f54f5722d4cb54c8d107f1a2a2c23cd99ee2eac539"
+    },
+    {
+      "path": "docs/facility-operations/col139-evidence/architecture-planning.md",
+      "sha256": "a2774df4b3a8d826f1ae8ce2c5b0ac07ac985f4196339fd40254a3a36b4c8c5c"
+    },
+    {
+      "path": "docs/facility-operations/col139-evidence/concurrency.txt",
+      "sha256": "a75d08a19dbc349c804983b6b1d916902c79fe39f879d0d36832652f0fc58500"
+    },
+    {
+      "path": "docs/facility-operations/col139-evidence/engineering-contracts.md",
+      "sha256": "3958b4acde63c703cfc941f325d22da54adfb3989e80acdd07475d11d68019ae"
+    },
+    {
+      "path": "docs/facility-operations/col139-evidence/independent-review.json",
+      "sha256": "54f5329fb211a6248c37dd8e80d1ff0b1c613103dd48fd6706fa8abf5af7b9f9"
+    },
+    {
+      "path": "docs/facility-operations/col139-evidence/linear-before.json",
+      "sha256": "874673b8497cb79cefe48de3f28202f724751e2fa994db05a72ad3a69e9149a3"
+    },
+    {
+      "path": "docs/facility-operations/col139-evidence/linear-state.json",
+      "sha256": "0d191a362aeb8bd438d93a5909b8777ed8e8001838f724ae0e83444ea94266f1"
+    },
+    {
+      "path": "docs/facility-operations/col139-evidence/source-before.json",
+      "sha256": "abaa89c20218fb13a34cbf19cb9713c7bda180fa37e176194e11c73bfecbce40"
+    },
+    {
+      "path": "docs/facility-operations/col139-evidence/verification.json",
+      "sha256": "420a4b777bef913baa0e21445a49b6f0ce6d1d2b481bc5189ff92af3654508c4"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-occurrences.md",
+      "sha256": "25207618a6048c49c809c73aaaba2f0aa84780d64039dcdcdf4ba36fc3003c31"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "bbf00a6bcd4e4ea651d9af276199f13991c6e493d597ab6f150742e2d0072f84"
+    },
+    {
+      "path": "scripts/facility-operations/test-occurrence-concurrency.py",
+      "sha256": "10e3ab2326da9e1398d2a0dea854f56903d0c64986ae095b4939812f601111fe"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/associate/route.ts",
+      "sha256": "d238d221db1351c37a1c029a31e6d4175be157bc359e6b0517cae4ecec3ac8b5"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/cancel/route.ts",
+      "sha256": "c509f935eb8c5522d4f30a5af67288bda07eb4590e7463f444867b903db5b494"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/bindings/[id]/retire/route.ts",
+      "sha256": "65168db107bd27a00274cc324b46ab886f10db93704049852edae061e6e435f9"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/bindings/route.ts",
+      "sha256": "b725d1e14d1f8c7c37bcb4b8a032121efec86b6fb6029b65a5abe74c6be0c5cc"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/manual/route.ts",
+      "sha256": "17e1942aecd404bdf775655b7ce235a51980e5a1a7d45584d56df3e6cf9d6ff3"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/route.test.ts",
+      "sha256": "2e220efd4eda904f69489ae384be636a7120e03f4bbdd4ad6569007ab9327f5c"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/route.ts",
+      "sha256": "b61016d11ed93d5fef2c60b8f8df3be474403cb5d443d12119babc0bfb482a41"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/route.ts",
+      "sha256": "1f6abaff7a38a567693d3164d359b40251198440c1b28d24af7c0095ae60bcdf"
+    },
+    {
+      "path": "src/lib/operations/occurrences.test.ts",
+      "sha256": "e753b8e557fd8d96eeff81ba4954f6441ed02e51bb6dd117ae93bf4be382ff7a"
+    },
+    {
+      "path": "src/lib/operations/occurrences.ts",
+      "sha256": "77f3042e003d0c1eeacaf6b6862bd7270ec243b104b5a76f40f57b0a0713ed78"
+    },
+    {
+      "path": "src/lib/operations/scheduler-evaluator.test.ts",
+      "sha256": "f1f32ea7d3cfc8c79a66ec3a2d36f1d11b39db8d22a2e3538f63fa6639698736"
+    },
+    {
+      "path": "src/lib/operations/server.ts",
+      "sha256": "0eb10da0058fb38207922b7712a0fa304aff123870afb6dc25c1aa3c841c9cea"
+    },
+    {
+      "path": "src/lib/operations/types.ts",
+      "sha256": "e477da3efc2364ccad2a142492b91e1d76f9c2f843f1f63ee292dff56b0cee33"
+    },
+    {
+      "path": "supabase/functions/oce-task-scheduler/index.ts",
+      "sha256": "e770fb4b8770c880182933b2a4ae512b8a5a177a46d503bfffe4022b4fb1f7e9"
+    },
+    {
+      "path": "supabase/migrations/340_hfo_occurrences.sql",
+      "sha256": "6b9f02743cf4ce7753b470d030a21d972b89748e158b8c575504b9d79c466e42"
+    },
+    {
+      "path": "supabase/tests/review_hfo_occurrences.sql",
+      "sha256": "efca7926510d08f5ab5ecf9c28eb5c3fbb2e6e498163d7669c37999f42bd29c6"
+    }
+  ]
+}

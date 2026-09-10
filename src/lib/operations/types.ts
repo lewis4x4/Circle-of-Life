@@ -52,6 +52,14 @@ export type OperationTask = {
   due_judgment: OperationDueJudgment;
   /** Calendar days overdue in the facility timezone; null when the schedule is unknown. */
   days_overdue: number | null;
+  /** COL-139 managed identity; absent or null on legacy rows and older saved responses. */
+  occurrence_kind?: "scheduled" | "event" | "manual" | null;
+  subject_id?: string | null;
+  /** Inclusive facility-local period the occurrence covers; null for manual work. */
+  period_start_date?: string | null;
+  period_end_date?: string | null;
+  /** Optimistic fingerprint echoed back by association commands. */
+  occurrence_revision?: string | null;
 };
 
 export type OperationTaskSummary = {
