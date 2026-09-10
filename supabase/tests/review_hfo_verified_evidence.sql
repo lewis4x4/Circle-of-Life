@@ -6,10 +6,14 @@
 -- receipt performed-with-missing-evidence while a failed supplementary upload
 -- never appears attached, that a later valid finalization satisfies the same
 -- performance once through an appended event with the original attribution
--- unchanged, that a stale receipt revision conflicts, and that direct DML is
--- refused. Local storage.objects rows stand in for uploads; no byte moves and
--- no hosted bucket is proven here. Authenticated SQL behaviour with synthetic
--- fixtures; not hosted, browser or staff acceptance. Everything rolls back.
+-- unchanged, that a stale receipt revision conflicts, that the declared MD5
+-- is verified against the object's eTag at upload marking and again at
+-- finalization (a mismatch or a changed object fails the row durably, a
+-- non-MD5 eTag never finalizes), and that direct DML is refused. Local
+-- storage.objects rows stand in for uploads with eTags computed as the MD5 of
+-- known bytes; no byte moves and no hosted bucket is proven here.
+-- Authenticated SQL behaviour with synthetic fixtures; not hosted, browser or
+-- staff acceptance. Everything rolls back.
 BEGIN;
 ALTER ROLE service_role BYPASSRLS;
 GRANT USAGE ON SCHEMA auth TO authenticated,service_role;
@@ -119,12 +123,17 @@ CREATE FUNCTION pg_temp.run(p_id text,d_from date,d_to date,p_config uuid) RETUR
 $$;
 CREATE FUNCTION pg_temp.k(p text) RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT 'col143-'||p $$;
 CREATE FUNCTION pg_temp.rev(p_label text) RETURNS text LANGUAGE sql AS $$ SELECT revision FROM public.operation_execution_receipts WHERE id=(SELECT id FROM ef_ids WHERE label=p_label) $$;
--- A local upload: the storage row Supabase would write after a successful PUT.
-CREATE FUNCTION pg_temp.put(p_evidence uuid,p_owner uuid,p_size bigint,p_mime text) RETURNS uuid LANGUAGE sql AS $$
- INSERT INTO storage.objects(bucket_id,name,owner,metadata) SELECT 'operation-evidence',e.object_path,p_owner,jsonb_build_object('size',p_size,'mimetype',p_mime,'eTag','"etag-'||e.id||'"')
+-- The known bytes of a fixture upload are its filename; an object-kind payload
+-- declares md5(filename) and a local upload writes the eTag Storage would
+-- (the quoted MD5 of the stored bytes) unless other bytes or another eTag are
+-- given, plus a Storage version.
+CREATE FUNCTION pg_temp.obj(p_payload text) RETURNS jsonb LANGUAGE sql IMMUTABLE AS $$ SELECT p_payload::jsonb||jsonb_build_object('md5',md5(p_payload::jsonb->>'filename')) $$;
+CREATE FUNCTION pg_temp.put(p_evidence uuid,p_owner uuid,p_size bigint,p_mime text,p_bytes text DEFAULT NULL,p_etag text DEFAULT NULL) RETURNS uuid LANGUAGE sql AS $$
+ INSERT INTO storage.objects(bucket_id,name,owner,metadata,version) SELECT 'operation-evidence',e.object_path,p_owner,
+  jsonb_build_object('size',p_size,'mimetype',p_mime,'eTag',coalesce(p_etag,'"'||md5(coalesce(p_bytes,split_part(e.object_path,'/',3)))||'"')),gen_random_uuid()::text
  FROM public.operation_evidence e WHERE e.id=p_evidence RETURNING id
 $$;
-GRANT ALL ON FUNCTION pg_temp.occ(date,text,text),pg_temp.run(text,date,date,uuid),pg_temp.e_login(text),pg_temp.e_service(),pg_temp.e_clear(),pg_temp.k(text),pg_temp.rev(text),pg_temp.put(uuid,uuid,bigint,text) TO authenticated,service_role;
+GRANT ALL ON FUNCTION pg_temp.occ(date,text,text),pg_temp.run(text,date,date,uuid),pg_temp.e_login(text),pg_temp.e_service(),pg_temp.e_clear(),pg_temp.k(text),pg_temp.rev(text),pg_temp.obj(text),pg_temp.put(uuid,uuid,bigint,text,text,text) TO authenticated,service_role;
 
 -- Versions (owner): no evidence, a required photo, a required document with review, a required linked record.
 SELECT pg_temp.e_login('owner');
@@ -204,38 +213,43 @@ GRANT SELECT ON ef_snapshot TO authenticated;
 -- Prepare: a required photo for the generator receipt by its recorder.
 SELECT pg_temp.e_login('maint');
 SET LOCAL ROLE authenticated;
-INSERT INTO ef_results SELECT 'prep1',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000001'),'{"kind":"photo","rule_label":"Panel photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":1234,"sha256":"1111111111111111111111111111111111111111111111111111111111111111"}');
+INSERT INTO ef_results SELECT 'prep1',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000001'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":1234,"sha256":"1111111111111111111111111111111111111111111111111111111111111111"}'));
 INSERT INTO ef_ids SELECT 'ev1',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep1';
 SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean=false AND result->'evidence'->>'state'='prepared' AND result->'evidence'->>'evidence_kind'='photo' AND result->'evidence'->>'rule_label'='Panel photo'
  AND result->'evidence'->>'object_path'=(SELECT site_a::text FROM ef)||'/'||(result->'evidence'->>'id')||'/panel.jpg' AND result->'evidence'->>'bucket_id'='operation-evidence'
  AND (result->'evidence'->>'uploaded_by')::uuid=(SELECT maint FROM ef) AND (result->'evidence'->>'checksum_verified')::boolean=false AND result->'event'->>'event_kind'='prepared' AND jsonb_typeof(result->'satisfaction')='null'
+ AND result->'evidence'->>'declared_md5'=md5('panel.jpg') AND result->'evidence'->>'checksum_method' IS NULL AND result->'evidence'->>'checksum_verified_at' IS NULL AND result->'evidence'->>'object_version' IS NULL AND result->>'outcome'='prepared'
  FROM ef_results WHERE label='prep1'),'prepared evidence is not an owned, classified identity');
 SELECT pg_temp.e_assert((SELECT organization_id=(SELECT org FROM ef) AND facility_id=(SELECT site_a FROM ef) AND activity_id=(SELECT act_fac FROM ef) AND authority_class='facility' AND task_instance_id=(SELECT id FROM ef_ids WHERE label='occ_fac_d1') FROM public.operation_evidence WHERE id=(SELECT id FROM ef_ids WHERE label='ev1')),'evidence did not copy the receipt scope');
 -- Replay: same key and content returns the same evidence; changed content conflicts.
-INSERT INTO ef_results SELECT 'prep1_replay',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000001'),'{"kind":"photo","rule_label":"Panel photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":1234,"sha256":"1111111111111111111111111111111111111111111111111111111111111111"}');
+INSERT INTO ef_results SELECT 'prep1_replay',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000001'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":1234,"sha256":"1111111111111111111111111111111111111111111111111111111111111111"}'));
 SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean AND (result->'evidence'->>'id')::uuid=(SELECT id FROM ef_ids WHERE label='ev1') FROM ef_results WHERE label='prep1_replay'),'prepare replay did not return the same evidence');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000001'),'{"kind":"photo","rule_label":"Panel photo","filename":"panel2.jpg","mime":"image/jpeg","size_bytes":1234}')$q$,'already saved with different content');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000001'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel2.jpg","mime":"image/jpeg","size_bytes":1234}'))$q$,'already saved with different content');
 SELECT pg_temp.e_assert((SELECT count(*)=1 FROM public.operation_evidence),'a replay or conflict created evidence');
 -- Shape and rule refusals create nothing.
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"document","rule_label":"Panel photo","filename":"panel.pdf","mime":"application/pdf","size_bytes":10}')$q$,'kind does not match the rule');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"photo","rule_label":"Missing rule","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}')$q$,'does not apply to this receipt');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"photo","filename":"panel.gif","mime":"image/gif","size_bytes":10}')$q$,'mime must be');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":20971521}')$q$,'size_bytes must be');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"photo","filename":"../panel.jpg","mime":"image/jpeg","size_bytes":10}')$q$,'filename must be');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10,"linked_table":"facility_documents"}')$q$,'carries no linked record');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10,"uploaded_by":"x"}')$q$,'not editable');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),'ab','{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}')$q$,'request key is required');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),pg_temp.obj('{"kind":"document","rule_label":"Panel photo","filename":"panel.pdf","mime":"application/pdf","size_bytes":10}'))$q$,'kind does not match the rule');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),pg_temp.obj('{"kind":"photo","rule_label":"Missing rule","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}'))$q$,'does not apply to this receipt');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),pg_temp.obj('{"kind":"photo","filename":"panel.gif","mime":"image/gif","size_bytes":10}'))$q$,'mime must be');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),pg_temp.obj('{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":20971521}'))$q$,'size_bytes must be');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),pg_temp.obj('{"kind":"photo","filename":"../panel.jpg","mime":"image/jpeg","size_bytes":10}'))$q$,'filename must be');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),pg_temp.obj('{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10,"linked_table":"facility_documents"}'))$q$,'carries no linked record');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),pg_temp.obj('{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10,"uploaded_by":"x"}'))$q$,'not editable');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),'ab',pg_temp.obj('{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}'))$q$,'request key is required');
+-- An object kind declares the MD5 of its bytes; a linked record carries none.
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}')$q$,'md5 is required');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000002'),'{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10,"md5":"0123456789ABCDEF0123456789ABCDEF"}')$q$,'md5 must be');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_link1'),pg_temp.k('prep-000002'),jsonb_build_object('kind','linked_record','linked_table','facility_documents','linked_record_id',(SELECT doc_a FROM ef),'md5',md5('x')))$q$,'carries no object');
 SELECT pg_temp.e_assert((SELECT count(*)=1 FROM public.operation_evidence),'a refused prepare created evidence');
 RESET ROLE;
 -- Authority before any receipt fact: a non-recorder for the activity, the other site's admin and a random receipt share one wording.
 SELECT pg_temp.e_login('nurse');
 SET LOCAL ROLE authenticated;
-SELECT pg_temp.e_denied($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-nurse-01'),'{"kind":"photo","rule_label":"Panel photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}')$q$);
+SELECT pg_temp.e_denied($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-nurse-01'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}'))$q$);
 RESET ROLE;
 SELECT pg_temp.e_login('admin_b');
 SET LOCAL ROLE authenticated;
-SELECT pg_temp.e_denied($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-b-000001'),'{"kind":"photo","rule_label":"Panel photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}')$q$);
-SELECT pg_temp.e_denied($q$SELECT public.prepare_operation_evidence_review(gen_random_uuid(),pg_temp.k('prep-b-000002'),'{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}')$q$);
+SELECT pg_temp.e_denied($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-b-000001'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}'))$q$);
+SELECT pg_temp.e_denied($q$SELECT public.prepare_operation_evidence_review(gen_random_uuid(),pg_temp.k('prep-b-000002'),pg_temp.obj('{"kind":"photo","filename":"panel.jpg","mime":"image/jpeg","size_bytes":10}'))$q$);
 SELECT pg_temp.e_denied($q$SELECT public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev1'),pg_temp.k('up-b-000001'))$q$);
 SELECT pg_temp.e_denied($q$SELECT public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev1'),pg_temp.k('fin-b-000001'),repeat('a',64),'{}')$q$);
 SELECT pg_temp.e_assert((SELECT count(*)=0 FROM public.operation_evidence)
@@ -268,7 +282,7 @@ RESET ROLE;
 -- Upload marking: the object must exist under the prepared path, be owned by the uploader and match the declared size and type.
 SELECT pg_temp.e_login('maint');
 SET LOCAL ROLE authenticated;
-INSERT INTO ef_results SELECT 'prep2',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac2'),pg_temp.k('prep-000010'),'{"kind":"photo","rule_label":"Panel photo","filename":"panel.png","mime":"image/png","size_bytes":500}');
+INSERT INTO ef_results SELECT 'prep2',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac2'),pg_temp.k('prep-000010'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel.png","mime":"image/png","size_bytes":500}'));
 INSERT INTO ef_ids SELECT 'ev2',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep2';
 SELECT pg_temp.e_expect($q$SELECT public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev2'),pg_temp.k('up-000010'))$q$,'Uploaded object not found');
 SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev2'),(SELECT maint FROM ef),501,'image/png');
@@ -276,9 +290,12 @@ SELECT pg_temp.e_expect($q$SELECT public.mark_operation_evidence_uploaded_review
 SELECT pg_temp.e_expect($q$SELECT public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev2'),pg_temp.k('fin-000010'),pg_temp.rev('r_fac2'),'{}')$q$,'does not match the prepared evidence');
 SELECT pg_temp.e_assert((SELECT state='prepared' FROM public.operation_evidence WHERE id=(SELECT id FROM ef_ids WHERE label='ev2')),'a mismatched object changed the evidence state');
 INSERT INTO ef_results SELECT 'up1',public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev1'),pg_temp.k('up-000001'));
-SELECT pg_temp.e_assert((SELECT result->'evidence'->>'state'='uploaded' AND (result->'evidence'->>'object_size_bytes')::bigint=1234 AND result->'evidence'->>'object_mime'='image/jpeg' AND result->'evidence'->>'object_etag' LIKE '"etag-%' AND result->'evidence'->>'object_id' IS NOT NULL AND result->'event'->>'event_kind'='uploaded' FROM ef_results WHERE label='up1'),'upload marking did not record the object facts');
+SELECT pg_temp.e_assert((SELECT result->'evidence'->>'state'='uploaded' AND (result->'evidence'->>'object_size_bytes')::bigint=1234 AND result->'evidence'->>'object_mime'='image/jpeg' AND result->'evidence'->>'object_etag'='"'||md5('panel.jpg')||'"' AND result->'evidence'->>'object_id' IS NOT NULL AND result->'event'->>'event_kind'='uploaded' FROM ef_results WHERE label='up1'),'upload marking did not record the object facts');
+-- The declared MD5 was verified against the eTag: method, instant and Storage version recorded; the reply names the outcome.
+SELECT pg_temp.e_assert((SELECT (result->'evidence'->>'checksum_verified')::boolean AND result->'evidence'->>'checksum_method'='storage_etag_md5' AND result->'evidence'->>'checksum_verified_at' IS NOT NULL AND result->'evidence'->>'object_version' IS NOT NULL
+ AND result->>'outcome'='uploaded' AND (result->'event'->'details'->>'checksum_verified')::boolean AND result->'event'->'details'->>'etag_kind'='md5' FROM ef_results WHERE label='up1'),'upload marking did not verify the checksum');
 INSERT INTO ef_results SELECT 'up1_replay',public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev1'),pg_temp.k('up-000001'));
-SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean FROM ef_results WHERE label='up1_replay'),'upload replay did not replay');
+SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean AND result->>'outcome'='uploaded' FROM ef_results WHERE label='up1_replay'),'upload replay did not replay');
 SELECT pg_temp.e_expect($q$SELECT public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev1'),pg_temp.k('up-000002'))$q$,'already uploaded');
 RESET ROLE;
 -- Another recorder for the activity cannot upload or finalize someone else's prepared evidence.
@@ -297,7 +314,8 @@ SELECT pg_temp.e_assert((SELECT evidence_status_current='missing' AND evidence_s
 INSERT INTO ef_results SELECT 'fin1',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev1'),pg_temp.k('fin-000001'),pg_temp.rev('r_fac1'),'{}');
 SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean=false AND result->'evidence'->>'state'='finalized' AND (result->'evidence'->>'finalized_by')::uuid=(SELECT maint FROM ef) AND result->'event'->>'event_kind'='finalized'
  AND result->'event'->>'expected_receipt_revision'=pg_temp.rev('r_fac1') AND result->'satisfaction'->>'receipt_evidence_status'='complete' AND result->'satisfaction'->'occurrence'->>'status'='completed'
- AND result->'satisfaction'->'occurrence'->>'execution_state'='completed' FROM ef_results WHERE label='fin1'),'finalization did not satisfy the receipt');
+ AND result->'satisfaction'->'occurrence'->>'execution_state'='completed' AND result->>'outcome'='finalized' AND (result->'evidence'->>'checksum_verified')::boolean AND result->'event'->'details'->>'checksum_method'='storage_etag_md5'
+ FROM ef_results WHERE label='fin1'),'finalization did not satisfy the receipt');
 SELECT pg_temp.e_assert((SELECT evidence_status_current='complete' AND evidence_satisfied_at IS NOT NULL AND evidence_status='missing' AND missing_evidence<>'[]'::jsonb FROM public.operation_execution_receipts WHERE id=(SELECT id FROM ef_ids WHERE label='r_fac1')),'receipt current evidence status not complete or recorded list rewritten');
 SELECT pg_temp.e_assert((SELECT to_jsonb(r)-ARRAY['evidence_status_current','evidence_satisfied_at']=s.receipt_json FROM public.operation_execution_receipts r JOIN ef_snapshot s ON s.receipt_id=r.id WHERE r.id=(SELECT id FROM ef_ids WHERE label='r_fac1')),'satisfaction rewrote an immutable receipt fact');
 SELECT pg_temp.e_assert((SELECT status='completed' AND execution_state='completed' AND completed_at IS NOT NULL AND verified_by=(SELECT maint FROM ef) AND verified_at IS NOT NULL AND verification_receipt_id IS NULL
@@ -309,7 +327,7 @@ SELECT pg_temp.e_assert((SELECT array_agg(event_kind ORDER BY event_seq)=ARRAY['
 INSERT INTO ef_results SELECT 'fin1_replay',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev1'),pg_temp.k('fin-000001'),pg_temp.rev('r_fac1'),'{}');
 SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean AND result->'event'->>'event_kind'='finalized' FROM ef_results WHERE label='fin1_replay'),'finalize replay did not replay');
 SELECT pg_temp.e_expect($q$SELECT public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev1'),pg_temp.k('fin-000002'),pg_temp.rev('r_fac1'),'{}')$q$,'already finalized');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000003'),'{"kind":"photo","rule_label":"Panel photo","filename":"again.jpg","mime":"image/jpeg","size_bytes":10}')$q$,'already satisfied');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac1'),pg_temp.k('prep-000003'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"again.jpg","mime":"image/jpeg","size_bytes":10}'))$q$,'already satisfied');
 SELECT pg_temp.e_assert((SELECT count(*)=1 FROM public.operation_evidence_events WHERE event_kind='satisfied'),'a replay satisfied twice');
 RESET ROLE;
 SELECT pg_temp.e_assert((SELECT count(*)=1 FROM public.operation_audit_log WHERE task_instance_id=(SELECT id FROM ef_ids WHERE label='occ_fac_d1') AND event_type='completed' AND event_notes='required evidence finalized'
@@ -335,23 +353,24 @@ SELECT pg_temp.e_assert((SELECT result->'evidence'->>'state'='failed' AND result
 SELECT pg_temp.e_expect($q$SELECT public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev2'),pg_temp.k('fin-000011'),pg_temp.rev('r_fac2'),'{}')$q$,'has failed');
 SELECT pg_temp.e_assert((SELECT evidence_status_current='missing' AND evidence_satisfied_at IS NULL FROM public.operation_execution_receipts WHERE id=(SELECT id FROM ef_ids WHERE label='r_fac2'))
  AND (SELECT execution_state='performed_missing_evidence' AND status='in_progress' FROM public.operation_task_instances WHERE id=(SELECT id FROM ef_ids WHERE label='occ_fac_d2')),'a failed required upload completed or satisfied anything');
-INSERT INTO ef_results SELECT 'prep3',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac2'),pg_temp.k('prep-000011'),'{"kind":"photo","rule_label":"Panel photo","filename":"panel-retry.png","mime":"image/png","size_bytes":500,"sha256":"3333333333333333333333333333333333333333333333333333333333333333"}');
+INSERT INTO ef_results SELECT 'prep3',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac2'),pg_temp.k('prep-000011'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel-retry.png","mime":"image/png","size_bytes":500,"sha256":"3333333333333333333333333333333333333333333333333333333333333333"}'));
 INSERT INTO ef_ids SELECT 'ev3',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep3';
 SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev3'),(SELECT maint FROM ef),500,'image/png');
 -- Finalization straight from prepared runs the object check itself.
 INSERT INTO ef_results SELECT 'fin3',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev3'),pg_temp.k('fin-000012'),pg_temp.rev('r_fac2'),'{"sha256":"3333333333333333333333333333333333333333333333333333333333333333"}');
 SELECT pg_temp.e_assert((SELECT result->'evidence'->>'state'='finalized' AND result->'evidence'->>'uploaded_at' IS NOT NULL AND result->'satisfaction'->>'receipt_evidence_status'='complete' AND result->'satisfaction'->'occurrence'->>'execution_state'='completed' FROM ef_results WHERE label='fin3'),'retry after failure did not satisfy once');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac2'),pg_temp.k('prep-000012'),'{"kind":"photo","filename":"dup.png","mime":"image/png","size_bytes":500,"sha256":"3333333333333333333333333333333333333333333333333333333333333333"}')$q$,'already finalized for these bytes','evidence_id='||(SELECT id FROM ef_ids WHERE label='ev3'));
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac2'),pg_temp.k('prep-000012'),pg_temp.obj('{"kind":"photo","filename":"dup.png","mime":"image/png","size_bytes":500,"sha256":"3333333333333333333333333333333333333333333333333333333333333333"}'))$q$,'already finalized for these bytes','evidence_id='||(SELECT id FROM ef_ids WHERE label='ev3'));
 SELECT pg_temp.e_assert((SELECT count(*)=1 FROM public.operation_evidence_events WHERE receipt_id=(SELECT id FROM ef_ids WHERE label='r_fac2') AND event_kind='satisfied'),'retry satisfied more than once');
 -- A failed supplementary upload never appears attached; a finalized supplementary one is attached but counts toward no rule.
-INSERT INTO ef_results SELECT 'prep_sup',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_a1'),pg_temp.k('prep-000020'),'{"kind":"document","filename":"receipt.pdf","mime":"application/pdf","size_bytes":9}');
+INSERT INTO ef_results SELECT 'prep_sup',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_a1'),pg_temp.k('prep-000020'),pg_temp.obj('{"kind":"document","filename":"receipt.pdf","mime":"application/pdf","size_bytes":9}'));
 INSERT INTO ef_ids SELECT 'ev_sup',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_sup';
 INSERT INTO ef_results SELECT 'fail_sup',public.fail_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_sup'),pg_temp.k('fail-000020'),'{"reason":"Cancelled by user"}');
-INSERT INTO ef_results SELECT 'prep_sup2',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_a1'),pg_temp.k('prep-000021'),'{"kind":"document","filename":"receipt.pdf","mime":"application/pdf","size_bytes":9}');
+INSERT INTO ef_results SELECT 'prep_sup2',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_a1'),pg_temp.k('prep-000021'),pg_temp.obj('{"kind":"document","filename":"receipt.pdf","mime":"application/pdf","size_bytes":9}'));
 INSERT INTO ef_ids SELECT 'ev_sup2',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_sup2';
 SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_sup2'),(SELECT maint FROM ef),9,'application/pdf');
-INSERT INTO ef_results SELECT 'fin_sup2',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_sup2'),pg_temp.k('fin-000021'),pg_temp.rev('r_a1'),'{}');
-SELECT pg_temp.e_assert((SELECT jsonb_typeof(result->'satisfaction')='null' FROM ef_results WHERE label='fin_sup2'),'supplementary evidence produced a satisfaction');
+-- An informational SHA-256 offered only at finalization is accepted and changes nothing on the immutable row.
+INSERT INTO ef_results SELECT 'fin_sup2',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_sup2'),pg_temp.k('fin-000021'),pg_temp.rev('r_a1'),'{"sha256":"4444444444444444444444444444444444444444444444444444444444444444"}');
+SELECT pg_temp.e_assert((SELECT jsonb_typeof(result->'satisfaction')='null' AND result->'evidence'->>'state'='finalized' AND result->'evidence'->>'declared_sha256' IS NULL FROM ef_results WHERE label='fin_sup2'),'supplementary evidence produced a satisfaction or rewrote its identity');
 SELECT pg_temp.e_assert((SELECT evidence_status_current='not_required' AND evidence_satisfied_at IS NULL FROM public.operation_execution_receipts WHERE id=(SELECT id FROM ef_ids WHERE label='r_a1')),'supplementary evidence changed a receipt without rules');
 RESET ROLE;
 SELECT pg_temp.e_login('admin_a');
@@ -362,7 +381,7 @@ RESET ROLE;
 -- An object owned by someone else under the uploader's path never counts.
 SELECT pg_temp.e_login('maint');
 SET LOCAL ROLE authenticated;
-INSERT INTO ef_results SELECT 'prep4',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac3'),pg_temp.k('prep-000030'),'{"kind":"photo","rule_label":"Panel photo","filename":"panel.webp","mime":"image/webp","size_bytes":77}');
+INSERT INTO ef_results SELECT 'prep4',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac3'),pg_temp.k('prep-000030'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel.webp","mime":"image/webp","size_bytes":77}'));
 INSERT INTO ef_ids SELECT 'ev4',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep4';
 RESET ROLE;
 -- Modelled foreign object: written outside the client policy (the way a misrouted service upload would arrive).
@@ -384,10 +403,115 @@ SELECT pg_temp.e_denied($q$SELECT public.fail_operation_evidence_review((SELECT 
 RESET ROLE;
 SELECT pg_temp.e_assert((SELECT state='prepared' FROM public.operation_evidence WHERE id=(SELECT id FROM ef_ids WHERE label='ev4')),'a non-uploader failed someone else''s evidence');
 
+-- Checksum verification: the declared MD5 is checked against the object's eTag when the upload is marked and again at finalization.
+SELECT pg_temp.e_login('maint');
+SET LOCAL ROLE authenticated;
+-- Mismatch at upload marking: the row fails durably (checksum_mismatch) with both values on the event and nothing raised; the failed row can neither be marked nor finalized; the receipt stays missing.
+INSERT INTO ef_results SELECT 'prep_c1',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac4'),pg_temp.k('prep-000080'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel-c1.jpg","mime":"image/jpeg","size_bytes":64}'));
+INSERT INTO ef_ids SELECT 'ev_c1',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_c1';
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c1'),(SELECT maint FROM ef),64,'image/jpeg','other bytes');
+INSERT INTO ef_results SELECT 'up_c1',public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev_c1'),pg_temp.k('up-000080'));
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='checksum_mismatch' AND (result->>'replayed')::boolean=false AND result->'evidence'->>'state'='failed' AND result->'evidence'->>'failure_reason'='checksum_mismatch' AND result->'evidence'->>'failed_at' IS NOT NULL
+ AND (result->'evidence'->>'checksum_verified')::boolean=false AND result->'evidence'->>'object_id' IS NULL AND result->'event'->>'event_kind'='failed' AND result->'event'->'details'->>'failure_kind'='checksum_mismatch'
+ AND result->'event'->'details'->>'declared_md5'=md5('panel-c1.jpg') AND result->'event'->'details'->>'observed_md5'=md5('other bytes') AND result->'event'->'details'->>'observed_etag'='"'||md5('other bytes')||'"'
+ FROM ef_results WHERE label='up_c1'),'a checksum mismatch did not fail the row durably with both values');
+SELECT pg_temp.e_assert((SELECT state='failed' AND failure_reason='checksum_mismatch' FROM public.operation_evidence WHERE id=(SELECT id FROM ef_ids WHERE label='ev_c1')),'the mismatch failure was not durable');
+INSERT INTO ef_results SELECT 'up_c1_replay',public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev_c1'),pg_temp.k('up-000080'));
+SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean AND result->>'outcome'='checksum_mismatch' FROM ef_results WHERE label='up_c1_replay'),'mismatch replay did not report the same outcome');
+SELECT pg_temp.e_expect($q$SELECT public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev_c1'),pg_temp.k('up-000081'))$q$,'has failed');
+SELECT pg_temp.e_expect($q$SELECT public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c1'),pg_temp.k('fin-000080'),pg_temp.rev('r_fac4'),'{}')$q$,'has failed');
+SELECT pg_temp.e_assert((SELECT evidence_status_current='missing' AND evidence_satisfied_at IS NULL FROM public.operation_execution_receipts WHERE id=(SELECT id FROM ef_ids WHERE label='r_fac4'))
+ AND (SELECT execution_state='performed_missing_evidence' FROM public.operation_task_instances WHERE id=(SELECT id FROM ef_ids WHERE label='occ_fac_d4')),'a mismatched upload satisfied anything');
+-- Multipart eTag: uploaded but unverified; finalization refuses and the row stays uploaded; the uploader fails it explicitly.
+INSERT INTO ef_results SELECT 'prep_c2',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac4'),pg_temp.k('prep-000082'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel-c2.jpg","mime":"image/jpeg","size_bytes":64}'));
+INSERT INTO ef_ids SELECT 'ev_c2',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_c2';
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c2'),(SELECT maint FROM ef),64,'image/jpeg',NULL,'"'||md5('panel-c2.jpg')||'-3"');
+INSERT INTO ef_results SELECT 'up_c2',public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev_c2'),pg_temp.k('up-000082'));
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='checksum_unverifiable' AND result->'evidence'->>'state'='uploaded' AND (result->'evidence'->>'checksum_verified')::boolean=false AND result->'evidence'->>'checksum_method' IS NULL AND result->'evidence'->>'checksum_verified_at' IS NULL
+ AND result->'evidence'->>'object_id' IS NOT NULL AND result->'event'->>'event_kind'='uploaded' AND result->'event'->'details'->>'etag_kind'='multipart' FROM ef_results WHERE label='up_c2'),'a multipart eTag did not leave the row uploaded and unverified');
+SELECT pg_temp.e_expect($q$SELECT public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c2'),pg_temp.k('fin-000082'),pg_temp.rev('r_fac4'),'{}')$q$,'checksum could not be verified from the stored object');
+SELECT pg_temp.e_assert((SELECT state='uploaded' AND NOT checksum_verified FROM public.operation_evidence WHERE id=(SELECT id FROM ef_ids WHERE label='ev_c2')),'a refused finalization moved an unverified row');
+INSERT INTO ef_results SELECT 'fail_c2',public.fail_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c2'),pg_temp.k('fail-000082'),'{"reason":"Storage returned a multipart eTag"}');
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='failed' AND result->'evidence'->>'state'='failed' AND result->'event'->'details'->>'previous_state'='uploaded' FROM ef_results WHERE label='fail_c2'),'explicit failure of an unverified upload did not work');
+-- The object changed between upload marking and finalization (its eTag moved): object_changed, durable, with the recorded and observed facts on the event; nothing satisfied.
+INSERT INTO ef_results SELECT 'prep_c3',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac4'),pg_temp.k('prep-000083'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel-c3.jpg","mime":"image/jpeg","size_bytes":64}'));
+INSERT INTO ef_ids SELECT 'ev_c3',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_c3';
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c3'),(SELECT maint FROM ef),64,'image/jpeg');
+INSERT INTO ef_results SELECT 'up_c3',public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev_c3'),pg_temp.k('up-000083'));
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='uploaded' AND (result->'evidence'->>'checksum_verified')::boolean FROM ef_results WHERE label='up_c3'),'a matching upload was not verified');
+RESET ROLE;
+-- Bytes replaced outside any client policy (no client may update the bucket): the stored eTag moves under the same object id.
+UPDATE storage.objects SET metadata=metadata||jsonb_build_object('eTag','"'||md5('replaced bytes')||'"') WHERE bucket_id='operation-evidence' AND name=(SELECT object_path FROM public.operation_evidence WHERE id=(SELECT id FROM ef_ids WHERE label='ev_c3'));
+SELECT pg_temp.e_login('maint');
+SET LOCAL ROLE authenticated;
+INSERT INTO ef_results SELECT 'fin_c3',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c3'),pg_temp.k('fin-000083'),pg_temp.rev('r_fac4'),'{}');
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='object_changed' AND (result->>'replayed')::boolean=false AND result->'evidence'->>'state'='failed' AND result->'evidence'->>'failure_reason'='object_changed' AND jsonb_typeof(result->'satisfaction')='null'
+ AND result->'event'->>'event_kind'='failed' AND result->'event'->'details'->>'failure_kind'='object_changed' AND result->'event'->>'expected_receipt_revision'=pg_temp.rev('r_fac4')
+ AND result->'event'->'details'->'recorded'->>'object_etag'='"'||md5('panel-c3.jpg')||'"' AND result->'event'->'details'->'observed'->>'object_etag'='"'||md5('replaced bytes')||'"'
+ FROM ef_results WHERE label='fin_c3'),'a changed object did not fail finalization durably');
+INSERT INTO ef_results SELECT 'fin_c3_replay',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c3'),pg_temp.k('fin-000083'),pg_temp.rev('r_fac4'),'{}');
+SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean AND result->>'outcome'='object_changed' FROM ef_results WHERE label='fin_c3_replay'),'object_changed replay did not report the same outcome');
+SELECT pg_temp.e_assert((SELECT evidence_status_current='missing' FROM public.operation_execution_receipts WHERE id=(SELECT id FROM ef_ids WHERE label='r_fac4')),'a changed object satisfied the receipt');
+-- The object row replaced under the same path (new id, same eTag and owner): object_changed.
+INSERT INTO ef_results SELECT 'prep_c4',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac4'),pg_temp.k('prep-000084'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel-c4.jpg","mime":"image/jpeg","size_bytes":64}'));
+INSERT INTO ef_ids SELECT 'ev_c4',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_c4';
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c4'),(SELECT maint FROM ef),64,'image/jpeg');
+INSERT INTO ef_results SELECT 'up_c4',public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev_c4'),pg_temp.k('up-000084'));
+RESET ROLE;
+DELETE FROM storage.objects WHERE bucket_id='operation-evidence' AND name=(SELECT object_path FROM public.operation_evidence WHERE id=(SELECT id FROM ef_ids WHERE label='ev_c4'));
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c4'),(SELECT maint FROM ef),64,'image/jpeg');
+SELECT pg_temp.e_login('maint');
+SET LOCAL ROLE authenticated;
+INSERT INTO ef_results SELECT 'fin_c4',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c4'),pg_temp.k('fin-000084'),pg_temp.rev('r_fac4'),'{}');
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='object_changed' AND result->'evidence'->>'state'='failed' AND result->'event'->'details'->'observed'->>'object_id'<>result->'event'->'details'->'recorded'->>'object_id' FROM ef_results WHERE label='fin_c4'),'a replaced object row finalized');
+-- The Storage version moved under the same id and eTag: object_changed.
+INSERT INTO ef_results SELECT 'prep_c5',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac4'),pg_temp.k('prep-000085'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel-c5.jpg","mime":"image/jpeg","size_bytes":64}'));
+INSERT INTO ef_ids SELECT 'ev_c5',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_c5';
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c5'),(SELECT maint FROM ef),64,'image/jpeg');
+INSERT INTO ef_results SELECT 'up_c5',public.mark_operation_evidence_uploaded_review((SELECT id FROM ef_ids WHERE label='ev_c5'),pg_temp.k('up-000085'));
+RESET ROLE;
+UPDATE storage.objects SET version=gen_random_uuid()::text WHERE bucket_id='operation-evidence' AND name=(SELECT object_path FROM public.operation_evidence WHERE id=(SELECT id FROM ef_ids WHERE label='ev_c5'));
+SELECT pg_temp.e_login('maint');
+SET LOCAL ROLE authenticated;
+INSERT INTO ef_results SELECT 'fin_c5',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c5'),pg_temp.k('fin-000085'),pg_temp.rev('r_fac4'),'{}');
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='object_changed' AND result->'evidence'->>'state'='failed' FROM ef_results WHERE label='fin_c5'),'a moved Storage version finalized');
+-- eTag normalisation: a weak, quoted, upper-case MD5 verifies; finalization straight from prepared verifies once and satisfies the same performance once after every failure above.
+INSERT INTO ef_results SELECT 'prep_c6',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac4'),pg_temp.k('prep-000086'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"panel-c6.jpg","mime":"image/jpeg","size_bytes":64}'));
+INSERT INTO ef_ids SELECT 'ev_c6',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_c6';
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c6'),(SELECT maint FROM ef),64,'image/jpeg',NULL,'W/"'||upper(md5('panel-c6.jpg'))||'"');
+INSERT INTO ef_results SELECT 'fin_c6',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c6'),pg_temp.k('fin-000086'),pg_temp.rev('r_fac4'),'{}');
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='finalized' AND result->'evidence'->>'state'='finalized' AND (result->'evidence'->>'checksum_verified')::boolean AND result->'evidence'->>'checksum_method'='storage_etag_md5' AND result->'evidence'->>'uploaded_at' IS NOT NULL
+ AND result->'evidence'->>'object_etag'='W/"'||upper(md5('panel-c6.jpg'))||'"' AND result->'satisfaction'->>'receipt_evidence_status'='complete' AND result->'satisfaction'->'occurrence'->>'execution_state'='completed' FROM ef_results WHERE label='fin_c6'),'a normalised eTag did not verify and satisfy');
+SELECT pg_temp.e_assert((SELECT array_agg(event_kind ORDER BY event_seq)=ARRAY['prepared','uploaded','finalized'] FROM public.operation_evidence_events WHERE evidence_id=(SELECT id FROM ef_ids WHERE label='ev_c6'))
+ AND (SELECT count(*)=1 FROM public.operation_evidence_events WHERE receipt_id=(SELECT id FROM ef_ids WHERE label='r_fac4') AND event_kind='satisfied'),'finalization from prepared did not record the upload once and satisfy once');
+SELECT pg_temp.e_assert((SELECT array_agg(state ORDER BY prepared_at)=ARRAY['failed','failed','failed','failed','failed','finalized'] FROM public.operation_evidence WHERE receipt_id=(SELECT id FROM ef_ids WHERE label='r_fac4')),'the receipt''s evidence history is not five durable failures and one finalization');
+-- The same bytes (by MD5) never finalize twice on one receipt: a later preparation replays the existing id.
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac4'),pg_temp.k('prep-000087'),pg_temp.obj('{"kind":"photo","filename":"panel-c6.jpg","mime":"image/jpeg","size_bytes":64}'))$q$,'already finalized for these bytes','evidence_id='||(SELECT id FROM ef_ids WHERE label='ev_c6'));
+-- Finalization straight from prepared runs under the upload rules: a mismatch fails the row under the finalize request's own key; an unverifiable eTag leaves it uploaded and the next finalize refuses.
+INSERT INTO ef_results SELECT 'prep_c7',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_link2'),pg_temp.k('prep-000088'),pg_temp.obj('{"kind":"document","filename":"note-c7.pdf","mime":"application/pdf","size_bytes":12}'));
+INSERT INTO ef_ids SELECT 'ev_c7',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_c7';
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c7'),(SELECT maint FROM ef),12,'application/pdf','other bytes');
+INSERT INTO ef_results SELECT 'fin_c7',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c7'),pg_temp.k('fin-000088'),pg_temp.rev('r_link2'),'{}');
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='checksum_mismatch' AND result->'evidence'->>'state'='failed' AND result->'evidence'->>'failure_reason'='checksum_mismatch' AND result->'event'->>'event_kind'='failed' AND result->'event'->>'request_key'=pg_temp.k('fin-000088') FROM ef_results WHERE label='fin_c7'),'finalization from prepared did not fail a mismatch durably');
+-- The failed event of a finalization names the receipt revision it was made under; the same failure at upload marking carries none.
+SELECT pg_temp.e_assert((SELECT result->'event'->>'expected_receipt_revision'=pg_temp.rev('r_link2') FROM ef_results WHERE label='fin_c7') AND (SELECT result->'event'->>'expected_receipt_revision' IS NULL FROM ef_results WHERE label='up_c1'),'the finalize-path mismatch event did not carry the expected receipt revision');
+INSERT INTO ef_results SELECT 'fin_c7_replay',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c7'),pg_temp.k('fin-000088'),pg_temp.rev('r_link2'),'{}');
+SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean AND result->>'outcome'='checksum_mismatch' FROM ef_results WHERE label='fin_c7_replay'),'finalize mismatch replay did not report the same outcome');
+INSERT INTO ef_results SELECT 'prep_c8',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_link2'),pg_temp.k('prep-000089'),pg_temp.obj('{"kind":"document","filename":"note-c8.pdf","mime":"application/pdf","size_bytes":12}'));
+INSERT INTO ef_ids SELECT 'ev_c8',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_c8';
+SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_c8'),(SELECT maint FROM ef),12,'application/pdf',NULL,'"'||md5('note-c8.pdf')||'-2"');
+INSERT INTO ef_results SELECT 'fin_c8',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c8'),pg_temp.k('fin-000089'),pg_temp.rev('r_link2'),'{}');
+SELECT pg_temp.e_assert((SELECT result->>'outcome'='checksum_unverifiable' AND result->'evidence'->>'state'='uploaded' AND (result->'evidence'->>'checksum_verified')::boolean=false AND result->'event'->>'event_kind'='uploaded' AND result->'event'->>'request_key'=pg_temp.k('fin-000089') FROM ef_results WHERE label='fin_c8'),'finalization from prepared did not leave an unverifiable upload uploaded');
+INSERT INTO ef_results SELECT 'fin_c8_replay',public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c8'),pg_temp.k('fin-000089'),pg_temp.rev('r_link2'),'{}');
+SELECT pg_temp.e_assert((SELECT (result->>'replayed')::boolean AND result->>'outcome'='checksum_unverifiable' FROM ef_results WHERE label='fin_c8_replay'),'unverifiable finalize replay did not report the same outcome');
+SELECT pg_temp.e_expect($q$SELECT public.finalize_operation_evidence_review((SELECT id FROM ef_ids WHERE label='ev_c8'),pg_temp.k('fin-000090'),pg_temp.rev('r_link2'),'{}')$q$,'checksum could not be verified from the stored object');
+SELECT pg_temp.e_assert((SELECT evidence_status_current='missing' FROM public.operation_execution_receipts WHERE id=(SELECT id FROM ef_ids WHERE label='r_link2')) AND (SELECT count(*)=0 FROM public.operation_evidence WHERE receipt_id=(SELECT id FROM ef_ids WHERE label='r_link2') AND state='finalized'),'an unverified or mismatched object attached to the receipt');
+RESET ROLE;
+
 -- Review-required work: finalized evidence moves the occurrence to awaiting verification, and only an independent reviewer completes it.
 SELECT pg_temp.e_login('admin_a');
 SET LOCAL ROLE authenticated;
-INSERT INTO ef_results SELECT 'prep_emp',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_emp1'),pg_temp.k('prep-000040'),'{"kind":"document","rule_label":"Signed checklist","filename":"checklist.pdf","mime":"application/pdf","size_bytes":4096}');
+INSERT INTO ef_results SELECT 'prep_emp',public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_emp1'),pg_temp.k('prep-000040'),pg_temp.obj('{"kind":"document","rule_label":"Signed checklist","filename":"checklist.pdf","mime":"application/pdf","size_bytes":4096}'));
 INSERT INTO ef_ids SELECT 'ev_emp',(result->'evidence'->>'id')::uuid FROM ef_results WHERE label='prep_emp';
 SELECT pg_temp.put((SELECT id FROM ef_ids WHERE label='ev_emp'),(SELECT admin_a FROM ef),4096,'application/pdf');
 SELECT pg_temp.e_expect($q$SELECT public.verify_operation_work_review((SELECT id FROM ef_ids WHERE label='occ_emp_d1'),pg_temp.k('ver-000040'),'{"decision":"verified"}')$q$,'not awaiting verification');
@@ -425,7 +549,7 @@ RESET ROLE;
 SELECT pg_temp.e_login('maint');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_link2'),pg_temp.k('prep-000072'),jsonb_build_object('kind','linked_record','rule_label','Vault document','linked_table','employee_file_records','linked_record_id',(SELECT rec_emp1_pers FROM ef)))$q$,'not readable for this receipt');
-SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_link2'),pg_temp.k('prep-000073'),'{"kind":"photo","filename":"fraction.jpg","mime":"image/jpeg","size_bytes":1234.5}')$q$,'size_bytes must be');
+SELECT pg_temp.e_expect($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_link2'),pg_temp.k('prep-000073'),pg_temp.obj('{"kind":"photo","filename":"fraction.jpg","mime":"image/jpeg","size_bytes":1234.5}'))$q$,'size_bytes must be');
 RESET ROLE;
 
 -- Direct DML and forged settings are refused; evidence and events are immutable; states move only forward.
@@ -462,10 +586,11 @@ SELECT set_config('haven.operation_occurrence_command','',true);
 SELECT pg_temp.e_login('maint');
 DELETE FROM auth.sessions WHERE id=(SELECT maint_session FROM ef);
 SET LOCAL ROLE authenticated;
-SELECT pg_temp.e_denied($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac3'),pg_temp.k('prep-000060'),'{"kind":"photo","rule_label":"Panel photo","filename":"late.jpg","mime":"image/jpeg","size_bytes":10}')$q$);
+SELECT pg_temp.e_denied($q$SELECT public.prepare_operation_evidence_review((SELECT id FROM ef_ids WHERE label='r_fac3'),pg_temp.k('prep-000060'),pg_temp.obj('{"kind":"photo","rule_label":"Panel photo","filename":"late.jpg","mime":"image/jpeg","size_bytes":10}'))$q$);
 RESET ROLE;
 SELECT pg_temp.e_assert(NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name IN('operation_execution_receipts','operation_task_instances') AND column_name IN('object_path','filename')),'a receipt or task row carries an object path');
-SELECT pg_temp.e_assert((SELECT count(*)=9 FROM public.operation_evidence) AND (SELECT count(*)=4 FROM public.operation_evidence_events WHERE event_kind='satisfied'),'unexpected evidence or satisfaction count');
+SELECT pg_temp.e_assert((SELECT count(*)=17 FROM public.operation_evidence) AND (SELECT count(*)=5 FROM public.operation_evidence_events WHERE event_kind='satisfied'),'unexpected evidence or satisfaction count');
+SELECT pg_temp.e_assert(NOT EXISTS(SELECT 1 FROM public.operation_evidence WHERE state='finalized' AND evidence_kind<>'linked_record' AND NOT (checksum_verified AND checksum_method='storage_etag_md5' AND checksum_verified_at IS NOT NULL)),'an object finalized without a verified checksum');
 SELECT pg_temp.e_assert(NOT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE '%operation_evidence%' AND p.prosecdef),'a public evidence RPC is definer');
 SELECT 'COL-143 verified evidence behavior PASS' result;
 ROLLBACK;

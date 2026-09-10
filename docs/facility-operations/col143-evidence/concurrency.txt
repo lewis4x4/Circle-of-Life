@@ -1,3 +1,4 @@
+# COL-143 evidence concurrency, run 2026-09-10T19:56:22Z on the rebuilt baseline col143_base343 (stub + migrations through the amended 343, no probes), native PostgreSQL 17 cluster port 55443
 {
   "issue": "COL-143",
   "baseline_database": "col143_base343",

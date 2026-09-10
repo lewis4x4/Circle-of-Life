@@ -1,5 +1,7 @@
 # COL-143 settled engineering contracts (source-only portion)
 
+**Amended 2026-09-10 by [checksum-contracts.md](checksum-contracts.md):** the checksum rules in §2.1 (declared checksum recorded but not verified), §3 (prepare payload `sha256?`), §4 (`sha256` optional) and §5 (same-`sha256` replay) are superseded. The client now declares the file MD5, the database verifies it against the Storage-computed eTag at mark-uploaded and again at finalization, a mismatch or a changed object fails the row durably, and nothing finalizes unverified. Read the amendment with this document.
+
 Settled 2026-09-10 from the live COL-143 acceptance, BUILD-SCOPE section 5 ("Evidence" row; "Evidence supplied after performance") and the delivered COL-133/142 contracts, following the Storage pattern of `335_employee_file_lifecycle.sql`. Migration: `supabase/migrations/343_hfo_verified_evidence.sql` (provisional branch-local slot, stacked on 342). Probe: `supabase/tests/review_hfo_verified_evidence.sql`. Race script: `scripts/facility-operations/test-evidence-concurrency.py`.
 
 **Blocker kept explicit.** Acceptance item 3 (a real upload, finalize, completion and corporate download with positive hosted Storage HTTP proof) needs hosted transport. This segment builds and proves everything up to the byte transfer with local `storage.objects` rows standing in for uploads (the way 335's probe does), and the issue stays In Progress until the hosted proof is retained. Q10 (what counts as done) and Q23 (paperwork capture rules) stay open.

@@ -1,0 +1,92 @@
+{
+  "base_commit": "5367f6e7",
+  "branch": "codex/hfo-col143-evidence",
+  "scope": "checksum-verification amendment; hosted Storage proof open",
+  "recorded_at": "2026-09-10T20:06:50.570Z",
+  "files": [
+    {
+      "path": "docs/facility-operations/COL-143-HANDOFF.md",
+      "sha256": "07cf5ee99f7fa9c8ac6a289bc91bd3b0cb4e67f6c3f9fb34b1395f6260a31c74"
+    },
+    {
+      "path": "docs/facility-operations/OWNER-DECISIONS.md",
+      "sha256": "d3e104e1dbaef1291993f3f6b6dcec86842b54dae46f992d13aaad25731b3c78"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/concurrency.txt",
+      "sha256": "8ed9ddc6c13c4f560e915892a11bdcdf99de2969255844afb75aa3aa19dc6fd9"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/engineering-contracts.md",
+      "sha256": "8a5652f91d82c406297c5433c0a169f3eba77406f978e450c4cbee50c9253ffd"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-evidence.md",
+      "sha256": "10895d960164006e8b588b6b6a8c1c5d4ccc703356ff39d5ccfe0d6397f8bbef"
+    },
+    {
+      "path": "scripts/facility-operations/test-evidence-concurrency.py",
+      "sha256": "d1a2cb32ac92759ef232afb26cd5e44349eb8bb9a560aa8b50f29eb76db821ad"
+    },
+    {
+      "path": "scripts/pg-verify-stub.sql",
+      "sha256": "aa7969f4a7b6208407c45b6001924ee2ed2c72ccba9887a56d53a6556c4b21a7"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/[id]/finalize/route.ts",
+      "sha256": "4e757f03cbb7f6428b98d62257d3cca62adf19f4bfb5ebd643ec5e069c1abffc"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/[id]/uploaded/route.ts",
+      "sha256": "db1511d1b3163b53a5a2b37fec3e8fe7a8800754629a048e6826f5704ad9d4c9"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/route.test.ts",
+      "sha256": "e695af773449cf9274f2bcfc1ad85563d4ecebbef6f45c2f4f0eb40a964fb3ec"
+    },
+    {
+      "path": "src/app/api/admin/operations/evidence/route.ts",
+      "sha256": "937e0f7bc207556e7d5431c4f27782b840335c71350dcb325811206b7f9753b6"
+    },
+    {
+      "path": "src/lib/operations/evidence.test.ts",
+      "sha256": "297a0e4186b6c6fe2ab86120079f0acac95423b0b889f3aff784886626dbf0ca"
+    },
+    {
+      "path": "src/lib/operations/evidence.ts",
+      "sha256": "2252a450ab546b02ec1b2320ca847a80223a3c87916abcd0e86db506f6a3478d"
+    },
+    {
+      "path": "supabase/migrations/343_hfo_verified_evidence.sql",
+      "sha256": "77b28fe638bb604050b9d1ae522c8f8317ef72f62919d359277e279b47fdcc80"
+    },
+    {
+      "path": "supabase/tests/review_hfo_verified_evidence.sql",
+      "sha256": "3a3c5cb7dc564c99f4549a5306947d79fe4c42a77f233ad78ddb246bd23d56b9"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/checksum-contracts.md",
+      "sha256": "85f37839067091d655239f05f9469a5d0a245c8960913e4e1baf576486d54ae3"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/checksum-independent-review.json",
+      "sha256": "8dbe4443499ed87ae02ef239244699d37640db594b608b44bbbe534557374e13"
+    },
+    {
+      "path": "docs/facility-operations/col143-evidence/checksum-verification.json",
+      "sha256": "6bfce543397505afa875a20a339d524c9e10a3860efd68e5eddb327b33225e0a"
+    },
+    {
+      "path": "src/lib/operations/md5.test.ts",
+      "sha256": "fddfc033f683fc338c44c42d5651db93b6ab0bffe03965a2c0bb98ea71771b3f"
+    },
+    {
+      "path": "src/lib/operations/md5.ts",
+      "sha256": "1970f11071ae3e5944131ada87092aa4410a5cf9ab4166cbe82bbfb28b951e62"
+    },
+    {
+      "path": "test-results/agent-gates/2026-09-10T20-02-21-103Z-COL-143-HFO-EVIDENCE-CHECKSUM.json",
+      "sha256": "090dd1672579d2003f6f3a9126c260c5961eb3a4b69bf5364e2b01e7726e9e54"
+    }
+  ]
+}

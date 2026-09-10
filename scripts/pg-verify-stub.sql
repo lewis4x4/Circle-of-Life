@@ -187,6 +187,7 @@ CREATE TABLE IF NOT EXISTS storage.objects (
   updated_at timestamptz DEFAULT now(),
   last_accessed_at timestamptz DEFAULT now(),
   metadata jsonb DEFAULT '{}'::jsonb,
+  version text,
   UNIQUE (bucket_id, name)
 );
 

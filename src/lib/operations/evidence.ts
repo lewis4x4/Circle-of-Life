@@ -31,12 +31,23 @@ export const EVIDENCE_MAX_BYTES = 20 * 1024 * 1024;
 export const LINKED_RECORD_TABLES = ["facility_documents", "employee_file_records"] as const;
 export const EVIDENCE_COMMANDS = ["prepare", "uploaded", "finalize", "fail"] as const;
 export type EvidenceCommand = (typeof EVIDENCE_COMMANDS)[number];
+/**
+ * What a command did with the evidence, as the database reports it: the plain
+ * transitions, or the checksum outcomes. A checksum mismatch or a changed
+ * object is a durable failure (the row is `failed`), and an unverifiable
+ * checksum leaves the row `uploaded` but unverified; none of them is an
+ * exception, so the reply carries the row.
+ */
+export const EVIDENCE_RESULT_OUTCOMES = ["prepared", "uploaded", "finalized", "failed", "checksum_mismatch", "checksum_unverifiable", "object_changed"] as const;
+export type EvidenceResultOutcome = (typeof EVIDENCE_RESULT_OUTCOMES)[number];
 /** Signed download URLs are short-lived; the policy decides again on every request. */
 export const DOWNLOAD_URL_SECONDS = 60;
 
 const uuid = z.string().uuid();
 const text = (max: number) => z.string().trim().min(1).max(max);
 const sha256 = z.string().regex(/^[0-9a-f]{64}$/, "sha256 must be 64 hex characters");
+/** The MD5 of the bytes about to be uploaded (see md5.ts); the database verifies it against the Storage eTag. */
+const md5 = z.string().regex(/^[0-9a-f]{32}$/, "md5 must be 32 lowercase hex characters");
 /** The evidence id owns the object path; the filename is the last segment and stays plain. */
 export const filenameSchema = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/, "filename must be plain characters, at most 120 long");
 /** The receipt fingerprint the client read; the database refuses a stale one so a concurrent correction conflicts safely. */
@@ -52,6 +63,7 @@ const objectPayload = <K extends (typeof OBJECT_EVIDENCE_KINDS)[number]>(kind: K
       filename: filenameSchema,
       mime: z.enum(EVIDENCE_MIME_TYPES),
       size_bytes: z.number().int().min(1).max(EVIDENCE_MAX_BYTES),
+      md5,
       sha256: sha256.optional(),
     })
     .strict();
@@ -109,7 +121,7 @@ export function evidencePayloadProblem(error: z.ZodError): string | null {
  * every other row before it leaves the server.
  */
 export const EVIDENCE_SELECT =
-  "id, organization_id, facility_id, activity_id, subject_id, authority_class, receipt_id, task_instance_id, evidence_kind, rule_label, state, bucket_id, object_path, declared_mime, declared_size_bytes, declared_sha256, checksum_verified, object_id, object_etag, object_size_bytes, object_mime, linked_table, linked_record_id, uploaded_by, prepared_at, uploaded_at, finalized_at, finalized_by, failed_at, failure_reason, revision, created_at";
+  "id, organization_id, facility_id, activity_id, subject_id, authority_class, receipt_id, task_instance_id, evidence_kind, rule_label, state, bucket_id, object_path, declared_mime, declared_size_bytes, declared_sha256, declared_md5, checksum_verified, checksum_method, checksum_verified_at, object_id, object_etag, object_version, object_size_bytes, object_mime, linked_table, linked_record_id, uploaded_by, prepared_at, uploaded_at, finalized_at, finalized_by, failed_at, failure_reason, revision, created_at";
 
 export type EvidenceRow = Record<string, unknown> & { id: string; state?: string; uploaded_by?: string | null; object_path?: string | null };
 
@@ -143,6 +155,8 @@ const VALIDATION_FRAGMENTS = [
   "Uploaded object does not match the prepared evidence",
   "sha256 does not match the prepared evidence",
 ];
+/** Finalize refuses a row whose checksum Storage could not confirm; the uploader must re-read and fail or retry, so this is uncertain, not a conflict. */
+export const CHECKSUM_UNVERIFIABLE_WORDING = "Evidence checksum could not be verified from the stored object";
 const CONFLICT_FRAGMENTS = [
   "already saved with different content",
   "Receipt changed since it was read",
@@ -156,7 +170,7 @@ const CONFLICT_FRAGMENTS = [
   "Uploaded object not found for this evidence",
   "Linked record is not readable for this receipt",
 ];
-const TRUSTED_FRAGMENTS = [...VALIDATION_FRAGMENTS, ...CONFLICT_FRAGMENTS];
+const TRUSTED_FRAGMENTS = [...VALIDATION_FRAGMENTS, ...CONFLICT_FRAGMENTS, CHECKSUM_UNVERIFIABLE_WORDING];
 
 export type EvidenceRpcError = { code?: string; message?: string; details?: string | null } | null | undefined;
 export type MappedEvidenceError = { status: number; outcome: OutcomeClass; error: string; existing_evidence_id?: string };
@@ -175,6 +189,9 @@ const COMMAND_NOUN: Record<EvidenceCommand, string> = {
  * missing (404), conflict (409: stale receipt revision, changed replay,
  * wrong state, duplicate bytes; names the existing evidence when the
  * database does), uncertain (500; the client must re-read the evidence).
+ * A finalize refused because the stored object's checksum could not be
+ * verified is uncertain at 409: the row stays uploaded and the uploader
+ * decides whether to fail it or retry with a fresh preparation.
  */
 export function mapEvidenceRpcError(error: NonNullable<EvidenceRpcError>, command: EvidenceCommand): MappedEvidenceError {
   const message = error.message ?? "";
@@ -182,6 +199,7 @@ export function mapEvidenceRpcError(error: NonNullable<EvidenceRpcError>, comman
   const trusted = TRUSTED_FRAGMENTS.some((fragment) => message.includes(fragment));
   const existing = UUID_IN_DETAILS.exec(`${error.details ?? ""} ${message}`)?.[1];
   const withExisting = (mapped: MappedEvidenceError): MappedEvidenceError => (existing ? { ...mapped, existing_evidence_id: existing } : mapped);
+  if (error.code === "P0001" && message.includes(CHECKSUM_UNVERIFIABLE_WORDING)) return { status: 409, outcome: "uncertain", error: CHECKSUM_UNVERIFIABLE_WORDING };
   if (error.code === "42501") return { status: 403, outcome: "denied", error: "Operation unavailable" };
   if (error.code === "P0002") return { status: 404, outcome: "missing", error: "Evidence not found" };
   if (error.code === "22023") return { status: 400, outcome: "validation", error: trusted ? message : `${noun} contains an invalid value` };
@@ -202,18 +220,48 @@ export type EvidenceOutcome = {
   event: Record<string, unknown> & { id: string };
   replayed: boolean;
   satisfaction?: Record<string, unknown> | null;
+  outcome: EvidenceResultOutcome;
 };
 
 function hasId(value: unknown): value is Record<string, unknown> & { id: string } {
   return !!value && typeof value === "object" && typeof (value as { id?: unknown }).id === "string";
 }
 
-/** Every evidence command returns the evidence row, the event it wrote (or replayed) and the replay flag; finalize adds the satisfaction outcome. */
+/** Every evidence command returns the evidence row, the event it wrote (or replayed), the replay flag and what it did; finalize adds the satisfaction outcome. */
 export function isEvidenceOutcome(value: unknown): value is EvidenceOutcome {
   if (!value || typeof value !== "object") return false;
-  const candidate = value as { evidence?: unknown; event?: unknown; replayed?: unknown; satisfaction?: unknown };
+  const candidate = value as { evidence?: unknown; event?: unknown; replayed?: unknown; satisfaction?: unknown; outcome?: unknown };
   const satisfactionOk = candidate.satisfaction === undefined || candidate.satisfaction === null || (typeof candidate.satisfaction === "object");
-  return hasId(candidate.evidence) && hasId(candidate.event) && typeof candidate.replayed === "boolean" && satisfactionOk;
+  const outcomeOk = typeof candidate.outcome === "string" && (EVIDENCE_RESULT_OUTCOMES as readonly string[]).includes(candidate.outcome);
+  return hasId(candidate.evidence) && hasId(candidate.event) && typeof candidate.replayed === "boolean" && satisfactionOk && outcomeOk;
+}
+
+/**
+ * The checksum outcomes are not exceptions in the database (the failure is
+ * durable on the row) but they are not receipts either: a mismatch or a
+ * changed object is a conflict with what was uploaded, an unverifiable
+ * checksum is uncertain. Both return 409 with the evidence so the uploader
+ * can reason about the retry. Every other outcome is a receipt.
+ */
+const RESULT_CLASSES: Partial<Record<EvidenceResultOutcome, { status: number; outcome: OutcomeClass; error: string }>> = {
+  checksum_mismatch: { status: 409, outcome: "conflict", error: "Uploaded object does not match the declared checksum; the evidence has failed and a new preparation is needed" },
+  object_changed: { status: 409, outcome: "conflict", error: "Stored object changed after it was uploaded; the evidence has failed and a new preparation is needed" },
+  checksum_unverifiable: { status: 409, outcome: "uncertain", error: CHECKSUM_UNVERIFIABLE_WORDING },
+};
+
+/** Reply for a command result: outcome class, the evidence outcome, the presented row, its event and the replay flag; finalize adds satisfaction. */
+export function evidenceResultReply(result: EvidenceOutcome, actorId: string, command: EvidenceCommand): { status: number; body: Record<string, unknown> } {
+  const cls = RESULT_CLASSES[result.outcome];
+  const body: Record<string, unknown> = {
+    outcome: cls?.outcome ?? "receipt",
+    evidence_outcome: result.outcome,
+    ...(cls ? { error: cls.error } : {}),
+    evidence: presentEvidence(result.evidence, actorId),
+    event: withoutRequestHash(result.event),
+    replayed: result.replayed,
+    ...(command === "finalize" || command === "prepare" ? { satisfaction: result.satisfaction ?? null } : {}),
+  };
+  return { status: cls?.status ?? 200, body };
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -293,11 +341,6 @@ export async function runEvidenceCommand(command: Exclude<EvidenceCommand, "prep
   if (!isEvidenceOutcome(result)) {
     return NextResponse.json({ error: `${COMMAND_NOUN[command]} could not be confirmed; re-read the evidence before retrying`, outcome: "uncertain" }, { status: 500 });
   }
-  return NextResponse.json({
-    outcome: "receipt",
-    evidence: presentEvidence(result.evidence, current.actor.id),
-    event: withoutRequestHash(result.event),
-    replayed: result.replayed,
-    ...(command === "finalize" ? { satisfaction: result.satisfaction ?? null } : {}),
-  });
+  const reply = evidenceResultReply(result, current.actor.id, command);
+  return NextResponse.json(reply.body, { status: reply.status });
 }

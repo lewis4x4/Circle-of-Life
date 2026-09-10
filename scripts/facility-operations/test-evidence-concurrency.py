@@ -3,9 +3,10 @@
 explicitly run-owned scratch cluster (native PostgreSQL, never Docker).
 Requires psycopg. Clones the migrated scratch database named by
 HFO_EVIDENCE_BASELINE_DB (default col143_base343, which must already carry
-migration 343) and applies the probe's fixture section. Local storage.objects
-rows stand in for uploads; no byte moves. Every clone is dropped by exact
-name in finally.
+the current migration 343 with checksum verification) and applies the
+probe's fixture section. Local storage.objects rows stand in for uploads with
+eTags equal to the MD5 of known bytes; no byte moves. Every clone is dropped
+by exact name in finally.
 
 Cases:
 1. Two finalizations of the same uploaded evidence with different request
@@ -27,6 +28,7 @@ Cases:
    commands lock occurrence, then receipt, then evidence, in that order) and
    exactly one satisfaction exists.
 """
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -62,12 +64,16 @@ def session(database, fixture, who, role):
 
 
 def prepare_and_upload(conn, receipt, key, filename):
-    payload = json.dumps({"kind": "photo", "rule_label": "Panel photo", "filename": filename, "mime": "image/jpeg", "size_bytes": 321})
+    # The known bytes of the stand-in upload are the filename; the declared MD5
+    # and the eTag Storage would write (the quoted MD5 of the stored bytes) agree.
+    digest = hashlib.md5(filename.encode()).hexdigest()
+    payload = json.dumps({"kind": "photo", "rule_label": "Panel photo", "filename": filename, "mime": "image/jpeg", "size_bytes": 321, "md5": digest})
     value = conn.execute('SELECT public.prepare_operation_evidence_review(%s,%s,%s::jsonb)', (receipt, key, payload)).fetchone()[0]
     evidence = value['evidence']['id']
-    conn.execute("INSERT INTO storage.objects(bucket_id,name,owner,metadata) VALUES('operation-evidence',%s,auth.uid(),%s::jsonb)",
-                 (value['evidence']['object_path'], json.dumps({"size": 321, "mimetype": "image/jpeg", "eTag": '"race"'})))
-    conn.execute('SELECT public.mark_operation_evidence_uploaded_review(%s,%s)', (evidence, key + '-up'))
+    conn.execute("INSERT INTO storage.objects(bucket_id,name,owner,metadata,version) VALUES('operation-evidence',%s,auth.uid(),%s::jsonb,gen_random_uuid()::text)",
+                 (value['evidence']['object_path'], json.dumps({"size": 321, "mimetype": "image/jpeg", "eTag": f'"{digest}"'})))
+    uploaded = conn.execute('SELECT public.mark_operation_evidence_uploaded_review(%s,%s)', (evidence, key + '-up')).fetchone()[0]
+    assert uploaded['outcome'] == 'uploaded' and uploaded['evidence']['checksum_verified'] is True, uploaded
     conn.commit()
     return evidence
 

@@ -38,9 +38,17 @@ CREATE TABLE public.operation_evidence (
  declared_mime text CHECK(declared_mime IS NULL OR declared_mime IN('application/pdf','image/jpeg','image/png','image/webp')),
  declared_size_bytes bigint CHECK(declared_size_bytes IS NULL OR declared_size_bytes BETWEEN 1 AND 20971520),
  declared_sha256 text CHECK(declared_sha256 IS NULL OR declared_sha256 ~ '^[0-9a-f]{64}$'),
+ -- The client declares the MD5 of the bytes it uploads; the database verifies
+ -- it against the Storage service's eTag (the one content fingerprint the
+ -- client did not write) when the upload is marked and again at finalization.
+ -- The SHA-256 stays optional and informational.
+ declared_md5 text CHECK(declared_md5 IS NULL OR declared_md5 ~ '^[0-9a-f]{32}$'),
  checksum_verified boolean NOT NULL DEFAULT false,
+ checksum_method text CHECK(checksum_method IS NULL OR checksum_method='storage_etag_md5'),
+ checksum_verified_at timestamptz,
  object_id uuid,
  object_etag text,
+ object_version text,
  object_size_bytes bigint,
  object_mime text,
  linked_table text CHECK(linked_table IS NULL OR linked_table IN('facility_documents','employee_file_records')),
@@ -58,10 +66,14 @@ CREATE TABLE public.operation_evidence (
  created_at timestamptz NOT NULL DEFAULT now(),
  FOREIGN KEY(organization_id,activity_id) REFERENCES public.operation_activities(organization_id,id),
  -- Object kinds carry a path in the bucket; a linked record carries a native reference and no object.
- CHECK((evidence_kind<>'linked_record' AND bucket_id='operation-evidence' AND object_path IS NOT NULL AND declared_mime IS NOT NULL AND declared_size_bytes IS NOT NULL AND linked_table IS NULL AND linked_record_id IS NULL
+ CHECK((evidence_kind<>'linked_record' AND bucket_id='operation-evidence' AND object_path IS NOT NULL AND declared_mime IS NOT NULL AND declared_size_bytes IS NOT NULL AND declared_md5 IS NOT NULL AND linked_table IS NULL AND linked_record_id IS NULL
    AND object_path=facility_id::text||'/'||id::text||'/'||split_part(object_path,'/',3) AND split_part(object_path,'/',3) ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$' AND array_length(string_to_array(object_path,'/'),1)=3)
-  OR (evidence_kind='linked_record' AND bucket_id IS NULL AND object_path IS NULL AND declared_mime IS NULL AND declared_size_bytes IS NULL AND declared_sha256 IS NULL AND linked_table IS NOT NULL AND linked_record_id IS NOT NULL
-   AND object_id IS NULL AND object_etag IS NULL AND object_size_bytes IS NULL AND object_mime IS NULL AND state IN('finalized'))),
+  OR (evidence_kind='linked_record' AND bucket_id IS NULL AND object_path IS NULL AND declared_mime IS NULL AND declared_size_bytes IS NULL AND declared_sha256 IS NULL AND declared_md5 IS NULL AND linked_table IS NOT NULL AND linked_record_id IS NOT NULL
+   AND object_id IS NULL AND object_etag IS NULL AND object_version IS NULL AND object_size_bytes IS NULL AND object_mime IS NULL AND NOT checksum_verified AND state IN('finalized'))),
+ -- A verified checksum names its method and instant against an observed object; an unverified one names neither.
+ CHECK((checksum_verified AND checksum_method IS NOT NULL AND checksum_verified_at IS NOT NULL AND object_id IS NOT NULL) OR (NOT checksum_verified AND checksum_method IS NULL AND checksum_verified_at IS NULL)),
+ -- Only a verified, identical object finalizes.
+ CHECK(state<>'finalized' OR evidence_kind='linked_record' OR checksum_verified),
  -- State shape: object facts arrive with the upload, finalization names who and when, failure names why.
  CHECK((state='prepared' AND uploaded_at IS NULL AND object_id IS NULL AND finalized_at IS NULL AND finalized_by IS NULL AND failed_at IS NULL AND failure_reason IS NULL)
   OR (state='uploaded' AND uploaded_at IS NOT NULL AND object_id IS NOT NULL AND object_size_bytes IS NOT NULL AND object_mime IS NOT NULL AND finalized_at IS NULL AND finalized_by IS NULL AND failed_at IS NULL AND failure_reason IS NULL)
@@ -71,8 +83,9 @@ CREATE TABLE public.operation_evidence (
  CHECK(state<>'uploaded' OR (object_size_bytes=declared_size_bytes AND object_mime=declared_mime)),
  CHECK(state<>'finalized' OR evidence_kind='linked_record' OR (object_size_bytes=declared_size_bytes AND object_mime=declared_mime))
 );
--- A retry with the same bytes deduplicates once finalized.
+-- A retry with the same bytes deduplicates once finalized (by either fingerprint).
 CREATE UNIQUE INDEX operation_evidence_finalized_bytes ON public.operation_evidence(receipt_id,declared_sha256) WHERE state='finalized' AND declared_sha256 IS NOT NULL;
+CREATE UNIQUE INDEX operation_evidence_finalized_md5 ON public.operation_evidence(receipt_id,declared_md5) WHERE state='finalized' AND declared_md5 IS NOT NULL;
 CREATE INDEX idx_operation_evidence_receipt ON public.operation_evidence(receipt_id,state);
 CREATE INDEX idx_operation_evidence_task ON public.operation_evidence(task_instance_id);
 CREATE INDEX idx_operation_evidence_uploader ON public.operation_evidence(uploaded_by) WHERE state IN('prepared','uploaded');
@@ -133,9 +146,9 @@ BEGIN
  IF NOT haven.operation_occurrence_approved() THEN RAISE EXCEPTION 'Use the evidence commands' USING ERRCODE='42501'; END IF;
  IF TG_OP='UPDATE' THEN
   IF (NEW.id,NEW.organization_id,NEW.facility_id,NEW.activity_id,NEW.subject_id,NEW.authority_class,NEW.receipt_id,NEW.task_instance_id,NEW.evidence_kind,NEW.rule_label,NEW.bucket_id,NEW.object_path,
-      NEW.declared_mime,NEW.declared_size_bytes,NEW.declared_sha256,NEW.linked_table,NEW.linked_record_id,NEW.uploaded_by,NEW.prepared_at,NEW.request_key,NEW.request_hash,NEW.created_at)
+      NEW.declared_mime,NEW.declared_size_bytes,NEW.declared_sha256,NEW.declared_md5,NEW.linked_table,NEW.linked_record_id,NEW.uploaded_by,NEW.prepared_at,NEW.request_key,NEW.request_hash,NEW.created_at)
    IS DISTINCT FROM (OLD.id,OLD.organization_id,OLD.facility_id,OLD.activity_id,OLD.subject_id,OLD.authority_class,OLD.receipt_id,OLD.task_instance_id,OLD.evidence_kind,OLD.rule_label,OLD.bucket_id,OLD.object_path,
-      OLD.declared_mime,OLD.declared_size_bytes,OLD.declared_sha256,OLD.linked_table,OLD.linked_record_id,OLD.uploaded_by,OLD.prepared_at,OLD.request_key,OLD.request_hash,OLD.created_at) THEN
+      OLD.declared_mime,OLD.declared_size_bytes,OLD.declared_sha256,OLD.declared_md5,OLD.linked_table,OLD.linked_record_id,OLD.uploaded_by,OLD.prepared_at,OLD.request_key,OLD.request_hash,OLD.created_at) THEN
    RAISE EXCEPTION 'Evidence identity is immutable' USING ERRCODE='23514';
   END IF;
   IF NOT ((OLD.state='prepared' AND NEW.state IN('uploaded','finalized','failed')) OR (OLD.state='uploaded' AND NEW.state IN('finalized','failed'))) THEN
@@ -306,13 +319,26 @@ BEGIN
  END;
  RETURN e;
 END $$;
+-- The outcome of the request that wrote (or replayed) the event: prepared,
+-- uploaded, finalized, failed, or the checksum outcomes checksum_mismatch,
+-- checksum_unverifiable and object_changed, read from the event itself so a
+-- replay reports the same outcome as the original request.
+CREATE FUNCTION haven.operation_evidence_outcome(ev public.operation_evidence,e public.operation_evidence_events) RETURNS text
+LANGUAGE sql IMMUTABLE SET search_path='' AS $$
+ SELECT CASE e.event_kind
+  WHEN 'prepared' THEN CASE WHEN ev.evidence_kind='linked_record' THEN 'finalized' ELSE 'prepared' END
+  WHEN 'uploaded' THEN CASE WHEN coalesce((e.details->>'checksum_verified')::boolean,false) THEN 'uploaded' ELSE 'checksum_unverifiable' END
+  WHEN 'failed' THEN coalesce(e.details->>'failure_kind','failed')
+  ELSE e.event_kind END
+$$;
 CREATE FUNCTION haven.operation_evidence_reply(ev public.operation_evidence,e public.operation_evidence_events,p_replayed boolean,p_satisfaction jsonb) RETURNS jsonb
 LANGUAGE sql STABLE SET search_path='' AS $$
- SELECT jsonb_build_object('evidence',to_jsonb(ev),'event',to_jsonb(e),'replayed',p_replayed,'satisfaction',p_satisfaction)
+ SELECT jsonb_build_object('evidence',to_jsonb(ev),'event',to_jsonb(e),'replayed',p_replayed,'satisfaction',p_satisfaction,'outcome',haven.operation_evidence_outcome(ev,e))
 $$;
 REVOKE ALL ON FUNCTION haven.operation_receipt_evidence_rules(public.operation_execution_receipts),haven.operation_evidence_rule_met(uuid,jsonb),haven.operation_receipt_evidence_unmet(public.operation_execution_receipts),
  haven.operation_evidence_linked_readable(text,uuid,public.operation_execution_receipts),haven.operation_evidence_request_problem(text,jsonb,text[]),haven.operation_evidence_request_hash(jsonb),
  haven.operation_evidence_replay(uuid,text,text),haven.write_operation_evidence_event(public.operation_execution_receipts,uuid,text,text,text,text,jsonb),
+ haven.operation_evidence_outcome(public.operation_evidence,public.operation_evidence_events),
  haven.operation_evidence_reply(public.operation_evidence,public.operation_evidence_events,boolean,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Receipt authority: the receipt is read without a lock only to find its
@@ -382,22 +408,66 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION haven.satisfy_operation_receipt_evidence(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role;
 
--- Object presence check shared by upload marking and finalization: the object
--- must exist under the prepared path, be owned by the uploader and match the
--- declared size and type. Fills the object facts on the row.
-CREATE FUNCTION haven.operation_evidence_object(ev public.operation_evidence) RETURNS public.operation_evidence
+-- The Storage eTag, normalised: surrounding quotes and a weak prefix removed,
+-- lower-cased. A 32-hex value is the MD5 of the stored bytes (single-request
+-- upload); a value with a -N suffix is a multipart fingerprint; anything else
+-- is unknown. Only an MD5 verifies a declared checksum.
+CREATE FUNCTION haven.operation_evidence_etag(p_etag text) RETURNS text
+LANGUAGE sql IMMUTABLE SET search_path='' AS $$
+ SELECT nullif(lower(btrim(regexp_replace(btrim(coalesce(p_etag,'')),'^[Ww]/',''),'"')),'')
+$$;
+-- Observation of the object under the owned path: presence, owner, size,
+-- type, eTag (raw and normalised), Storage version and the eTag kind. Never
+-- raises and writes nothing; the commands decide what an observation means.
+CREATE FUNCTION haven.operation_evidence_object(ev public.operation_evidence) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SET search_path='' AS $$
-DECLARE obj record;
+DECLARE obj jsonb; etag text;
 BEGIN
- SELECT s.id,s.owner,s.metadata INTO obj FROM storage.objects s WHERE s.bucket_id=ev.bucket_id AND s.name=ev.object_path;
- IF NOT FOUND OR obj.owner IS DISTINCT FROM ev.uploaded_by THEN RAISE EXCEPTION 'Uploaded object not found for this evidence' USING ERRCODE='P0001'; END IF;
- IF nullif(obj.metadata->>'size','')::bigint IS DISTINCT FROM ev.declared_size_bytes OR (obj.metadata->>'mimetype') IS DISTINCT FROM ev.declared_mime THEN
+ SELECT to_jsonb(s) INTO obj FROM storage.objects s WHERE s.bucket_id=ev.bucket_id AND s.name=ev.object_path;
+ IF NOT FOUND THEN RETURN jsonb_build_object('present',false); END IF;
+ etag:=haven.operation_evidence_etag(obj->'metadata'->>'eTag');
+ RETURN jsonb_build_object('present',true,'object_id',obj->>'id','owner',obj->>'owner',
+  'object_size_bytes',nullif(obj->'metadata'->>'size','')::bigint,'object_mime',obj->'metadata'->>'mimetype',
+  'object_etag',obj->'metadata'->>'eTag','object_version',obj->>'version',
+  'etag_md5',CASE WHEN etag ~ '^[0-9a-f]{32}$' THEN etag END,
+  'etag_kind',CASE WHEN etag IS NULL THEN 'missing' WHEN etag ~ '^[0-9a-f]{32}$' THEN 'md5' WHEN etag ~ '^[0-9a-f]{32}-[0-9]+$' THEN 'multipart' ELSE 'unknown' END);
+END $$;
+-- Upload check shared by upload marking and finalization from prepared (the
+-- caller holds the locks and the token; the row is prepared). The object must
+-- exist under the prepared path, be owned by the uploader and match the
+-- declared size and type (refused otherwise, nothing written). Then the
+-- checksum: an MD5 eTag different from the declared MD5 moves the row to
+-- failed (checksum_mismatch) with a failed event carrying both values, so the
+-- failure is durable and the command returns it; a matching MD5 records the
+-- object facts with checksum_verified, method and instant; an eTag that is
+-- not an MD5 records the object facts with the checksum unverified. Returns
+-- the event written. When finalizing, a verified upload's event takes a
+-- derived key so the finalized event keeps the request key, and a failed
+-- event carries the expected receipt revision the finalization was made under.
+CREATE FUNCTION haven.record_operation_evidence_upload(r public.operation_execution_receipts,ev public.operation_evidence,p_request_key text,p_request_hash text,p_finalizing boolean,p_expected_revision text,p_now timestamptz) RETURNS public.operation_evidence_events
+LANGUAGE plpgsql VOLATILE SET search_path='' AS $$
+DECLARE obs jsonb; verified boolean; e public.operation_evidence_events;
+BEGIN
+ obs:=haven.operation_evidence_object(ev);
+ IF NOT (obs->>'present')::boolean OR (obs->>'owner')::uuid IS DISTINCT FROM ev.uploaded_by THEN RAISE EXCEPTION 'Uploaded object not found for this evidence' USING ERRCODE='P0001'; END IF;
+ IF (obs->>'object_size_bytes')::bigint IS DISTINCT FROM ev.declared_size_bytes OR (obs->>'object_mime') IS DISTINCT FROM ev.declared_mime THEN
   RAISE EXCEPTION 'Uploaded object does not match the prepared evidence' USING ERRCODE='P0001';
  END IF;
- ev.object_id:=obj.id; ev.object_etag:=obj.metadata->>'eTag'; ev.object_size_bytes:=(obj.metadata->>'size')::bigint; ev.object_mime:=obj.metadata->>'mimetype';
- RETURN ev;
+ IF obs->>'etag_kind'='md5' AND obs->>'etag_md5'<>ev.declared_md5 THEN
+  UPDATE public.operation_evidence SET state='failed',failed_at=p_now,failure_reason='checksum_mismatch' WHERE id=ev.id;
+  RETURN haven.write_operation_evidence_event(r,ev.id,'failed',p_request_key,p_request_hash,p_expected_revision,jsonb_build_object('failure_kind','checksum_mismatch','reason','checksum_mismatch','rule_label',ev.rule_label,'previous_state','prepared',
+   'declared_md5',ev.declared_md5,'observed_md5',obs->>'etag_md5','observed_etag',obs->>'object_etag','object_id',obs->>'object_id','object_version',obs->>'object_version','object_size_bytes',(obs->>'object_size_bytes')::bigint,'object_mime',obs->>'object_mime'));
+ END IF;
+ verified:=obs->>'etag_kind'='md5';
+ UPDATE public.operation_evidence SET state='uploaded',uploaded_at=p_now,object_id=(obs->>'object_id')::uuid,object_etag=obs->>'object_etag',object_version=obs->>'object_version',
+  object_size_bytes=(obs->>'object_size_bytes')::bigint,object_mime=obs->>'object_mime',
+  checksum_verified=verified,checksum_method=CASE WHEN verified THEN 'storage_etag_md5' END,checksum_verified_at=CASE WHEN verified THEN p_now END WHERE id=ev.id;
+ RETURN haven.write_operation_evidence_event(r,ev.id,'uploaded',CASE WHEN p_finalizing AND verified THEN p_request_key||'|uploaded' ELSE p_request_key END,p_request_hash,NULL,
+  jsonb_build_object('object_id',obs->>'object_id','object_size_bytes',(obs->>'object_size_bytes')::bigint,'object_mime',obs->>'object_mime','object_etag',obs->>'object_etag','object_version',obs->>'object_version',
+   'etag_kind',obs->>'etag_kind','checksum_verified',verified,'checksum_method',CASE WHEN verified THEN 'storage_etag_md5' END,'declared_md5',ev.declared_md5));
 END $$;
-REVOKE ALL ON FUNCTION haven.operation_evidence_object(public.operation_evidence) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION haven.operation_evidence_etag(text),haven.operation_evidence_object(public.operation_evidence),
+ haven.record_operation_evidence_upload(public.operation_execution_receipts,public.operation_evidence,text,text,boolean,text,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
 
 -- ---------------------------------------------------------------------------
 -- Commands (session). Order in each: shape → lock → replay → state and drift
@@ -405,18 +475,18 @@ REVOKE ALL ON FUNCTION haven.operation_evidence_object(public.operation_evidence
 -- ---------------------------------------------------------------------------
 CREATE FUNCTION haven.prepare_operation_evidence(p_receipt uuid,p_request_key text,p_payload jsonb) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
-DECLARE r public.operation_execution_receipts; problem text; kind text; rule_label text; filename text; mime text; size_bytes bigint; sha text; linked_table text; linked_id uuid;
+DECLARE r public.operation_execution_receipts; problem text; kind text; rule_label text; filename text; mime text; size_bytes bigint; sha text; md5_hex text; linked_table text; linked_id uuid;
  rules jsonb; rule jsonb; canonical jsonb; request_hash text; prior public.operation_evidence_events; ev public.operation_evidence; e public.operation_evidence_events; existing public.operation_evidence;
  new_id uuid; now_at timestamptz; satisfaction jsonb; path text;
 BEGIN
- problem:=haven.operation_evidence_request_problem(p_request_key,p_payload,ARRAY['kind','rule_label','filename','mime','size_bytes','sha256','linked_table','linked_record_id']);
+ problem:=haven.operation_evidence_request_problem(p_request_key,p_payload,ARRAY['kind','rule_label','filename','mime','size_bytes','md5','sha256','linked_table','linked_record_id']);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem USING ERRCODE='22023'; END IF;
  kind:=p_payload->>'kind';
  IF kind IS NULL OR kind NOT IN('document','photo','signature','linked_record') THEN RAISE EXCEPTION 'kind must be document, photo, signature or linked_record' USING ERRCODE='22023'; END IF;
  rule_label:=nullif(btrim(coalesce(p_payload->>'rule_label','')),'');
  IF length(coalesce(rule_label,''))>200 THEN RAISE EXCEPTION 'rule_label must be at most 200 characters' USING ERRCODE='22023'; END IF;
  IF kind='linked_record' THEN
-  IF p_payload ? 'filename' OR p_payload ? 'mime' OR p_payload ? 'size_bytes' OR p_payload ? 'sha256' THEN RAISE EXCEPTION 'A linked record carries no object' USING ERRCODE='22023'; END IF;
+  IF p_payload ? 'filename' OR p_payload ? 'mime' OR p_payload ? 'size_bytes' OR p_payload ? 'md5' OR p_payload ? 'sha256' THEN RAISE EXCEPTION 'A linked record carries no object' USING ERRCODE='22023'; END IF;
   linked_table:=p_payload->>'linked_table';
   IF linked_table IS NULL OR linked_table NOT IN('facility_documents','employee_file_records') THEN RAISE EXCEPTION 'linked_table must be facility_documents or employee_file_records' USING ERRCODE='22023'; END IF;
   BEGIN linked_id:=(p_payload->>'linked_record_id')::uuid; EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'linked_record_id must be a uuid' USING ERRCODE='22023'; END;
@@ -430,13 +500,16 @@ BEGIN
   IF jsonb_typeof(p_payload->'size_bytes') IS DISTINCT FROM 'number' OR (p_payload->>'size_bytes') !~ '^[0-9]{1,9}$'
    OR (p_payload->>'size_bytes')::numeric<1 OR (p_payload->>'size_bytes')::numeric>20971520 THEN RAISE EXCEPTION 'size_bytes must be a whole number of bytes up to 20 MiB' USING ERRCODE='22023'; END IF;
   size_bytes:=((p_payload->>'size_bytes')::numeric)::bigint;
+  md5_hex:=nullif(p_payload->>'md5','');
+  IF md5_hex IS NULL THEN RAISE EXCEPTION 'md5 is required for an object kind' USING ERRCODE='22023'; END IF;
+  IF md5_hex !~ '^[0-9a-f]{32}$' THEN RAISE EXCEPTION 'md5 must be 32 lowercase hex characters' USING ERRCODE='22023'; END IF;
   sha:=nullif(p_payload->>'sha256','');
   IF sha IS NOT NULL AND sha !~ '^[0-9a-f]{64}$' THEN RAISE EXCEPTION 'sha256 must be 64 hex characters' USING ERRCODE='22023'; END IF;
  END IF;
  -- Authority before any receipt fact: the receipt's occurrence, subject, grants
  -- and session are locked and the actor must be a recorder for the activity.
  r:=haven.lock_operation_evidence_authority(p_receipt,true);
- canonical:=jsonb_build_object('receipt',p_receipt,'kind',kind,'rule_label',rule_label,'filename',filename,'mime',mime,'size_bytes',size_bytes,'sha256',sha,'linked_table',linked_table,'linked_record_id',linked_id);
+ canonical:=jsonb_build_object('receipt',p_receipt,'kind',kind,'rule_label',rule_label,'filename',filename,'mime',mime,'size_bytes',size_bytes,'md5',md5_hex,'sha256',sha,'linked_table',linked_table,'linked_record_id',linked_id);
  request_hash:=haven.operation_evidence_request_hash(canonical);
  prior:=haven.operation_evidence_replay(r.id,p_request_key,request_hash);
  IF prior.id IS NOT NULL THEN
@@ -451,8 +524,8 @@ BEGIN
   IF rule->>'kind'<>kind THEN RAISE EXCEPTION 'Evidence kind does not match the rule' USING ERRCODE='22023'; END IF;
   IF haven.operation_evidence_rule_met(r.id,rule) THEN RAISE EXCEPTION 'Evidence rule is already satisfied' USING ERRCODE='P0001'; END IF;
  END IF;
- IF sha IS NOT NULL THEN
-  SELECT * INTO existing FROM public.operation_evidence WHERE receipt_id=r.id AND declared_sha256=sha AND state='finalized';
+ IF kind<>'linked_record' THEN
+  SELECT * INTO existing FROM public.operation_evidence WHERE receipt_id=r.id AND state='finalized' AND (declared_md5=md5_hex OR (sha IS NOT NULL AND declared_sha256=sha)) ORDER BY finalized_at LIMIT 1;
   IF FOUND THEN RAISE EXCEPTION 'Evidence already finalized for these bytes' USING ERRCODE='P0001',DETAIL='evidence_id='||existing.id; END IF;
  END IF;
  IF kind='linked_record' AND NOT haven.operation_evidence_linked_readable(linked_table,linked_id,r) THEN
@@ -463,14 +536,14 @@ BEGIN
  PERFORM set_config('haven.operation_occurrence_command',haven.operation_occurrence_token(),true);
  BEGIN
   INSERT INTO public.operation_evidence(id,organization_id,facility_id,activity_id,subject_id,authority_class,receipt_id,task_instance_id,evidence_kind,rule_label,state,bucket_id,object_path,
-   declared_mime,declared_size_bytes,declared_sha256,linked_table,linked_record_id,uploaded_by,prepared_at,finalized_at,finalized_by,request_key,request_hash,revision)
+   declared_mime,declared_size_bytes,declared_sha256,declared_md5,linked_table,linked_record_id,uploaded_by,prepared_at,finalized_at,finalized_by,request_key,request_hash,revision)
   VALUES(new_id,r.organization_id,r.facility_id,r.activity_id,r.subject_id,r.authority_class,r.id,r.task_instance_id,kind,rule_label,CASE WHEN kind='linked_record' THEN 'finalized' ELSE 'prepared' END,
-   CASE WHEN kind='linked_record' THEN NULL ELSE 'operation-evidence' END,path,mime,size_bytes,sha,linked_table,linked_id,auth.uid(),now_at,
+   CASE WHEN kind='linked_record' THEN NULL ELSE 'operation-evidence' END,path,mime,size_bytes,sha,md5_hex,linked_table,linked_id,auth.uid(),now_at,
    CASE WHEN kind='linked_record' THEN now_at END,CASE WHEN kind='linked_record' THEN auth.uid() END,p_request_key,request_hash,haven.operation_occurrence_revision()) RETURNING * INTO ev;
  EXCEPTION WHEN unique_violation THEN
   RAISE EXCEPTION 'This request was already saved with different content' USING ERRCODE='P0001';
  END;
- e:=haven.write_operation_evidence_event(r,ev.id,'prepared',p_request_key,request_hash,NULL,jsonb_build_object('kind',kind,'rule_label',rule_label,'declared_mime',mime,'declared_size_bytes',size_bytes,'linked_table',linked_table));
+ e:=haven.write_operation_evidence_event(r,ev.id,'prepared',p_request_key,request_hash,NULL,jsonb_build_object('kind',kind,'rule_label',rule_label,'declared_mime',mime,'declared_size_bytes',size_bytes,'declared_md5',md5_hex,'linked_table',linked_table));
  IF kind='linked_record' THEN
   PERFORM haven.write_operation_evidence_event(r,ev.id,'finalized',p_request_key||'|finalized',request_hash,r.revision,jsonb_build_object('linked_table',linked_table,'linked_record_id',linked_id));
   satisfaction:=haven.satisfy_operation_receipt_evidence(r.id,p_request_key,request_hash);
@@ -496,11 +569,13 @@ BEGIN
  IF ev.uploaded_by<>auth.uid() THEN RAISE EXCEPTION 'Evidence belongs to another uploader' USING ERRCODE='P0001'; END IF;
  IF ev.state='failed' THEN RAISE EXCEPTION 'Evidence has failed' USING ERRCODE='P0001'; END IF;
  IF ev.state<>'prepared' THEN RAISE EXCEPTION 'Evidence is already uploaded' USING ERRCODE='P0001'; END IF;
- ev:=haven.operation_evidence_object(ev);
  now_at:=clock_timestamp();
  PERFORM set_config('haven.operation_occurrence_command',haven.operation_occurrence_token(),true);
- UPDATE public.operation_evidence SET state='uploaded',uploaded_at=now_at,object_id=ev.object_id,object_etag=ev.object_etag,object_size_bytes=ev.object_size_bytes,object_mime=ev.object_mime WHERE id=ev.id RETURNING * INTO ev;
- e:=haven.write_operation_evidence_event(r,ev.id,'uploaded',p_request_key,request_hash,NULL,jsonb_build_object('object_id',ev.object_id,'object_size_bytes',ev.object_size_bytes,'object_mime',ev.object_mime));
+ -- Object present, owned and as declared, then the checksum against the eTag:
+ -- uploaded (verified), uploaded with the checksum unverifiable, or failed
+ -- with checksum_mismatch; the reply's outcome names which.
+ e:=haven.record_operation_evidence_upload(r,ev,p_request_key,request_hash,false,NULL,now_at);
+ SELECT * INTO ev FROM public.operation_evidence WHERE id=ev.id;
  PERFORM set_config('haven.operation_occurrence_command','',true);
  PERFORM haven.lock_operation_evidence_authority(ev.receipt_id,true);
  RETURN haven.operation_evidence_reply(ev,e,false,NULL);
@@ -508,7 +583,7 @@ END $$;
 
 CREATE FUNCTION haven.finalize_operation_evidence(p_evidence uuid,p_request_key text,p_expected_receipt_revision text,p_payload jsonb) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
-DECLARE ev public.operation_evidence; r public.operation_execution_receipts; problem text; sha text; request_hash text; prior public.operation_evidence_events; e public.operation_evidence_events; now_at timestamptz; satisfaction jsonb;
+DECLARE ev public.operation_evidence; r public.operation_execution_receipts; problem text; sha text; request_hash text; prior public.operation_evidence_events; e public.operation_evidence_events; now_at timestamptz; satisfaction jsonb; obs jsonb;
 BEGIN
  problem:=haven.operation_evidence_request_problem(p_request_key,coalesce(p_payload,'{}'::jsonb),ARRAY['sha256']);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem USING ERRCODE='22023'; END IF;
@@ -526,20 +601,53 @@ BEGIN
  IF ev.state='failed' THEN RAISE EXCEPTION 'Evidence has failed' USING ERRCODE='P0001'; END IF;
  IF ev.state='finalized' THEN RAISE EXCEPTION 'Evidence is already finalized' USING ERRCODE='P0001'; END IF;
  IF sha IS NOT NULL AND ev.declared_sha256 IS NOT NULL AND ev.declared_sha256<>sha THEN RAISE EXCEPTION 'sha256 does not match the prepared evidence' USING ERRCODE='P0001'; END IF;
- -- The receipt the uploader saw must still be the receipt: a concurrent
- -- correction (HFO-08) moves the revision and this finalization conflicts.
+ -- The receipt the uploader saw must still be the receipt. Receipt revisions
+ -- are immutable (the guard permits only the two evidence-status columns to
+ -- move), so the expected revision proves the caller read this receipt's
+ -- current fingerprint; a concurrent correction (HFO-08) does not move it but
+ -- supersedes the receipt, and the superseded check below is what conflicts.
  IF r.revision<>p_expected_receipt_revision THEN RAISE EXCEPTION 'Receipt changed since it was read' USING ERRCODE='P0001'; END IF;
  IF r.receipt_kind<>'performance' OR r.superseded_by_receipt_id IS NOT NULL THEN RAISE EXCEPTION 'Evidence attaches to the effective performance receipt' USING ERRCODE='P0001'; END IF;
- IF ev.state='prepared' THEN ev:=haven.operation_evidence_object(ev); END IF;
  now_at:=clock_timestamp();
  PERFORM set_config('haven.operation_occurrence_command',haven.operation_occurrence_token(),true);
+ IF ev.state='prepared' THEN
+  -- Straight from prepared: the upload check runs first under the same rules
+  -- as upload marking; a checksum mismatch (failed) or an unverifiable
+  -- checksum (uploaded, unverified) ends the command with that outcome.
+  e:=haven.record_operation_evidence_upload(r,ev,p_request_key,request_hash,true,p_expected_receipt_revision,now_at);
+  SELECT * INTO ev FROM public.operation_evidence WHERE id=ev.id;
+  IF ev.state='failed' OR NOT ev.checksum_verified THEN
+   PERFORM set_config('haven.operation_occurrence_command','',true);
+   PERFORM haven.lock_operation_evidence_authority(ev.receipt_id,true);
+   RETURN haven.operation_evidence_reply(ev,e,false,NULL);
+  END IF;
+ ELSE
+  -- An unverified checksum never finalizes; the uploader may fail the row explicitly.
+  IF NOT ev.checksum_verified THEN RAISE EXCEPTION 'Evidence checksum could not be verified from the stored object' USING ERRCODE='P0001'; END IF;
+  -- The stored object must still be the one that was verified: same id,
+  -- eTag, version (when recorded), owner, size and type, and its MD5 must
+  -- still equal the declared one. Any difference fails the row durably.
+  obs:=haven.operation_evidence_object(ev);
+  IF NOT (obs->>'present')::boolean OR (obs->>'object_id')::uuid IS DISTINCT FROM ev.object_id OR (obs->>'owner')::uuid IS DISTINCT FROM ev.uploaded_by
+   OR haven.operation_evidence_etag(obs->>'object_etag') IS DISTINCT FROM haven.operation_evidence_etag(ev.object_etag) OR obs->>'etag_md5' IS DISTINCT FROM ev.declared_md5
+   OR (ev.object_version IS NOT NULL AND obs->>'object_version' IS DISTINCT FROM ev.object_version)
+   OR (obs->>'object_size_bytes')::bigint IS DISTINCT FROM ev.declared_size_bytes OR obs->>'object_mime' IS DISTINCT FROM ev.declared_mime THEN
+   UPDATE public.operation_evidence SET state='failed',failed_at=now_at,failure_reason='object_changed' WHERE id=ev.id RETURNING * INTO ev;
+   e:=haven.write_operation_evidence_event(r,ev.id,'failed',p_request_key,request_hash,p_expected_receipt_revision,jsonb_build_object('failure_kind','object_changed','reason','object_changed','rule_label',ev.rule_label,'previous_state','uploaded',
+    'declared_md5',ev.declared_md5,'recorded',jsonb_build_object('object_id',ev.object_id,'object_etag',ev.object_etag,'object_version',ev.object_version,'object_size_bytes',ev.object_size_bytes,'object_mime',ev.object_mime),
+    'observed',CASE WHEN (obs->>'present')::boolean THEN obs-'present'-'etag_md5'-'etag_kind' ELSE jsonb_build_object('present',false) END));
+   PERFORM set_config('haven.operation_occurrence_command','',true);
+   PERFORM haven.lock_operation_evidence_authority(ev.receipt_id,true);
+   RETURN haven.operation_evidence_reply(ev,e,false,NULL);
+  END IF;
+ END IF;
  BEGIN
-  UPDATE public.operation_evidence SET state='finalized',uploaded_at=coalesce(uploaded_at,now_at),object_id=ev.object_id,object_etag=ev.object_etag,object_size_bytes=ev.object_size_bytes,object_mime=ev.object_mime,
-   declared_sha256=coalesce(declared_sha256,sha),finalized_at=now_at,finalized_by=auth.uid() WHERE id=ev.id RETURNING * INTO ev;
+  UPDATE public.operation_evidence SET state='finalized',finalized_at=now_at,finalized_by=auth.uid() WHERE id=ev.id RETURNING * INTO ev;
  EXCEPTION WHEN unique_violation THEN
   RAISE EXCEPTION 'Evidence already finalized for these bytes' USING ERRCODE='P0001';
  END;
- e:=haven.write_operation_evidence_event(r,ev.id,'finalized',p_request_key,request_hash,p_expected_receipt_revision,jsonb_build_object('object_id',ev.object_id,'object_etag',ev.object_etag,'declared_sha256',ev.declared_sha256,'rule_label',ev.rule_label));
+ e:=haven.write_operation_evidence_event(r,ev.id,'finalized',p_request_key,request_hash,p_expected_receipt_revision,jsonb_build_object('object_id',ev.object_id,'object_etag',ev.object_etag,'object_version',ev.object_version,
+  'declared_md5',ev.declared_md5,'checksum_method',ev.checksum_method,'checksum_verified_at',ev.checksum_verified_at,'declared_sha256',ev.declared_sha256,'rule_label',ev.rule_label));
  satisfaction:=haven.satisfy_operation_receipt_evidence(r.id,p_request_key,request_hash);
  PERFORM set_config('haven.operation_occurrence_command','',true);
  PERFORM haven.lock_operation_evidence_authority(ev.receipt_id,true);
@@ -667,7 +775,8 @@ DO $$ BEGIN
  END IF;
 END $$;
 
-COMMENT ON TABLE public.operation_evidence IS 'COL-143: immutable evidence metadata for one performance receipt (kind, rule, owned object path in the operation-evidence bucket or a linked native record, declared and observed type and size, uploader, prepared/uploaded/finalized/failed). Only a finalized object owned by the evidence satisfies a rule; nothing here transfers bytes.';
+COMMENT ON TABLE public.operation_evidence IS 'COL-143: immutable evidence metadata for one performance receipt (kind, rule, owned object path in the operation-evidence bucket or a linked native record, declared and observed type and size, declared MD5 verified against the Storage eTag, uploader, prepared/uploaded/finalized/failed). Only a finalized, checksum-verified object owned by the evidence satisfies a rule; nothing here transfers bytes.';
+COMMENT ON COLUMN public.operation_evidence.declared_md5 IS 'COL-143: MD5 of the bytes the uploader declared at preparation; verified against storage.objects.metadata->>''eTag'' (checksum_method storage_etag_md5) when the upload is marked and again at finalization. A mismatch fails the row (checksum_mismatch); a non-MD5 eTag leaves it unverified and it never finalizes.';
 COMMENT ON TABLE public.operation_evidence_events IS 'COL-143: immutable evidence history (prepared, uploaded, finalized, failed) and receipt-level satisfaction events with the expected receipt revision and request fingerprint.';
 COMMENT ON COLUMN public.operation_execution_receipts.evidence_status_current IS 'COL-143: the receipt''s evidence status now (missing until every applicable required rule is met by finalized evidence, then complete); evidence_status keeps what was recorded at the click.';
 COMMENT ON FUNCTION haven.finalize_operation_evidence(uuid,text,text,jsonb) IS 'COL-143: finalize an uploaded object as evidence under the uploader''s current authority and the expected receipt revision; appends the satisfaction event and moves the occurrence on when the receipt''s rules are met, without a second performance.';

@@ -7,6 +7,7 @@ import {
   EVIDENCE_SELECT,
   EVIDENCE_VIEW_ROLES,
   evidencePayloadProblem,
+  evidenceResultReply,
   isAttached,
   isEvidenceOutcome,
   mapEvidenceRpcError,
@@ -14,7 +15,6 @@ import {
   presentEvidence,
   type EvidenceRow,
 } from "@/lib/operations/evidence";
-import { withoutRequestHash } from "@/lib/operations/receipts";
 import { logError } from "@/lib/observability/logger";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -41,9 +41,11 @@ async function readReceipt(actor: OperationsActor, receiptId: string, scope: str
 
 /**
  * Prepare evidence for a performance receipt (COL-143). The database mints
- * the evidence identity and its owned object path; for object kinds the
- * route then asks Storage, through the session's own policies, for a signed
- * upload URL. No service-role Storage call is made and no byte moves here.
+ * the evidence identity and its owned object path and records the declared
+ * MD5 of the bytes (verified against the Storage eTag at upload marking and
+ * finalization); for object kinds the route then asks Storage, through the
+ * session's own policies, for a signed upload URL. No service-role Storage
+ * call is made and no byte moves here.
  */
 export async function POST(request: NextRequest) {
   const auth = await requireOperationsActor({ allowedRoles: EVIDENCE_COMMAND_ROLES });
@@ -76,9 +78,8 @@ export async function POST(request: NextRequest) {
   if (!isEvidenceOutcome(result)) {
     return NextResponse.json({ error: "Evidence preparation could not be confirmed; re-read the evidence before retrying", outcome: "uncertain" }, { status: 500 });
   }
-  const evidence = presentEvidence(result.evidence, current.actor.id);
   // A linked record is finalized at preparation and may satisfy the receipt at once; the satisfaction outcome rides along.
-  const reply: Record<string, unknown> = { outcome: "receipt", evidence, event: withoutRequestHash(result.event), replayed: result.replayed, satisfaction: result.satisfaction ?? null };
+  const { status, body: reply } = evidenceResultReply(result, current.actor.id, "prepare");
   const path = typeof result.evidence.object_path === "string" ? result.evidence.object_path : null;
   const inFlight = result.evidence.state === "prepared";
   if (path && inFlight) {
@@ -94,7 +95,8 @@ export async function POST(request: NextRequest) {
   } else {
     reply.upload = null;
   }
-  return NextResponse.json(reply);
+  // Prepare only ever reports prepared or finalized today; the status comes from the same classification as the other commands.
+  return NextResponse.json(reply, { status });
 }
 
 /**

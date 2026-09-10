@@ -36,13 +36,14 @@ const evidenceId = "88888888-8888-4888-8888-888888888888";
 const key = "evidence:2026-09-10:0001";
 const revision = "a".repeat(64);
 const path = `${facilityId}/${evidenceId}/panel.jpg`;
-const photo = { kind: "photo", rule_label: "Panel photo", filename: "panel.jpg", mime: "image/jpeg", size_bytes: 1024 };
+const md5 = "900150983cd24fb0d6963f7d28e17f72";
+const photo = { kind: "photo", rule_label: "Panel photo", filename: "panel.jpg", mime: "image/jpeg", size_bytes: 1024, md5 };
 const post = (body: unknown) => new Request("https://local.test/evidence", { method: "POST", body: JSON.stringify(body) }) as never;
 const params = (id: string) => ({ params: Promise.resolve({ id }) });
 const receiptRow = { id: receiptId, organization_id: "org", facility_id: facilityId };
 const satisfaction = { receipt_evidence_status: "complete", unmet: [], satisfied_event_id: "ev-sat", occurrence: { id: "occ", status: "completed", execution_state: "completed" } };
 const evidenceRow = { id: evidenceId, organization_id: "org", facility_id: facilityId, state: "prepared", uploaded_by: "actor", object_path: path, evidence_kind: "photo" };
-const prepared = { evidence: { id: evidenceId, state: "prepared", uploaded_by: "actor", object_path: path, request_hash: "h".repeat(64) }, event: { id: "ev1", event_kind: "prepared", request_hash: "h".repeat(64) }, replayed: false };
+const prepared = { evidence: { id: evidenceId, state: "prepared", uploaded_by: "actor", object_path: path, request_hash: "h".repeat(64) }, event: { id: "ev1", event_kind: "prepared", request_hash: "h".repeat(64) }, replayed: false, outcome: "prepared" };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -93,6 +94,7 @@ describe("prepare evidence", () => {
     expect(createSignedUploadUrl).toHaveBeenCalledExactlyOnceWith(path);
     expect(await response.json()).toEqual({
       outcome: "receipt",
+      evidence_outcome: "prepared",
       evidence: { id: evidenceId, state: "prepared", uploaded_by: "actor", object_path: path },
       event: { id: "ev1", event_kind: "prepared" },
       replayed: false,
@@ -101,12 +103,22 @@ describe("prepare evidence", () => {
     });
   });
 
+  it("refuses an object kind without its declared MD5 before any read", async () => {
+    const { md5: _md5, ...withoutMd5 } = photo;
+    void _md5;
+    const response = await PREPARE(post({ receipt_id: receiptId, request_key: key, payload: withoutMd5 }));
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toMatch(/^payload\.md5: /);
+    expect(from).not.toHaveBeenCalled();
+  });
+
   it("returns the satisfaction outcome when a linked record finalizes at preparation", async () => {
-    rpc.mockResolvedValue({ data: { ...prepared, evidence: { id: evidenceId, state: "finalized", uploaded_by: "actor", object_path: null, evidence_kind: "linked_record" }, satisfaction }, error: null });
+    rpc.mockResolvedValue({ data: { ...prepared, evidence: { id: evidenceId, state: "finalized", uploaded_by: "actor", object_path: null, evidence_kind: "linked_record" }, satisfaction, outcome: "finalized" }, error: null });
     const response = await PREPARE(post({ receipt_id: receiptId, request_key: key, payload: { kind: "linked_record", linked_table: "facility_documents", linked_record_id: receiptId } }));
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.satisfaction).toEqual(satisfaction);
+    expect(body.evidence_outcome).toBe("finalized");
     expect(body.upload).toBeNull();
     expect(createSignedUploadUrl).not.toHaveBeenCalled();
   });
@@ -124,7 +136,7 @@ describe("prepare evidence", () => {
   });
 
   it("returns no upload for a linked record or an already finalized replay", async () => {
-    rpc.mockResolvedValue({ data: { ...prepared, evidence: { id: evidenceId, state: "finalized", uploaded_by: "actor", object_path: null, evidence_kind: "linked_record" }, replayed: true }, error: null });
+    rpc.mockResolvedValue({ data: { ...prepared, evidence: { id: evidenceId, state: "finalized", uploaded_by: "actor", object_path: null, evidence_kind: "linked_record" }, replayed: true, outcome: "finalized" }, error: null });
     const response = await PREPARE(post({ receipt_id: receiptId, request_key: key, payload: { kind: "linked_record", linked_table: "facility_documents", linked_record_id: receiptId } }));
     const body = await response.json();
     expect(body.upload).toBeNull();
@@ -161,21 +173,65 @@ describe("evidence commands", () => {
     maybeSingle.mockResolvedValue({ data: evidenceRow, error: null });
   });
 
-  it("marks uploaded with exactly the evidence id and key", async () => {
-    rpc.mockResolvedValue({ data: { ...prepared, evidence: { ...prepared.evidence, state: "uploaded" } }, error: null });
+  it("marks uploaded with exactly the evidence id and key and reports the verified upload", async () => {
+    rpc.mockResolvedValue({ data: { ...prepared, evidence: { ...prepared.evidence, state: "uploaded", checksum_verified: true, checksum_method: "storage_etag_md5" }, outcome: "uploaded" }, error: null });
     const response = await UPLOADED(post({ request_key: key }), params(evidenceId));
     expect(response.status).toBe(200);
     expect(rpc).toHaveBeenCalledExactlyOnceWith("mark_operation_evidence_uploaded_review", { p_evidence: evidenceId, p_request_key: key });
-    expect((await response.json()).evidence.object_path).toBe(path);
+    const body = await response.json();
+    expect(body.outcome).toBe("receipt");
+    expect(body.evidence_outcome).toBe("uploaded");
+    expect(body.evidence.object_path).toBe(path);
+    expect(body.evidence.checksum_method).toBe("storage_etag_md5");
+    expect(body).not.toHaveProperty("satisfaction");
+  });
+
+  it("returns 409 conflict with the failed evidence when the checksum does not match or the object changed", async () => {
+    const failed = { ...prepared.evidence, state: "failed", failure_reason: "checksum_mismatch" };
+    rpc.mockResolvedValueOnce({ data: { ...prepared, evidence: failed, event: { id: "ev2", event_kind: "failed", request_hash: "h", details: { declared_md5: md5, observed_md5: "0".repeat(32) } }, outcome: "checksum_mismatch" }, error: null });
+    let response = await UPLOADED(post({ request_key: key }), params(evidenceId));
+    expect(response.status).toBe(409);
+    let body = await response.json();
+    expect(body).toMatchObject({ outcome: "conflict", evidence_outcome: "checksum_mismatch", evidence: { id: evidenceId, state: "failed", failure_reason: "checksum_mismatch" }, event: { id: "ev2", event_kind: "failed" }, replayed: false });
+    expect(typeof body.error).toBe("string");
+    expect(body.evidence).not.toHaveProperty("object_path");
+    expect(body.event).not.toHaveProperty("request_hash");
+    rpc.mockResolvedValueOnce({ data: { ...prepared, evidence: { ...failed, failure_reason: "object_changed" }, satisfaction: null, outcome: "object_changed" }, error: null });
+    response = await FINALIZE(post({ request_key: key, expected_receipt_revision: revision }), params(evidenceId));
+    expect(response.status).toBe(409);
+    body = await response.json();
+    expect(body).toMatchObject({ outcome: "conflict", evidence_outcome: "object_changed", evidence: { state: "failed", failure_reason: "object_changed" }, satisfaction: null });
+    expect(logError).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 uncertain when the stored object's checksum could not be verified, whether the database reports or refuses it", async () => {
+    rpc.mockResolvedValueOnce({ data: { ...prepared, evidence: { ...prepared.evidence, state: "uploaded", checksum_verified: false }, outcome: "checksum_unverifiable" }, error: null });
+    let response = await UPLOADED(post({ request_key: key }), params(evidenceId));
+    expect(response.status).toBe(409);
+    let body = await response.json();
+    expect(body).toMatchObject({ outcome: "uncertain", evidence_outcome: "checksum_unverifiable", error: "Evidence checksum could not be verified from the stored object", evidence: { state: "uploaded", checksum_verified: false, object_path: path } });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: "P0001", message: "Evidence checksum could not be verified from the stored object" } });
+    response = await FINALIZE(post({ request_key: key, expected_receipt_revision: revision }), params(evidenceId));
+    expect(response.status).toBe(409);
+    body = await response.json();
+    expect(body).toEqual({ outcome: "uncertain", error: "Evidence checksum could not be verified from the stored object" });
+  });
+
+  it("treats a command result without a known outcome as uncertain", async () => {
+    rpc.mockResolvedValue({ data: { ...prepared, outcome: undefined }, error: null });
+    const response = await UPLOADED(post({ request_key: key }), params(evidenceId));
+    expect(response.status).toBe(500);
+    expect((await response.json()).outcome).toBe("uncertain");
   });
 
   it("finalizes with the receipt revision the client read and returns the satisfaction outcome", async () => {
-    rpc.mockResolvedValue({ data: { ...prepared, evidence: { ...prepared.evidence, state: "finalized" }, satisfaction }, error: null });
+    rpc.mockResolvedValue({ data: { ...prepared, evidence: { ...prepared.evidence, state: "finalized" }, satisfaction, outcome: "finalized" }, error: null });
     const response = await FINALIZE(post({ request_key: key, expected_receipt_revision: revision }), params(evidenceId));
     expect(response.status).toBe(200);
     expect(rpc).toHaveBeenCalledExactlyOnceWith("finalize_operation_evidence_review", { p_evidence: evidenceId, p_request_key: key, p_expected_receipt_revision: revision, p_payload: {} });
     const body = await response.json();
     expect(body.satisfaction).toEqual(satisfaction);
+    expect(body.evidence_outcome).toBe("finalized");
     // A finalized row carries no object path; downloads go through the signed-URL route.
     expect(body.evidence).toEqual({ id: evidenceId, state: "finalized", uploaded_by: "actor" });
   });
@@ -191,9 +247,10 @@ describe("evidence commands", () => {
   });
 
   it("fails an upload with a reason and passes an object-mismatch validation through", async () => {
-    rpc.mockResolvedValueOnce({ data: { ...prepared, evidence: { ...prepared.evidence, state: "failed" } }, error: null });
+    rpc.mockResolvedValueOnce({ data: { ...prepared, evidence: { ...prepared.evidence, state: "failed" }, outcome: "failed" }, error: null });
     const response = await FAIL(post({ request_key: key, payload: { reason: "Camera upload timed out" } }), params(evidenceId));
     expect(response.status).toBe(200);
+    expect((await response.json()).evidence_outcome).toBe("failed");
     expect(rpc).toHaveBeenCalledExactlyOnceWith("fail_operation_evidence_review", { p_evidence: evidenceId, p_request_key: key, p_payload: { reason: "Camera upload timed out" } });
     rpc.mockResolvedValueOnce({ data: null, error: { code: "P0001", message: "Uploaded object does not match the prepared evidence" } });
     const mismatch = await UPLOADED(post({ request_key: key }), params(evidenceId));
