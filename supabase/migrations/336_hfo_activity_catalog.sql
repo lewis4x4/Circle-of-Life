@@ -129,6 +129,20 @@ REVOKE ALL ON FUNCTION haven.guard_operation_activity_identity() FROM PUBLIC,ano
 CREATE TRIGGER operation_activity_identity BEFORE INSERT OR UPDATE OR DELETE ON public.operation_activities
   FOR EACH ROW EXECUTE FUNCTION haven.guard_operation_activity_identity();
 
+-- Row-level guards do not fire for TRUNCATE; catalog history is never bulk-erased.
+CREATE FUNCTION haven.guard_operation_catalog_truncate() RETURNS trigger
+LANGUAGE plpgsql SET search_path='' AS $$
+BEGIN RAISE EXCEPTION 'Activity catalog history cannot be truncated' USING ERRCODE='23514'; END $$;
+REVOKE ALL ON FUNCTION haven.guard_operation_catalog_truncate() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER operation_activities_no_truncate BEFORE TRUNCATE ON public.operation_activities
+  FOR EACH STATEMENT EXECUTE FUNCTION haven.guard_operation_catalog_truncate();
+CREATE TRIGGER operation_source_items_no_truncate BEFORE TRUNCATE ON public.operation_activity_source_items
+  FOR EACH STATEMENT EXECUTE FUNCTION haven.guard_operation_catalog_truncate();
+CREATE TRIGGER operation_source_mappings_no_truncate BEFORE TRUNCATE ON public.operation_activity_source_mappings
+  FOR EACH STATEMENT EXECUTE FUNCTION haven.guard_operation_catalog_truncate();
+CREATE TRIGGER operation_activity_subjects_no_truncate BEFORE TRUNCATE ON public.operation_activity_subjects
+  FOR EACH STATEMENT EXECUTE FUNCTION haven.guard_operation_catalog_truncate();
+
 ALTER TABLE public.operation_task_templates ADD COLUMN activity_id uuid REFERENCES public.operation_activities(id);
 ALTER TABLE public.operation_task_instances ADD COLUMN activity_id uuid REFERENCES public.operation_activities(id);
 CREATE POLICY operation_activities_read ON public.operation_activities FOR SELECT TO authenticated USING (
@@ -223,6 +237,13 @@ BEGIN
     PERFORM haven.assert_operation_catalog_actor(NEW.organization_id,NEW.facility_id,true);
     INSERT INTO public.operation_activities(organization_id,facility_id,activity_key,name,origin)
       VALUES(NEW.organization_id,NEW.facility_id,'legacy-template:'||NEW.id,NEW.name,'legacy_template') RETURNING id INTO NEW.activity_id;
+  ELSIF (nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'role') IN ('anon','authenticated')
+    AND current_setting('haven.operation_catalog_bind',true) IS DISTINCT FROM 'approved' THEN
+    -- A client request (this trigger runs as its definer, so the JWT role claim is
+    -- the request identity) receives its own legacy identity on a root insert. It
+    -- can never adopt a catalog activity or another lineage. Only an approved
+    -- command that sets haven.operation_catalog_bind for its transaction may bind.
+    RAISE EXCEPTION 'Operation template cannot choose a stable activity' USING ERRCODE='23514';
   END IF;
   SELECT * INTO activity FROM public.operation_activities WHERE id=NEW.activity_id FOR SHARE;
   IF NOT FOUND OR activity.organization_id IS DISTINCT FROM NEW.organization_id

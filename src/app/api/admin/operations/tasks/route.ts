@@ -11,6 +11,7 @@ type OperationTaskRow = {
   organization_id: string;
   facility_id: string;
   template_id: string | null;
+  activity_id?: string | null;
   template_name: string;
   template_category: string;
   template_cadence_type: string;

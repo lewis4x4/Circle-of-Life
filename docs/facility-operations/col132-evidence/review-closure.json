@@ -1,0 +1,116 @@
+{
+  "issue": "COL-132",
+  "recorded_at": "2026-09-10T02:20:00Z",
+  "purpose": "Close the catalog review: re-gate the reviewed source 64cc31b8 with the release-gate blockers resolved, re-review it independently, remediate clear-cut findings on this branch, and record what stays open.",
+  "gate_resolution": {
+    "commit": "6cc1bfd7 (cherry-pick -x of COL-133's 8e52a197; identical patch on both branches)",
+    "dependencies": "next/eslint-config-next/@next/bundle-analyzer 16.3.4, sharp 0.35.4, vitest ^4.1.11, hono ^4.13.7, js-yaml ^4.3.2; npm audit 0 vulnerabilities (lockfile resolved with npm 11.19.1, lockfileVersion 3)",
+    "gitleaks": "three Finance-history fingerprints ported from the owning branch; no rule or path suppression",
+    "first_regate": "test-results/agent-gates/2026-09-10T01-33-07-477Z-COL-132-HFO-CATALOG.json PASS on the unchanged catalog source",
+    "recorded_focused_suite_after_dependency_bump": "10 files, 66 tests PASS; typecheck PASS; seed check PASS (91 mappings)"
+  },
+  "independent_review_of_64cc31b8": {
+    "method": "two read-only reviewers: SQL (migration 336 and probe) and TypeScript/seed/scripts; every finding verified against the source and dispositioned",
+    "acceptance": {
+      "a_91_mappings": "91 entries, 91 unique source IDs, 110 components with unique keys and UUIDs, 80 mapped and 11 needs_confirmation each with a reason; ADMIN_LOG_SOURCE_IDS enumerates exactly 91 and the schema requires each once; seed check deterministic and PASS",
+      "b_revision_continuity_and_validated_subjects": "revision inherits the parent activity in the bind trigger; subjects validated against live facility, resident, staff and asset rows with matching organization and facility",
+      "c_no_imported_performed_work": "seed writes only source items, activities and mappings with status forced to draft; no template, instance, schedule or completion rows; probe asserts instance counts unchanged"
+    },
+    "clean_categories": [
+      "RLS enabled and policies before data",
+      "organization ownership and org-first filtering",
+      "source item and mapping immutability",
+      "version lineage integrity (cycles and cross-scope chains abort)",
+      "SECURITY DEFINER hygiene and no PUBLIC/anon grants",
+      "no trigger rewrites existing rows beyond adding identities",
+      "single-transaction replay",
+      "probe assertions are real",
+      "no as any, secrets or PHI in logs",
+      "no source values imported as work"
+    ],
+    "findings": [
+      {
+        "severity": "should-fix",
+        "where": "336 bind trigger, root insert path",
+        "claim": "a client owner insert could bind a new template to any in-scope activity (draft Admin Log activity or another lineage's root); only the API prevented it",
+        "disposition": "Fixed: a client request's root insert with a supplied activity_id is rejected ('Operation template cannot choose a stable activity'); keyed on the JWT role claim because the trigger runs as its definer; an approved binding command may set haven.operation_catalog_bind='approved' for its transaction (reserved for COL-135). Two probes added."
+      },
+      {
+        "severity": "should-fix",
+        "where": "templates/[id] PATCH",
+        "claim": "a facility change on revision is rejected by the database as invalid lineage scope but the API offered it and mapped the failure to a generic retry",
+        "disposition": "Fixed: explicit 400 before any command; test added."
+      },
+      {
+        "severity": "should-fix",
+        "where": "operation_activities readers",
+        "claim": "the 11 needs_confirmation source items produce draft activities indistinguishable from mapped ones outside the source payload",
+        "disposition": "Deferred to COL-135 by design: it owns the activity-level applicability state (applicable / not_applicable / needs_confirmation) that makes them distinct and auditable. Recorded in the spec."
+      },
+      {
+        "severity": "should-fix",
+        "where": "activity-catalog.json AL-Y02, AL-C08",
+        "claim": "two source header labels name individuals (a fire-safety vendor contact and a staff member) and are seeded permanently",
+        "disposition": "Owner ruling required before deployment: redact the sourceText with a note, or accept workbook header wording as evidence. Not changed; spec sentence corrected to say so. No resident data, dates, phones or IDs exist in the catalog."
+      },
+      {
+        "severity": "should-fix",
+        "where": "templates POST/PATCH",
+        "claim": "no test asserted that mutation payloads cannot choose or rewrite stable IDs",
+        "disposition": "Fixed: POST and PATCH tests assert id, activity_id, previous_version_id and version are dropped."
+      },
+      {
+        "severity": "should-fix",
+        "where": "template/task reads via service-role client with app-side gating",
+        "claim": "activity_id reads do not exercise RLS",
+        "disposition": "Pre-existing pattern; resolved on the stacked COL-133 branch, where every operations route reads through the session client."
+      },
+      {
+        "severity": "note",
+        "where": "336 immutable tables",
+        "claim": "row-level guards do not fire for TRUNCATE",
+        "disposition": "Fixed: statement-level BEFORE TRUNCATE guards on activities, source items, mappings and subjects; probes added (CASCADE form reaches the trigger)."
+      },
+      {
+        "severity": "note",
+        "where": "scripts/facility-operations/sync-activity-catalog-seed.ts",
+        "claim": "resolved paths from cwd",
+        "disposition": "Fixed: resolves from the script location; verified from an unrelated directory."
+      },
+      {
+        "severity": "note",
+        "where": "tasks/route.ts row type",
+        "claim": "activity_id missing from the local row type",
+        "disposition": "Fixed."
+      },
+      {
+        "severity": "note",
+        "where": "backfill audit volume, production dry-run, legacy activity visibility after soft delete, created_at mutability by service role, DB-level lineage branching, hard-coded 336 filename in the seed script, index naming, backfill harness runnable only in a codex scratch directory",
+        "disposition": "Recorded, no change. The production dry-run stays a pre-apply integration step; renumbering must update the seed script's filename (spec already says so)."
+      }
+    ]
+  },
+  "remediation_verification": {
+    "focused_tests": "11 files, 69 tests PASS",
+    "typecheck": "PASS",
+    "seed_check": "PASS from repository root and from /tmp",
+    "native_replay": "PASS 339 migration files, 20 SQL probes (extended catalog probe)",
+    "strict_gate": "see remediation_gate"
+  },
+  "remediation_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T01-49-33-895Z-COL-132-HFO-CATALOG.json",
+    "verdict": "PASS",
+    "summary": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "blocking_failures": []
+    }
+  },
+  "still_open": [
+    "owner ruling on the two named individuals in source header text before deployment",
+    "activity-level disposition exposure (COL-135)",
+    "hosted apply, deployment, browser and staff acceptance"
+  ],
+  "integration_note": "Migration 336 remains branch-local and unapplied; COL-133 stacks on this branch and receives the same remediation by cherry-pick. Numbering is assigned at integration after re-reading origin/main and the hosted ledger (last read 2026-09-10: numbered through 335)."
+}

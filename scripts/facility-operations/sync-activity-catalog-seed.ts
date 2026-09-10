@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { parseActivityCatalog } from "../../src/lib/operations/activity-catalog";
 
 // This compiles a reviewed source catalog, never worksheet Y/N cells or executions.
 // Run with --check in verification; regenerate only before this migration is deployed.
-const root = process.cwd();
+// Paths resolve from this file, so the check works from any working directory.
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const catalog = parseActivityCatalog(JSON.parse(fs.readFileSync(
   path.join(root, "src/lib/operations/activity-catalog.json"), "utf8",
 )));

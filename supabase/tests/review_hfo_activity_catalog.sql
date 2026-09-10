@@ -57,6 +57,12 @@ SELECT pg_temp.hfo_expect('UPDATE public.operation_task_instances SET facility_i
 SELECT pg_temp.hfo_expect('INSERT INTO public.operation_task_instances(organization_id,facility_id,template_id,template_name,template_category,template_cadence_type,assigned_shift_date) SELECT org,other_facility,template,''Bad'',''safety'',''on_demand'',CURRENT_DATE FROM hfo_fixture','template scope');
 SELECT pg_temp.hfo_expect('UPDATE public.operation_activities SET activity_key=''changed'' WHERE id=(SELECT activity_id FROM public.operation_task_templates WHERE id=(SELECT template FROM hfo_fixture))','identity is immutable');
 SELECT pg_temp.hfo_expect('UPDATE public.operation_activity_source_items SET source_payload=''{}'' WHERE source_item_id=''AL-D01''','provenance is immutable');
+-- A revision cannot switch identity, and catalog history cannot be bulk-erased.
+SELECT pg_temp.hfo_expect('INSERT INTO public.operation_task_templates(organization_id,facility_id,name,description,category,cadence_type,previous_version_id,activity_id) SELECT org,facility,''Bad'',''Bad'',''safety'',''on_demand'',template,(SELECT id FROM public.operation_activities WHERE origin=''admin_log'' LIMIT 1) FROM hfo_fixture','must retain activity');
+SELECT pg_temp.hfo_expect('TRUNCATE public.operation_activities CASCADE','cannot be truncated');
+SELECT pg_temp.hfo_expect('TRUNCATE public.operation_activity_source_items CASCADE','cannot be truncated');
+SELECT pg_temp.hfo_expect('TRUNCATE public.operation_activity_source_mappings CASCADE','cannot be truncated');
+SELECT pg_temp.hfo_expect('TRUNCATE public.operation_activity_subjects CASCADE','cannot be truncated');
 
 -- All four subject types reuse actual domain masters and reject wrong site/org/type.
 INSERT INTO public.residents(id,organization_id,facility_id,first_name,last_name,date_of_birth,gender)
@@ -111,6 +117,19 @@ INSERT INTO public.operation_activities(organization_id,facility_id,activity_key
   SELECT org,other_facility,'hfo-hidden','Hidden facility','legacy_template' FROM hfo_fixture
   UNION ALL SELECT other_org,NULL,'hfo-foreign','Foreign organization','legacy_template' FROM hfo_fixture;
 GRANT SELECT ON hfo_fixture TO authenticated;
+-- A client owner insert receives a legacy identity; it cannot adopt a catalog activity.
+ALTER TABLE hfo_fixture ADD COLUMN legacy_activity uuid;
+UPDATE hfo_fixture SET legacy_activity=(SELECT activity_id FROM public.operation_task_templates WHERE id=hfo_fixture.template);
+DO $$ BEGIN IF (SELECT legacy_activity FROM hfo_fixture) IS NULL THEN RAISE EXCEPTION 'Fixture legacy activity missing'; END IF; END $$;
+GRANT INSERT ON public.operation_task_templates TO authenticated;
+UPDATE public.user_profiles SET app_role='owner' WHERE id=(SELECT reader FROM hfo_fixture);
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.reader,'session_id',f.reader_session,'role','authenticated','auth_claim_version',p.auth_claim_version,'app_role','owner','organization_id',f.org)::text,true)
+  FROM hfo_fixture f JOIN public.user_profiles p ON p.id=f.reader;
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.hfo_expect('INSERT INTO public.operation_task_templates(organization_id,facility_id,name,description,category,cadence_type,activity_id) SELECT org,facility,''Adopt'',''Adopt'',''safety'',''on_demand'',(SELECT id FROM public.operation_activities WHERE origin=''admin_log'' LIMIT 1) FROM hfo_fixture','cannot choose a stable activity');
+SELECT pg_temp.hfo_expect('INSERT INTO public.operation_task_templates(organization_id,facility_id,name,description,category,cadence_type,activity_id) SELECT org,facility,''Merge'',''Merge'',''safety'',''on_demand'',legacy_activity FROM hfo_fixture','cannot choose a stable activity');
+RESET ROLE;
+UPDATE public.user_profiles SET app_role='facility_admin' WHERE id=(SELECT reader FROM hfo_fixture);
 SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.reader,'session_id',f.reader_session,'role','authenticated','auth_claim_version',p.auth_claim_version,'app_role','facility_admin','organization_id',f.org)::text,true)
   FROM hfo_fixture f JOIN public.user_profiles p ON p.id=f.reader;
 SET LOCAL ROLE authenticated;
