@@ -1,6 +1,6 @@
 # Current handoff
 
-Read [COL-135-HANDOFF.md](COL-135-HANDOFF.md). Versioned applicability is implemented on `codex/hfo-col135-applicability`, stacked on COL-133. COL-132 is Done (reviewed, unmerged); COL-133 stays In Review until integration; nothing is merged, applied or deployed. [COL-133 history](COL-133-HANDOFF.md) and [COL-132 history](COL-132-HANDOFF.md) are retained.
+Read [COL-135-HANDOFF.md](COL-135-HANDOFF.md). Versioned applicability is implemented on `codex/hfo-col135-applicability`, stacked on COL-133. COL-132, COL-133 and COL-135 are Done in Linear as reviewed, gated, unmerged source (closure records: `col133-evidence/review-closure.json`, `col135-evidence/review-closure.json`); nothing is merged, applied or deployed, and [CHECKPOINT.md](CHECKPOINT.md) holds the resume state. Next dependency-ready issue: COL-137 (evaluator). [COL-133 history](COL-133-HANDOFF.md) and [COL-132 history](COL-132-HANDOFF.md) are retained.
 
 # Earlier COL-18 handoff
 

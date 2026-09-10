@@ -1,31 +1,36 @@
-# Facility Operations overnight checkpoint
+# Facility Operations checkpoint
 
-Updated 2026-09-10 (early). Durable resume state for the HFO track. No secrets. Local source state only; nothing merged, applied, deployed, scheduled or transmitted.
+Updated 2026-09-10 (morning). Durable resume state for the HFO track. No secrets. Local source state only; nothing merged, applied, deployed, scheduled or transmitted.
+
+## Review closures (this update)
+
+- **COL-133 / HFO-05** closed as Done on the recorded evidence: `col133-evidence/review-closure.json` maps each acceptance criterion to the independent review, the seven observed-lock concurrency cases and the PASS gates (01-22-58 remediation, 01-58-01 final branch, 02-37-46 stacked). Head stays `476f02d1` (pushed); draft PR #466 open. Done = reviewed, gated, unmerged source, exactly as COL-132.
+- **COL-135 / HFO-02** closed as Done on the recorded evidence: `col135-evidence/review-closure.json` maps each criterion to the applicability probe, the independent review and the 02-37-46 strict gate at `62d19cf4`. Later commits on the branch are documentation only. Draft PR #467 open.
+- No reviewer was re-run; no duplicate reviewer report was opened. Closure is not deployment: OWNER-DECISIONS.md items 1–6 stay open; Finance-first integration and a fresh correct-project hosted-ledger read precede final migration numbers.
 
 ## Current issue
 
-- **COL-135 / HFO-02** — versioned facility applicability, evidence rules and local procedures. State: In Review in Linear (local source complete; not dependency closure).
-- Worktree `/Users/brianlewis/Circle of Life/Haven Facility Applicability`, branch `codex/hfo-col135-applicability`, base `476f02d1` (COL-133 tip). HEAD `62d19cf4` pushed; draft PR #467 (base codex/hfo-col133-authority). Linear: In Review.
-- Owned files: `supabase/migrations/338_hfo_requirement_versions.sql`, `supabase/tests/review_hfo_applicability.sql`, `src/lib/operations/requirements.ts` (+test), `src/lib/operations/requirement-publication.ts`, `src/app/api/admin/operations/requirements/**`, `src/app/api/admin/operations/facility-requirements/**`, `docs/specs/27-facility-operations-applicability.md`, `docs/specs/README.md` (one paragraph), `docs/facility-operations/COL-135-HANDOFF.md`, `docs/facility-operations/HANDOFF.md` (pointer), `docs/facility-operations/col135-evidence/`, this file.
-- Last completed step: implementation, independent review (no blocker; 6 SQL + 3 TS should-fix items remediated: effective-window model, service identity locked out, snapshot window/agreement, schedule confirmation not publishable, subject classification required, local evidence/inputs additive, schema refinements, 400 vs 409 mapping), focused suite 166 tests / 21 files, typecheck, lint, native replay 341 files / 22 probes, strict gate PASS (2026-09-10T02-37-46-794Z). Committing and pushing next.
+- **COL-137 / HFO-03** — one recurrence and due-date evaluator. Dependency COL-135 is Done in Linear, so COL-137 is dependency-ready. Worktree `/Users/brianlewis/Circle of Life/Haven Facility Evaluator`, branch `codex/hfo-col137-evaluator`, stacked on the COL-135 tip (this closure commit). Migration number 339 is provisional (hosted ledger numbered through 335 at last read; Finance holds 336–342 on its branch).
+- Handoff for this issue: `COL-137-HANDOFF.md` and `col137-evidence/` once written.
 
 ## Sibling state
 
-- COL-132 `codex/hfo-col132-catalog` at `92dea9b9` (pushed): review closed, Linear Done. Owner ruling pending: two named individuals in source header labels (AL-Y02, AL-C08).
-- COL-133 `codex/hfo-col133-authority` at `476f02d1` (pushed): strict gate PASS, integration-reviewed, Linear In Review awaiting integration (Finance-first ordering, integrator decision on listing completed export jobs, fresh hosted-ledger read before numbering). Test-count note: the recorded 131 focused tests became 125 after review remediation (six meeting-action success-path tests retired because COL-133 revokes that command; recoverable from `afe24111`) and 128 after the catalog remediation added three stable-identity tests. No coverage was silently dropped; see `col133-evidence/integration-review.json`.
-- Hosted ledger (project manfqmasfqppukpobpld) last read 2026-09-10: 344 records, numbered through 335. Migrations 336–338 are provisional.
+- COL-132 `codex/hfo-col132-catalog` at `92dea9b9` (pushed): Done. Owner ruling pending on AL-Y02 / AL-C08 header labels.
+- COL-133 `codex/hfo-col133-authority` at `476f02d1` (pushed): Done (see above). Integration constraints unchanged: Finance's export-job column change applies before COL-133's policies; integrator decision on listing completed export jobs.
+- COL-135 `codex/hfo-col135-applicability`: Done (see above). Full-stack rehearsal recorded in `col135-evidence/stack-integration-rehearsal.json` (scratch branch local only).
+- Hosted ledger (project manfqmasfqppukpobpld) last read 2026-09-10 early: 344 records, numbered through 335. Migrations 336–339 are provisional.
 
 ## Resume commands
 
 ```
-cd "/Users/brianlewis/Circle of Life/Haven Facility Applicability"
+cd "/Users/brianlewis/Circle of Life/Haven Facility Evaluator"
 npm test -- src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts
 npm run typecheck
 # native replay needs a run-owned cluster under ~/.hermes/tmp/agent-runs/<run>/ with manifest.json created_by "codex"
 PG_VERIFY_NATIVE_SOCKET=<run dir> PG_VERIFY_NATIVE_BIN=/opt/homebrew/opt/postgresql@17/bin PG_VERIFY_NATIVE_PORT=55443 npm run migrations:verify:pg
-npm run segment:gates -- --segment COL-135-HFO-APPLICABILITY --ui
+npm run segment:gates -- --segment COL-137-HFO-EVALUATOR --ui
 ```
 
 ## Next action
 
-Done overnight: COL-135 committed/pushed (62d19cf4), draft PRs #466 (COL-133) and #467 (COL-135), full-stack integration rehearsal recorded in `col135-evidence/stack-integration-rehearsal.json` (scratch branch `scratch/hfo-stack-integration` 3b45e4f1, local only), owner/integrator decisions in `OWNER-DECISIONS.md`. No implementation issue is dependency-closed (COL-137 needs COL-135; COL-139/142/143/144 need COL-133). Single best next step: close the COL-133 and COL-135 reviews (Done as reviewed, unmerged source, as COL-132 was) or integrate the stack per the rehearsal; then COL-137 becomes ready.
+Implement COL-137 under its Linear acceptance (unknown schedule → no due/overdue judgment and no assigned-date midnight fallback; DST, month end, leap day, two six-month meanings, holiday calendar and expiry anchors deterministic or explicitly unresolved; scheduler, next-due, history and exception views on one evaluator; fire/hood/MH ambiguities unactivated). Then focused tests, independent review, strict gate, commit and push. Integration stays separate.
