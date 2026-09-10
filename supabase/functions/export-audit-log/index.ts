@@ -143,7 +143,6 @@ Deno.serve(async (req) => {
         if (currentJobError || !currentJob) throw new Error("Export job authority changed");
       }
     };
-    await assertCurrentScope();
     const header = [
       "id",
       "table_name",
@@ -176,11 +175,14 @@ Deno.serve(async (req) => {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
+    // Current authority is asserted after the bytes are built and before the job
+    // is completed; the completion command's own locked recheck is the last gate,
+    // so a denial can never leave a completed job with no bytes delivered.
+    await assertCurrentScope();
     const { data: completed, error: completionError } = await userClient.rpc(
       "haven_complete_audit_export_job", { p_job_id: jobId },
     );
     if (completionError || completed !== true) throw new Error("Export completion could not be confirmed");
-    await assertCurrentScope(false);
 
     t.log({ event: "complete", outcome: "success", job_id: jobId, row_count: list.length });
 

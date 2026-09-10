@@ -12,6 +12,9 @@ const TRUSTED_ACTION_ERRORS = new Set([
   'Assignee unavailable in meeting facility',
 ]);
 
+/** Flip only when the scoped meeting-task command ships and re-grants the RPC. */
+const MEETING_TASK_CREATION_AVAILABLE = false;
+
 const actionSchema = z.object({
   id: z.uuid(), description: z.string().trim().min(1).max(8000),
   assigned_to: z.uuid().nullable(), due_date: z.iso.date(),
@@ -26,6 +29,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const parsed = actionSchema.safeParse(submitted);
   if (!parsed.success) return NextResponse.json({ error: 'Provide an action identity, description, assignee and valid due date.' }, { status: 400 });
   const { id } = await params;
+  if (!MEETING_TASK_CREATION_AVAILABLE) {
+    // COL-133 revokes create_meeting_action until a classified task command exists.
+    // Say so explicitly instead of failing at the database and inviting retries.
+    return NextResponse.json({ error: 'Meeting task creation requires a classified command and is not available yet' }, { status: 409 });
+  }
   const meeting = await actor.currentActor.client.from('meetings' as never).select('facility_id, organization_id').eq('id', id).is('deleted_at', null).maybeSingle();
   const row = meeting.data as { facility_id: string; organization_id: string } | null;
   if (meeting.error || !row || row.organization_id !== actor.organizationId) return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });

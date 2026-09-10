@@ -1,50 +1,39 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-const state=vi.hoisted(()=>({access:true,rpc:vi.fn(),actorId:'manager-session',organizationId:'org',meetingOrg:'org'}));
+// COL-133 revokes create_meeting_action until a classified meeting-task command
+// exists. The route must say so before touching the meeting or the RPC. The
+// former success-path tests live in history (afe24111) for when the command ships.
+const state=vi.hoisted(()=>({access:true,rpc:vi.fn(),from:vi.fn(),actorId:'manager-session',organizationId:'org',meetingOrg:'org'}));
 const logError = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/operations/auth',()=>({
  requireOperationsActor: async()=>({actor:{id:state.actorId,organizationId:state.organizationId,appRole:'manager',currentActor:{client:{
-  from:()=>{const query={select:()=>query,eq:()=>query,is:()=>query,maybeSingle:async()=>({data:{facility_id:'facility',organization_id:state.meetingOrg},error:null})};return query;},rpc:state.rpc,
+  from:state.from,rpc:state.rpc,
  }}}}),
  actorCanAccessFacility:async()=>state.access,
 }));
 vi.mock('@/lib/observability/logger',()=>({logError}));
 import { POST } from './route';
 const body={id:'11111111-1111-4111-8111-111111111111',description:'Call supplier',assigned_to:null,due_date:'2026-09-07'};
-const trustedActionErrors = [
- 'Actor, description and due date required',
- 'Meeting unavailable',
- 'Meeting action author is not authorized',
- 'Meeting facility access required',
- 'Action identity already saved with different values',
- 'Assignee unavailable in meeting facility',
-];
-beforeEach(()=>{state.access=true;state.meetingOrg='org';state.rpc.mockReset().mockResolvedValue({data:body.id,error:null});logError.mockReset();});
-it('creates a meeting action using the authenticated manager identity',async()=>{
+beforeEach(()=>{state.access=true;state.meetingOrg='org';state.rpc.mockReset();state.from.mockReset();logError.mockReset();});
+it('reports meeting task creation as unavailable without reading the meeting or calling the revoked command',async()=>{
  const response=await POST(new Request('https://local.test/actions',{method:'POST',body:JSON.stringify(body)}),{params:Promise.resolve({id:'meeting'})});
- expect(response.status).toBe(200);expect(await response.json()).toEqual({id:body.id});
- expect(state.rpc).toHaveBeenCalledWith('create_meeting_action',expect.objectContaining({p_actor_id:'manager-session',p_meeting_id:'meeting'}));
+ expect(response.status).toBe(409);
+ expect(await response.json()).toEqual({error:'Meeting task creation requires a classified command and is not available yet'});
+ expect(state.from).not.toHaveBeenCalled();
+ expect(state.rpc).not.toHaveBeenCalled();
+ expect(logError).not.toHaveBeenCalled();
 });
-it('refuses a manager without access to the meeting facility',async()=>{
- state.access=false;const response=await POST(new Request('https://local.test/actions',{method:'POST',body:JSON.stringify(body)}),{params:Promise.resolve({id:'meeting'})});
- expect(response.status).toBe(403);expect(state.rpc).not.toHaveBeenCalled();
+it('does not reveal whether a meeting exists or is accessible while the command is unavailable',async()=>{
+ state.access=false;state.meetingOrg='other-org';
+ const response=await POST(new Request('https://local.test/actions',{method:'POST',body:JSON.stringify(body)}),{params:Promise.resolve({id:'missing-meeting'})});
+ expect(response.status).toBe(409);
+ expect(state.from).not.toHaveBeenCalled();
+ expect(state.rpc).not.toHaveBeenCalled();
 });
-it('rejects caller-supplied actor identity instead of forwarding it',async()=>{
+it('still validates the request shape and rejects caller-supplied actor identity',async()=>{
  const response=await POST(new Request('https://local.test/actions',{method:'POST',body:JSON.stringify({...body,actor_id:'someone-else'})}),{params:Promise.resolve({id:'meeting'})});
  expect(response.status).toBe(400);expect(state.rpc).not.toHaveBeenCalled();
 });
-it('logs but does not return an unexpected database error',async()=>{
- const sentinel='relation public.secret_meeting_actions violates constraint private_action_key';
- state.rpc.mockResolvedValue({data:null,error:{message:sentinel,code:'23514'}});
- const response=await POST(new Request('https://local.test/actions',{method:'POST',body:JSON.stringify(body)}),{params:Promise.resolve({id:'meeting'})});
- const payload=await response.json();
- expect(response.status).toBe(409);
- expect(payload).toEqual({error:'Meeting action could not be saved. Review the meeting and retry.'});
- expect(JSON.stringify(payload)).not.toContain(sentinel);
- expect(logError).toHaveBeenCalledWith('admin.meetings.actions.create',expect.objectContaining({message:sentinel}),{action:'rpc',meetingId:'meeting'});
-});
-it.each(trustedActionErrors)('preserves the trusted meeting action error: %s',async(errorMessage)=>{
- state.rpc.mockResolvedValue({data:null,error:{message:errorMessage}});
- const response=await POST(new Request('https://local.test/actions',{method:'POST',body:JSON.stringify(body)}),{params:Promise.resolve({id:'meeting'})});
- expect(response.status).toBe(409);
- expect(await response.json()).toEqual({error:errorMessage});
+it('rejects a malformed body before anything else',async()=>{
+ const response=await POST(new Request('https://local.test/actions',{method:'POST',body:'not json'}),{params:Promise.resolve({id:'meeting'})});
+ expect(response.status).toBe(400);expect(state.rpc).not.toHaveBeenCalled();
 });

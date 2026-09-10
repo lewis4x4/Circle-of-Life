@@ -1,0 +1,48 @@
+{
+  "issue": "COL-133",
+  "recorded_at": "2026-09-10T01:25:00Z",
+  "scope": "Resolution of the two source conflicts between codex/hfo-col133-authority (afe24111) and codex/haven-finance-integration (0d0e7763) so that neither branch's protections are lost. Rehearsed on local scratch branch scratch/hfo-col133-finance-integration (d968bc30, detached merge of origin/main fad17dcc + Finance + COL-133, Finance-first numbering). Not pushed, not applied, not deployed.",
+  "conflict_1": {
+    "file": "supabase/functions/export-audit-log/index.ts",
+    "finance_protection": "F01: one immutable CSV snapshot materialized in PostgreSQL under an MVCC snapshot (no REST paging caps or drift), immutable snapshot/event evidence, retry returns identical bytes, authority rechecked at request, materialization and retrieval, effective-role write guard.",
+    "col133_protection": "Every page read under current RLS including the COL-133 restrictive audit_log policies; session, profile, explicit current site grant and job authority revalidated before bytes are returned; no service client; cached counts cannot expose prior scope.",
+    "loss_if_finance_taken_alone": "haven.materialize_audit_export is SECURITY DEFINER and reads public.audit_log directly, bypassing the COL-133 RESTRICTIVE policies (legacy evidence paths, unclassified tasks, operation_audit_log, cards/meetings, aggregate snapshots, other-site assets), and its scope check uses the legacy haven.has_facility_access rather than the explicit, expiring COL-133 site grant.",
+    "loss_if_col133_taken_alone": "Edge-side paging with no immutable snapshot; retries requery live data; F01's request/materialize/retrieve evidence and write guards absent.",
+    "resolution": "Keep the Finance handler (thin Edge, DB RPCs). Add a reconcile migration after both branches' migrations that (a) defines haven.operation_audit_row_current(audit_log) with the identical predicate to the two COL-133 restrictive policies, (b) defines haven.can_export_audit_scope_current = F01 scope AND haven.operation_facility_access, (c) replaces materialize/retrieve to use both before and after materialization and to filter rows with (a), and (d) revokes the superseded COL-133 completion RPC from authenticated so no job can be completed without a snapshot.",
+    "proof": "review_audit_export_current_authority.sql: snapshot id set equals the RLS-visible id set for a site admin (3 of 9 fixture rows) and for an owner across two sites; restricted markers absent from CSV bytes; expired COL-133 grant denies retrieval and materialization while legacy access still holds; owner cannot request a site B export without a current site B grant; superseded completion RPC denied and pending job unchanged. Finance's own F01 suite passes unchanged in intent."
+  },
+  "conflict_2": {
+    "file": "supabase/tests/review_clinical_integrity.sql",
+    "resolution": "Union of both sides: Finance's facility-timezone/business_today calendar fixture and future-arrival rejection, plus COL-133's witness session, explicit facility subject classification, forged-witness denial and authenticated witness dual sign. Replays PASS.",
+    "artifact": "review_clinical_integrity.merged.sql"
+  },
+  "finance_probe_fixture_adaptations": {
+    "file": "supabase/tests/review_audit_export_authorization.sql",
+    "patch": "review_audit_export_authorization.fixture-adaptation.patch",
+    "changes": [
+      "Owner actor receives an explicit user_facility_access row for site B before the owner-B export (COL-133 requires an explicit current grant for corporate roles; Finance previously relied on role alone).",
+      "Forge-completion denial asserted on a still-visible pending job the owner requested, plus an explicit assertion that the completed job is hidden (COL-133 hides completed jobs from the requester, so the original UPDATE matched no row)."
+    ],
+    "assertions_weakened": "none; two assertions added"
+  },
+  "retired": {
+    "file": "src/lib/operations/audit-export-authority.test.ts",
+    "reason": "Compiled and exercised the replaced Edge source; its five guarantees are now asserted against the database by the reconcile probe."
+  },
+  "artifacts": {
+    "proposed_audit_export_current_authority_reconcile.sql": "609653de7c6d032734c2ebc4aed6446ff26e7c38126bc513039400961340d73d",
+    "replay-probe-notices.log": "114e55d72cadc41eb71a52836f0caecbccc41427bb4c08e7fe0a7d7b1b758275",
+    "review_audit_export_authorization.fixture-adaptation.patch": "d2978ea3611bc7644485aac1614ee85e3b177d17f2e24c79db52792d50014ac1",
+    "review_audit_export_current_authority.sql": "88f166398305b75fd7af5e6a1437a176ef023578dc328bff5960b77621a296c2",
+    "review_clinical_integrity.merged.sql": "f4393e14c41ab2660184ee4cd1faf4ba61aa87d4410bf7be06340600e9a8b3eb"
+  },
+  "verification_on_scratch": {
+    "migrations_check": "PASS 348 files, 001..345",
+    "native_replay": "PASS 348 migration files, 29 SQL probes (native PostgreSQL 17, Supabase stubs); probe notices in replay-probe-notices.log",
+    "deno_check": "export-audit-log, oce-escalation-scanner, oce-staffing-adequacy-computer, risk-nightly-scorer PASS",
+    "finance_handler_deno_tests": "15 passed, 0 failed",
+    "vitest": "16 files, 122 tests passed (COL-133 focused suites without the retired harness, current-api-actor, audit-export)",
+    "typecheck": "PASS"
+  },
+  "not_established": "No hosted apply, deployment, browser or staff acceptance. Final migration numbers depend on merge order; the reconcile must follow both branches' migrations."
+}

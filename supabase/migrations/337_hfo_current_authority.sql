@@ -597,7 +597,7 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE j public.audit_log_export_jobs;
 BEGIN
  SELECT * INTO j FROM public.audit_log_export_jobs WHERE id=p_job_id AND deleted_at IS NULL FOR UPDATE;
- IF j.id IS NULL OR j.requested_by IS DISTINCT FROM auth.uid() OR j.status NOT IN('pending','processing') OR j.storage_path IS NOT NULL THEN RAISE EXCEPTION 'Export unavailable' USING ERRCODE='42501'; END IF;
+ IF j.id IS NULL OR j.requested_by IS DISTINCT FROM auth.uid() OR j.status NOT IN('pending','processing','failed') OR j.storage_path IS NOT NULL THEN RAISE EXCEPTION 'Export unavailable' USING ERRCODE='42501'; END IF;
  PERFORM 1 FROM public.user_facility_access WHERE user_id=auth.uid() AND (j.facility_id IS NULL OR facility_id=j.facility_id) FOR SHARE;
  PERFORM 1 FROM public.user_profiles p JOIN auth.users u ON u.id=p.id JOIN auth.sessions sess ON sess.user_id=p.id AND sess.id=nullif(auth.jwt()->>'session_id','')::uuid WHERE p.id=auth.uid() FOR SHARE OF p,u,sess;
  IF haven.organization_id() IS DISTINCT FROM j.organization_id OR haven.app_role()::text NOT IN('owner','org_admin','facility_admin') OR (j.facility_id IS NOT NULL AND NOT haven.operation_facility_access(j.facility_id)) THEN RAISE EXCEPTION 'Export unavailable' USING ERRCODE='42501'; END IF;

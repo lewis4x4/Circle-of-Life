@@ -414,7 +414,7 @@ Deno.serve(async (req) => {
       .is("deleted_at", null);
     if (orgError) {
       t.log({ event: "organizations_load_failed", outcome: "error", error_message: orgError.message });
-      return jsonResponse({ error: orgError.message }, 500, origin);
+      return jsonResponse({ error: "Organizations unavailable" }, 500, origin);
     }
     organizations.push(...((orgData ?? []) as OrgRow[]));
   }
@@ -598,7 +598,8 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (snapshotError) {
-          results.push({ organization_id: org.id, facility_id: facility.id, error: snapshotError.message });
+          t.log({ event: "snapshot_write_failed", outcome: "error", facility_id: facility.id, error_message: snapshotError.message });
+          results.push({ organization_id: org.id, facility_id: facility.id, error: "Snapshot write failed" });
           continue;
         }
         snapshotId = (snapshotUpsert as { id: string } | null)?.id ?? null;

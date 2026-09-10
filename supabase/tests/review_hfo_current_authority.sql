@@ -119,6 +119,13 @@ DO $$ DECLARE f authority_fixture; first_result jsonb; replay_result jsonb; k te
  PERFORM pg_temp.hfo_assert(EXISTS(SELECT 1 FROM public.operation_task_instances WHERE id=(first_result->>'new_task_id')::uuid AND subject_id=f.subject_a AND authority_class='facility' AND created_by=f.owner_actor),'Defer lost subject/actor authority');
 END $$;
 RESET ROLE;
+-- An explicitly revoked subject grant hides native subjects immediately.
+UPDATE public.operation_subject_access SET revoked_at=clock_timestamp() WHERE user_id=(SELECT owner_actor FROM authority_fixture);
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.hfo_assert((SELECT count(*)=0 FROM public.operation_task_instances WHERE id IN(SELECT task_resident FROM authority_fixture UNION ALL SELECT task_employee FROM authority_fixture)),'Revoked subject grant remained readable');
+RESET ROLE;
+UPDATE public.operation_subject_access SET revoked_at=NULL WHERE user_id=(SELECT owner_actor FROM authority_fixture);
+RESET ROLE;
 SELECT pg_temp.hfo_login('nurse');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.hfo_assert((SELECT count(*)=0 FROM public.operation_task_instances WHERE id=(SELECT task_employee FROM authority_fixture)),'Personnel native role bypass');
@@ -135,6 +142,12 @@ UPDATE public.user_facility_access SET operation_expires_at=clock_timestamp()-in
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.hfo_assert((SELECT count(*)=0 FROM public.operation_task_instances WHERE id=(SELECT task_a FROM authority_fixture)),'Expired temporary coverage remained readable');
 SELECT pg_temp.hfo_denied('SELECT public.complete_operation_task_review(task_a,owner_actor,''owner'',''expired replay'',''{}'') FROM authority_fixture');
+RESET ROLE;
+-- An explicitly revoked site grant denies even when no expiry is set.
+UPDATE public.user_facility_access SET operation_expires_at=NULL,revoked_at=clock_timestamp() WHERE user_id=(SELECT owner_actor FROM authority_fixture);
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.hfo_assert((SELECT count(*)=0 FROM public.operation_task_instances WHERE id=(SELECT task_a FROM authority_fixture)),'Revoked site grant remained readable');
+SELECT pg_temp.hfo_denied('SELECT public.complete_operation_task_review(task_a,owner_actor,''owner'',''revoked site replay'',''{}'') FROM authority_fixture');
 RESET ROLE;
 SELECT pg_temp.hfo_login('staff');
 DELETE FROM auth.sessions WHERE id=(SELECT actor_session FROM authority_fixture);

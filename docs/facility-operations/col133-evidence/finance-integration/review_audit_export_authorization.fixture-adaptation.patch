@@ -1,0 +1,29 @@
+diff --git a/supabase/tests/review_audit_export_authorization.sql b/supabase/tests/review_audit_export_authorization.sql
+index a1c677a6..4b43e7a0 100644
+--- a/supabase/tests/review_audit_export_authorization.sql
++++ b/supabase/tests/review_audit_export_authorization.sql
+@@ -34,7 +34,9 @@ INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_
+  SELECT actor,org,actor||'@audit.invalid','Restricted audit actor','facility_admin'::public.app_role,true FROM audit_fixture
+  UNION ALL SELECT owner_id,org,owner_id||'@audit.invalid','Owner audit actor','owner'::public.app_role,true FROM audit_fixture;
+ INSERT INTO auth.sessions(id,user_id) SELECT session_id,actor FROM audit_fixture UNION ALL SELECT owner_session,owner_id FROM audit_fixture;
+-INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT actor,a,org FROM audit_fixture;
++-- Integration: COL-133 requires an explicit current site grant for corporate roles too;
++-- the owner's site B export below therefore needs a site B grant, not only the owner role.
++INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT actor,a,org FROM audit_fixture UNION ALL SELECT owner_id,b,org FROM audit_fixture;
+ INSERT INTO public.audit_log(id,table_name,record_id,action,old_data,new_data,changed_fields,organization_id,facility_id,created_at,user_agent)
+  SELECT md5('F01-source-'||i)::uuid,'F01-source',md5('F01-record-'||i)::uuid,'UPDATE',jsonb_build_object('value','before-'||i),jsonb_build_object('value','after-'||i),ARRAY['value'],org,a,'2099-01-01 12:00:00+00'::timestamptz,' =FORMULA()'
+  FROM audit_fixture CROSS JOIN generate_series(1,2505) i;
+@@ -147,7 +149,12 @@ RESET ROLE;
+ GRANT UPDATE ON public.audit_log_export_jobs TO authenticated;
+ CREATE POLICY audit_test_update ON public.audit_log_export_jobs FOR UPDATE TO authenticated USING(true) WITH CHECK(true);
+ SET LOCAL ROLE authenticated;
+-SELECT pg_temp.audit_denied($q$UPDATE public.audit_log_export_jobs SET row_count=0 WHERE id=(SELECT id FROM audit_jobs WHERE label='owner-null')$q$,'accidental-grant-does-not-forge-completion');
++-- Integration: COL-133 hides completed jobs from the requester, so a forge against the
++-- completed job matches no row. Assert the guard on a job that is still visible.
++WITH added AS(INSERT INTO public.audit_log_export_jobs(organization_id,requested_by,date_from,date_to) SELECT org,owner_id,'2099-01-01','2099-01-01' FROM audit_fixture RETURNING id) INSERT INTO audit_jobs SELECT 'owner-pending',id FROM added;
++SELECT pg_temp.audit_assert((SELECT count(*) FROM public.audit_log_export_jobs WHERE id=(SELECT id FROM audit_jobs WHERE label='owner-pending'))=1,'pending-job-visible-for-forge-attempt');
++SELECT pg_temp.audit_denied($q$UPDATE public.audit_log_export_jobs SET row_count=0 WHERE id=(SELECT id FROM audit_jobs WHERE label='owner-pending')$q$,'accidental-grant-does-not-forge-completion');
++SELECT pg_temp.audit_assert((SELECT count(*) FROM public.audit_log_export_jobs WHERE id=(SELECT id FROM audit_jobs WHERE label='owner-null'))=0,'completed-job-hidden-from-forge');
+ RESET ROLE;
+ SELECT jsonb_build_object('suite','F01-audit-export','sourceRows',2505,'status','PASS','assertionCount',(SELECT last_value FROM audit_assertion_count),'skips',0);
+ ROLLBACK;

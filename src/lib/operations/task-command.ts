@@ -11,6 +11,14 @@ export async function runOperationTaskCommand(
 ) {
   const auth = await requireOperationsActor();
   if ("response" in auth) return auth.response;
+  if (action === "escalate") {
+    // Manual escalation has no scoped command yet; the database rejects it
+    // unconditionally, so do not take task and authority locks to learn that.
+    return NextResponse.json(
+      { error: "Manual escalation requires a scoped command and is not available yet" },
+      { status: 409 },
+    );
+  }
   const current = await revalidateOperationsActor(auth.actor);
   if ("response" in current) return current.response;
 

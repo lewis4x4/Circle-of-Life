@@ -11,25 +11,82 @@
   },
   "hosted_ledger": {
     "project": "manfqmasfqppukpobpld",
-    "latest_readback": "docs/facility-operations/COL-18-BASELINE.md (September 9, 2026): 344 ledger records; every source migration 001-335 present; 319-335 content matched by SHA-256",
-    "reread_this_session": false,
-    "reason": "No .env.local or ledger credential in this worktree; the connected Supabase MCP account exposes a different project. Re-read the ledger with the linked CLI before assigning final numbers."
+    "reread_this_session": true,
+    "read_at": "2026-09-10T01:10:00Z",
+    "result": "344 ledger records; numbered versions 001-335 all present; max numbered 335; six August timestamp supplements; no 336+ entry from any branch",
+    "evidence": "docs/facility-operations/col133-evidence/hosted-ledger.json",
+    "next_free_numbered_version": "336"
   },
   "this_branch": {
     "branch": "codex/hfo-col133-authority",
     "base": "64cc31b8ea7bf2f9cec69ad934cf619882eb1c39 (COL-132 catalog, committed, on origin)",
     "migrations": [
-      {"file": "336_hfo_activity_catalog.sql", "owner": "COL-132", "state": "committed on codex/hfo-col132-catalog; unapplied"},
-      {"file": "337_hfo_current_authority.sql", "owner": "COL-133", "state": "local source; unapplied", "sha256": "b45506534158f6bb2bddbcec3b6c8b231b958478f8c04fc9bbeca837e080dbe5"}
+      {
+        "file": "336_hfo_activity_catalog.sql",
+        "owner": "COL-132",
+        "state": "committed on codex/hfo-col132-catalog; unapplied"
+      },
+      {
+        "file": "337_hfo_current_authority.sql",
+        "owner": "COL-133",
+        "state": "local source; unapplied",
+        "sha256": "b45506534158f6bb2bddbcec3b6c8b231b958478f8c04fc9bbeca837e080dbe5"
+      }
     ],
     "ordering_constraint": "337 depends on 336 (catalog objects). Both must land together and in order; do not apply 337 alone."
   },
   "competing_claims_on_336_plus": [
-    {"branch": "codex/haven-finance-integration", "commits_ahead_of_origin_main": 20, "files": ["336_finance_source_commands.sql", "337_audit_export_scope_and_snapshot.sql", "338_resident_money_snapshot.sql", "339_finance_event_outbox.sql", "340_finance_batch_approval.sql", "341_finance_review_queue.sql", "342_finance_credential_lifecycle.sql"]},
-    {"branch": "codex/haven-insurance-workspace", "commits_ahead_of_origin_main": 2, "files": ["336_insurance_verified_workspace.sql", "337_insurance_servicing_records.sql"]},
-    {"branch": "codex/haven-insureflow-receiver", "commits_ahead_of_origin_main": 4, "files": ["336_insurance_verified_workspace.sql", "337_insurance_servicing_records.sql", "338_insureflow_synthetic_receiver.sql"]},
-    {"branch": "codex/haven-operating-evidence", "commits_ahead_of_origin_main": 9, "files": ["336_resident_return_followups.sql", "337_referral_next_actions.sql", "338_business_conflict_http_status.sql"]},
-    {"branch": "codex/haven-remaining-roadmap", "commits_ahead_of_origin_main": 9, "files": ["336_assessment_fall_risk_chronology.sql", "337_atomic_discharge_bed_release.sql", "338_operational_medication_shifts.sql", "339_atomic_payment_recording.sql", "340_atomic_purchase_order_creation.sql", "341_atomic_source_gl_posting.sql"]}
+    {
+      "branch": "codex/haven-finance-integration",
+      "commits_ahead_of_origin_main": 20,
+      "files": [
+        "336_finance_source_commands.sql",
+        "337_audit_export_scope_and_snapshot.sql",
+        "338_resident_money_snapshot.sql",
+        "339_finance_event_outbox.sql",
+        "340_finance_batch_approval.sql",
+        "341_finance_review_queue.sql",
+        "342_finance_credential_lifecycle.sql"
+      ]
+    },
+    {
+      "branch": "codex/haven-insurance-workspace",
+      "commits_ahead_of_origin_main": 2,
+      "files": [
+        "336_insurance_verified_workspace.sql",
+        "337_insurance_servicing_records.sql"
+      ]
+    },
+    {
+      "branch": "codex/haven-insureflow-receiver",
+      "commits_ahead_of_origin_main": 4,
+      "files": [
+        "336_insurance_verified_workspace.sql",
+        "337_insurance_servicing_records.sql",
+        "338_insureflow_synthetic_receiver.sql"
+      ]
+    },
+    {
+      "branch": "codex/haven-operating-evidence",
+      "commits_ahead_of_origin_main": 9,
+      "files": [
+        "336_resident_return_followups.sql",
+        "337_referral_next_actions.sql",
+        "338_business_conflict_http_status.sql"
+      ]
+    },
+    {
+      "branch": "codex/haven-remaining-roadmap",
+      "commits_ahead_of_origin_main": 9,
+      "files": [
+        "336_assessment_fall_risk_chronology.sql",
+        "337_atomic_discharge_bed_release.sql",
+        "338_operational_medication_shifts.sql",
+        "339_atomic_payment_recording.sql",
+        "340_atomic_purchase_order_creation.sql",
+        "341_atomic_source_gl_posting.sql"
+      ]
+    }
   ],
   "schema_object_overlap": {
     "method": "CREATE/ALTER/DROP object-name intersection between 336_hfo_activity_catalog.sql + 337_hfo_current_authority.sql (93 named objects) and every competing 336+ file above",
@@ -37,17 +94,80 @@
     "caveat": "Name-level check only. Semantic conflicts (same table altered by different branches under different names, or policy behaviour changes) still require review at integration."
   },
   "source_file_overlap_with_unmerged_branches": [
-    {"branch": "codex/haven-finance-integration", "files": ["supabase/functions/export-audit-log/index.ts", "supabase/tests/review_clinical_integrity.sql", "package.json", "package-lock.json", ".gitleaksignore"], "three_way_dry_merge": "export-audit-log/index.ts: 2 conflict hunks (Finance rewrites the export path around its 337_audit_export_scope_and_snapshot; COL-133 adds per-page current-authority checks). review_clinical_integrity.sql: 2 conflict hunks. Whichever branch integrates second must re-derive both files so that Finance's snapshot scope and COL-133's session/current-authority checks are both preserved; neither side may be dropped to resolve the conflict."},
-    {"branch": "codex/haven-insurance-workspace", "files": ["package.json", "package-lock.json"], "note": "Same Next 16.3.4 / sharp 0.35.4 pins; expected to resolve cleanly or trivially."},
-    {"branch": "codex/haven-insureflow-receiver", "files": ["package.json", "package-lock.json", ".gitleaksignore"], "note": "Same pins; .gitleaksignore additions are append-only fingerprint lines."},
-    {"branch": "codex/haven-operating-evidence", "files": []},
-    {"branch": "codex/haven-remaining-roadmap", "files": []}
+    {
+      "branch": "codex/haven-finance-integration",
+      "files": [
+        "supabase/functions/export-audit-log/index.ts",
+        "supabase/tests/review_clinical_integrity.sql",
+        "package.json",
+        "package-lock.json",
+        ".gitleaksignore"
+      ],
+      "three_way_dry_merge": "export-audit-log/index.ts: 2 conflict hunks (Finance rewrites the export path around its 337_audit_export_scope_and_snapshot; COL-133 adds per-page current-authority checks). review_clinical_integrity.sql: 2 conflict hunks. Whichever branch integrates second must re-derive both files so that Finance's snapshot scope and COL-133's session/current-authority checks are both preserved; neither side may be dropped to resolve the conflict."
+    },
+    {
+      "branch": "codex/haven-insurance-workspace",
+      "files": [
+        "package.json",
+        "package-lock.json"
+      ],
+      "note": "Same Next 16.3.4 / sharp 0.35.4 pins; expected to resolve cleanly or trivially."
+    },
+    {
+      "branch": "codex/haven-insureflow-receiver",
+      "files": [
+        "package.json",
+        "package-lock.json",
+        ".gitleaksignore"
+      ],
+      "note": "Same pins; .gitleaksignore additions are append-only fingerprint lines."
+    },
+    {
+      "branch": "codex/haven-operating-evidence",
+      "files": []
+    },
+    {
+      "branch": "codex/haven-remaining-roadmap",
+      "files": []
+    }
   ],
   "integration_rule": [
     "Re-read origin/main and the hosted ledger immediately before integration.",
+    "Hard ordering constraint (reproduced on PostgreSQL 17): Finance 337_audit_export_scope_and_snapshot.sql alters audit_log_export_jobs.row_count to bigint, and PostgreSQL refuses ALTER TYPE on a column referenced by a policy. COL-133's operation_export_job_current and operation_export_job_insert_current reference row_count, so Finance's file must apply first. If COL-133 must land first, drop and recreate those two policies around Finance's ALTER in the integration commit.",
     "Renumber 336_hfo_activity_catalog.sql and 337_hfo_current_authority.sql to the first two free numbers after whatever has merged by then, keeping their suffixes and relative order; update docs/specs/README.md and the two handoffs to the final numbers in the same commit.",
+    "Apply the reconcile migration (proposed_audit_export_current_authority_reconcile.sql) as the first migration after both Finance 337 and COL-133 authority have landed, together with its probe; carry the Finance probe fixture adaptation and retire the COL-133 Edge harness test in the same integration commit.",
     "Schema/RPC installation precedes the matching API/Edge release; the four changed Edge functions and the operations API routes must not be released ahead of the migration.",
     "Never rewrite installed ledger history or drop classification/audit data; forward repair only.",
     "Do not deploy this migration alone to an operating facility. Legacy classification, required scoped commands and affected consumers (see COL-133-HANDOFF.md, Material compatibility boundaries) are reconciled in a coordinated release."
-  ]
+  ],
+  "integration_rehearsal": {
+    "scratch_branch": "scratch/hfo-col133-finance-integration (local only, detached merge of origin/main + Finance + COL-133; not pushed)",
+    "numbering_assumption": "Finance-first: Finance keeps 336-342; COL-132 catalog becomes 343, COL-133 authority becomes 344, reconcile 345. If COL-133 integrates first the same files take 336-338 and Finance shifts; the reconcile migration must always follow both.",
+    "resolutions": {
+      ".gitleaksignore": "Finance version taken; fingerprint sets were identical after the COL-133 gate fix.",
+      "supabase/functions/export-audit-log/index.ts": "Finance thin handler kept. COL-133's Edge-side per-page checks are relocated into the database by the reconcile migration.",
+      "supabase/tests/review_clinical_integrity.sql": "Both sides merged: Finance facility-timezone/business_today fixture and future-arrival assertion plus COL-133 witness session, subject classification and forged-witness assertions.",
+      "reconcile_migration": "docs/facility-operations/col133-evidence/finance-integration/proposed_audit_export_current_authority_reconcile.sql",
+      "reconcile_probe": "docs/facility-operations/col133-evidence/finance-integration/review_audit_export_current_authority.sql",
+      "finance_probe_fixture_adaptation": "docs/facility-operations/col133-evidence/finance-integration/review_audit_export_authorization.fixture-adaptation.patch (explicit owner site B grant; forge assertion against a still-visible pending job). No Finance assertion was weakened.",
+      "retired": "src/lib/operations/audit-export-authority.test.ts (compiled the replaced Edge source; its guarantees are asserted by the reconcile probe against the database instead)."
+    },
+    "semantic_differences_resolved": [
+      "Finance let owner/org_admin export any site by role via haven.has_facility_access; COL-133 requires an explicit unexpired current site grant for corporate roles too. Both are enforced: haven.can_export_audit_scope_current = F01 scope AND haven.operation_facility_access.",
+      "Finance materialized audit_log as SECURITY DEFINER, bypassing the COL-133 RESTRICTIVE audit_log policies; the reconcile applies the identical predicate (haven.operation_audit_row_current) and the probe proves snapshot ids equal the RLS-visible ids for a site admin and for an owner.",
+      "COL-133 hides completed export jobs from the requester; Finance's retrieve reads the job as definer, so retrieval still works, and its forge-completion assertion was moved to a visible pending job.",
+      "COL-133's Edge-side completion RPC is superseded by the snapshot path and revoked from authenticated so a job cannot be marked completed without evidence."
+    ],
+    "verification_on_merged_tree": {
+      "migrations_check": "PASS 348 files, sequence 001..345",
+      "native_replay": "PASS 348 migration files, 29 SQL probes",
+      "deno_check_edge": "PASS export-audit-log + three COL-133 functions",
+      "finance_handler_deno_tests": "15 passed",
+      "vitest_focused": "16 files, 122 tests passed (COL-133 suites minus retired harness, plus current-api-actor)",
+      "typecheck": "PASS"
+    },
+    "open_decisions": [
+      "Completed export jobs: COL-133 hides them from the requester's list (status/row_count restrictive policy) while Finance's UI expects to list snapshot-bearing completed jobs for download. Retrieval stays authority-checked in the database, so allowing the list to show completed jobs that carry a snapshot would lose no protection. Integrator's decision; not made here."
+    ]
+  }
 }

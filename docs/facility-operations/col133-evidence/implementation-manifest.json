@@ -187,5 +187,48 @@
       "path": "supabase/tests/rpc_grant_posture.sql",
       "sha256": "2c9efca3ed93ea1b9173f2ef4aa5094963ef6b1f3610bb7bb8bc253e3ef14138"
     }
-  ]
+  ],
+  "review_remediation": {
+    "base_commit": "afe24111",
+    "gate_artifact": "test-results/agent-gates/2026-09-10T01-22-58-857Z-COL-133-HFO-CURRENT-AUTHORITY.json",
+    "files": [
+      {
+        "path": "src/app/api/admin/meetings/[id]/actions/route.test.ts",
+        "sha256": "addc932a9ccf92922e0d23c4690619b75a8fce74ad524bc3110a9a196e9d71f6"
+      },
+      {
+        "path": "src/app/api/admin/meetings/[id]/actions/route.ts",
+        "sha256": "c2a7e5c5b6e0ea65a519923ff913e46e04a4ba14801b9e5536fc8efd5bd57bc9"
+      },
+      {
+        "path": "src/lib/operations/audit-export-authority.test.ts",
+        "sha256": "f0faccdf7ca30001bf5fb66d8466063c387c93da3677bfb530b31fb06091ae9f"
+      },
+      {
+        "path": "src/lib/operations/task-command.test.ts",
+        "sha256": "d0b3a7be558371cea7051f5fde707266ce62470948fedf0de26db4d1521aaab1"
+      },
+      {
+        "path": "src/lib/operations/task-command.ts",
+        "sha256": "3b2f4cf00b4e86ce193da78f853e296c474f638534b14473e7cabf65211473c1"
+      },
+      {
+        "path": "supabase/functions/export-audit-log/index.ts",
+        "sha256": "3f323a6d50dc25dddbde84b97c4001145ea93d7c910387384e7c9b60e233813a"
+      },
+      {
+        "path": "supabase/functions/risk-nightly-scorer/index.ts",
+        "sha256": "d98065d355ea97de392c93b51fb7f78e030c6cefc73b0d102e933c50b6d4f74a"
+      },
+      {
+        "path": "supabase/migrations/337_hfo_current_authority.sql",
+        "sha256": "b2afa957af7f2083ea2267d1d0cfeef9334450a72f46073677eb1762856d7838"
+      },
+      {
+        "path": "supabase/tests/review_hfo_current_authority.sql",
+        "sha256": "640b6b1459177bdcadeed0a0c4984d346005be75af65d7719fe030d9c2575479"
+      }
+    ]
+  },
+  "note": "Section files retain their afe24111 hashes except those listed under review_remediation, which supersede them."
 }

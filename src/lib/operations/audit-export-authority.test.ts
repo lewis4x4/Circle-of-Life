@@ -10,9 +10,9 @@ const compiled = ts.transpileModule(source.replace(/^import .*;\n/gm, ""), { com
 const job = { id: "job", organization_id: "org", requested_by: "actor", facility_id: null, date_from: null, date_to: null, status: "pending", format: "csv" };
 const row = (index: number) => ({ id: String(index).padStart(5, "0"), table_name: "operation_task_instances", record_id: `permitted-task-${index}`, action: "UPDATE", user_id: "actor", organization_id: "org", facility_id: "site", created_at: "2026-09-09T12:00:00Z" });
 
-function harness(options: { rows?: ReturnType<typeof row>[]; failPage?: number; revokeAtCheck?: number; failProfile?: boolean; truncated?: boolean; facilityId?: string } = {}) {
+function harness(options: { rows?: ReturnType<typeof row>[]; failPage?: number; revokeAtCheck?: number; failProfile?: boolean; truncated?: boolean; facilityId?: string; facilityAccess?: boolean; requestedBy?: string } = {}) {
   const rows = options.rows ?? [row(1)];
-  const selectedJob = { ...job, facility_id: options.facilityId ?? null };
+  const selectedJob = { ...job, facility_id: options.facilityId ?? null, requested_by: options.requestedBy ?? job.requested_by };
   let handler: (request: Request) => Promise<Response>;
   let page = 0;
   let check = 0;
@@ -47,7 +47,7 @@ function harness(options: { rows?: ReturnType<typeof row>[]; failPage?: number; 
     };
     return chain;
   });
-  const rpc = vi.fn().mockResolvedValue({ data: true, error: null });
+  const rpc = vi.fn(async (name: string) => ({ data: name === "haven_operation_facility_access" ? options.facilityAccess ?? true : true, error: null }));
   const client = { from, rpc, auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "actor" } }, error: null }) } };
   const createClient = vi.fn(() => client);
   runInNewContext(compiled, {
@@ -89,9 +89,24 @@ describe("audit export current authority", () => {
     const h = harness({ rows: Array.from({ length: 501 }, (_, i) => row(i)), truncated: true });
     expect((await h.run()).status).toBe(500);
   });
-  it.each([1, 2, 3, 4])("rejects revocation during authorization check %i before returning CSV", async (revokeAtCheck) => {
+  it.each([1, 2])("rejects revocation during authorization check %i before completing the job or returning CSV", async (revokeAtCheck) => {
     const h = harness({ revokeAtCheck });
     expect((await h.run()).status).toBe(500);
+    expect(h.rpc).not.toHaveBeenCalledWith("haven_complete_audit_export_job", expect.anything());
+  });
+  it("denies a facility export when the current site grant is gone, before completing the job", async () => {
+    const h = harness({ facilityId: "11111111-1111-4111-8111-111111111111", facilityAccess: false });
+    const response = await h.run();
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: "Export failed" });
+    expect(h.rpc).not.toHaveBeenCalledWith("haven_complete_audit_export_job", expect.anything());
+  });
+  it("refuses a job requested by a different user without reading any audit rows", async () => {
+    const h = harness({ requestedBy: "someone-else" });
+    const response = await h.run();
+    expect(response.status).toBe(403);
+    expect(h.queries.some((q) => q.table === "audit_log")).toBe(false);
+    expect(h.rpc).not.toHaveBeenCalled();
   });
   it("rechecks database actor authority for an empty export", async () => {
     const h = harness({ rows: [], failProfile: true });

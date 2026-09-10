@@ -1,0 +1,24 @@
+{
+  "project": "manfqmasfqppukpobpld",
+  "read_at": "2026-09-10T01:10:00Z",
+  "method": "Supabase Management API database query with read_only=true, authenticated with the local Supabase CLI keyring token; single SELECT statements against supabase_migrations.schema_migrations. No statement mutated state.",
+  "totals": {"ledger_records": 344, "numbered_versions": 335, "max_numbered_version": "335", "max_any_version": "335"},
+  "numbered_330_plus": [
+    {"version": "330", "name": "quality_caller_scope_and_corrections"},
+    {"version": "331", "name": "rounding_completion_receipts"},
+    {"version": "332", "name": "resident_search_current_scope"},
+    {"version": "333", "name": "rounding_javascript_whitespace"},
+    {"version": "334", "name": "payroll_source_freshness"},
+    {"version": "335", "name": "employee_file_lifecycle"}
+  ],
+  "competing_branch_names_present": "none (no hfo_, finance_source, insurance_verified, insureflow, resident_return, referral_next, business_conflict, assessment_fall or atomic_ 336+ entries)",
+  "timestamp_supplements_after_20260514203302": [
+    "20260814153636 revoke_anon_security_definer_rpc_execute",
+    "20260814200926 family_portal_messages_one_way",
+    "20260814201004 col_discovery_round_cadence_jessica_2026_08_14",
+    "20260814201013 snack_logs_time_and_passer_only",
+    "20260814201022 revoke_anon_col_discovery_round_rpcs",
+    "20260814201741 pin_col_discovery_helper_search_path"
+  ],
+  "conclusion": "Hosted ledger matches origin/main fad17dcc (001-335 plus the six recorded August supplements) and the COL-18 baseline readback of September 9. Next free numbered version on hosted and on origin/main is 336. Nothing from any unmerged branch has been applied."
+}
