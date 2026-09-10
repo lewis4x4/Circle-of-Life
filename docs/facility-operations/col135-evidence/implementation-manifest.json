@@ -1,0 +1,74 @@
+{
+  "base_commit": "476f02d1",
+  "branch": "codex/hfo-col135-applicability",
+  "files": [
+    {
+      "path": "docs/facility-operations/COL-135-HANDOFF.md",
+      "sha256": "945d049dd9a42e4c1743aa33b8d24550ae7e6e8a5f0d0408c6a03b6f63b0cc6f"
+    },
+    {
+      "path": "docs/facility-operations/HANDOFF.md",
+      "sha256": "cc2a2b38efcb7a81af5cac7fa732398c84734e27cbac84352fa3a33528baa1e9"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-applicability.md",
+      "sha256": "7efc09a0cafcee17089b79334be0f2a9255bfb6fcf78651e2de1ee61b5c3e8aa"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "8a64f23788263b46ab68cc950c6df9ae8051d86e214d75ba40d4e4a73815b942"
+    },
+    {
+      "path": "src/app/api/admin/operations/facility-requirements/[id]/preview/route.ts",
+      "sha256": "ee8f814b37567ffd24424165e3181eea244d6cb24b26637a7c3f9d9da4767fba"
+    },
+    {
+      "path": "src/app/api/admin/operations/facility-requirements/[id]/publish/route.ts",
+      "sha256": "3aa3c3f1d78d17c6d59fe758b0f791bb43d55a59e1c951a0feb63a802e5b916a"
+    },
+    {
+      "path": "src/app/api/admin/operations/facility-requirements/route.test.ts",
+      "sha256": "30b1023aa213b4200d87eec52c2498b9716947ff3be6072763506a6df3668c52"
+    },
+    {
+      "path": "src/app/api/admin/operations/facility-requirements/route.ts",
+      "sha256": "1860f786bfd1320312a0845a25660b068ab03dde8eae6931af6bb2e466c63b51"
+    },
+    {
+      "path": "src/app/api/admin/operations/requirements/[id]/preview/route.ts",
+      "sha256": "74885f196ce06273b12ea5d9a4f7204bde730d8b76ee514519b7a1e3ce2a1dae"
+    },
+    {
+      "path": "src/app/api/admin/operations/requirements/[id]/publish/route.ts",
+      "sha256": "abe8bfa24925be2b27b051be30a9e029ca2fe8ccd204ca064656320461f58fc6"
+    },
+    {
+      "path": "src/app/api/admin/operations/requirements/route.test.ts",
+      "sha256": "73f52bb46e406347b71128a0d2c07f0740f6881028945d22ab3d67a816d50020"
+    },
+    {
+      "path": "src/app/api/admin/operations/requirements/route.ts",
+      "sha256": "2e1da7b5e61ff1515e9d1ef16bddf0987d579317d34bcbd0581e47084730a9ec"
+    },
+    {
+      "path": "src/lib/operations/requirement-publication.ts",
+      "sha256": "27537f5f84d20195db1e0bca81c3b375f745a99cb49561336ecb02d2cf30e2b0"
+    },
+    {
+      "path": "src/lib/operations/requirements.test.ts",
+      "sha256": "ad37ffce16a365a13ea1efa84f0e569cb20a12066b847e3ada2ea0043bf208c8"
+    },
+    {
+      "path": "src/lib/operations/requirements.ts",
+      "sha256": "3bd7b88dc67a6b6a5b5662a6b158b295a094e1ad4f6d072606662b1d2ce9314d"
+    },
+    {
+      "path": "supabase/migrations/338_hfo_requirement_versions.sql",
+      "sha256": "ef7e5bf91054b4f9b5649796ea561a532b408dcc87e612809b0b58af75261bd7"
+    },
+    {
+      "path": "supabase/tests/review_hfo_applicability.sql",
+      "sha256": "ac87fe5c4cf4be3b0635101973c898c6d06bacc7a7d0c6e10e4cfc4d6b51f08f"
+    }
+  ]
+}
