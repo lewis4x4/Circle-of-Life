@@ -1,32 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/admin/api-auth", () => ({
-  requireAdminApiActor: vi.fn(),
+vi.mock("@/lib/operations/auth", () => ({
+  requireOperationsActor: vi.fn(),
   actorCanAccessFacility: vi.fn(async () => true),
   listActorAccessibleFacilityIds: vi.fn(async () => []),
 }));
 vi.mock("@/lib/observability/logger", () => ({ logError: vi.fn() }));
 
 import { POST } from "./route";
-import { requireAdminApiActor } from "@/lib/admin/api-auth";
+import { requireOperationsActor } from "@/lib/operations/auth";
 
 const insert = vi.fn();
 const single = vi.fn();
 const actor = {
   id: "actor",
-  organization_id: "org",
-  admin: {
-    from: vi.fn(() => {
-      const query = {
-        insert: (payload: unknown) => {
-          insert(payload);
-          return query;
-        },
-        select: vi.fn().mockReturnThis(),
-        single,
-      };
-      return query;
-    }),
+  organizationId: "org",
+  currentActor: {
+    client: {
+      from: vi.fn(() => {
+        const query = {
+          insert: (payload: unknown) => {
+            insert(payload);
+            return query;
+          },
+          select: vi.fn().mockReturnThis(),
+          single,
+        };
+        return query;
+      }),
+    },
   },
 };
 const valid = {
@@ -40,7 +42,7 @@ const valid = {
 describe("operation template creation keeps stable identity server-owned", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireAdminApiActor).mockResolvedValue({ actor } as never);
+    vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
     single.mockResolvedValue({ data: { id: "created", ...valid, activity_id: "allocated" }, error: null });
   });
 

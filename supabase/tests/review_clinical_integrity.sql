@@ -146,9 +146,13 @@ DO $$ DECLARE f record; payload jsonb; receipt jsonb; template_id uuid:=gen_rand
  IF receipt->>'id' IS DISTINCT FROM create_admission_case_review(payload)->>'id' THEN RAISE EXCEPTION 'Admission request retry duplicated case'; END IF;
  BEGIN PERFORM create_admission_case_review(payload||jsonb_build_object('status','pending_clearance')); RAISE EXCEPTION 'Draft submission returned false success'; EXCEPTION WHEN raise_exception THEN IF SQLERRM NOT LIKE 'An admission case already exists%' THEN RAISE; END IF; END;
  -- Explicit synthetic facility activity; do not infer classification from template text.
+ -- The fixture binds a catalog activity the way an approved command will: under the
+ -- transaction-local approved-bind setting, never as a bare client insert.
+ PERFORM set_config('haven.operation_catalog_bind','approved',true);
  INSERT INTO operation_activities(id,organization_id,facility_id,activity_key,name,activity_kind,subject_kind,origin)
  VALUES(activity_id,f.org,f.facility,'clinical-fixture:'||activity_id,'Facility fixture','attestation','facility','admin_log');
  INSERT INTO operation_task_templates(id,organization_id,facility_id,name,description,category,cadence_type,assignee_role,created_by,updated_by,activity_id) VALUES(template_id,f.org,f.facility,'Fixture template','Verified fixture','maintenance','monthly','maintenance',f.actor,f.actor,activity_id);
+ PERFORM set_config('haven.operation_catalog_bind','',true);
  result:=publish_operation_template_review(template_id,jsonb_build_object('name','Fixture version two','created_by',f.actor,'updated_by',f.actor));
  IF (SELECT is_active FROM operation_task_templates WHERE id=template_id) OR (SELECT previous_version_id FROM operation_task_templates WHERE id=(result->>'id')::uuid)<>template_id THEN RAISE EXCEPTION 'Template publication did not retire prior version'; END IF;
 END $$;

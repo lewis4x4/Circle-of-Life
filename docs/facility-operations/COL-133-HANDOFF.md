@@ -50,7 +50,9 @@ The two Finance conflicts were rehearsed on a local scratch merge (origin/main +
 
 Commit-level review of `8e52a197` and `afe24111`: [integration review](col133-evidence/integration-review.json). The gate-fix commit had no findings. The feature review found no source blocker; its one blocker is an ordering constraint, reproduced on PostgreSQL: Finance's export-job column type change must apply before COL-133's export-job policies, which the Finance-first order satisfies. Clear-cut should-fix items were remediated in the follow-up commit on this branch: explicit unavailable responses for meeting-task creation and manual escalation before any database work, export completion accepting failed jobs with the current-authority assertion moved ahead of the completion command, fixed error strings in the risk scorer, revoked site and subject grant cases added to the SQL probe, and negative export tests. Recorded without change: whole-run fail-closed automation behaviour on population mismatch (owner decision), org-wide templates becoming unwritable and invisible under explicit facility typing, and the per-row policy cost on list queries.
 
-COL-133 stays In Review; COL-135 stays blocked until COL-132's review closes.
+COL-132's review closed on September 10 (Done). Its closure remediation (`92dea9b9`) is carried here as `8ee6d8f2`, followed by fixture and test adaptations: the clinical probe binds its synthetic facility activity under the transaction-local approved-bind setting, and the template POST test uses this branch's session client. Focused suite 128 tests, replay and the strict gate PASS again.
+
+COL-133 stays In Review awaiting integration (Finance-first ordering, the recorded integrator decisions and a fresh hosted-ledger read before numbering). COL-135 proceeds on a branch stacked on this one.
 
 ## Resume and rollback
 
