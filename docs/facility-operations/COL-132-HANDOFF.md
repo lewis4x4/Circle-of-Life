@@ -1,8 +1,12 @@
 # COL-132 — catalog implementation handoff
 
-Source implementation is complete and independently reviewed. **Leave In Review:** strict full gates remain FAIL on the existing dependency audit and shared-ref scan. No merge, hosted migration, production deploy, schedule activation or operating acceptance occurred.
+Source implementation is complete, independently reviewed twice, strict-gate PASS and committed on the feature branch. **Review closed September 10; the issue may move to Done as a reviewed, unmerged source segment.** No merge, hosted migration, production deploy, schedule activation or operating acceptance occurred.
 
-Worktree: `/Users/brianlewis/Circle of Life/Haven Facility Catalog`; branch `codex/hfo-col132-catalog`, based on COL-18 commit `39d41591` over main `fad17dcc`. Nineteen other worktree heads and twelve dirty files match the starting snapshot. Preserve all concurrent work.
+Worktree: `/Users/brianlewis/Circle of Life/Haven Facility Catalog`; branch `codex/hfo-col132-catalog`, based on COL-18 commit `39d41591` over origin/main `fad17dcc`. COL-133 stacks on this branch. Preserve all concurrent work.
+
+## Review closure (September 10)
+
+The two release-gate blockers were pre-existing and were cleared by carrying COL-133's gate-fix commit onto this branch (`6cc1bfd7`, identical patch); the unchanged catalog source then passed the full strict gate. A second independent review of `64cc31b8` (SQL and TypeScript/seed) found no blocker; its findings and dispositions are in [review closure](col132-evidence/review-closure.json). Remediated on this branch: a client request's root template insert can no longer adopt a catalog activity or another lineage (database guard keyed on the request role claim, with an approved-bind setting reserved for COL-135); catalog tables reject TRUNCATE; a site change on template revision is rejected explicitly by the API; stable-identity tests for POST and PATCH; seed check runs from any directory. **Open for the owner:** two source header labels (AL-Y02, AL-C08) name individuals as the workbook wrote them; rule on redaction before deployment. **Deferred to COL-135:** activity-level exposure of the eleven `needs_confirmation` dispositions.
 
 ## Delivered
 

@@ -8,7 +8,7 @@ const logError = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/observability/logger", () => ({ logError }));
 
 import { PATCH } from "./route";
-import { requireOperationsActor } from "@/lib/operations/auth";
+import { actorCanAccessFacility, requireOperationsActor } from "@/lib/operations/auth";
 
 const rpc = vi.fn();
 const update = vi.fn();
@@ -114,6 +114,43 @@ describe("operation template error boundary", () => {
       expect.objectContaining({ message: sentinel }),
       { action: "update-status", templateId: "template" },
     );
+  });
+
+  it("rejects a site change on revision before any command runs", async () => {
+    vi.mocked(actorCanAccessFacility).mockResolvedValue(true);
+    lookup.mockResolvedValue({ data: { ...existingTemplate, facility_id: "site-a" }, error: null });
+
+    const response = await PATCH(
+      new Request("https://local.test/template", { method: "PATCH", body: JSON.stringify({ facility_id: "site-b", name: "Moved" }) }) as never,
+      { params: Promise.resolve({ id: "template" }) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "A template keeps its site across revisions. Create a new template at the other site." });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("never forwards caller-supplied stable identity into a revision", async () => {
+    lookup.mockResolvedValue({ data: existingTemplate, error: null });
+    rpc.mockResolvedValue({ data: { ...existingTemplate, id: "revision", version: 2, name: "Renamed" }, error: null });
+
+    const response = await PATCH(
+      new Request("https://local.test/template", {
+        method: "PATCH",
+        body: JSON.stringify({ name: "Renamed", id: "chosen-id", activity_id: "chosen-activity", previous_version_id: "chosen-parent", version: 9 }),
+      }) as never,
+      { params: Promise.resolve({ id: "template" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledTimes(1);
+    const payload = (rpc.mock.calls[0] as unknown[])[1] as { p_previous_id: string; p_payload: Record<string, unknown> };
+    expect(payload.p_previous_id).toBe("template");
+    expect(payload.p_payload).not.toHaveProperty("id");
+    expect(payload.p_payload).not.toHaveProperty("activity_id");
+    expect(payload.p_payload).not.toHaveProperty("previous_version_id");
+    expect(payload.p_payload).not.toHaveProperty("version");
   });
 
   it.each([
