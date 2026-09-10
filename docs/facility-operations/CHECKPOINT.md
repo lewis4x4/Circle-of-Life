@@ -4,6 +4,14 @@ Updated 2026-09-10 (late afternoon). Durable resume state for the HFO track. No 
 
 ## Current issue
 
+- **COL-143 / HFO-07** — scoped verified evidence (source-only portion). Selected after COL-144 closed: it and COL-140 are the only dependency-ready HFO issues, and both are externally blocked. COL-143's third acceptance item (real upload, finalize, completion and corporate download with positive hosted Storage HTTP proof) needs hosted transport; the schema, commands, routes and local proofs are source work and are being built, and the issue stays In Progress, not Done, until that proof exists. COL-140 needs the owner's answers to Q01, Q02, Q04–Q10, Q14 and Q30 and is not started. Branch `codex/hfo-col143-evidence` in this worktree, stacked on the COL-144 closure commit. Preparation and state: `COL-143-PREPARATION.md`, `col143-evidence/` once created.
+
+## Just closed
+
+- **COL-144 / HFO-14** — Done in Linear 2026-09-10T19:22Z as reviewed, gated, unmerged source; commit `f97fb50f` on `codex/hfo-col144-issues`, draft PR #471 (base COL-142). Closure `col144-evidence/review-closure.json`; handoff `COL-144-HANDOFF.md`.
+
+## Previous issue record
+
 - **COL-144 / HFO-14** — problems, next actions, backup ownership and resolution. Selected from live Linear after COL-142 closed (blockers COL-133, COL-142 Done). COL-143 (HFO-07) is also dependency-ready but its acceptance needs positive hosted Storage HTTP proof, outside the source-only boundary; it stays Backlog with that reason recorded in `col142-evidence/review-closure.json`. Branch `codex/hfo-col144-issues` in this worktree, stacked on `0c61def2` (COL-142 closure over `006a12ff`). Linear In Progress since 2026-09-10T17:58Z (`col144-evidence/linear-state.json`). Contracts settled in `col144-evidence/engineering-contracts.md`; preparation `COL-144-PREPARATION.md`. Both lanes delivered; independent reviews done (TypeScript: four should-fix remediated; SQL: two should-fix remediated, re-verified PASS, one re-verification note applied); focused suite 328 tests / 31 files, typecheck, lint, native replay 345 files / 26 probes (128-assertion probe), three-case race script, strict gate PASS (`test-results/agent-gates/2026-09-10T17-22-18-024Z-COL-144-HFO-ISSUES.json`). Remaining: commit/push, draft PR against `codex/hfo-col142-receipts`, Linear closing comment, closure record, next selection. Scratch cluster as below; `col142_base341` and `col144_base342` hold migrations through 341 and 342.
 
 ## Just closed
