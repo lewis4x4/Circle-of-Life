@@ -1,0 +1,12 @@
+# COL-139 preparation — no implementation yet
+
+A read-only architecture review identified the following engineering contracts. They amend the draft plan; critic review and implementation have not started. They are not new findings against completed COL-137.
+
+## Architect amendments (settle before implementation; critic review still pending)
+- Add explicit effective-dated activity/site/subject bindings with authority_class, shift, provenance and retirement; registry existence/site configuration never automatically enrolls residents/employees/assets.
+- Database-owned immutable exact key excludes version/template UUID and deadline. Normalize inclusive evaluator periods; serialize by activity/site/subject, reject incompatible overlap (including shifted/unshifted overlap). Persist a precise governing instant so same-day configuration cutover cannot choose the wrong version. Retain identity across cancellation/deletion.
+- Manual unscheduled identity retains null period/deadline. A labelled compatibility queue date may satisfy the legacy assigned_shift_date column; it is not performed-at/compliance period. Later association is an immutable audited relation with expected revision/request fingerprint and explicit cardinality; never rewrites identities/snapshots or implies completion.
+- Native retirement/transfer requires narrow service reconciliation distinct from human mutation. Append lifecycle events without rewriting executed/completed/missed facts or granting historical read access. Skip historical generation without proven binding eligibility.
+- Legacy defer currently creates replacement rows lacking managed identity/snapshots. Preserve true legacy behavior, but explicitly protect new managed rows against incompatible defer/reinstate/meeting/service paths until their scoped semantics are implemented. Do not disable required COL139 generation/manual association/cancellation workflows.
+- Fully paginate approved configuration/binding inputs. PostgreSQL validates scope/binding/snapshot/windows/identity and trusted evaluator output contract; the TS shared evaluator remains recurrence authority. Persist evaluator version/timezone/period/due/grace/reminder/adjustments. Reject reversed/invalid ranges. Source events need stable validated source identity; no production adapters activated.
+- Additional tests: same-day configuration cutover, timezone change, shifted/unshifted overlap, binding retirement during generation, association to generated/completed occurrence, managed-row legacy defer rejection, replay after deletion.

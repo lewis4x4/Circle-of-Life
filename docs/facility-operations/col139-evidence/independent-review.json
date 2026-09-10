@@ -1,0 +1,139 @@
+{
+  "issue": "COL-139",
+  "recorded_at": "2026-09-10T15:45:00Z",
+  "method": "Two independent read-only reviewers on the uncommitted tree (SQL: migration 340, its probe and the race script against the settled contracts and the 336-339 guarantees, with rolled-back experiments on the run-owned native cluster; TypeScript: scheduler, occurrence library, six routes, tests, types and server pass-through against the database wrapper signatures). Both ran the gates themselves. Every finding was verified against the source and dispositioned; remediations were applied before the commit and re-verified (focused suite, typecheck, lint, Deno check, native replay, strict gate).",
+  "typescript_review": {
+    "verdict": "changes requested: two blockers, three should-fix, four notes; all remediated or recorded",
+    "findings": [
+      {
+        "severity": "blocker",
+        "where": "oce-task-scheduler p_run.rule",
+        "claim": "the scheduler sent the evaluator's normalised rule (null keys dropped, months sorted) while the database asserts jsonb equality with the stored column, so a stored rule with an explicit null reminder or calendar key would fail every managed run",
+        "disposition": "Fixed: the stored column is sent back verbatim; the test fixture stores an explicit null calendar key and asserts p_run with toEqual."
+      },
+      {
+        "severity": "blocker",
+        "where": "oce-task-scheduler reconciliation counts",
+        "claim": "bindings_closed and occurrences_cancelled were read from the top level, which the command returns as id arrays; Number(array) is NaN and serialises as null",
+        "disposition": "Fixed: counts are read from the command's counts object; the stub now returns the database shape."
+      },
+      {
+        "severity": "should-fix",
+        "where": "legacy supersession",
+        "claim": "a configuration whose window merely touched the range superseded the legacy template for every date, including catch-up dates before it took effect, and invalid or event rules superseded although they generate nothing",
+        "disposition": "Fixed: supersession is a set of clipped date intervals per facility and activity recorded only after a valid non-event rule; legacy dates outside the intervals still generate (tests added for both cases)."
+      },
+      {
+        "severity": "should-fix",
+        "where": "existing-rows query",
+        "claim": "the widened, unpaged existing-rows query could be truncated at PostgREST's row cap, and the activity-keyed skip is not backed by the template-keyed database index",
+        "disposition": "Fixed: paged 500 rows at a time to the last short page and bounded to the loaded templates' activities (template ids when a template lacks one); test proves a row on the second page is honoured."
+      },
+      {
+        "severity": "should-fix",
+        "where": "row-by-row legacy convergence",
+        "claim": "a non-duplicate error during the singles left earlier rows committed while the 500 body hid the counts",
+        "disposition": "Fixed: the 500 body and log carry inserted and skipped_existing; test added."
+      },
+      {
+        "severity": "note",
+        "where": "shift on bindings",
+        "claim": "the managed pass never sends a shift, so a shifted binding always reports no_binding",
+        "disposition": "Recorded as a known limit and an engineering policy (OWNER-DECISIONS 3c vi); no shift is invented from a deadline time."
+      },
+      {
+        "severity": "note",
+        "where": "trusted error fragments",
+        "claim": "several plain database messages were hidden behind generic text because the fragments did not match the wording",
+        "disposition": "Fixed: fragments aligned with the 340 wording (need no binding, is in force, already retired, must follow the binding start, classification is required)."
+      },
+      {
+        "severity": "note",
+        "where": "configuration window pre-check",
+        "claim": "the coarse facility-zone check could drop a configuration whose rule-local start date equals the range's last day when zones differ",
+        "disposition": "Fixed: the intersection is computed only in the rule zone."
+      },
+      {
+        "severity": "note",
+        "where": "test gaps",
+        "claim": "no test for a batch split above 400 periods, a non-duplicate fallback error, or revalidation failing before a command",
+        "disposition": "Tests added for all three; multi-facility reconciliation and the list filters remain covered by the route and command tests only."
+      }
+    ],
+    "clean": [
+      "RPC names, p_* parameter names and return shapes match every public wrapper; items carry exactly the keys the database reads; counts keys match",
+      "evaluator version and 800-day span agree on both sides; event rules reported, never generated; dry run calls no RPC; one failing command counted without aborting",
+      "routes: site grant before any read or command, revalidation before every RPC, [id] routes resolve through the session client, strict bodies, request-key regex identical to the database, 42501 hidden as 403, raw constraint text never echoed",
+      "Deno function uses no Node API; harness injects the only new global; paging terminates on the first short page",
+      "types, server and task-list additions are optional pass-through fields"
+    ]
+  },
+  "sql_review": {
+    "verdict": "changes required: two blockers, five should-fix, seven notes; blockers and should-fixes remediated, notes applied or recorded; re-verification recorded below",
+    "findings": [
+      {
+        "severity": "blocker",
+        "where": "340 generate_operation_occurrences, facility candidate query",
+        "claim": "the facility subject was not created on demand, so a facility-kind activity at a site without one reported no_binding with a reason reserved for people and assets; the probe fixture pre-inserted the subject and masked it (all five local sites lack one)",
+        "disposition": "Fixed: the command inserts the site's facility subject ON CONFLICT DO NOTHING before expansion; the probe no longer pre-creates it and asserts generation creates exactly one."
+      },
+      {
+        "severity": "blocker",
+        "where": "340 haven.operation_occurrence_approved and the identity/authority guards",
+        "claim": "the approval flag was an ordinary custom setting; service_role, which keeps INSERT/UPDATE on the instance table for the legacy scheduler, could set it and then mint a managed identity, cancel through the 337 carve-out and soft-delete with plain DML (reproduced)",
+        "disposition": "Fixed: an owner-only secrets table and haven.operation_occurrence_token() (definer, executable by nobody but the owner-run commands) yield a per-transaction token; the commands set it and the guards compare against it. Probe: service_role and authenticated with the forged setting are denied on token, secrets, managed INSERT, status UPDATE, deleted_at UPDATE and direct association INSERT."
+      },
+      {
+        "severity": "should-fix",
+        "where": "340 generate_operation_occurrences, re-read after the advisory lock",
+        "claim": "the binding was re-read without a row lock, so an in-flight retirement holding FOR UPDATE won the FK wait and the generator still inserted an occurrence whose binding ended before its governing instant (reproduced)",
+        "disposition": "Fixed: native subject rows are pinned FOR SHARE and the binding re-read FOR KEY SHARE after the lock, so the retired window is seen; the race script's third case reproduces the in-flight retirement and observes no_binding and no row."
+      },
+      {
+        "severity": "should-fix",
+        "where": "340 cancel_operation_occurrence replay after p_remove",
+        "claim": "a replay of the same cancel key after removal raised 42501 instead of returning replayed:true",
+        "disposition": "Fixed: a removed, cancelled row whose cancel audit carries the same key and actor replays after the actor's site authority is re-locked; other keys or actors are refused (probed)."
+      },
+      {
+        "severity": "should-fix",
+        "where": "340 generate_operation_occurrences p_run",
+        "claim": "rule and rule_sha256 were both optional, so the trusted-evaluator check could be skipped",
+        "disposition": "Fixed: p_run.rule is mandatory (22023 when absent); the scheduler always sends the stored column."
+      },
+      {
+        "severity": "should-fix",
+        "where": "340 manual/enroll/retire ordering",
+        "claim": "subject-kind mismatch and binding existence were reported before the site-authority check, disclosing foreign-site facts by wording",
+        "disposition": "Fixed: site authority is asserted right after the facility lookup; not-found and denial share the wording Operation unavailable."
+      },
+      {
+        "severity": "should-fix",
+        "where": "probe and race script gaps",
+        "claim": "protected-class reconciliation, forged-flag DML, on-demand facility subject, in-flight retirement race, explicit queue dates and bound, shift-specific bindings, unscheduled association kind, the COL-137 ambiguity assertion and the advisory wait event were untested",
+        "disposition": "Fixed: all added (probe 155 assertions, race script three cases asserting wait_event advisory or transactionid)."
+      },
+      {
+        "severity": "note",
+        "where": "timestamp helper volatility; closing DO block; session-retired bindings; revision fingerprint; manual employee class; global request-key uniqueness; future-dated retirement",
+        "disposition": "Helper declared STABLE and the closing block now asserts no binding or association rows exist; the other five are design choices kept and recorded in COL-139-HANDOFF.md and OWNER-DECISIONS.md 3c."
+      }
+    ],
+    "clean": [
+      "defer_operation_task_review and operation_task_command differ from 337 by exactly one added guard each; guard_operation_current_authority by the four-line carve-out",
+      "every 340 function pins search_path and revokes PUBLIC/anon EXECUTE; definer commands granted only to authenticated or service_role; public wrappers are invoker",
+      "table grants and RLS on both new tables; read policies gate on subject accessibility and task readability; the other site sees nothing",
+      "audit-log CHECK replaced under the same name; legacy rows satisfy the new shape CHECK; identity index and ON CONFLICT arbiter match; cancelled and soft-deleted rows retain identity",
+      "governing-instant plus 338 local-day checks; same-day cutover and timezone change verified; overlap rule as contracted; reconciliation scope as contracted; association and manual semantics as contracted",
+      "no service job writes task instance status today, so refusing service updates outside the commands breaks no existing job"
+    ],
+    "re_verification": {
+      "verdict": "PASS",
+      "method": "the reviewer reproduced every original counter-example on a clone of the rebuilt 340 base: on-demand facility subject created and generated; forged setting denied for service_role and authenticated on token, secrets, managed INSERT, status/deleted_at/priority UPDATE and association INSERT; no route to a valid token (setting empty after a command, rolled back with an aborted savepoint, absent from pg_settings); in-flight retirement and in-flight asset retirement both observed waiting and reported no_binding/binding_not_current with zero rows; cancel replay after removal idempotent for the same actor and key only; p_run without rule refused; manual and enroll disclose nothing before site authority; 337 bodies verbatim plus one guard each; ACLs, wrappers, search_path and grants confirmed; race script three cases PASS",
+      "notes": [
+        {"where": "retire_operation_binding wording", "claim": "an in-organisation caller without the site grant saw a different 42501 message for an existing binding than for a random id (SQL-level only; the API maps both to 403)", "disposition": "Fixed: the actor denial is re-raised as Operation unavailable, matching the not-found branch."},
+        {"where": "secret generation", "claim": "gen_random_bytes was the migration's only unqualified pgcrypto call, resolving on the hosted project only through the migration runner's search_path", "disposition": "Fixed: the secret is derived with built-in functions only (sha256 over two random uuids, the clock and the backend pid); native replay and the strict gate were rerun after the change."}
+      ]
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "issue": {
+    "id": "07bdd215-b945-46d6-b5ae-ffc5b516acec",
+    "identifier": "COL-139",
+    "title": "[HFO-04] Generate subject-scoped occurrences without duplicate or rewritten history",
+    "description": "The current unique key uses template revision and cannot separate multiple assets or resident/employee subjects.\n\n**Scope**\nUse stable activity + site + subject + period/shift/source event as occurrence identity. Add concurrent generation, catch-up, manual unscheduled work linkage and explicit retirement/cancellation reconciliation.\n\n**Acceptance**\n\n- [ ] Two assets of the same type receive distinct occurrences; concurrent scheduler runs generate one per intended subject/period.\n- [ ] Publishing a new template within the same period does not create a duplicate; missed periods and prior evidence survive catch-up/retirement.\n- [ ] Early/late/unknown-schedule work is not silently reassigned to the current period; later association requires auditable reconciliation.\n\n**Dependencies:** [COL-137](https://linear.app/jarvislewis/issue/COL-137/hfo-03-implement-one-recurrence-and-due-date-evaluator), [COL-133](https://linear.app/jarvislewis/issue/COL-133/hfo-05-enforce-site-subject-and-current-person-authority-on-every)\n**Related existing work:** See source pointers below\n**Release:** Core. Implementation not started; this issue is not proof of deployment or staff acceptance.\n**Source items:** Shared core contract across all applicable Admin Log items\n**Source/code pointers:** `201_oce_reconciliation_and_generation_guard.sql:183, supabase/functions/oce-task-scheduler/index.ts:241, R01 R03`. Migration filenames are under `supabase/migrations/`; source paths are relative to Circle-of-Life unless explicitly named otherwise. Reconcile current main before editing.\n**Open configuration questions:** Q05 See [Haven Facility Operations \u2014 Source Coverage and Open Decisions](https://linear.app/jarvislewis/document/haven-facility-operations-source-coverage-and-open-decisions-0bf9ab4bebce).\n\n**Build contract:** [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). **Sequence:** [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\nOne bounded implementation segment at a time. Record exact source/commit, focused behavioral tests, applicable repository segment gates, review and rollback/handoff evidence. Preserve current authority after waits and on retries, existing dirty/concurrent work, source truth and unknown rules. No new dependency, external transmission, clinical/employment decision or policy activation is implied. Keep source/local/hosted/provider/staff/operating-cycle acceptance distinct. No named assignee, estimate or date has been invented.\n\nRoadmap key: HFO-04 / HAVEN-ADMIN-20260909",
+    "state": {
+      "name": "Backlog"
+    },
+    "inverseRelations": {
+      "nodes": [
+        {
+          "type": "blocks",
+          "issue": {
+            "identifier": "COL-133",
+            "state": {
+              "name": "Done"
+            }
+          }
+        },
+        {
+          "type": "blocks",
+          "issue": {
+            "identifier": "COL-137",
+            "state": {
+              "name": "Done"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

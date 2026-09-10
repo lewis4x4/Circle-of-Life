@@ -1,0 +1,17 @@
+{
+  "issue": "COL-139",
+  "before": {
+    "checked_at": "2026-09-10T17:55:00Z",
+    "state": "Backlog",
+    "blockers": {"COL-133": "Done", "COL-137": "Done"},
+    "dependency_ready": true,
+    "source": "live Linear GraphQL read (issue, team workflow states, inverse relations)"
+  },
+  "started": {
+    "at": "2026-09-10T17:58:00Z",
+    "state": "In Progress",
+    "comment_id": "d61c3d0f-bdaa-400f-814d-9fb5ef649acf",
+    "comment": "start comment naming branch codex/hfo-col139-occurrences, worktree, base caca9592, provisional slot 340 and the plan against the acceptance criteria"
+  },
+  "after": "see the closing comment recorded in verification.json once the segment is committed and pushed"
+}
