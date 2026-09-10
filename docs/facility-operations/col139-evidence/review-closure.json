@@ -1,0 +1,13 @@
+{
+  "issue": "COL-139",
+  "closed_at": "2026-09-10T16:20:00Z",
+  "reviewed_head": "120b7f03",
+  "branch": "codex/hfo-col139-occurrences",
+  "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/469 (base codex/hfo-col137-evaluator)",
+  "manifest": "docs/facility-operations/col139-evidence/implementation-manifest.json (33 files, hashed at commit)",
+  "strict_gate": "test-results/agent-gates/2026-09-10T15-51-37-911Z-COL-139-HFO-OCCURRENCES.json",
+  "verdict": "PASS",
+  "independent_review": "docs/facility-operations/col139-evidence/independent-review.json (SQL and TypeScript reviews; every blocker and should-fix remediated; SQL remediation re-verified PASS by the reviewer; two re-verification notes applied before the final replay and gate)",
+  "linear": {"state": "Done", "closing_comment_id": "460ab5c1-50e5-4ad9-941c-72999b7dae37"},
+  "completion_meaning": "reviewed, gated, unmerged source only; no hosted, provider, staff or operating acceptance; migration 340 provisional; Finance-first integration and a fresh hosted-ledger read precede final numbering"
+}

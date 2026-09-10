@@ -13,5 +13,13 @@
     "comment_id": "d61c3d0f-bdaa-400f-814d-9fb5ef649acf",
     "comment": "start comment naming branch codex/hfo-col139-occurrences, worktree, base caca9592, provisional slot 340 and the plan against the acceptance criteria"
   },
-  "after": "see the closing comment recorded in verification.json once the segment is committed and pushed"
+  "after": {
+    "at": "2026-09-10T16:18:00Z",
+    "state": "Done",
+    "closing_comment_id": "460ab5c1-50e5-4ad9-941c-72999b7dae37",
+    "commit": "120b7f03",
+    "draft_pr": "#469",
+    "meaning": "reviewed, gated, unmerged source; no hosted or operating acceptance",
+    "dependents_read_live": {"COL-142": "Backlog, blockers COL-133/135/139 all Done: dependency-ready", "COL-147": "Backlog, still blocked by COL-142 and COL-145"}
+  }
 }
