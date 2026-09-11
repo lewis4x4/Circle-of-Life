@@ -56,6 +56,8 @@ export function StandUpEditor(props: Props) {
     else if (documentEntry === false) window.location.replace(window.location.href);
   }, []);
   const editable = browserProtected && (!historical || (canManage && correction));
+  // Historical figures stay readable but reject typing until a reasoned correction is opened.
+  const readOnly = historical && !(canManage && correction);
   const guardState = useRef({ dirty, advancedBusy });
   useLayoutEffect(() => { guardState.current = { dirty, advancedBusy }; }, [dirty, advancedBusy]);
   useLayoutEffect(() => {
@@ -131,7 +133,7 @@ export function StandUpEditor(props: Props) {
     return () => clearTimeout(timer);
   }, [draft, dirty, online, review, historical, conflict, phase, advancedBusy, save]);
   const change = (key: keyof EntryFields, value: string) => {
-    if (isRouteTransitionPending()) return;
+    if (isRouteTransitionPending() || readOnly) return;
     generation.current++; draftRef.current = { ...draftRef.current, [key]: value }; setDraft(draftRef.current);
     dirtyRef.current = true; setDirty(true); setReview(false);
     // Invalid local input has no unknown server outcome, so a correction can
@@ -174,7 +176,7 @@ export function StandUpEditor(props: Props) {
     {saved?.entry_origin === 'imported' && !saved.last_submitted_at && <p className="border-l-2 border-border pl-3 text-sm">These figures were imported from the workbook. Check every section before submitting; filled fields do not mean administrator review is complete.</p>}
     {overtimeError && <p role="alert" className="rounded border border-destructive p-3">{overtimeError.message}</p>}
     {!online && <p role="status" className="rounded border border-border p-3 text-sm">Haven is offline. Keep this page open to retain unsaved entries. The shared Google workbook is your outage fallback while Drive is available.</p>}
-    {historical && <section className="space-y-2 rounded border border-border p-4"><h3 className="font-medium">Historical report — {dateLabel(week)}</h3><p className="text-sm">Previous meetings are preserved. This is not the open reporting period.</p>{canManage && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={correction} disabled={routePending || phase === 'saving' || dirty || !!pending.current} onChange={event => setCorrection(event.target.checked)} /> Make a correction with a recorded reason</label>}</section>}
+    {historical && <section className="space-y-2 rounded border border-border p-4"><h3 className="font-medium">Historical report — {dateLabel(week)}</h3><p className="text-sm">Previous meetings are preserved. This is not the open reporting period.{readOnly ? ' Figures are read-only.' : ''}</p>{canManage && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={correction} disabled={routePending || phase === 'saving' || dirty || !!pending.current} onChange={event => setCorrection(event.target.checked)} /> Make a correction with a recorded reason</label>}</section>}
     {history && <StandUpHistory reports={props.reports} facilityId={facility.id} facilityName={facility.name} />}
     {review && values ? <section aria-label="Review report" className="space-y-4 rounded border border-border p-5">
       <h3 ref={reviewHeading} tabIndex={-1} className="text-lg font-semibold outline-none">Review {facility.name} · {dateLabel(week)}</h3><p className="text-sm text-muted-foreground">Check the destination, period and all sixteen figures. Submission confirms your review; payroll verification is separate.</p>
@@ -185,7 +187,7 @@ export function StandUpEditor(props: Props) {
     </section> : <form noValidate id="stand-up-entry" className="space-y-5" onSubmit={event => { event.preventDefault(); void save('draft'); }}>
       <p className="text-sm text-muted-foreground">Leave a figure blank if it is not yet known. Enter 0 when there are none.</p>
       {prior && <p className="text-xs text-muted-foreground">Reference figures below are from {dateLabel(prior.week_start)}{prior.week_start !== shiftDay(week, -7) ? '; the previous calendar week is missing' : ', the previous reporting week'}. They are not copied into this report.</p>}
-      <EntryQuestions fields={draft} onChange={change} disabled={!editable || advancedBusy || conflict || routePending} week={week} prior={prior} priorWeek={prior ? dateLabel(prior.week_start) : undefined} overtimeError={overtimeError} />
+      <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} prior={prior} priorWeek={prior ? dateLabel(prior.week_start) : undefined} overtimeError={overtimeError} />
       {historical && correction && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
     </form>}
     <aside aria-label="Save and submit report" className="sticky bottom-0 z-10 space-y-3 border-y border-border bg-background px-1 py-4 shadow-sm">

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useHavenAuth } from '@/contexts/haven-auth-context';
-import { useFacilityStore } from '@/hooks/useFacilityStore';
+import { selectionBelongsToPeriod, useFacilityStore } from '@/hooks/useFacilityStore';
 import { useRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
 import { dateLabel, reportDeadlineState, derivedValues, easternTime, fieldDisplay, reportState, staffingPeriod, shiftDay, FIELD_STATE_TEXT, type StandUpReport } from '@/lib/stand-up/model';
@@ -48,10 +48,11 @@ function StandUpSession({ userId }: { userId: string }) {
       if (initial) {
         setWeek(data.current_week);
         const current = useFacilityStore.getState();
-        // A cached choice belongs to its actor. The authorized response always
-        // validates it again before any form is mounted.
+        // A cached choice belongs to its actor and to one reporting period. The
+        // authorized response always validates it again before any form is mounted,
+        // and an account with more than one grant chooses again each new Monday.
         if (data.facilities.length === 1) current.setSelectedFacility(data.facilities[0].id);
-        else if (current.facilitiesCacheUserId !== userId || !data.facilities.some(f => f.id === current.selectedFacilityId)) current.setSelectedFacility(null);
+        else if (current.facilitiesCacheUserId !== userId || !data.facilities.some(f => f.id === current.selectedFacilityId) || !selectionBelongsToPeriod(current.selectedReportingPeriod, data.current_week)) current.setSelectedFacility(null);
         hydrated.current = true;
       }
     } catch (cause) {
@@ -72,6 +73,8 @@ function StandUpSession({ userId }: { userId: string }) {
     return () => { mounted.current = false; invalidate(); clearInterval(clock); clearInterval(refresh); window.removeEventListener('focus', focus); };
   }, [reload]);
   useLayoutEffect(() => useFacilityStore.getState().registerFacilityChangeGuard(() => guard.current()), []);
+  const currentWeek = workspace?.current_week;
+  useEffect(() => { if (hydrated.current && selectedId && currentWeek) useFacilityStore.getState().stampSelectionPeriod(currentWeek); }, [selectedId, currentWeek]);
   const bindGuard = useCallback((next: (silent?: boolean) => boolean) => { guards.current.add(next); return () => { guards.current.delete(next); }; }, []);
   const accept = useCallback((saved: StandUpReport) => {
     if (!mounted.current) return;

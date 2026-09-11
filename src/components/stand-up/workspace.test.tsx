@@ -38,11 +38,34 @@ describe('Stand Up facility identity', () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, facilities: [] }); render(<StandUpWorkspace />);
     await screen.findByText('No facility assignment'); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
   });
-  it('rejects another actor cached facility, but honors a validated explicit selection', async () => {
-    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'different' });
+  it('rejects another actor cached facility, but honors a validated explicit selection from the open period', async () => {
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'different', selectedReportingPeriod: '2026-09-14' });
     const view = await start(); expect(useFacilityStore.getState().selectedFacilityId).toBeNull(); view.unmount();
-    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u' }); render(<StandUpWorkspace />);
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u', selectedReportingPeriod: '2026-09-14' }); render(<StandUpWorkspace />);
     await screen.findByLabelText('Current census'); expect(screen.getByRole('heading', { name: 'Oakridge' })).toBeInTheDocument();
+  });
+  it('lands a multi-grant account on All facilities when the reporting period has changed since the choice', async () => {
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u', selectedReportingPeriod: '2026-09-07' });
+    const view = await start(); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+    expect(useFacilityStore.getState().selectedFacilityId).toBeNull(); expect(screen.getByLabelText('Reporting facility')).toHaveValue(''); view.unmount();
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u', selectedReportingPeriod: null }); render(<StandUpWorkspace />);
+    await screen.findByRole('heading', { name: 'All facilities' }); expect(useFacilityStore.getState().selectedFacilityId).toBeNull();
+  });
+  it('stamps the open period when an ALF is chosen so the same period keeps the choice', async () => {
+    await start(); await choose('b');
+    expect(useFacilityStore.getState()).toMatchObject({ selectedFacilityId: 'b', selectedReportingPeriod: '2026-09-14' });
+  });
+  it('keeps a single-grant account on its facility whatever period was stored', async () => {
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u', selectedReportingPeriod: '2026-08-31' });
+    mocks.request.mockResolvedValueOnce({ ...workspace, facilities: [workspace.facilities[1]] });
+    render(<StandUpWorkspace />); await screen.findByLabelText('Current census');
+    expect(screen.getByRole('heading', { name: 'Oakridge' })).toBeInTheDocument(); expect(useFacilityStore.getState().selectedFacilityId).toBe('b');
+  });
+  it('rejects a save for an ALF outside the grant and removes the editable surface', async () => {
+    await start(); await choose(); changeCensus('9');
+    mocks.request.mockRejectedValueOnce(new StandUpRequestError('Stand Up access denied', 403)); save();
+    await screen.findByText(/Your access changed/); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+    expect(mocks.request.mock.calls.at(-1)?.[0]).toBe('save');
   });
   it('vetoes dirty shell and meeting changes before moving the context', async () => {
     await start(); await choose(); changeCensus('25');
@@ -250,6 +273,23 @@ describe('Stand Up capture, autosave and review', () => {
     expect(screen.getByText(/Submission timing was not recorded/)).toBeInTheDocument(); expect(screen.queryByText(/target has passed/)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
     expect(screen.queryByText(/target has passed|Past target/)).not.toBeInTheDocument();
+  });
+  it('keeps historical figures readable but read-only until a reasoned correction is opened', async () => {
+    mocks.auth.appRole = 'owner';
+    mocks.request.mockResolvedValueOnce({ ...workspace, can_import: true, reports: [report({ id: 'old', week_start: '2026-09-07', values: { ...emptyValues(), current_total_census: 41 } })] });
+    await start(); await choose();
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
+    const census = screen.getByLabelText('Current census');
+    expect(census).toHaveValue(41); expect(census).toHaveAttribute('readonly'); expect(census).toBeEnabled();
+    expect(screen.getByLabelText('Overtime hours')).toHaveAttribute('readonly');
+    expect(screen.getByText(/Figures are read-only/)).toBeInTheDocument();
+    fireEvent.change(census, { target: { value: '42' } }); expect(screen.getByLabelText('Current census')).toHaveValue(41);
+    expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled(); expect(screen.getByRole('button', { name: 'Review and submit' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Make a correction with a recorded reason'));
+    expect(screen.getByLabelText('Current census')).not.toHaveAttribute('readonly');
+    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '42' } }); expect(screen.getByLabelText('Current census')).toHaveValue(42);
+    expect(screen.getByText('Unsaved changes')).toBeInTheDocument(); expect(screen.getByLabelText('Correction reason')).toBeInTheDocument();
   });
   it('keeps technical imports out of facility-admin entry', async () => {
     await start(); await choose(); expect(screen.queryByRole('button', { name: 'Management tools' })).not.toBeInTheDocument();
