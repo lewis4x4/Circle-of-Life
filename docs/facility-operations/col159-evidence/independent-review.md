@@ -23,6 +23,6 @@ An independent, read-only reviewer seat examined migration `348_hfo_dietary_admi
 | Meal-level records and audit/performance distinct; equipment/site applicability controls tasks | PASS |
 | Composite checks preserve components; service recording does not advance unrelated lifecycle; outbound content not auto-published | PASS |
 
-Re-verification after the fixes: the 348 and 347 probes PASS on a fresh `col159_base348`, race script **6/6 PASS** with observed waits, focused vitest 7 files / 67 tests PASS, typecheck and lint PASS; the reviewer seat re-ran its F1/F2/F3 scenarios against the fixed migration (see `independent-review.json`). Strict segment gate: see `verification.json`.
+Re-verification after the fixes: the 348 and 347 probes PASS on a fresh `col159_base348`, race script **6/6 PASS** with observed waits, focused vitest 7 files / 67 tests PASS, typecheck and lint PASS; the reviewer seat re-ran its F1/F2/F3 scenarios and new bypass attempts (conflict-then-unenrolled, move back, void-then-correct, never-linked record, refused-path unchanged, one-effective-receipt invariant) against the fixed migration and returned **APPROVE** (RV-F1, RV-F2, RV-F3 closed; RV-N1 the gate artifact, resolved below); see `independent-review.json`. Strict segment gate: see `verification.json`.
 
 Machine-readable: `col159-evidence/independent-review.json`.

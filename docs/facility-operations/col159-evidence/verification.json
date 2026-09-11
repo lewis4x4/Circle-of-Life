@@ -1,0 +1,121 @@
+{
+ "issue": "COL-159",
+ "uuid": "1ed5af55-72be-4b41-af3a-0c6fb718333b",
+ "title": "[HFO-22] Connect dietary, facility services and general admin evidence",
+ "scope": "source only; complete AL coverage pass (three new adapters, two AED kinds) on the COL-147 mechanism; no hosted apply, deploy, rule, schedule, deadline, reminder, UI, provider, staff or operating acceptance; nothing sent or published",
+ "model_used": "Fable 5.1 / claude-fable-5-1",
+ "recorded_at": "2026-09-11T04:30:00Z",
+ "branch": "codex/hfo-col159-dietary-admin",
+ "base": "codex/hfo-col154-drill-generators @ 47455a13d812ba638b9f75b2606cd5b957a6f653",
+ "draft_pr": "(opened after the segment PASS; see GATE.md)",
+ "commits": {
+  "contract": "1018aff4",
+  "migration": "d9874539",
+  "probe_routes_race": "20ab7163",
+  "docs": "335ffdac",
+  "review_fixes": "a7fe221e",
+  "review_closeout_and_gate": "(the commit that carries this file; see GATE.md and git log)"
+ },
+ "migration_slot": {
+  "file": "supabase/migrations/348_hfo_dietary_admin_sources.sql",
+  "status": "provisional on this stack; no local or remote branch carried a 348_* file at the 2026-09-10 fetch (205 remote refs); origin/main now ends at 336_stand_up_pilot.sql so 336 is taken twice across branches; the 336-348 run renumbers at integration"
+ },
+ "checks": {
+  "focused_vitest": {
+   "command": "npx vitest run src/lib/operations/source-records.test.ts src/lib/operations/source-links.test.ts src/lib/operations/receipts.test.ts src/app/api/admin/operations/asset-observations src/app/api/admin/operations/drill-logs src/app/api/admin/operations/service-records src/app/api/admin/operations/dietary-records",
+   "result": "PASS",
+   "files": 7,
+   "tests": 67
+  },
+  "full_vitest": {
+   "command": "npx vitest run",
+   "result": "PASS",
+   "files": 584,
+   "tests": 4004,
+   "skipped": 2,
+   "log": "col159-evidence/vitest-full.log",
+   "run_after": "the review fixes"
+  },
+  "typecheck": {
+   "command": "npm run typecheck",
+   "result": "PASS"
+  },
+  "lint": {
+   "command": "npm run lint",
+   "result": "PASS (eslint --max-warnings 0; constitution lint 30 files)"
+  },
+  "migrations_check": {
+   "command": "npm run migrations:check",
+   "result": "PASS (351 migrations, sequence 001..348)"
+  },
+  "native_probe_col159": {
+   "database": "col159_base348 (clone of col154_base347 plus 348, re-cloned after the review fixes) on scratch cluster hfo-col139-20260910-105544 port 55443",
+   "file": "supabase/tests/review_hfo_dietary_admin_sources.sql",
+   "result": "PASS",
+   "sections": [
+    "0 registration exact (5 adapters, 16 rules); no review or human-path activity allowlisted; migration recorded nothing; observation kinds widened",
+    "1 AED operation check satisfies its component only; equipment component pending until its own record; AED check against an extinguisher, generator test against an AED, unknown kind and self-test refused by name; duplicate is a visible conflict; aide outside the recorder list refused with attention on the pending component",
+    "2 vendor extinguisher inspection satisfies once as on_behalf with the vendor as performer and label; currency check and other extinguisher pending; replay; same key different content conflicts; duplicate conflict; 2a one visit two records (fire staff self, sprinkler vendor with vendor name as label), fire safety pending; hood cleaning and AC filter change satisfy their assets; 2b twenty refusals by name write nothing (subject shape x2, asset type x3, retired, other site, other-site and archived certificate, next_due_on not after, bad date, future, unstated late, fail without issue, stranger staff, unstated on-behalf, unknown kind, unknown field, bad readings, bad performer kind, short key); late fire safety recorded as late; wrong-adapter delivery is reader_failed; assets, profile, documents, facility, tickets, completions and the inspected extinguisher's service dates unchanged",
+    "3 meal substitution satisfies its period once as meal-level; second in period is a visible conflict; fourteen dietary refusals by name write nothing; menu approval late with labels verbatim and document referenced; failed food check on behalf opens a failed_result issue; void reverses, keeps the issue open, replay/already-voided/correct-voided",
+    "4 correction chains with stale version naming current; kind change refused for service and dietary; no-op, corrected time after original, unknown field refused; asset move invalidates first and satisfies second as a fresh chain (one effective receipt); vendor->staff restatement makes the corrector the performer; restating back to vendor needs a reason; cross-person correction on behalf",
+    "4b (review F3) restated performer never inherits the earlier entry reason",
+    "4c (review F1) archived certificate or approval document no longer blocks a note-only correction; restating to an archived document refused; ended vendor link refuses a note-only correction by name with the record unchanged; re-linked chains",
+    "4d (review F2) unmatched correction of a satisfied record refused by name and rolled back whole; void then re-record leaves the reversal and a visible unmatched delivery",
+    "4a retired-asset void and correct refused by name with record, occurrence, receipts and ledger unchanged; un-retiring restores; void reverses; void replay; already voided; correct voided refused",
+    "5 other site denied for record/correct/void on both tables and reads nothing; site B records land unmatched; generic audit payloads of the ledger hidden",
+    "6 direct DML on both tables denied for session and service, with and without the forged setting; owner definer with the real token cannot rewrite voided/identity/kind/deleted/silent restatement/off-site asset/delete; adapter registration outside a migration refused",
+    "7 forced audit failure leaves no record, request, delivery or receipt on either table",
+    "8 invariants: every record final; request rows keep their delivery; receipt source columns together; one effective receipt per record; public RPCs are invokers; no record_review activity allowlisted; no resident column"
+   ]
+  },
+  "native_probe_col154_adjusted": {
+   "file": "supabase/tests/review_hfo_drill_generator_sources.sql",
+   "change": "registration assertions scoped to the COL-154 keys and excluding the two AED rules",
+   "result": "PASS on col159_base348"
+  },
+  "native_probe_col147_adjusted": {
+   "file": "supabase/tests/review_hfo_source_links.sql",
+   "change": "allowlist assertion admits the three COL-159 adapters",
+   "result": "PASS on col159_base348 outside its 23:00-02:59 America/New_York fixture window (fails identically on col147_base346 and col154_base347 inside it; pre-existing, not a 348 effect)"
+  },
+  "race_script": {
+   "file": "scripts/facility-operations/test-dietary-admin-concurrency.py",
+   "baseline": "col159_base348",
+   "result": "PASS 6/6 (rerun after the review fixes)",
+   "cases": [
+    "two_aed_checks_one_aed (transactionid)",
+    "human_first_then_service (transactionid)",
+    "service_first_then_human (transactionid)",
+    "correction_first_then_void (advisory)",
+    "void_first_then_correction (advisory)",
+    "same_key_twice (advisory)"
+   ],
+   "evidence": "docs/facility-operations/col159-evidence/concurrency.txt"
+  },
+  "independent_review": {
+   "verdict_before": "APPROVE WITH FIXES (no blocking finding)",
+   "verdict_after": "APPROVE",
+   "evidence": "docs/facility-operations/col159-evidence/independent-review.json"
+  },
+  "segment_gate": {
+   "command": "CI=true REQUIRE_PG_VERIFY=1 npm run segment:gates -- --segment COL-159-HFO-DIETARY-ADMIN (PG_VERIFY_NATIVE_SOCKET/BIN/PORT set; no --ui: no UI changed)",
+   "superseded_run": {
+    "artifact": "test-results/agent-gates/2026-09-11T04-21-00-259Z-COL-159-HFO-DIETARY-ADMIN.json",
+    "verdict": "FAIL",
+    "summary": {
+     "passed": 9,
+     "failed": 1,
+     "skipped": 3,
+     "blocking_failures": [
+      "qa.migrations-apply-postgres"
+     ]
+    },
+    "log": "col159-evidence/gate-run-1.log",
+    "note": "run at 00:21 America/New_York; the only failure is qa.migrations-apply-postgres on the COL-147 probe's 23:00-02:59 fixture window (review F5); every other required check passed"
+   },
+   "artifact": "(run 2, scheduled 03:01 America/New_York; recorded below when complete)"
+  }
+ },
+ "boundaries": "no Homewood day, time, threshold, reading definition, equipment list or deadline; no rule, binding or applicability published; no reminder, scheduler, integration or transmission; nothing sent or published; no vendor created; no PHI; COL-143 hosted untouched; legacy ac_filter consumer untouched; 346 unchanged",
+ "mission_alignment": "PASS for the bounded domain connection with every item dispositioned and nothing invented; hosted and operating readiness RISK"
+}

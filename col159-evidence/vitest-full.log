@@ -1,7 +1,7 @@
 
  RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Facility Dietary Admin
 
-11:19:56 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/node_modules/typescript/lib/typescript.js.
+11:43:18 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/node_modules/typescript/lib/typescript.js.
 Error: An error occurred while trying to read the map file at typescript.js.map
 Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/node_modules/typescript/lib/typescript.js.map'
     at Object.readFileSync (node:fs:440:20)
@@ -14,7 +14,7 @@ Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life
 
  Test Files  584 passed (584)
       Tests  4004 passed | 2 skipped (4006)
-   Start at  23:19:13
-   Duration  56.26s (transform 64.90s, setup 60.54s, import 357.12s, tests 62.56s, environment 239.16s)
+   Start at  23:43:06
+   Duration  65.91s (transform 79.18s, setup 70.99s, import 398.90s, tests 73.53s, environment 286.31s)
 
 EXIT 0
