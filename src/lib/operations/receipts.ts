@@ -192,6 +192,16 @@ const TRUSTED_FRAGMENTS = [
   "not a candidate",
   "applies to select only",
   "does not match the caller",
+  // COL-154 drill and asset observation records: refusals by name and record-state conflicts.
+  "is not a staff observation",
+  "is recorded against",
+  "Asset is not current",
+  "A correction must restate",
+  "invalid drill value",
+  "already final",
+  "already voided",
+  "is voided",
+  "is a draft",
 ];
 const CONFLICT_FRAGMENTS = [
   "Required evidence is missing",
@@ -207,18 +217,25 @@ const CONFLICT_FRAGMENTS = [
   "not awaiting verification",
   // COL-147: a settled ledger row is a conflict the client re-reads (a moved event revision matches "changed since").
   "Source delivery is settled",
+  // COL-154: a record that is already final, voided or still a draft is a state the client re-reads (a moved record version matches "changed since").
+  "already final",
+  "already voided",
+  "is voided",
+  "is a draft",
 ];
-const VALIDATION_FRAGMENTS = ["is required", "are required", "requires", "must be", "not editable", "is invalid", "carries no identifier", "Recorded values", "Performed time", "Corrected performed time", "Performer", "not allowlisted", "not a candidate", "applies to select only", "does not match the caller"];
+const VALIDATION_FRAGMENTS = ["is required", "are required", "requires", "must be", "not editable", "is invalid", "carries no identifier", "Recorded values", "Performed time", "Corrected performed time", "Performer", "not allowlisted", "not a candidate", "applies to select only", "does not match the caller", "is not a staff observation", "is recorded against", "Asset is not current", "A correction must restate", "invalid drill value"];
 const INDEPENDENCE_WORDING = "A different authorized staff member must verify this task";
 
 export type ReceiptRpcError = { code?: string; message?: string; details?: string | null } | null | undefined;
-export type MappedReceiptError = { status: number; outcome: OutcomeClass; error: string; current_receipt_id?: string; current_receipt_revision?: string; current_event_revision?: string };
+export type MappedReceiptError = { status: number; outcome: OutcomeClass; error: string; current_receipt_id?: string; current_receipt_revision?: string; current_event_revision?: string; current_record_version?: string };
 
 const UUID_IN_DETAILS = /current_receipt_id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
 /** COL-145 conflicts also name the current receipt's revision so the client can re-read and retry against it. */
 const REVISION_IN_DETAILS = /current_receipt_revision=([0-9a-f]{64})/i;
 /** COL-147 reconcile conflicts name the current event revision the same way. */
 const EVENT_REVISION_IN_DETAILS = /current_event_revision=([0-9a-f]{64})/i;
+/** COL-154 record corrections name the current record version when the expected one is stale. */
+const RECORD_VERSION_IN_DETAILS = /current_record_version=([0-9]{1,9})/i;
 
 /**
  * Bounded outcome classes: validation (400), denied (403, hides existence),
@@ -226,7 +243,7 @@ const EVENT_REVISION_IN_DETAILS = /current_event_revision=([0-9a-f]{64})/i;
  * when the database does), uncertain (500; the client must check the
  * occurrence, never retry blindly). Untrusted wording is never echoed.
  */
-export type ReceiptCommand = "record" | "correct" | "reverse" | "verify" | "issue" | "deliver" | "reconcile";
+export type ReceiptCommand = "record" | "correct" | "reverse" | "verify" | "issue" | "deliver" | "reconcile" | "source_record";
 const COMMAND_NOUN: Record<ReceiptCommand, { request: string; conflict: string; confirm: string }> = {
   record: { request: "Record request", conflict: "an existing receipt", confirm: "Record" },
   correct: { request: "Correction request", conflict: "an existing receipt", confirm: "Correction" },
@@ -236,14 +253,17 @@ const COMMAND_NOUN: Record<ReceiptCommand, { request: string; conflict: string; 
   // COL-147 source links: a delivery converges rather than conflicting, so a conflict here is a moved ledger row.
   deliver: { request: "Source delivery", conflict: "an existing delivery", confirm: "Source delivery" },
   reconcile: { request: "Reconcile request", conflict: "an existing reconcile attempt", confirm: "Reconcile" },
+  // COL-154 drill and asset observation commands: a conflict names the record's current state or version.
+  source_record: { request: "Record request", conflict: "an existing record request", confirm: "Record" },
 };
 
 /** The current-receipt fields of a mapped error, ready to spread into a response body. */
-export function currentReceiptFields(mapped: MappedReceiptError): { current_receipt_id?: string; current_receipt_revision?: string; current_event_revision?: string } {
+export function currentReceiptFields(mapped: MappedReceiptError): { current_receipt_id?: string; current_receipt_revision?: string; current_event_revision?: string; current_record_version?: string } {
   return {
     ...(mapped.current_receipt_id ? { current_receipt_id: mapped.current_receipt_id } : {}),
     ...(mapped.current_receipt_revision ? { current_receipt_revision: mapped.current_receipt_revision } : {}),
     ...(mapped.current_event_revision ? { current_event_revision: mapped.current_event_revision } : {}),
+    ...(mapped.current_record_version ? { current_record_version: mapped.current_record_version } : {}),
   };
 }
 
@@ -255,8 +275,10 @@ export function mapReceiptRpcError(error: NonNullable<ReceiptRpcError>, command:
   const currentReceipt = UUID_IN_DETAILS.exec(haystack)?.[1];
   const currentRevision = currentReceipt ? REVISION_IN_DETAILS.exec(haystack)?.[1] : undefined;
   const currentEventRevision = EVENT_REVISION_IN_DETAILS.exec(haystack)?.[1];
+  const currentRecordVersion = RECORD_VERSION_IN_DETAILS.exec(haystack)?.[1];
   const withReceipt = (mapped: MappedReceiptError): MappedReceiptError => {
-    const withEvent = currentEventRevision ? { ...mapped, current_event_revision: currentEventRevision } : mapped;
+    const withRecord = currentRecordVersion ? { ...mapped, current_record_version: currentRecordVersion } : mapped;
+    const withEvent = currentEventRevision ? { ...withRecord, current_event_revision: currentEventRevision } : withRecord;
     return currentReceipt ? { ...withEvent, current_receipt_id: currentReceipt, ...(currentRevision ? { current_receipt_revision: currentRevision } : {}) } : withEvent;
   };
   // Independence is a state conflict the reviewer can act on, not a hidden denial, even though the database raises it as 42501.

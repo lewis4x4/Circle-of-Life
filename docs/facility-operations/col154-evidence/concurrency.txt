@@ -1,0 +1,43 @@
+{
+  "issue": "COL-154",
+  "baseline": "col154_base347",
+  "runtime": "native PostgreSQL scratch cluster hfo-col139-20260910-105544",
+  "recorded_at": "2026-09-11T01:48:41Z",
+  "cases": {
+    "two_records_one_generator": {
+      "outcome": "second record waited on the occurrence and landed as a visible conflict; the first receipt stays effective; two records, one receipt",
+      "receipts": 1,
+      "records": 2,
+      "waited_on": "transactionid"
+    },
+    "human_first_then_finalize": {
+      "outcome": "finalize landed as a pending conflict after the human recording; the log is final; the human receipt stays effective",
+      "sqlstate": null,
+      "receipts": 1,
+      "waited_on": "transactionid"
+    },
+    "finalize_first_then_human": {
+      "outcome": "human recording refused after the wait naming the drill log receipt",
+      "sqlstate": "23505",
+      "receipts": 1,
+      "waited_on": "transactionid"
+    },
+    "correction_first_then_void": {
+      "outcome": "void waited on the record lock behind the correction and invalidated the corrected version; chain retained; occurrence unrecorded",
+      "receipts": 3,
+      "waited_on": "advisory"
+    },
+    "void_first_then_correction": {
+      "outcome": "correction refused after the wait because the void landed first; record stays voided at version 1; reversal retained",
+      "sqlstate": "P0001",
+      "receipts": 2,
+      "waited_on": "advisory"
+    },
+    "same_key_twice": {
+      "outcome": "second session waited on the request-key lock and replayed the first reply; one record, one request row",
+      "records": 1,
+      "waited_on": "advisory"
+    }
+  },
+  "status": "PASS"
+}
