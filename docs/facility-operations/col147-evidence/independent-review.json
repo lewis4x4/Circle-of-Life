@@ -1,0 +1,61 @@
+{
+  "issue": "COL-147",
+  "title": "[HFO-09] Link final source records to requirements with replay and invalidation handling",
+  "scope": "source only; no hosted apply, deploy, policy activation, domain adapters (COL-154..159), or staff acceptance",
+  "status": "READY_FOR_HAVEN_PRODUCT_GATE",
+  "model_used": "Fable 5.1 / claude-fable-5-1",
+  "session": "97e09ee8-25e1-4023-b71b-7f27e95e1ef7",
+  "shas": {
+    "base": "db451440b44ca67662dceb6018844943b42a456c",
+    "checkpoint": "5dafa6e0b2a84f00d53b1d1bad07a93d3e0c56a9",
+    "gate_md": "594eeeb25a540cb9e5c1d14f078698806c92ff53"
+  },
+  "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/476",
+  "sql_runtime_review": {
+    "reviewer": "Claude seat (Fable implementer) adversarial pass for Haven closeout \u2014 not a second independent Codex subagent",
+    "verdict": "PASS_WITH_NOTES",
+    "notes": [
+      "Migration 346 introduces adapters/rules/events/attempts with unique live ledger key on (org,source_key,record_id,version,event_kind) excluding refused \u2014 supports replay convergence.",
+      "Attention flag is forward-only once cleared; settled rows reject content mutation \u2014 matches invalidation/history retention.",
+      "Final vs voided event_kind checked against reader finality; draft/wrong finality refused without satisfaction.",
+      "Matching covers activity allowlist, site agreement, subject enrollment/current, period containment, and conflict with existing effective receipts.",
+      "Effective source receipt unique index prevents duplicate satisfaction from the same source identity.",
+      "Allowlist empty in 346; domain adapters explicitly deferred \u2014 no invented finality/providers."
+    ],
+    "residual_risks_for_Haven": [
+      "Provisional migration number 346 is stack-local; integration renumber vs Finance still required later.",
+      "Reader SECURITY DEFINER surface and guard_operation_current_authority extension deserve Haven product read of engineering-contracts.md \u00a72\u2013\u00a75.",
+      "This package is implementer-authored evidence assembly; Haven should treat product GATE as the independent closeout, or commission a separate Codex/SQL subagent if that bar is required."
+    ],
+    "verification": {
+      "segment_gate": {
+        "segment": "COL-147-HFO-SOURCE-ADAPTERS",
+        "artifact": "test-results/agent-gates/2026-09-11T00-24-04-243Z-COL-147-HFO-SOURCE-ADAPTERS.json",
+        "verdict": "PASS",
+        "passed": 10,
+        "failed": 0,
+        "skipped": 3
+      },
+      "native_concurrency": {
+        "artifact": "docs/facility-operations/col147-evidence/concurrency.txt",
+        "baseline": "col147_base346",
+        "status": "PASS",
+        "cases": 8
+      },
+      "sql_probe": "supabase/tests/review_hfo_source_links.sql",
+      "unit_api_tests": [
+        "src/lib/operations/source-links.test.ts",
+        "src/app/api/admin/operations/source-events/route.test.ts"
+      ]
+    }
+  },
+  "acceptance_mapped": {
+    "final_once_no_duplicate_replay": "Covered by unique live ledger index + concurrency cases same_version_twice / retry_vs_redelivery PASS",
+    "wrong_scope_draft_invalid_cannot_satisfy": "Covered by refuse paths source_not_final/source_voided/unmatched/ambiguous + unit mapping tests",
+    "void_correction_keeps_invalidation_history": "Covered by voided delivery invalidation + concurrency correction_first_then_void / void_first_then_correction PASS"
+  },
+  "feature_freeze": {
+    "at": "2026-09-11T00:59:41.836330+00:00",
+    "action": "Stopped Fable -p session on Lewi freeze; further feature edits only if Haven names a GATE miss"
+  }
+}
