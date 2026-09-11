@@ -7,14 +7,14 @@
  "recorded_at": "2026-09-11T07:05:00Z",
  "branch": "codex/hfo-col159-dietary-admin",
  "base": "codex/hfo-col154-drill-generators @ 47455a13d812ba638b9f75b2606cd5b957a6f653",
- "draft_pr": "(opened after the segment PASS; see GATE.md)",
+ "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/479",
  "commits": {
   "contract": "1018aff4",
   "migration": "d9874539",
   "probe_routes_race": "20ab7163",
   "docs": "335ffdac",
   "review_fixes": "a7fe221e",
-  "review_closeout_and_gate": "(the commit that carries this file; see GATE.md and git log)"
+  "review_closeout_and_gate": "ed6a9660 (review closeout), 3d5e8182 (gated segment)"
  },
  "migration_slot": {
   "file": "supabase/migrations/348_hfo_dietary_admin_sources.sql",

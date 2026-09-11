@@ -23,6 +23,9 @@
     "contract": "docs/facility-operations/col159-evidence/engineering-contracts.md"
   },
   "after": {
-    "state": "pending closure record (Lewi owns Done; the implementer posts one notification comment on the issue when the draft PR and the segment PASS exist, as the brief asks)"
+    "state": "In Progress (Lewi owns Done); implementer notification comment posted on the issue after draft PR #479 and the segment PASS",
+    "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/479",
+    "gated_commit": "3d5e8182",
+    "gate_artifact": "test-results/agent-gates/2026-09-11T07-01-00-750Z-COL-159-HFO-DIETARY-ADMIN.json"
   }
 }

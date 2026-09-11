@@ -28,4 +28,4 @@ The complete AL coverage pass for the twenty-one COL-159 items on the COL-147 me
 
 `OWNER-DECISIONS.md` 3l(xv): the 348 commands refuse a correction whose delivery would match no occurrence while the earlier version still satisfies one; the owner may prefer the 346 mechanism fix (invalidate on unmatched), which would also cover drill-log corrections. 3l(v): whether AL-M08 is a per-substitution record or a monthly note (Q14) must be settled before a rule is published. Vendor creation from certificate names stays an owner call.
 
-Draft PR: see `docs/facility-operations/col159-evidence/verification.json` (`draft_pr`) once opened. Mission alignment: **PASS**; hosted and operating readiness: **RISK**.
+Draft PR: https://github.com/lewis4x4/Circle-of-Life/pull/479 (vs `codex/hfo-col154-drill-generators`; draft; do not merge). Gated commit `3d5e8182`. Mission alignment: **PASS**; hosted and operating readiness: **RISK**.
