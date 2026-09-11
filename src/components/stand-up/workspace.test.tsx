@@ -99,7 +99,7 @@ describe('Stand Up capture, autosave and review', () => {
   it('labels imported complete data as unreviewed and requires explicit named submission', async () => {
     const values = Object.fromEntries(Object.keys(emptyValues()).map(key => [key, 0])) as StandUpReport['values']; values.overtime_reported = 17.15;
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values, entry_origin: 'imported' })] });
-    await start(); await choose(); expect(screen.getByText('Imported — awaiting review')).toBeInTheDocument();
+    await start(); await choose(); expect(screen.getByText('Imported, awaiting review')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
     expect(within(screen.getByLabelText('Review report')).getByText('17h 15m')).toBeInTheDocument();
     expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);

@@ -21,7 +21,15 @@ export const METRICS = [
 export type MetricKey = typeof METRICS[number]['key']
 export const METRIC_KEYS: MetricKey[] = METRICS.map(metric => metric.key)
 export type StandUpValues = Record<MetricKey, number | null>
-export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null }
+export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; field_dispositions?: Record<string, string> }
+/** Shared vocabulary: docs/specs/26-stand-up-field-state-vocabulary.md. One token per metric per report. */
+export const FIELD_STATES = ['provided', 'not_provided', 'held_unit_unconfirmed', 'needs_duration_review', 'source_held', 'no_report'] as const
+export type FieldState = typeof FIELD_STATES[number]
+export const FIELD_STATE_VERSION = 1
+export const FIELD_STATE_CODES: Record<Exclude<FieldState, 'no_report'>, number> = { provided: 0, not_provided: 1, held_unit_unconfirmed: 2, needs_duration_review: 3, source_held: 4 }
+export const FIELD_STATE_TEXT: Record<Exclude<FieldState, 'provided'>, string> = { not_provided: 'Not provided', held_unit_unconfirmed: 'Held: unit unconfirmed', needs_duration_review: 'Needs duration review', source_held: 'Source held for review', no_report: 'No report' }
+export const HELD_UNIT_DISPOSITION = 'historical_unit_unconfirmed'
+export const REPORT_STATES = ['Not started', 'Draft', 'Imported, awaiting review', 'Submitted', 'Changes awaiting resubmission'] as const
 export function emptyValues(): StandUpValues { return Object.fromEntries(METRIC_KEYS.map(key => [key, null])) as StandUpValues }
 export function validateValues(input: unknown): string[] {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return ['Values must be an object.']
@@ -48,7 +56,28 @@ export function derivedValues(values: StandUpValues) {
   const beds = [values.sp_female_beds_open, values.sp_male_beds_open, values.sp_flexible_beds_open, values.private_beds_open]
   return { average_rent_cents: values.monthly_rent_roll_cents !== null && values.current_total_census !== null && values.current_total_census > 0 ? Math.round(values.monthly_rent_roll_cents / values.current_total_census) : null,
     total_beds_open: beds.every(value => value !== null) ? beds.reduce<number>((sum, value) => sum + value!, 0) : null,
-    completed_fields: METRIC_KEYS.filter(key => values[key] !== null).length }
+    // A held raw notation is evidence, not a provided figure; it never counts.
+    completed_fields: METRIC_KEYS.filter(key => values[key] !== null && (key !== 'overtime_reported' || validOvertime(values[key]))).length }
+}
+function validOvertime(value: number | null): boolean { try { legacyOvertimeToMinutes(value); return true } catch { return false } }
+/** True when the stored overtime cannot be read as whole hours and minutes. */
+export function overtimeNeedsReview(report: StandUpReport | undefined): boolean {
+  if (!report) return false
+  return !!report.overtime_issue || !validOvertime(report.values.overtime_reported)
+}
+function notStarted(report: StandUpReport | undefined): boolean {
+  return !report || (report.entry_origin === 'initialized' && derivedValues(report.values).completed_fields === 0)
+}
+export function fieldState(report: StandUpReport | undefined, key: MetricKey): FieldState {
+  if (notStarted(report)) return 'no_report'
+  if (key === 'overtime_reported' && overtimeNeedsReview(report)) return 'needs_duration_review'
+  if (report!.values[key] === null) return report!.field_dispositions?.[key] === HELD_UNIT_DISPOSITION ? 'held_unit_unconfirmed' : 'not_provided'
+  return 'provided'
+}
+/** The value when provided, otherwise the vocabulary text for why it is absent. */
+export function fieldDisplay(report: StandUpReport | undefined, key: MetricKey): string {
+  const state = fieldState(report, key)
+  return state === 'provided' ? metricDisplay(key, report!.values[key]) : FIELD_STATE_TEXT[state]
 }
 
 export const dollars = (cents: number | null) => cents === null ? 'Not provided' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -67,11 +96,11 @@ export function metricDisplay(key: MetricKey, value: number | null): string {
   }
   return value === null ? 'Not provided' : value.toLocaleString('en-US')
 }
-export function reportState(report?: StandUpReport): string {
-  if (!report || (report.entry_origin === 'initialized' && derivedValues(report.values).completed_fields === 0)) return 'Not started'
-  if (report.status === 'ready') return 'Submitted'
-  if (report.last_submitted_at) return 'Changes awaiting resubmission'
-  if (report.entry_origin === 'imported') return 'Imported — awaiting review'
+export function reportState(report?: StandUpReport): typeof REPORT_STATES[number] {
+  if (notStarted(report)) return 'Not started'
+  if (report!.status === 'ready') return 'Submitted'
+  if (report!.last_submitted_at) return 'Changes awaiting resubmission'
+  if (report!.entry_origin === 'imported') return 'Imported, awaiting review'
   return 'Draft'
 }
 export function dateLabel(day: string, weekday = false): string {
