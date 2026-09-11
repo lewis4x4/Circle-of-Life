@@ -2,7 +2,7 @@
   "issue": "COL-159",
   "baseline": "col159_base348",
   "runtime": "native PostgreSQL scratch cluster hfo-col139-20260910-105544",
-  "recorded_at": "2026-09-11T03:18:40Z",
+  "recorded_at": "2026-09-11T03:36:13Z",
   "cases": {
     "two_aed_checks_one_aed": {
       "outcome": "second AED check waited on the occurrence and landed as a visible conflict; one receipt; the equipment component untouched",

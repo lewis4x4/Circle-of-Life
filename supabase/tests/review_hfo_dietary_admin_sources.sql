@@ -298,6 +298,7 @@ SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean=false AND result->'
 INSERT INTO cf_results SELECT 'svc_fire',pg_temp.svc('fire-insp-0001','fire_inspection',NULL,recent,'pass',jsonb_build_object('performer_kind','staff','note','Panel and pulls tested','certificate_document_id',doc1)) FROM cf;
 INSERT INTO cf_results SELECT 'svc_sprk',pg_temp.svc('sprk-insp-0001','sprinkler_inspection',NULL,recent,'pass',jsonb_build_object('performer_kind','vendor','vendor_id',vendor_ok,'entry_reason','Vendor visit','next_due_on',to_char(d0+90,'YYYY-MM-DD'))) FROM cf;
 INSERT INTO cf_ids SELECT 's_fire',(result->'record'->>'id')::uuid FROM cf_results WHERE label='svc_fire';
+INSERT INTO cf_ids SELECT 's_sprk',(result->'record'->>'id')::uuid FROM cf_results WHERE label='svc_sprk';
 SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_fire_d0') AND result->'delivery'->'event'->>'source_key'='facility-service' AND result->'delivery'->'receipt'->>'performer_kind'='self'
  AND result->'delivery'->'receipt'->>'entry_kind'='routine' AND (result->'record'->>'performed_by')::uuid=(SELECT admin_a FROM cf) AND result->'record'->>'asset_id' IS NULL FROM cf_results WHERE label='svc_fire'),'a staff fire inspection did not satisfy its component');
 SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_sprk_d0') AND result->'delivery'->'receipt'->>'performer_kind'='vendor' AND result->'delivery'->'receipt'->>'performer_label'='Probe Fire Services' FROM cf_results WHERE label='svc_sprk'),'a vendor sprinkler inspection did not satisfy its component with the vendor name as label');
@@ -309,6 +310,7 @@ SET LOCAL ROLE authenticated;
 INSERT INTO cf_results SELECT 'svc_hood',pg_temp.svc('hood-clean-001','hood_cleaning',hood1,recent,'pass',jsonb_build_object('performer_kind','vendor','vendor_id',vendor_ok,'entry_reason','Cleaning crew; certificate on the hood')) FROM cf;
 INSERT INTO cf_results SELECT 'svc_ac',pg_temp.svc('ac-filter-0001','ac_filter_change',ac1,recent,'pass','{}'::jsonb) FROM cf;
 INSERT INTO cf_ids SELECT 's_ac',(result->'record'->>'id')::uuid FROM cf_results WHERE label='svc_ac';
+INSERT INTO cf_ids SELECT 's_hood',(result->'record'->>'id')::uuid FROM cf_results WHERE label='svc_hood';
 SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_hood_d0') FROM cf_results WHERE label='svc_hood')
  AND (SELECT (result->>'linked')::boolean AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_ac_d0') AND result->'record'->>'performer_kind'='staff' AND (result->'record'->>'performed_by')::uuid=(SELECT maint FROM cf) FROM cf_results WHERE label='svc_ac'),'hood cleaning or AC filter change did not satisfy');
 -- 2b. Refusals by name write nothing: wrong subject shape, wrong asset type, retired asset, other site's or archived certificate, next-due before the service date, future instant, unstated late, failed without issue, stranger staff, unknown kind, unknown field.
@@ -438,6 +440,54 @@ SET LOCAL ROLE authenticated;
 SELECT pg_temp.c_expect($q$SELECT public.correct_facility_service_review(pg_temp.rid('s_fire'),pg_temp.k('fire-cor-00001'),1,'{"reason":"Add note","note":"Pull station two sticky"}')$q$,'must be entered on behalf with a reason');
 INSERT INTO cf_results SELECT 'cor_fire_other',public.correct_facility_service_review(pg_temp.rid('s_fire'),pg_temp.k('fire-cor-00001'),1,'{"reason":"Add note","note":"Pull station two sticky","entry_reason":"Restated for the administrator"}');
 SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='corrected' AND result->'delivery'->'receipt'->>'entry_kind'='on_behalf' AND result->'delivery'->'receipt'->>'performer_kind'='other_staff' AND (result->'delivery'->'receipt'->>'recorder_id')::uuid=(SELECT maint FROM cf) FROM cf_results WHERE label='cor_fire_other'),'a cross-person correction was not recorded on behalf');
+-- 4b. Review F3: a restated performer never inherits the earlier entry reason; the on-behalf rule asks for a fresh one.
+SELECT pg_temp.c_expect($q$SELECT public.correct_facility_service_review(pg_temp.rid('s_hood'),pg_temp.k('hood-cor-00001'),1,jsonb_build_object('reason','Crew did not come','performer_kind','staff','performed_by',(SELECT admin_a FROM cf)))$q$,'must be entered on behalf with a reason');
+INSERT INTO cf_results SELECT 'cor_hood_staff',public.correct_facility_service_review(pg_temp.rid('s_hood'),pg_temp.k('hood-cor-00001'),1,jsonb_build_object('reason','Crew did not come','performer_kind','staff','performed_by',(SELECT admin_a FROM cf),'entry_reason','Administrator cleaned it; I logged'));
+SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='corrected' AND result->'delivery'->'receipt'->>'entry_kind'='on_behalf' AND result->'delivery'->'receipt'->>'entry_reason'='Administrator cleaned it; I logged' AND result->'delivery'->'receipt'->>'performer_kind'='other_staff'
+ AND result->'record'->>'vendor_id' IS NULL AND (result->'record'->>'performed_by')::uuid=(SELECT admin_a FROM cf) FROM cf_results WHERE label='cor_hood_staff'),'a restated performer carried the vendor entry reason');
+RESET ROLE;
+-- 4c. Review F1: a correction re-checks a vendor link or a certificate only when it restates them; archiving last year's certificate or ending the vendor link never freezes the record.
+UPDATE public.facility_documents SET archived_at=now() WHERE id=(SELECT doc1 FROM cf);
+UPDATE public.vendor_facilities SET deleted_at=now() WHERE vendor_id=(SELECT vendor_ok FROM cf);
+SELECT pg_temp.c_login('admin_a');
+SET LOCAL ROLE authenticated;
+-- A vendor whose site link has ended is refused by name even for a note-only correction (346 would refuse the delivery at every version anyway); the record stays at its version; re-linking restores the path.
+SELECT pg_temp.c_expect($q$SELECT public.correct_facility_service_review(pg_temp.rid('s_sprk'),pg_temp.k('sprk-cor-00001'),1,'{"reason":"Add note","note":"Riser room key returned"}')$q$,'Performer vendor is not linked to this site');
+SELECT pg_temp.c_assert((SELECT record_version=1 AND note IS NULL FROM public.facility_service_records WHERE id=pg_temp.rid('s_sprk')),'a refused vendor correction restated the record');
+INSERT INTO cf_results SELECT 'cor_fire_note',public.correct_facility_service_review(pg_temp.rid('s_fire'),pg_temp.k('fire-cor-00002'),2,'{"reason":"Add note","note":"Pull station two sticky; ticket raised"}');
+SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='corrected' AND (result->'record'->>'certificate_document_id')::uuid=(SELECT doc1 FROM cf) AND (result->'record'->>'record_version')::int=3 FROM cf_results WHERE label='cor_fire_note'),'a note-only correction re-validated the untouched certificate');
+SELECT pg_temp.c_expect($q$SELECT public.correct_facility_service_review(pg_temp.rid('s_fire'),pg_temp.k('fire-cor-00003'),3,jsonb_build_object('reason','Restate certificate','certificate_document_id',(SELECT doc_arch FROM cf),'note','x'))$q$,'Certificate is not a current document of this site');
+RESET ROLE;
+SELECT pg_temp.c_login('cook');
+SET LOCAL ROLE authenticated;
+INSERT INTO cf_results SELECT 'cor_menu_note',public.correct_dietary_record_review(pg_temp.rid('d_menu'),pg_temp.k('menu-cor-00002'),1,'{"reason":"Add note","note":"Signed sheet filed"}');
+SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='corrected' AND (result->'record'->>'approval_document_id')::uuid=(SELECT doc1 FROM cf) FROM cf_results WHERE label='cor_menu_note'),'a note-only dietary correction re-validated the untouched approval document');
+RESET ROLE;
+UPDATE public.facility_documents SET archived_at=NULL WHERE id=(SELECT doc1 FROM cf);
+UPDATE public.vendor_facilities SET deleted_at=NULL WHERE vendor_id=(SELECT vendor_ok FROM cf);
+SELECT pg_temp.c_login('admin_a');
+SET LOCAL ROLE authenticated;
+INSERT INTO cf_results SELECT 'cor_sprk_note',public.correct_facility_service_review(pg_temp.rid('s_sprk'),pg_temp.k('sprk-cor-00002'),1,'{"reason":"Add note","note":"Riser room key returned"}');
+SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='corrected' AND (result->'record'->>'record_version')::int=2 AND (result->'record'->>'vendor_id')::uuid=(SELECT vendor_ok FROM cf) FROM cf_results WHERE label='cor_sprk_note'),'a note-only vendor correction did not chain after re-linking');
+RESET ROLE;
+-- 4d. Review F2: a correction whose delivery matches no occurrence while the earlier version still satisfies one is refused by name and rolls back entirely; the honest path is void and re-record, which leaves the reversal and an unmatched delivery visible.
+CREATE TEMP TABLE cf_f2_before AS SELECT (SELECT to_jsonb(s) FROM public.facility_service_records s WHERE s.id=pg_temp.rid('s_fire_safety')) rec,(SELECT to_jsonb(t) FROM public.operation_task_instances t WHERE t.id=pg_temp.rid('occ_fire_safety_d0')) occ,
+ (SELECT count(*) FROM public.operation_source_events WHERE source_record_id=pg_temp.rid('s_fire_safety')::text) events,(SELECT count(*) FROM public.operation_source_record_requests) requests,(SELECT count(*) FROM public.operation_execution_receipts) receipts;
+SELECT pg_temp.c_login('admin_a');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.c_expect($q$SELECT public.correct_facility_service_review(pg_temp.rid('s_fire_safety'),pg_temp.k('fs-cor-000001'),1,jsonb_build_object('reason','It was the previous week','performed_at',((SELECT dold FROM cf)::timestamp+'14:00'::time) AT TIME ZONE 'America/New_York','entry_reason','Transcribed late'))$q$,'no longer matches the occurrence it satisfied; void the record and record it again');
+RESET ROLE;
+SELECT pg_temp.c_assert((SELECT to_jsonb(s)=(SELECT rec FROM cf_f2_before) FROM public.facility_service_records s WHERE s.id=pg_temp.rid('s_fire_safety')) AND (SELECT to_jsonb(t)=(SELECT occ FROM cf_f2_before) FROM public.operation_task_instances t WHERE t.id=pg_temp.rid('occ_fire_safety_d0'))
+ AND (SELECT events=(SELECT count(*) FROM public.operation_source_events WHERE source_record_id=pg_temp.rid('s_fire_safety')::text) AND requests=(SELECT count(*) FROM public.operation_source_record_requests) AND receipts=(SELECT count(*) FROM public.operation_execution_receipts) FROM cf_f2_before),'a refused unmatched correction left something behind');
+SELECT pg_temp.c_login('admin_a');
+SET LOCAL ROLE authenticated;
+INSERT INTO cf_results SELECT 'void_fs',public.void_facility_service_review(pg_temp.rid('s_fire_safety'),pg_temp.k('fs-void-000001'),'{"reason":"Wrong week; re-recording"}');
+SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='invalidated' AND (result->'delivery'->'event'->>'attention')::boolean FROM cf_results WHERE label='void_fs') AND (SELECT effective_receipt_id IS NULL AND status IN('pending','missed') FROM public.operation_task_instances WHERE id=pg_temp.rid('occ_fire_safety_d0')),'the void did not return the occurrence to pending');
+INSERT INTO cf_results SELECT 'svc_fs_old',pg_temp.svc('fs-insp-000002','fire_safety_inspection',NULL,((SELECT dold FROM cf)::timestamp+'14:00'::time) AT TIME ZONE 'America/New_York','pass','{"entry_reason":"Transcribed late"}') FROM cf;
+SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean=false AND result->'delivery'->'event'->>'state'='unmatched' AND result->'delivery'->'event'->>'reason'='no_candidate' AND (result->'delivery'->'event'->>'attention')::boolean FROM cf_results WHERE label='svc_fs_old'),'the re-recorded earlier inspection was not a visible unmatched delivery');
+RESET ROLE;
+SELECT pg_temp.c_login('maint');
+SET LOCAL ROLE authenticated;
 -- 4a. Void of an asset-kind record whose asset is no longer current is refused by name and changes nothing; un-retiring restores the path.
 RESET ROLE;
 UPDATE public.facility_assets SET status='retired' WHERE id=(SELECT ac1 FROM cf);

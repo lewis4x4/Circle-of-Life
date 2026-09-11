@@ -91,6 +91,22 @@ REVOKE ALL ON FUNCTION haven.operation_source_observation_kind_problem(text,text
  haven.operation_source_statement_for(timestamptz,timestamptz,jsonb,text,text,jsonb,text,text),haven.operation_source_local_date(timestamptz,uuid),haven.operation_source_vendor_linked(uuid,uuid,uuid),
  haven.operation_source_document_current(uuid,uuid,uuid),haven.operation_source_date(jsonb,text) FROM PUBLIC,anon,authenticated,service_role;
 
+-- Review F2: a corrected version that matches no occurrence while its earlier version still satisfies one would leave that occurrence completed on
+-- evidence the record no longer states. 346 invalidates only when a candidate exists, so the 348 commands refuse such a correction outright (the
+-- transaction rolls back: record, delivery and request untouched) and the person voids and re-records. A conflict keeps the COL-154 3k(xi) policy.
+CREATE FUNCTION haven.operation_source_record_effective(p_org uuid,p_source_key text,p_record_id text) RETURNS boolean
+LANGUAGE sql STABLE SET search_path='' AS $$
+ SELECT EXISTS(SELECT 1 FROM public.operation_execution_receipts r WHERE r.organization_id=p_org AND r.source_key=p_source_key AND r.source_record_id=p_record_id
+  AND r.receipt_kind='performance' AND r.superseded_by_receipt_id IS NULL AND r.source_event_id IS NOT NULL)
+$$;
+CREATE FUNCTION haven.operation_source_correction_unmatched(p_had_receipt boolean,p_delivery jsonb) RETURNS void
+LANGUAGE plpgsql IMMUTABLE SET search_path='' AS $$
+BEGIN
+ IF p_had_receipt AND p_delivery->'event'->>'state'='unmatched' THEN
+  RAISE EXCEPTION 'Corrected record no longer matches the occurrence it satisfied; void the record and record it again' USING ERRCODE='22023'; END IF;
+END $$;
+REVOKE ALL ON FUNCTION haven.operation_source_record_effective(uuid,text,text),haven.operation_source_correction_unmatched(boolean,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 -- ---------------------------------------------------------------------------
 -- asset_observations (347) widened: two AED kinds. The reader and the record
 -- and correct commands are replaced in place with the wider kind list; the
@@ -171,7 +187,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION haven.correct_asset_observation(p_id uuid,p_request_key text,p_expected_version integer,p_payload jsonb) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
-DECLARE k text; r public.asset_observations; n public.asset_observations; asset public.facility_assets; reason text; org uuid; actor uuid; hash text; existing jsonb; now_at timestamptz; delivery jsonb; problem text;
+DECLARE k text; r public.asset_observations; n public.asset_observations; asset public.facility_assets; reason text; org uuid; actor uuid; hash text; existing jsonb; now_at timestamptz; delivery jsonb; problem text; had_receipt boolean;
 BEGIN
  PERFORM haven.operation_source_request_key(p_request_key);
  IF p_id IS NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
@@ -203,6 +219,7 @@ BEGIN
  IF p_payload ? 'asset_id' THEN n.asset_id:=haven.operation_source_uuid(p_payload,'asset_id'); IF n.asset_id IS NULL THEN RAISE EXCEPTION 'asset_id is required' USING ERRCODE='22023'; END IF; END IF;
  IF p_payload ? 'observed_at' THEN n.observed_at:=haven.operation_occurrence_timestamp(p_payload->'observed_at'); END IF;
  IF p_payload ? 'observed_by' THEN n.observed_by:=coalesce(haven.operation_source_uuid(p_payload,'observed_by'),actor); END IF;
+ IF n.observed_by IS DISTINCT FROM r.observed_by AND NOT (p_payload ? 'entry_reason') THEN n.entry_reason:=NULL; END IF;
  IF p_payload ? 'outcome' THEN n.outcome:=p_payload->>'outcome'; END IF;
  IF p_payload ? 'readings' THEN n.readings:=coalesce(nullif(p_payload->'readings','null'::jsonb),'{}'::jsonb); END IF;
  IF p_payload ? 'issue_summary' THEN n.issue_summary:=haven.operation_source_text(p_payload,'issue_summary',2000); END IF;
@@ -216,11 +233,13 @@ BEGIN
  IF n.observed_by<>actor AND NOT haven.operation_source_staff_current(n.observed_by,org,r.facility_id,now_at) THEN RAISE EXCEPTION 'Performer is not current staff at this site' USING ERRCODE='22023'; END IF;
  problem:=haven.operation_source_entry_problem(n.observed_at,r.finalized_at,true,n.observed_by<>actor,n.entry_reason,n.outcome='fail',n.issue_summary);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem USING ERRCODE='22023'; END IF;
+ had_receipt:=haven.operation_source_record_effective(org,'asset-observation',p_id::text);
  PERFORM set_config('haven.operation_source_record_command',haven.operation_occurrence_token(),true);
  UPDATE public.asset_observations SET asset_id=n.asset_id,observed_at=n.observed_at,observed_by=n.observed_by,outcome=n.outcome,readings=n.readings,issue_summary=n.issue_summary,note=n.note,entry_reason=n.entry_reason,
   correction_reason=reason,version_recorded_at=now_at,version_recorded_by=actor,updated_by=actor WHERE id=p_id RETURNING * INTO r;
  PERFORM set_config('haven.operation_source_record_command','',true);
  delivery:=haven.operation_source_record_deliver(p_request_key,'asset-observation',r.id::text,r.record_version::text,'final',r.facility_id);
+ PERFORM haven.operation_source_correction_unmatched(had_receipt,delivery);
  RETURN haven.operation_source_record_finish(p_request_key,hash,actor,org,r.facility_id,'asset-observation',r.id::text,'correct',to_jsonb(r),delivery);
 END $$;
 
@@ -456,7 +475,10 @@ REVOKE ALL ON FUNCTION haven.operation_source_service_snapshot(public.facility_s
 -- validation runs on the record as it would be after the command, against the
 -- original recording act for a correction.
 -- ---------------------------------------------------------------------------
-CREATE FUNCTION haven.operation_source_service_problem(n public.facility_service_records,p_actor uuid,p_reference timestamptz,p_correction boolean,p_now timestamptz) RETURNS text
+-- p_prev is the row before a correction (NULL on record). A certificate is checked when it is first recorded or restated, never re-validated on a
+-- correction that leaves it alone: the vault archiving last year's certificate must not freeze the record (review F1). The vendor link is different:
+-- 346 re-validates it at every delivery, so it is re-checked here too.
+CREATE FUNCTION haven.operation_source_service_problem(n public.facility_service_records,p_prev public.facility_service_records,p_actor uuid,p_reference timestamptz,p_correction boolean,p_now timestamptz) RETURNS text
 LANGUAGE plpgsql VOLATILE SET search_path='' AS $$
 DECLARE asset public.facility_assets; problem text; other boolean;
 BEGIN
@@ -470,6 +492,8 @@ BEGIN
  IF n.performer_kind='vendor' THEN
   IF n.performed_by IS NOT NULL THEN RETURN 'performed_by must be empty for a vendor performer'; END IF;
   IF n.vendor_id IS NULL THEN RETURN 'vendor_id must be set for a vendor performer'; END IF;
+  -- The vendor link is re-checked on every version because the 344 statement rules re-check it at every delivery: refusing here keeps the record at its
+  -- current version instead of rewriting it under a refused delivery. Re-link the vendor or restate the performer to correct such a record.
   PERFORM 1 FROM public.vendors WHERE id=n.vendor_id FOR SHARE;
   IF NOT haven.operation_source_vendor_linked(n.vendor_id,n.organization_id,n.facility_id) THEN RETURN 'Performer vendor is not linked to this site'; END IF;
   other:=true;
@@ -480,7 +504,7 @@ BEGIN
   other:=n.performed_by<>p_actor;
  END IF;
  IF n.next_due_on IS NOT NULL AND n.next_due_on<=haven.operation_source_local_date(n.performed_at,n.facility_id) THEN RETURN 'next_due_on must be after the service date'; END IF;
- IF n.certificate_document_id IS NOT NULL THEN
+ IF n.certificate_document_id IS NOT NULL AND (p_prev IS NULL OR n.certificate_document_id IS DISTINCT FROM p_prev.certificate_document_id) THEN
   PERFORM 1 FROM public.facility_documents WHERE id=n.certificate_document_id FOR SHARE;
   IF NOT haven.operation_source_document_current(n.certificate_document_id,n.organization_id,n.facility_id) THEN RETURN 'Certificate is not a current document of this site'; END IF;
  END IF;
@@ -527,7 +551,7 @@ BEGIN
  IF existing IS NOT NULL THEN RETURN existing; END IF;
  now_at:=clock_timestamp();
  IF n.performer_kind='staff' THEN n.performed_by:=coalesce(n.performed_by,actor); END IF;
- problem:=haven.operation_source_service_problem(n,actor,now_at,false,now_at);
+ problem:=haven.operation_source_service_problem(n,NULL,actor,now_at,false,now_at);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem USING ERRCODE='22023'; END IF;
  src:=haven.operation_source_service_key(n.service_kind);
  PERFORM set_config('haven.operation_source_record_command',haven.operation_occurrence_token(),true);
@@ -542,7 +566,7 @@ END $$;
 
 CREATE FUNCTION haven.correct_facility_service(p_id uuid,p_request_key text,p_expected_version integer,p_payload jsonb) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
-DECLARE k text; r public.facility_service_records; n public.facility_service_records; reason text; org uuid; actor uuid; hash text; existing jsonb; now_at timestamptz; delivery jsonb; problem text; src text;
+DECLARE k text; r public.facility_service_records; n public.facility_service_records; reason text; org uuid; actor uuid; hash text; existing jsonb; now_at timestamptz; delivery jsonb; problem text; src text; had_receipt boolean;
 BEGIN
  PERFORM haven.operation_source_request_key(p_request_key);
  IF p_id IS NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
@@ -591,19 +615,23 @@ BEGIN
  -- A performer restated from vendor to staff without naming the staff member is the corrector; a restatement to vendor drops the staff member.
  IF n.performer_kind='staff' AND r.performer_kind='vendor' THEN n.vendor_id:=CASE WHEN p_payload ? 'vendor_id' THEN n.vendor_id ELSE NULL END; n.performer_label:=CASE WHEN p_payload ? 'performer_label' THEN n.performer_label ELSE NULL END; n.performed_by:=coalesce(n.performed_by,actor); END IF;
  IF n.performer_kind='vendor' AND r.performer_kind='staff' AND NOT (p_payload ? 'performed_by') THEN n.performed_by:=NULL; END IF;
+ -- A restated performer never inherits the earlier entry reason (review F3): the on-behalf rule asks for a fresh one unless the correction states it.
+ IF (n.performer_kind,n.performed_by,n.vendor_id) IS DISTINCT FROM (r.performer_kind,r.performed_by,r.vendor_id) AND NOT (p_payload ? 'entry_reason') THEN n.entry_reason:=NULL; END IF;
  IF (n.asset_id,n.performed_at,n.performer_kind,n.performed_by,n.vendor_id,n.performer_label,n.outcome,n.readings,n.issue_summary,n.next_due_on,n.certificate_document_id,n.note,n.entry_reason)
   IS NOT DISTINCT FROM (r.asset_id,r.performed_at,r.performer_kind,r.performed_by,r.vendor_id,r.performer_label,r.outcome,r.readings,r.issue_summary,r.next_due_on,r.certificate_document_id,r.note,r.entry_reason) THEN
   RAISE EXCEPTION 'A correction must restate at least one field' USING ERRCODE='22023'; END IF;
  -- The late and future rules stay anchored on the original recording act (344): a correction never moves them.
- problem:=haven.operation_source_service_problem(n,actor,r.finalized_at,true,now_at);
+ problem:=haven.operation_source_service_problem(n,r,actor,r.finalized_at,true,now_at);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem USING ERRCODE='22023'; END IF;
  src:=haven.operation_source_service_key(r.service_kind);
+ had_receipt:=haven.operation_source_record_effective(org,src,p_id::text);
  PERFORM set_config('haven.operation_source_record_command',haven.operation_occurrence_token(),true);
  UPDATE public.facility_service_records SET asset_id=n.asset_id,performed_at=n.performed_at,performer_kind=n.performer_kind,performed_by=n.performed_by,vendor_id=n.vendor_id,performer_label=n.performer_label,outcome=n.outcome,readings=n.readings,
   issue_summary=n.issue_summary,next_due_on=n.next_due_on,certificate_document_id=n.certificate_document_id,note=n.note,entry_reason=n.entry_reason,
   correction_reason=reason,version_recorded_at=now_at,version_recorded_by=actor,updated_by=actor WHERE id=p_id RETURNING * INTO r;
  PERFORM set_config('haven.operation_source_record_command','',true);
  delivery:=haven.operation_source_record_deliver(p_request_key,src,r.id::text,r.record_version::text,'final',r.facility_id);
+ PERFORM haven.operation_source_correction_unmatched(had_receipt,delivery);
  RETURN haven.operation_source_record_finish(p_request_key,hash,actor,org,r.facility_id,src,r.id::text,'correct',to_jsonb(r),delivery);
 END $$;
 
@@ -644,7 +672,7 @@ END $$;
 -- ---------------------------------------------------------------------------
 -- Dietary record commands: record (final), correct, void.
 -- ---------------------------------------------------------------------------
-CREATE FUNCTION haven.operation_source_dietary_problem(n public.dietary_records,p_actor uuid,p_reference timestamptz,p_correction boolean,p_now timestamptz) RETURNS text
+CREATE FUNCTION haven.operation_source_dietary_problem(n public.dietary_records,p_prev public.dietary_records,p_actor uuid,p_reference timestamptz,p_correction boolean,p_now timestamptz) RETURNS text
 LANGUAGE plpgsql VOLATILE SET search_path='' AS $$
 BEGIN
  IF n.performed_by IS NULL THEN RETURN 'performed_by must name the staff performer'; END IF;
@@ -666,7 +694,7 @@ BEGIN
   IF n.menu_label IS NULL OR n.approver_label IS NULL THEN RETURN 'menu_label and approver_label are required for a menu approval'; END IF;
   IF n.service_date IS NOT NULL OR n.meal_period IS NOT NULL OR n.planned_item IS NOT NULL OR n.substitute_item IS NOT NULL OR n.substitution_reason IS NOT NULL OR n.meal_service_id IS NOT NULL THEN
    RETURN 'meal fields must be empty for a menu approval'; END IF;
-  IF n.approval_document_id IS NOT NULL THEN
+  IF n.approval_document_id IS NOT NULL AND (p_prev IS NULL OR n.approval_document_id IS DISTINCT FROM p_prev.approval_document_id) THEN
    PERFORM 1 FROM public.facility_documents WHERE id=n.approval_document_id FOR SHARE;
    IF NOT haven.operation_source_document_current(n.approval_document_id,n.organization_id,n.facility_id) THEN RETURN 'Approval document is not a current document of this site'; END IF;
   END IF;
@@ -713,7 +741,7 @@ BEGIN
  IF existing IS NOT NULL THEN RETURN existing; END IF;
  now_at:=clock_timestamp();
  n.performed_by:=coalesce(n.performed_by,actor);
- problem:=haven.operation_source_dietary_problem(n,actor,now_at,false,now_at);
+ problem:=haven.operation_source_dietary_problem(n,NULL,actor,now_at,false,now_at);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem USING ERRCODE='22023'; END IF;
  PERFORM set_config('haven.operation_source_record_command',haven.operation_occurrence_token(),true);
  INSERT INTO public.dietary_records(organization_id,facility_id,record_kind,performed_at,performed_by,outcome,service_date,meal_period,planned_item,substitute_item,substitution_reason,meal_service_id,menu_label,approver_label,approval_document_id,
@@ -727,7 +755,7 @@ END $$;
 
 CREATE FUNCTION haven.correct_dietary_record(p_id uuid,p_request_key text,p_expected_version integer,p_payload jsonb) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
-DECLARE k text; r public.dietary_records; n public.dietary_records; reason text; org uuid; actor uuid; hash text; existing jsonb; now_at timestamptz; delivery jsonb; problem text;
+DECLARE k text; r public.dietary_records; n public.dietary_records; reason text; org uuid; actor uuid; hash text; existing jsonb; now_at timestamptz; delivery jsonb; problem text; had_receipt boolean;
 BEGIN
  PERFORM haven.operation_source_request_key(p_request_key);
  IF p_id IS NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
@@ -760,6 +788,7 @@ BEGIN
  n:=r;
  IF p_payload ? 'performed_at' THEN n.performed_at:=haven.operation_occurrence_timestamp(p_payload->'performed_at'); END IF;
  IF p_payload ? 'performed_by' THEN n.performed_by:=coalesce(haven.operation_source_uuid(p_payload,'performed_by'),actor); END IF;
+ IF n.performed_by IS DISTINCT FROM r.performed_by AND NOT (p_payload ? 'entry_reason') THEN n.entry_reason:=NULL; END IF;
  IF p_payload ? 'outcome' THEN n.outcome:=p_payload->>'outcome'; END IF;
  IF p_payload ? 'service_date' THEN n.service_date:=haven.operation_source_date(p_payload,'service_date'); END IF;
  IF p_payload ? 'meal_period' THEN n.meal_period:=haven.operation_source_text(p_payload,'meal_period',20); END IF;
@@ -777,14 +806,16 @@ BEGIN
  IF (n.performed_at,n.performed_by,n.outcome,n.service_date,n.meal_period,n.planned_item,n.substitute_item,n.substitution_reason,n.meal_service_id,n.menu_label,n.approver_label,n.approval_document_id,n.readings,n.issue_summary,n.note,n.entry_reason)
   IS NOT DISTINCT FROM (r.performed_at,r.performed_by,r.outcome,r.service_date,r.meal_period,r.planned_item,r.substitute_item,r.substitution_reason,r.meal_service_id,r.menu_label,r.approver_label,r.approval_document_id,r.readings,r.issue_summary,r.note,r.entry_reason) THEN
   RAISE EXCEPTION 'A correction must restate at least one field' USING ERRCODE='22023'; END IF;
- problem:=haven.operation_source_dietary_problem(n,actor,r.finalized_at,true,now_at);
+ problem:=haven.operation_source_dietary_problem(n,r,actor,r.finalized_at,true,now_at);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem USING ERRCODE='22023'; END IF;
+ had_receipt:=haven.operation_source_record_effective(org,'dietary-record',p_id::text);
  PERFORM set_config('haven.operation_source_record_command',haven.operation_occurrence_token(),true);
  UPDATE public.dietary_records SET performed_at=n.performed_at,performed_by=n.performed_by,outcome=n.outcome,service_date=n.service_date,meal_period=n.meal_period,planned_item=n.planned_item,substitute_item=n.substitute_item,
   substitution_reason=n.substitution_reason,meal_service_id=n.meal_service_id,menu_label=n.menu_label,approver_label=n.approver_label,approval_document_id=n.approval_document_id,readings=n.readings,issue_summary=n.issue_summary,note=n.note,entry_reason=n.entry_reason,
   correction_reason=reason,version_recorded_at=now_at,version_recorded_by=actor,updated_by=actor WHERE id=p_id RETURNING * INTO r;
  PERFORM set_config('haven.operation_source_record_command','',true);
  delivery:=haven.operation_source_record_deliver(p_request_key,'dietary-record',r.id::text,r.record_version::text,'final',r.facility_id);
+ PERFORM haven.operation_source_correction_unmatched(had_receipt,delivery);
  RETURN haven.operation_source_record_finish(p_request_key,hash,actor,org,r.facility_id,'dietary-record',r.id::text,'correct',to_jsonb(r),delivery);
 END $$;
 
@@ -834,7 +865,7 @@ LANGUAGE sql VOLATILE SECURITY INVOKER SET search_path='' AS $$ SELECT haven.cor
 CREATE FUNCTION public.void_dietary_record_review(p_id uuid,p_request_key text,p_payload jsonb) RETURNS jsonb
 LANGUAGE sql VOLATILE SECURITY INVOKER SET search_path='' AS $$ SELECT haven.void_dietary_record(p_id,p_request_key,p_payload) $$;
 REVOKE ALL ON FUNCTION
- haven.operation_source_service_problem(public.facility_service_records,uuid,timestamptz,boolean,timestamptz),haven.operation_source_service_key(text),haven.operation_source_dietary_problem(public.dietary_records,uuid,timestamptz,boolean,timestamptz),
+ haven.operation_source_service_problem(public.facility_service_records,public.facility_service_records,uuid,timestamptz,boolean,timestamptz),haven.operation_source_service_key(text),haven.operation_source_dietary_problem(public.dietary_records,public.dietary_records,uuid,timestamptz,boolean,timestamptz),
  haven.record_facility_service(text,jsonb),haven.correct_facility_service(uuid,text,integer,jsonb),haven.void_facility_service(uuid,text,jsonb),
  haven.record_dietary_record(text,jsonb),haven.correct_dietary_record(uuid,text,integer,jsonb),haven.void_dietary_record(uuid,text,jsonb),
  public.record_facility_service_review(text,jsonb),public.correct_facility_service_review(uuid,text,integer,jsonb),public.void_facility_service_review(uuid,text,jsonb),

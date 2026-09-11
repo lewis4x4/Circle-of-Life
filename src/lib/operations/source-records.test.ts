@@ -213,6 +213,7 @@ describe("COL-159 error mapping", () => {
       "Service kind cannot change; void the record and record it again",
       "next_due_on must be after the service date",
       "Certificate is not a current document of this site",
+      "Corrected record no longer matches the occurrence it satisfied; void the record and record it again",
     ]) {
       expect(mapReceiptRpcError({ code: "22023", message }, "source_record")).toEqual({ status: 400, outcome: "validation", error: message });
     }
