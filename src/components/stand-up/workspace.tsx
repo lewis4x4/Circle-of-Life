@@ -87,7 +87,7 @@ function StandUpSession({ userId }: { userId: string }) {
   const currentReports = workspace?.reports.filter(report => report.week_start === week) ?? [];
   const weeks = workspace ? [...new Set([workspace.current_week, ...workspace.reports.map(report => report.week_start)])].sort().reverse() : [];
   const late = !!workspace && workspace.facilities.some(facility => reportDeadlineState(currentReports.find(report => report.facility_id === facility.id), week, workspace.current_week, now) === 'past_target');
-  return <main className="mx-auto max-w-6xl space-y-6 p-4 pb-12 md:p-6">
+  return <div className="mx-auto max-w-6xl space-y-6 p-4 pb-12 md:p-6">
     <header className="flex flex-wrap items-start justify-between gap-4">
       <div><p className="text-xs font-medium text-muted-foreground">MONDAY OPERATIONS</p><h1 className="mt-1 text-2xl font-semibold">Weekly Stand Up</h1><p className="mt-2 text-sm text-muted-foreground">Complete by 8:45 a.m. Eastern · Management call at 9:15 a.m.</p></div>
       {workspace && <Button variant="outline" disabled={loading || routePending} onClick={() => { if (guard.current()) void reload(false); }}>Refresh reports</Button>}
@@ -112,5 +112,5 @@ function StandUpSession({ userId }: { userId: string }) {
         {canManage && <section className="border-t border-border pt-4"><Button variant="ghost" disabled={routePending} aria-expanded={tools} onClick={() => { if (guard.current()) setTools(value => !value); }}>{tools ? 'Close management tools' : 'Management tools'}</Button>{tools && <HistoricalImports onReload={() => reload(false)} bindGuard={bindGuard} onDenied={deny} />}</section>}
       </>}
     </>}
-  </main>;
+  </div>;
 }
