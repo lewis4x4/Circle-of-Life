@@ -30,7 +30,8 @@ describe('facility history analytics', () => {
     expect(latest.getAllByText('Change unavailable')).toHaveLength(2);
     expect(latest.getByText('Not calculable')).toBeInTheDocument();
     expect(latest.getByText('Unknown')).toBeInTheDocument();
-    expect(latest.getAllByText('0')).toHaveLength(3);
+    expect(latest.getAllByText('0')).toHaveLength(2);
+    expect(latest.getByText('0h 0m')).toBeInTheDocument();
     expect(latest.getByText('Compared with 2026-09-07')).toBeInTheDocument();
   });
 });

@@ -1,86 +1,113 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useHavenAuth } from '@/contexts/haven-auth-context';
+import { useFacilityStore } from '@/hooks/useFacilityStore';
+import { useRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { METRICS, METRIC_KEYS, emptyValues, derivedValues, validateValues, type StandUpValues, type StandUpReport, type MetricKey } from '@/lib/stand-up/model';
-import { StandUpHistory } from './history';
-import { standUpRequest, downloadText, fallbackCsv, parseFallback, type FallbackFile } from './transport';
-
-type Workspace = { pending_recoveries?: Preview[]; facilities: { id: string; name: string }[]; reports: StandUpReport[]; current_week: string; can_import: boolean };
-type Preview = { facility_id: string; week_start: string; preview_id: string; expected_version: number; merged: StandUpValues; baseline?: StandUpValues; current?: StandUpValues; incoming?: StandUpValues; conflicts: MetricKey[]; clears: MetricKey[] };
-type Stage = { batch_id: string; rows: unknown[] };
-const sections = [...new Set(METRICS.map(metric => metric.section))];
-function fields(values: StandUpValues) { return Object.fromEntries(METRIC_KEYS.map(key => [key, values[key] === null ? '' : String(key === 'monthly_rent_roll_cents' ? values[key]! / 100 : values[key])])) as Record<MetricKey, string>; }
-function valuesFromFields(draft: Record<MetricKey, string>): StandUpValues {
-  return Object.fromEntries(METRIC_KEYS.map(key => [key, draft[key].trim() === '' ? null : key === 'monthly_rent_roll_cents' ? Math.round(Number(draft[key]) * 100) : Number(draft[key])])) as StandUpValues;
-}
-function period(week: string) { const start = new Date(`${week}T12:00:00Z`); start.setUTCDate(start.getUTCDate() - 7); const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6); return `${start.toISOString().slice(0, 10)} through ${end.toISOString().slice(0, 10)}`; }
+import { dateLabel, reportDeadlineState, derivedValues, dollars, easternTime, metricDisplay, reportState, staffingPeriod, shiftDay, type StandUpReport } from '@/lib/stand-up/model';
+import { StandUpEditor } from './editor';
+import { HistoricalImports } from './imports';
+import { StandUpRequestError, standUpRequest } from './transport';
+import type { StandUpWorkspaceData } from './types';
 
 export function StandUpWorkspace() {
   const auth = useHavenAuth();
-  return <StandUpSession key={`${auth.organizationId ?? ''}:${auth.user?.id ?? ''}`} />;
+  if (auth.loading) return <p role="status" className="p-6">Checking your Haven access…</p>;
+  if (!auth.user || !auth.organizationId) return <p role="alert" className="p-6">Sign in to your Haven organization to open Stand Up.</p>;
+  return <StandUpSession key={`${auth.organizationId}:${auth.user.id}:${auth.appRole}`} userId={auth.user.id} />;
 }
 
-function StandUpSession() {
-  const auth = useHavenAuth();
-  const userId = auth.user?.id;
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [facility, setFacility] = useState(''); const [week, setWeek] = useState('');
-  const [draft, setDraft] = useState(fields(emptyValues())); const [dirty, setDirty] = useState(false);
-  const [error, setError] = useState(''); const [notice, setNotice] = useState(''); const [busy, setBusy] = useState(false);
-  const [reason, setReason] = useState(''); const [correction, setCorrection] = useState(false);
-  const [preview, setPreview] = useState<Preview | null>(null); const [resolutions, setResolutions] = useState<Record<string, string>>({}); const [confirmClears, setConfirmClears] = useState(false);
-  const [historyText, setHistoryText] = useState(''); const [stage, setStage] = useState<Stage | null>(null); const [batchId, setBatchId] = useState('');
-  const requestIds = useRef(new Map<string, string>());
-  function requestId(action: string, payload: unknown) { const key = `${action}:${JSON.stringify(payload)}`; let id = requestIds.current.get(key); if (!id) { id = crypto.randomUUID(); requestIds.current.set(key, id); } return id; }
+function StandUpSession({ userId }: { userId: string }) {
+  const routePending = useRouteTransitionPending();
+  const selectedId = useFacilityStore(state => state.selectedFacilityId);
+  const setSelectedFacility = useFacilityStore(state => state.setSelectedFacility);
+  const [workspace, setWorkspace] = useState<StandUpWorkspaceData | null>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [week, setWeek] = useState('');
+  const [tools, setTools] = useState(false);
+  const [now, setNow] = useState(new Date());
+  const clockOffset = useRef(0);
+  const loadGeneration = useRef(0);
+  const mounted = useRef(true);
+  const guards = useRef(new Set<(silent?: boolean) => boolean>());
+  const guard = useRef((silent = false) => [...guards.current].every(check => check(silent)));
+  const hydrated = useRef(false);
+  const selected = workspace?.facilities.find(facility => facility.id === selectedId);
+  const canManage = workspace?.can_import === true;
+  const reload = useCallback(async (initial = false) => {
+    const generation = ++loadGeneration.current;
+    if (initial) setLoading(true);
+    try {
+      const data = await standUpRequest<StandUpWorkspaceData>('workspace');
+      if (!mounted.current || generation !== loadGeneration.current) return;
+      setWorkspace(data); setError('');
+      if (data.server_now) clockOffset.current = Date.parse(data.server_now) - Date.now();
+      setNow(new Date(Date.now() + clockOffset.current));
+      if (initial) {
+        setWeek(data.current_week);
+        const current = useFacilityStore.getState();
+        // A cached choice belongs to its actor. The authorized response always
+        // validates it again before any form is mounted.
+        if (data.facilities.length === 1) current.setSelectedFacility(data.facilities[0].id);
+        else if (current.facilitiesCacheUserId !== userId || !data.facilities.some(f => f.id === current.selectedFacilityId)) current.setSelectedFacility(null);
+        hydrated.current = true;
+      }
+    } catch (cause) {
+      if (!mounted.current || generation !== loadGeneration.current) return;
+      setError(cause instanceof Error ? cause.message : 'Reports could not be loaded. Try again.');
+      // Failed authority revalidation removes the editable surface. An old list
+      // of permitted facilities is never used to authorize a later operation.
+      if (cause instanceof StandUpRequestError && [401, 403].includes(cause.status)) setWorkspace(null);
+    } finally { if (mounted.current && generation === loadGeneration.current) setLoading(false); }
+  }, [userId]);
   useEffect(() => {
-    if (auth.loading || !userId || !auth.organizationId) return;
-    let active = true;
-    setWorkspace(null); setFacility(''); setDraft(fields(emptyValues())); setPreview(null); setStage(null); setDirty(false);
-    standUpRequest<Workspace>('workspace').then(data => { if (active) { setWorkspace(data); setWeek(data.current_week); setFacility(data.facilities[0]?.id ?? ''); } }).catch(e => { if (active) setError(e.message); });
-    return () => { active = false; };
-  }, [auth.loading, userId, auth.organizationId]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
-  const report = workspace?.reports.find(item => item.facility_id === facility && item.week_start === week);
-  useLayoutEffect(() => { setDraft(fields(report?.values ?? emptyValues())); setDirty(false); setCorrection(false); setPreview(null); setReason(''); }, [facility, week, report]);
-  const historical = !!workspace && week !== workspace.current_week;
-  const editable = !historical || (workspace?.can_import && correction);
-  const derived = derivedValues(valuesFromFields(draft));
-  async function run(operation: () => Promise<void>) { setBusy(true); setError(''); setNotice(''); try { await operation(); } catch (e) { setError(e instanceof Error ? e.message : 'Operation failed. Your entries are retained.'); } finally { setBusy(false); } }
-  function accept(saved: StandUpReport) { setWorkspace(current => current ? { ...current, reports: [...current.reports.filter(item => !(item.facility_id === saved.facility_id && item.week_start === saved.week_start)), saved] } : current); setNotice(`Saved receipt: revision ${saved.revision_id}, version ${saved.version}. ${saved.status === 'ready' ? 'Ready for Stand Up; not source-verified.' : 'Draft saved.'}`); setDirty(false); }
-  function save(status: 'draft' | 'ready') { return run(async () => { if (draft.monthly_rent_roll_cents.trim() && !/^\d+(\.\d{1,2})?$/.test(draft.monthly_rent_roll_cents.trim())) throw new Error('Monthly rent roll must be dollars with at most two decimal places.'); const values = valuesFromFields(draft); const errors = validateValues(values); if (errors.length) throw new Error(errors.join(' ')); if (historical && !reason.trim()) throw new Error('Enter the reason for this historical correction.'); const payload = { facility_id: facility, week_start: week, expected_version: report?.version ?? 0, values, status, reason: historical ? reason : undefined }; accept(await standUpRequest<StandUpReport>('save', { ...payload, request_id: requestId('save', payload) })); }); }
-  function switchScope(nextFacility: string, nextWeek: string) { if (dirty) { setError('Save your draft or choose Discard unsaved changes before switching facility or week.'); return; } setFacility(nextFacility); setWeek(nextWeek); setNotice(''); setError(''); }
-  if (auth.loading) return <p role="status" className="p-6">Checking access…</p>;
-  if (!auth.user || !auth.organizationId) return <p role="alert" className="p-6">Sign in to your Haven organization to open Stand Up.</p>;
-  return <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-    <header><h1 className="text-2xl font-semibold">Weekly Stand Up</h1><p className="text-muted-foreground">Prepare Sunday or Monday. Complete by Monday at 8:45 a.m. Eastern for the 9:15 a.m. call.</p><p>Reported figures are not yet source-verified. Blank means not provided; zero means none.</p></header>
-    {error && <div role="alert" className="rounded border border-destructive p-3">{error}</div>}{notice && <p role="status" className="rounded border p-3">{notice}</p>}
-    {!workspace ? <Button disabled={busy} onClick={() => run(async () => { const data = await standUpRequest<Workspace>('workspace'); setWorkspace(data); setWeek(data.current_week); setFacility(data.facilities[0]?.id ?? ''); })}>Load reports</Button> : <>
-    <Button variant="outline" disabled={busy || dirty} onClick={() => run(async () => { setWorkspace(await standUpRequest<Workspace>('workspace')); setNotice('Saved reports refreshed.'); })}>Refresh saved reports</Button>
-    <section aria-label="Reporting coverage" className="rounded border p-4"><h2 className="font-semibold">Reporting coverage — {workspace.current_week}</h2><p>{workspace.facilities.filter(f => workspace.reports.some(r => r.facility_id === f.id && r.week_start === workspace.current_week && r.status === 'ready')).length} of {workspace.facilities.length} accessible facilities ready.</p><ul>{workspace.facilities.map(f => { const r = workspace.reports.find(item => item.facility_id === f.id && item.week_start === workspace.current_week); return <li key={f.id}>{f.name}: {r ? `${r.status === 'ready' ? 'Ready' : 'In progress'} · ${derivedValues(r.values).completed_fields}/16 fields · updated ${new Date(r.updated_at).toLocaleString()}` : 'Not started'}</li>; })}</ul></section>
-    <div className="flex flex-wrap gap-4"><label>Facility<select aria-label="Facility" className="block rounded border bg-background p-2" disabled={busy} value={facility} onChange={e => switchScope(e.target.value, week)}>{workspace.facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label><label>Monday reporting date<select aria-label="Monday reporting date" className="block rounded border bg-background p-2" disabled={busy} value={week} onChange={e => switchScope(facility, e.target.value)}>{[...new Set([workspace.current_week, ...workspace.reports.filter(r => r.facility_id === facility).map(r => r.week_start)])].sort().reverse().map(w => <option key={w} value={w}>{w}{w === workspace.current_week ? ' — current week' : ' — history'}</option>)}</select></label>{dirty && <Button variant="outline" disabled={busy} onClick={() => { setDraft(fields(report?.values ?? emptyValues())); setDirty(false); setError(''); }}>Discard unsaved changes</Button>}</div>
-    {facility && week && <><p>Staffing period: <strong>{period(week)}</strong>. Sunday preparations remain drafts until this period closes.</p>
-    {historical && <section className="rounded border p-3"><p>Historical report. Previous weeks are preserved.</p>{workspace.can_import && <label><input type="checkbox" checked={correction} disabled={busy} onChange={e => setCorrection(e.target.checked)} /> Make an audited correction</label>}</section>}
-    <form onSubmit={e => { e.preventDefault(); void save('draft'); }} className="space-y-5">
-    {sections.map(section => <fieldset key={section} disabled={busy || !editable} className="rounded border p-4"><legend className="px-2 font-semibold">{section}</legend><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{METRICS.filter(m => m.section === section).map(metric => <label key={metric.key} htmlFor={metric.key} className="space-y-1 text-sm"><span>{metric.label}{metric.key === 'monthly_rent_roll_cents' ? ' ($)' : ''}</span><Input id={metric.key} type="number" min="0" step={metric.key === 'monthly_rent_roll_cents' ? '0.01' : metric.key === 'overtime_reported' ? 'any' : '1'} value={draft[metric.key]} onChange={e => { setDraft(current => ({ ...current, [metric.key]: e.target.value })); setDirty(true); }} /></label>)}</div></fieldset>)}
-    <p>{derived.completed_fields}/16 fields provided · Total beds open: {derived.total_beds_open ?? 'Not available'} · Average rent: {derived.average_rent_cents === null ? 'Not available' : `$${(derived.average_rent_cents / 100).toFixed(2)}`}</p>
-    {historical && correction && <label className="block">Correction reason<Input value={reason} onChange={e => setReason(e.target.value)} required /></label>}
-    <div className="flex flex-wrap gap-3"><Button type="submit" disabled={busy || !editable}>Save draft</Button><Button type="button" variant="outline" disabled={busy || !editable || derived.completed_fields !== 16} onClick={() => save('ready')}>Ready for Stand Up</Button></div></form>
-    <section className="space-y-3 rounded border p-4"><h2 className="text-lg font-semibold">Outage fallback and recovery</h2><p>Save the report before downloading. The file retains an immutable server baseline. Currency in these files is integer cents. Upload edits to preview before applying them.</p><div className="flex flex-wrap gap-3">{(['json', 'csv'] as const).map(format => <Button key={format} variant="outline" disabled={busy || dirty || !report} onClick={() => run(async () => { const file = await standUpRequest<FallbackFile>('export', { facility_id: facility, week_start: week }); downloadText(`stand-up-${facility}-${week}.${format}`, format === 'json' ? JSON.stringify(file, null, 2) : fallbackCsv(file), format === 'json' ? 'application/json' : 'text/csv'); })}>Download {format.toUpperCase()}</Button>)}</div>
-    <label className="block">Upload edited fallback (JSON or CSV)<Input type="file" accept=".json,.csv" disabled={busy || dirty} onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file) void run(async () => { if (file.size > 1000000) throw new Error('File exceeds 1 MB.'); const data = parseFallback(await file.text()); if (data.facility_id !== facility || data.week_start !== week) throw new Error('Select the facility and week matching this fallback file first.'); setPreview(null); setResolutions({}); setConfirmClears(false); const result = await standUpRequest<Preview>('preview_recovery', { baseline_id: data.baseline_id, facility_id: facility, week_start: week, values: data.values }); if (result.facility_id !== facility || result.week_start !== week) throw new Error('Recovery preview does not match the selected facility and week. No changes applied.'); setPreview(result); }); }} /></label>
-    {(workspace.pending_recoveries ?? []).some(item => item.facility_id === facility && item.week_start === week) && <section aria-label="Pending file recoveries" className="space-y-2 rounded border p-3"><h3 className="font-semibold">File changes awaiting review</h3><p>These changes were detected by the file synchronization process. Review each decision before the file can synchronize.</p>{(workspace.pending_recoveries ?? []).filter(item => item.facility_id === facility && item.week_start === week).map(item => <div key={item.preview_id} className="flex flex-wrap items-center gap-3"><span>Recovery {item.preview_id} · {item.conflicts.length} conflicts · {item.clears.length} clears</span><Button variant="outline" disabled={busy || dirty} onClick={() => { if (item.facility_id !== facility || item.week_start !== week) { setError('Recovery preview does not match the selected facility and week. No changes applied.'); return; } setError(''); setResolutions({}); setConfirmClears(false); setPreview(item); }}>Review recovery {item.preview_id}</Button></div>)}</section>}
-    {preview && <div className="space-y-3"><h3 className="font-semibold">Recovery preview — current version {preview.expected_version}</h3><p>{preview.conflicts.length} conflicts · {preview.clears.length} proposed clears. Review all merged values.</p><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Field</th><th>Proposed value (currency in cents)</th></tr></thead><tbody>{METRICS.map(m => <tr key={m.key}><th className="p-2 font-normal">{m.label}</th><td>{(preview.conflicts.includes(m.key) || preview.clears.includes(m.key)) ? <label><span className="block">Baseline: {preview.baseline?.[m.key] ?? 'Blank'} · Haven: {preview.current?.[m.key] ?? 'Blank'} · File: {preview.incoming?.[m.key] ?? 'Blank'}</span>Resolve {m.label}<Input aria-label={`Resolve ${m.label}`} value={resolutions[m.key] ?? ''} placeholder="Enter a number or CLEAR" onChange={e => setResolutions(current => ({ ...current, [m.key]: e.target.value }))} /></label> : preview.merged[m.key] ?? 'Blank'}</td></tr>)}</tbody></table></div><label><input type="checkbox" checked={confirmClears} onChange={e => setConfirmClears(e.target.checked)} /> I confirm any intentional clearing of values.</label><Button disabled={busy || dirty || [...new Set([...preview.conflicts, ...preview.clears])].some(key => !resolutions[key]?.trim()) || (Object.values(resolutions).some(value => value.trim() === 'CLEAR') && !confirmClears)} onClick={() => run(async () => { if (preview.facility_id !== facility || preview.week_start !== week) throw new Error('Recovery preview does not match the selected facility and week. No changes applied.'); const choices = Object.fromEntries([...new Set([...preview.conflicts, ...preview.clears])].map(key => { const value = resolutions[key].trim(); if (value !== 'CLEAR' && !Number.isFinite(Number(value))) throw new Error(`Enter a number or CLEAR for ${key}.`); return [key, value === 'CLEAR' ? null : Number(value)]; })); const payload = { facility_id: facility, week_start: week, preview_id: preview.preview_id, expected_version: preview.expected_version, resolutions: choices, confirm_clears: confirmClears }; accept(await standUpRequest<StandUpReport>('commit_recovery', { ...payload, request_id: requestId('commit_recovery', payload) })); setPreview(null); setWorkspace(current => current ? { ...current, pending_recoveries: (current.pending_recoveries ?? []).filter(item => item.preview_id !== preview.preview_id) } : current); try { setWorkspace(await standUpRequest<Workspace>('workspace')); } catch { setError('Recovery was saved. Refresh saved reports to retrieve the latest pending queue.'); } })}>Apply reviewed recovery</Button></div>}</section></>}
-    {facility && <StandUpHistory reports={workspace.reports} facilityId={facility} facilityName={workspace.facilities.find(item => item.id === facility)?.name ?? 'Selected facility'} />}
-    {workspace.can_import && <section className="space-y-3 rounded border p-4"><h2 className="text-lg font-semibold">Historical import</h2><p>Stage a canonical JSON payload containing reason, provenance, and rows with facility_id, week_start, expected_version and all sixteen values. Currency is integer cents. Validation failures and duplicate reports must be resolved before publication.</p><label className="block">Historical JSON file<Input type="file" accept=".json" disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file) void run(async () => { if (file.size > 1000000) throw new Error('File exceeds 1 MB.'); setHistoryText(await file.text()); setStage(null); }); }} /></label><label className="block">Historical payload<textarea className="block min-h-40 w-full rounded border bg-background p-2 font-mono text-sm" value={historyText} disabled={busy} onChange={e => { setHistoryText(e.target.value); setStage(null); }} /></label><Button disabled={busy || dirty || !historyText.trim()} onClick={() => run(async () => { setStage(null); const payload = JSON.parse(historyText); const result = await standUpRequest<Stage>('stage_import', { ...payload, request_id: requestId('stage_import', payload) }); setStage(result); setBatchId(result.batch_id); })}>Validate and stage import</Button>
-    {stage && <div className="space-y-3"><p>Staged batch: {stage.batch_id}. Review the validated records before publishing.</p><pre className="max-h-80 overflow-auto rounded bg-muted p-3 text-xs">{JSON.stringify(stage.rows, null, 2)}</pre><Button disabled={busy || dirty} onClick={() => run(async () => { await standUpRequest('commit_import', { batch_id: stage.batch_id }); setWorkspace(await standUpRequest<Workspace>('workspace')); setNotice(`Imported batch ${stage.batch_id}. Source provenance retained.`); setStage(null); })}>Publish staged import</Button></div>}
-    <details><summary className="cursor-pointer font-medium">Reverse an imported batch</summary><p>Reversal preserves original provenance and later independent edits. Conflicts require review.</p><label className="block">Batch ID<Input value={batchId} onChange={e => setBatchId(e.target.value)} /></label><label className="block">Reversal reason<Input value={reason} onChange={e => setReason(e.target.value)} /></label><Button variant="outline" disabled={busy || dirty || !batchId.trim() || !reason.trim()} onClick={() => run(async () => { const result = await standUpRequest<{ restored: unknown; conflicts: unknown }>('reverse_import', { batch_id: batchId, reason }); setWorkspace(await standUpRequest<Workspace>('workspace')); setNotice(`Reversal result — restored: ${JSON.stringify(result.restored)}; conflicts: ${JSON.stringify(result.conflicts)}.`); })}>Reverse batch with audit history</Button></details></section>}
+    mounted.current = true; void reload(true);
+    const clock = window.setInterval(() => setNow(new Date(Date.now() + clockOffset.current)), 15000);
+    const focus = () => { if (guard.current(true)) void reload(false); };
+    const refresh = window.setInterval(focus, 60000);
+    window.addEventListener('focus', focus);
+    const invalidate = () => { loadGeneration.current++; };
+    return () => { mounted.current = false; invalidate(); clearInterval(clock); clearInterval(refresh); window.removeEventListener('focus', focus); };
+  }, [reload]);
+  useLayoutEffect(() => useFacilityStore.getState().registerFacilityChangeGuard(() => guard.current()), []);
+  const bindGuard = useCallback((next: (silent?: boolean) => boolean) => { guards.current.add(next); return () => { guards.current.delete(next); }; }, []);
+  const accept = useCallback((saved: StandUpReport) => {
+    if (!mounted.current) return;
+    // An earlier refresh cannot overwrite a later confirmed save receipt.
+    loadGeneration.current++;
+    setWorkspace(current => current ? { ...current, reports: [...current.reports.filter(report => !(report.facility_id === saved.facility_id && report.week_start === saved.week_start)), saved] } : current);
+  }, []);
+  const deny = useCallback(() => { loadGeneration.current++; setWorkspace(null); setError('Your access changed. Refresh reports to check your current facility assignments.'); }, []);
+  const changeWeek = (next: string) => { if (guard.current()) setWeek(next); };
+  const currentReports = workspace?.reports.filter(report => report.week_start === week) ?? [];
+  const weeks = workspace ? [...new Set([workspace.current_week, ...workspace.reports.map(report => report.week_start)])].sort().reverse() : [];
+  const late = !!workspace && workspace.facilities.some(facility => reportDeadlineState(currentReports.find(report => report.facility_id === facility.id), week, workspace.current_week, now) === 'past_target');
+  return <main className="mx-auto max-w-6xl space-y-6 p-4 pb-12 md:p-6">
+    <header className="flex flex-wrap items-start justify-between gap-4">
+      <div><p className="text-xs font-medium text-muted-foreground">MONDAY OPERATIONS</p><h1 className="mt-1 text-2xl font-semibold">Weekly Stand Up</h1><p className="mt-2 text-sm text-muted-foreground">Complete by 8:45 a.m. Eastern · Management call at 9:15 a.m.</p></div>
+      {workspace && <Button variant="outline" disabled={loading || routePending} onClick={() => { if (guard.current()) void reload(false); }}>Refresh reports</Button>}
+    </header>
+    {error && workspace && <p role="alert" className="rounded border border-destructive p-3 text-sm">{error} Your current entries are retained.</p>}
+    {loading ? <p role="status">Loading your permitted facilities and reports…</p> : error && !workspace ? <section role="alert" className="space-y-3 rounded border border-destructive p-4"><p>{error}</p><Button onClick={() => void reload(true)}>Check access and reload</Button></section> : workspace && <>
+      {workspace.facilities.length === 0 ? <section className="rounded border border-border p-5"><h2 className="font-semibold">No facility assignment</h2><p className="mt-2 text-sm">Ask your company administrator to assign your Haven account to the ALF you report for. Entry stays unavailable until access is assigned.</p></section> : <>
+        <section aria-label="Report identity" className="grid gap-4 border-y border-border py-4 sm:grid-cols-[1fr_auto]">
+          <div><h2 className="text-xl font-semibold">{selected?.name ?? 'All facilities'}</h2><p className="mt-1 font-medium">Stand Up for {week && dateLabel(week, true)}</p><p className="mt-1 text-sm text-muted-foreground">Staffing and payroll: {week && staffingPeriod(week)}</p>{week === workspace.current_week && <p className="mt-1 text-xs text-muted-foreground">The next Monday report opens on Sunday, {dateLabel(shiftDay(workspace.current_week, 6))}.</p>}</div>
+          <div className="space-y-3">
+            {workspace.facilities.length > 1 && <label className="block text-xs font-medium">Reporting facility<select disabled={routePending} aria-label="Reporting facility" className="mt-1 block min-h-10 w-full rounded border border-border bg-background px-3 text-sm" value={selected?.id ?? ''} onChange={e => { if (setSelectedFacility(e.target.value || null)) setTools(false); }}><option value="">All facilities — choose an ALF to enter</option>{workspace.facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>}
+            <label className="block text-xs font-medium">Meeting date<select disabled={routePending} aria-label="Meeting date" className="mt-1 block min-h-10 w-full rounded border border-border bg-background px-3 text-sm" value={week} onChange={e => changeWeek(e.target.value)}>{weeks.map(value => <option key={value} value={value}>{dateLabel(value)}{value === workspace.current_week ? ' · open reporting period' : ' · history'}</option>)}</select></label>
+          </div>
+        </section>
+        {!selected && <section aria-label="Reporting coverage" className="space-y-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="text-lg font-semibold">Facility reports</h2><p className="text-sm">{currentReports.filter(report => report.status === 'ready').length} of {workspace.facilities.length} submitted{late ? ' · Haven submission target has passed' : week === workspace.current_week ? ' · Monday target: 8:45 a.m.' : ' · historical reports'}</p></div>
+          <p className="text-sm text-muted-foreground">Choose the ALF you are reporting for. Populated figures still need administrator review before submission.</p>
+          <div className="overflow-x-auto rounded border border-border" role="region" aria-label="Facility reporting overview" tabIndex={0}><table className="w-full text-left text-sm"><caption className="sr-only">Facility status and current reported operating figures</caption><thead className="bg-muted/40"><tr>{['Facility', 'Report status', 'Census', 'Open beds', 'Monthly rent roll', 'Overtime', ''].map((label, i) => <th key={i} scope="col" className="p-3 font-medium">{label || <span className="sr-only">Open report</span>}</th>)}</tr></thead><tbody>{workspace.facilities.map(facility => { const report = currentReports.find(item => item.facility_id === facility.id); const derived = report && derivedValues(report.values); return <tr key={facility.id} className="border-t border-border"><th scope="row" className="min-w-40 p-3 font-medium">{facility.name}</th><td className="min-w-44 p-3"><span>{reportState(report)}</span><span className="mt-1 block text-xs text-muted-foreground">{derived?.completed_fields ?? 0}/16 provided{reportDeadlineState(report, week, workspace.current_week, now) === 'past_target' ? ' · Haven submission target passed' : reportDeadlineState(report, week, workspace.current_week, now) === 'timing_unknown' ? ' · Submission timing not recorded' : ''}</span>{report && <span className="mt-1 block text-xs text-muted-foreground">Saved {easternTime(report.updated_at)}</span>}</td><td className="p-3 tabular-nums">{report?.values.current_total_census ?? '—'}</td><td className="p-3 tabular-nums">{derived?.total_beds_open ?? '—'}</td><td className="whitespace-nowrap p-3 tabular-nums">{dollars(report?.values.monthly_rent_roll_cents ?? null)}</td><td className="whitespace-nowrap p-3 tabular-nums">{metricDisplay('overtime_reported', report?.values.overtime_reported ?? null)}</td><td className="p-3"><Button variant="outline" onClick={() => setSelectedFacility(facility.id)} aria-label={`Open ${facility.name} report`}>Open report</Button></td></tr>; })}</tbody></table></div>
+          <p className="text-xs text-muted-foreground">Blank figures are not zero. Reported figures have not yet been checked against payroll or other operating records.</p>
+        </section>}
+        {selected && hydrated.current && <StandUpEditor key={`${selected.id}:${week}`} facility={selected} week={week} currentWeek={workspace.current_week} report={currentReports.find(report => report.facility_id === selected.id)} reports={workspace.reports} recoveries={(workspace.pending_recoveries ?? []).filter(item => item.facility_id === selected.id && item.week_start === week)} canManage={canManage} userId={userId} now={now} onSaved={accept} onDenied={deny} bindGuard={bindGuard} onReload={() => reload(false)} />}
+        {canManage && <section className="border-t border-border pt-4"><Button variant="ghost" disabled={routePending} aria-expanded={tools} onClick={() => { if (guard.current()) setTools(value => !value); }}>{tools ? 'Close management tools' : 'Management tools'}</Button>{tools && <HistoricalImports onReload={() => reload(false)} bindGuard={bindGuard} onDenied={deny} />}</section>}
+      </>}
     </>}
   </main>;
 }

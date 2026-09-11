@@ -19,7 +19,7 @@
  * Anti-patterns enforced here (per Quiet Operator DNA):
  *  - No hamburger menu on desktop.
  *  - No nested collapsible sections — pillars cap at 9 items.
- *  - No "More" overflow menu — auxiliary routes live in the ⌘K palette.
+ *  - Auxiliary routes live in the ⌘K palette; mobile secondary tools use More actions.
  *  - Survey Visit Mode banner is page-level chrome, not nav.
  */
 
@@ -36,6 +36,8 @@ import {
   Menu as MenuIcon,
   MessageSquare,
   Moon,
+  MoreHorizontal,
+  MessageSquareWarning,
   Search,
   ShieldAlert,
   Sun,
@@ -61,7 +63,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent, PopoverTitle } from "@/components/ui/popover";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import {
   HavenNavLink,
@@ -153,6 +155,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const facilitiesFetchedAt = useFacilityStore((s) => s.facilitiesFetchedAt);
   const facilitiesCacheUserId = useFacilityStore((s) => s.facilitiesCacheUserId);
   const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
+  const resetSelectedFacility = useFacilityStore((s) => s.resetSelectedFacility);
   const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
   const clearFacilityCache = useFacilityStore((s) => s.clearFacilityCache);
 
@@ -205,6 +208,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [pillarSheetOpen, setPillarSheetOpen] = useState(false);
   const [sheetPillarId, setSheetPillarId] = useState<Pillar["id"] | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const [mobileFeedbackOpen, setMobileFeedbackOpen] = useState(false);
+  const mobileMoreTrigger = useRef<HTMLButtonElement>(null);
+  const mobileOverlayOpening = useRef(false);
   const [sectionsJumpListMounted, setSectionsJumpListMounted] = useState(false);
   const [sectionsJumpListOpen, setSectionsJumpListOpen] = useState(false);
   const [sectionsJumpListSearch, setSectionsJumpListSearch] = useState("");
@@ -212,6 +219,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   useEffect(() => setMounted(true), []);
 
   const catalogActivePillar = useMemo(() => findActivePillar(pathname), [pathname]);
+  // Route-dependent client-only survey chrome must have the same empty SSR
+  // and first-hydration shape. Redirected owner entry can resolve a different
+  // pathname on the client; its Suspense boundary must not shift the following
+  // notification control during hydration.
   const suppressSurveyVisitChrome = useMemo(() => shouldSuppressSurveyVisitChrome(pathname), [pathname]);
 
   // ── ⌘K / ⌘, global hotkeys ──────────────────────────────────────
@@ -257,7 +268,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     try {
       facilityRefreshRequestRef.current += 1;
       clearFacilityCache();
-      setSelectedFacility(null);
+      resetSelectedFacility();
       syncSelectedFacilityCookie(null);
 
       const supabase = createClient();
@@ -267,7 +278,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     } finally {
       setSigningOut(false);
     }
-  }, [clearFacilityCache, router, setSelectedFacility]);
+  }, [clearFacilityCache, router, resetSelectedFacility]);
 
   const refreshFacilities = useCallback(async () => {
     if (authLoading) {
@@ -279,7 +290,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     if (currentUserId == null) {
       facilityRefreshRequestRef.current += 1;
       clearFacilityCache();
-      setSelectedFacility(null);
+      resetSelectedFacility();
       syncSelectedFacilityCookie(null);
       setFacilitiesLoading(false);
       setFacilitiesLoadFailed(false);
@@ -297,7 +308,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         st.selectedFacilityId != null &&
         !st.availableFacilities.some((f) => f.id === st.selectedFacilityId)
       ) {
-        setSelectedFacility(null);
+        resetSelectedFacility();
         syncSelectedFacilityCookie(null);
       }
       setFacilitiesLoading(false);
@@ -308,7 +319,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     if (st.facilitiesCacheUserId != null && st.facilitiesCacheUserId !== currentUserId) {
       facilityRefreshRequestRef.current += 1;
       clearFacilityCache();
-      setSelectedFacility(null);
+      resetSelectedFacility();
       syncSelectedFacilityCookie(null);
     }
 
@@ -328,7 +339,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       setAvailableFacilities(list, currentUserId);
       const persistedId = useFacilityStore.getState().selectedFacilityId;
       if (persistedId != null && !list.some((f) => f.id === persistedId)) {
-        setSelectedFacility(null);
+        resetSelectedFacility();
         syncSelectedFacilityCookie(null);
       }
     } catch (err) {
@@ -350,7 +361,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         setFacilitiesLoading(false);
       }
     }
-  }, [authLoading, clearFacilityCache, currentUserId, setAvailableFacilities, setSelectedFacility]);
+  }, [authLoading, clearFacilityCache, currentUserId, setAvailableFacilities, resetSelectedFacility]);
 
   useEffect(() => {
     void refreshFacilities();
@@ -374,7 +385,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
   const handleFacilityScopeChange = useCallback(
     (facilityId: string | null) => {
-      setSelectedFacility(facilityId);
+      if (setSelectedFacility(facilityId) === false) return;
       syncSelectedFacilityCookie(facilityId);
       if (/^\/admin\/facilities\/[^/]+/.test(pathname)) {
         router.push(facilityId ? `/admin/facilities/${facilityId}` : "/admin/facilities");
@@ -447,7 +458,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       href={resolveRouteHref("/admin")}
       aria-label="Haven — admin home"
       className={cn(
-        "flex h-9 shrink-0 rounded-md px-1.5 pr-4",
+        "flex h-9 shrink-0 rounded-md px-0 pr-1 md:px-1.5 md:pr-4",
         "text-foreground transition-opacity hover:opacity-90",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
@@ -470,12 +481,12 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         title={facilityControlLoading ? undefined : facilityTriggerLabel}
         className={cn(
           WORKSPACE_WELL,
-          "flex min-h-9 max-w-[140px] md:max-w-[220px] items-center gap-2 rounded-md px-2.5 py-1",
+          "flex min-h-9 min-w-0 w-[clamp(80px,25vw,140px)] md:w-auto md:max-w-[220px] items-center gap-1 md:gap-2 rounded-md px-1.5 md:px-2.5 py-1",
           "text-[12px] font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
-        <Building2 className="size-3.5 shrink-0 opacity-90" aria-hidden />
+        <Building2 className="hidden size-3.5 shrink-0 opacity-90 md:block" aria-hidden />
         {facilityControlLoading ? (
           <Skeleton className="h-3 w-24 rounded bg-muted" aria-label="Loading facilities" />
         ) : (
@@ -569,7 +580,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
               aria-label="Open search (⌘K)"
               className={cn(
                 WORKSPACE_ICON_LG,
-                "md:hidden",
+                "size-8 md:hidden",
                 "transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               )}
@@ -623,7 +634,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       className={cn(
         // Semantic danger, but lower-temperature than `variant="destructive"`:
         // a soft tint + ring so it reads as a global action, not an alert.
-        "flex h-9 items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2.5",
+        "flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-0 md:h-9 md:w-auto md:px-2.5",
         "text-[12px] font-medium text-destructive transition-colors",
         "hover:border-destructive/50 hover:bg-destructive/10",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive",
@@ -631,7 +642,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       aria-label="Report incident"
     >
       <ShieldAlert className="size-3.5" aria-hidden />
-      <span className="hidden sm:inline">Report incident</span>
+      <span className="hidden md:inline">Report incident</span>
     </HavenNavLink>
   ) : null;
 
@@ -745,10 +756,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           distinctly above the canvas. */}
       <header
         className={cn(
-          "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2",
+          "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-0.5 md:gap-2",
           "bg-stone-300 text-foreground border-b border-stone-400 shadow-md",
           "dark:bg-stone-900 dark:border-stone-700",
-          "px-3 lg:px-4",
+          "px-2 md:px-3 lg:px-4",
         )}
       >
         {renderBrand()}
@@ -758,6 +769,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
             aria-label="Open all sections menu"
             className={cn(
               WORKSPACE_ICON_LG,
+              "size-8 md:size-9",
               "transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
@@ -784,15 +796,27 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           {visiblePillars.map(renderPillarTab)}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 md:gap-1">
           {renderSearchTrigger()}
-          {renderGraceTrigger()}
-          {renderHavenInsightTrigger()}
+          <div className="hidden items-center gap-1 md:flex">{renderGraceTrigger()}{renderHavenInsightTrigger()}</div>
           {renderReportIncidentButton()}
-          <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
-          {suppressSurveyVisitChrome ? null : <SurveyVisitShellToggle survey={surveyVisit} />}
-          {renderNotificationsButton()}
-          {renderThemeToggle()}
+          <div className="hidden items-center gap-1 md:flex">
+            <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
+            {mounted && !suppressSurveyVisitChrome ? <SurveyVisitShellToggle survey={surveyVisit} /> : null}
+            {renderNotificationsButton()}{renderThemeToggle()}
+          </div>
+          <Popover open={mobileMoreOpen} onOpenChange={next => { if (next) mobileOverlayOpening.current = false; setMobileMoreOpen(next); }}>
+            <PopoverTrigger ref={mobileMoreTrigger} aria-label="More actions" className={cn(WORKSPACE_ICON_LG, "size-8 md:hidden")}><MoreHorizontal className="size-4" aria-hidden /></PopoverTrigger>
+            <PopoverContent align="end" finalFocus={() => mobileOverlayOpening.current ? false : mobileMoreTrigger.current ?? true} className="w-[min(20rem,calc(100vw-1rem))] gap-1 p-3 md:hidden">
+              <PopoverTitle className="px-2 pb-2">More actions</PopoverTitle>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); window.dispatchEvent(new CustomEvent("grace:open")); }}><MessageSquare className="size-4" aria-hidden />Ask Grace</button>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); window.dispatchEvent(new CustomEvent("haven-insight:open")); }}><LineChart className="size-4" aria-hidden />Haven Insight</button>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); setMobileFeedbackOpen(true); }}><MessageSquareWarning className="size-4" aria-hidden />Pilot feedback</button>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setMobileMoreOpen(false); navigate("/admin/settings/notifications"); }}><Bell className="size-4" aria-hidden />Notification settings</button>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setMobileMoreOpen(false); setTheme(theme === "dark" ? "light" : "dark"); }}>{theme === "dark" ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}Switch to {theme === "dark" ? "light" : "dark"} theme</button>
+              {!suppressSurveyVisitChrome && <div className="mt-2 space-y-2 border-t border-border px-2 pt-3"><p className="text-xs font-medium">Survey visit tools</p>{safeSelectedFacilityId ? <SurveyVisitShellToggle survey={surveyVisit} /> : <p className="text-xs text-muted-foreground">Select a facility to use survey visit tools.</p>}</div>}
+            </PopoverContent>
+          </Popover>
           <div className="hidden md:block">
             <UserMenu
               fullName={fullName}
@@ -818,13 +842,14 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
               userId={currentUserId}
               signingOut={signingOut}
               onSignOut={handleSignOut}
-              triggerClassName={WORKSPACE_ICON_LG}
+              triggerClassName={cn(WORKSPACE_ICON_LG, "size-8")}
             />
           </div>
         </div>
       </header>
+      {mounted && <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} open={mobileFeedbackOpen} onOpenChange={setMobileFeedbackOpen} returnFocusRef={mobileMoreTrigger} hideTrigger />}
 
-      {suppressSurveyVisitChrome ? null : <SurveyVisitWorkspaceDock survey={surveyVisit} />}
+      {mounted && !suppressSurveyVisitChrome ? <SurveyVisitWorkspaceDock survey={surveyVisit} /> : null}
 
       {/* ── Mobile pillar scroll strip ──────────────────────────── */}
       <nav

@@ -1,100 +1,246 @@
-import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, cleanup, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StandUpWorkspace } from './workspace';
-import { emptyValues } from '@/lib/stand-up/model';
-const mocks = vi.hoisted(() => ({ request: vi.fn() }));
-vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => ({ loading: false, user: { id: 'u' }, organizationId: 'org' }) }));
+import { emptyValues, type StandUpReport } from '@/lib/stand-up/model';
+import { useFacilityStore } from '@/hooks/useFacilityStore';
+import { allowRouteLeave } from '@/components/layout/navigation-pending';
+import { StandUpRequestError } from './transport';
+const mocks = vi.hoisted(() => ({ request: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'org_admin' } }));
+vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => mocks.auth }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
-const workspace = { facilities: [{ id: 'a', name: 'Homewood' }, { id: 'b', name: 'Oakridge' }], reports: [], current_week: '2026-09-14', can_import: false };
-afterEach(cleanup);
-beforeEach(() => { mocks.request.mockReset(); mocks.request.mockResolvedValue(workspace); });
-describe('Stand Up entry', () => {
-  it('retains draft after a failed save, preserves zero/null and converts dollars to cents', async () => {
-    render(<StandUpWorkspace />);
-    await screen.findByLabelText('Monthly rent roll ($)');
-    fireEvent.change(screen.getByLabelText('Monthly rent roll ($)'), { target: { value: '1234.56' } });
-    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '0' } });
-    mocks.request.mockRejectedValueOnce(new Error('Request timed out; retry'));
-    fireEvent.submit(screen.getByText('Save draft').closest('form')!);
-    await screen.findByText('Request timed out; retry');
+const workspace = { facilities: [{ id: 'a', name: 'Homewood' }, { id: 'b', name: 'Oakridge' }], reports: [] as StandUpReport[], current_week: '2026-09-14', can_import: false, server_now: '2026-09-14T12:30:00Z' };
+const report = (patch: Partial<StandUpReport> = {}): StandUpReport => ({ id: 'r', facility_id: 'a', week_start: '2026-09-14', version: 1, revision_id: 'rev1', values: emptyValues(), status: 'draft', updated_at: '2026-09-14T12:31:00Z', ...patch });
+function deferred<T>() { let resolve!: (value: T) => void; let reject!: (value: unknown) => void; const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; }
+async function start() { const view = render(<StandUpWorkspace />); await screen.findByRole('heading', { name: 'All facilities' }); return view; }
+async function choose(id = 'a') { fireEvent.change(screen.getByLabelText('Reporting facility'), { target: { value: id } }); await screen.findByLabelText('Current census'); }
+function changeCensus(value: string) { fireEvent.change(screen.getByLabelText('Current census'), { target: { value } }); }
+function save() { fireEvent.click(screen.getByRole('button', { name: /^(Save draft|Retry save)$/ })); }
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
+beforeEach(() => {
+  mocks.auth.user = { id: 'u' }; mocks.auth.loading = false; mocks.auth.appRole = 'org_admin';
+  mocks.request.mockReset(); mocks.request.mockImplementation(async action => { if (action === 'workspace') return workspace; throw new Error('Unexpected operation'); });
+  useFacilityStore.setState({ selectedFacilityId: null, availableFacilities: workspace.facilities, facilitiesCacheUserId: 'u' });
+  Object.defineProperty(window, 'navigation', { configurable: true, value: new EventTarget() });
+  Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+});
+describe('Stand Up facility identity', () => {
+  it('opens a management overview without silently selecting the first ALF', async () => {
+    await start(); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+    expect(screen.getByText('0 of 2 submitted · Monday target: 8:45 a.m.')).toBeInTheDocument();
+    await choose('b'); expect(screen.getByRole('heading', { name: 'Oakridge' })).toBeInTheDocument();
+    expect(useFacilityStore.getState().selectedFacilityId).toBe('b');
+  });
+  it('fixes a single authorized ALF and blocks entry when no facilities are assigned', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, facilities: [workspace.facilities[1]] });
+    const view = render(<StandUpWorkspace />); await screen.findByLabelText('Current census');
+    expect(screen.queryByLabelText('Reporting facility')).not.toBeInTheDocument();
+    expect(useFacilityStore.getState().selectedFacilityId).toBe('b'); view.unmount();
+    mocks.request.mockResolvedValueOnce({ ...workspace, facilities: [] }); render(<StandUpWorkspace />);
+    await screen.findByText('No facility assignment'); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+  });
+  it('rejects another actor cached facility, but honors a validated explicit selection', async () => {
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'different' });
+    const view = await start(); expect(useFacilityStore.getState().selectedFacilityId).toBeNull(); view.unmount();
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u' }); render(<StandUpWorkspace />);
+    await screen.findByLabelText('Current census'); expect(screen.getByRole('heading', { name: 'Oakridge' })).toBeInTheDocument();
+  });
+  it('vetoes dirty shell and meeting changes before moving the context', async () => {
+    await start(); await choose(); changeCensus('25');
+    act(() => { expect(allowRouteLeave('/admin/executive')).toBe(false); });
+    act(() => { expect(useFacilityStore.getState().setSelectedFacility('b')).toBe(false); });
+    expect(screen.getByRole('alert')).toHaveTextContent('Save or discard Homewood'); expect(useFacilityStore.getState().selectedFacilityId).toBe('a');
+    fireEvent.click(screen.getByRole('button', { name: 'Discard unsaved changes' })); await choose('b');
+    expect(screen.getByLabelText('Current census')).toHaveValue(null);
+  });
+  it('clears the form on a forced security reset and ignores an old A–B–A response', async () => {
+    await start(); await choose(); changeCensus('11'); const slow = deferred<StandUpReport>(); mocks.request.mockReturnValueOnce(slow.promise); save();
+    act(() => useFacilityStore.getState().resetSelectedFacility()); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+    await choose('b'); await choose('a');
+    await act(async () => slow.resolve(report({ values: { ...emptyValues(), current_total_census: 11 } })));
+    expect(screen.getByLabelText('Current census')).toHaveValue(null); expect(screen.getByText('No saved report yet')).toBeInTheDocument();
+  });
+  it('does not expose a delayed response after logout', async () => {
+    const slow = deferred<typeof workspace>(); mocks.request.mockReturnValueOnce(slow.promise); const view = render(<StandUpWorkspace />);
+    mocks.auth.user = null; view.rerender(<StandUpWorkspace />); await act(async () => slow.resolve(workspace));
+    expect(screen.getByRole('alert')).toHaveTextContent('Sign in'); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+  });
+});
+describe('Stand Up capture, autosave and review', () => {
+  it('retains failed entries and retries the exact request while preserving zero/null and cents', async () => {
+    await start(); await choose(); fireEvent.change(screen.getByLabelText('Monthly rent roll ($)'), { target: { value: '1234.56' } }); changeCensus('0');
+    mocks.request.mockRejectedValueOnce(new Error('Request timed out; retry')); save(); await screen.findByText('Request timed out; retry');
     expect(screen.getByLabelText('Monthly rent roll ($)')).toHaveValue(1234.56);
-    expect(mocks.request).toHaveBeenLastCalledWith('save', expect.objectContaining({ facility_id: 'a', expected_version: 0, values: { ...emptyValues(), monthly_rent_roll_cents: 123456, current_total_census: 0 } }));
-    const first = mocks.request.mock.calls.at(-1)?.[1].request_id;
-    mocks.request.mockRejectedValueOnce(new Error('Still unavailable'));
-    fireEvent.submit(screen.getByText('Save draft').closest('form')!);
-    await screen.findByText('Still unavailable');
-    expect(mocks.request.mock.calls.at(-1)?.[1].request_id).toBe(first);
+    const first = mocks.request.mock.calls.at(-1)?.[1]; expect(first).toMatchObject({ facility_id: 'a', expected_version: 0, values: { ...emptyValues(), monthly_rent_roll_cents: 123456, current_total_census: 0 } });
+    mocks.request.mockResolvedValueOnce(report({ values: first.values })); save(); await screen.findByText(/Saved Sep 14/);
+    expect(mocks.request.mock.calls.at(-1)?.[1]).toEqual(first);
   });
-  it('prevents writing a dirty facility draft to a different facility', async () => {
+  it('debounces online changes into one draft save and keeps later edits through its receipt', async () => {
+    await start(); await choose(); vi.useFakeTimers();
+    const slow = deferred<StandUpReport>(); mocks.request.mockReturnValueOnce(slow.promise);
+    changeCensus('20'); await act(async () => { vi.advanceTimersByTime(600); }); changeCensus('21');
+    await act(async () => { vi.advanceTimersByTime(1199); }); expect(mocks.request.mock.calls.filter(call => call[0] === 'save')).toHaveLength(0);
+    await act(async () => { vi.advanceTimersByTime(1); }); expect(mocks.request.mock.calls.filter(call => call[0] === 'save')).toHaveLength(1);
+    expect(mocks.request.mock.calls.at(-1)?.[1]).toMatchObject({ status: 'draft', values: { ...emptyValues(), current_total_census: 21 } });
+    changeCensus('22'); await act(async () => slow.resolve(report({ values: { ...emptyValues(), current_total_census: 21 } })));
+    expect(screen.getByLabelText('Current census')).toHaveValue(22); expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
+    mocks.request.mockResolvedValueOnce(report({ version: 2, revision_id: 'rev2', values: { ...emptyValues(), current_total_census: 22 } }));
+    await act(async () => { vi.advanceTimersByTime(1200); });
+    expect(mocks.request.mock.calls.at(-1)?.[1]).toMatchObject({ expected_version: 1, values: { ...emptyValues(), current_total_census: 22 } });
+    expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
+  });
+  it('captures hours and minutes, rejects invalid minutes, and preserves a true zero duration', async () => {
+    await start(); await choose(); fireEvent.change(screen.getByLabelText('Overtime hours'), { target: { value: '17' } }); fireEvent.change(screen.getByLabelText('Overtime minutes'), { target: { value: '60' } }); save();
+    await screen.findByRole('alert'); expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+    fireEvent.change(screen.getByLabelText('Overtime minutes'), { target: { value: '15' } }); mocks.request.mockResolvedValueOnce(report({ values: { ...emptyValues(), overtime_reported: 17.15 } })); save(); await screen.findByText(/Saved Sep 14/);
+    expect(mocks.request.mock.calls.at(-1)?.[1].values.overtime_reported).toBe(17.15);
+    fireEvent.change(screen.getByLabelText('Overtime hours'), { target: { value: '0' } }); fireEvent.change(screen.getByLabelText('Overtime minutes'), { target: { value: '0' } });
+    mocks.request.mockResolvedValueOnce(report({ version: 2, values: { ...emptyValues(), overtime_reported: 0 } })); save(); await waitFor(() => expect(mocks.request.mock.calls.at(-1)?.[1].values.overtime_reported).toBe(0));
+  });
+  it('labels imported complete data as unreviewed and requires explicit named submission', async () => {
+    const values = Object.fromEntries(Object.keys(emptyValues()).map(key => [key, 0])) as StandUpReport['values']; values.overtime_reported = 17.15;
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values, entry_origin: 'imported' })] });
+    await start(); await choose(); expect(screen.getByText('Imported — awaiting review')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
+    expect(within(screen.getByLabelText('Review report')).getByText('17h 15m')).toBeInTheDocument();
+    expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+    mocks.request.mockResolvedValueOnce(report({ values, status: 'ready', last_submitted_at: '2026-09-14T12:40:00Z' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Homewood for September 14, 2026' })); await screen.findByText('Submitted');
+    expect(mocks.request.mock.calls.at(-1)?.[1]).toMatchObject({ facility_id: 'a', week_start: '2026-09-14', status: 'ready' });
+  });
+  it('shows the deadline after 8:45 without locking entry and blocks Sunday submission', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, server_now: '2026-09-14T12:45:00Z', reports: [report({ entry_origin: 'manual' })] }); const view = await start(); await choose();
+    expect(screen.getByText(/The 8:45 a.m. Haven submission target has passed/)).toBeInTheDocument(); expect(screen.getByLabelText('Current census')).toBeEnabled(); view.unmount();
+    mocks.request.mockResolvedValueOnce({ ...workspace, server_now: '2026-09-13T12:00:00Z' }); useFacilityStore.setState({ selectedFacilityId: null }); await start(); await choose();
+    fireEvent.click(screen.getByRole('button', { name: 'Review and submit' })); expect(screen.getByRole('button', { name: /Submit Homewood for/ })).toBeDisabled();
+    expect(screen.getByText(/Sunday preparation stays a draft/)).toBeInTheDocument();
+  });
+  it('does not autosave offline and removes entry on a server revocation response', async () => {
+    await start(); await choose(); act(() => { Object.defineProperty(navigator, 'onLine', { configurable: true, value: false }); window.dispatchEvent(new Event('offline')); });
+    changeCensus('12'); expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled();
+    act(() => { Object.defineProperty(navigator, 'onLine', { configurable: true, value: true }); window.dispatchEvent(new Event('online')); });
+    mocks.request.mockRejectedValueOnce(new StandUpRequestError('No longer authorized', 403)); save();
+    await screen.findByText(/Your access changed/); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+  });
+  it('preserves a conflict from another tab and loads its newer saved version only on explicit discard', async () => {
+    await start(); await choose(); changeCensus('21');
+    mocks.request.mockRejectedValueOnce(new StandUpRequestError('Report version changed', 409));
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ version: 3, values: { ...emptyValues(), current_total_census: 30 } })] }); save();
+    await screen.findByText('This report changed elsewhere. Your entries are retained. Review the saved report before continuing.');
+    expect(screen.getByLabelText('Current census')).toHaveValue(21);
+    fireEvent.click(screen.getByRole('button', { name: 'Discard my edits and load saved figures' }));
+    expect(screen.getByLabelText('Current census')).toHaveValue(30);
+    changeCensus('31'); mocks.request.mockResolvedValueOnce(report({ version: 4, values: { ...emptyValues(), current_total_census: 31 } })); save();
+    await waitFor(() => expect(mocks.request.mock.calls.at(-1)?.[1].expected_version).toBe(3));
+  });
+  it('keeps retrying the unknown payload before autosaving edits made after the timeout', async () => {
+    await start(); await choose(); changeCensus('11'); mocks.request.mockRejectedValueOnce(new Error('Unknown save result')); save();
+    await screen.findByText('Unknown save result'); const original = mocks.request.mock.calls.at(-1)?.[1];
+    changeCensus('12'); expect(screen.getByRole('button', { name: 'Discard unsaved changes' })).toBeDisabled();
+    mocks.request.mockResolvedValueOnce(report({ values: { ...emptyValues(), current_total_census: 11 } })); save();
+    await screen.findByText('Unsaved changes'); expect(mocks.request.mock.calls.at(-1)?.[1]).toEqual(original);
+    expect(screen.getByLabelText('Current census')).toHaveValue(12);
+  });
+  it('ignores an old save failure and finally handler after a new facility save starts', async () => {
+    await start(); await choose(); const first = deferred<StandUpReport>(); mocks.request.mockReturnValueOnce(first.promise); changeCensus('10'); save();
+    act(() => useFacilityStore.getState().resetSelectedFacility()); await choose('b');
+    const second = deferred<StandUpReport>(); mocks.request.mockReturnValueOnce(second.promise); changeCensus('20'); save();
+    await act(async () => first.reject(new Error('Old Homewood failure')));
+    expect(screen.queryByText('Old Homewood failure')).not.toBeInTheDocument(); expect(screen.getByText('Saving…')).toBeInTheDocument();
+    await act(async () => second.resolve(report({ facility_id: 'b', values: { ...emptyValues(), current_total_census: 20 } })));
+    expect(screen.getByLabelText('Current census')).toHaveValue(20); expect(screen.queryByText('Saving…')).not.toBeInTheDocument();
+  });
+  it('does not let a refresh started before a save replace its newer receipt', async () => {
+    await start(); await choose(); const refresh = deferred<typeof workspace>(); mocks.request.mockReturnValueOnce(refresh.promise);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh reports' })); changeCensus('40');
+    mocks.request.mockResolvedValueOnce(report({ values: { ...emptyValues(), current_total_census: 40 } })); save(); await screen.findByText(/Saved Sep 14/);
+    await act(async () => refresh.resolve(workspace));
+    expect(screen.getByLabelText('Current census')).toHaveValue(40); await choose('b'); await choose('a');
+    expect(screen.getByLabelText('Current census')).toHaveValue(40);
+  });
+  it('retains unsaved entries when refreshing the workspace fails without an authorization failure', async () => {
+    await start(); await choose(); mocks.request.mockRejectedValueOnce(new Error('Connection unavailable'));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh reports' })); await screen.findByText('Connection unavailable Your current entries are retained.');
+    expect(screen.getByLabelText('Current census')).toBeInTheDocument();
+  });
+  it('retains an uncertain submission receipt for an unchanged saved report across every scope and refresh guard', async () => {
+    const values = Object.fromEntries(Object.keys(emptyValues()).map(key => [key, 0])) as StandUpReport['values'];
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values }), report({ id: 'old', week_start: '2026-09-07', values })] });
+    await start(); await choose(); fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
+    mocks.request.mockRejectedValueOnce(new Error('Unknown submission result'));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Homewood for September 14, 2026' })); await screen.findByText('Unknown submission result');
+    const original = mocks.request.mock.calls.at(-1)?.[1]; expect(original.status).toBe('ready');
+    act(() => { expect(allowRouteLeave('/admin/executive')).toBe(false); });
+    act(() => { expect(useFacilityStore.getState().setSelectedFacility('b')).toBe(false); });
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } }); expect(screen.getByLabelText('Meeting date')).toHaveValue('2026-09-14');
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh reports' })); expect(mocks.request.mock.calls.at(-1)?.[1]).toEqual(original);
+    expect(screen.getByRole('button', { name: 'Spreadsheet recovery and backup' })).toBeDisabled();
+    const unload = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(unload); expect(unload.defaultPrevented).toBe(true);
+    mocks.request.mockResolvedValueOnce(report({ values, version: 2, status: 'ready', last_submitted_at: '2026-09-14T12:40:00Z' })); save(); await screen.findByText('Submitted');
+    expect(mocks.request.mock.calls.at(-1)?.[1]).toEqual(original); expect(screen.getByRole('button', { name: 'Spreadsheet recovery and backup' })).toBeEnabled();
+  });
+  it('shows the raw invalid duration and refuses unrelated autosave until explicitly corrected', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: { ...emptyValues(), overtime_reported: 15.65 } })] });
+    await start(); await choose(); expect(screen.getByText(/saved overtime notation 15.65 needs review/)).toBeInTheDocument();
+    changeCensus('20'); save(); await screen.findByText('Correct the saved overtime with explicit hours and minutes before saving.');
+    expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+  });
+  it('reloads a legacy SPA entry before enabling edits, but permits a verified document entry', async () => {
+    Object.defineProperty(window, 'navigation', { configurable: true, value: undefined });
+    const href = window.location.href; window.history.replaceState(null, '', '/admin/stand-up');
+    const timing = vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ name: new URL('/admin/executive', window.location.origin).href } as PerformanceEntry]);
+    const replace = vi.spyOn(window.location, 'replace').mockImplementation(() => {});
+    const view = await start(); await choose(); expect(replace).toHaveBeenCalledWith(window.location.href); expect(screen.getByLabelText('Current census')).toBeDisabled();
+    view.unmount(); useFacilityStore.setState({ selectedFacilityId: null }); timing.mockReturnValue([{ name: window.location.href } as PerformanceEntry]);
+    await start(); await choose(); expect(screen.getByLabelText('Current census')).toBeEnabled();
+    window.history.replaceState(null, '', href);
+  });
+  it('never infers lateness for imported current reports or historical manual records', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, server_now: '2026-09-14T13:00:00Z', facilities: [workspace.facilities[0]], reports: [report({ values: { ...emptyValues(), current_total_census: 40 }, entry_origin: 'imported' }), report({ id: 'old', week_start: '2026-09-07', entry_origin: 'manual' })] });
     render(<StandUpWorkspace />); await screen.findByLabelText('Current census');
-    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '25' } });
-    fireEvent.change(screen.getByLabelText('Facility'), { target: { value: 'b' } });
-    expect(screen.getByRole('alert')).toHaveTextContent('Save your draft');
-    expect(screen.getByLabelText('Facility')).toHaveValue('a');
-    fireEvent.click(screen.getByText('Discard unsaved changes'));
-    fireEvent.change(screen.getByLabelText('Facility'), { target: { value: 'b' } });
-    await waitFor(() => expect(screen.getByLabelText('Current census')).toHaveValue(null));
-    expect(screen.getByLabelText('Facility')).toHaveValue('b');
+    expect(screen.getByText(/Submission timing was not recorded/)).toBeInTheDocument(); expect(screen.queryByText(/target has passed/)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
+    expect(screen.queryByText(/target has passed|Past target/)).not.toBeInTheDocument();
   });
-  it('shows missing coverage and last Monday through Sunday without zero totals', async () => {
-    render(<StandUpWorkspace />); await screen.findByLabelText('Current census');
-    expect(screen.getByText('0 of 2 accessible facilities ready.')).toBeInTheDocument();
-    expect(screen.getByText('2026-09-07 through 2026-09-13')).toBeInTheDocument();
-    expect(screen.getByText(/Average rent: Not available/)).toBeInTheDocument();
-    expect(screen.getByText('Ready for Stand Up')).toBeDisabled();
+  it('keeps technical imports out of facility-admin entry', async () => {
+    await start(); await choose(); expect(screen.queryByRole('button', { name: 'Management tools' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Import JSON')).not.toBeInTheDocument(); expect(screen.queryByText(/Currency.*cents/)).not.toBeInTheDocument();
   });
-  it('requires explicit conflict resolution and clear confirmation before recovery', async () => {
-    const values = { ...emptyValues(), current_total_census: 20 };
-    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [{ id: 'r', facility_id: 'a', week_start: '2026-09-14', version: 2, revision_id: 'rev', values, status: 'draft', updated_at: '2026-09-14T10:00:00Z' }] });
-    render(<StandUpWorkspace />); await screen.findByLabelText('Current census');
-    mocks.request.mockResolvedValueOnce({ facility_id: 'a', week_start: '2026-09-14', preview_id: 'p', expected_version: 2, merged: values, conflicts: ['current_total_census'], clears: ['monthly_rent_roll_cents'] });
-    const file = new File([''], 'fallback.json', { type: 'application/json' });
-    Object.defineProperty(file, 'text', { value: async () => JSON.stringify({ baseline_id: 'baseline', facility_id: 'a', week_start: '2026-09-14', version: 1, values }) });
-    fireEvent.change(screen.getByLabelText('Upload edited fallback (JSON or CSV)'), { target: { files: [file] } });
-    await screen.findByText('Recovery preview — current version 2');
-    const apply = screen.getByText('Apply reviewed recovery'); expect(apply).toBeDisabled();
-    fireEvent.change(screen.getByLabelText('Resolve Current census'), { target: { value: '21' } });
-    fireEvent.change(screen.getByLabelText('Resolve Monthly rent roll'), { target: { value: 'CLEAR' } });
-    expect(apply).toBeDisabled();
-    fireEvent.click(screen.getByLabelText('I confirm any intentional clearing of values.'));
-    mocks.request.mockResolvedValueOnce({ id: 'r', facility_id: 'a', week_start: '2026-09-14', version: 3, revision_id: 'rev3', values: { ...values, current_total_census: 21 }, status: 'draft', updated_at: '2026-09-14T10:10:00Z' });
-    fireEvent.click(apply);
-    await screen.findByText(/Saved receipt: revision rev3/);
-    expect(mocks.request).toHaveBeenCalledWith('commit_recovery', expect.objectContaining({ preview_id: 'p', expected_version: 2, resolutions: { current_total_census: 21, monthly_rent_roll_cents: null }, confirm_clears: true }));
+});
+describe('Friendly spreadsheet recovery', () => {
+  it('requires a deliberate blank confirmation for spreadsheet clears and sends corrected dollars as cents', async () => {
+    const values = { ...emptyValues(), monthly_rent_roll_cents: 100000, current_total_census: 20 };
+    const preview = { facility_id: 'a', week_start: '2026-09-14', preview_id: 'p', expected_version: 1, current: values, incoming: { ...values, current_total_census: null }, merged: values, conflicts: ['monthly_rent_roll_cents'], clears: ['current_total_census'] };
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values })], pending_recoveries: [preview] });
+    await start(); await choose(); fireEvent.click(screen.getByRole('button', { name: '1 spreadsheet change needs review' })); fireEvent.click(screen.getByRole('button', { name: 'Review spreadsheet change 1' }));
+    fireEvent.change(screen.getByLabelText('Decision for Monthly rent roll'), { target: { value: 'corrected' } }); fireEvent.change(screen.getByLabelText('Corrected Monthly rent roll ($)'), { target: { value: '1234.56' } });
+    fireEvent.change(screen.getByLabelText('Decision for Current census'), { target: { value: 'file' } });
+    const apply = screen.getByRole('button', { name: 'Save reviewed choices for Homewood' }); expect(apply).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('I intend to leave the selected figures blank.'));
+    mocks.request.mockResolvedValueOnce(report({ version: 2, values: { ...values, monthly_rent_roll_cents: 123456, current_total_census: null } }));
+    fireEvent.click(apply); await screen.findByText('Reviewed spreadsheet changes saved.');
+    expect(mocks.request).toHaveBeenCalledWith('commit_recovery', expect.objectContaining({ resolutions: { monthly_rent_roll_cents: 123456, current_total_census: null }, confirm_clears: true }));
   });
-
-  it.each([{ facility_id: 'b', week_start: '2026-09-14' }, { facility_id: 'a', week_start: '2026-09-07' }])('rejects a returned recovery preview for another scope: %j', async scope => {
-    render(<StandUpWorkspace />); await screen.findByLabelText('Current census');
-    const values = emptyValues();
-    mocks.request.mockResolvedValueOnce({ ...scope, preview_id: 'wrong', expected_version: 2, merged: values, conflicts: [], clears: [] });
-    const file = new File([''], 'fallback.json', { type: 'application/json' });
-    Object.defineProperty(file, 'text', { value: async () => JSON.stringify({ baseline_id: 'misbound-baseline', facility_id: 'a', week_start: '2026-09-14', version: 1, values }) });
-    fireEvent.change(screen.getByLabelText('Upload edited fallback (JSON or CSV)'), { target: { files: [file] } });
-    await screen.findByText('Recovery preview does not match the selected facility and week. No changes applied.');
-    expect(screen.queryByText('Apply reviewed recovery')).not.toBeInTheDocument();
-    expect(mocks.request).toHaveBeenLastCalledWith('preview_recovery', { baseline_id: 'misbound-baseline', facility_id: 'a', week_start: '2026-09-14', values });
-    expect(mocks.request.mock.calls.some(([action]) => action === 'commit_recovery')).toBe(false);
+  it('locks corrected values and clear confirmation while reviewed recovery is being saved', async () => {
+    const values = { ...emptyValues(), monthly_rent_roll_cents: 100000, current_total_census: 20 };
+    const preview = { facility_id: 'a', week_start: '2026-09-14', preview_id: 'p', expected_version: 1, current: values, incoming: { ...values, current_total_census: null }, merged: values, conflicts: ['monthly_rent_roll_cents'], clears: ['current_total_census'] };
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values })], pending_recoveries: [preview] });
+    await start(); await choose(); fireEvent.click(screen.getByRole('button', { name: '1 spreadsheet change needs review' })); fireEvent.click(screen.getByRole('button', { name: 'Review spreadsheet change 1' }));
+    fireEvent.change(screen.getByLabelText('Decision for Monthly rent roll'), { target: { value: 'corrected' } }); fireEvent.change(screen.getByLabelText('Corrected Monthly rent roll ($)'), { target: { value: '1234.56' } });
+    fireEvent.change(screen.getByLabelText('Decision for Current census'), { target: { value: 'clear' } }); fireEvent.click(screen.getByLabelText('I intend to leave the selected figures blank.'));
+    const slow = deferred<StandUpReport>(); mocks.request.mockReturnValueOnce(slow.promise);
+    fireEvent.click(screen.getByRole('button', { name: 'Save reviewed choices for Homewood' }));
+    expect(screen.getByLabelText('Corrected Monthly rent roll ($)')).toBeDisabled(); expect(screen.getByLabelText('I intend to leave the selected figures blank.')).toBeDisabled();
+    await act(async () => slow.resolve(report({ version: 2, values: { ...values, monthly_rent_roll_cents: 123456, current_total_census: null } })));
   });
-
-  it('loads detected file changes without upload and removes a reviewed Haven decision', async () => {
-    const values = { ...emptyValues(), current_total_census: 20, monthly_rent_roll_cents: 100000 };
-    const saved = { id: 'r', facility_id: 'a', week_start: '2026-09-14', version: 2, revision_id: 'rev', values, status: 'draft', updated_at: '2026-09-14T10:00:00Z' };
-    const recovery = { facility_id: 'a', week_start: '2026-09-14', preview_id: 'pending-1', expected_version: 2, baseline: { ...values, current_total_census: 19 }, current: values, incoming: { ...values, current_total_census: 22, monthly_rent_roll_cents: null }, merged: values, conflicts: ['current_total_census'], clears: ['monthly_rent_roll_cents'] };
-    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [saved], pending_recoveries: [recovery, { ...recovery, preview_id: 'other', facility_id: 'b' }] });
-    render(<StandUpWorkspace />);
-    const review = await screen.findByText('Review recovery pending-1');
-    expect(screen.queryByText('Review recovery other')).not.toBeInTheDocument();
-    fireEvent.click(review);
-    expect(screen.getByText('Baseline: 19 · Haven: 20 · File: 22')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Resolve Current census'), { target: { value: '20' } });
-    fireEvent.change(screen.getByLabelText('Resolve Monthly rent roll'), { target: { value: '100000' } });
-    mocks.request.mockResolvedValueOnce({ ...saved, version: 3, revision_id: 'rev3' });
-    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [{ ...saved, version: 3, revision_id: 'rev3' }], pending_recoveries: [] });
-    fireEvent.click(screen.getByText('Apply reviewed recovery'));
-    await screen.findByText(/Saved receipt: revision rev3/);
-    await waitFor(() => expect(screen.queryByText('Review recovery pending-1')).not.toBeInTheDocument());
-    expect(mocks.request).toHaveBeenCalledWith('commit_recovery', expect.objectContaining({ preview_id: 'pending-1', facility_id: 'a', week_start: '2026-09-14', resolutions: { current_total_census: 20, monthly_rent_roll_cents: 100000 }, confirm_clears: false }));
-    expect(mocks.request).toHaveBeenLastCalledWith('workspace');
+  it('keeps Haven values and expresses money in dollars without exposing cents in routine choices', async () => {
+    const values = { ...emptyValues(), monthly_rent_roll_cents: 100000, current_total_census: 20 };
+    const preview = { facility_id: 'a', week_start: '2026-09-14', preview_id: 'p', expected_version: 1, baseline: values, current: values, incoming: { ...values, monthly_rent_roll_cents: null, current_total_census: 22 }, merged: values, conflicts: ['current_total_census'], clears: ['monthly_rent_roll_cents'] };
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values })], pending_recoveries: [preview] });
+    await start(); await choose(); fireEvent.click(screen.getByRole('button', { name: '1 spreadsheet change needs review' })); fireEvent.click(screen.getByRole('button', { name: 'Review spreadsheet change 1' }));
+    expect(screen.getByText('Previously: $1,000.00 · Haven: $1,000.00 · Spreadsheet: Not provided')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Decision for Monthly rent roll'), { target: { value: 'haven' } }); fireEvent.change(screen.getByLabelText('Decision for Current census'), { target: { value: 'haven' } });
+    mocks.request.mockResolvedValueOnce(report({ values, version: 2 })); mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values, version: 2 })], pending_recoveries: [] });
+    fireEvent.click(screen.getByRole('button', { name: 'Save reviewed choices for Homewood' })); await screen.findByText('Reviewed spreadsheet changes saved.');
+    expect(mocks.request).toHaveBeenCalledWith('commit_recovery', expect.objectContaining({ resolutions: { current_total_census: 20, monthly_rent_roll_cents: 100000 }, confirm_clears: false }));
   });
-
 });

@@ -2,6 +2,7 @@
 
 import { Bell, ChevronRight, LifeBuoy, Loader2, LogOut, Settings, UserCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { navigateWithLeaveGuard } from "@/components/layout/navigation-pending";
 import { useState, type ComponentType, type ReactNode } from "react";
 import { IdentityAvatar, IdentityBlock } from "@/components/ui/identity-block";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -66,7 +67,7 @@ export function UserMenuSheet({
 
   const navigateTo = (href: string) => {
     setOpen(false);
-    router.push(href);
+    navigateWithLeaveGuard(href, destination => router.push(destination));
   };
 
   const handleSignOut = () => {

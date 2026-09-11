@@ -18,7 +18,11 @@ interface FacilityState {
   facilitiesFetchedAt: number | null;
   /** Authenticated Supabase user id that owns the persisted facility-options cache. */
   facilitiesCacheUserId: string | null;
-  setSelectedFacility: (id: string | null) => void;
+  setSelectedFacility: (id: string | null) => boolean;
+  /** Forms may veto user navigation while a save or unsaved draft is pending. */
+  registerFacilityChangeGuard: (guard: (id: string | null) => boolean) => () => void;
+  /** Security invalidation must clear context even when a form is dirty. */
+  resetSelectedFacility: () => void;
   setAvailableFacilities: (facilities: Facility[], userId: string) => void;
   clearFacilityCache: () => void;
 }
@@ -62,14 +66,33 @@ const noopServerStorage: StateStorage = {
   removeItem: () => {},
 };
 
+// Navigation guards are transient and are never persisted with facility choices.
+const facilityChangeGuards = new Set<(id: string | null) => boolean>();
+
 export const useFacilityStore = create<FacilityState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       selectedFacilityId: null,
       availableFacilities: [],
       facilitiesFetchedAt: null,
       facilitiesCacheUserId: null,
-      setSelectedFacility: (id) => set({ selectedFacilityId: id }),
+      setSelectedFacility: (id) => {
+        if (id === get().selectedFacilityId) return true;
+        try {
+          for (const guard of facilityChangeGuards) {
+            if (!guard(id)) return false;
+          }
+        } catch {
+          return false;
+        }
+        set({ selectedFacilityId: id });
+        return true;
+      },
+      registerFacilityChangeGuard: (guard) => {
+        facilityChangeGuards.add(guard);
+        return () => { facilityChangeGuards.delete(guard); };
+      },
+      resetSelectedFacility: () => set({ selectedFacilityId: null }),
       setAvailableFacilities: (facilities, userId) =>
         set({
           availableFacilities: facilities,

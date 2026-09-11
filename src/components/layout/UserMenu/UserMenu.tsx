@@ -2,6 +2,7 @@
 
 import { Bell, LifeBuoy, Loader2, LogOut, Settings, UserCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { navigateWithLeaveGuard } from "@/components/layout/navigation-pending";
 import type { ReactNode } from "react";
 import { IdentityAvatar, IdentityBlock } from "@/components/ui/identity-block";
 import {
@@ -56,7 +57,7 @@ export function UserMenu({
     typeof triggerChildren === "function" ? triggerChildren(orgName) : triggerChildren;
 
   const navigateTo = (href: string) => {
-    router.push(href);
+    navigateWithLeaveGuard(href, destination => router.push(destination));
   };
 
   return (

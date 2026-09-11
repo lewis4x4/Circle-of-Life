@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type RefObject } from "react";
 import { Flag, Loader2, MessageSquareWarning, Send } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -21,6 +21,10 @@ type PilotFeedbackLauncherProps = {
   shellKind: "admin" | "caregiver" | "family" | "med-tech";
   facilityId?: string | null;
   compact?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+  returnFocusRef?: RefObject<HTMLElement | null>;
 };
 
 const CATEGORY_OPTIONS: Array<{ value: FeedbackCategory; label: string }> = [
@@ -42,9 +46,18 @@ export function PilotFeedbackLauncher({
   shellKind,
   facilityId = null,
   compact = false,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+  returnFocusRef,
 }: PilotFeedbackLauncherProps) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (next: boolean) => {
+    if (controlledOpen === undefined) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
   const [category, setCategory] = useState<FeedbackCategory>("friction");
   const [severity, setSeverity] = useState<FeedbackSeverity>("medium");
   const [title, setTitle] = useState("");
@@ -112,7 +125,7 @@ export function PilotFeedbackLauncher({
 
   return (
     <>
-      <Button
+      {!hideTrigger && <Button
         type="button"
         variant={compact ? "ghost" : "outline"}
         size={compact ? "icon-sm" : "sm"}
@@ -122,7 +135,7 @@ export function PilotFeedbackLauncher({
         title={compact ? "Pilot feedback" : undefined}
       >
         {compact ? <Flag className="h-4 w-4" aria-hidden /> : <><MessageSquareWarning className="mr-2 h-4 w-4" aria-hidden />Feedback</>}
-      </Button>
+      </Button>}
 
       <Dialog open={open} onOpenChange={(next) => {
         setOpen(next);
@@ -131,7 +144,7 @@ export function PilotFeedbackLauncher({
           setSuccess(null);
         }
       }}>
-        <DialogContent className="max-w-xl rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-zinc-950/95 ">
+        <DialogContent onCloseAutoFocus={returnFocusRef ? event => { event.preventDefault(); returnFocusRef.current?.focus(); } : undefined} className="max-w-xl rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-zinc-950/95 ">
           <DialogHeader>
             <DialogTitle>Pilot Feedback</DialogTitle>
             <DialogDescription>
