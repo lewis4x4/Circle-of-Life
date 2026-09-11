@@ -60,7 +60,7 @@ function StandUpSession() {
   if (auth.loading) return <p role="status" className="p-6">Checking access…</p>;
   if (!auth.user || !auth.organizationId) return <p role="alert" className="p-6">Sign in to your Haven organization to open Stand Up.</p>;
   return <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-    <header><h1 className="text-2xl font-semibold">Weekly Stand Up</h1><p className="text-muted-foreground">Prepare Sunday or Monday. Ready before Monday at 9:15 a.m. Eastern.</p><p>Reported figures are not yet source-verified. Blank means not provided; zero means none.</p></header>
+    <header><h1 className="text-2xl font-semibold">Weekly Stand Up</h1><p className="text-muted-foreground">Prepare Sunday or Monday. Complete by Monday at 8:45 a.m. Eastern for the 9:15 a.m. call.</p><p>Reported figures are not yet source-verified. Blank means not provided; zero means none.</p></header>
     {error && <div role="alert" className="rounded border border-destructive p-3">{error}</div>}{notice && <p role="status" className="rounded border p-3">{notice}</p>}
     {!workspace ? <Button disabled={busy} onClick={() => run(async () => { const data = await standUpRequest<Workspace>('workspace'); setWorkspace(data); setWeek(data.current_week); setFacility(data.facilities[0]?.id ?? ''); })}>Load reports</Button> : <>
     <Button variant="outline" disabled={busy || dirty} onClick={() => run(async () => { setWorkspace(await standUpRequest<Workspace>('workspace')); setNotice('Saved reports refreshed.'); })}>Refresh saved reports</Button>
