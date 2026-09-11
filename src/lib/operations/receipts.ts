@@ -203,6 +203,17 @@ const TRUSTED_FRAGMENTS = [
   "already voided",
   "is voided",
   "is a draft",
+  // COL-159 service and dietary records: refusals by name for subject shape, performer, certificate, meal-level rules and immutable kinds.
+  "is recorded against the site",
+  "is recorded against a named asset",
+  "is not linked to this site",
+  "is recorded on its service date",
+  "is recorded as performed",
+  "cannot change; void the record",
+  "next_due_on",
+  "is not a current document",
+  "must be empty",
+  "must name the staff performer",
 ];
 const CONFLICT_FRAGMENTS = [
   "Required evidence is missing",
@@ -224,7 +235,9 @@ const CONFLICT_FRAGMENTS = [
   "is voided",
   "is a draft",
 ];
-const VALIDATION_FRAGMENTS = ["is required", "are required", "requires", "must be", "not editable", "is invalid", "carries no identifier", "Recorded values", "Performed time", "Corrected performed time", "Performer", "not allowlisted", "not a candidate", "applies to select only", "does not match the caller", "is not a staff observation", "is recorded against", "Asset is not current", "A correction must restate", "invalid drill value", "Drill type cannot change"];
+const VALIDATION_FRAGMENTS = ["is required", "are required", "requires", "must be", "not editable", "is invalid", "carries no identifier", "Recorded values", "Performed time", "Corrected performed time", "Performer", "not allowlisted", "not a candidate", "applies to select only", "does not match the caller", "is not a staff observation", "is recorded against", "Asset is not current", "A correction must restate", "invalid drill value", "Drill type cannot change",
+  // COL-159
+  "is recorded against the site", "is recorded against a named asset", "is not linked to this site", "is recorded on its service date", "is recorded as performed", "cannot change; void the record", "next_due_on", "is not a current document", "must be empty", "must name the staff performer"];
 const INDEPENDENCE_WORDING = "A different authorized staff member must verify this task";
 
 export type ReceiptRpcError = { code?: string; message?: string; details?: string | null } | null | undefined;

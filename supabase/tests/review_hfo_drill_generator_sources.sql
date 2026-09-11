@@ -39,9 +39,11 @@ CREATE FUNCTION pg_temp.c_expect(stmt text,fragment text,detail_fragment text DE
 END $$;
 
 -- 0. Registration is exactly the two adapters and five rules for the seeded organisation; no review activity is allowlisted; nothing was delivered, recorded or finalized.
-SELECT pg_temp.c_assert((SELECT array_agg(source_key||':'||subject_kind||':'||reader_function||':'||status ORDER BY source_key) FROM public.operation_source_adapters)
+-- The COL-159 adapters (facility-service, asset-service, dietary-record) and its rules for the asset-observation adapter are excluded here; the COL-159 probe asserts them exactly.
+SELECT pg_temp.c_assert((SELECT array_agg(source_key||':'||subject_kind||':'||reader_function||':'||status ORDER BY source_key) FROM public.operation_source_adapters WHERE source_key IN('drill-log','asset-observation'))
  =ARRAY['asset-observation:asset:operation_source_read_asset_observation:registered','drill-log:facility:operation_source_read_drill_log:registered'],'COL-154 adapters not registered exactly');
-SELECT pg_temp.c_assert((SELECT array_agg(ru.source_key||':'||a.activity_key ORDER BY ru.source_key,a.activity_key) FROM public.operation_source_rules ru JOIN public.operation_activities a ON a.id=ru.activity_id)
+SELECT pg_temp.c_assert((SELECT array_agg(ru.source_key||':'||a.activity_key ORDER BY ru.source_key,a.activity_key) FROM public.operation_source_rules ru JOIN public.operation_activities a ON a.id=ru.activity_id
+ WHERE ru.source_key IN('drill-log','asset-observation') AND a.activity_key NOT IN('hfo-al-w04-01','hfo-al-w04-02'))
  =ARRAY['asset-observation:hfo-al-a07-03','asset-observation:hfo-al-w01-01','asset-observation:hfo-al-w01-02','drill-log:hfo-al-m05-01','drill-log:hfo-al-m06-01'],'COL-154 rules not registered exactly');
 SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_source_rules ru JOIN public.operation_activities a ON a.id=ru.activity_id WHERE a.activity_key IN('hfo-al-a07-01','hfo-al-a07-02','hfo-al-a08-01','hfo-al-a08-02')),'a review activity is allowlisted');
 SELECT pg_temp.c_assert((SELECT bool_and(status='registered') FROM public.operation_source_adapters) AND (SELECT bool_and(organization_id='00000000-0000-0000-0000-000000000001') FROM public.operation_source_adapters),'adapter registration drifted');

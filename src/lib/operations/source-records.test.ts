@@ -120,3 +120,104 @@ describe("error mapping", () => {
     expect(mapReceiptRpcError({ code: "23514", message: 'new row for relation "asset_observations" violates check constraint' }, "source_record").error).toBe("Record request could not be completed. Refresh the occurrence and retry.");
   });
 });
+
+// COL-159: service and dietary record bodies, the widened observation kinds and the new refusal wordings.
+import {
+  OBSERVATION_KINDS,
+  SERVICE_KINDS,
+  dietaryRecordCommandBodySchema,
+  facilityServiceCommandBodySchema,
+  isAssetServiceKind,
+  listDietaryRecordsQuerySchema,
+  listFacilityServicesQuerySchema,
+  recordDietaryRecordBodySchema,
+  recordFacilityServiceBodySchema,
+} from "./source-records";
+
+const vendor = "99999999-9999-4999-8999-999999999999";
+const service = { facility_id: facility, service_kind: "extinguisher_inspection", asset_id: asset, performed_at: "2026-09-10T14:00:00-04:00", outcome: "pass" };
+
+describe("COL-159 observation kinds", () => {
+  it("accepts the two AED components as observation kinds", () => {
+    expect(OBSERVATION_KINDS).toContain("aed_operation_check");
+    expect(OBSERVATION_KINDS).toContain("aed_equipment_check");
+    expect(recordAssetObservationBodySchema.safeParse({ request_key: key, payload: { ...observation, observation_kind: "aed_equipment_check" } }).success).toBe(true);
+  });
+});
+
+describe("record facility service body", () => {
+  it("accepts a staff service against an asset and a vendor service against the site, and refuses the composite shapes by name", () => {
+    expect(recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: service }).success).toBe(true);
+    expect(recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, service_kind: "sprinkler_inspection", asset_id: undefined, performer_kind: "vendor", vendor_id: vendor, performer_label: "Technician", entry_reason: "Vendor visit", next_due_on: "2027-03-01", certificate_document_id: facility } }).success).toBe(true);
+    const siteWithAsset = recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, service_kind: "fire_inspection" } });
+    expect(siteWithAsset.success).toBe(false);
+    expect(siteWithAsset.success ? "" : siteWithAsset.error.issues[0]?.message).toBe("fire_inspection is recorded against the site, not an asset");
+    const assetWithout = recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, asset_id: undefined } });
+    expect(assetWithout.success).toBe(false);
+    expect(recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, performer_kind: "vendor" } }).success).toBe(false);
+    expect(recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, performer_kind: "vendor", vendor_id: vendor, performed_by: asset } }).success).toBe(false);
+    expect(recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, vendor_id: vendor } }).success).toBe(false);
+    expect(recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, next_due_on: "soon" } }).success).toBe(false);
+    expect(recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, service_kind: "elevator_inspection" } }).success).toBe(false);
+    expect(recordFacilityServiceBodySchema.safeParse({ request_key: key, payload: { ...service, surprise: true } }).success).toBe(false);
+    expect(SERVICE_KINDS.filter(isAssetServiceKind)).toEqual(["extinguisher_inspection", "hood_cleaning", "ac_filter_change"]);
+  });
+
+  it("requires an expected version and a reason for a correction, only a reason for a void, and never a kind", () => {
+    expect(facilityServiceCommandBodySchema.safeParse({ request_key: key, action: "correct", expected_version: 2, payload: { reason: "Tag misread", readings: { tag_year: 2025 }, asset_id: asset, next_due_on: null } }).success).toBe(true);
+    expect(facilityServiceCommandBodySchema.safeParse({ request_key: key, action: "correct", expected_version: 2, payload: { reason: "Kind", service_kind: "hood_cleaning" } }).success).toBe(false);
+    expect(facilityServiceCommandBodySchema.safeParse({ request_key: key, action: "correct", payload: { reason: "x" } }).success).toBe(false);
+    expect(facilityServiceCommandBodySchema.safeParse({ request_key: key, action: "void", payload: { reason: "Wrong unit" } }).success).toBe(true);
+    expect(facilityServiceCommandBodySchema.safeParse({ request_key: key, action: "void", payload: {} }).success).toBe(false);
+    expect(listFacilityServicesQuerySchema.safeParse({ facility_id: facility, kind: "hood_cleaning", asset_id: asset, voided: "false" }).success).toBe(true);
+    expect(listFacilityServicesQuerySchema.safeParse({ facility_id: facility, kind: "drill" }).success).toBe(false);
+  });
+});
+
+describe("record dietary record body", () => {
+  const substitution = { facility_id: facility, record_kind: "meal_substitution", performed_at: "2026-09-10T12:10:00-04:00", service_date: "2026-09-10", meal_period: "lunch", planned_item: "Baked chicken", substitute_item: "Turkey loaf", substitution_reason: "Delivery short" };
+
+  it("accepts each kind with its own fields and refuses the other kinds' fields, a failed substitution or approval, and a failed check without an issue", () => {
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: substitution }).success).toBe(true);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { ...substitution, meal_service_id: asset } }).success).toBe(true);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { facility_id: facility, record_kind: "menu_approval", performed_at: substitution.performed_at, menu_label: "Fall cycle", approver_label: "RD on file", approval_document_id: asset, entry_reason: "Late" } }).success).toBe(true);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { facility_id: facility, record_kind: "emergency_food_supply_check", performed_at: substitution.performed_at, outcome: "failed", issue_summary: "Two cases past date", readings: { cases_counted: 18 } } }).success).toBe(true);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { ...substitution, planned_item: undefined } }).success).toBe(false);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { ...substitution, menu_label: "x" } }).success).toBe(false);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { ...substitution, outcome: "failed", issue_summary: "x" } }).success).toBe(false);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { ...substitution, meal_period: "brunch" } }).success).toBe(false);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { facility_id: facility, record_kind: "menu_approval", performed_at: substitution.performed_at, menu_label: "Fall cycle" } }).success).toBe(false);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { facility_id: facility, record_kind: "emergency_food_supply_check", performed_at: substitution.performed_at, outcome: "failed" } }).success).toBe(false);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { facility_id: facility, record_kind: "emergency_food_supply_check", performed_at: substitution.performed_at, service_date: "2026-09-10" } }).success).toBe(false);
+    expect(recordDietaryRecordBodySchema.safeParse({ request_key: key, payload: { ...substitution, resident_id: asset } }).success).toBe(false);
+  });
+
+  it("shapes corrections, voids and the list query", () => {
+    expect(dietaryRecordCommandBodySchema.safeParse({ request_key: key, action: "correct", expected_version: 1, payload: { reason: "Item misnamed", substitute_item: "Turkey meatloaf", meal_service_id: null } }).success).toBe(true);
+    expect(dietaryRecordCommandBodySchema.safeParse({ request_key: key, action: "correct", expected_version: 1, payload: { reason: "Kind", record_kind: "menu_approval" } }).success).toBe(false);
+    expect(dietaryRecordCommandBodySchema.safeParse({ request_key: key, action: "void", payload: { reason: "Wrong shelf" } }).success).toBe(true);
+    expect(listDietaryRecordsQuerySchema.safeParse({ facility_id: facility, kind: "menu_approval", voided: "true" }).success).toBe(true);
+    expect(listDietaryRecordsQuerySchema.safeParse({ facility_id: facility, asset_id: asset }).success).toBe(false);
+  });
+});
+
+describe("COL-159 error mapping", () => {
+  it("classes the service and dietary refusals by name as validation and the record states as conflicts", () => {
+    for (const message of [
+      "A fire safety inspection is recorded against the site, not an asset",
+      "An extinguisher inspection is recorded against a named asset",
+      "Performer vendor is not linked to this site",
+      "performed_by must be empty for a vendor performer",
+      "A meal substitution is recorded on its service date",
+      "A menu approval is recorded as performed; state a problem as an issue summary",
+      "Service kind cannot change; void the record and record it again",
+      "next_due_on must be after the service date",
+      "Certificate is not a current document of this site",
+    ]) {
+      expect(mapReceiptRpcError({ code: "22023", message }, "source_record")).toEqual({ status: 400, outcome: "validation", error: message });
+    }
+    expect(mapReceiptRpcError({ code: "P0001", message: "Service record is voided" }, "source_record").outcome).toBe("conflict");
+    expect(mapReceiptRpcError({ code: "P0001", message: "Dietary record is already voided" }, "source_record").outcome).toBe("conflict");
+    expect(mapReceiptRpcError({ code: "23514", message: 'new row for relation "dietary_records" violates check constraint "dietary_records_kind_shape"' }, "source_record").error).toBe("Record request could not be completed. Refresh the occurrence and retry.");
+  });
+});

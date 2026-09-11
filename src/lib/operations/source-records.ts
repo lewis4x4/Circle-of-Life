@@ -16,7 +16,8 @@ import { isSourceDeliveryOutcome, presentSourceOutcome, type SourceDeliveryOutco
 /** Any operations role may record, finalize, correct or void at a site it holds; the recorder list decides satisfaction in the database. */
 export const SOURCE_RECORD_ROLES = OPERATIONS_VIEW_ROLES;
 
-export const OBSERVATION_KINDS = ["generator_test", "carbon_monoxide_check", "extinguisher_check"] as const;
+/** COL-159 adds the two AED components: operation and equipment currency are separate records against an `aed` asset. */
+export const OBSERVATION_KINDS = ["generator_test", "carbon_monoxide_check", "extinguisher_check", "aed_operation_check", "aed_equipment_check"] as const;
 /** Only `staff_observed` is accepted; the other two are named so the database can refuse them by name rather than as a generic shape error. */
 export const OBSERVATION_BASES = ["staff_observed", "automatic_self_test", "photo_only"] as const;
 export const OBSERVATION_OUTCOMES = ["pass", "fail"] as const;
@@ -107,6 +108,206 @@ export const listAssetObservationsQuerySchema = z
     voided: z.enum(["true", "false"]).optional(),
   })
   .strict();
+
+/**
+ * COL-159 facility service records: one inspection, cleaning or maintenance
+ * action on one occasion against the site (facility kinds) or a named asset
+ * (asset kinds), by a staff member or a site-linked vendor. The database
+ * decides the adapter by kind, refuses the wrong subject, performer, asset
+ * type, certificate or instant by name, and never writes an asset, a
+ * profile date, a document or a ticket from a service record.
+ */
+export const FACILITY_SERVICE_KINDS = ["fire_safety_inspection", "fire_inspection", "sprinkler_inspection"] as const;
+export const ASSET_SERVICE_KINDS = ["extinguisher_inspection", "hood_cleaning", "ac_filter_change"] as const;
+export const SERVICE_KINDS = [...FACILITY_SERVICE_KINDS, ...ASSET_SERVICE_KINDS] as const;
+export const SERVICE_PERFORMER_KINDS = ["staff", "vendor"] as const;
+export const SERVICE_OUTCOMES = ["pass", "fail"] as const;
+export const SERVICE_RECORD_ACTIONS = ["correct", "void"] as const;
+/** COL-159 dietary records: meal-level substitution, dietitian menu approval and the emergency food supply check; no resident is ever referenced. */
+export const DIETARY_RECORD_KINDS = ["meal_substitution", "menu_approval", "emergency_food_supply_check"] as const;
+export const MEAL_PERIODS = ["breakfast", "lunch", "dinner", "snack_am", "snack_pm", "snack_hs"] as const;
+export const DIETARY_OUTCOMES = ["performed", "failed"] as const;
+export const DIETARY_RECORD_ACTIONS = ["correct", "void"] as const;
+
+type ServiceKind = (typeof SERVICE_KINDS)[number];
+export function isAssetServiceKind(kind: ServiceKind): boolean {
+  return (ASSET_SERVICE_KINDS as readonly string[]).includes(kind);
+}
+
+const calendarDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "must be a calendar date");
+
+const serviceCore = {
+  performed_at: isoInstant,
+  performer_kind: z.enum(SERVICE_PERFORMER_KINDS).optional(),
+  performed_by: uuid.optional(),
+  vendor_id: uuid.optional(),
+  performer_label: text(200).optional(),
+  outcome: z.enum(SERVICE_OUTCOMES),
+  readings: readingsSchema.optional(),
+  issue_summary: text(2000).optional(),
+  next_due_on: calendarDate.optional(),
+  certificate_document_id: uuid.optional(),
+  note: text(4000).optional(),
+  entry_reason: text(2000).optional(),
+};
+
+type ServicePerformerShape = { performer_kind?: "staff" | "vendor"; performed_by?: string; vendor_id?: string; performer_label?: string };
+
+/** The composite shapes the database refuses by name, refused here first so the operator is answered before the round trip. */
+function refineServicePerformer(payload: ServicePerformerShape, ctx: z.RefinementCtx) {
+  const kind = payload.performer_kind ?? "staff";
+  if (kind === "vendor") {
+    if (!payload.vendor_id) ctx.addIssue({ code: "custom", message: "vendor_id must be set for a vendor performer" });
+    if (payload.performed_by) ctx.addIssue({ code: "custom", message: "performed_by must be empty for a vendor performer" });
+  } else if (payload.vendor_id || payload.performer_label) {
+    ctx.addIssue({ code: "custom", message: "vendor_id and performer_label must be empty for a staff performer" });
+  }
+}
+
+export const recordFacilityServiceBodySchema = z
+  .object({
+    request_key: sourceRecordRequestKeySchema,
+    payload: z
+      .object({ facility_id: uuid, service_kind: z.enum(SERVICE_KINDS), asset_id: uuid.optional(), ...serviceCore })
+      .strict()
+      .superRefine((payload, ctx) => {
+        if (isAssetServiceKind(payload.service_kind) && !payload.asset_id) ctx.addIssue({ code: "custom", message: `${payload.service_kind} is recorded against a named asset` });
+        if (!isAssetServiceKind(payload.service_kind) && payload.asset_id) ctx.addIssue({ code: "custom", message: `${payload.service_kind} is recorded against the site, not an asset` });
+        refineServicePerformer(payload, ctx);
+      }),
+  })
+  .strict();
+
+const correctServicePayload = z
+  .object({
+    reason: text(2000),
+    asset_id: uuid.optional(),
+    performed_at: isoInstant.optional(),
+    performer_kind: z.enum(SERVICE_PERFORMER_KINDS).optional(),
+    performed_by: uuid.nullable().optional(),
+    vendor_id: uuid.nullable().optional(),
+    performer_label: text(200).nullable().optional(),
+    outcome: z.enum(SERVICE_OUTCOMES).optional(),
+    readings: readingsSchema.optional(),
+    issue_summary: text(2000).nullable().optional(),
+    next_due_on: calendarDate.nullable().optional(),
+    certificate_document_id: uuid.nullable().optional(),
+    note: text(4000).nullable().optional(),
+    entry_reason: text(2000).nullable().optional(),
+  })
+  .strict();
+
+export const facilityServiceCommandBodySchema = z.discriminatedUnion("action", [
+  z.object({ request_key: sourceRecordRequestKeySchema, action: z.literal("correct"), expected_version: expectedVersion, payload: correctServicePayload }).strict(),
+  z.object({ request_key: sourceRecordRequestKeySchema, action: z.literal("void"), payload: voidPayload }).strict(),
+]);
+
+export const listFacilityServicesQuerySchema = z
+  .object({
+    facility_id: uuid,
+    kind: z.enum(SERVICE_KINDS).optional(),
+    asset_id: uuid.optional(),
+    voided: z.enum(["true", "false"]).optional(),
+  })
+  .strict();
+
+const dietaryCore = {
+  performed_at: isoInstant,
+  performed_by: uuid.optional(),
+  outcome: z.enum(DIETARY_OUTCOMES).optional(),
+  service_date: calendarDate.optional(),
+  meal_period: z.enum(MEAL_PERIODS).optional(),
+  planned_item: text(200).optional(),
+  substitute_item: text(200).optional(),
+  substitution_reason: text(2000).optional(),
+  meal_service_id: uuid.optional(),
+  menu_label: text(200).optional(),
+  approver_label: text(200).optional(),
+  approval_document_id: uuid.optional(),
+  readings: readingsSchema.optional(),
+  issue_summary: text(2000).optional(),
+  note: text(4000).optional(),
+  entry_reason: text(2000).optional(),
+};
+
+type DietaryShape = z.infer<z.ZodObject<typeof dietaryCore>> & { record_kind: (typeof DIETARY_RECORD_KINDS)[number] };
+
+/** Kind-specific shapes, refused here first; the database refuses again by name. */
+function refineDietaryRecord(payload: DietaryShape, ctx: z.RefinementCtx) {
+  const mealFields = [payload.service_date, payload.meal_period, payload.planned_item, payload.substitute_item, payload.substitution_reason];
+  const menuFields = [payload.menu_label, payload.approver_label];
+  if (payload.record_kind === "meal_substitution") {
+    if (mealFields.some((value) => value === undefined)) ctx.addIssue({ code: "custom", message: "service_date, meal_period, planned_item, substitute_item and substitution_reason are required for a meal substitution" });
+    if (menuFields.some((value) => value !== undefined) || payload.approval_document_id) ctx.addIssue({ code: "custom", message: "menu_label, approver_label and approval_document_id must be empty for a meal substitution" });
+    if (payload.outcome === "failed") ctx.addIssue({ code: "custom", message: "A meal substitution is recorded as performed; state a problem as an issue summary" });
+  } else if (payload.record_kind === "menu_approval") {
+    if (menuFields.some((value) => value === undefined)) ctx.addIssue({ code: "custom", message: "menu_label and approver_label are required for a menu approval" });
+    if (mealFields.some((value) => value !== undefined) || payload.meal_service_id) ctx.addIssue({ code: "custom", message: "meal fields must be empty for a menu approval" });
+    if (payload.outcome === "failed") ctx.addIssue({ code: "custom", message: "A menu approval is recorded as performed; state a problem as an issue summary" });
+  } else if (mealFields.some((value) => value !== undefined) || payload.meal_service_id || menuFields.some((value) => value !== undefined) || payload.approval_document_id) {
+    ctx.addIssue({ code: "custom", message: "meal and menu fields must be empty for an emergency food supply check" });
+  }
+  if (payload.outcome === "failed" && !payload.issue_summary) ctx.addIssue({ code: "custom", message: "A failed outcome requires an issue summary" });
+}
+
+export const recordDietaryRecordBodySchema = z
+  .object({
+    request_key: sourceRecordRequestKeySchema,
+    payload: z
+      .object({ facility_id: uuid, record_kind: z.enum(DIETARY_RECORD_KINDS), ...dietaryCore })
+      .strict()
+      .superRefine(refineDietaryRecord),
+  })
+  .strict();
+
+const correctDietaryPayload = z
+  .object({
+    reason: text(2000),
+    performed_at: isoInstant.optional(),
+    performed_by: uuid.optional(),
+    outcome: z.enum(DIETARY_OUTCOMES).optional(),
+    service_date: calendarDate.nullable().optional(),
+    meal_period: z.enum(MEAL_PERIODS).nullable().optional(),
+    planned_item: text(200).nullable().optional(),
+    substitute_item: text(200).nullable().optional(),
+    substitution_reason: text(2000).nullable().optional(),
+    meal_service_id: uuid.nullable().optional(),
+    menu_label: text(200).nullable().optional(),
+    approver_label: text(200).nullable().optional(),
+    approval_document_id: uuid.nullable().optional(),
+    readings: readingsSchema.optional(),
+    issue_summary: text(2000).nullable().optional(),
+    note: text(4000).nullable().optional(),
+    entry_reason: text(2000).nullable().optional(),
+  })
+  .strict();
+
+export const dietaryRecordCommandBodySchema = z.discriminatedUnion("action", [
+  z.object({ request_key: sourceRecordRequestKeySchema, action: z.literal("correct"), expected_version: expectedVersion, payload: correctDietaryPayload }).strict(),
+  z.object({ request_key: sourceRecordRequestKeySchema, action: z.literal("void"), payload: voidPayload }).strict(),
+]);
+
+export const listDietaryRecordsQuerySchema = z
+  .object({
+    facility_id: uuid,
+    kind: z.enum(DIETARY_RECORD_KINDS).optional(),
+    voided: z.enum(["true", "false"]).optional(),
+  })
+  .strict();
+
+export type RecordFacilityServiceBody = z.infer<typeof recordFacilityServiceBodySchema>;
+export type FacilityServiceCommandBody = z.infer<typeof facilityServiceCommandBodySchema>;
+export type ListFacilityServicesQuery = z.infer<typeof listFacilityServicesQuerySchema>;
+export type RecordDietaryRecordBody = z.infer<typeof recordDietaryRecordBodySchema>;
+export type DietaryRecordCommandBody = z.infer<typeof dietaryRecordCommandBodySchema>;
+export type ListDietaryRecordsQuery = z.infer<typeof listDietaryRecordsQuerySchema>;
+
+/** Service record columns read through the session (site access governs the row); the certificate is an id under the vault's own access. */
+export const FACILITY_SERVICE_SELECT =
+  "id, organization_id, facility_id, service_kind, asset_id, performed_at, performer_kind, performed_by, vendor_id, performer_label, outcome, readings, issue_summary, next_due_on, certificate_document_id, note, entry_reason, correction_reason, record_version, finalized_at, finalized_by, version_recorded_at, version_recorded_by, voided_at, voided_by, void_reason, created_at, updated_at";
+/** Dietary record columns read through the session; no resident column exists. */
+export const DIETARY_RECORD_SELECT =
+  "id, organization_id, facility_id, record_kind, performed_at, performed_by, outcome, service_date, meal_period, planned_item, substitute_item, substitution_reason, meal_service_id, menu_label, approver_label, approval_document_id, readings, issue_summary, note, entry_reason, correction_reason, record_version, finalized_at, finalized_by, version_recorded_at, version_recorded_by, voided_at, voided_by, void_reason, created_at, updated_at";
 
 export type RecordAssetObservationBody = z.infer<typeof recordAssetObservationBodySchema>;
 export type AssetObservationCommandBody = z.infer<typeof assetObservationCommandBodySchema>;

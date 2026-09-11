@@ -1,0 +1,43 @@
+{
+  "issue": "COL-159",
+  "baseline": "col159_base348",
+  "runtime": "native PostgreSQL scratch cluster hfo-col139-20260910-105544",
+  "recorded_at": "2026-09-11T03:18:40Z",
+  "cases": {
+    "two_aed_checks_one_aed": {
+      "outcome": "second AED check waited on the occurrence and landed as a visible conflict; one receipt; the equipment component untouched",
+      "receipts": 1,
+      "records": 2,
+      "waited_on": "transactionid"
+    },
+    "human_first_then_service": {
+      "outcome": "service record landed as a pending conflict after the human recording; the record is final; the human receipt stays effective",
+      "sqlstate": null,
+      "receipts": 1,
+      "waited_on": "transactionid"
+    },
+    "service_first_then_human": {
+      "outcome": "human recording refused after the wait naming the service record receipt",
+      "sqlstate": "23505",
+      "receipts": 1,
+      "waited_on": "transactionid"
+    },
+    "correction_first_then_void": {
+      "outcome": "void waited on the record lock behind the correction and invalidated the corrected version; chain retained; occurrence unrecorded",
+      "receipts": 3,
+      "waited_on": "advisory"
+    },
+    "void_first_then_correction": {
+      "outcome": "correction refused after the wait because the void landed first; record stays voided at version 1; reversal retained",
+      "sqlstate": "P0001",
+      "receipts": 2,
+      "waited_on": "advisory"
+    },
+    "same_key_twice": {
+      "outcome": "second session waited on the request-key lock and replayed the first reply; one meal-level record, one request row",
+      "records": 1,
+      "waited_on": "advisory"
+    }
+  },
+  "status": "PASS"
+}
