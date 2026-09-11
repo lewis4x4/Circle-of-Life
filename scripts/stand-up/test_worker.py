@@ -402,6 +402,101 @@ class WorkerTests(unittest.TestCase):
             self.assertEqual(state.data['front_office_sequence'], 1)
             self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'unchanged')
 
+    def test_current_feed_renews_unchanged_at_240_seconds_without_freshening_source(self):
+        state = FakeState()
+        with patch.dict('os.environ', {'FRONT_OFFICE_INGEST_KEY_ID': 'current-key', 'FRONT_OFFICE_INGEST_SECRET': 's' * 32}), patch('worker.time.time', return_value=1000) as clock, patch('worker.http', return_value=(b'{"receiptId":"accepted","replayed":false}', {})) as request:
+            self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'accepted')
+            first = json.loads(request.call_args.args[2])
+            clock.return_value = 1239
+            self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'unchanged')
+            self.assertEqual(request.call_count, 1)
+            clock.return_value = 1240
+            self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'accepted')
+            renewed = json.loads(request.call_args.args[2])
+            self.assertEqual(renewed['rows'], first['rows'])
+            self.assertEqual(renewed['sourceAsOf'], first['sourceAsOf'])
+            self.assertNotEqual(renewed['batchId'], first['batchId'])
+            self.assertEqual(renewed['sequence'], first['sequence'] + 1)
+            self.assertEqual(state.data['front_office_last_admitted_at'], 1240)
+            self.assertFalse(any(key.startswith('history_') for key in state.data))
+
+    def test_current_feed_new_content_does_not_wait_for_renewal(self):
+        state = FakeState()
+        with patch.dict('os.environ', {'FRONT_OFFICE_INGEST_KEY_ID': 'current-key', 'FRONT_OFFICE_INGEST_SECRET': 's' * 32}), patch('worker.time.time', return_value=1000) as clock, patch('worker.http', return_value=(b'{"receiptId":"accepted","replayed":false}', {})) as request:
+            publish_front_office(state, workspace(), MAP, date(2026, 9, 7))
+            first = json.loads(request.call_args.args[2])
+            clock.return_value = 1001
+            changed = workspace()
+            changed['reports'][0]['values']['current_total_census'] = 1
+            self.assertEqual(publish_front_office(state, changed, MAP, date(2026, 9, 7)), 'accepted')
+            second = json.loads(request.call_args.args[2])
+            self.assertEqual(second['sequence'], 2)
+            self.assertEqual(second['sourceAsOf'], first['sourceAsOf'])
+            self.assertNotEqual(second['rows'], first['rows'])
+            self.assertEqual(request.call_args.args[3]['x-ingest-key-id'], 'current-key')
+            self.assertEqual(second['dataset'], 'standup_weekly')
+
+    def test_current_feed_upgrade_without_admission_time_renews_once(self):
+        state = FakeState()
+        with patch.dict('os.environ', {'FRONT_OFFICE_INGEST_KEY_ID': 'current-key', 'FRONT_OFFICE_INGEST_SECRET': 's' * 32}), patch('worker.time.time', return_value=1000) as clock, patch('worker.http', return_value=(b'{"receiptId":"accepted","replayed":false}', {})) as request:
+            publish_front_office(state, workspace(), MAP, date(2026, 9, 7))
+            state.data.pop('front_office_last_admitted_at')  # Existing pre-renewal state.
+            state.data['front_office_sequence'] = 41
+            clock.return_value = 1001
+            self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'accepted')
+            self.assertEqual(json.loads(request.call_args.args[2])['sequence'], 42)
+            self.assertEqual(state.data['front_office_last_admitted_at'], 1001)
+            clock.return_value = 1002
+            self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'unchanged')
+            self.assertEqual(request.call_count, 2)
+
+    def test_current_feed_old_unknown_receipt_is_replayed_then_renewed_next_poll(self):
+        for legacy_pending in (False, True):
+            with self.subTest(legacy_pending=legacy_pending):
+                state, bodies = FakeState(), []
+                def response(url, method, body, headers):
+                    bodies.append(body)
+                    self.assertGreater(state.saves, 0)
+                    self.assertEqual(state.data['front_office_pending']['body'].encode(), body)
+                    if len(bodies) == 1:
+                        self.assertEqual(state.data['front_office_pending']['first_sent_at'], 1000)
+                        raise BridgeError('Acceptance response lost')
+                    return json.dumps({'receiptId': 'old-receipt' if len(bodies) == 2 else 'new-receipt', 'replayed': len(bodies) == 2}).encode(), {}
+                with patch.dict('os.environ', {'FRONT_OFFICE_INGEST_KEY_ID': 'current-key', 'FRONT_OFFICE_INGEST_SECRET': 's' * 32}), patch('worker.time.time', return_value=1000) as clock, patch('worker.http', side_effect=response):
+                    with self.assertRaises(BridgeError):
+                        publish_front_office(state, workspace(), MAP, date(2026, 9, 7))
+                    self.assertNotIn('front_office_last_admitted_at', state.data)
+                    if legacy_pending:
+                        state.data['front_office_pending'].pop('first_sent_at')
+                    clock.return_value = 1600
+                    self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'accepted')
+                    self.assertEqual(bodies[0], bodies[1])
+                    self.assertEqual(state.data['front_office_sequence'], 1)
+                    self.assertEqual(state.data['front_office_last_admitted_at'], None if legacy_pending else 1000)
+                    clock.return_value = 1601
+                    self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'accepted')
+                    old, renewed = json.loads(bodies[0]), json.loads(bodies[2])
+                    self.assertEqual(renewed['rows'], old['rows'])
+                    self.assertEqual(renewed['sourceAsOf'], old['sourceAsOf'])
+                    self.assertNotEqual(renewed['batchId'], old['batchId'])
+                    self.assertEqual(renewed['sequence'], 2)
+                    self.assertEqual(state.data['front_office_last_admitted_at'], 1601)
+                    self.assertNotIn('front_office_pending', state.data)
+                    clock.return_value = 1602
+                    self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'unchanged')
+
+    def test_current_feed_retry_new_admission_uses_retry_time_not_old_attempt(self):
+        state = FakeState()
+        with patch.dict('os.environ', {'FRONT_OFFICE_INGEST_KEY_ID': 'current-key', 'FRONT_OFFICE_INGEST_SECRET': 's' * 32}), patch('worker.time.time', return_value=1000) as clock, patch('worker.http', side_effect=[BridgeError('Not known if received'), (b'{"receiptId":"new","replayed":false}', {})]) as request:
+            with self.assertRaises(BridgeError):
+                publish_front_office(state, workspace(), MAP, date(2026, 9, 7))
+            clock.return_value = 1600
+            self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'accepted')
+            self.assertEqual(request.call_args_list[0].args[2], request.call_args_list[1].args[2])
+            self.assertEqual(state.data['front_office_last_admitted_at'], 1600)
+            clock.return_value = 1601
+            self.assertEqual(publish_front_office(state, workspace(), MAP, date(2026, 9, 7)), 'unchanged')
+
     def test_haven_rejected_command_can_be_repreviewed(self):
         state = FakeState({'haven_pending': {'action': 'commit_recovery', 'payload': {'preview_id': 'stale'}}})
         client = object.__new__(Haven)

@@ -31,6 +31,7 @@ HAVEN = "https://manfqmasfqppukpobpld.supabase.co"
 FRONT_OFFICE = "https://wecsjfiituxlityaacba.supabase.co/functions/v1/ingest"
 PREFIXES = dict(zip(FACILITIES, ("homewood", "oakridge", "rising_oaks", "plantation", "grande_cypress")))
 HISTORY_REFRESH_INTERVAL = timedelta(hours=6)
+CURRENT_REFRESH_SECONDS = 240
 
 
 class BridgeError(RuntimeError):
@@ -432,15 +433,22 @@ def publish_front_office(state, workspace, mapping, week):
     if len(secret.encode()) < 32:
         raise BridgeError("Front Office HMAC secret must be at least 32 bytes")
     pending = state.data.get("front_office_pending")
+    now = time.time()
     if not pending:
         payload = source_payload(workspace, mapping, week, state.data.get("front_office_sequence", 0) + 1)
         fingerprint = hashlib.sha256(compact({"rows": payload["rows"], "sourceAsOf": payload["sourceAsOf"]})).hexdigest()
-        if fingerprint == state.data.get("front_office_fingerprint"):
+        admitted_at = state.data.get("front_office_last_admitted_at")
+        recently_admitted = (isinstance(admitted_at, (int, float)) and not isinstance(admitted_at, bool)
+                             and 0 <= now - admitted_at < CURRENT_REFRESH_SECONDS)
+        if fingerprint == state.data.get("front_office_fingerprint") and recently_admitted:
             return "unchanged"
-        pending = {"body": compact(payload).decode(), "fingerprint": fingerprint, "sequence": payload["sequence"]}
+        # Renewal gets a new batch/sequence while preserving the source's own as-of.
+        # Persist first-attempt timing outside the exact signed body for replay recovery.
+        pending = {"body": compact(payload).decode(), "fingerprint": fingerprint, "sequence": payload["sequence"], "first_sent_at": now}
         state.data["front_office_pending"] = pending
         state.save()
-    sent = str(int(time.time()))
+    sent_at = time.time()
+    sent = str(int(sent_at))
     body = pending["body"].encode()
     signature = hmac.new(secret.encode(), f"front-office-ingest-v1\nPOST\napplication/json\n{key_id}\n{sent}\n".encode() + body, hashlib.sha256).hexdigest()
     try:
@@ -454,7 +462,14 @@ def publish_front_office(state, workspace, mapping, week):
     receipt = json.loads(raw)
     if not receipt.get("receiptId"):
         raise BridgeError("Missing Front Office acceptance receipt")
-    state.data.update(front_office_sequence=pending["sequence"], front_office_fingerprint=pending["fingerprint"], front_office_last_receipt=receipt["receiptId"])
+    # Replaying an old receipt does not renew the receiver's admission timestamp.
+    # Without a new-admission assertion, use the durable first attempt as a
+    # conservative bound; legacy pending bodies without timing renew next poll.
+    admitted_at = sent_at if receipt.get("replayed") is False else pending.get("first_sent_at")
+    if (not isinstance(admitted_at, (int, float)) or isinstance(admitted_at, bool)
+            or not 0 <= admitted_at <= sent_at):
+        admitted_at = None
+    state.data.update(front_office_sequence=pending["sequence"], front_office_fingerprint=pending["fingerprint"], front_office_last_receipt=receipt["receiptId"], front_office_last_admitted_at=admitted_at)
     state.data.pop("front_office_pending")
     state.save()
     return "accepted"
