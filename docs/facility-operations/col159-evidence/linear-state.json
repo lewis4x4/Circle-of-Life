@@ -1,0 +1,28 @@
+{
+  "issue": "COL-159",
+  "issue_id": "1ed5af55-72be-4b41-af3a-0c6fb718333b",
+  "title": "[HFO-22] Connect dietary, facility services and general admin evidence",
+  "before": {
+    "checked_at": "2026-09-11T02:40:00Z",
+    "state": "In Progress (moved by the orchestrator at 2026-09-11T02:35:40Z; no comments on the issue)",
+    "blockers": {
+      "COL-147": "Done",
+      "COL-154": "Done"
+    },
+    "related": [
+      "COL-143 (parked In Progress; hosted Storage untouched by this segment)"
+    ],
+    "dependency_ready": true,
+    "source": "live Linear MCP read (get_issue with relations) at session start"
+  },
+  "started": {
+    "branch": "codex/hfo-col159-dietary-admin",
+    "base": "47455a13 (codex/hfo-col154-drill-generators tip)",
+    "provisional_slot": "348_hfo_dietary_admin_sources.sql",
+    "segment_id": "COL-159-HFO-DIETARY-ADMIN",
+    "contract": "docs/facility-operations/col159-evidence/engineering-contracts.md"
+  },
+  "after": {
+    "state": "pending closure record (Lewi owns Done; the implementer posts one notification comment on the issue when the draft PR and the segment PASS exist, as the brief asks)"
+  }
+}

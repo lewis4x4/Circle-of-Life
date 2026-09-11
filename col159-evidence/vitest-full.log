@@ -1,0 +1,20 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Facility Dietary Admin
+
+11:19:56 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Dietary%20Admin/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Dietary%20Admin/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Dietary%20Admin/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Dietary%20Admin/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Dietary%20Admin/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Dietary%20Admin/node_modules/vite/dist/node/chunks/node.js:19691:22)
+
+ Test Files  584 passed (584)
+      Tests  4004 passed | 2 skipped (4006)
+   Start at  23:19:13
+   Duration  56.26s (transform 64.90s, setup 60.54s, import 357.12s, tests 62.56s, environment 239.16s)
+
+EXIT 0
