@@ -273,6 +273,22 @@ class HTTPTest(unittest.TestCase):
         self.assertNotIn(b"apis.google.com", body)
         self.assertIn("default-src 'none'", headers["Content-Security-Policy"])
 
+    def test_saved_haven_session_shows_confirmation_and_explicit_reconnect(self):
+        self.server.app.facility_map = MAP
+        saved = {"organization_id": HAVEN_ORG, "facility_ids": list(MAP.values()),
+                 "HAVEN_STAND_UP_REFRESH_TOKEN": "synthetic-saved-session"}
+        with patch("google_connect.private_json", return_value=saved):
+            status, _, body = self.request("GET", "/haven")
+            self.assertEqual(status, 200)
+            self.assertIn(b"Haven connection saved", body)
+            self.assertNotIn(b'type="password"', body)
+            self.assertNotIn(b"synthetic-saved-session", body)
+            _, _, reconnect = self.request("GET", "/haven?reconnect=1")
+            self.assertIn(b'type="password"', reconnect)
+            saved["facility_ids"] = []
+            _, _, invalid = self.request("GET", "/haven")
+            self.assertNotIn(b"<h1>Haven connection saved", invalid)
+
     def test_haven_login_csrf_prevents_password_request(self):
         body = urllib.parse.urlencode({"csrf": "wrong", "email": "person@example.test", "password": "synthetic-password"})
         with patch("google_connect.haven_json") as request:

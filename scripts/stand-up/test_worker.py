@@ -185,6 +185,74 @@ class GoogleTransportTests(unittest.TestCase):
 
 
 class WorkerTests(unittest.TestCase):
+    def test_empty_week_initializes_immutable_baseline_then_recovers_file_edit(self):
+        raw = fixture(blank=True)
+        google, state = FakeGoogle(raw), FakeState()
+        class Operator:
+            def __init__(self):
+                self.exports = {facility: {"baseline_id": None, "version": 0, "values": dict.fromkeys(KEYS)} for facility in MAP.values()}
+                self.saved, self.recoveries, self.previews = [], [], {}
+            def command(self, action, payload):
+                if action == 'export':
+                    return self.exports[payload['facility_id']]
+                if action == 'find_recovery':
+                    return {'resolved_result': None}
+                if action == 'preview_recovery':
+                    self.recoveries.append(payload)
+                    self.previews['review'] = payload
+                    return {'preview_id': 'review', 'conflicts': [], 'clears': []}
+                raise AssertionError(action)
+            def mutate(self, action, payload):
+                facility = payload['facility_id']
+                if action == 'save':
+                    self.saved.append(payload)
+                    self.exports[facility] = {'baseline_id': 'empty-' + facility, 'version': 1, 'values': payload['values']}
+                elif action == 'commit_recovery':
+                    incoming = self.previews[payload['preview_id']]
+                    self.exports[facility] = {'baseline_id': 'edited-' + facility, 'version': 2, 'values': incoming['values']}
+                else:
+                    raise AssertionError(action)
+        operator = Operator()
+        with patch.dict('os.environ', {'STAND_UP_REHEARSAL_FILE_ID': 'rehearsal', 'STAND_UP_PRODUCTION_FILE_ID': 'production'}):
+            synchronize(state, operator, google, MAP, date(2026, 9, 7), 'rehearsal')
+            self.assertEqual(len(operator.saved), 5)
+            self.assertTrue(all(p['reason'] == 'Empty weekly fallback initialization' and p['status'] == 'draft' and p['values'] == dict.fromkeys(KEYS) for p in operator.saved))
+            self.assertEqual(google.uploads, 0)
+            baseline = state.data['baselines'][MAP['Homewood'] + ':2026-09-07']['baseline_id']
+            parsed = parse_workbook(raw, MAP, 'rehearsal', 'file.xlsx')
+            incoming = {**dict.fromkeys(KEYS), 'current_total_census': 12}
+            google.body = patch_workbook(raw, parsed, {MAP['Homewood'] + ':2026-09-07': incoming})
+            synchronize(state, operator, google, MAP, date(2026, 9, 7), 'rehearsal')
+            self.assertEqual(len(operator.saved), 5)  # Later edit uses recovery, not adoption.
+            self.assertEqual(operator.recoveries[0]['baseline_id'], baseline)
+            self.assertEqual(operator.exports[MAP['Homewood']]['values'], incoming)
+            self.assertEqual(google.uploads, 0)
+
+    def test_nonempty_file_against_blank_haven_still_requires_adoption(self):
+        google, state = FakeGoogle(fixture()), FakeState()
+        class Operator:
+            def command(self, action, payload):
+                return {'baseline_id': None, 'version': 0, 'values': dict.fromkeys(KEYS)}
+            def mutate(self, *_):
+                raise AssertionError('Must not automatically adopt nonempty file')
+        with patch.dict('os.environ', {'STAND_UP_REHEARSAL_FILE_ID': 'rehearsal', 'STAND_UP_PRODUCTION_FILE_ID': 'production'}):
+            with self.assertRaisesRegex(BridgeError, 'explicit --adopt'):
+                synchronize(state, Operator(), google, MAP, date(2026, 9, 7), 'rehearsal')
+        self.assertEqual(google.uploads, 0)
+        self.assertEqual(state.data['baselines'], {})
+
+    def test_empty_baseline_is_not_reported_or_ready_and_does_not_age_snapshot(self):
+        data = workspace()
+        data['reports'][0].update(values=dict.fromkeys(KEYS), status='ready')
+        now = datetime(2026, 9, 13, 12, tzinfo=timezone.utc)
+        payload = source_payload(data, MAP, date(2026, 9, 7), 1, now)
+        rows = {row['metric']: row['value'] for row in payload['rows']}
+        self.assertEqual(rows['homewood_reported'], 0)
+        self.assertEqual(rows['homewood_ready'], 0)
+        self.assertNotIn('homewood_as_of_epoch', rows)
+        self.assertEqual(payload['sourceAsOf'], '2026-09-13T12:00:00.000Z')
+        self.assertFalse(any('homewood_' + key in rows for key in KEYS))
+
     def test_service_mode_rejects_google_probe_before_state_or_network(self):
         args = ['worker.py', '--state-dir', '/unused', '--facility-map', '/unused.json', '--publish', '--publisher-service', '--probe-google']
         with patch('sys.argv', args), patch('worker.State') as state, patch('worker.Google') as google:

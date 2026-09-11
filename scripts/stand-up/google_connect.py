@@ -137,6 +137,18 @@ class Bootstrap:
         self.facility_map = mapping
         self.haven_phase = "ready_for_operator_login"
 
+    def haven_session_saved(self):
+        """Report a validated saved connection, not current token validity."""
+        try:
+            saved = private_json(self.state_dir / "haven-credentials.json")
+            return (self.facility_map is not None
+                    and saved.get("organization_id") == HAVEN_ORG
+                    and set(saved.get("facility_ids", [])) == set(self.facility_map.values())
+                    and isinstance(saved.get("HAVEN_STAND_UP_REFRESH_TOKEN"), str)
+                    and bool(saved["HAVEN_STAND_UP_REFRESH_TOKEN"]))
+        except (OSError, ValueError, TypeError):
+            return False
+
     def connect_haven(self, email, password):
         if not self.haven_key or not self.facility_map:
             raise ValueError("Haven public key and facility mapping are not configured")
@@ -304,6 +316,13 @@ HAVEN_PAGE = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name=
 <form method="post" action="/haven-connect"><input type="hidden" name="csrf" value="__CSRF__"><label for="haven-email">Haven email</label><input id="haven-email" name="email" type="email" autocomplete="username" required maxlength="254"><label for="haven-password">Haven password</label><input id="haven-password" name="password" type="password" autocomplete="current-password" required maxlength="1024"><button>Authorize and replace this connector's Haven session</button></form>
 <p role="status">Status: __HAVEN_PHASE__</p><a href="/">Return to Google connection</a></html>'''
 
+HAVEN_SAVED_PAGE = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Haven connection saved</title>
+<style>body{font:18px system-ui;max-width:680px;margin:50px auto;padding:20px;color:#183732}a{display:block;margin:20px 0}</style>
+<h1>Haven connection saved</h1><p role="status">Your sign-in succeeded. Access to all five facilities was verified when this session was saved.</p>
+<p>You do not need to enter your password again. The connector saved a separate session, not your password.</p>
+<p>Automatic spreadsheet synchronization remains off until the full recovery rehearsal passes.</p>
+<a href="/">View Google connection</a><a href="/haven?reconnect=1">Use a different Haven account or reconnect</a></html>'''
+
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "HavenLocal"
@@ -351,7 +370,8 @@ class Handler(BaseHTTPRequestHandler):
             path = urllib.parse.urlsplit(self.path)
             self.guard(session=path.path in ("/oauth/callback", "/picker-config", "/status"))
             if path.path == "/haven":
-                page = HAVEN_PAGE.replace("__CSRF__", self.app.csrf).replace("__HAVEN_PHASE__", self.app.haven_phase)
+                reconnect = urllib.parse.parse_qs(path.query).get("reconnect") == ["1"]
+                page = HAVEN_SAVED_PAGE if self.app.haven_session_saved() and not reconnect else HAVEN_PAGE.replace("__CSRF__", self.app.csrf).replace("__HAVEN_PHASE__", self.app.haven_phase)
                 self.reply(200, page, "text/html; charset=utf-8", {"Set-Cookie": f"haven_connect={self.app.session}; HttpOnly; SameSite=Lax; Path=/; Max-Age=3600", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"})
             elif path.path == "/":
                 nonce = secrets.token_urlsafe(24)

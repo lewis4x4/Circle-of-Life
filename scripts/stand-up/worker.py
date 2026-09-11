@@ -236,11 +236,12 @@ def source_payload(workspace, facility_map, week, sequence, now=None):
     for name in FACILITIES:
         prefix = PREFIXES[name]
         report = by_facility.get(facility_map[name])
-        rows.extend([{"metric": prefix + "_reported", "value": int(report is not None)}, {"metric": prefix + "_ready", "value": int(report is not None and report["status"] == "ready")}, {"metric": prefix + "_revision", "value": report["version"] if report else 0}])
-        if not report:
-            continue
-        if set(report["values"]) != set(KEYS):
+        if report and set(report["values"]) != set(KEYS):
             raise BridgeError("Unexpected source metric contract")
+        reported = report is not None and any(value is not None for value in report["values"].values())
+        rows.extend([{"metric": prefix + "_reported", "value": int(reported)}, {"metric": prefix + "_ready", "value": int(reported and report["status"] == "ready")}, {"metric": prefix + "_revision", "value": report["version"] if report else 0}])
+        if not reported:
+            continue  # An empty recovery baseline is not submitted facility data.
         as_of = report.get("source_as_of")
         if as_of:
             stamp = datetime.fromisoformat(as_of.replace("Z", "+00:00"))
@@ -437,6 +438,13 @@ def synchronize(state, haven, google, mapping, week, mode, adopt=None):
                         raise BridgeError("Outage changes need conflict/clear review in Haven; workbook unchanged")
                     haven.mutate("commit_recovery", {"preview_id": preview["preview_id"], "facility_id": facility, "week_start": week.isoformat(), "resolutions": {}, "confirm_clears": False})
                 exported = haven.command("export", {"facility_id": facility, "week_start": week.isoformat()})
+        elif exported["baseline_id"] is None and values == dict.fromkeys(KEYS) and exported["values"] == dict.fromkeys(KEYS):
+            # A genuinely empty new week needs a revision so later outage edits
+            # have an immutable three-way recovery baseline. No data is inferred.
+            haven.mutate("save", {"facility_id": facility, "week_start": week.isoformat(), "expected_version": exported["version"],
+                                  "values": dict.fromkeys(KEYS), "status": "draft", "as_of": None,
+                                  "reason": "Empty weekly fallback initialization", "provenance": {"file_id": file_id, "schema_version": "standup-2026-v1"}})
+            exported = haven.command("export", {"facility_id": facility, "week_start": week.isoformat()})
         elif values != exported["values"] or exported["baseline_id"] is None:
             if adopt not in ("file", "haven"):
                 raise BridgeError("First synchronization needs explicit --adopt file|haven after reviewing both versions")
