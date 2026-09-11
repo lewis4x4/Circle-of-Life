@@ -4,6 +4,8 @@
  * Env:
  *   BASE_URL          — default http://127.0.0.1:3000
  *   DESIGN_REVIEW_ROUTES — comma-separated paths, default "/"
+ *   UI_REVIEW_STORAGE_STATE — optional private Playwright storage-state file
+ *   UI_REVIEW_READY_SELECTOR — optional visible route-specific readiness selector
  */
 
 import { chromium } from "playwright";
@@ -13,6 +15,7 @@ import process from "node:process";
 
 const root = process.cwd();
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
+const storageState = process.env.UI_REVIEW_STORAGE_STATE || undefined;
 const routes = (process.env.DESIGN_REVIEW_ROUTES ?? "/")
   .split(",")
   .map((s) => s.trim())
@@ -36,6 +39,8 @@ async function main() {
     timestamp: new Date().toISOString(),
     baseUrl,
     routes,
+    authentication: storageState ? "provided-storage-state" : "anonymous",
+    readySelector: process.env.UI_REVIEW_READY_SELECTOR || null,
     viewports: viewports.map((v) => v.name),
     shots: [],
     errors: [],
@@ -47,6 +52,7 @@ async function main() {
       for (const vp of viewports) {
         const context = await browser.newContext({
           viewport: { width: vp.width, height: vp.height },
+          ...(storageState ? { storageState } : {}),
         });
         const page = await context.newPage();
         try {
@@ -57,6 +63,7 @@ async function main() {
           const status = res?.status() ?? 0;
           if (status < 200 || status >= 400) throw new Error(`HTTP ${status}`);
           if (new URL(page.url()).pathname === "/login" && !["/", "/login"].includes(new URL(url).pathname)) throw new Error("Authentication required for requested route; screenshot would only cover login.");
+          if (process.env.UI_REVIEW_READY_SELECTOR) await page.locator(process.env.UI_REVIEW_READY_SELECTOR).waitFor({ state: "visible", timeout: 30000 });
           const title = await page.title();
           const fileSafe = `${route.replace(/\//g, "_") || "root"}-${vp.name}.png`.replace(
             /_+/g,

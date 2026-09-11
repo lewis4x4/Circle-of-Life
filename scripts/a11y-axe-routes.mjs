@@ -5,6 +5,8 @@
  * Env:
  *   BASE_URL — default http://127.0.0.1:3000
  *   AXE_ROUTES — comma-separated paths (default "/" or DESIGN_REVIEW_ROUTES)
+ *   UI_REVIEW_STORAGE_STATE — optional private Playwright storage-state file
+ *   UI_REVIEW_READY_SELECTOR — optional visible route-specific readiness selector
  */
 
 import AxeBuilder from "@axe-core/playwright";
@@ -12,6 +14,7 @@ import { chromium } from "playwright";
 import process from "node:process";
 
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
+const storageState = process.env.UI_REVIEW_STORAGE_STATE || undefined;
 const routes = (
   process.env.AXE_ROUTES ??
   process.env.DESIGN_REVIEW_ROUTES ??
@@ -27,13 +30,14 @@ async function main() {
 
   try {
     for (const route of routes) {
-      const context = await browser.newContext();
+      const context = await browser.newContext(storageState ? { storageState } : {});
       const page = await context.newPage();
       const url = new URL(route, baseUrl).href;
       try {
         const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
         if (!response || response.status() >= 400) throw new Error(`HTTP ${response?.status() ?? "unavailable"}`);
         if (new URL(page.url()).pathname === "/login" && !["/", "/login"].includes(new URL(url).pathname)) throw new Error("Authentication required for this route; login is not a substitute for its accessibility audit.");
+        if (process.env.UI_REVIEW_READY_SELECTOR) await page.locator(process.env.UI_REVIEW_READY_SELECTOR).waitFor({ state: "visible", timeout: 30000 });
         // Let client hydration settle to avoid scanning transient loading overlays.
         await page.waitForTimeout(1000);
         // Never remove product content by matching generic words such as

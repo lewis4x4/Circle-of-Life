@@ -74,6 +74,10 @@ npm run dev
 BASE_URL=http://127.0.0.1:3000 npm run design:review
 ```
 
+Authenticated UI routes can use `UI_REVIEW_STORAGE_STATE=/absolute/private/path/state.json` with both existing UI runners. Create that Playwright state through a real sign-in to the intended isolated test environment; keep cookies/tokens outside Git and never copy production state into a synthetic run. Defaults remain anonymous, invalid state fails, and a redirect to login never counts as protected-route coverage. The design report records whether state was supplied without recording its contents. `UI_REVIEW_READY_SELECTOR` can require a visible route-specific control before either UI check, so a loading shell does not substitute for the requested form.
+
+For native HTTP staging, the existing `SEGMENT_GATES_USE_DEV_SERVER=1` option uses an independently started development server at `BASE_URL`; the formal bundle still requires its production build. Point `DESIGN_REVIEW_ROUTES` and `AXE_ROUTES` at the actual protected route. The state cookie origin must match `BASE_URL`. Remove synthetic environment/state files and rebuild without staging configuration before any production artifact use.
+
 Override routes:
 
 ```bash

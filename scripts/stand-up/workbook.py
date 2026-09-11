@@ -202,10 +202,12 @@ def overtime_minutes(value):
 
 
 def cell_number(cell, key):
-    if not cell or cell["value"] is None or str(cell["value"]).strip() == "":
+    if not cell:
         return None
     if cell["formula"] or cell["error"]:
         raise WorkbookError("Input contains formula/error; review source rather than using a cached result")
+    if cell["value"] is None or str(cell["value"]).strip() == "":
+        return None
     value = cell["value"]
     if isinstance(value, bool) or isinstance(value, date):
         raise WorkbookError("Expected numeric value")

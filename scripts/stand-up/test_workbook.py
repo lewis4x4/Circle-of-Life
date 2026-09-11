@@ -88,6 +88,15 @@ class WorkbookTests(unittest.TestCase):
     def test_input_formula_held(self):
         self.assertTrue(any(i['code'] == 'invalid_input' for i in self.parse(fixture(bad_formula=True))['issues']))
 
+    def test_input_formula_without_cached_value_is_not_a_writable_blank(self):
+        parsed = self.parse(fixture(blank=True, bad_formula=True))
+        self.assertEqual(parsed['records'], [])
+        self.assertEqual(parsed['locations'], {})
+        self.assertEqual(len(parsed['issues']), 5)
+        self.assertTrue(all(issue['code'] == 'invalid_input' for issue in parsed['issues']))
+        with self.assertRaises(WorkbookError):
+            cell_number({'value': None, 'formula': False, 'error': True}, 'current_total_census')
+
     def test_legacy_does_not_reinterpret_census_as_rent(self):
         result = self.parse(fixture(old=True))
         self.assertTrue(result['issues'])
