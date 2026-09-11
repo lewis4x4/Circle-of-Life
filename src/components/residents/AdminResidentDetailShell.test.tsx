@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ResidentOverviewDetail } from "@/lib/residents/resident-detail-overview-load";
 
 const shellMocks = vi.hoisted(() => ({
   selectedSegment: "assessments" as string | null,
+  selectedFacilityId: "facility-1",
   loadResidentOverviewDetail: vi.fn(),
 }));
 
@@ -14,7 +15,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({ selectedFacilityId: "facility-1" }),
+  useFacilityStore: () => ({ selectedFacilityId: shellMocks.selectedFacilityId }),
 }));
 
 vi.mock("@/lib/residents/resident-detail-overview-load", async (importOriginal) => {
@@ -61,6 +62,7 @@ function residentDetail(gender: string | null): ResidentOverviewDetail {
 describe("AdminResidentDetailShell", () => {
   beforeEach(() => {
     shellMocks.selectedSegment = "assessments";
+    shellMocks.selectedFacilityId = "facility-1";
     shellMocks.loadResidentOverviewDetail.mockReset();
     shellMocks.loadResidentOverviewDetail.mockImplementation(
       () => new Promise<ResidentOverviewDetail | null>(() => undefined),
@@ -105,4 +107,86 @@ describe("AdminResidentDetailShell", () => {
       "Age 82 · No gender posted · Room 101 A · Admitted Aug 1, 2026",
     );
   });
+
+  it("preserves unsaved tab input when the profile header recovers", async () => {
+    const header = Promise.withResolvers<ResidentOverviewDetail | null>();
+    shellMocks.loadResidentOverviewDetail.mockReturnValueOnce(header.promise);
+    render(
+      <AdminResidentDetailShell initialDetail={null} initialError="Header unavailable" initialFacilityId="facility-1">
+        <input aria-label="Assessment notes" defaultValue="" />
+      </AdminResidentDetailShell>,
+    );
+    const input = screen.getByRole("textbox", { name: "Assessment notes" });
+    fireEvent.change(input, { target: { value: "Unsaved assessment notes" } });
+    await act(async () => header.resolve(residentDetail(null)));
+    expect(screen.getByRole("textbox", { name: "Assessment notes" })).toBe(input);
+    expect(input).toHaveValue("Unsaved assessment notes");
+  });
+
+  it("blocks tab content when the server found no resident in scope", () => {
+    render(
+      <AdminResidentDetailShell initialDetail={null} initialError={null} initialFacilityId="facility-1">
+        <div>Other facility vitals</div>
+      </AdminResidentDetailShell>,
+    );
+    expect(screen.getByText("Resident not found")).toBeInTheDocument();
+    expect(screen.queryByText("Other facility vitals")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("resident-tabs")).not.toBeInTheDocument();
+  });
+
+  it("blocks tab content when a header retry confirms no resident", async () => {
+    const header = Promise.withResolvers<ResidentOverviewDetail | null>();
+    shellMocks.loadResidentOverviewDetail.mockReturnValueOnce(header.promise);
+    render(
+      <AdminResidentDetailShell initialDetail={null} initialError="Header unavailable" initialFacilityId="facility-1">
+        <div>Independent assessment content</div>
+      </AdminResidentDetailShell>,
+    );
+    expect(screen.getByText("Independent assessment content")).toBeInTheDocument();
+    await act(async () => header.resolve(null));
+    expect(screen.queryByText("Independent assessment content")).not.toBeInTheDocument();
+    expect(screen.getByText("Resident not found")).toBeInTheDocument();
+  });
+
+  it("hides the previous facility while reloading and ignores stale responses", async () => {
+    const secondFacility = Promise.withResolvers<ResidentOverviewDetail | null>();
+    const thirdFacility = Promise.withResolvers<ResidentOverviewDetail | null>();
+    shellMocks.loadResidentOverviewDetail
+      .mockReturnValueOnce(secondFacility.promise)
+      .mockReturnValueOnce(thirdFacility.promise);
+    const view = () => (
+      <AdminResidentDetailShell initialDetail={residentDetail(null)} initialError={null} initialFacilityId="facility-1">
+        <div>Resident vitals</div>
+      </AdminResidentDetailShell>
+    );
+    const { rerender } = render(view());
+    expect(screen.getByText("Resident vitals")).toBeInTheDocument();
+    shellMocks.selectedFacilityId = "facility-2";
+    rerender(view());
+    expect(screen.queryByText("Resident vitals")).not.toBeInTheDocument();
+    shellMocks.selectedFacilityId = "facility-3";
+    rerender(view());
+    await act(async () => thirdFacility.resolve(null));
+    expect(screen.getByText("Resident not found")).toBeInTheDocument();
+    await act(async () => secondFacility.resolve(residentDetail(null)));
+    expect(screen.queryByText("Resident vitals")).not.toBeInTheDocument();
+    expect(screen.getByText("Resident not found")).toBeInTheDocument();
+  });
+
+  it("keeps the previous facility hidden if the new scope cannot be loaded", async () => {
+    const header = Promise.withResolvers<ResidentOverviewDetail | null>();
+    shellMocks.loadResidentOverviewDetail.mockReturnValueOnce(header.promise);
+    const view = () => (
+      <AdminResidentDetailShell initialDetail={residentDetail(null)} initialError={null} initialFacilityId="facility-1">
+        <div>Previous facility vitals</div>
+      </AdminResidentDetailShell>
+    );
+    const { rerender } = render(view());
+    shellMocks.selectedFacilityId = "facility-2";
+    rerender(view());
+    await act(async () => header.reject(new Error("Profile unavailable")));
+    expect(screen.queryByText("Previous facility vitals")).not.toBeInTheDocument();
+    expect(screen.getByText("Live resident profile is unavailable right now.")).toBeInTheDocument();
+  });
+
 });

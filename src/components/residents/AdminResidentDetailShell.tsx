@@ -65,6 +65,14 @@ export function AdminResidentDetailShell({
   const hrefs = useMemo(() => adminResidentDetailHrefs(residentId), [residentId]);
   const { selectedFacilityId } = useFacilityStore();
   const skipNextLoadRef = useRef(initialError == null);
+  const requestVersionRef = useRef(0);
+  const [loadedScope, setLoadedScope] = useState({
+    residentId,
+    facilityId: initialFacilityId,
+  });
+  const scopeMatches =
+    loadedScope.residentId === residentId &&
+    loadedScope.facilityId === selectedFacilityId;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
@@ -81,11 +89,12 @@ export function AdminResidentDetailShell({
     }
     skipNextLoadRef.current = false;
 
+    const requestVersion = ++requestVersionRef.current;
     setLoading(true);
     setError(null);
-    setNotFound(false);
 
     if (!residentId || !UUID_STRING_RE.test(residentId)) {
+      setLoadedScope({ residentId, facilityId: selectedFacilityId });
       setDetail(null);
       setNotFound(true);
       setLoading(false);
@@ -94,9 +103,12 @@ export function AdminResidentDetailShell({
 
     try {
       const row = await loadResidentOverviewDetail(residentId, selectedFacilityId);
+      if (requestVersion !== requestVersionRef.current) return;
+      setLoadedScope({ residentId, facilityId: selectedFacilityId });
       setDetail(row);
       setNotFound(!row);
     } catch (loadError) {
+      if (requestVersion !== requestVersionRef.current) return;
       setDetail(null);
       setError(
         formatLiveDataLoadError(
@@ -105,132 +117,135 @@ export function AdminResidentDetailShell({
         ),
       );
     } finally {
-      setLoading(false);
+      if (requestVersion === requestVersionRef.current) setLoading(false);
     }
   }, [initialFacilityId, residentId, selectedFacilityId]);
 
   useEffect(() => {
     void load();
+    return () => {
+      requestVersionRef.current += 1;
+    };
   }, [load]);
 
   // The overview already owns this exact header. Child routes inherit it here,
   // so the resident identity and tabs remain mounted while their content swaps.
   if (selectedSegment == null) return children;
 
-  if (!detail) {
-    return (
-      <div className="fade-in animate-in flex max-w-[1440px] flex-col gap-4 pb-4 pt-2 duration-[var(--motion-duration)]">
-        <Link
-          prefetch={false}
-          href={hrefs.rosterHref}
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "inline-flex gap-1",
-          )}
-        >
-          ← Resident roster
-        </Link>
-        {loading ? <AdminTableLoadingState /> : null}
-        {notFound ? (
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-xl">Resident profile header unavailable</CardTitle>
-              <CardDescription>
-                This profile may be outside your facility filter, discharged, or the link is invalid.
-                The selected tab remains available below.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        ) : null}
-        {error ? (
-          <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
-        ) : null}
-
-        <div className="w-full shrink-0">
-          <ResidentDetailTabStrip hrefs={hrefs} active={activeTab} />
-        </div>
-
-        <div className="min-w-0">{children}</div>
-      </div>
-    );
-  }
-
-  const subtitle = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${formatResidentOverviewGenderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
+  const visibleDetail = scopeMatches ? detail : null;
+  const showContent = scopeMatches && !notFound;
+  const subtitle = visibleDetail
+    ? `${visibleDetail.ageYears != null ? `Age ${visibleDetail.ageYears}` : "Age pending"} · ${formatResidentOverviewGenderLabel(visibleDetail.gender)} · Room ${visibleDetail.roomLabel} · Admitted ${visibleDetail.admissionLabel}`
+    : "";
 
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-4 pt-2">
-      <RecordDetailHeader
-        title={detail.fullName}
-        subtitle={subtitle}
-        backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
-        statusChips={
-          !isPresenceStatus(detail.rawStatus) ? (
-            <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
-          ) : detail.status !== "active" ? (
-            <StatusPill tone={presenceTone(detail.status)}>
-              {presenceLabel(detail.status)}
-            </StatusPill>
-          ) : null
-        }
-        actions={
-          <div className="flex shrink-0 flex-col items-end gap-2 md:flex-row md:items-start">
-            <div className="flex flex-row flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setBehaviorModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setConditionModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setGeneralNoteModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <FileText className="mr-1.5 size-4" aria-hidden /> General note
-              </Button>
+      {/* Keep the tab subtree in the same position when header data recovers. */}
+      {visibleDetail ? (
+        <RecordDetailHeader
+          title={visibleDetail.fullName}
+          subtitle={subtitle}
+          backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
+          statusChips={
+            !isPresenceStatus(visibleDetail.rawStatus) ? (
+              <StatusPill tone="muted">{lifecycleStatusLabel(visibleDetail.rawStatus)}</StatusPill>
+            ) : visibleDetail.status !== "active" ? (
+              <StatusPill tone={presenceTone(visibleDetail.status)}>
+                {presenceLabel(visibleDetail.status)}
+              </StatusPill>
+            ) : null
+          }
+          actions={
+            <div className="flex shrink-0 flex-col items-end gap-2 md:flex-row md:items-start">
+              <div className="flex flex-row flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setBehaviorModalOpen(true)}
+                  className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                >
+                  <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setConditionModalOpen(true)}
+                  className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                >
+                  <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setGeneralNoteModalOpen(true)}
+                  className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                >
+                  <FileText className="mr-1.5 size-4" aria-hidden /> General note
+                </Button>
+              </div>
             </div>
-          </div>
-        }
-      />
+          }
+        />
+      ) : (
+        <div className="space-y-4">
+          <Link
+            prefetch={false}
+            href={hrefs.rosterHref}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
+          >
+            ← Resident roster
+          </Link>
+          {loading || (!scopeMatches && !error) ? <AdminTableLoadingState /> : null}
+          {scopeMatches && notFound ? (
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="text-xl">Resident not found</CardTitle>
+                <CardDescription>
+                  This profile may be outside your facility filter or the link is invalid.
+                  Adjust your facility filter or return to the resident roster.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
+          {error ? (
+            <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
+          ) : null}
+        </div>
+      )}
 
-      <div className="w-full shrink-0">
-        <ResidentDetailTabStrip hrefs={hrefs} active={activeTab} />
-      </div>
+      {showContent ? (
+        <div className="w-full shrink-0">
+          <ResidentDetailTabStrip hrefs={hrefs} active={activeTab} />
+        </div>
+      ) : null}
 
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0">{showContent ? children : null}</div>
 
-      <BehaviorLogModal
-        open={behaviorModalOpen}
-        onOpenChange={setBehaviorModalOpen}
-        residentId={residentId}
-        residentName={detail.fullName}
-        onSuccess={() => void load()}
-      />
-      <ConditionLogModal
-        open={conditionModalOpen}
-        onOpenChange={setConditionModalOpen}
-        residentId={residentId}
-        residentName={detail.fullName}
-        onSuccess={() => void load()}
-      />
-      <GeneralNoteModal
-        open={generalNoteModalOpen}
-        onOpenChange={setGeneralNoteModalOpen}
-        residentId={residentId}
-        residentName={detail.fullName}
-        onSuccess={() => void load()}
-      />
+      {visibleDetail ? (
+        <>
+          <BehaviorLogModal
+            open={behaviorModalOpen}
+            onOpenChange={setBehaviorModalOpen}
+            residentId={residentId}
+            residentName={visibleDetail.fullName}
+            onSuccess={() => void load()}
+          />
+          <ConditionLogModal
+            open={conditionModalOpen}
+            onOpenChange={setConditionModalOpen}
+            residentId={residentId}
+            residentName={visibleDetail.fullName}
+            onSuccess={() => void load()}
+          />
+          <GeneralNoteModal
+            open={generalNoteModalOpen}
+            onOpenChange={setGeneralNoteModalOpen}
+            residentId={residentId}
+            residentName={visibleDetail.fullName}
+            onSuccess={() => void load()}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
