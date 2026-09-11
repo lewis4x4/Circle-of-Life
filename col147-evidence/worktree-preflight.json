@@ -1,0 +1,205 @@
+{
+  "recorded_at": "2026-09-10T23:52:41.921127+00:00",
+  "purpose": "COL-147 preflight: every worktree retained untouched; only Haven Facility Source Adapters is edited",
+  "worktrees": [
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life",
+      "head": "3dec84bbdc216d1c58e7296568b007ebe6f101be",
+      "branch": "refs/heads/codex/haven-home-login",
+      "dirty_entries": 4,
+      "status_ok": true
+    },
+    {
+      "path": "/private/tmp/circle-of-life-ci-fix",
+      "head": "808d16a0f8eb4ea80706df332101e6abf4f40472",
+      "branch": "refs/heads/codex/fix-nightly-auth-smoke",
+      "dirty_entries": 0,
+      "status_ok": false
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/eager-ishizaka-4a54b8",
+      "head": "814ada6df64b759bf2614e76427d5d713cbad018",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/laughing-mendel-8c7c7b",
+      "head": "ca2400ad79fac648777d81a3d826d7026d5a91d7",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/modest-heisenberg-6818c9",
+      "head": "1205b48fb6ce06946e6e235b7e534d13c79a003d",
+      "branch": "refs/heads/claude/modest-heisenberg-6818c9",
+      "dirty_entries": 3,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/sad-curie-3e04c5",
+      "head": "ffbe30df67721679293f880ca8620fc3103e34a5",
+      "branch": "refs/heads/claude/sad-curie-3e04c5",
+      "dirty_entries": 1,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/sweet-moser-4ae591",
+      "head": "798c4c3f7a19376fdc0bffe386e1b6ed8bea0d61",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Employee Lifecycle",
+      "head": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+      "branch": "refs/heads/codex/employee-file-lifecycle",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Applicability",
+      "head": "520ccbde972830f26fb5d1011731c7b7595d2fbc",
+      "branch": "refs/heads/codex/hfo-col135-applicability",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Authority",
+      "head": "476f02d1ca6c215a1cc315485fe0e511a0a0a6f8",
+      "branch": "refs/heads/codex/hfo-col133-authority",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Catalog",
+      "head": "92dea9b9897bc3826f452e3bfe4b752b944a8457",
+      "branch": "refs/heads/codex/hfo-col132-catalog",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Evaluator",
+      "head": "caca9592026dead75ef60e3dbf21b04f73e95850",
+      "branch": "refs/heads/codex/hfo-col137-evaluator",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Evidence",
+      "head": "45ea4ea98c1f3eb7b99622387fcb6f6f73b7cd97",
+      "branch": "refs/heads/codex/hfo-col143-evidence",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Occurrences",
+      "head": "c7dc9efc1ba29f0774b4c94ca819a1ef28cf7358",
+      "branch": "refs/heads/codex/hfo-col145-corrections",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Operations",
+      "head": "39d41591e8c8110d1df2251ecfc10dd0edb08ae4",
+      "branch": "refs/heads/codex/hfo-col18-baseline",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Recovery",
+      "head": "d9f5ffb2bbb57effdff9d9a817e05263534ed28f",
+      "branch": "refs/heads/codex/hfo-col146-recovery",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Source Adapters",
+      "head": "db451440b44ca67662dceb6018844943b42a456c",
+      "branch": "refs/heads/codex/hfo-col147-source-adapters",
+      "dirty_entries": 1,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Workspace",
+      "head": "db451440b44ca67662dceb6018844943b42a456c",
+      "branch": "refs/heads/codex/hfo-col148-workspace",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Finance Integration",
+      "head": "0d0e7763e9fcccbe957a48fba3da7564e9356fd5",
+      "branch": "refs/heads/codex/haven-finance-integration",
+      "dirty_entries": 3,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Insurance Workspace",
+      "head": "a94b21df423e67ddd82bfd2e84ecbe95f2460784",
+      "branch": "refs/heads/codex/haven-insurance-workspace",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver",
+      "head": "7bed5c903603d8ed1eb06f223080817f342bf0d5",
+      "branch": "refs/heads/codex/haven-insureflow-receiver",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Operating Evidence",
+      "head": "be3f25a2c7e68ea5e93499a345e325f63704b476",
+      "branch": "refs/heads/codex/haven-operating-evidence",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Payroll Release",
+      "head": "2aa8d5720e55405926e54274878dab923bbbab5a",
+      "branch": "refs/heads/codex/haven-http500-investigation",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Remaining Roadmap",
+      "head": "a49d765c9b1cd862e571c30e0f7eb6b9962af7ef",
+      "branch": "refs/heads/codex/haven-remaining-roadmap",
+      "dirty_entries": 1,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Remediation 2026-09-06",
+      "head": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+      "branch": "refs/heads/codex/haven-review-sys-001",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2",
+      "head": "9db72d2d8a16e4206e2f62c68712c0775bf8c225",
+      "branch": "refs/heads/codex/haven-tonight-release-closeout",
+      "dirty_entries": 0,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2 Independent Review 2026-09-07/source",
+      "head": "6d90e3197ac59e757addd2ac3e401dcbd12865f1",
+      "dirty_entries": 1,
+      "status_ok": true
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2 Staging",
+      "head": "05c9a1792c909186eae6b0865ed87ddbbb03acee",
+      "dirty_entries": 0,
+      "status_ok": true
+    }
+  ],
+  "this_worktree": "/Users/brianlewis/Circle of Life/Haven Facility Source Adapters",
+  "migration_reconciliation": {
+    "origin_main_last": "335_employee_file_lifecycle.sql",
+    "hfo_stack_last": "345_hfo_command_drafts.sql (codex/hfo-col148-workspace, db451440)",
+    "remote_branches_using_346": [],
+    "local_scratch_using_346": "scratch/hfo-stack-integration (local only; finance-first renumbering experiment where HFO catalog is 343 and 346 is audit-export reconcile)",
+    "decision": "346_hfo_source_links.sql provisional stack-local slot; integration renumbers after Finance as recorded for 336-345"
+  }
+}
