@@ -320,7 +320,7 @@ HAVEN_SAVED_PAGE = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta
 <style>body{font:18px system-ui;max-width:680px;margin:50px auto;padding:20px;color:#183732}a{display:block;margin:20px 0}</style>
 <h1>Haven connection saved</h1><p role="status">Your sign-in succeeded. Access to all five facilities was verified when this session was saved.</p>
 <p>You do not need to enter your password again. The connector saved a separate session, not your password.</p>
-<p>Automatic spreadsheet synchronization remains off until the full recovery rehearsal passes.</p>
+<p>Your account setup is complete. The connector manages spreadsheet synchronization separately from this sign-in.</p>
 <a href="/">View Google connection</a><a href="/haven?reconnect=1">Use a different Haven account or reconnect</a></html>'''
 
 
