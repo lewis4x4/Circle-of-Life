@@ -157,6 +157,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const facilitiesFetchedAt = useFacilityStore((s) => s.facilitiesFetchedAt);
   const facilitiesCacheUserId = useFacilityStore((s) => s.facilitiesCacheUserId);
   const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
+  const resetSelectedFacility = useFacilityStore((s) => s.resetSelectedFacility);
   const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
   const clearFacilityCache = useFacilityStore((s) => s.clearFacilityCache);
 
@@ -210,7 +211,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     try {
       facilityRefreshRequestRef.current += 1;
       clearFacilityCache();
-      setSelectedFacility(null);
+      resetSelectedFacility();
       syncSelectedFacilityCookie(null);
 
       const supabase = createClient();
@@ -220,7 +221,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     } finally {
       setSigningOut(false);
     }
-  }, [clearFacilityCache, router, setSelectedFacility]);
+  }, [clearFacilityCache, router, resetSelectedFacility]);
 
   const refreshFacilities = useCallback(async () => {
     if (authLoading) {
@@ -232,7 +233,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     if (currentUserId == null) {
       facilityRefreshRequestRef.current += 1;
       clearFacilityCache();
-      setSelectedFacility(null);
+      resetSelectedFacility();
       syncSelectedFacilityCookie(null);
       setFacilitiesLoading(false);
       setFacilitiesLoadFailed(false);
@@ -250,7 +251,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         st.selectedFacilityId != null &&
         !st.availableFacilities.some((f) => f.id === st.selectedFacilityId)
       ) {
-        setSelectedFacility(null);
+        resetSelectedFacility();
         syncSelectedFacilityCookie(null);
       }
       setFacilitiesLoading(false);
@@ -261,7 +262,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     if (st.facilitiesCacheUserId != null && st.facilitiesCacheUserId !== currentUserId) {
       facilityRefreshRequestRef.current += 1;
       clearFacilityCache();
-      setSelectedFacility(null);
+      resetSelectedFacility();
       syncSelectedFacilityCookie(null);
     }
 
@@ -281,7 +282,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       setAvailableFacilities(list, currentUserId);
       const persistedId = useFacilityStore.getState().selectedFacilityId;
       if (persistedId != null && !list.some((f) => f.id === persistedId)) {
-        setSelectedFacility(null);
+        resetSelectedFacility();
         syncSelectedFacilityCookie(null);
       }
     } catch (err) {
@@ -303,7 +304,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         setFacilitiesLoading(false);
       }
     }
-  }, [authLoading, clearFacilityCache, currentUserId, setAvailableFacilities, setSelectedFacility]);
+  }, [authLoading, clearFacilityCache, currentUserId, setAvailableFacilities, resetSelectedFacility]);
 
   useEffect(() => {
     void refreshFacilities();
@@ -327,7 +328,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const handleFacilityScopeChange = useCallback(
     (facilityId: string | null) => {
-      setSelectedFacility(facilityId);
+      if (setSelectedFacility(facilityId) === false) return;
       syncSelectedFacilityCookie(facilityId);
       router.refresh();
     },

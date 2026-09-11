@@ -35,4 +35,38 @@ describe("useFacilityStore SSR import safety", () => {
       facilitiesCacheUserId: null,
     });
   });
+
+  it("vetoes a user scope change before subscribers observe it and unregisters cleanly", async () => {
+    const { useFacilityStore } = await import("./useFacilityStore");
+    const state = useFacilityStore.getState();
+    const a = "00000000-0000-0000-0000-000000000001";
+    const b = "00000000-0000-0000-0000-000000000002";
+    expect(state.setSelectedFacility(a)).toBe(true);
+    const changes: (string | null)[] = [];
+    const stop = useFacilityStore.subscribe(s => { changes.push(s.selectedFacilityId); });
+    const guard = vi.fn(() => false);
+    const unregister = state.registerFacilityChangeGuard(guard);
+    expect(state.setSelectedFacility(b)).toBe(false);
+    expect(state.setSelectedFacility(null)).toBe(false);
+    expect(useFacilityStore.getState().selectedFacilityId).toBe(a);
+    expect(changes).toEqual([]);
+    expect(state.setSelectedFacility(a)).toBe(true);
+    expect(guard).toHaveBeenCalledTimes(2);
+    unregister();
+    expect(state.setSelectedFacility(b)).toBe(true);
+    expect(changes).toEqual([b]);
+    stop();
+  });
+
+  it("allows security invalidation to clear a dirty form's scope", async () => {
+    const { useFacilityStore } = await import("./useFacilityStore");
+    const state = useFacilityStore.getState();
+    state.setSelectedFacility("00000000-0000-0000-0000-000000000001");
+    const guard = vi.fn(() => false);
+    const unregister = state.registerFacilityChangeGuard(guard);
+    state.resetSelectedFacility();
+    expect(useFacilityStore.getState().selectedFacilityId).toBeNull();
+    expect(guard).not.toHaveBeenCalled();
+    unregister();
+  });
 });

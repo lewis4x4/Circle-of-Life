@@ -25,11 +25,12 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from workbook import FACILITIES, KEYS, MAX_BYTES, WorkbookError, parse_workbook, patch_workbook
+from workbook import FACILITIES, KEYS, MAX_BYTES, WorkbookError, parse_workbook, patch_workbook, overtime_minutes
 
 HAVEN = "https://manfqmasfqppukpobpld.supabase.co"
 FRONT_OFFICE = "https://wecsjfiituxlityaacba.supabase.co/functions/v1/ingest"
 PREFIXES = dict(zip(FACILITIES, ("homewood", "oakridge", "rising_oaks", "plantation", "grande_cypress")))
+HISTORY_REFRESH_INTERVAL = timedelta(hours=6)
 
 
 class BridgeError(RuntimeError):
@@ -77,13 +78,21 @@ def reporting_week(now=None):
     return day + timedelta(days=1 if day.weekday() == 6 else -day.weekday())
 
 
+def reject_history_state(data):
+    if any(key.startswith("history_") for key in data):
+        raise BridgeError("History-bound state cannot be used by the current publisher or Google connector")
+
+
 class State:
-    def __init__(self, directory):
+    def __init__(self, directory, *, history=False):
         self.directory = Path(directory).expanduser().resolve()
+        self.path = self.directory / "state.json"
+        # Refuse an existing history identity before creating/changing its lock file.
+        if not history and self.path.exists():
+            reject_history_state(json.loads(self.path.read_text()))
         self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         if self.directory.stat().st_mode & 0o077:
             raise BridgeError("State directory must be private (mode 0700)")
-        self.path = self.directory / "state.json"
         self.lock = (self.directory / "worker.lock").open("a+")
         os.chmod(self.lock.name, 0o600)
         try:
@@ -91,6 +100,8 @@ class State:
         except BlockingIOError as exc:
             raise BridgeError("Another bridge worker owns this state") from exc
         self.data = json.loads(self.path.read_text()) if self.path.exists() else {"baselines": {}}
+        if not history:
+            reject_history_state(self.data)  # Recheck after acquiring the lock.
 
     def save(self):
         temporary = self.directory / "state.next"
@@ -109,6 +120,7 @@ class State:
 
 class Haven:
     def __init__(self, state):
+        reject_history_state(state.data)
         self.state = state
         self.anon = required("NEXT_PUBLIC_SUPABASE_ANON_KEY")
         refresh = state.data.get("haven_refresh_token") or required("HAVEN_STAND_UP_REFRESH_TOKEN")
@@ -119,10 +131,12 @@ class Haven:
         state.save()  # Persist rotated token before making any business command.
 
     def command(self, action, payload):
+        reject_history_state(self.state.data)
         raw, _ = http(HAVEN + "/rest/v1/rpc/stand_up_command", "POST", compact({"p_action": action, "p_payload": payload}), {"apikey": self.anon, "authorization": "Bearer " + self.token, "content-type": "application/json"})
         return json.loads(raw)
 
     def mutate(self, action, payload):
+        reject_history_state(self.state.data)
         pending = self.state.data.get("haven_pending")
         if pending:
             raise BridgeError("Resume the prior Haven command before a new mutation")
@@ -134,6 +148,7 @@ class Haven:
         return self.resume()
 
     def resume(self):
+        reject_history_state(self.state.data)
         pending = self.state.data.get("haven_pending")
         if not pending:
             return None
@@ -200,6 +215,25 @@ def strong_etag(value):
     return isinstance(value, str) and bool(re.fullmatch(r'"[\x21\x23-\x7e]+"', value))
 
 
+class HistoryReader:
+    """Service-only bounded archive; no Google or operator mutation methods."""
+    def __init__(self, from_week, to_week):
+        self.from_week, self.to_week = from_week, to_week
+        if (from_week.weekday() != 0 or to_week.weekday() != 0
+                or not 0 <= (to_week - from_week).days <= 721):
+            raise BridgeError("History requires a Monday range of at most 104 weeks")
+        self.key = required("SUPABASE_SERVICE_ROLE_KEY")
+        self.organization = required("STAND_UP_ORGANIZATION_ID")
+        uuid.UUID(self.organization)
+
+    def archive(self):
+        raw, _ = http(HAVEN + "/rest/v1/rpc/stand_up_export_history", "POST", compact({
+            "p_organization_id": self.organization, "p_from_week": self.from_week.isoformat(),
+            "p_to_week": self.to_week.isoformat()}), {"apikey": self.key,
+            "authorization": "Bearer " + self.key, "content-type": "application/json"})
+        return json.loads(raw)
+
+
 class AggregateReader:
     """Haven-hosted publisher can only invoke the aggregate export RPC here."""
     def __init__(self, week):
@@ -240,6 +274,29 @@ def source_payload(workspace, facility_map, week, sequence, now=None):
             raise BridgeError("Unexpected source metric contract")
         reported = report is not None and any(value is not None for value in report["values"].values())
         rows.extend([{"metric": prefix + "_reported", "value": int(reported)}, {"metric": prefix + "_ready", "value": int(reported and report["status"] == "ready")}, {"metric": prefix + "_revision", "value": report["version"] if report else 0}])
+        if report:
+            raw_overtime = report["values"]["overtime_reported"]
+            try:
+                minutes = overtime_minutes(raw_overtime)
+                issue = False
+            except WorkbookError:
+                minutes, issue = None, True
+            if "overtime_minutes" in report and report["overtime_minutes"] != minutes:
+                raise BridgeError("Canonical overtime does not match retained HH.MM source")
+            if "overtime_issue" in report and report["overtime_issue"] is not issue:
+                raise BridgeError("Canonical overtime review flag does not match source")
+            rows.append({"metric": prefix + "_overtime_issue", "value": int(issue)})
+            if minutes is not None:
+                rows.append({"metric": prefix + "_overtime_minutes", "value": minutes})
+            if "entry_origin" in report:
+                origins = {"initialized": 0, "imported": 1, "manual": 2, "recovery": 3}
+                if report["entry_origin"] not in origins:
+                    raise BridgeError("Unexpected source entry origin")
+                rows.append({"metric": prefix + "_entry_origin", "value": origins[report["entry_origin"]]})
+            for field, metric in (("first_submitted_at", "first_submitted_epoch"), ("last_submitted_at", "last_submitted_epoch")):
+                if report.get(field):
+                    rows.append({"metric": prefix + "_" + metric, "value": int(aware_timestamp(report[field]).timestamp())})
+            rows.append({"metric": prefix + "_needs_resubmission", "value": int(bool(report.get("last_submitted_at")) and report["status"] != "ready")})
         if not reported:
             continue  # An empty recovery baseline is not submitted facility data.
         as_of = report.get("source_as_of")
@@ -260,7 +317,117 @@ def source_payload(workspace, facility_map, week, sequence, now=None):
     return {"source": "col", "dataset": "standup_weekly", "contractVersion": 1, "batchId": str(uuid.uuid4()), "sequence": sequence, "sourceAsOf": as_of.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), "mode": "full", "complete": True, "rows": rows}
 
 
+def aware_timestamp(value):
+    if not isinstance(value, str):
+        raise BridgeError("Explicit timezone timestamp required")
+    try:
+        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise BridgeError("Invalid archive timestamp") from exc
+    if stamp.tzinfo is None:
+        raise BridgeError("Explicit timezone timestamp required")
+    return stamp
+
+
+def history_payloads(archive, mapping, first_sequence):
+    generated = aware_timestamp(archive.get("archive_as_of"))
+    snapshots = archive.get("snapshots")
+    if not isinstance(snapshots, list) or len(snapshots) > 312:
+        raise BridgeError("History archive exceeds 104 weeks and three snapshot kinds")
+    identities, results = set(), []
+    for snapshot in sorted(snapshots, key=lambda x: (x["week_start"], x["kind"])):
+        week = date.fromisoformat(snapshot["week_start"])
+        kind = snapshot["kind"]
+        if week.weekday() != 0 or isinstance(kind, bool) or kind not in (0, 1, 2):
+            raise BridgeError("Invalid history Monday or snapshot kind")
+        meeting_cutoff = datetime(week.year, week.month, week.day, 9, 15, tzinfo=ZoneInfo("America/New_York"))
+        if kind == 2 and generated < meeting_cutoff:
+            raise BridgeError("Meeting snapshot is unavailable before Monday 09:15 Eastern")
+        identity = week.isoformat() + ":" + str(kind)
+        if identity in identities:
+            raise BridgeError("Duplicate history week and snapshot kind")
+        identities.add(identity)
+        if not set(mapping.values()).issubset({f["id"] for f in snapshot["facilities"]}):
+            raise BridgeError("History mapping does not belong to configured organization")
+        if any(r["facility_id"] not in mapping.values() or r["week_start"] != week.isoformat() for r in snapshot["reports"]):
+            raise BridgeError("Unexpected history facility or reporting week")
+        payload = source_payload(snapshot, mapping, week, first_sequence + len(results), generated)
+        payload.update(dataset="standup_weekly_history", sourceAsOf=generated.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"))
+        payload["rows"].extend([{"metric": "snapshot_kind", "value": kind},
+                                {"metric": "archive_as_of_epoch", "value": int(generated.timestamp())}])
+        results.append((identity, payload))
+    return results
+
+
+def publish_front_office_history(state, archive, mapping):
+    """Independent durable history sequence. sourceAsOf is archive generation only."""
+    if (state.data.get("baselines") or "file_id" in state.data or
+            any(key.startswith(("front_office_", "google_", "haven_")) for key in state.data)):
+        raise BridgeError("History requires its own state directory; current publisher state is untouched")
+    key_id = required("FRONT_OFFICE_HISTORY_INGEST_KEY_ID")
+    secret = required("FRONT_OFFICE_HISTORY_INGEST_SECRET")
+    if len(secret.encode()) < 32:
+        raise BridgeError("Front Office history HMAC secret must be at least 32 bytes")
+    binding = {"key_id": key_id, "mapping": mapping, "dataset": "standup_weekly_history"}
+    if state.data.get("history_binding", binding) != binding:
+        raise BridgeError("History state belongs to a different key or facility mapping")
+    state.data["history_binding"] = binding
+
+    def drain():
+        accepted = 0
+        queue = state.data.get("history_pending_queue", [])
+        while queue:
+            pending = queue[0]
+            body = pending["body"].encode()
+            sent = str(int(time.time()))
+            signature = hmac.new(secret.encode(), f"front-office-ingest-v1\nPOST\napplication/json\n{key_id}\n{sent}\n".encode() + body, hashlib.sha256).hexdigest()
+            try:
+                raw, _ = http(FRONT_OFFICE, "POST", body, {"content-type": "application/json", "x-ingest-key-id": key_id,
+                    "x-ingest-sent-at": sent, "x-ingest-signature": signature})
+            except HttpFailure as exc:
+                state.data["history_rejection"] = {"status": exc.status, "sequence": pending["sequence"]}
+                state.save()  # Retain exact pending evidence; no sequence is advanced.
+                raise
+            receipt = json.loads(raw)
+            if not receipt.get("receiptId"):
+                raise BridgeError("Missing Front Office history acceptance receipt")
+            state.data.update(history_sequence=pending["sequence"], history_last_receipt=receipt["receiptId"], history_source_as_of=pending["source_as_of"])
+            state.data.setdefault("history_fingerprints", {})[pending["identity"]] = pending["fingerprint"]
+            state.data.setdefault("history_published_at", {})[pending["identity"]] = pending["source_as_of"]
+            state.data.pop("history_rejection", None)
+            queue.pop(0)
+            state.save()
+            accepted += 1
+        return accepted
+
+    accepted = drain()  # Readback/retry old archive before generating any new batch.
+    generated = aware_timestamp(archive.get("archive_as_of"))
+    last = state.data.get("history_source_as_of")
+    if last and generated < aware_timestamp(last):
+        raise BridgeError("Archive generation timestamp regressed; history publication refused")
+    queue = []
+    fingerprints = state.data.get("history_fingerprints", {})
+    published_at = state.data.get("history_published_at", {})
+    for identity, payload in history_payloads(archive, mapping, state.data.get("history_sequence", 0) + 1):
+        comparable = [r for r in payload["rows"] if r["metric"] != "archive_as_of_epoch"]
+        fingerprint = hashlib.sha256(compact(comparable)).hexdigest()
+        last_published = published_at.get(identity)
+        # Renew archive evidence even when figures are unchanged. This timestamp
+        # means source archive generation, never a new facility observation.
+        if (fingerprints.get(identity) == fingerprint and last_published
+                and generated - aware_timestamp(last_published) < HISTORY_REFRESH_INTERVAL):
+            continue
+        payload["sequence"] = state.data.get("history_sequence", 0) + len(queue) + 1
+        queue.append({"identity": identity, "body": compact(payload).decode(), "fingerprint": fingerprint,
+                      "sequence": payload["sequence"], "source_as_of": payload["sourceAsOf"]})
+    state.data["history_pending_queue"] = queue
+    state.save()  # Whole immutable archive queue is durable before the first request.
+    accepted += drain()
+    return {"accepted": accepted, "unchanged": not bool(accepted)}
+
+
 def publish_front_office(state, workspace, mapping, week):
+    reject_history_state(state.data)
     key_id, secret = required("FRONT_OFFICE_INGEST_KEY_ID"), required("FRONT_OFFICE_INGEST_SECRET")
     if len(secret.encode()) < 32:
         raise BridgeError("Front Office HMAC secret must be at least 32 bytes")
@@ -294,6 +461,7 @@ def publish_front_office(state, workspace, mapping, week):
 
 
 def recover_pending_google(state, google, file_id):
+    reject_history_state(state.data)
     pending = state.data.get("google_pending")
     if not pending:
         return
@@ -326,6 +494,7 @@ def recover_pending_google(state, google, file_id):
 
 def probe_google(state, google, file_id):
     """Rehearsal only: real stale-ETag rejection and durable exact-byte restoration."""
+    reject_history_state(state.data)
     if state.data.get("probe_original"):
         if state.data.get("probe_file_id") != file_id:
             raise BridgeError("Interrupted probe belongs to a different rehearsal copy")
@@ -404,6 +573,7 @@ def probe_google(state, google, file_id):
 
 
 def synchronize(state, haven, google, mapping, week, mode, adopt=None):
+    reject_history_state(state.data)
     file_id = file_target(mode)
     if state.data.get("file_id") not in (None, file_id):
         raise BridgeError("Use separate state directories for separate source files")
@@ -472,6 +642,7 @@ def synchronize(state, haven, google, mapping, week, mode, adopt=None):
 
 
 def changed_prior_weeks(state, google, mapping, current_week, mode):
+    reject_history_state(state.data)
     weeks = sorted({identity.rsplit(":", 1)[1] for identity in state.data["baselines"] if identity.rsplit(":", 1)[1] != current_week.isoformat()})
     if not weeks:
         return []
@@ -502,18 +673,24 @@ def main():
     parser.add_argument("--adopt", choices=("file", "haven"), help="Explicitly select initial authority; does not resolve later conflicts")
     parser.add_argument("--google", action="store_true")
     parser.add_argument("--publish", action="store_true")
+    parser.add_argument("--publish-history", action="store_true", help="Dedicated service-only archive publisher with separate state and HMAC key")
+    parser.add_argument("--from-week", help="Inclusive history Monday")
+    parser.add_argument("--to-week", help="Inclusive history Monday; range at most 104 weeks")
     parser.add_argument("--publisher-service", action="store_true", help="Haven-hosted aggregate read only; cannot be combined with Google or adoption")
     parser.add_argument("--probe-google", action="store_true", help="Rehearsal copy only; verifies conditional writes and restores exact original bytes")
     args = parser.parse_args()
-    if args.publisher_service and (not args.publish or args.google or args.probe_google or args.adopt):
+    if args.publish_history and (not args.publisher_service or args.publish or args.google or args.probe_google or args.adopt or not args.from_week or not args.to_week):
+        raise BridgeError("History publication requires isolated service mode, dates and its own state")
+    if args.publisher_service and (not (args.publish or args.publish_history) or args.google or args.probe_google or args.adopt):
         raise BridgeError("Service publisher is aggregate-read-only; Google recovery needs an authenticated operator")
     if args.probe_google:
         if args.mode != "rehearsal":
             raise BridgeError("Provider probe may only target rehearsal")
         state = State(args.state_dir)
+        reject_history_state(state.data)
         probe_google(state, Google(), file_target("rehearsal"))
         return
-    if not args.google and not args.publish:
+    if not args.google and not args.publish and not args.publish_history:
         parser.error("Choose --google and/or --publish")
     mapping = json.loads(Path(args.facility_map).read_text())
     if set(mapping) != set(FACILITIES) or len(set(mapping.values())) != 5:
@@ -521,7 +698,14 @@ def main():
     week = date.fromisoformat(args.week) if args.week else reporting_week()
     if week.weekday() != 0:
         raise BridgeError("Week must be Monday")
-    state = State(args.state_dir)
+    state = State(args.state_dir, history=args.publish_history)
+    if not args.publish_history:
+        reject_history_state(state.data)
+    if args.publish_history:
+        archive = HistoryReader(date.fromisoformat(args.from_week), date.fromisoformat(args.to_week)).archive()
+        result = publish_front_office_history(state, archive, mapping)
+        print(json.dumps({"front_office_history": result, "google": "disabled", "checked_at": datetime.now(timezone.utc).isoformat()}))
+        return
     if args.publisher_service:
         workspace = AggregateReader(week).workspace()
         if not set(mapping.values()).issubset({f["id"] for f in workspace["facilities"]}):

@@ -1,10 +1,14 @@
+export class StandUpRequestError extends Error {
+  constructor(message: string, public status: number) { super(message); this.name = 'StandUpRequestError'; }
+}
+
 export async function standUpRequest<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   try {
     const response = await fetch('/api/stand-up', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, payload }), signal: controller.signal });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Could not complete this operation.');
+    if (!response.ok) throw new StandUpRequestError(result.error || 'Could not complete this operation.', response.status);
     return result as T;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') throw new Error('The request timed out. Your entries remain here. Retry the same operation to retrieve its receipt; do not assume it failed.');

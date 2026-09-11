@@ -1,4 +1,5 @@
 import React from "react";
+import { renderToString } from "react-dom/server";
 import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -6,6 +7,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "./AppShell";
 
+const pathMock = vi.hoisted(() => ({ pathname: "/admin/executive" }));
 const pushMock = vi.fn();
 const refreshMock = vi.fn();
 
@@ -21,7 +23,7 @@ const authMock = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/admin/executive",
+  usePathname: () => pathMock.pathname,
   useRouter: () => ({ push: pushMock, replace: vi.fn(), refresh: refreshMock }),
 }));
 
@@ -31,6 +33,7 @@ vi.mock("next-themes", () => ({
 
 vi.mock("next/dynamic", () => ({
   default: (importFn: () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>) => {
+    if (String(importFn).includes("SurveyVisitShellToggle")) return function SurveyToggleFixture() { return <button>Survey session fixture</button>; };
     const Lazy = React.lazy(importFn);
     return function DynamicComponent(props: Record<string, unknown>) {
       return (
@@ -53,6 +56,8 @@ vi.mock("@/hooks/useFacilityStore", () => {
     facilitiesFetchedAt: Date.now(),
     facilitiesCacheUserId: "user-1",
     setSelectedFacility: vi.fn(),
+    resetSelectedFacility: vi.fn(),
+    registerFacilityChangeGuard: vi.fn(() => () => {}),
     setAvailableFacilities: vi.fn(),
     clearFacilityCache: vi.fn(),
   };
@@ -124,9 +129,20 @@ function renderAppShell() {
 describe("AppShell all-sections jump list", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    pathMock.pathname = "/admin/executive";
     authMock.loading = false;
     authMock.appRole = "owner";
     authMock.user = { id: "user-1" };
+  });
+
+  it("defers route-dependent survey chrome until hydration while preserving the notification control", async () => {
+    pathMock.pathname = "/admin/stand-up";
+    const html = renderToString(<TooltipProvider><AppShell><div>Stand Up fixture</div></AppShell></TooltipProvider>);
+    expect(html).not.toContain("Survey session fixture");
+    expect(html).toContain('aria-label="Notification settings"');
+    renderAppShell();
+    expect(await screen.findByRole("button", { name: "Survey session fixture" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Notification settings" })).toBeInTheDocument();
   });
 
   it("does not render a mismatched role label in chrome while auth is loading", () => {
