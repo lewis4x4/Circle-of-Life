@@ -32,6 +32,50 @@ The actual 2026 workbook contains dates/fields requiring review outside the samp
 
 ## Google and publisher configuration
 
+### Local authorization setup
+
+`google_connect.py` provides an operator-driven, loopback-only OAuth setup and
+Google Picker. It requests only `drive.file`, validates the fixed original
+workbook identity and an independent XLSX rehearsal copy, and keeps synchronization
+disabled. Use a private web-client JSON with origin `http://localhost:8766` and
+redirect `http://localhost:8766/oauth/callback`:
+
+```sh
+python3 scripts/stand-up/google_connect.py \
+  --client-file /private/google/oauth-client.json \
+  --app-id GOOGLE_PROJECT_NUMBER \
+  --state-dir /private/google/connection
+```
+
+Enter the restricted browser key on the local setup page. Google requires its
+Picker key to allow both Google Picker API and Google Drive API, and both the
+local origin and `https://docs.google.com/*` referrers. See the
+[official Picker setup](https://developers.google.com/workspace/drive/picker/guides/web-picker-sample).
+The browser key does not replace the user OAuth grant. Store neither key nor
+refresh tokens in source control or frontend environment variables.
+
+After authorization, `credentials.json` contains the private refresh token and
+`files.json` records validated selections. Use `--resume` after a local server
+restart to refresh the same client/scope grant without repeating consent. A new
+authorization clears stale file selections. A failed or broadened grant must
+not activate synchronization. Google external Testing refresh tokens expire
+after seven days for this scope; resolve publishing/identity ownership before
+treating the connector as permanent unattended infrastructure.
+
+For the separate Haven operator session, start with `--haven-config` pointing to
+an owned private JSON containing the fixed Haven `url` and public `anon_key`,
+and `--facility-map` pointing to the reviewed mapping. Open `/haven` on the local
+setup server and use the existing authorized administrator login. This isolated
+page loads no third-party scripts. The password is sent only to the fixed Haven
+Auth endpoint, is never stored, and a private `haven-credentials.json` is saved
+only after the role, all five facilities and organization are verified. Do not
+substitute a service key or a browser session's rotating refresh token. This
+setup does not itself start the Google worker or resolve first-adoption authority.
+
+When the existing aggregate publisher is already installed, run the Google lane
+with **`--google` only** and independent state. Do not start the combined example
+below alongside an active publisher, or copy/reset its sequence state.
+
 No unattended Google OAuth connection was present during discovery/build. Browser sign-in is not an integration credential. Missing configuration leaves the worker inactive; local recovery tests do not prove Google activation.
 
 Set these variables privately on the worker host, never in frontend-prefixed variables or source control:
@@ -59,7 +103,7 @@ python3 scripts/stand-up/worker.py \
   --facility-map /private/path/facility-map.json --mode rehearsal --probe-google
 ```
 
-The rehearsal ID and production ID must be different. The probe tests rejection of an invalid If-Match, a unique-byte write resolved by fresh readback, and restoration of exact original bytes. It changes only a ZIP comment in the rehearsal copy and retains restoration evidence on interruption. Lack of ETag/412 support keeps overwrites disabled. Provider capability is established only by this real test, not an assumption about Google APIs.
+The rehearsal ID and production ID must be different. The probe writes unique bytes conditionally, verifies the new revision, then tests rejection of the formerly valid ETag with a distinct payload. It requires HTTP 412 with unchanged bytes and revision, followed by restoration of exact original bytes. It changes only a ZIP comment in the rehearsal copy and retains restoration evidence on interruption. Downloads associate v3 media bytes with matching v2 metadata before and after, including revision, checksum and size. Up to three read-only attempts allow transient post-upload metadata to stabilize. Updates use v2 conditional PUT: the live rehearsal found v3 media PATCH ignored If-Match. Lack of strong ETag/412 support keeps overwrites disabled. Provider capability is established only by this real test, not an assumption about Google APIs.
 
 Then run a rehearsal input change and open it in the actual Excel/Google viewer. Confirm totals/average rent recalculate and layout/formatting remain usable. Record that evidence and set `recalculation_verified: true` in the private provider-proof JSON only after that observation. The patcher preserves formulas and requests full recalculation on open; it does not claim cached formula results have already recalculated. Production mode requires both automated provider proof and that recorded observation.
 
