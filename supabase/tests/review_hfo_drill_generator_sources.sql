@@ -288,6 +288,27 @@ SELECT pg_temp.c_assert((SELECT status IN('pending','missed') AND execution_stat
 SELECT pg_temp.c_assert((SELECT count(*)=1 AND bool_and(task_instance_id=pg_temp.rid('occ_gen2_d0')) FROM public.operation_execution_receipts WHERE source_record_id=pg_temp.rid('o_gen1')::text AND receipt_kind='performance' AND superseded_by_receipt_id IS NULL),'one record holds two effective receipts');
 RESET ROLE;
 
+-- 3a. A correction by someone other than the observer is an on-behalf restatement and needs its reason; a void whose asset is no longer current is refused by name (COL-133 retired-subject boundary) and leaves record, occurrence and receipt untouched.
+SELECT pg_temp.c_login('admin_a');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.c_expect($q$SELECT public.correct_asset_observation_review(pg_temp.rid('o_gen1'),pg_temp.k('gen1-cor-0010'),3,'{"reason":"Note added by the administrator","note":"Transfer switch labelled"}')$q$,'entered on behalf with a reason');
+INSERT INTO cf_results SELECT 'cor_gen1_admin',public.correct_asset_observation_review(pg_temp.rid('o_gen1'),pg_temp.k('gen1-cor-0011'),3,'{"reason":"Note added by the administrator","note":"Transfer switch labelled","entry_reason":"Maintenance observed; administrator restated the note"}');
+SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND result->'delivery'->'event'->>'state'='corrected' AND result->'delivery'->'receipt'->>'entry_kind'='on_behalf' AND result->'delivery'->'receipt'->>'performer_kind'='other_staff'
+ AND (result->'delivery'->'receipt'->>'performer_user_id')::uuid=(SELECT maint FROM cf) AND (result->'delivery'->'receipt'->>'recorder_id')::uuid=(SELECT admin_a FROM cf) AND (result->'record'->>'record_version')::int=4
+ AND (result->'record'->>'version_recorded_by')::uuid=(SELECT admin_a FROM cf) AND (result->'record'->>'finalized_by')::uuid=(SELECT maint FROM cf) FROM cf_results WHERE label='cor_gen1_admin'),'a cross-person correction was not recorded on behalf');
+RESET ROLE;
+SELECT pg_temp.c_clear();
+UPDATE public.facility_assets SET status='retired' WHERE id=(SELECT gen2 FROM cf);
+CREATE TEMP TABLE cf_retired_before AS SELECT to_jsonb(o) rec,(SELECT to_jsonb(t) FROM public.operation_task_instances t WHERE t.id=pg_temp.rid('occ_gen2_d0')) occ,(SELECT count(*) FROM public.operation_execution_receipts) receipts FROM public.asset_observations o WHERE o.id=pg_temp.rid('o_gen1');
+SELECT pg_temp.c_login('maint');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.c_expect($q$SELECT public.void_asset_observation_review(pg_temp.rid('o_gen1'),pg_temp.k('gen1-void-ret1'),'{"reason":"Generator retired"}')$q$,'Asset is not current at this site');
+SELECT pg_temp.c_expect($q$SELECT public.correct_asset_observation_review(pg_temp.rid('o_gen1'),pg_temp.k('gen1-cor-ret1'),4,'{"reason":"Generator retired","note":"x"}')$q$,'Asset is not current at this site');
+RESET ROLE;
+SELECT pg_temp.c_assert((SELECT to_jsonb(o)=(SELECT rec FROM cf_retired_before) FROM public.asset_observations o WHERE o.id=pg_temp.rid('o_gen1')) AND (SELECT to_jsonb(t)=(SELECT occ FROM cf_retired_before) FROM public.operation_task_instances t WHERE t.id=pg_temp.rid('occ_gen2_d0'))
+ AND (SELECT count(*)=(SELECT receipts FROM cf_retired_before) FROM public.operation_execution_receipts) AND (SELECT count(*)=0 FROM public.operation_source_record_requests WHERE request_key IN(pg_temp.k('gen1-void-ret1'),pg_temp.k('gen1-cor-ret1'))),'a refused void on a retired asset changed something');
+UPDATE public.facility_assets SET status='active' WHERE id=(SELECT gen2 FROM cf);
+
 -- 4. Refusals by name write nothing: self-test, photo only, future, unstated late, failed without issue, wrong asset type, retired asset, another site's asset, stranger observer, malformed readings, unknown field.
 SELECT pg_temp.c_login('maint');
 SET LOCAL ROLE authenticated;
@@ -380,12 +401,24 @@ SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='invalidat
  AND result->'record'->>'voided_at' IS NOT NULL FROM cf_results WHERE label='void_fire'),'a drill void did not reverse');
 SELECT pg_temp.c_assert((SELECT count(*)=4 FROM public.operation_execution_receipts WHERE task_instance_id=pg_temp.rid('occ_fire_d0')) AND (SELECT effective_receipt_id IS NULL FROM public.operation_task_instances WHERE id=pg_temp.rid('occ_fire_d0')),'void lost drill history or left a completion');
 SELECT pg_temp.c_expect($q$UPDATE public.drill_log SET notes='after void' WHERE id=pg_temp.rid('dl_fire')$q$,'Voided drill logs are immutable');
+-- A voided log keeps its (site, type, date, time) slot under the 220 unique constraint the legacy page's upsert relies on: a restatement is a correction, and a re-entry at the same minute is refused (OWNER-DECISIONS 3k(x)).
+SELECT pg_temp.c_expect($q$SELECT pg_temp.drill('fire',(SELECT d0 FROM cf),(SELECT hh0 FROM cf),'{"notes":"Re-entered at the voided slot"}')$q$,'duplicate key',NULL,'23505');
 SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_fire'),pg_temp.k('dl-cor-000005'),3,'{"reason":"After void","notes":"x"}')$q$,'Drill log is voided',NULL,'P0001');
 SELECT pg_temp.c_expect($q$SELECT public.void_drill_log_review(pg_temp.rid('dl_fire'),pg_temp.k('dl-void-00002'),'{"reason":"Again"}')$q$,'already voided',NULL,'P0001');
 RESET ROLE;
--- 5a. An elopement drill by maintenance satisfies only its activity; a tornado drill is finalized without a delivery and a direct delivery of it is a recorded reader failure; a previous-period fire drill moves when its date is corrected.
+-- 5a. A failed elopement drill needs its issue summary, then opens an issue that its void leaves open; an elopement drill by maintenance then satisfies only its activity; a tornado drill is finalized without a delivery and a direct delivery of it is a recorded reader failure; a previous-period fire drill moves when its date is corrected; a drill type never changes to or from tornado on a final log; a type change onto an occurrence another record satisfied is a visible conflict.
 SELECT pg_temp.c_login('maint');
 SET LOCAL ROLE authenticated;
+INSERT INTO cf_ids SELECT 'dl_failed',pg_temp.drill('elopement',d0,'00:10','{"notes":"Elopement drill, slow response","outcome":"failed"}') FROM cf;
+SELECT pg_temp.c_expect($q$SELECT public.finalize_drill_log_review(pg_temp.rid('dl_failed'),pg_temp.k('dl-fin-fail-01'),'{"entry_reason":"Logged after"}')$q$,'A failed outcome requires an issue summary');
+UPDATE public.drill_log SET issue_summary='Exit B alarm did not sound' WHERE id=pg_temp.rid('dl_failed');
+INSERT INTO cf_results SELECT 'fin_failed',public.finalize_drill_log_review(pg_temp.rid('dl_failed'),pg_temp.k('dl-fin-fail-01'),'{"entry_reason":"Logged after"}');
+INSERT INTO cf_ids SELECT 'i_failed',(result->'delivery'->'receipt'->>'issue_id')::uuid FROM cf_results WHERE label='fin_failed';
+SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND result->'delivery'->'event'->>'state'='satisfied' AND result->'delivery'->'receipt'->>'outcome'='failed' AND result->'delivery'->'receipt'->>'completion_state'='failed'
+ AND result->'delivery'->'occurrence'->>'execution_state'='failed' AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_elope_d0') FROM cf_results WHERE label='fin_failed'),'a failed drill did not open an issue and leave the occurrence failed');
+SELECT pg_temp.c_assert((SELECT status='open' AND issue_kind='failed_result' AND summary='Exit B alarm did not sound' AND task_instance_id=pg_temp.rid('occ_elope_d0') FROM public.operation_issues WHERE id=pg_temp.rid('i_failed')),'drill issue not bound');
+INSERT INTO cf_results SELECT 'void_failed',public.void_drill_log_review(pg_temp.rid('dl_failed'),pg_temp.k('dl-void-fail-1'),'{"reason":"Logged under the wrong exit; re-run scheduled"}');
+SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='invalidated' AND result->'delivery'->'occurrence'->>'execution_state'='none' FROM cf_results WHERE label='void_failed') AND (SELECT status='open' FROM public.operation_issues WHERE id=pg_temp.rid('i_failed')),'a drill void closed its issue or left the occurrence recorded');
 INSERT INTO cf_ids SELECT 'dl_elope',pg_temp.drill('elopement',d0,hh0,'{"notes":"Elopement drill, exit B"}') FROM cf;
 INSERT INTO cf_results SELECT 'fin_elope',public.finalize_drill_log_review(pg_temp.rid('dl_elope'),pg_temp.k('dl-fin-elope-1'),'{"entry_reason":"Logged after the drill"}');
 SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_elope_d0') AND result->'delivery'->'receipt'->>'completion_state'='completed' FROM cf_results WHERE label='fin_elope'),'an elopement drill did not satisfy its occurrence');
@@ -404,15 +437,18 @@ SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND result->'delive
  FROM cf_results WHERE label='cor_fire_old'),'a corrected drill date did not move the receipt as a fresh chain');
 SELECT pg_temp.c_assert((SELECT superseded_by_receipt_id IS NOT NULL FROM public.operation_execution_receipts WHERE id=pg_temp.rid('r_fire_old')) AND (SELECT execution_state='none' AND effective_receipt_id IS NULL FROM public.operation_task_instances WHERE id=pg_temp.rid('occ_fire_old')),'the older occurrence kept the moved drill');
 SELECT pg_temp.c_assert((SELECT count(*)=1 FROM public.operation_execution_receipts WHERE source_record_id=pg_temp.rid('dl_fire_old')::text AND receipt_kind='performance' AND superseded_by_receipt_id IS NULL),'a drill log holds two effective receipts');
--- A draft cannot be corrected or voided; the finalize of a failed drill needs its issue summary and then opens an issue.
+-- A final log never changes between a linked type and tornado (the receipt would be stranded or a never-delivered record delivered mid-chain); a change onto an occurrence another record satisfied is a visible conflict that overwrites nothing.
+SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_fire_old'),pg_temp.k('dl-cor-old-002'),2,'{"reason":"Wrong type","drill_type":"tornado"}')$q$,'cannot change to or from tornado');
+SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_tornado'),pg_temp.k('dl-cor-torn-01'),1,'{"reason":"Wrong type","drill_type":"fire"}')$q$,'cannot change to or from tornado');
+SELECT pg_temp.c_assert((SELECT record_version=2 AND drill_type='fire' FROM public.drill_log WHERE id=pg_temp.rid('dl_fire_old')) AND (SELECT record_version=1 AND drill_type='tornado' FROM public.drill_log WHERE id=pg_temp.rid('dl_tornado')),'a refused type change restated the log');
+INSERT INTO cf_results SELECT 'cor_fire_old_type',public.correct_drill_log_review(pg_temp.rid('dl_fire_old'),pg_temp.k('dl-cor-old-003'),2,'{"reason":"It was the elopement drill","drill_type":"elopement"}');
+SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean=false AND result->'delivery'->'event'->>'state'='conflict' AND result->'delivery'->'event'->>'reason'='already_recorded' AND (result->'delivery'->'event'->>'attention')::boolean
+ AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_elope_d0') AND (result->'record'->>'record_version')::int=3 FROM cf_results WHERE label='cor_fire_old_type'),'a type change onto a satisfied occurrence was not a visible conflict');
+SELECT pg_temp.c_assert((SELECT count(*)=1 AND bool_and(task_instance_id=pg_temp.rid('occ_fire_d0') AND source_record_version='2') FROM public.operation_execution_receipts WHERE source_record_id=pg_temp.rid('dl_fire_old')::text AND receipt_kind='performance' AND superseded_by_receipt_id IS NULL),'a conflicting type change moved or duplicated the receipt');
+-- A draft cannot be corrected or voided.
 INSERT INTO cf_ids SELECT 'dl_draft2',pg_temp.drill('fire',d0,'00:05','{"notes":"Draft only"}') FROM cf;
 SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_draft2'),pg_temp.k('dl-cor-draft-1'),1,'{"reason":"x","notes":"y"}')$q$,'is a draft',NULL,'P0001');
 SELECT pg_temp.c_expect($q$SELECT public.void_drill_log_review(pg_temp.rid('dl_draft2'),pg_temp.k('dl-void-draft1'),'{"reason":"x"}')$q$,'is a draft',NULL,'P0001');
-INSERT INTO cf_ids SELECT 'dl_failed',pg_temp.drill('elopement',d0,'00:10','{"notes":"Elopement drill, slow response","outcome":"failed"}') FROM cf;
-SELECT pg_temp.c_expect($q$SELECT public.finalize_drill_log_review(pg_temp.rid('dl_failed'),pg_temp.k('dl-fin-fail-01'),'{"entry_reason":"Logged after"}')$q$,'A failed outcome requires an issue summary');
-UPDATE public.drill_log SET issue_summary='Exit B alarm did not sound' WHERE id=pg_temp.rid('dl_failed');
-INSERT INTO cf_results SELECT 'fin_failed',public.finalize_drill_log_review(pg_temp.rid('dl_failed'),pg_temp.k('dl-fin-fail-01'),'{"entry_reason":"Logged after"}');
-SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='conflict' AND result->'delivery'->'event'->>'reason'='already_recorded' FROM cf_results WHERE label='fin_failed'),'a second elopement drill in the week was not a visible conflict');
 RESET ROLE;
 
 -- 6. Authority: the other site's administrator cannot finalize, correct, void or read site A's records; the request ledger and observations are site-scoped.

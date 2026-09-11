@@ -442,8 +442,11 @@ BEGIN
  IF NOT FOUND OR r.organization_id IS DISTINCT FROM haven.organization_id() THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  actor:=haven.operation_source_record_actor(r.facility_id);
  org:=r.organization_id;
+ -- Lock order everywhere: the request key, then the record, then 346's per-record delivery lock.
+ PERFORM pg_advisory_xact_lock(hashtext('operation_source_record_request:'||p_request_key));
  PERFORM pg_advisory_xact_lock(hashtext('operation_source_record:'||p_id::text));
  SELECT * INTO r FROM public.asset_observations WHERE id=p_id FOR UPDATE;
+ IF r.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  hash:=encode(sha256(convert_to(jsonb_build_object('action','correct','actor',actor,'record',p_id,'expected_version',p_expected_version,'payload',p_payload)::text,'UTF8')),'hex');
  existing:=haven.operation_source_record_replay(p_request_key,hash,actor);
  IF existing IS NOT NULL THEN RETURN existing; END IF;
@@ -491,12 +494,19 @@ BEGIN
  IF NOT FOUND OR r.organization_id IS DISTINCT FROM haven.organization_id() THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  actor:=haven.operation_source_record_actor(r.facility_id);
  org:=r.organization_id;
+ -- Lock order everywhere: the request key, then the record, then 346's per-record delivery lock.
+ PERFORM pg_advisory_xact_lock(hashtext('operation_source_record_request:'||p_request_key));
  PERFORM pg_advisory_xact_lock(hashtext('operation_source_record:'||p_id::text));
  SELECT * INTO r FROM public.asset_observations WHERE id=p_id FOR UPDATE;
+ IF r.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  hash:=encode(sha256(convert_to(jsonb_build_object('action','void','actor',actor,'record',p_id,'reason',reason)::text,'UTF8')),'hex');
  existing:=haven.operation_source_record_replay(p_request_key,hash,actor);
  IF existing IS NOT NULL THEN RETURN existing; END IF;
  IF r.voided_at IS NOT NULL THEN RAISE EXCEPTION 'Observation is already voided' USING ERRCODE='P0001'; END IF;
+ -- A void must be able to reverse the receipt it delivered: an asset that is retired, deleted or moved hides its occurrence under the
+ -- COL-133 retired-subject boundary, so the record is refused by name rather than voided with a false completion left behind.
+ IF NOT EXISTS(SELECT 1 FROM public.facility_assets a WHERE a.id=r.asset_id AND a.organization_id=org AND a.facility_id=r.facility_id AND a.deleted_at IS NULL AND a.status<>'retired') THEN
+  RAISE EXCEPTION 'Asset is not current at this site; the observation stays as history until a historical-record scope exists' USING ERRCODE='22023'; END IF;
  now_at:=clock_timestamp();
  PERFORM set_config('haven.operation_source_record_command',haven.operation_occurrence_token(),true);
  UPDATE public.asset_observations SET voided_at=now_at,voided_by=actor,void_reason=reason,updated_by=actor WHERE id=p_id RETURNING * INTO r;
@@ -525,8 +535,11 @@ BEGIN
  IF NOT FOUND OR r.organization_id IS DISTINCT FROM haven.organization_id() OR r.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  actor:=haven.operation_source_record_actor(r.facility_id);
  org:=r.organization_id;
+ -- Lock order everywhere: the request key, then the record, then 346's per-record delivery lock.
+ PERFORM pg_advisory_xact_lock(hashtext('operation_source_record_request:'||p_request_key));
  PERFORM pg_advisory_xact_lock(hashtext('operation_source_record:'||p_id::text));
  SELECT * INTO r FROM public.drill_log WHERE id=p_id FOR UPDATE;
+ IF r.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  hash:=encode(sha256(convert_to(jsonb_build_object('action','finalize','actor',actor,'record',p_id,'entry_reason',entry)::text,'UTF8')),'hex');
  existing:=haven.operation_source_record_replay(p_request_key,hash,actor);
  IF existing IS NOT NULL THEN RETURN existing; END IF;
@@ -571,8 +584,11 @@ BEGIN
  IF NOT FOUND OR r.organization_id IS DISTINCT FROM haven.organization_id() OR r.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  actor:=haven.operation_source_record_actor(r.facility_id);
  org:=r.organization_id;
+ -- Lock order everywhere: the request key, then the record, then 346's per-record delivery lock.
+ PERFORM pg_advisory_xact_lock(hashtext('operation_source_record_request:'||p_request_key));
  PERFORM pg_advisory_xact_lock(hashtext('operation_source_record:'||p_id::text));
  SELECT * INTO r FROM public.drill_log WHERE id=p_id FOR UPDATE;
+ IF r.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  hash:=encode(sha256(convert_to(jsonb_build_object('action','correct','actor',actor,'record',p_id,'expected_version',p_expected_version,'payload',p_payload)::text,'UTF8')),'hex');
  existing:=haven.operation_source_record_replay(p_request_key,hash,actor);
  IF existing IS NOT NULL THEN RETURN existing; END IF;
@@ -590,6 +606,8 @@ BEGIN
   IF p_payload ? 'residents_present_count' THEN n.residents_present_count:=nullif(p_payload->>'residents_present_count','')::integer; END IF;
  EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'Correction request contains an invalid drill value' USING ERRCODE='22023'; END;
  IF n.drill_date IS NULL OR n.drill_time IS NULL THEN RAISE EXCEPTION 'drill_date and drill_time are required' USING ERRCODE='22023'; END IF;
+ IF (r.drill_type='tornado') IS DISTINCT FROM (n.drill_type='tornado') THEN
+  RAISE EXCEPTION 'Drill type cannot change to or from tornado; void the log and record it again' USING ERRCODE='22023'; END IF;
  IF p_payload ? 'conducted_by' THEN n.conducted_by:=haven.operation_source_uuid(p_payload,'conducted_by'); END IF;
  IF p_payload ? 'notes' THEN n.notes:=haven.operation_source_text(p_payload,'notes',4000); END IF;
  IF p_payload ? 'readings' THEN n.readings:=coalesce(nullif(p_payload->'readings','null'::jsonb),'{}'::jsonb); END IF;
@@ -630,8 +648,11 @@ BEGIN
  IF NOT FOUND OR r.organization_id IS DISTINCT FROM haven.organization_id() OR r.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  actor:=haven.operation_source_record_actor(r.facility_id);
  org:=r.organization_id;
+ -- Lock order everywhere: the request key, then the record, then 346's per-record delivery lock.
+ PERFORM pg_advisory_xact_lock(hashtext('operation_source_record_request:'||p_request_key));
  PERFORM pg_advisory_xact_lock(hashtext('operation_source_record:'||p_id::text));
  SELECT * INTO r FROM public.drill_log WHERE id=p_id FOR UPDATE;
+ IF r.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'Operation unavailable' USING ERRCODE='42501'; END IF;
  hash:=encode(sha256(convert_to(jsonb_build_object('action','void','actor',actor,'record',p_id,'reason',reason)::text,'UTF8')),'hex');
  existing:=haven.operation_source_record_replay(p_request_key,hash,actor);
  IF existing IS NOT NULL THEN RETURN existing; END IF;
@@ -683,7 +704,7 @@ GRANT EXECUTE ON FUNCTION
 DO $$
 DECLARE v_org constant uuid:='00000000-0000-0000-0000-000000000001'; n int;
 BEGIN
- IF NOT EXISTS(SELECT 1 FROM public.organizations WHERE id=v_org) THEN RETURN; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.organizations WHERE id=v_org) THEN RAISE NOTICE 'COL-154: organisation % is absent; no adapter registered',v_org; RETURN; END IF;
  SELECT count(*) INTO n FROM public.operation_activities WHERE organization_id=v_org AND activity_key IN('hfo-al-m05-01','hfo-al-m06-01','hfo-al-w01-01','hfo-al-w01-02','hfo-al-a07-03');
  IF n<>5 THEN RAISE EXCEPTION 'COL-154: the 336 catalog activities for drills and asset observations are missing (% of 5)',n; END IF;
  INSERT INTO public.operation_source_adapters(organization_id,source_key,subject_kind,reader_function,note) VALUES
@@ -695,7 +716,7 @@ BEGIN
  IF (SELECT count(*) FROM public.operation_source_rules WHERE organization_id=v_org AND source_key IN('drill-log','asset-observation'))<>5 THEN RAISE EXCEPTION 'COL-154: allowlist registration incomplete'; END IF;
  IF EXISTS(SELECT 1 FROM public.operation_source_rules ru JOIN public.operation_activities a ON a.id=ru.activity_id WHERE a.activity_key IN('hfo-al-a07-01','hfo-al-a07-02','hfo-al-a08-01','hfo-al-a08-02')) THEN
   RAISE EXCEPTION 'COL-154: a review activity must never be allowlisted for a source'; END IF;
- IF EXISTS(SELECT 1 FROM public.operation_source_events) OR EXISTS(SELECT 1 FROM public.operation_source_record_requests) OR EXISTS(SELECT 1 FROM public.asset_observations)
+ IF EXISTS(SELECT 1 FROM public.operation_source_events WHERE source_key IN('drill-log','asset-observation')) OR EXISTS(SELECT 1 FROM public.operation_source_record_requests) OR EXISTS(SELECT 1 FROM public.asset_observations)
   OR EXISTS(SELECT 1 FROM public.drill_log WHERE finalized_at IS NOT NULL OR voided_at IS NOT NULL OR record_version<>1) THEN
   RAISE EXCEPTION 'COL-154: the migration must not deliver, record or finalize anything'; END IF;
 END $$;

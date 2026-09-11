@@ -198,6 +198,7 @@ const TRUSTED_FRAGMENTS = [
   "Asset is not current",
   "A correction must restate",
   "invalid drill value",
+  "Drill type cannot change",
   "already final",
   "already voided",
   "is voided",
@@ -223,7 +224,7 @@ const CONFLICT_FRAGMENTS = [
   "is voided",
   "is a draft",
 ];
-const VALIDATION_FRAGMENTS = ["is required", "are required", "requires", "must be", "not editable", "is invalid", "carries no identifier", "Recorded values", "Performed time", "Corrected performed time", "Performer", "not allowlisted", "not a candidate", "applies to select only", "does not match the caller", "is not a staff observation", "is recorded against", "Asset is not current", "A correction must restate", "invalid drill value"];
+const VALIDATION_FRAGMENTS = ["is required", "are required", "requires", "must be", "not editable", "is invalid", "carries no identifier", "Recorded values", "Performed time", "Corrected performed time", "Performer", "not allowlisted", "not a candidate", "applies to select only", "does not match the caller", "is not a staff observation", "is recorded against", "Asset is not current", "A correction must restate", "invalid drill value", "Drill type cannot change"];
 const INDEPENDENCE_WORDING = "A different authorized staff member must verify this task";
 
 export type ReceiptRpcError = { code?: string; message?: string; details?: string | null } | null | undefined;

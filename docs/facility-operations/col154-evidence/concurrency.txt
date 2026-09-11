@@ -2,7 +2,7 @@
   "issue": "COL-154",
   "baseline": "col154_base347",
   "runtime": "native PostgreSQL scratch cluster hfo-col139-20260910-105544",
-  "recorded_at": "2026-09-11T01:48:41Z",
+  "recorded_at": "2026-09-11T02:09:09Z",
   "cases": {
     "two_records_one_generator": {
       "outcome": "second record waited on the occurrence and landed as a visible conflict; the first receipt stays effective; two records, one receipt",
