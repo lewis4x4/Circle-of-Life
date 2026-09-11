@@ -13,7 +13,7 @@ const authMock = vi.hoisted(() => ({
 
 const queryMock = vi.hoisted(() => ({
   data: undefined as
-    | { rows: []; importJobs: []; importJobsError: null }
+    | { rows: Record<string, unknown>[]; importJobs: []; importJobsError: null }
     | undefined,
   isFetching: false,
   error: null as Error | null,

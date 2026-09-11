@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -17,6 +19,7 @@ type FacilityMini = { id: string; name: string };
 type VendorMini = { id: string; name: string };
 
 export default function NewPurchaseOrderPage() {
+  const router = useRouter();
   const supabase = createClient();
   const { organizationId, appRole } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
@@ -113,7 +116,7 @@ export default function NewPurchaseOrderPage() {
       setLoadError(liErr.message);
       return;
     }
-    window.location.href = `/admin/vendors/purchase-orders/${po.id}`;
+    router.push(`/admin/vendors/purchase-orders/${po.id}`);
   }
 
   return (

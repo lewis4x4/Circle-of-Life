@@ -7,7 +7,7 @@ it("refuses a stale page's queue owner after another operator signs in",async()=
  getSession.mockResolvedValue({data:{session:{user:{id:"new-operator"}}}});
  let notify:(event:{data:unknown})=>void=()=>{};
  class Channel {port1={set onmessage(value:typeof notify){notify=value;}};port2={};}
- const postMessage=vi.fn(()=>Promise.resolve().then(()=>notify({data:{ok:true,state:{}}})));
+ const postMessage=vi.fn<(message: { item: { payload: unknown } }) => Promise<void>>(()=>Promise.resolve().then(()=>notify({data:{ok:true,state:{}}})));
  vi.stubGlobal("MessageChannel",Channel);
  vi.stubGlobal("navigator",{onLine:false,serviceWorker:{getRegistration:async()=>({active:{postMessage}})}});
  await expect(queueRoundingCompletion("task","resident",{quickStatus:"awake"},{ownerUserId:"old-operator",organizationId:"org",facilityId:"facility"})).rejects.toThrow(/operator|account/i);
@@ -17,7 +17,7 @@ it("preserves the first online request identity and time when falling back to th
  getSession.mockResolvedValue({data:{session:{user:{id:"operator"}}}});
  let notify:(event:{data:unknown})=>void=()=>{};
  class Channel {port1={set onmessage(value:typeof notify){notify=value;}};port2={};}
- const postMessage=vi.fn(()=>Promise.resolve().then(()=>notify({data:{ok:true,state:{}}})));
+ const postMessage=vi.fn<(message: { item: { payload: unknown } }) => Promise<void>>(()=>Promise.resolve().then(()=>notify({data:{ok:true,state:{}}})));
  vi.stubGlobal("MessageChannel",Channel);
  vi.stubGlobal("navigator",{onLine:false,serviceWorker:{getRegistration:async()=>({active:{postMessage}})}});
  const payload={quickStatus:"awake" as const,requestId:"bb36f9cf-fc96-47d3-aad6-676d649ee425",observedAt:"2026-09-07T12:00:00.000Z"};
@@ -29,7 +29,7 @@ it("assigns a durable identity to a newly queued legacy draft",async()=>{
  getSession.mockResolvedValue({data:{session:{user:{id:"operator"}}}});
  let notify:(event:{data:unknown})=>void=()=>{};
  class Channel {port1={set onmessage(value:typeof notify){notify=value;}};port2={};}
- const postMessage=vi.fn(()=>Promise.resolve().then(()=>notify({data:{ok:true,state:{}}})));
+ const postMessage=vi.fn<(message: { item: { payload: unknown } }) => Promise<void>>(()=>Promise.resolve().then(()=>notify({data:{ok:true,state:{}}})));
  vi.stubGlobal("MessageChannel",Channel);
  vi.stubGlobal("navigator",{onLine:false,serviceWorker:{getRegistration:async()=>({active:{postMessage}})}});
  const item=await queueRoundingCompletion("task","resident",{quickStatus:"awake"},{ownerUserId:"operator",organizationId:"org",facilityId:"facility"});

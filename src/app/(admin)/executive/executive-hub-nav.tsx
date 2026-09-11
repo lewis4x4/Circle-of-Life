@@ -28,6 +28,7 @@ import {
  */
 const PRIMARY = [
   { href: "/admin/executive", label: "Overview" },
+  { href: "/admin/stand-up", label: "Weekly Stand Up" },
   { href: "/admin/executive/standup", label: "Standup" },
   { href: "/admin/executive/reports", label: "Reports" },
   { href: "/admin/executive/nlq", label: "Haven Insight" },

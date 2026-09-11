@@ -149,7 +149,7 @@ for (const entry of ["console", "modal"] as const) {
     it("can resume a restored pending receipt after cancellation with no active medications", async () => {
       active = []; pending = [saved];
       render(show()); await waitFor(() => expect(cosign()).toBeEnabled());
-      fireEvent.click(screen.getByRole("button", { name: "Cancel", exact: true }));
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
       fireEvent.click(screen.getByRole("button", { name: "Resume saved count verification" }));
       expect(cosign()).toBeEnabled();
       expect(mock.save).not.toHaveBeenCalled();
@@ -158,7 +158,7 @@ for (const entry of ["console", "modal"] as const) {
     it("allows cancelling and resuming a blocked identity lookup", async () => {
       active = []; pending = [saved]; identities = { data: null, error: { message: "Unavailable" } };
       render(show()); await screen.findByRole("alert");
-      const cancel = screen.getByRole("button", { name: "Cancel", exact: true });
+      const cancel = screen.getByRole("button", { name: "Cancel" });
       expect(cancel).toBeEnabled(); fireEvent.click(cancel);
       expect(screen.queryByRole("button", { name: /^verify & co-sign$/i })).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Resume saved count verification" }));

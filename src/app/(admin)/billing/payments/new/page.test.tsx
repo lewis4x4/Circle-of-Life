@@ -8,7 +8,7 @@ type AnyRow = Record<string, unknown>;
 const mocks = vi.hoisted(() => ({
   searchParams: new URLSearchParams(""),
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
-  client: { from: () => ({}) as unknown },
+  client: { from: (() => ({})) as (table: string) => unknown },
 }));
 
 vi.mock("next/navigation", () => ({

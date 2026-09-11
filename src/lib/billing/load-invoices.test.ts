@@ -19,6 +19,7 @@ type FakeQueryResult = {
     status: string;
     balance_due: number;
     total: number;
+    adjustments?: number;
     invoice_date: string;
     due_date: string;
     updated_at: string;

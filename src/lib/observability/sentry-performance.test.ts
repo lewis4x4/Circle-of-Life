@@ -17,6 +17,7 @@ describe("Sentry performance privacy", () => {
 
   it("removes identifiers and query strings from transactions and spans", () => {
     const event = {
+      type: "transaction",
       transaction:
         "GET /admin/residents/11111111-1111-4111-8111-111111111111?resident=avery@example.com",
       request: {
@@ -24,6 +25,9 @@ describe("Sentry performance privacy", () => {
       },
       spans: [
         {
+          span_id: "1111111111111111",
+          trace_id: "22222222222222222222222222222222",
+          start_timestamp: 1,
           description:
             "GET https://api.test/residents/11111111-1111-4111-8111-111111111111?select=*",
           data: {

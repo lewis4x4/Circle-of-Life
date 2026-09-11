@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CalendarClock, Cog, Hammer, Plus } from "lucide-react";
@@ -32,6 +34,7 @@ type VendorOption = {
 };
 
 export default function OperationsAssetsPage() {
+  const router = useRouter();
   const { selectedFacilityId } = useFacilityStore();
   const [assets, setAssets] = useState<AssetRow[]>([]);
   const [vendors, setVendors] = useState<VendorOption[]>([]);
@@ -136,7 +139,7 @@ export default function OperationsAssetsPage() {
 
   function createMaintenanceTemplate(asset: AssetRow) {
     const params = new URLSearchParams({ asset: asset.id, name: asset.name, interval: String(asset.service_interval_days ?? "") });
-    window.location.assign(`/admin/operations/templates?${params.toString()}`);
+    router.push(`/admin/operations/templates?${params.toString()}`);
   }
 
   return (

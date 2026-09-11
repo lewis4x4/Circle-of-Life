@@ -7,7 +7,7 @@ const tooltipProviderMock = vi.fn(
   ({ children }: { children: React.ReactNode }) => <div data-testid="tooltip-provider">{children}</div>,
 );
 const serviceWorkerRegisterMock = vi.fn(() => <div data-testid="sw-register" />);
-const toasterMock = vi.fn(() => <div data-testid="toaster" />);
+const toasterMock = vi.fn<(props: { richColors?: boolean; closeButton?: boolean; position?: string }) => React.ReactNode>(() => <div data-testid="toaster" />);
 
 vi.mock("@/components/ui/tooltip", () => ({
   TooltipProvider: (props: { children: React.ReactNode; delay?: number; closeDelay?: number }) =>

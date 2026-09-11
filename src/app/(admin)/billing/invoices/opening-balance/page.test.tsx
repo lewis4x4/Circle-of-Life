@@ -14,7 +14,7 @@ type AnyRow = Record<string, unknown>;
 const mocks = vi.hoisted(() => ({
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
   rpc: vi.fn(),
-  client: { from: () => ({}) as unknown, rpc: vi.fn() },
+  client: { from: (() => ({})) as (table: string) => unknown, rpc: vi.fn() },
 }));
 
 vi.mock("next/navigation", () => ({

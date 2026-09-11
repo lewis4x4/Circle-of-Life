@@ -1,7 +1,6 @@
-import { Linter } from "eslint";
+import { Linter, type Rule } from "eslint";
 import { describe, expect, it } from "vitest";
 
-// @ts-expect-error — the rule file is .mjs and has no .d.ts
 import noDirectPrimitiveImport from "../../../eslint-rules/no-direct-primitive-import.mjs";
 
 function lint(code: string, filename = "src/app/(admin)/admin/v2/sample/page.tsx") {
@@ -18,7 +17,7 @@ function lint(code: string, filename = "src/app/(admin)/admin/v2/sample/page.tsx
         },
       },
       plugins: {
-        "ui-v2": { rules: { "no-direct-primitive-import": noDirectPrimitiveImport } },
+        "ui-v2": { rules: { "no-direct-primitive-import": noDirectPrimitiveImport as Rule.RuleModule } },
       },
       rules: { "ui-v2/no-direct-primitive-import": "error" },
     },

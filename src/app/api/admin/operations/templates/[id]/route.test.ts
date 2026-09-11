@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/admin/api-auth", () => ({
@@ -81,6 +82,7 @@ describe("operation template error boundary", () => {
       new Request("https://local.test/template", { method: "PATCH", body: JSON.stringify({ is_active: false }) }) as never,
       { params: Promise.resolve({ id: "template" }) },
     );
+    assert(response);
     const payload = await response.json();
 
     expect(response.status).toBe(500);
@@ -103,6 +105,7 @@ describe("operation template error boundary", () => {
       new Request("https://local.test/template", { method: "PATCH", body: JSON.stringify({ is_active: false }) }) as never,
       { params: Promise.resolve({ id: "template" }) },
     );
+    assert(response);
     const payload = await response.json();
 
     expect(response.status).toBe(500);
@@ -126,6 +129,7 @@ describe("operation template error boundary", () => {
       new Request("https://local.test/template", { method: "PATCH", body: JSON.stringify({ name: "Updated safety review" }) }) as never,
       { params: Promise.resolve({ id: "template" }) },
     );
+    assert(response);
     const payload = await response.json();
 
     expect(response.status).toBe(409);

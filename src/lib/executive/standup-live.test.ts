@@ -21,7 +21,7 @@ function client(tables: Tables, failedTable?: string) {
       from(table: string) {
         const operations: unknown[][] = [];
         queries.push({ table, operations });
-        let rows = tables[table];
+        let rows: Row[] | null | undefined = tables[table];
         const query = {
           select(columns: string) { operations.push(["select", columns]); return query; },
           eq(column: string, value: unknown) { operations.push(["eq", column, value]); rows = rows?.filter((r) => r[column] === value); return query; },

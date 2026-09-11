@@ -9,6 +9,15 @@ import {
 } from "./executive-nav-access";
 
 describe("executive nav access", () => {
+  it("exposes weekly entry only to its authorized reporting roles", () => {
+    const items = [{ key: "stand-up", href: "/admin/stand-up", label: "Weekly Stand Up" }];
+    for (const role of ["owner", "org_admin", "facility_admin"]) {
+      expect(applyExecutiveCommandNavToItems(items, role, false)).toEqual(items);
+      expect(canOpenExecutiveHubHref(role, "/admin/stand-up")).toBe(true);
+    }
+    expect(applyExecutiveCommandNavToItems(items, "nurse", false)).toEqual([]);
+    expect(applyExecutiveCommandNavToItems(items, "owner", true)).toEqual([]);
+  });
   it("keeps overview and standup for owner / org admin", () => {
     expect(canOpenExecutiveOverview("owner")).toBe(true);
     expect(canOpenExecutiveStandup("owner")).toBe(true);

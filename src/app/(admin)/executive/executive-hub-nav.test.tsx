@@ -73,7 +73,7 @@ describe("ExecutiveHubNav", () => {
     expect(screen.queryByRole("link", { name: "Overview" })).not.toBeInTheDocument();
     const drawer = await openSections();
     expect(drawer.getAllByRole("link").map((link) => link.textContent)).toEqual([
-      "Standup", "Standup history", "Standup compare",
+      "Weekly Stand Up", "Standup", "Standup history", "Standup compare",
     ]);
     expect(drawer.getAllByRole("link", { current: "page" })).toHaveLength(1);
     expect(drawer.getByRole("link", { current: "page" })).toHaveAccessibleName("Standup history");

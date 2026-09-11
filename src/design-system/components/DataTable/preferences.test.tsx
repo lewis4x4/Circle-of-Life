@@ -30,7 +30,7 @@ function createPreferencesFetch() {
       }),
       { status: 200, headers: { "content-type": "application/json" } },
     );
-  }) as typeof fetch & { mock: { calls: Array<[RequestInfo | URL, RequestInit | undefined]> } };
+  });
 }
 
 function Harness({ fetchImpl }: { fetchImpl?: typeof fetch }) {

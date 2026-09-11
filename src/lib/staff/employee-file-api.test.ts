@@ -33,7 +33,7 @@ let client: { from: ReturnType<typeof vi.fn>; rpc: ReturnType<typeof vi.fn>; sto
 let admin: { from: ReturnType<typeof vi.fn>; rpc: ReturnType<typeof vi.fn> };
 let sign: ReturnType<typeof vi.fn>;
 let role: string;
-let commandRpc: ReturnType<typeof vi.fn>;
+let commandRpc: ReturnType<typeof vi.fn<(name: string, payload: unknown) => Promise<QueryResult>>>;
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -50,7 +50,7 @@ function actor(options?: { appRole?: string; staffId?: string | null }) {
       admin,
       client: {
         auth: {
-          getClaims: vi.fn(async () => ({
+          getClaims: vi.fn<() => Promise<{ data: { claims: { sub: string; session_id?: string; auth_claim_version: number } }; error: null }>>(async () => ({
             data: {
               claims: {
                 sub: "user-1",
