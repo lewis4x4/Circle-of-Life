@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { registerRouteLeaveGuard, supportsRouteLeaveProtection, standUpHasDocumentEntry, useRouteTransitionPending, isRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { METRICS, dateLabel, reportDeadlineState, derivedValues, dollars, easternTime, metricDisplay, reportState, shiftDay, validateValues, type StandUpReport } from '@/lib/stand-up/model';
+import { METRICS, dateLabel, reportDeadlineState, derivedValues, dollars, easternTime, fieldState, metricDisplay, reportState, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
 import { EntryQuestions, entryValues, fieldsFor, type EntryFields } from './entry-fields';
 import { StandUpHistory } from './history';
@@ -148,7 +148,7 @@ export function StandUpEditor(props: Props) {
     if (!mounted.current || report.facility_id !== facility.id || report.week_start !== week) return;
     savedRef.current = report; setSaved(report); draftRef.current = fieldsFor(report.values); setDraft(draftRef.current); setPhase('saved'); onSaved(report);
   };
-  let values; let validationMessage = '';
+  let values: StandUpValues | undefined; let validationMessage = '';
   try { values = entryValues(draft); } catch (cause) { validationMessage = cause instanceof Error ? cause.message : 'Check the figures.'; }
   const complete = values ? derivedValues(values) : null;
   const missing = values ? METRICS.filter(metric => values[metric.key] === null) : [];
@@ -160,6 +160,10 @@ export function StandUpEditor(props: Props) {
   const staffingClosed = `${easternPart('year')}-${easternPart('month')}-${easternPart('day')}` >= week;
   let durationNeedsReview = !!saved?.overtime_issue;
   try { legacyOvertimeToMinutes(saved?.values.overtime_reported ?? null); } catch { durationNeedsReview = true; }
+  // The save path refuses every save, including autosave of other figures, while the stored notation is unreadable.
+  const overtimeError = durationNeedsReview && saved ? { id: 'overtime-review', message: `The saved overtime notation ${saved.values.overtime_reported} needs review. Enter hours and minutes. Until then this report cannot be saved, including autosave of other figures, or submitted.` } : undefined;
+  // A blank in review that is still a held import says so, so the administrator knows why it is blank.
+  const reviewDisplay = (key: MetricKey) => values && values[key] === null && fieldState(saved, key) === 'held_unit_unconfirmed' ? FIELD_STATE_TEXT.held_unit_unconfirmed : values ? metricDisplay(key, values[key]) : '';
   const saveText = !online ? 'Offline — changes stay in this open page' : phase === 'saving' ? 'Saving…' : phase === 'failed' ? 'Not saved — retry required' : dirty ? 'Unsaved changes' : saved ? `Saved ${easternTime(saved.updated_at)} Eastern` : 'No saved report yet';
   return <section aria-label={`${facility.name} entry`} className="space-y-5">
     {!browserProtected && <p role="alert" className="rounded border border-border p-3 text-sm">To enter figures safely, open Haven in an up-to-date Chrome, Edge, Firefox, or Safari browser. Haven could not establish a protected document entry in this browser. Saved reports remain available.</p>}
@@ -168,25 +172,25 @@ export function StandUpEditor(props: Props) {
       {prior && <Button variant="ghost" onClick={() => setHistory(value => !value)} aria-expanded={history}>Report history</Button>}
     </div>
     {saved?.entry_origin === 'imported' && !saved.last_submitted_at && <p className="border-l-2 border-border pl-3 text-sm">These figures were imported from the workbook. Check every section before submitting; filled fields do not mean administrator review is complete.</p>}
-    {durationNeedsReview && saved && <p role="alert" className="rounded border border-destructive p-3">The saved overtime notation {saved.values.overtime_reported} needs review. Enter the correct hours and minutes before saving this report.</p>}
+    {overtimeError && <p role="alert" className="rounded border border-destructive p-3">{overtimeError.message}</p>}
     {!online && <p role="status" className="rounded border border-border p-3 text-sm">Haven is offline. Keep this page open to retain unsaved entries. The shared Google workbook is your outage fallback while Drive is available.</p>}
     {historical && <section className="space-y-2 rounded border border-border p-4"><h3 className="font-medium">Historical report — {dateLabel(week)}</h3><p className="text-sm">Previous meetings are preserved. This is not the open reporting period.</p>{canManage && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={correction} disabled={routePending || phase === 'saving' || dirty || !!pending.current} onChange={event => setCorrection(event.target.checked)} /> Make a correction with a recorded reason</label>}</section>}
     {history && <StandUpHistory reports={props.reports} facilityId={facility.id} facilityName={facility.name} />}
     {review && values ? <section aria-label="Review report" className="space-y-4 rounded border border-border p-5">
       <h3 ref={reviewHeading} tabIndex={-1} className="text-lg font-semibold outline-none">Review {facility.name} · {dateLabel(week)}</h3><p className="text-sm text-muted-foreground">Check the destination, period and all sixteen figures. Submission confirms your review; payroll verification is separate.</p>
       {missing.length > 0 && <p role="alert">Still needed: {missing.map(metric => metric.label).join(', ')}.</p>}
-      <dl className="grid gap-x-8 sm:grid-cols-2">{METRICS.map(metric => <div key={metric.key} className="flex justify-between gap-3 border-b border-border py-3 text-sm"><dt>{metric.label}</dt><dd className="whitespace-nowrap font-medium tabular-nums">{metricDisplay(metric.key, values[metric.key])}</dd></div>)}</dl>
+      <dl className="grid gap-x-8 sm:grid-cols-2">{METRICS.map(metric => <div key={metric.key} className="flex justify-between gap-3 border-b border-border py-3 text-sm"><dt>{metric.label}</dt><dd className="whitespace-nowrap font-medium tabular-nums">{reviewDisplay(metric.key)}</dd></div>)}</dl>
       {!staffingClosed && <p className="text-sm">Sunday preparation stays a draft until the Monday–Sunday payroll period has closed.</p>}
       <div className="flex flex-wrap gap-3"><Button variant="outline" onClick={() => setReview(false)}>Back to figures</Button><Button className="h-auto min-h-10 whitespace-normal text-left" disabled={routePending || !online || phase === 'saving' || advancedBusy || complete?.completed_fields !== 16 || !staffingClosed} onClick={() => void save('ready')}>Submit {facility.name} for {dateLabel(week)}</Button></div>
     </section> : <form noValidate id="stand-up-entry" className="space-y-5" onSubmit={event => { event.preventDefault(); void save('draft'); }}>
       <p className="text-sm text-muted-foreground">Leave a figure blank if it is not yet known. Enter 0 when there are none.</p>
       {prior && <p className="text-xs text-muted-foreground">Reference figures below are from {dateLabel(prior.week_start)}{prior.week_start !== shiftDay(week, -7) ? '; the previous calendar week is missing' : ', the previous reporting week'}. They are not copied into this report.</p>}
-      <EntryQuestions fields={draft} onChange={change} disabled={!editable || advancedBusy || conflict || routePending} week={week} prior={prior?.values} priorWeek={prior ? dateLabel(prior.week_start) : undefined} />
-      {historical && correction && <label className="block text-sm font-medium">Correction reason<Input value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
+      <EntryQuestions fields={draft} onChange={change} disabled={!editable || advancedBusy || conflict || routePending} week={week} prior={prior} priorWeek={prior ? dateLabel(prior.week_start) : undefined} overtimeError={overtimeError} />
+      {historical && correction && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
     </form>}
     <aside aria-label="Save and submit report" className="sticky bottom-0 z-10 space-y-3 border-y border-border bg-background px-1 py-4 shadow-sm">
       {error && <div role="alert" className="rounded border border-destructive p-3 text-sm">{error}</div>}
-      <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><p className="font-semibold">{facility.name} · {dateLabel(week)}</p><p role="status" className="mt-1 text-sm">{routePending ? 'Opening page — editing paused' : saveText}</p>{saved?.updated_by_name && <p className="mt-1 text-xs text-muted-foreground">Last saved by {saved.updated_by === props.userId ? 'you' : saved.updated_by_name}</p>}<p className="mt-1 text-xs text-muted-foreground">{complete?.completed_fields ?? '—'}/16 provided · Open beds: {complete?.total_beds_open ?? 'Not provided'} · Average rent: {dollars(complete?.average_rent_cents ?? null)}</p></div>
+      <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><p className="font-semibold">{facility.name} · {dateLabel(week)}</p><p role="status" className="mt-1 text-sm">{routePending ? 'Opening page — editing paused' : saveText}</p>{saved?.updated_by_name && <p className="mt-1 text-xs text-muted-foreground">Last saved by {saved.updated_by === props.userId ? 'you' : saved.updated_by_name}</p>}<p className="mt-1 text-xs text-muted-foreground">{complete?.completed_fields ?? '—'}/16 provided · Open beds: {complete?.total_beds_open ?? FIELD_STATE_TEXT.not_provided} · Average rent: {dollars(complete?.average_rent_cents ?? null)}</p></div>
         {!review && <div className="flex flex-wrap gap-2"><Button type="submit" form="stand-up-entry" variant="outline" disabled={routePending || !online || !editable || phase === 'saving' || advancedBusy || conflict || (!dirty && !pending.current)}>{phase === 'failed' ? 'Retry save' : 'Save draft'}</Button><Button ref={reviewButton} disabled={routePending || !editable || !online || phase === 'saving' || advancedBusy || conflict || !!pending.current} onClick={() => { if (validationMessage) { setError(validationMessage); return; } setReview(true); }}>Review and submit</Button></div>}
       </div>
       {(dirty || conflict) && <Button variant="ghost" disabled={routePending || phase === 'saving' || advancedBusy || !!pending.current} onClick={discard}>{conflict ? 'Discard my edits and load saved figures' : 'Discard unsaved changes'}</Button>}

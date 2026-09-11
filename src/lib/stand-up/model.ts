@@ -29,6 +29,10 @@ export const FIELD_STATE_VERSION = 1
 export const FIELD_STATE_CODES: Record<Exclude<FieldState, 'no_report'>, number> = { provided: 0, not_provided: 1, held_unit_unconfirmed: 2, needs_duration_review: 3, source_held: 4 }
 export const FIELD_STATE_TEXT: Record<Exclude<FieldState, 'provided'>, string> = { not_provided: 'Not provided', held_unit_unconfirmed: 'Held: unit unconfirmed', needs_duration_review: 'Needs duration review', source_held: 'Source held for review', no_report: 'No report' }
 export const HELD_UNIT_DISPOSITION = 'historical_unit_unconfirmed'
+/** Outage fallback named in the recovery section and on the sign-in page. */
+export const STAND_UP_WORKBOOK_URL = 'https://docs.google.com/spreadsheets/d/1rUozaY9YLhD77lS_jjdRbUW2LsdvgS1r/edit'
+export const STAND_UP_WORKBOOK_LINK_TEXT = 'Open the shared Stand Up workbook'
+export const STAND_UP_OUTAGE_BACKUP_TEXT = 'No internet: use the JSON or CSV backup you downloaded last week.'
 export const REPORT_STATES = ['Not started', 'Draft', 'Imported, awaiting review', 'Submitted', 'Changes awaiting resubmission'] as const
 export function emptyValues(): StandUpValues { return Object.fromEntries(METRIC_KEYS.map(key => [key, null])) as StandUpValues }
 export function validateValues(input: unknown): string[] {
