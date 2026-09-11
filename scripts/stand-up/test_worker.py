@@ -6,8 +6,9 @@ from datetime import date, datetime, timezone
 from unittest.mock import patch
 
 from workbook import KEYS, parse_workbook, patch_workbook
-from worker import BridgeError, Haven, HttpFailure, changed_prior_weeks, file_target, publish_front_office, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
+from worker import AggregateReader, BridgeError, Haven, HttpFailure, changed_prior_weeks, file_target, publish_front_office, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
 from test_workbook import MAP, fixture
+import worker
 
 
 class FakeState:
@@ -45,6 +46,26 @@ def workspace():
 
 
 class WorkerTests(unittest.TestCase):
+    def test_service_mode_rejects_google_probe_before_state_or_network(self):
+        args = ['worker.py', '--state-dir', '/unused', '--facility-map', '/unused.json', '--publish', '--publisher-service', '--probe-google']
+        with patch('sys.argv', args), patch('worker.State') as state, patch('worker.Google') as google:
+            with self.assertRaises(BridgeError):
+                worker.main()
+            state.assert_not_called()
+            google.assert_not_called()
+
+    def test_service_publisher_calls_only_scoped_aggregate_rpc(self):
+        calls = []
+        def request(url, method, body, headers):
+            calls.append((url, json.loads(body)))
+            return b'{"facilities":[],"reports":[]}', {}
+        with patch.dict('os.environ', {'SUPABASE_SERVICE_ROLE_KEY': 'synthetic-service-key', 'STAND_UP_ORGANIZATION_ID': '00000000-0000-4000-8000-000000000001'}), patch('worker.http', side_effect=request):
+            reader = AggregateReader(date(2026, 9, 7))
+            reader.workspace()
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(calls[0][0].endswith('/rest/v1/rpc/stand_up_export_aggregate'))
+        self.assertEqual(calls[0][1]['p_week_start'], '2026-09-07')
+
     def test_reviewed_haven_choice_updates_file_and_stops_conflict_loop(self):
         original = fixture()
         parsed = parse_workbook(original, MAP, 'rehearsal', 'file.xlsx')

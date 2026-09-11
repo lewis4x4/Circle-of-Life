@@ -164,6 +164,19 @@ class Google:
         return http("https://www.googleapis.com/upload/drive/v3/files/" + urllib.parse.quote(file_id, safe="") + "?uploadType=media", "PATCH", data, {"authorization": "Bearer " + self.token, "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "If-Match": etag})
 
 
+class AggregateReader:
+    """Haven-hosted publisher can only invoke the aggregate export RPC here."""
+    def __init__(self, week):
+        self.week = week
+        self.key = required("SUPABASE_SERVICE_ROLE_KEY")
+        self.organization = required("STAND_UP_ORGANIZATION_ID")
+        uuid.UUID(self.organization)
+
+    def workspace(self):
+        raw, _ = http(HAVEN + "/rest/v1/rpc/stand_up_export_aggregate", "POST", compact({"p_organization_id": self.organization, "p_week_start": self.week.isoformat()}), {"apikey": self.key, "authorization": "Bearer " + self.key, "content-type": "application/json"})
+        return json.loads(raw)
+
+
 def file_target(mode):
     rehearsal = required("STAND_UP_REHEARSAL_FILE_ID")
     production = required("STAND_UP_PRODUCTION_FILE_ID")
@@ -422,8 +435,11 @@ def main():
     parser.add_argument("--adopt", choices=("file", "haven"), help="Explicitly select initial authority; does not resolve later conflicts")
     parser.add_argument("--google", action="store_true")
     parser.add_argument("--publish", action="store_true")
+    parser.add_argument("--publisher-service", action="store_true", help="Haven-hosted aggregate read only; cannot be combined with Google or adoption")
     parser.add_argument("--probe-google", action="store_true", help="Rehearsal copy only; verifies conditional writes and restores exact original bytes")
     args = parser.parse_args()
+    if args.publisher_service and (not args.publish or args.google or args.probe_google or args.adopt):
+        raise BridgeError("Service publisher is aggregate-read-only; Google recovery needs an authenticated operator")
     if args.probe_google:
         if args.mode != "rehearsal":
             raise BridgeError("Provider probe may only target rehearsal")
@@ -439,6 +455,13 @@ def main():
     if week.weekday() != 0:
         raise BridgeError("Week must be Monday")
     state = State(args.state_dir)
+    if args.publisher_service:
+        workspace = AggregateReader(week).workspace()
+        if not set(mapping.values()).issubset({f["id"] for f in workspace["facilities"]}):
+            raise BridgeError("Publisher mapping does not belong to the configured organization")
+        result = publish_front_office(state, workspace, mapping, week)
+        print(json.dumps({"front_office": result, "google": "disabled", "checked_at": datetime.now(timezone.utc).isoformat()}))
+        return
     haven = Haven(state)
     workspace = haven.command("workspace", {})
     if not set(mapping.values()).issubset({f["id"] for f in workspace["facilities"]}):

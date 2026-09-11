@@ -83,6 +83,8 @@ python3 scripts/stand-up/worker.py \
 
 Run the once-only command under an approved supervisor at the desired interval (proposed one minute; not an established SLA). Google and Front Office lanes report independent results. Google mapping errors, conflict review, or outages must not prevent the publisher from reading current Haven values. Nonzero exit requires operator attention; log metadata only. The implementation does not install a scheduler or create credentials automatically.
 
+The Haven-hosted publisher can also run independently using `--publish --publisher-service`. It requires `SUPABASE_SERVICE_ROLE_KEY` and `STAND_UP_ORGANIZATION_ID` on the Haven side and calls only the scoped aggregate export RPC. It cannot perform Google recovery or adoption. Front Office receives only the HMAC-signed numeric payload, never the Haven key. Use a versioned installed copy under a supervisor, with a private state directory; source credentials stay on the Haven host. This mode does not require an operator refresh token or Google OAuth.
+
 ## Recovery and restart behavior
 
 - Before a remote write, persist the exact body, expected source version/ETag and intended baseline.
