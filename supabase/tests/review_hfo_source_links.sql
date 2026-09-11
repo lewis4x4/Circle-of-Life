@@ -31,8 +31,8 @@ CREATE FUNCTION pg_temp.c_expect(stmt text,fragment text,detail_fragment text DE
  RAISE EXCEPTION 'COL-147 expected rejection containing "%": %',fragment,stmt;
 END $$;
 
--- Nothing in the migrations registers a source or delivers anything.
-SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_source_adapters) AND NOT EXISTS(SELECT 1 FROM public.operation_source_rules),'a migration registered a source adapter or rule');
+-- Migration 346 registers no source; the only adapters and rules in the migrations are the two COL-154 domain adapters (347), proven by their own probe.
+SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_source_adapters WHERE source_key NOT IN('drill-log','asset-observation')) AND NOT EXISTS(SELECT 1 FROM public.operation_source_rules WHERE source_key NOT IN('drill-log','asset-observation')),'a migration registered a source adapter or rule beyond COL-154');
 SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_source_events) AND NOT EXISTS(SELECT 1 FROM public.operation_source_event_attempts),'a migration delivered a source event');
 SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_execution_receipts WHERE source_event_id IS NOT NULL),'a migration wrote a source receipt');
 SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_audit_log WHERE event_type IN('source_linked','source_pending','source_invalidated')),'a migration wrote a source audit row');
@@ -734,7 +734,7 @@ DROP FUNCTION haven.col147_probe_audit_bomb();
 -- 10. Reads: the site administrator sees the ledger, attempts and the source receipts in order; generic audit payloads stay hidden; the public RPCs are invokers; earlier probes' invariants hold.
 SELECT pg_temp.c_login('admin_a');
 SET LOCAL ROLE authenticated;
-SELECT pg_temp.c_assert((SELECT count(*)>=20 FROM public.operation_source_events) AND (SELECT count(*)>=4 FROM public.operation_source_event_attempts) AND (SELECT count(*)=4 FROM public.operation_source_adapters WHERE status='registered'),'site administrator cannot read the ledger');
+SELECT pg_temp.c_assert((SELECT count(*)>=20 FROM public.operation_source_events) AND (SELECT count(*)>=4 FROM public.operation_source_event_attempts) AND (SELECT count(*)=4 FROM public.operation_source_adapters WHERE status='registered' AND source_key LIKE 'probe-%'),'site administrator cannot read the ledger');
 SELECT pg_temp.c_assert((SELECT array_agg(receipt_kind||':'||coalesce(source_record_version,'-') ORDER BY recorded_at)=ARRAY['performance:1','verification:-','performance:2','reversal:3','performance:-'] FROM public.operation_execution_receipts WHERE task_instance_id=pg_temp.rid('occ_res_d0')),'source history not readable in recorded order');
 SELECT pg_temp.c_assert((SELECT count(*)=0 FROM public.audit_log WHERE table_name IN('operation_source_events','operation_source_event_attempts','operation_source_adapters','operation_source_rules')),'generic audit payloads of the ledger leaked');
 RESET ROLE;
