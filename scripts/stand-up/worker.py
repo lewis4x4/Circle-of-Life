@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -155,13 +156,48 @@ class Google:
         raw, _ = http("https://oauth2.googleapis.com/token", "POST", form, {"content-type": "application/x-www-form-urlencoded"})
         self.token = json.loads(raw)["access_token"]
 
+    def metadata(self, file_id):
+        fields = "id,mimeType,etag,version,headRevisionId,md5Checksum,fileSize,labels(trashed)"
+        raw, _ = http("https://www.googleapis.com/drive/v2/files/" + urllib.parse.quote(file_id, safe="") + "?" + urllib.parse.urlencode({"fields": fields, "supportsAllDrives": "true"}), headers={"authorization": "Bearer " + self.token})
+        meta = json.loads(raw)
+        if (meta.get("id") != file_id or meta.get("mimeType") != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                or meta.get("labels", {}).get("trashed") is not False or not strong_etag(meta.get("etag"))
+                or not isinstance(meta.get("version"), str) or not meta["version"].isdigit()
+                or not isinstance(meta.get("headRevisionId"), str) or not meta["headRevisionId"]
+                or not re.fullmatch(r"[a-fA-F0-9]{32}", str(meta.get("md5Checksum", "")))
+                or not isinstance(meta.get("fileSize"), str) or not meta["fileSize"].isdigit()
+                or not 0 < int(meta["fileSize"]) <= MAX_BYTES):
+            raise BridgeError("Google snapshot metadata lacks a valid binary revision and strong ETag")
+        return meta
+
     def download(self, file_id):
-        return http("https://www.googleapis.com/drive/v3/files/" + urllib.parse.quote(file_id, safe="") + "?alt=media", headers={"authorization": "Bearer " + self.token})
+        # Google can briefly expose changing metadata just after a write. Retry
+        # only complete read-only snapshots, never carry an old ETag forward.
+        for attempt in range(3):
+            before = self.metadata(file_id)  # Malformed metadata fails immediately.
+            raw, _ = http("https://www.googleapis.com/drive/v3/files/" + urllib.parse.quote(file_id, safe="") + "?alt=media&supportsAllDrives=true", headers={"authorization": "Bearer " + self.token})
+            after = self.metadata(file_id)
+            if before != after:
+                reason = "metadata_changed"
+            elif len(raw) != int(before["fileSize"]) or hashlib.md5(raw).hexdigest() != before["md5Checksum"].lower():
+                reason = "checksum_or_size_mismatch"
+            else:
+                return raw, {"ETag": before["etag"], "X-Haven-Drive-Version": before["version"], "X-Haven-Drive-Head-Revision": before["headRevisionId"]}
+            print(json.dumps({"google_snapshot": reason, "attempt": attempt + 1, "read_only": True}), file=sys.stderr)
+            if attempt < 2:
+                time.sleep(0.25 * (attempt + 1))
+        raise BridgeError("Workbook snapshot did not stabilize after three complete reads (" + reason + "); no stable snapshot or write")
 
     def upload(self, file_id, data, etag):
-        if not etag:
-            raise BridgeError("Provider did not supply an ETag; conditional overwrite is unavailable")
-        return http("https://www.googleapis.com/upload/drive/v3/files/" + urllib.parse.quote(file_id, safe="") + "?uploadType=media", "PATCH", data, {"authorization": "Bearer " + self.token, "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "If-Match": etag})
+        if not strong_etag(etag):
+            raise BridgeError("A strong observed ETag is required; conditional overwrite is unavailable")
+        # Live rehearsal proved v3 media PATCH ignored If-Match; v2 PUT rejected
+        # a previously valid stale ETag. Never silently fall back to v3 writes.
+        return http("https://www.googleapis.com/upload/drive/v2/files/" + urllib.parse.quote(file_id, safe="") + "?uploadType=media&supportsAllDrives=true", "PUT", data, {"authorization": "Bearer " + self.token, "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "If-Match": etag})
+
+
+def strong_etag(value):
+    return isinstance(value, str) and bool(re.fullmatch(r'"[\x21\x23-\x7e]+"', value))
 
 
 class AggregateReader:
@@ -184,7 +220,7 @@ def file_target(mode):
         raise BridgeError("Rehearsal and production file IDs must differ")
     if mode == "production":
         proof = json.loads(Path(required("STAND_UP_PROVIDER_PROOF")).read_text())
-        if proof.get("rehearsal_file_id") != rehearsal or not proof.get("conditional_rejection") or not proof.get("unknown_outcome_readback") or not proof.get("recalculation_verified"):
+        if proof.get("transport") != "drive-v2-conditional-media-put" or not proof.get("real_stale_etag_rejection") or proof.get("rehearsal_file_id") != rehearsal or not proof.get("conditional_rejection") or not proof.get("unknown_outcome_readback") or not proof.get("recalculation_verified"):
             raise BridgeError("Production requires retained rehearsal conditional-write and recovery evidence")
         return production
     return rehearsal
@@ -200,11 +236,12 @@ def source_payload(workspace, facility_map, week, sequence, now=None):
     for name in FACILITIES:
         prefix = PREFIXES[name]
         report = by_facility.get(facility_map[name])
-        rows.extend([{"metric": prefix + "_reported", "value": int(report is not None)}, {"metric": prefix + "_ready", "value": int(report is not None and report["status"] == "ready")}, {"metric": prefix + "_revision", "value": report["version"] if report else 0}])
-        if not report:
-            continue
-        if set(report["values"]) != set(KEYS):
+        if report and set(report["values"]) != set(KEYS):
             raise BridgeError("Unexpected source metric contract")
+        reported = report is not None and any(value is not None for value in report["values"].values())
+        rows.extend([{"metric": prefix + "_reported", "value": int(reported)}, {"metric": prefix + "_ready", "value": int(reported and report["status"] == "ready")}, {"metric": prefix + "_revision", "value": report["version"] if report else 0}])
+        if not reported:
+            continue  # An empty recovery baseline is not submitted facility data.
         as_of = report.get("source_as_of")
         if as_of:
             stamp = datetime.fromisoformat(as_of.replace("Z", "+00:00"))
@@ -288,7 +325,7 @@ def recover_pending_google(state, google, file_id):
 
 
 def probe_google(state, google, file_id):
-    """Rehearsal only: conditional rejection, unique-byte unknown outcome, and restoration."""
+    """Rehearsal only: real stale-ETag rejection and durable exact-byte restoration."""
     if state.data.get("probe_original"):
         if state.data.get("probe_file_id") != file_id:
             raise BridgeError("Interrupted probe belongs to a different rehearsal copy")
@@ -297,49 +334,72 @@ def probe_google(state, google, file_id):
         if hashlib.sha256(current).hexdigest() not in (state.data["probe_after"], hashlib.sha256(original).hexdigest()):
             raise BridgeError("Rehearsal changed during probe; original retained for operator recovery")
         if current != original:
+            expected = state.data.get("probe_restore_etag")
+            if expected and expected != headers.get("ETag"):
+                raise BridgeError("Rehearsal revision changed before restoration; operator review required")
+            state.data["probe_phase"] = "restoring"
+            state.save()
             google.upload(file_id, original, headers.get("ETag"))
         restored, _ = google.download(file_id)
         if restored != original:
             raise BridgeError("Rehearsal restoration not verified")
         state.data.pop("probe_original")
+        state.data["probe_phase"] = "interrupted_restored"
         state.save()
         raise BridgeError("Interrupted rehearsal restored; rerun probe for complete evidence")
     original, headers = google.download(file_id)
-    if not headers.get("ETag"):
-        raise BridgeError("No ETag returned; provider concurrency support not proven")
+    if not strong_etag(headers.get("ETag")):
+        raise BridgeError("No strong ETag returned; provider concurrency support not proven")
+    # ZIP comments change bytes while preserving all visible values and formulas.
+    def with_comment(label):
+        buffer = io.BytesIO(original)
+        with zipfile.ZipFile(buffer, 'a') as archive:
+            archive.comment = (label + " " + str(uuid.uuid4())).encode()
+        return buffer.getvalue()
+    changed = with_comment("Haven rehearsal")
+    stale_payload = with_comment("Haven stale-write rejection probe")
+    state.data.update(probe_original=base64.b64encode(original).decode(), probe_after=hashlib.sha256(changed).hexdigest(),
+                      probe_file_id=file_id, probe_phase="writing_unique_bytes", probe_original_etag=headers["ETag"])
+    state.data.pop("probe_restore_etag", None)
+    state.save()  # Original and unique expected digest are durable before any upload.
     try:
-        google.upload(file_id, original, '"haven-deliberately-invalid-etag"')
+        google.upload(file_id, changed, headers["ETag"])
+    except BridgeError:
+        pass  # Resolve unknown outcomes by readback, never blind retries.
+    actual, latest_headers = google.download(file_id)
+    if actual != changed or latest_headers.get("ETag") == headers["ETag"]:
+        raise BridgeError("Unique-byte write not confirmed with a new revision; original retained")
+    state.data.update(probe_restore_etag=latest_headers["ETag"], probe_phase="rejecting_real_stale_etag")
+    state.save()
+    try:
+        google.upload(file_id, stale_payload, headers["ETag"])
     except HttpFailure as exc:
         if exc.status != 412:
             raise
     else:
-        raise BridgeError("Provider ignored invalid If-Match; automatic overwrite must remain disabled")
-    # A ZIP comment changes bytes without changing visible workbook values or formulas.
-    buffer = io.BytesIO(original)
-    with zipfile.ZipFile(buffer, 'a') as archive:
-        archive.comment = ("Haven rehearsal " + str(uuid.uuid4())).encode()
-    changed = buffer.getvalue()
-    state.data.update(probe_original=base64.b64encode(original).decode(), probe_after=hashlib.sha256(changed).hexdigest(), probe_file_id=file_id)
+        raise BridgeError("Provider accepted a stale ETag; automatic overwrite must remain disabled")
+    unchanged, unchanged_headers = google.download(file_id)
+    if unchanged != changed or unchanged_headers != latest_headers:
+        raise BridgeError("Workbook or revision changed during stale rejection; original retained")
+    state.data["probe_phase"] = "restoring"
     state.save()
-    try:
-        google.upload(file_id, changed, headers.get("ETag"))
-    except BridgeError:
-        pass  # Deliberately resolve success/unknown by a fresh read, never by retrying blind.
-    actual, latest_headers = google.download(file_id)
-    if actual != changed:
-        raise BridgeError("Unknown-outcome probe not confirmed; original retained for safe recovery")
-    google.upload(file_id, original, latest_headers.get("ETag"))
+    google.upload(file_id, original, latest_headers["ETag"])
     restored, _ = google.download(file_id)
     if restored != original:
         raise BridgeError("Probe restore readback differs; original retained")
-    proof = {"rehearsal_file_id": file_id, "conditional_rejection": True, "unknown_outcome_readback": True, "recalculation_verified": False, "restored_sha256": hashlib.sha256(original).hexdigest(), "verified_at": datetime.now(timezone.utc).isoformat()}
+    proof = {"rehearsal_file_id": file_id, "transport": "drive-v2-conditional-media-put", "conditional_rejection": True,
+             "real_stale_etag_rejection": True, "unknown_outcome_readback": True, "recalculation_verified": False,
+             "restored_sha256": hashlib.sha256(original).hexdigest(), "verified_at": datetime.now(timezone.utc).isoformat()}
     state.data.pop("probe_original")
+    state.data["probe_phase"] = "complete"
     state.data["provider_proof"] = proof
     state.save()
     proof_path = state.directory / "provider-proof.json"
-    with proof_path.open("w") as handle:
-        proof_path.chmod(0o600)
+    descriptor = os.open(proof_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(descriptor, "w") as handle:
         json.dump(proof, handle, indent=2)
+        handle.flush()
+        os.fsync(handle.fileno())
     print(json.dumps({"provider_probe": "passed", "restoration": "verified"}))
 
 
@@ -378,6 +438,13 @@ def synchronize(state, haven, google, mapping, week, mode, adopt=None):
                         raise BridgeError("Outage changes need conflict/clear review in Haven; workbook unchanged")
                     haven.mutate("commit_recovery", {"preview_id": preview["preview_id"], "facility_id": facility, "week_start": week.isoformat(), "resolutions": {}, "confirm_clears": False})
                 exported = haven.command("export", {"facility_id": facility, "week_start": week.isoformat()})
+        elif exported["baseline_id"] is None and values == dict.fromkeys(KEYS) and exported["values"] == dict.fromkeys(KEYS):
+            # A genuinely empty new week needs a revision so later outage edits
+            # have an immutable three-way recovery baseline. No data is inferred.
+            haven.mutate("save", {"facility_id": facility, "week_start": week.isoformat(), "expected_version": exported["version"],
+                                  "values": dict.fromkeys(KEYS), "status": "draft", "as_of": None,
+                                  "reason": "Empty weekly fallback initialization", "provenance": {"file_id": file_id, "schema_version": "standup-2026-v1"}})
+            exported = haven.command("export", {"facility_id": facility, "week_start": week.isoformat()})
         elif values != exported["values"] or exported["baseline_id"] is None:
             if adopt not in ("file", "haven"):
                 raise BridgeError("First synchronization needs explicit --adopt file|haven after reviewing both versions")

@@ -3,12 +3,13 @@ import hashlib
 import json
 import unittest
 from datetime import date, datetime, timezone
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 
 from workbook import KEYS, parse_workbook, patch_workbook
 from worker import AggregateReader, BridgeError, Haven, HttpFailure, changed_prior_weeks, file_target, publish_front_office, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
 from test_workbook import MAP, fixture
 import worker
+from pathlib import Path
 
 
 class FakeState:
@@ -45,7 +46,213 @@ def workspace():
     return {'reports': [{'facility_id': MAP['Homewood'], 'week_start': '2026-09-07', 'status': 'draft', 'version': 1, 'source_as_of': '2026-09-07T12:00:00Z', 'updated_at': '2026-09-11T01:00:00Z', 'values': {**dict.fromkeys(KEYS), 'current_total_census': 0}}]}
 
 
+class ProbeGoogle:
+    def __init__(self, body, interrupt_restore=False, ignore_stale=False):
+        self.body, self.version, self.uploads = body, 1, []
+        self.interrupt_restore, self.ignore_stale = interrupt_restore, ignore_stale
+
+    def download(self, file_id):
+        return self.body, {"ETag": '"v%d"' % self.version, "X-Haven-Drive-Version": str(self.version)}
+
+    def upload(self, file_id, body, etag):
+        self.uploads.append((body, etag))
+        if etag != '"v%d"' % self.version and not self.ignore_stale:
+            raise HttpFailure(412)
+        if self.interrupt_restore and len(self.uploads) == 3:
+            raise BridgeError("interrupted before restore")
+        self.body = body
+        self.version += 1
+        return b'{}', {}
+
+
+class GoogleTransportTests(unittest.TestCase):
+    def client(self):
+        client = object.__new__(worker.Google)
+        client.token = "synthetic-token"
+        return client
+
+    def metadata(self, body=b"binary"):
+        return {"id": "file", "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "etag": '"v1"', "version": "1", "headRevisionId": "revision1", "md5Checksum": hashlib.md5(body).hexdigest(), "fileSize": str(len(body)), "labels": {"trashed": False}}
+
+    def test_stable_metadata_associates_binary_with_v2_etag(self):
+        meta = json.dumps(self.metadata()).encode()
+        with patch('worker.http', side_effect=[(meta, {}), (b'binary', {}), (meta, {})]) as request:
+            body, headers = self.client().download('file')
+        self.assertEqual(body, b'binary')
+        self.assertEqual(headers['ETag'], '"v1"')
+        self.assertIn('/drive/v2/files/', request.call_args_list[0].args[0])
+        self.assertIn('/drive/v3/files/', request.call_args_list[1].args[0])
+
+    def test_metadata_race_rejected(self):
+        before = self.metadata()
+        after = {**before, "version": "2", "etag": '"v2"'}
+        with patch('worker.http', side_effect=[(json.dumps(before).encode(), {}), (b'binary', {}), (json.dumps(after).encode(), {})] * 3) as request, patch('worker.time.sleep'), patch('builtins.print'):
+            with self.assertRaisesRegex(BridgeError, 'three complete reads.*metadata_changed'):
+                self.client().download('file')
+            self.assertEqual(request.call_count, 9)
+
+    def test_checksum_and_size_mismatch_rejected(self):
+        for body in (b'wrong!', b'longer-binary'):
+            meta = json.dumps(self.metadata()).encode()
+            with patch('worker.http', side_effect=[(meta, {}), (body, {}), (meta, {})] * 3) as request, patch('worker.time.sleep'), patch('builtins.print'):
+                with self.assertRaisesRegex(BridgeError, 'three complete reads.*checksum_or_size_mismatch'):
+                    self.client().download('file')
+                self.assertEqual(request.call_count, 9)
+
+    def test_transient_snapshot_race_retries_fresh_then_stabilizes(self):
+        before = self.metadata()
+        after = {**before, "version": "2", "etag": '"v2"', "headRevisionId": "revision2"}
+        sequence = [(json.dumps(before).encode(), {}), (b'binary', {}), (json.dumps(after).encode(), {}), (json.dumps(after).encode(), {}), (b'binary', {}), (json.dumps(after).encode(), {})]
+        with patch('worker.http', side_effect=sequence) as request, patch('worker.time.sleep') as sleep, patch('builtins.print'):
+            body, headers = self.client().download('file')
+        self.assertEqual(request.call_count, 6)
+        self.assertEqual(headers['ETag'], '"v2"')
+        self.assertEqual(body, b'binary')
+        sleep.assert_called_once_with(0.25)
+        self.assertTrue(all(c.kwargs.get('method', 'GET') == 'GET' for c in request.call_args_list))
+
+    def test_transient_checksum_mismatch_retries_full_snapshot(self):
+        meta = json.dumps(self.metadata()).encode()
+        sequence = [(meta, {}), (b'wrong!', {}), (meta, {}), (meta, {}), (b'binary', {}), (meta, {})]
+        with patch('worker.http', side_effect=sequence) as request, patch('worker.time.sleep'), patch('builtins.print'):
+            self.assertEqual(self.client().download('file')[0], b'binary')
+        self.assertEqual(request.call_count, 6)
+
+    def test_malformed_metadata_not_retried(self):
+        meta = {**self.metadata(), 'etag': 'W/"weak"'}
+        with patch('worker.http', return_value=(json.dumps(meta).encode(), {})) as request, patch('worker.time.sleep') as sleep:
+            with self.assertRaises(BridgeError):
+                self.client().download('file')
+        self.assertEqual(request.call_count, 1)
+        sleep.assert_not_called()
+
+    def test_upload_only_v2_strong_conditional_put(self):
+        with patch('worker.http', return_value=(b'{}', {})) as request:
+            for etag in ('*', 'W/"v1"', '', 'v1'):
+                with self.assertRaises(BridgeError):
+                    self.client().upload('file', b'body', etag)
+            request.assert_not_called()
+            self.client().upload('file', b'body', '"v1"')
+            self.assertIn('/upload/drive/v2/files/', request.call_args.args[0])
+            self.assertEqual(request.call_args.args[1], 'PUT')
+            self.assertEqual(request.call_args.args[3]['If-Match'], '"v1"')
+
+    def test_probe_real_stale_etag_distinct_payload_and_restore(self):
+        original = fixture()
+        google, state = ProbeGoogle(original), FakeState()
+        state.directory = Path('/unused-synthetic')
+        with patch('worker.os.open', return_value=123), patch('worker.os.fdopen', mock_open()), patch('worker.os.fsync'), patch('builtins.print'):
+            worker.probe_google(state, google, 'rehearsal')
+        self.assertEqual(google.body, original)
+        self.assertEqual(len(google.uploads), 3)
+        self.assertEqual(google.uploads[0][1], google.uploads[1][1])
+        self.assertNotEqual(google.uploads[0][0], google.uploads[1][0])
+        self.assertTrue(state.data['provider_proof']['real_stale_etag_rejection'])
+        self.assertNotIn('probe_original', state.data)
+
+    def test_interrupted_probe_restores_but_never_marks_pass(self):
+        original = fixture()
+        google, state = ProbeGoogle(original, interrupt_restore=True), FakeState()
+        with self.assertRaises(BridgeError):
+            worker.probe_google(state, google, 'rehearsal')
+        self.assertIn('probe_original', state.data)
+        self.assertNotEqual(google.body, original)
+        with self.assertRaisesRegex(BridgeError, 'Interrupted rehearsal restored'):
+            worker.probe_google(state, google, 'rehearsal')
+        self.assertEqual(google.body, original)
+        self.assertNotIn('provider_proof', state.data)
+
+    def test_interrupted_probe_preserves_concurrent_revision(self):
+        original = fixture()
+        google, state = ProbeGoogle(original, interrupt_restore=True), FakeState()
+        with self.assertRaises(BridgeError):
+            worker.probe_google(state, google, 'rehearsal')
+        google.version += 1  # Even a metadata-only concurrent change requires review.
+        count = len(google.uploads)
+        with self.assertRaisesRegex(BridgeError, 'revision changed'):
+            worker.probe_google(state, google, 'rehearsal')
+        self.assertEqual(len(google.uploads), count)
+        self.assertIn('probe_original', state.data)
+
+    def test_ignored_stale_write_cannot_produce_proof_or_overwrite_again(self):
+        google, state = ProbeGoogle(fixture(), ignore_stale=True), FakeState()
+        with self.assertRaisesRegex(BridgeError, 'accepted a stale'):
+            worker.probe_google(state, google, 'rehearsal')
+        with self.assertRaisesRegex(BridgeError, 'changed during probe'):
+            worker.probe_google(state, google, 'rehearsal')
+        self.assertEqual(len(google.uploads), 2)
+        self.assertNotIn('provider_proof', state.data)
+
+
 class WorkerTests(unittest.TestCase):
+    def test_empty_week_initializes_immutable_baseline_then_recovers_file_edit(self):
+        raw = fixture(blank=True)
+        google, state = FakeGoogle(raw), FakeState()
+        class Operator:
+            def __init__(self):
+                self.exports = {facility: {"baseline_id": None, "version": 0, "values": dict.fromkeys(KEYS)} for facility in MAP.values()}
+                self.saved, self.recoveries, self.previews = [], [], {}
+            def command(self, action, payload):
+                if action == 'export':
+                    return self.exports[payload['facility_id']]
+                if action == 'find_recovery':
+                    return {'resolved_result': None}
+                if action == 'preview_recovery':
+                    self.recoveries.append(payload)
+                    self.previews['review'] = payload
+                    return {'preview_id': 'review', 'conflicts': [], 'clears': []}
+                raise AssertionError(action)
+            def mutate(self, action, payload):
+                facility = payload['facility_id']
+                if action == 'save':
+                    self.saved.append(payload)
+                    self.exports[facility] = {'baseline_id': 'empty-' + facility, 'version': 1, 'values': payload['values']}
+                elif action == 'commit_recovery':
+                    incoming = self.previews[payload['preview_id']]
+                    self.exports[facility] = {'baseline_id': 'edited-' + facility, 'version': 2, 'values': incoming['values']}
+                else:
+                    raise AssertionError(action)
+        operator = Operator()
+        with patch.dict('os.environ', {'STAND_UP_REHEARSAL_FILE_ID': 'rehearsal', 'STAND_UP_PRODUCTION_FILE_ID': 'production'}):
+            synchronize(state, operator, google, MAP, date(2026, 9, 7), 'rehearsal')
+            self.assertEqual(len(operator.saved), 5)
+            self.assertTrue(all(p['reason'] == 'Empty weekly fallback initialization' and p['status'] == 'draft' and p['values'] == dict.fromkeys(KEYS) for p in operator.saved))
+            self.assertEqual(google.uploads, 0)
+            baseline = state.data['baselines'][MAP['Homewood'] + ':2026-09-07']['baseline_id']
+            parsed = parse_workbook(raw, MAP, 'rehearsal', 'file.xlsx')
+            incoming = {**dict.fromkeys(KEYS), 'current_total_census': 12}
+            google.body = patch_workbook(raw, parsed, {MAP['Homewood'] + ':2026-09-07': incoming})
+            synchronize(state, operator, google, MAP, date(2026, 9, 7), 'rehearsal')
+            self.assertEqual(len(operator.saved), 5)  # Later edit uses recovery, not adoption.
+            self.assertEqual(operator.recoveries[0]['baseline_id'], baseline)
+            self.assertEqual(operator.exports[MAP['Homewood']]['values'], incoming)
+            self.assertEqual(google.uploads, 0)
+
+    def test_nonempty_file_against_blank_haven_still_requires_adoption(self):
+        google, state = FakeGoogle(fixture()), FakeState()
+        class Operator:
+            def command(self, action, payload):
+                return {'baseline_id': None, 'version': 0, 'values': dict.fromkeys(KEYS)}
+            def mutate(self, *_):
+                raise AssertionError('Must not automatically adopt nonempty file')
+        with patch.dict('os.environ', {'STAND_UP_REHEARSAL_FILE_ID': 'rehearsal', 'STAND_UP_PRODUCTION_FILE_ID': 'production'}):
+            with self.assertRaisesRegex(BridgeError, 'explicit --adopt'):
+                synchronize(state, Operator(), google, MAP, date(2026, 9, 7), 'rehearsal')
+        self.assertEqual(google.uploads, 0)
+        self.assertEqual(state.data['baselines'], {})
+
+    def test_empty_baseline_is_not_reported_or_ready_and_does_not_age_snapshot(self):
+        data = workspace()
+        data['reports'][0].update(values=dict.fromkeys(KEYS), status='ready')
+        now = datetime(2026, 9, 13, 12, tzinfo=timezone.utc)
+        payload = source_payload(data, MAP, date(2026, 9, 7), 1, now)
+        rows = {row['metric']: row['value'] for row in payload['rows']}
+        self.assertEqual(rows['homewood_reported'], 0)
+        self.assertEqual(rows['homewood_ready'], 0)
+        self.assertNotIn('homewood_as_of_epoch', rows)
+        self.assertEqual(payload['sourceAsOf'], '2026-09-13T12:00:00.000Z')
+        self.assertFalse(any('homewood_' + key in rows for key in KEYS))
+
     def test_service_mode_rejects_google_probe_before_state_or_network(self):
         args = ['worker.py', '--state-dir', '/unused', '--facility-map', '/unused.json', '--publish', '--publisher-service', '--probe-google']
         with patch('sys.argv', args), patch('worker.State') as state, patch('worker.Google') as google:
