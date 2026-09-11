@@ -281,8 +281,13 @@ def parse_workbook(raw, facility_map, file_id, filename, sheets=None, weeks=None
                         local_issues.append({"code": "unmapped_value", "cell": _address(col, row), "message": "Unmapped source field: " + label})
                 identity = facility_map[name] + ":" + week.isoformat()
                 if not populated:
+                    # Empty templates must satisfy the same mapping checks as populated blocks.
+                    for issue in local_issues:
+                        issues.append({**issue, "sheet": sheet["name"], "facility_id": facility_map[name], "week_start": week.isoformat()})
+                    if local_issues:
+                        locations.pop(identity, None)
                     # Keep validated empty-block coordinates for future writes, but do not import zero reports.
-                    if schema == "standup-2026-v1" and set(mapped) == set(KEYS) and week.weekday() == 0:
+                    if not local_issues and schema == "standup-2026-v1" and set(mapped) == set(KEYS) and week.weekday() == 0:
                         if identity in locations:
                             issues.append({"code": "overlapping_week", "sheet": sheet["name"], "facility_id": facility_map[name], "week_start": week.isoformat(), "message": "Repeated empty weekly block"})
                         locations[identity] = {"sheet": sheet["name"], "path": sheet["path"], "cells": mapped}

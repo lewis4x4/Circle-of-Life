@@ -55,6 +55,27 @@ class WorkbookTests(unittest.TestCase):
         self.assertEqual(len(result['locations']), 5)
         self.assertEqual(result['issues'], [])
 
+    def test_empty_block_duplicate_input_label_is_held_without_writable_locations(self):
+        before = zipfile.ZipFile(io.BytesIO(fixture(blank=True)))
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, 'w') as target:
+            for name in before.namelist():
+                content = before.read(name)
+                if name.endswith('sheet1.xml'):
+                    duplicate = b'<row r="26"><c r="A26" t="inlineStr"><is><t>Current AR</t></is></c></row>'
+                    content = content.replace(b'</sheetData>', duplicate + b'</sheetData>')
+                target.writestr(name, content)
+        raw = buffer.getvalue()
+        parsed = self.parse(raw)
+        self.assertEqual(parsed['records'], [])
+        self.assertEqual(len(parsed['issues']), 5)
+        self.assertTrue(all(issue['code'] == 'duplicate_label' for issue in parsed['issues']))
+        self.assertEqual({issue['facility_id'] for issue in parsed['issues']}, set(MAP.values()))
+        self.assertTrue(all(issue['sheet'] == 'September' and issue['week_start'] == '2026-09-07' for issue in parsed['issues']))
+        self.assertEqual(parsed['locations'], {})
+        with self.assertRaises(WorkbookError):
+            patch_workbook(raw, parsed, {MAP['Homewood'] + ':2026-09-07': dict.fromkeys(KEYS, 0)})
+
     def test_repeated_week_held_even_same_values(self):
         result = self.parse(fixture(extra_sheet=True))
         self.assertTrue(any(i['code'] == 'overlapping_week' for i in result['issues']))
