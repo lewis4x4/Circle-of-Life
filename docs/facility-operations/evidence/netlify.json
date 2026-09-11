@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-09-09T21:57:31.004394+00:00",
+  "site_id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+  "site_url": "https://circleoflifealf.com",
+  "published_deploy": {
+    "id": "6aa054790bc9d700089b72cb",
+    "state": "ready",
+    "commit_ref": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+    "published_at": "2026-09-08T18:33:52.882Z",
+    "deploy_ssl_url": "https://main--circleoflifealf.netlify.app",
+    "branch": "main"
+  },
+  "matches_source_head": true
+}

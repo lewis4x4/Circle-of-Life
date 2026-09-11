@@ -105,6 +105,8 @@ Every module has its own markdown file in `docs/specs/`. Each spec contains: sch
 
 ## Current Build Position
 
+**September 9 owner direction:** Haven Facility Operations is the primary new delivery direction: one shared application, Homewood first. Start with `docs/facility-operations/COL-18-BASELINE.md` and its bounded handoff. The catalog/current-authority foundations may proceed while the separate Track A operating/PHI acceptance gates remain open. The older sequencing below remains acceptance history, not a blanket prohibition on this explicitly authorized build. Recheck current main and concurrent migration numbers before every DDL segment; do not infer deployment or readiness from a completed baseline issue.
+
 **YOU ARE HERE: Closeout + hardening before expanding scope.**
 
 Phases 1, 2, and 3 core modules are shipped. You are NOT at the start of a new feature phase. Execute in this order before anything else:

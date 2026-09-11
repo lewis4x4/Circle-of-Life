@@ -10,15 +10,17 @@
 
 ---
 
-## 1. Current position (2026-09-06)
+## 1. Current position (2026-09-09)
+
+**Primary delivery direction:** one shared Haven Facility Operations application, Homewood first, under the September 9 owner-approved build package. [COL-18 baseline/readiness](../facility-operations/COL-18-BASELINE.md) reconciles current source and hosted evidence; [bounded handoff](../facility-operations/HANDOFF.md) selects COL-132 next, with COL-133 also dependent only on COL-18. Open operating acceptance gates do not block this authorized foundation build. Baseline completion does not mean the core or Homewood is release-ready.
 
 | Fact | Value |
 |------|-------|
-| Repo migrations | **328 files**, numbered sequence `001`–`325` (`325_review_med_tech_controlled_count_access.sql`) — **next free migration: `326`** |
-| Remote tracking | Hosted ledger recorded through `318` on `manfqmasfqppukpobpld`; remediation migrations `319`–`325` remain pending. Live Command Center projection remains the `315`/`316` definition (manager allowlist). Historical repair SQL: `scripts/repair-remote-schema-migrations-310-316.sql`. |
+| Repo migrations | **338 files**, numbered sequence `001`–`335` plus three retained May timestamp migrations, at main `fad17dcc`. The numerical successor is `336`, but concurrent branches overlap `335`–`342`; reconcile before reserving a number. |
+| Remote tracking | Fresh September 9 read: **344 ledger records**, no source version missing; six retained August supplemental entries. Installed statement hashes for `319`–`335` match source. This is not a full live-schema diff; see the COL-18 manifest and limitations. |
 | README "current state" drift | Reconcile `docs/specs/README.md` when the next DDL segment ships; treat **this file + the migrations folder** as current |
 | Pilot | Homewood Lodge is the current acceptance and controlled launch facility (`docs/homewood/`); preserve historical Oakridge seeded validation evidence. RLS-02 must run before Oakridge goes live. |
-| Production | Netlify auto-publish from `main` only |
+| Production | Netlify publishes `fad17dcc`, deployment `6aa054790bc9d700089b72cb`; 37 deployed Edge slugs match source names. Full baseline gates and latest nightly FAIL; security/dependency and operating acceptance remain open. |
 
 ### Track ledger
 
@@ -35,7 +37,7 @@
 
 1. **A5 remains PASS; current PHI-launch evidence must be refreshed separately.** Preserve the 2026-08-26 owner-attested closeout. Before PHI rollout, owner/legal must confirm current BAA coverage, HIPAA add-on, required project controls, and PITR as described in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md#post-closeout-phi-launch-evidence-refresh--2026-09-06). Absence of a locally inspected contract is not evidence that no BAA exists. A3 depth UAT remains open.
 2. One bounded segment at a time; `npm run segment:gates -- --segment "<id>"` (+ `--ui` for routes/visuals); PASS artifact in `test-results/agent-gates/` before "done".
-3. New DDL takes the next free migration number (currently `326`) and updates this file.
+3. New DDL takes a freshly reconciled/reserved migration number and updates this file. Main's current numerical successor `336` overlaps active branches; never reuse it blindly.
 4. Mission alignment (`pass` | `risk` | `fail`) recorded in every segment handoff.
 
 ---
