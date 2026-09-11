@@ -181,6 +181,26 @@ def parsed_day(value):
     return None
 
 
+def overtime_minutes(value):
+    """Validated legacy HH.MM -> integer minutes; never treat it as decimal hours."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        raise WorkbookError("Overtime must use hours and minutes")
+    try:
+        number = Decimal(str(value))
+    except InvalidOperation as exc:
+        raise WorkbookError("Overtime must use hours and minutes") from exc
+    if not number.is_finite() or number < 0 or number > 35791394.59 or number != number.quantize(Decimal("0.01")):
+        raise WorkbookError("Overtime must use hours and minutes with at most two decimal places")
+    hours = int(number)
+    minutes = (number - hours) * 100
+    total = hours * 60 + int(minutes)
+    if minutes > 59 or total > 2147483647:
+        raise WorkbookError("Overtime minute component must be 00 through 59")
+    return total
+
+
 def cell_number(cell, key):
     if not cell or cell["value"] is None or str(cell["value"]).strip() == "":
         return None
@@ -202,6 +222,8 @@ def cell_number(cell, key):
         raise WorkbookError("Count/cents must be whole numbers")
     if number > 2147483647:
         raise WorkbookError("Value exceeds supported numeric bound")
+    if key == "overtime_reported":
+        overtime_minutes(number)
     return float(number) if key == "overtime_reported" else int(number)
 
 
@@ -320,6 +342,8 @@ def patch_workbook(raw, parsed, updates):
                 number = Decimal(str(value))
                 if not number.is_finite() or number < 0 or number > 2147483647 or (key != "overtime_reported" and number != number.to_integral_value()):
                     raise WorkbookError("Invalid patch numeric bounds")
+                if key == "overtime_reported":
+                    overtime_minutes(number)
                 if key.endswith("_cents"):
                     number /= 100
             for node in list(cell):
