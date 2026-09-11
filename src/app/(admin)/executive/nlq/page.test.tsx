@@ -7,7 +7,7 @@ import ExecutiveNlqPage from "@/app/(admin)/executive/nlq/page";
 const authMock = vi.hoisted(() => ({
   loading: true,
   organizationId: null as string | null,
-  appRole: "owner" as const,
+  appRole: "owner" as "owner" | "facility_admin",
 }));
 
 vi.mock("next/navigation", () => ({

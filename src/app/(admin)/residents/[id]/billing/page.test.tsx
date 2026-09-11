@@ -15,7 +15,7 @@ const ORG_ID = "b0000000-0000-4000-8000-000000000001";
 
 const mocks = vi.hoisted(() => ({
   selectedFacilityId: null as string | null,
-  client: { from: () => ({}) as unknown },
+  client: { from: (() => ({})) as (table: string) => unknown },
 }));
 
 vi.mock("next/navigation", () => ({

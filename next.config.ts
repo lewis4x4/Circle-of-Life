@@ -23,6 +23,9 @@ const isProd = process.env.NODE_ENV === "production";
 const supabaseHost = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
   .replace(/^https?:\/\//, "")
   .replace(/\/$/, "");
+// Native local staging uses HTTP on loopback only. Production retains HTTPS/WSS.
+const localSupabase = !isProd && /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+const supabaseConnections = supabaseHost ? ` ${localSupabase ? "http" : "https"}://${supabaseHost} ${localSupabase ? "ws" : "wss"}://${supabaseHost}` : "";
 const sentryHost = [process.env.NEXT_PUBLIC_SENTRY_DSN, process.env.SENTRY_DSN]
   .map((dsn) => {
     if (!dsn) return "";
@@ -41,7 +44,7 @@ const cspDirectives = [
   `img-src 'self' data: blob: https://images.unsplash.com${supabaseHost ? ` https://${supabaseHost}` : ""}`,
   "media-src 'self' https://cdn.pixabay.com",
   "font-src 'self'",
-  `connect-src 'self'${supabaseHost ? ` https://${supabaseHost} wss://${supabaseHost}` : ""}${sentryHost ? ` https://${sentryHost}` : ""}`,
+  `connect-src 'self'${supabaseConnections}${sentryHost ? ` https://${sentryHost}` : ""}`,
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -72,6 +75,7 @@ if (isProd) {
 }
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   experimental: {
     optimizePackageImports: [
       "lucide-react",

@@ -7,8 +7,6 @@ import { FacilityCard } from "./FacilityCard";
 
 function facility(partial: Partial<FacilityRow> & Pick<FacilityRow, "id" | "name">): FacilityRow {
   return {
-    id: partial.id,
-    name: partial.name,
     organization_id: "org-1",
     phone: null,
     email: null,

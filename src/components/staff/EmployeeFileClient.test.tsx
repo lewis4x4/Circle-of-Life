@@ -66,7 +66,7 @@ describe('employee file rendered workflows', () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/catalog'))).toBe(false);
     let resolveCatalog!: (value: unknown) => void;
     fetchMock.mockImplementationOnce(() => new Promise((resolve) => { resolveCatalog = resolve; }));
-    await user.click(screen.getByRole('button', { name: 'Requirements', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Requirements' }));
     expect(screen.getByRole('status')).toHaveTextContent('Loading packet sources');
     expect(screen.queryByRole('button', { name: 'Save draft version' })).not.toBeInTheDocument();
     resolveCatalog({ ok: false, json: async () => ({ error: 'Catalog is temporarily unavailable.' }) });
@@ -81,7 +81,7 @@ describe('employee file rendered workflows', () => {
     const user = await open(fixture({ requirements: [req({ review_status: 'draft' })] }));
     expect(screen.getByText('No applicable requirements have been approved for this employee yet.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Submit for review' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Duty readiness', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Duty readiness' }));
     expect(screen.getAllByText('Not configured')).toHaveLength(3);
     expect(screen.queryByText('Ready', { exact: true })).not.toBeInTheDocument();
     expect(mutations()).toEqual([]);
@@ -114,7 +114,7 @@ describe('employee file rendered workflows', () => {
     await user.selectOptions(screen.getByLabelText('Signing capacity'), 'supervisor');
     await user.type(screen.getByLabelText('Your full name'), 'Taylor Supervisor');
     await user.click(screen.getByLabelText('I reviewed the requirement and evidence and am signing in my own capacity.'));
-    await user.click(screen.getByRole('button', { name: 'Sign', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Sign' }));
     await screen.findByText('Saved.');
     expect(mutations()[0]).toMatchObject({ action: 'sign_record', payload: { id: 'record-1', functional_role: 'supervisor', signature_name: 'Taylor Supervisor' } });
     await user.type(screen.getByLabelText('Review findings, including paper signatures checked'), 'Checked the signed employee and supervisor originals');
@@ -125,7 +125,7 @@ describe('employee file rendered workflows', () => {
 
   it('starts applicability empty and sends explicitly entered roles as a draft, never approval', async () => {
     const user = await open();
-    await user.click(screen.getByRole('button', { name: 'Requirements', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Requirements' }));
     await screen.findByRole('heading', { name: 'Create a requirement version' });
     const form = section('Create a requirement version');
     const roles = form.getByLabelText('Applicable staff roles');
@@ -172,7 +172,7 @@ describe('employee file rendered workflows', () => {
 
   it('records a human decision only after selecting a reviewed event and does not post on threshold display', async () => {
     const user = await open(fixture({ attendance: Array.from({ length: 6 }, (_, index) => ({ id: `event-${index}`, event_type: 'callout', occurred_at: `2026-09-0${index + 1}T12:00:00Z`, review_status: 'counted', review_reason: 'Reviewed circumstance', minutes_deviation: null, reason: 'Reported absence' })) }));
-    await user.click(screen.getByRole('button', { name: 'Attendance review', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Attendance review' }));
     expect(screen.getByText(/6-absence threshold in the draft source reached/)).toBeInTheDocument();
     expect(mutations()).toEqual([]);
     const form = section('Record a human corrective-action decision');
@@ -190,8 +190,8 @@ describe('employee file rendered workflows', () => {
 
   it('withholds management sections from an employee self-service viewer', async () => {
     await open(fixture({ canManage: false, canMedical: true, actorId: 'employee-1' }));
-    expect(screen.queryByRole('button', { name: 'Requirements', exact: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Attendance review', exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Requirements' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Attendance review' })).not.toBeInTheDocument();
   });
 });
 
@@ -199,11 +199,11 @@ it('shows future employment without attendance actions or premature duty clearan
   const data = fixture({ requirements: [req()], records: [record({ status: 'verified', reviewed_by: 'reviewer-1' })] });
   data.staff.hire_date = '2026-10-01';
   const user = await open(data);
-  await user.click(screen.getByRole('button', { name: 'Attendance review', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Attendance review' }));
   expect(screen.getByText('Employment starts on 2026-10-01. Attendance review becomes available on that date.')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Record for review' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Record authorized decision' })).not.toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Duty readiness', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Duty readiness' }));
   expect(screen.getAllByText('Blocked')).toHaveLength(3);
   expect(screen.queryByText('Ready', { exact: true })).not.toBeInTheDocument();
   expect(mutations()).toEqual([]);

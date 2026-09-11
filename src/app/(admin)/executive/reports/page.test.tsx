@@ -12,7 +12,7 @@ const authMock = vi.hoisted(() => ({
 }));
 
 const queryMock = vi.hoisted(() => ({
-  data: undefined as { rows: []; facilities: [] } | undefined,
+  data: undefined as { rows: Record<string, unknown>[]; facilities: [] } | undefined,
   isPending: false,
   error: null as Error | null,
 }));

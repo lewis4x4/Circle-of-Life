@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   params: { id: "b5000000-0000-0000-0000-0000000000a1" },
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
   appRole: "admin" as string,
-  client: { from: () => ({}) as unknown },
+  client: { from: (() => ({})) as (table: string) => unknown },
 }));
 
 vi.mock("next/navigation", () => ({

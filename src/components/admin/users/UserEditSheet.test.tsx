@@ -28,7 +28,7 @@ describe("explicit account reactivation", () => {
       return Response.json({ data: user });
     });
     render(<UserEditSheet userId="target" onClose={vi.fn()} />);
-    fireEvent.click(await screen.findByRole("button", { name: "Reactivate", exact: true }));
+    fireEvent.click(await screen.findByRole("button", { name: "Reactivate" }));
     const checkbox = await screen.findByRole("checkbox", { name: "Current facility" });
     expect(checkbox).not.toBeChecked();
     const submit = screen.getByRole("button", { name: "Reactivate with selected access" });
@@ -54,7 +54,7 @@ describe("explicit account reactivation", () => {
       return Response.json({ data: user });
     });
     render(<UserEditSheet userId="target" onClose={vi.fn()} />);
-    fireEvent.click(await screen.findByRole("button", { name: "Reactivate", exact: true }));
+    fireEvent.click(await screen.findByRole("button", { name: "Reactivate" }));
     fireEvent.click(await screen.findByRole("checkbox", { name: "Current facility" }));
     fireEvent.click(screen.getByRole("button", { name: "Reactivate with selected access" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Cancel" })).not.toBeDisabled());

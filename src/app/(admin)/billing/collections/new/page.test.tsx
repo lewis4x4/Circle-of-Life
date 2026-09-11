@@ -16,7 +16,7 @@ const RESIDENT_FACILITY = "22222222-2222-2222-2222-222222222222";
 const mocks = vi.hoisted(() => ({
   searchParams: new URLSearchParams(""),
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
-  client: { from: () => ({}) as unknown },
+  client: { from: (() => ({})) as (table: string) => unknown },
 }));
 
 vi.mock("next/navigation", () => ({
@@ -78,7 +78,7 @@ describe("AdminNewCollectionActivityPage facility derivation", () => {
   });
 
   it("posts the resident's facility, not the pinned facility", async () => {
-    const fetchMock = vi.fn(async () => ({
+    const fetchMock = vi.fn< (url: string, init: { body: string }) => Promise<{ ok: boolean; json: () => Promise<{ id: string }> }> >(async () => ({
       ok: true,
       json: async () => ({ id: "act-1" }),
     }));

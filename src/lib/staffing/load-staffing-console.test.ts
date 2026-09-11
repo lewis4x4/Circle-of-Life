@@ -14,6 +14,7 @@ function row(
     first_name: "Sample",
     last_name: "Worker",
     email: null,
+    photo_url: null,
     staff_role: "resident_aide",
     employment_status: "active",
     updated_at: "2026-08-01T12:00:00.000Z",

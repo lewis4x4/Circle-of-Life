@@ -1,7 +1,6 @@
-import { Linter } from "eslint";
+import { Linter, type Rule } from "eslint";
 import { describe, expect, it } from "vitest";
 
-// @ts-expect-error — the rule file is .mjs and has no .d.ts
 import requireKpiInfo from "../../../../eslint-rules/require-kpi-info.mjs";
 
 function lint(code: string) {
@@ -18,7 +17,7 @@ function lint(code: string) {
         },
       },
       plugins: {
-        "ui-v2": { rules: { "require-kpi-info": requireKpiInfo } },
+        "ui-v2": { rules: { "require-kpi-info": requireKpiInfo as Rule.RuleModule } },
       },
       rules: {
         "ui-v2/require-kpi-info": "error",

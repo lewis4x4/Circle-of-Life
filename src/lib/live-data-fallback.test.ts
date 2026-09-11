@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { queryErrorMessage, throwIfQueryError } from "@/lib/supabase/query-error";
@@ -30,21 +30,18 @@ describe("throwIfQueryError", () => {
 });
 
 describe("formatLiveDataLoadError", () => {
+  afterEach(() => vi.unstubAllEnvs());
   it("returns fallback in production", () => {
-    const prev = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     expect(formatLiveDataLoadError({ message: "column x missing" }, "Live data down.")).toBe(
       "Live data down.",
     );
-    process.env.NODE_ENV = prev;
   });
 
   it("appends detail in development", () => {
-    const prev = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     expect(
       formatLiveDataLoadError({ message: "column x missing" }, "Live data down."),
     ).toBe("Live data down. (column x missing)");
-    process.env.NODE_ENV = prev;
   });
 });

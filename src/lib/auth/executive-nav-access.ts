@@ -32,6 +32,7 @@ export function applyExecutiveCommandNavToItems<
   T extends { key: string; href: string; label: string },
 >(items: readonly T[], role: string | null, authLoading: boolean): T[] {
   return items.flatMap((item) => {
+    if (item.key === "stand-up") return !authLoading && role && canOpenExecutiveStandup(role) ? [item] : [];
     if (item.key !== "executive") return [item];
     if (authLoading || !role) return [];
     const resolved = resolveExecutiveCommandNav(role);
@@ -47,6 +48,7 @@ export function applyExecutiveCommandNavToItems<
 }
 
 export function canOpenExecutiveHubHref(role: string, href: string): boolean {
+  if (href === "/admin/stand-up") return canOpenExecutiveStandup(role);
   if (href === "/admin/executive/standup" || href.startsWith("/admin/executive/standup/")) {
     return canOpenExecutiveStandup(role);
   }

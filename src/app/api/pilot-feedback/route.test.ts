@@ -10,7 +10,7 @@ vi.mock("@/lib/supabase/service-role-facility-access", () => ({
 }));
 
 import { GET, PATCH, POST } from "./route";
-import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
+import { requireCurrentApiActor, revalidateCurrentApiActor, type CurrentApiActor } from "@/lib/auth/current-api-actor";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -19,7 +19,7 @@ const FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 
 type Profile = {
   organization_id: string;
-  app_role: string;
+  app_role: CurrentApiActor["appRole"];
   email: string | null;
   full_name: string | null;
 };
@@ -78,8 +78,8 @@ describe("/api/pilot-feedback", () => {
       }),
     };
 
-    vi.mocked(requireCurrentApiActor).mockImplementation(async ({ allowedRoles }) =>
-      (allowedRoles as readonly string[]).includes(profile.app_role)
+    vi.mocked(requireCurrentApiActor).mockImplementation(async ({ allowedRoles } = {}) =>
+      (!allowedRoles || allowedRoles.includes(profile.app_role))
         ? { actor: {
         id: USER_ID,
         organizationId: ORGANIZATION_ID,
@@ -87,8 +87,8 @@ describe("/api/pilot-feedback", () => {
         email: profile.email,
         fullName: profile.full_name,
         sessionEmail: "session@example.com",
-        client: {},
-        admin,
+        client: {} as CurrentApiActor["client"],
+        admin: admin as unknown as CurrentApiActor["admin"],
       } }
         : { response: Response.json({ error: "Insufficient permissions" }, { status: 403 }) } as never);
     vi.mocked(revalidateCurrentApiActor).mockImplementation(async (actor) => ({ actor }) as never);

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { loadFinanceOverviewData } from "./load-finance-overview-data";
 
-function createQuery(result: object, gte: ReturnType<typeof vi.fn>) {
+function createQuery(result: object, gte: (column: string, value: string) => unknown) {
   const query = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),

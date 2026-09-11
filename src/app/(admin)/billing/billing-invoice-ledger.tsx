@@ -677,7 +677,7 @@ function BillingInvoiceLedgerInner({
       }
       if ((e.key === "g" || e.key === "G") && !e.metaKey && !e.ctrlKey && isInvoicesHub) {
         e.preventDefault();
-        window.location.assign("/admin/billing/invoices/generate");
+        router.push("/admin/billing/invoices/generate");
       }
       if ((e.key === "f" || e.key === "F") && !e.metaKey && !e.ctrlKey && isInvoicesHub) {
         e.preventDefault();
@@ -691,6 +691,7 @@ function BillingInvoiceLedgerInner({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [
+    router,
     facilityLookup,
     hubCsvFilename,
     isInvoicesHub,
