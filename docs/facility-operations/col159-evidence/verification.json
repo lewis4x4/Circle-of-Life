@@ -4,7 +4,7 @@
  "title": "[HFO-22] Connect dietary, facility services and general admin evidence",
  "scope": "source only; complete AL coverage pass (three new adapters, two AED kinds) on the COL-147 mechanism; no hosted apply, deploy, rule, schedule, deadline, reminder, UI, provider, staff or operating acceptance; nothing sent or published",
  "model_used": "Fable 5.1 / claude-fable-5-1",
- "recorded_at": "2026-09-11T04:30:00Z",
+ "recorded_at": "2026-09-11T07:05:00Z",
  "branch": "codex/hfo-col159-dietary-admin",
  "base": "codex/hfo-col154-drill-generators @ 47455a13d812ba638b9f75b2606cd5b957a6f653",
  "draft_pr": "(opened after the segment PASS; see GATE.md)",
@@ -113,7 +113,22 @@
     "log": "col159-evidence/gate-run-1.log",
     "note": "run at 00:21 America/New_York; the only failure is qa.migrations-apply-postgres on the COL-147 probe's 23:00-02:59 fixture window (review F5); every other required check passed"
    },
-   "artifact": "(run 2, scheduled 03:01 America/New_York; recorded below when complete)"
+   "artifact": "test-results/agent-gates/2026-09-11T07-01-00-750Z-COL-159-HFO-DIETARY-ADMIN.json",
+   "verdict": "PASS",
+   "summary": {
+    "passed": 10,
+    "failed": 0,
+    "skipped": 3,
+    "blocking_failures": []
+   },
+   "skipped": [
+    "qa.web-build (optional)",
+    "cdo.design-review (optional)",
+    "cdo.a11y-axe (optional)"
+   ],
+   "native_replay": "351 migration files, 32 SQL probes; native PostgreSQL with Supabase stubs",
+   "log": "col159-evidence/gate-run-2.log",
+   "run_after": "the independent-review fixes (F1, F2, F3) and the reviewer re-verification; run at 03:01 America/New_York, outside the COL-147 probe window"
   }
  },
  "boundaries": "no Homewood day, time, threshold, reading definition, equipment list or deadline; no rule, binding or applicability published; no reminder, scheduler, integration or transmission; nothing sent or published; no vendor created; no PHI; COL-143 hosted untouched; legacy ac_filter consumer untouched; 346 unchanged",
