@@ -32,7 +32,7 @@ CREATE FUNCTION pg_temp.c_expect(stmt text,fragment text,detail_fragment text DE
 END $$;
 
 -- Migration 346 registers no source; the only adapters and rules in the migrations are the two COL-154 domain adapters (347), proven by their own probe.
-SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_source_adapters WHERE source_key NOT IN('drill-log','asset-observation')) AND NOT EXISTS(SELECT 1 FROM public.operation_source_rules WHERE source_key NOT IN('drill-log','asset-observation')),'a migration registered a source adapter or rule beyond COL-154');
+SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_source_adapters WHERE source_key NOT IN('drill-log','asset-observation','facility-service','asset-service','dietary-record')) AND NOT EXISTS(SELECT 1 FROM public.operation_source_rules WHERE source_key NOT IN('drill-log','asset-observation','facility-service','asset-service','dietary-record')),'a migration registered a source adapter or rule beyond COL-154 and COL-159');
 SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_source_events) AND NOT EXISTS(SELECT 1 FROM public.operation_source_event_attempts),'a migration delivered a source event');
 SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_execution_receipts WHERE source_event_id IS NOT NULL),'a migration wrote a source receipt');
 SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_audit_log WHERE event_type IN('source_linked','source_pending','source_invalidated')),'a migration wrote a source audit row');

@@ -1,0 +1,31 @@
+{
+  "issue": "COL-159",
+  "issue_id": "1ed5af55-72be-4b41-af3a-0c6fb718333b",
+  "title": "[HFO-22] Connect dietary, facility services and general admin evidence",
+  "before": {
+    "checked_at": "2026-09-11T02:40:00Z",
+    "state": "In Progress (moved by the orchestrator at 2026-09-11T02:35:40Z; no comments on the issue)",
+    "blockers": {
+      "COL-147": "Done",
+      "COL-154": "Done"
+    },
+    "related": [
+      "COL-143 (parked In Progress; hosted Storage untouched by this segment)"
+    ],
+    "dependency_ready": true,
+    "source": "live Linear MCP read (get_issue with relations) at session start"
+  },
+  "started": {
+    "branch": "codex/hfo-col159-dietary-admin",
+    "base": "47455a13 (codex/hfo-col154-drill-generators tip)",
+    "provisional_slot": "348_hfo_dietary_admin_sources.sql",
+    "segment_id": "COL-159-HFO-DIETARY-ADMIN",
+    "contract": "docs/facility-operations/col159-evidence/engineering-contracts.md"
+  },
+  "after": {
+    "state": "In Progress (Lewi owns Done); implementer notification comment posted on the issue after draft PR #479 and the segment PASS",
+    "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/479",
+    "gated_commit": "3d5e8182",
+    "gate_artifact": "test-results/agent-gates/2026-09-11T07-01-00-750Z-COL-159-HFO-DIETARY-ADMIN.json"
+  }
+}
