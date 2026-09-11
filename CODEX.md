@@ -10,6 +10,7 @@
 2. Run **`npm run segment:gates -- --segment "<id>"`** (add `--ui` when UI/routes changed).
 3. Do not claim “done” without a **machine-readable gate artifact** under `test-results/agent-gates/`.
 4. On required gate **PASS**: stage only segment files, **atomic commit**, push, then start the next segment.
+5. Before updating Linear, follow `docs/LINEAR-WORKFLOW.md`; keep delivery, human decisions, and release/acceptance as separate issues with real dependency links.
 
 ## Form primitives (operator-facing defaults)
 
@@ -43,4 +44,5 @@ Shared UI primitives—including **`QuietDatePicker`**—must **not** silently i
 - Full agent registry: `agents/registry.yaml`
 - Playbooks: `agents/playbooks/`
 - Runbook: `docs/agent-gates-runbook.md`
+- Linear workflow: `docs/LINEAR-WORKFLOW.md`
 - Next.js agent notes: `AGENTS.md`

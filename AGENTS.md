@@ -46,6 +46,7 @@ Mission alignment (`pass` | `risk` | `fail`) must be recorded in every segment h
 | **Agent registry** | `agents/registry.yaml` |
 | **Agent playbooks** | `agents/playbooks/` |
 | **Agent gates runbook** (`npm run segment:gates`) | `docs/agent-gates-runbook.md` |
+| **Linear workflow contract** | `docs/LINEAR-WORKFLOW.md` |
 | Gate report schema | `agents/schemas/gate-report.schema.json` |
 | Segment gate runner | `scripts/agent-gates/run-segment-gates.mjs` |
 | Gate JSON artifacts | `test-results/agent-gates/` |
@@ -209,6 +210,17 @@ Additional variables are documented in individual spec files as features require
 - No architecture reset without explicit approval.
 - After implementation, run **`npm run segment:gates -- --segment "<segment-id>"`** (`--ui` when visual or routing work changed — also runs axe on the same routes unless `--no-a11y`). CI runs the same gate bundle via `.github/workflows/ci-gates.yml` (includes gitleaks, audit, ESLint, Docker migration replay).
 - Security, RLS, and workspace boundaries are part of the gate model — not a post-release afterthought.
+
+## Linear Issue Discipline
+
+Read `docs/LINEAR-WORKFLOW.md` before creating, assigning, relating, commenting on, or changing the status of a Linear issue.
+
+- Keep Delivery assigned to the implementer. A required human answer belongs on a separate Decision / Approval issue assigned to that person; facility, clinical, customer, or live sign-off belongs on a Release / Acceptance issue assigned to the authorized approver.
+- Assignee means next actor. `In Review` means technical or peer review only. `Done` means this issue's written acceptance criteria passed; it is not deployment, facility, clinical, customer, or launch readiness.
+- For agent-only execution use a delegated agent/session when available; otherwise leave the human assignee empty and identify the agent in attributable updates. Never assign Brian as an agent proxy.
+- Use Blocks/Blocked by for prerequisites and `Related` only for context.
+- Do not add `Brian`, `Darren Decision`, or new `owner:<person>` labels. Migrate existing person labels only after preserving the unresolved ask, owner, history, and dependency links.
+- If the Linear API actor displays a human name, prefix automated comments with `Agent update — not human acknowledgement.` Never claim human approval or acceptance without a dated attributable source.
 
 ## Engineer / Codex Entrypoint
 
