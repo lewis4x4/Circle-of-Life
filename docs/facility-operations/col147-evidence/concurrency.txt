@@ -1,0 +1,54 @@
+{
+  "issue": "COL-147",
+  "baseline": "col147_base346",
+  "runtime": "native PostgreSQL scratch cluster hfo-col139-20260910-105544",
+  "recorded_at": "2026-09-11T00:55:11Z",
+  "cases": {
+    "same_version_twice": {
+      "outcome": "second delivery converged on the first ledger row after the wait; one receipt",
+      "ledger_rows": 1,
+      "receipts": 1,
+      "waited_on": "advisory"
+    },
+    "human_first_then_delivery": {
+      "outcome": "delivery landed as a pending conflict after the human recording; the human receipt stays effective",
+      "sqlstate": null,
+      "receipts": 1,
+      "waited_on": "transactionid"
+    },
+    "delivery_first_then_human": {
+      "outcome": "human recording refused after the wait naming the source receipt",
+      "sqlstate": "23505",
+      "receipts": 1,
+      "waited_on": "transactionid"
+    },
+    "correction_first_then_void": {
+      "outcome": "void refused after the wait as source_not_effective with attention; the human correction stays effective",
+      "receipts": 2,
+      "waited_on": "transactionid"
+    },
+    "void_first_then_correction": {
+      "outcome": "correction refused after the wait because the void reversed the source receipt; occurrence unrecorded with the reversed chain retained",
+      "sqlstate": "P0001",
+      "receipts": 2,
+      "waited_on": "transactionid"
+    },
+    "version1_first_then_version2": {
+      "outcome": "stale version 1 refused as source_version_changed; version 2 satisfied after the wait; one effective receipt at version 2",
+      "receipts": 1,
+      "waited_on": "advisory"
+    },
+    "version2_first_then_version1": {
+      "outcome": "version 2 satisfied first; stale version 1 refused after the wait as source_version_changed; one effective receipt at version 2",
+      "receipts": 1,
+      "waited_on": "advisory"
+    },
+    "retry_vs_redelivery": {
+      "outcome": "re-delivery waited on the advisory lock behind the retry and converged on the now-live row; no deadlock; one live row, one receipt",
+      "live_rows": 1,
+      "receipts": 1,
+      "waited_on": "advisory"
+    }
+  },
+  "status": "PASS"
+}
