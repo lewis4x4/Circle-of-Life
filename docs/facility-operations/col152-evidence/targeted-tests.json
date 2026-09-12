@@ -1,0 +1,46 @@
+{
+  "segment": "COL-152 / HFO-15",
+  "recorded_at": "2026-09-12T22:18:02.557109+00:00",
+  "scope": "source/local only; no hosted, external-channel or staff acceptance",
+  "tests": [
+    {
+      "command": "npx vitest run src/lib/operations/reminders.test.ts src/app/(admin)/admin/operations/work/_components/task-reminder.test.tsx",
+      "result": "PASS",
+      "files": 2,
+      "tests": 9
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "PASS"
+    },
+    {
+      "command": "npx eslint src/lib/operations/reminders.ts src/app/api/admin/operations/occurrences/[id]/reminder/route.ts src/app/(admin)/admin/operations/work/_components/task-reminder.tsx src/app/(admin)/admin/operations/work/_components/work-row.tsx --max-warnings 0",
+      "result": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run migrations:verify:pg (explicit run-owned native PostgreSQL17)",
+      "result": "PASS",
+      "migration_files": 353,
+      "sql_probes": 34,
+      "note": "Executed before final source_label and extra recipient/audit assertions; parent strict gate rechecks final current files."
+    }
+  ],
+  "parent_owned": [
+    "API route tests",
+    "full test suite",
+    "strict segment gates",
+    "independent SQL review",
+    "concurrency proof",
+    "exact commit and Linear closeout"
+  ],
+  "artifacts": "No disposable files created by implementation agent outside the parent run-owned cluster. npm ci created this worktree own node_modules (development dependency environment; retained). Native replay created and dropped its own database. Source, tests and evidence are retained for review.",
+  "limitations": [
+    "No cron/digest sender or external delivery; expanded work row is the in-app presentation.",
+    "Response authority intentionally matches existing work authority, including protected-domain recording scope.",
+    "Migration350 provisional until source-stack/main reconciliation; no hosted apply or configuration activation."
+  ]
+}

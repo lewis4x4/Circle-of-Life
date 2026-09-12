@@ -1,0 +1,46 @@
+{
+  "issue": "COL-135",
+  "recorded_at": "2026-09-10T02:43:01+00:00",
+  "state": "local_source_implemented_reviewed_gated",
+  "base_commit": "476f02d1 (codex/hfo-col133-authority tip)",
+  "branch": "codex/hfo-col135-applicability",
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts",
+    "files": 21,
+    "tests": 166,
+    "status": "PASS",
+    "note": "162 before review remediation; four tests added for uniqueness, finite bounds, client-error mapping and the facility preview route"
+  },
+  "typecheck": "PASS",
+  "eslint_new_files": "PASS (0 warnings)",
+  "native_replay": {
+    "migration_files": 341,
+    "numbered_through": "338",
+    "sql_probes": 22,
+    "status": "PASS",
+    "runtime": "native PostgreSQL 17, run-owned socket-only cluster, Supabase stubs"
+  },
+  "strict_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T02-37-46-794Z-COL-135-HFO-APPLICABILITY.json",
+    "verdict": "PASS",
+    "summary": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "blocking_failures": []
+    },
+    "prior_artifacts": [
+      "2026-09-10T02-14-54-214Z FAIL (worktree node_modules was a symlink; Turbopack rejects it; replaced by a real install)",
+      "2026-09-10T02-21-20-253Z PASS (before review remediation)"
+    ]
+  },
+  "independent_review": "docs/facility-operations/col135-evidence/independent-review.json (no blocker; all should-fix items remediated)",
+  "acceptance": {
+    "1_distinct_auditable_states_and_override_provenance": "probe: needs_confirmation published as its own state with approver; not_applicable requires reason; override source recorded; audit rows on both tables",
+    "2_future_change_preserves_snapshots": "probe: v2 scheduled tomorrow keeps v1 in force and closes it at the successor's start; occurrence keeps v1/fr3; snapshot immutable; window and agreement enforced",
+    "3_no_active_defaults_and_recording_available": "probe: drafts default to needs_confirmation for applicability and schedule; schedule confirmation not publishable; completion of tasks with no version and with a closed snapshot succeeds"
+  },
+  "not_established": "hosted apply, deployment, browser or staff acceptance; evaluator (COL-137) and occurrence generation (COL-139) not started",
+  "mission_alignment": "PASS",
+  "operating_readiness": "RISK"
+}

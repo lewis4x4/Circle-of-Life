@@ -1,0 +1,93 @@
+{
+  "issue": "COL-148",
+  "scope": "source only; no hosted Storage proof, deployment, policy activation, or staff acceptance",
+  "status": "APPROVED",
+  "server_review": {
+    "reviewer": "independent Codex subagent server_review",
+    "verdict": "APPROVE after all remediation and re-verification",
+    "original_findings": [
+      {
+        "finding": "Lenient cursor date interpolation",
+        "resolution": "Strict timestamp grammar retains microseconds; hostile cursor rejected before reads"
+      },
+      {
+        "finding": "Earlier legacy work hidden",
+        "resolution": "Lower date bound removed"
+      },
+      {
+        "finding": "Missing pinned rules silently fall back",
+        "resolution": "Missing pinned requirements fail closed with rules partial marker"
+      },
+      {
+        "finding": "Finalized count was not a file count",
+        "resolution": "required_rules plus aggregate satisfied semantics"
+      }
+    ],
+    "additional_findings": [
+      {
+        "severity": "HIGH",
+        "finding": "Provider max_rows silently truncates unbounded reads",
+        "resolution": "Complete paged reads, batched IDs, disjoint history sources with exact counts and microsecond merge"
+      },
+      {
+        "severity": "HIGH",
+        "finding": "Receipt hydration can combine new receipt with old occurrence",
+        "resolution": "Authorized occurrence read before and after complete receipt chain; retry once if lifecycle changes, then retryable503; lost authority404. Independent20tests passed."
+      },
+      {
+        "severity": "MEDIUM",
+        "finding": "Correction unmet-evidence snapshots omit carried evidence and cannot establish full required count",
+        "resolution": "Existing evidence-requiring receipt count is explicitly null; not_required zero; prospective count known before recording; aggregate satisfaction retained."
+      }
+    ],
+    "verification": {
+      "workspace_navigation": {
+        "files": 4,
+        "tests": 62,
+        "result": "PASS"
+      },
+      "detail_pagination": {
+        "files": 5,
+        "tests": 91,
+        "result": "PASS"
+      },
+      "production_types": "PASS"
+    }
+  },
+  "client_review": {
+    "verdict": "APPROVE after remediation and re-verification",
+    "reviewer": "independent Codex subagent server_review",
+    "verification": {
+      "files": 5,
+      "tests": 72,
+      "status": "PASS",
+      "production_typecheck": "PASS",
+      "final_guard": "Independent forced-submit regression PASS; no remaining findings"
+    },
+    "findings_resolved": [
+      "Strict occurrence draft schema rejected extra facility_id; exact schemas now validated in client network tests",
+      "Canceled/disclosed exceptional outcome state could remain hidden; resets now explicit",
+      "Missing pinned receipt must block new recording and support targeted retry",
+      "Full correction preserves original note, performed instant and actual performer when another actor corrects a self-recorded entry",
+      "Reversal retains history and permits subsequent recording when effective receipt is null",
+      "Multiple pending drafts cannot replace an unresolved adopted draft; view/site/filter changes re-list server drafts before new mutations",
+      "History displays recorded values, performer, time and actual evidence API fields with finalized download/error handling",
+      "Facility-local datetime conversion rejects invalid calendar/DST times and preserves subsecond correction instants",
+      "Shared date picker nonempty value caused render loop; memoized parsing and equal-month guard with regression",
+      "Touch mode supplies44px controls including portal, regular named day buttons, open-dialog axe and Escape focus",
+      "New attachments blocked in controls and handlers while row work is unresolved or receipt/authority unavailable; existing attempt remains recoverable"
+    ]
+  },
+  "recorded_at": "2026-09-10T21:54:26.296603+00:00",
+  "evidence_review": {
+    "reviewer": "independent Codex subagent evidence_review",
+    "verdict": "APPROVE",
+    "tests": 30,
+    "findings_resolved": [
+      "Normal/replayed finalization hydrates authoritative receipt and consistent current occurrence including satisfaction:null",
+      "Definitive validation/authority/state refusal allows replacement; uncertain request retains same keys",
+      "Finalization returns focus to persistent row control after evidence panel unmount"
+    ],
+    "test_typing": "13 newly introduced page mock diagnostics repaired; no owned diagnostics remain. Exploratory unfiltered test typecheck still reports14 unrelated baseline billing/executive test diagnostics; official production typecheck passes."
+  }
+}

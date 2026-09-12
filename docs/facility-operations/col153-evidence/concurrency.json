@@ -1,0 +1,35 @@
+{
+  "result": "PASS",
+  "cases": [
+    {
+      "case": "same_key_replay",
+      "result": "PASS",
+      "observed_wait": "advisory",
+      "sqlstate": null,
+      "replayed": true
+    },
+    {
+      "case": "stale_parallel_publication",
+      "result": "PASS",
+      "observed_wait": "advisory",
+      "sqlstate": "P0001",
+      "replayed": null
+    },
+    {
+      "case": "revoked_during_wait",
+      "result": "PASS",
+      "observed_wait": "advisory",
+      "sqlstate": "42501",
+      "replayed": null
+    },
+    {
+      "case": "expired_during_wait",
+      "result": "PASS",
+      "observed_wait": "advisory",
+      "sqlstate": "42501",
+      "replayed": null
+    }
+  ],
+  "migration_sha256": "79d4dde7e252d04061a95b4658a39bb19534d12792a2a26132e5c4661175eaa4",
+  "environment": "fresh native PostgreSQL17 migration replay with synthetic Supabase stubs; no hosted validation"
+}

@@ -1,0 +1,60 @@
+{
+  "issue": "COL-135",
+  "recorded_at": "2026-09-10T11:50:00Z",
+  "purpose": "Close the applicability source review: confirm that the recorded evidence satisfies each acceptance criterion at the branch head, without re-running a reviewer. Done means reviewed, gated, unmerged source, as COL-132 and COL-133 were closed. It is not merge, hosted application, deployment, a requirement approved for any facility, a confirmed schedule or operating acceptance.",
+  "reviewed_head": {
+    "branch": "codex/hfo-col135-applicability",
+    "source_commit": "62d19cf4 (implementation, reviewed and gated)",
+    "later_commits": "a1bd6017 records the integration rehearsal and pending decisions (documentation only: CHECKPOINT.md, OWNER-DECISIONS.md, col135-evidence/stack-integration-rehearsal.json); this closure commit is documentation only",
+    "remote": "origin/codex/hfo-col135-applicability (verified 2026-09-10)",
+    "draft_pr": "#467 (base codex/hfo-col133-authority), open, draft"
+  },
+  "acceptance": {
+    "a_states_distinct_and_auditable_overrides_identify_source_and_approver": {
+      "criterion": "Applicable/not-applicable/needs-confirmation remain distinct and auditable; local overrides identify source and approver.",
+      "evidence": [
+        "supabase/tests/review_hfo_applicability.sql: a blank site draft stays needs_confirmation and publishes as its own state with approved_by set; not_applicable without a reason is rejected; a local override needs a reason and names its override_source; publication of each state is audited (audit_log rows asserted)",
+        "col135-evidence/independent-review.json sql_review clean: 'authority before and after DML in every command', 'RLS draft visibility and site gating', 'probe assertions are value checks'",
+        "operation_activity_requirements view exposes source disposition (mapped / needs_confirmation), resolving the COL-132 review's deferred finding; asserted for the seeded organisation in the probe"
+      ],
+      "status": "satisfied"
+    },
+    "b_future_changes_preserve_old_occurrence_snapshots": {
+      "criterion": "Changing future wording/evidence/schedule preserves old occurrence rule snapshots.",
+      "evidence": [
+        "supabase/tests/review_hfo_applicability.sql: a second central version published effective tomorrow leaves version 1 in force today, appears as scheduled, keeps the closed version's wording, and leaves an existing occurrence's snapshot untouched; a direct snapshot rewrite is rejected ('snapshot is immutable'); a tomorrow occurrence must snapshot the version in force and its site configuration must agree",
+        "col135-evidence/independent-review.json sql_review finding 1 (published conflated with effective) fixed by the effective-window model; finding 3 (snapshot guard gaps) fixed with activity, window and agreement checks and probes",
+        "published rows immutable in every column except the closing time, for clients, privileged paths and the service identity (probe cases; TRUNCATE guarded)"
+      ],
+      "status": "satisfied"
+    },
+    "c_unknown_values_not_defaults_recording_available": {
+      "criterion": "Unknown values do not become active defaults; actual-work recording remains available within current permissions.",
+      "evidence": [
+        "schedule_status defaults to needs_confirmation; a confirmed draft requires a rule object; publication of a confirmed schedule is rejected until the COL-137 evaluator defines rule shapes; probe asserts no published row is confirmed",
+        "a central version cannot be published for an unclassified activity (probe: legacy unclassified activity denied)",
+        "supabase/tests/review_hfo_applicability.sql: complete_operation_task_review succeeds for a task with no version and for an occurrence with a closed snapshot",
+        "col135-evidence/independent-review.json sql_review clean 'recording availability'"
+      ],
+      "status": "satisfied"
+    }
+  },
+  "gates": {
+    "strict_gate": "test-results/agent-gates/2026-09-10T02-37-46-794Z-COL-135-HFO-APPLICABILITY.json PASS (12 passed, 0 failed, 1 skipped; qa.web-build skipped by the runner) at the tree committed as 62d19cf4",
+    "focused_tests": "166 tests / 21 files PASS",
+    "typecheck": "PASS",
+    "eslint_new_files": "PASS (0 warnings)",
+    "native_replay": "341 migration files (numbered through 338), 22 SQL probes PASS on native PostgreSQL 17 with Supabase stubs",
+    "stack_rehearsal": "col135-evidence/stack-integration-rehearsal.json: Finance-first scratch merge, 349 files / 30 probes PASS with 343/344/345/346 provisional numbers; local only"
+  },
+  "reviews_relied_on": [
+    "col135-evidence/independent-review.json (two independent read-only reviewers, SQL and TypeScript; no blocker; six SQL and three TypeScript should-fix items remediated before the commit and re-verified)"
+  ],
+  "no_new_review": "No reviewer was re-run for this closure; the recorded review covers the committed source and both later commits are documentation.",
+  "still_open_not_blocking_closure": [
+    "Schedule confirmation stays unpublishable until COL-137 defines and validates rule shapes (by design)",
+    "Q01, Q02, Q07, Q08 and Q10 remain unapproved; needs_confirmation is the published state for every unanswered item",
+    "Migration 338 is a provisional number; a fresh read of the Haven hosted ledger precedes final numbering; integration follows Finance, COL-132 and COL-133",
+    "No administrator screen; hosted apply, deployment, browser and staff acceptance"
+  ]
+}

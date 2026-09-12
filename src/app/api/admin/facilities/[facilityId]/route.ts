@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { updateFacilitySchema } from "@/lib/validation/facility-admin";
 
@@ -23,6 +24,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     return auth.response;
   }
   const { actor } = auth;
+  const sessionClient = await createClient();
 
   const { facilityId } = await ctx.params;
   const admin = actor.admin;
@@ -103,8 +105,8 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
       .eq("organization_id", orgId)
       .eq("facility_id", facilityId)
       .is("deleted_at", null),
-    untypedAdmin
-      .from("risk_score_snapshots")
+    sessionClient
+      .from("risk_score_snapshots" as never)
       .select("summary_json")
       .eq("organization_id", orgId)
       .eq("facility_id", facilityId)

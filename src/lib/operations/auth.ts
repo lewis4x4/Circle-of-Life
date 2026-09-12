@@ -6,17 +6,12 @@ import {
   revalidateCurrentApiActor,
   type CurrentApiActor,
 } from "@/lib/auth/current-api-actor";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
-import { OPERATIONS_MUTATION_ADMIN_ROLE_SET, OPERATIONS_VIEW_ROLE_SET, ORG_WIDE_OPERATION_ROLES } from "@/lib/operations/constants";
-
-type AdminClient = ReturnType<typeof createServiceRoleClient>;
+import { OPERATIONS_MUTATION_ADMIN_ROLE_SET, OPERATIONS_VIEW_ROLE_SET } from "@/lib/operations/constants";
 
 export type OperationsActor = {
   id: string;
   organizationId: string;
   appRole: AppRole;
-  admin: AdminClient;
   currentActor: CurrentApiActor;
 };
 
@@ -28,10 +23,10 @@ type OperationTaskAccessShape = {
   assigned_role?: string | null;
 };
 
-export async function requireOperationsActor(): Promise<
+export async function requireOperationsActor(options?: { allowedRoles?: readonly AppRole[] }): Promise<
   { actor: OperationsActor } | { response: NextResponse }
 > {
-  const result = await requireCurrentApiActor({ scope: "operations.api-auth" });
+  const result = await requireCurrentApiActor({ scope: "operations.api-auth", allowedRoles: options?.allowedRoles });
   if ("response" in result) return result;
 
   return {
@@ -39,7 +34,6 @@ export async function requireOperationsActor(): Promise<
       id: result.actor.id,
       organizationId: result.actor.organizationId,
       appRole: result.actor.appRole,
-      admin: result.actor.admin,
       currentActor: result.actor,
     },
   };
@@ -57,7 +51,6 @@ export async function revalidateOperationsActor(
       id: result.actor.id,
       organizationId: result.actor.organizationId,
       appRole: result.actor.appRole,
-      admin: result.actor.admin,
       currentActor: result.actor,
     },
   };
@@ -71,34 +64,19 @@ export function actorHasMutationAdminScope(actor: Pick<OperationsActor, "appRole
   return OPERATIONS_MUTATION_ADMIN_ROLE_SET.has(actor.appRole);
 }
 
+/** Current database grants, including explicit corporate coverage, govern every request. */
 export async function listActorAccessibleFacilityIds(actor: OperationsActor): Promise<string[]> {
-  if (ORG_WIDE_OPERATION_ROLES.has(actor.appRole)) {
-    const { data } = await actor.admin
-      .from("facilities")
-      .select("id")
-      .eq("organization_id", actor.organizationId)
-      .eq("status", "active")
-      .is("deleted_at", null);
-
-    return Array.from(new Set((data ?? []).map((facility) => facility.id)));
-  }
-
-  const { data } = await actor.admin
-    .from("user_facility_access")
-    .select("facility_id")
-    .eq("user_id", actor.id)
-    .eq("organization_id", actor.organizationId)
-    .is("revoked_at", null);
-
-  return Array.from(new Set((data ?? []).map((row) => row.facility_id)));
+  const { data, error } = await actor.currentActor.client.rpc("haven_operation_accessible_facility_ids" as never);
+  if (error || !Array.isArray(data)) throw new Error("Could not verify facility access");
+  return Array.from(new Set(data as string[]));
 }
 
 export async function actorCanAccessFacility(actor: OperationsActor, facilityId: string) {
-  return serviceRoleUserHasFacilityAccess(actor.admin, {
-    userId: actor.id,
-    facilityId,
-    organizationId: actor.organizationId,
-  });
+  const { data, error } = await actor.currentActor.client.rpc(
+    "haven_operation_facility_access" as never,
+    { p_facility_id: facilityId } as never,
+  );
+  return !error && data === true;
 }
 
 export async function actorCanMutateTask(
@@ -106,7 +84,9 @@ export async function actorCanMutateTask(
   task: OperationTaskAccessShape,
 ): Promise<boolean> {
   if (task.organization_id !== actor.organizationId) return false;
-  if (task.assigned_to === actor.id || (!task.assigned_to && task.assigned_role === actor.appRole)) return actorCanAccessFacility(actor, task.facility_id);
-  if (!actorHasMutationAdminScope(actor)) return false;
-  return actorCanAccessFacility(actor, task.facility_id);
+  const { data, error } = await actor.currentActor.client.rpc(
+    "haven_operation_task_access" as never,
+    { p_task_id: task.id } as never,
+  );
+  return !error && data === true;
 }

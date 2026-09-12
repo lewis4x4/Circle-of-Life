@@ -1,0 +1,115 @@
+{
+  "issue": "COL-137",
+  "recorded_at": "2026-09-10T12:56:38Z",
+  "state": "local_source_implemented_reviewed_gated",
+  "base_commit": "520ccbde (codex/hfo-col135-applicability tip)",
+  "branch": "codex/hfo-col137-evaluator",
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts",
+    "files": 24,
+    "tests": 241,
+    "status": "PASS",
+    "note": "233 before review remediation; eight added: interval period bounds and year handling, scheduler sandbox (generation through the evaluator, existing-occurrence skipping, range refusal), and route/schema cases for invalid rules and previews"
+  },
+  "typecheck": "PASS",
+  "eslint_changed_files": "PASS (0 warnings)",
+  "deno_check": "oce-task-scheduler, risk-nightly-scorer PASS (--no-lock)",
+  "native_replay": {
+    "migration_files": 342,
+    "numbered_through": "339",
+    "sql_probes": 23,
+    "status": "PASS",
+    "runtime": "native PostgreSQL 17.9, run-owned socket-only cluster under ~/.hermes/tmp/agent-runs (no Docker), Supabase stubs"
+  },
+  "strict_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T12-48-37-467Z-COL-137-HFO-EVALUATOR.json",
+    "verdict": "PASS",
+    "summary": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "blocking_failures": []
+    },
+    "checks": [
+      {
+        "id": "hygiene.env-example",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.tracked-secrets-scan",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.npm-audit",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "security.gitleaks",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.eslint",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.migration-sequence",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.migrations-apply-postgres",
+        "status": "passed",
+        "required": false
+      },
+      {
+        "id": "qa.root-build",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.nextjs-deprecation-signal",
+        "status": "passed",
+        "required": false
+      },
+      {
+        "id": "qa.web-build",
+        "status": "skipped",
+        "required": false
+      },
+      {
+        "id": "chaos.stress-suite",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "cdo.design-review",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "cdo.a11y-axe",
+        "status": "passed",
+        "required": true
+      }
+    ],
+    "prior_artifacts": [
+      "2026-09-10T12-24-46-085Z PASS (before review remediation)",
+      "an earlier run without the native-cluster variables was stopped because the gate's replay step started a Docker replay; its container was removed; no artifact"
+    ]
+  },
+  "independent_review": "docs/facility-operations/col137-evidence/independent-review.json (SQL blocker and all should-fix items remediated before commit)",
+  "hosted_ledger": "docs/facility-operations/col137-evidence/hosted-ledger.json (numbered through 335; 339 provisional)",
+  "acceptance": {
+    "unknown_schedule_no_judgment": "judgeDue + due-judgment.test.ts (past assigned date, null due \u2192 unknown/null, not overdue, counted as schedule_unknown); assigned-date fallbacks removed from server.ts, overdue page and kanban page; scheduler reports unknown_schedules",
+    "deterministic_or_unresolved": "schedule-evaluator.test.ts: DST gap/overlap instants with adjustments, day 31 clamp/skip/last, leap-day anniversary, interval 6 vs fixed [1,7] vs interval 24, holiday calendar coverage refusals, expiry anchor then new-anchor-required",
+    "same_evaluator_everywhere_ambiguities_unactivated": "scheduler, server, risk scorer and facility preview import the one module (scheduler-evaluator.test.ts, automation-authority harness); seven ambiguous source items carry no approved rule (Vitest and SQL probe); probe asserts no migration stores or confirms a rule"
+  },
+  "release_boundary": "No hosted migration, deployment, schedule confirmation for any facility, occurrence generation from a confirmed rule, reminder delivery, provider transmission or operating acceptance",
+  "mission_alignment": "PASS",
+  "operating_readiness": "RISK"
+}

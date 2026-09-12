@@ -1,0 +1,30 @@
+{
+  "created_by": "codex",
+  "run_id": "haven-col152-20260912",
+  "owner": "COL-152 reminder concurrency proof",
+  "artifacts": [
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col152-20260912/reminder-concurrency-1f6b48fa39e948a7.json"
+  ],
+  "scratch_databases": [
+    {
+      "name": "hfo_reminder_base_1f6b48fa39e948a7",
+      "state": "dropped"
+    },
+    {
+      "name": "hfo_reminder_race_40c1a95ad239446e",
+      "state": "dropped"
+    },
+    {
+      "name": "hfo_reminder_race_52611826da354ca5",
+      "state": "dropped"
+    },
+    {
+      "name": "hfo_reminder_race_dd8d60ff79f94b71",
+      "state": "dropped"
+    },
+    {
+      "name": "hfo_reminder_race_6d2122fba6454c5b",
+      "state": "dropped"
+    }
+  ]
+}

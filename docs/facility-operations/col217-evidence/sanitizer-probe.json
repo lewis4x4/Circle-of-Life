@@ -1,0 +1,11 @@
+{
+  "without_target_ack_exit": 3,
+  "with_verified_target_ack_exit": 0,
+  "post_sanitize_counts": {
+    "facilities": 5,
+    "unbanned_users": 0,
+    "enabled_profiles": 0,
+    "catalog_activities": 133,
+    "non_synthetic_auth_emails": 0
+  }
+}

@@ -1,0 +1,20 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Facility Drill Generators
+
+9:51:13 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Facility Drill Generators/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven Facility Drill Generators/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Drill%20Generators/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Drill%20Generators/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Drill%20Generators/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Drill%20Generators/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Drill%20Generators/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Facility%20Drill%20Generators/node_modules/vite/dist/node/chunks/node.js:19691:22)
+
+ Test Files  582 passed (582)
+      Tests  3983 passed | 2 skipped (3985)
+   Start at  21:50:34
+   Duration  51.23s (transform 66.76s, setup 63.69s, import 319.62s, tests 63.26s, environment 205.85s)
+
+VITEST_EXIT=0

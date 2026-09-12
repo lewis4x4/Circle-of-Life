@@ -1,0 +1,226 @@
+{
+ "issue": "COL-159",
+ "uuid": "1ed5af55-72be-4b41-af3a-0c6fb718333b",
+ "title": "[HFO-22] Connect dietary, facility services and general admin evidence",
+ "scope": "source only; complete AL coverage pass: three new adapters and two AED kinds on the COL-147 mechanism; no hosted apply, deploy, rule, schedule, deadline, reminder, UI, provider, staff or operating acceptance; nothing sent or published",
+ "status": "APPROVED AFTER FIXES (re-verified)",
+ "reviewed_at": "2026-09-11T03:31:00Z",
+ "model_used": "Fable 5.1 / claude-fable-5-1 (implementer); independent reviewer seat: general-purpose subagent, read-only, 23 SQL scenarios run inside BEGIN...ROLLBACK on col159_base348",
+ "reviewer_verdict_before_fixes": "APPROVE WITH FIXES",
+ "surfaces": [
+  "supabase/migrations/348_hfo_dietary_admin_sources.sql",
+  "supabase/tests/review_hfo_dietary_admin_sources.sql",
+  "supabase/tests/review_hfo_drill_generator_sources.sql (registration assertions)",
+  "supabase/tests/review_hfo_source_links.sql (allowlist assertion)",
+  "scripts/facility-operations/test-dietary-admin-concurrency.py",
+  "src/lib/operations/source-records.ts",
+  "src/lib/operations/receipts.ts",
+  "src/app/api/admin/operations/service-records/",
+  "src/app/api/admin/operations/dietary-records/"
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "severity": "should-fix",
+   "finding": "Corrections re-validate references the correction does not touch. haven.operation_source_service_problem re-checks the vendor link (348 lines 470-474) and the certificate (lines 483-486) on every correction (called at line 598 with the merged row), and operation_source_dietary_problem re-checks the approval document (lines 669-672, called at 780). Once the vault archives the certificate (the normal lifecycle when next year's certificate supersedes it) or the vendor's site link is ended, a note-only correction of that record is refused by name, so the record can no longer be corrected at all unless the operator also drops the certificate reference or restates the vendor, which falsifies the record. Void is unaffected.",
+   "reproduced": true,
+   "how": "On the probe fixtures (admin_a at site A): record a sprinkler inspection with performer_kind='vendor', vendor_id=vendor_ok, certificate_document_id=doc1 -> satisfied. Then as owner: UPDATE public.facility_documents SET archived_at=now() WHERE id=doc1; as admin_a: SELECT public.correct_facility_service_review(<id>,'atk-ecor-001',1,'{\"reason\":\"Add note\",\"note\":\"Riser room key returned\"}') -> ERROR 'Certificate is not a current document of this site'. Restore the document, then UPDATE public.vendor_facilities SET deleted_at=now() WHERE vendor_id=vendor_ok; the same note-only correction -> ERROR 'Performer vendor is not linked to this site'. void_facility_service_review on the same record still succeeds (invalidated). Script: /tmp/col159-attack1.sql section S5.",
+   "reviewer_suggested_fix": "In operation_source_service_problem / operation_source_dietary_problem, check the vendor link only when the correction restates the performer (p_payload ? 'vendor_id' OR p_payload ? 'performer_kind') and the certificate/approval document only when p_payload ? 'certificate_document_id' / 'approval_document_id' (or when n.<ref> IS DISTINCT FROM r.<ref>); pass a 'restated' flag or compare n against r. Keep the asset-current re-check, which is a subject check. Add a probe case: archive doc1 after recording, note-only correction succeeds.",
+   "disposition": "fixed for documents; kept and documented for the vendor link",
+   "fix": "operation_source_service_problem/operation_source_dietary_problem take the previous row and re-check a certificate or approval document only when restated; the vendor link stays re-checked because the 344 statement rules re-check it at every 346 delivery (a relaxed command would rewrite the record under a refused delivery).",
+   "reverified": "probe 4c: certificate archived after recording -> note-only correction chains (v3); restating to the archived document refused by name; vendor link ended -> note-only correction refused by name with the record unchanged; re-linked -> chains; dietary approval document archived -> note-only correction chains"
+  },
+  {
+   "id": "F2",
+   "severity": "should-fix",
+   "finding": "A corrected version whose delivery lands 'unmatched' leaves the earlier version's receipt effective on the old occurrence, so that occurrence reads completed on evidence the record no longer states (asset, date). This is 346 settle behaviour (the moved-receipt invalidation at 346 lines 602-621 runs only when a candidate exists), inherited by 348 and reachable through every new adapter: asset-service (move to an asset with no enrolled binding), facility-service and dietary-record (performed_at / service_date restated out of every period). The 'conflict' variant (move onto an occurrence another record already satisfied) is the documented COL-154 policy and is reproduced too. An attention row exists in each case, so it is not silent, but 348's contract section 5 ('an asset move within the kind is delivered and handled by 346 by source identity') does not tell the reader the earlier receipt survives.",
+   "reproduced": true,
+   "how": "S2: record extinguisher inspection on ext1 (satisfied occ_ext_insp1_d0); INSERT an active fire_extinguisher asset with no operation_activity_subjects row; correct_facility_service_review(rec,'atk-cor-0002',<v>,'{\"reason\":\"New wing unit\",\"asset_id\":\"<new asset>\"}') -> event state 'unmatched' reason 'subject_not_enrolled'; SELECT effective_receipt_id, status FROM operation_task_instances WHERE id=occ_ext_insp1_d0 -> still the v1 receipt, 'completed', while facility_service_records.asset_id is the new unit at record_version 3. S3: fire_inspection satisfied occ_fire_d0; correct performed_at to recent-40 days with entry_reason -> 'unmatched'/'no_candidate'; occ_fire_d0 still completed by the v1 receipt whose performed_at is today. S4: meal substitution satisfied occ_meal_d0; correct service_date=dold and performed_at on dold with entry_reason -> 'unmatched'/'no_candidate'; occ_meal_d0 still completed by v1. S1 (documented policy): move ext1 record onto ext2 whose occurrence another record satisfied -> 'conflict'/'already_recorded'; ext1 occurrence still completed by the v1 receipt while the record says ext2. Script: /tmp/col159-attack1.sql sections S1-S4.",
+   "reviewer_suggested_fix": "Preferred (346, owner decision): when a 'final' delivery for a new version of a record that currently holds an effective receipt on another occurrence resolves to unmatched, invalidate that earlier receipt with the same reversal reason used on the moved path (the record can never satisfy two occurrences and its content no longer supports the old one). 348-local alternative: in correct_facility_service / correct_dietary_record, when the record has an effective source receipt and the delivery of the corrected version returns state 'unmatched', raise a named refusal (22023, e.g. 'Corrected record no longer covers the occurrence it satisfied; void the record and record it again') so the transaction rolls back. At minimum, state in engineering-contracts.md section 5 that an unmatched or conflicting correction leaves the earlier receipt effective with an attention row, and add a probe case.",
+   "disposition": "fixed (348-local)",
+   "fix": "haven.operation_source_record_effective + haven.operation_source_correction_unmatched: the three 348 correct commands (asset observation, facility service, dietary record) raise 22023 'Corrected record no longer matches the occurrence it satisfied; void the record and record it again' when the record held an effective source receipt and the corrected version's delivery is unmatched; the transaction rolls back. Conflict keeps COL-154 3k(xi). The 346 alternative (invalidate on unmatched) is recorded as the owner's preferred fix, which would also cover 347 drill-log corrections.",
+   "reverified": "probe 4d: the correction is refused; record, occurrence, ledger, requests and receipts unchanged; void reverses with attention; re-record at the earlier date lands unmatched/no_candidate with attention"
+  },
+  {
+   "id": "F3",
+   "severity": "note",
+   "finding": "A performer restatement carries the previous entry_reason across the restated performer. correct_facility_service (348 lines 591-593) clears vendor_id/performer_label on vendor->staff and performed_by on staff->vendor, but entry_reason is left as recorded, so a vendor record corrected to 'staff, performed_by=maint' without restating the reason is delivered as an on_behalf entry whose reason is the vendor visit text. The probe passes entry_reason:null explicitly and so never exercises the carry. The corresponding 'another actor corrects an on-behalf record and the original reason carries' case is 347 behaviour.",
+   "reproduced": true,
+   "how": "Record hood_cleaning with performer_kind='vendor', vendor_id=vendor_ok, entry_reason='Vendor crew cleaned it'; correct with {reason, performer_kind:'staff', performed_by:<maint>} -> receipt performer_kind 'other_staff', entry_kind 'on_behalf', entry_reason 'Vendor crew cleaned it'. /tmp/col159-attack2.sql S15; S19 in /tmp/col159-attack3.sql shows the cross-actor carry on a dietary record.",
+   "reviewer_suggested_fix": "When performer_kind changes (or performed_by/vendor_id changes), require entry_reason to be present in the payload (refuse 'Restating the performer requires an entry reason') or clear it unless restated so the existing 'must be entered on behalf with a reason' refusal fires.",
+   "disposition": "fixed",
+   "fix": "a changed performer (performer_kind/performed_by/vendor_id, or observed_by) drops the earlier entry_reason unless the correction states one.",
+   "reverified": "probe 4b: vendor->other staff without entry_reason refused 'must be entered on behalf with a reason'; with a reason the receipt carries the new reason as on_behalf/other_staff"
+  },
+  {
+   "id": "F4",
+   "severity": "note",
+   "finding": "Inherited 347 policy, confirmed on the new tables: any managed actor with site access can correct a record even when they are not on the recorder list; the record is rewritten (e.g. outcome pass->fail, version 2) while the delivery is refused 'recorder_not_authorized' and the occurrence stays completed on version 1. Attention row is set. Not new to 348; recorded so the owner sees the consequence on inspection records.",
+   "reproduced": true,
+   "how": "admin_a records fire_inspection (satisfied). aide (housekeeper) runs correct_facility_service_review(rec,'atk-hcor-001',1,'{\"reason\":\"It failed\",\"outcome\":\"fail\",\"issue_summary\":\"Panel fault\",\"entry_reason\":\"Restating for the administrator\"}') -> event 'refused'/'recorder_not_authorized', record outcome 'fail' v2; occ_fire_d0 completed with receipt outcome 'performed' v1. /tmp/col159-attack2.sql S8.",
+   "reviewer_suggested_fix": "No change required for this segment; consider in a later segment whether a correction that cannot be delivered should be refused rather than recorded.",
+   "disposition": "accepted (COL-154 policy, unchanged)",
+   "fix": null,
+   "reverified": null
+  },
+  {
+   "id": "F5",
+   "severity": "note",
+   "finding": "Contract section 7 claims 'The COL-154 probe and the COL-147 probe keep passing'. The COL-154 probe passes on col159_base348. The COL-147 probe (supabase/tests/review_hfo_source_links.sql) fails at line 567 ('Occurrence must snapshot the version in force on its date') at 23:26 America/New_York on col159_base348, and identically on col154_base347 and col147_base346, so it is a pre-existing time-of-day fixture flake (line 47 derives dates from current_date, which is UTC and already the next day) rather than a 348 regression. The claim is not reproducible in the evening and the probe should not be cited as evidence without the hour.",
+   "reproduced": true,
+   "how": "psql -d col159_base348 -f supabase/tests/review_hfo_source_links.sql (and -d col154_base347, -d col147_base346) at 2026-09-10 23:26 EDT -> ERROR at :567.",
+   "reviewer_suggested_fix": "Out of 348 scope; anchor the COL-147 probe's date fixtures on the facility-local date as the 348 probe does, or note the constraint in the handoff.",
+   "disposition": "documented",
+   "fix": "contract section 7 and the handoff note the 23:00-23:59 America/New_York window of the COL-147 fixture; the gate's native replay is run outside it.",
+   "reverified": "COL-147 probe fails identically on col147_base346, col154_base347 and col159_base348 in that window"
+  },
+  {
+   "id": "F6",
+   "severity": "note",
+   "finding": "No gate artifact yet: test-results/agent-gates/ contains no COL-159 PASS JSON (latest is COL-154), col159-evidence/gate-run-1.log is empty, and every COL-159 commit on the branch is labelled '(ungated)'. Under the repo's gate artifact rule the segment cannot be called done until 'npm run segment:gates -- --segment COL-159-HFO-DIETARY-ADMIN' produces a PASS. The focused vitest suites (4 files, 47 tests) pass locally; the 348 probe passes in 1.3 s.",
+   "reproduced": true,
+   "how": "ls test-results/agent-gates/ | grep -i 159 -> nothing; tail col159-evidence/gate-run-1.log -> empty; git log --oneline -3.",
+   "reviewer_suggested_fix": "Run the segment gate after F1/F2 are addressed and attach the PASS JSON before the handoff.",
+   "disposition": "resolved by the strict gate run",
+   "fix": "see verification.json / GATE.md",
+   "reverified": null
+  },
+  {
+   "id": "F7",
+   "severity": "note",
+   "finding": "Reference currency checks are narrower than their names suggest, consistently with the hand-recording path: operation_source_vendor_linked ignores vendors.status (an 'inactive' vendor linked to the site is accepted, exactly as 344's hand recording accepts it), and the meal_services reference ignores meal_services.status (a 'closed' service is acceptable). facility_documents has no superseded flag, so 'current' means not deleted and not archived only.",
+   "reproduced": true,
+   "how": "UPDATE public.vendors SET status='inactive' WHERE id=vendor_ok; record fire_inspection with that vendor -> accepted (delivery conflict only because the occurrence was already taken). /tmp/col159-attack1.sql S6. Column check: vendors has status with no CHECK constraint; meal_services.status in (planned,prep,plating,service,closed).",
+   "reviewer_suggested_fix": "None required (matches the stated policy 'exactly as a hand recording requires'); mention vendor status in the contract so nobody expects it to be enforced.",
+   "disposition": "documented (matches 344)",
+   "fix": "contract section 5 states vendors.status and meal_services.status are not consulted.",
+   "reverified": null
+  },
+  {
+   "id": "F8",
+   "severity": "note",
+   "finding": "Replay hash is computed before performed_by/observed_by is defaulted to the actor (348 line 523 hashes n.performed_by, line 529 coalesces; dietary 709 vs 715; observations 151 vs 159), so a retry that names the recorder explicitly after an omitted-performer first attempt is refused as 'already saved with different content'. Same as 347. Client retries must resend the identical body.",
+   "reproduced": true,
+   "how": "diet('atk-n-000001','emergency_food_supply_check',recent) then the same key with performed_by=<cook> -> ERROR 'This request was already saved with different content'. /tmp/col159-attack2.sql S13.",
+   "reviewer_suggested_fix": "Optional: hash after the coalesce so the canonical payload is hashed.",
+   "disposition": "accepted (347 parity)",
+   "fix": null,
+   "reverified": null
+  },
+  {
+   "id": "F9",
+   "severity": "note",
+   "finding": "Wording drift between contract and code on next_due_on: contract section 3.2 says 'must not precede the performed date at the site' and section 5 lists 'next_due_on before the service date' as the refusal, while the code (348 line 482) refuses equality too ('next_due_on must be after the service date'). Local-date semantics are correct: a 23:30 local service on d0-1 accepts next_due_on = d0 and refuses d0-1.",
+   "reproduced": true,
+   "how": "/tmp/col159-attack2.sql S11; probe bad-000010 refuses next_due_on = today for a service today.",
+   "reviewer_suggested_fix": "Align the contract wording to 'after the service date' (or relax the check to '<', whichever the owner intends).",
+   "disposition": "fixed (document)",
+   "fix": "contract now says next_due_on must be after the service date.",
+   "reverified": null
+  },
+  {
+   "id": "F10",
+   "severity": "note",
+   "finding": "The haven.* definer commands (record/correct/void for both tables) are EXECUTE-granted directly to authenticated (348 lines 843-848) and the haven schema carries USAGE for authenticated, so the public.*_review invoker wrappers are not the only entry point. This mirrors 347 (record_asset_observation has the same grant) and adds no authority because the wrappers only delegate, but it makes the 'public RPCs are invokers' probe invariant less meaningful.",
+   "reproduced": true,
+   "how": "SELECT proacl FROM pg_proc WHERE proname='record_facility_service' -> authenticated=X; has_schema_privilege('authenticated','haven','USAGE') -> true.",
+   "reviewer_suggested_fix": "Optional: grant only the public wrappers to authenticated and leave the haven.* commands executable by the wrappers' invoker through the schema owner, or document the dual entry point.",
+   "disposition": "accepted (347 parity), documented as 3l(xvi)",
+   "fix": null,
+   "reverified": null
+  }
+ ],
+ "acceptance": {
+  "1": "PASS - all 21 items map to real 336 catalog keys on the live database (110 hfo-al-* activities queried): source rules are exactly the eleven registered (asset-observation w04-01/02; asset-service y03-01, y05-01, m11-01; facility-service y02-01, y04-01/02; dietary-record m01-01, m08-01, y01-01), the 15-key never list (d11-01, a07-01/02, a08-01/02, d01-01, d02-01/02, d03-01/02, d16-01, w03-01, m10-01, y06-01, y07-01) all exist and none is allowlisted, no record_review activity is allowlisted anywhere, W01 and A07-03 remain on the COL-154 adapter, and each Human-path row names its question (Q04/Q06/Q07/Q13/Q14/Q25/Q28). No silent omission found.",
+  "2": "PASS - meal substitution is meal-level (service_date + meal_period, performed_at must fall on the service date in the facility timezone; verified at 23:45 vs 00:15 local), a meal_service of another site or period is refused, no resident column exists; the y03-01 inspection and the a07-03 currency check are distinct occurrences (probe), the two AED components are two records, and asset-type checks (AED, extinguisher, hood/kitchen, AC unit) plus retired/other-site refusals control the subject. Open policy (documented 3l(v)): under a monthly M08 rule every substitution after the first in the period lands as an attention conflict, which will be noisy until Q14 is answered.",
+  "3": "PASS - composite components stay separate (probe sections 1, 2, 2a; my S22 failed fire safety inspection opens an issue and leaves the other components pending); facility_assets, facility_building_profiles, facilities, facility_documents, maintenance_tickets/completions and meal_services are unchanged after every command (probe snapshot plus my S22 document diff and ticket count); nothing sends or publishes. Risk noted under F2: a corrected version that lands unmatched leaves the earlier receipt effective, which is visible (attention) but is a completion the record no longer supports."
+ },
+ "scenarios_run": [
+  "Baseline: supabase/tests/review_hfo_dietary_admin_sources.sql PASS (1.3 s); review_hfo_drill_generator_sources.sql PASS on col159_base348; review_hfo_source_links.sql FAILS at :567 on col159_base348, col154_base347 and col147_base346 at 23:26 EDT (pre-existing date flake)",
+  "vitest: service-records and dietary-records route tests, source-records and receipts schema tests: 4 files, 47 tests pass",
+  "S1 asset move onto an occurrence another record satisfied -> conflict; old receipt stays effective (documented COL-154 policy)",
+  "S2 asset move onto an unenrolled asset -> unmatched/subject_not_enrolled; old receipt stays effective (F2)",
+  "S3 performed_at moved 40 days back on a fire inspection -> unmatched/no_candidate; old receipt stays effective (F2)",
+  "S4 meal substitution moved to another service date -> unmatched; old receipt stays effective (F2)",
+  "S5 archived certificate and ended vendor link block note-only corrections; void still works (F1)",
+  "S6 vendor linked only to site B refused; inactive vendor accepted; site-B meal service refused (S12)",
+  "S7 same key, same content, other actor -> 'already saved with different content'",
+  "S8 housekeeper corrects outcome pass->fail: record v2 'fail', delivery refused recorder_not_authorized, occurrence completed on v1 (F4)",
+  "S9 asset moved to site B by UPDATE: blocked by haven.guard_operation_asset_authority ('Asset unavailable'), so the move is not reachable; retired-asset void/correct refusals covered by probe 4a",
+  "S10 service_role INSERT and command calls denied; owner TRUNCATE with the real domain token refused on both tables",
+  "S11 next_due_on local-date edge (23:30 local previous day) and HS snack at 23:45 vs 00:15 local",
+  "S12 correction adding asset_id to a facility kind refused by name; dietary meal_service of site B refused",
+  "S13 hash sensitivity: explicit self performed_by vs omitted is 'different content' (F8)",
+  "S15 vendor->staff restatement carries the vendor entry_reason (F3); S19 cross-actor dietary correction carries the on-behalf reason",
+  "S16 readers with non-uuid, empty and unknown ids return {exists:false}",
+  "S17 one effective receipt per (org, source_key, record) after all moves and corrections; attention rows present",
+  "S18 site B admin reads zero request rows, events and dietary records of site A; site A aide reads the request ledger reply including the full record",
+  "S20 never-list keys all exist in the catalog and none is allowlisted; catalog kinds/subjects match the register",
+  "S21 AED observation correction to site B's AED, to an extinguisher, and observation_kind change refused by name",
+  "S22 failed fire safety inspection with certificate: issue opened, document row unchanged, no maintenance ticket",
+  "Static: TS schemas vs SQL refusals (nullable correct fields, kind refinements, performer shapes, calendar dates) consistent; TRUSTED_FRAGMENTS cover every 348 RAISE wording enumerated (recorded against, not linked, service date, recorded as performed, cannot change; void, next_due_on, not a current document, must be empty, must name, must be/are required/requires/not editable, is voided/already voided, changed since) and no Postgres-internal wording under 22023/23514/P0001 carries the new fragments; route order auth -> body -> site guard (404) -> revalidate -> RPC -> mapReceiptRpcError('source_record'); lock order request key -> record -> FOR UPDATE + deleted_at re-check -> 346 per-record lock matches 347; no Homewood day/time/threshold set (Tuesday rule is a labelled probe fixture; facility.timezone is NOT NULL so the America/New_York fallback never applies); no resident reference on either table"
+ ],
+ "reverification": {
+  "probe_348": "PASS on a fresh col159_base348 (sections 0-8 incl. 4b/4c/4d added for F3/F1/F2)",
+  "probe_347": "PASS on col159_base348",
+  "race": "PASS 6/6 with observed waits (transactionid x3, advisory x3)",
+  "vitest_focused": "7 files / 67 tests PASS",
+  "typecheck": "PASS",
+  "lint": "PASS",
+  "gate": "see verification.json",
+  "reviewer_seat": {
+   "verdict": "APPROVE",
+   "findings": [
+    {
+     "id": "RV-F2",
+     "severity": "closed",
+     "finding": "F2 fixed. haven.operation_source_record_effective + haven.operation_source_correction_unmatched (348 lines 97-108) are called after delivery in all three correct commands (asset observation line 236/242, facility service 627/634, dietary 811/818). A corrected version whose delivery is 'unmatched' while the record held an effective source receipt raises 22023 'Corrected record no longer matches the occurrence it satisfied; void the record and record it again'.",
+     "reproduced": true,
+     "how": "S2: extinguisher inspection on ext1 (satisfied) corrected to an active but unenrolled extinguisher -> refused 22023 with that wording; counts of operation_source_record_requests, operation_source_events, operation_execution_receipts and audit_log unchanged and the record row byte-identical (record_version 1); occ_ext_insp1_d0 still completed by the original receipt. S3: fire inspection performed_at moved 40 days back with entry_reason -> refused; record_version stays 1. S4: meal substitution moved to dold -> refused; service_date stays d0. AED: aed_operation_check corrected onto an unenrolled AED -> refused. Bypasses tried: (a) conflict then unenrolled: step 1 move onto ext2 (occupied by another record) -> 'conflict' v2 as 3k(xi) allows; step 2 move to the unenrolled unit -> refused; moving back to ext1 -> 'corrected'. (b) moved then unenrolled: after voiding the other ext2 record, moving rec1 to ext2 -> 'satisfied' with ext1 released (fresh chain, as before); then to the unenrolled unit -> refused. (c) void then correct -> 'Service record is voided' (P0001). (d) a record that was unmatched from the start (unenrolled asset at record time) can still be corrected while unmatched (had_receipt false), as intended. (e) an unauthorized corrector (housekeeper) restating outcome pass->fail still lands 'refused'/'recorder_not_authorized' with the record at v2, i.e. the refused path is unchanged (inherited F4 note stands). (f) an unauthorized corrector moving performed_at back 12 days landed 'unmatched' and was refused by the new guard; a 'refused, candidate exists' variant could not be built because the fixture versions take effect yesterday so no earlier occurrence can be generated (generator created 0).",
+     "suggested_fix": "None. Residual (already noted as F4, inherited): a correction whose delivery is 'refused' with a candidate (recorder_not_authorized, statement_invalid) still rewrites the record while the earlier receipt stays effective; not in scope of this fix."
+    },
+    {
+     "id": "RV-F1",
+     "severity": "closed",
+     "finding": "F1 fixed for documents; vendor re-check deliberately kept, and the stated reasoning is confirmed. operation_source_service_problem / operation_source_dietary_problem now take p_prev and check certificate_document_id / approval_document_id only when NULL-prev or IS DISTINCT FROM the previous row (lines 507-510, 697-700). The vendor link is still re-checked on every version (lines 494-500).",
+     "reproduced": true,
+     "how": "S5: sprinkler inspection by vendor_ok with certificate doc1 (satisfied); owner archives doc1; note-only correction -> 'corrected', certificate kept on the record. Restating the certificate to the archived doc_arch -> refused 'Certificate is not a current document of this site'. Ending the vendor link (vendor_facilities.deleted_at) -> note-only correction refused 'Performer vendor is not linked to this site' as designed. Reasoning check: with the vendor link ended, I simulated an absent command check by bumping the record under the owner token (note-only UPDATE with version_recorded_at -> record_version 3) and delivering version 3 'final' through deliver_operation_source_event_review as admin_a: 346 returned state 'refused', reason 'statement_invalid', detail 'Performer vendor is not linked to this site', attention=false, and the occurrence kept the version-2 receipt while the record sat at version 3. So a relaxed command check would rewrite the record under a refused delivery that does not even raise attention; refusing in the command is the right call.",
+     "suggested_fix": "None. Optional wording: the contract could say that a record whose vendor link has ended is corrected by re-linking the vendor or restating the performer, as the code comment already does."
+    },
+    {
+     "id": "RV-F3",
+     "severity": "closed",
+     "finding": "F3 fixed. A changed performer (performer_kind/performed_by/vendor_id on service records, line 619; performed_by on dietary, line 791; observed_by on observations, line 222) drops the earlier entry_reason unless the correction states one, so the on-behalf rule asks for a fresh reason.",
+     "reproduced": true,
+     "how": "S15: vendor hood cleaning corrected to staff performed_by=maint without entry_reason -> refused 'must be entered on behalf with a reason'; with entry_reason 'Maintenance told me' -> other_staff receipt carrying that reason. Vendor AC filter change corrected to {performer_kind:'staff'} -> self, routine, entry_reason NULL on receipt and record. Vendor A -> vendor B without a reason -> refused. Dietary: on-behalf food check corrected to performed_by=aide without a reason -> refused. S19 (unchanged performer, different corrector): the earlier 'Cook counted; I logged' still carries -> by design, unchanged from 347.",
+     "suggested_fix": "None."
+    },
+    {
+     "id": "RV-N1",
+     "severity": "note",
+     "finding": "receipts.ts carries the new wording as a trusted validation fragment ('no longer matches the occurrence', lines 217 and 241) and source-records.test.ts asserts it (line 216); the probe covers the refusal at line 478. The COL-159 probe and the COL-154 probe PASS on the fixed database. The gate artifact (test-results/agent-gates/*COL-159*) was still absent at review time; run the segment gate before handoff.",
+     "reproduced": true,
+     "how": "grep in src/lib/operations/receipts.ts and the probe; psql -f both probes.",
+     "suggested_fix": "Run npm run segment:gates -- --segment COL-159-HFO-DIETARY-ADMIN and attach the PASS JSON."
+    }
+   ],
+   "scenarios_run": [
+    "Fresh database check: facility_service_records empty; haven.operation_source_record_effective and haven.operation_source_correction_unmatched present; problem functions carry p_prev",
+    "supabase/tests/review_hfo_dietary_admin_sources.sql (updated) PASS; review_hfo_drill_generator_sources.sql PASS on col159_base348",
+    "F2/S2 unenrolled-asset move refused; request/event/receipt/audit counts and record row unchanged; old occurrence keeps its receipt",
+    "F2/S3 fire inspection performed_at moved 40 days back refused; version stays 1",
+    "F2/S4 meal substitution moved to another service date refused; service_date stays d0",
+    "F2 AED operation check moved onto an unenrolled AED refused",
+    "F2 bypass: conflict-then-unenrolled (step 2 refused), move back to own occurrence 'corrected', moved-then-unenrolled (refused after a legitimate fresh-chain move), void-then-correct (voided), never-linked record corrects while unmatched",
+    "Refused path unchanged: housekeeper correction pass->fail lands refused/recorder_not_authorized at v2",
+    "F1/S5 archived certificate no longer blocks a note-only correction; restating to an archived certificate refused; ended vendor link still refuses a note-only correction",
+    "F1 reasoning: token-bumped version 3 delivered directly after the vendor link ended -> 346 refused statement_invalid 'Performer vendor is not linked to this site', attention=false, occurrence keeps v2",
+    "F3/S15 vendor->other staff without reason refused, with reason on_behalf; vendor->self routine with entry_reason dropped; vendor A->vendor B without reason refused",
+    "F3/S19 unchanged performer with a different corrector carries the earlier reason (by design); dietary performer change without reason refused",
+    "Invariant: one effective source receipt per (organization, source_key, record) after every scenario"
+   ],
+   "reviewed_at": "2026-09-11T03:42:00Z"
+  }
+ },
+ "reviewer_verdict_after_fixes": "APPROVE"
+}

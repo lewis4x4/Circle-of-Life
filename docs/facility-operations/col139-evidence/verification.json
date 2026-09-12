@@ -1,0 +1,59 @@
+{
+  "issue": "COL-139",
+  "recorded_at": "2026-09-10T16:05:00Z",
+  "state": "local_source_implemented_reviewed_gated",
+  "base_commit": "caca9592 (codex/hfo-col137-evaluator tip)",
+  "branch": "codex/hfo-col139-occurrences",
+  "baseline_before_changes": {
+    "focused_tests": "241 tests / 24 files PASS",
+    "native_replay": "342 migration files, 23 probes PASS"
+  },
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts",
+    "files": 26,
+    "tests": 278,
+    "status": "PASS",
+    "note": "241 at the base; added: scheduler managed pass (evaluator-only generation with the stored rule sent verbatim, window clipping in the rule zone, event and invalid rules never generated, supersession only on in-force dates, configuration and existing-row paging, one failing command counted, dry run without commands, batch split above 400, row-by-row legacy convergence and its partial-failure report), occurrence library schemas and error mapping, six occurrence routes"
+  },
+  "typecheck": "PASS",
+  "lint": "PASS (eslint src --max-warnings 0 and constitution lint)",
+  "deno_check": "oce-task-scheduler PASS (--no-lock)",
+  "native_replay": {
+    "migration_files": 343,
+    "numbered_through": "340",
+    "sql_probes": 24,
+    "probe": "supabase/tests/review_hfo_occurrences.sql (155 assertions, rolls back)",
+    "status": "PASS",
+    "runtime": "native PostgreSQL 17.9, run-owned socket-only cluster under ~/.hermes/tmp/agent-runs (no Docker), Supabase stubs"
+  },
+  "lock_races": {
+    "script": "scripts/facility-operations/test-occurrence-concurrency.py",
+    "output": "docs/facility-operations/col139-evidence/concurrency.txt",
+    "cases": [
+      "two generators, same configuration and period: the second waits on the advisory lock; both report the same task ids (created/existing); two rows total",
+      "binding retirement committed while a generator waits on the advisory lock: no_binding after the wait, zero rows",
+      "binding retirement held FOR UPDATE before the generator starts and committed while it waits on the binding row: no_binding after the wait, zero rows"
+    ],
+    "status": "PASS"
+  },
+  "strict_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T15-51-37-911Z-COL-139-HFO-OCCURRENCES.json",
+    "verdict": "PASS",
+    "summary": {"passed": 12, "failed": 0, "skipped": 1, "blocking_failures": []},
+    "checks": "hygiene.env-example, hygiene.tracked-secrets-scan, hygiene.npm-audit, security.gitleaks, qa.eslint, qa.migration-sequence, qa.migrations-apply-postgres (native replay), qa.root-build, hygiene.nextjs-deprecation-signal, chaos.stress-suite, cdo.design-review, cdo.a11y-axe passed; qa.web-build skipped (no apps/web)",
+    "prior_artifacts": [
+      "2026-09-10T15-26-57-067Z-COL-139-HFO-OCCURRENCES.json PASS (before review remediation)",
+      "2026-09-10T15-45-41-414Z-COL-139-HFO-OCCURRENCES.json PASS (after review remediation, before the two re-verification notes were applied)"
+    ]
+  },
+  "independent_review": "docs/facility-operations/col139-evidence/independent-review.json (SQL: two blockers and five should-fix remediated; TypeScript: two blockers and three should-fix remediated; notes applied or recorded)",
+  "hosted_ledger": "docs/facility-operations/col137-evidence/hosted-ledger.json (numbered through 335 on both 2026-09-10 reads; 340 provisional, not re-read for this source-only segment)",
+  "acceptance": {
+    "distinct_subjects_one_per_period": "probe: two asset bindings produce two rows and replay reports existing with the same ids; race script cases 1-3; unique identity index retained across cancellation and soft deletion",
+    "no_duplicate_on_revision_history_survives": "probe: revised and same-day-cutover configurations converge on the existing row and keep the original snapshot; catch-up after retirement creates nothing; reconciliation cancels only future pending rows and leaves in-progress and completed rows; cancelled and removed identities never recreated",
+    "no_silent_redating_audited_association": "probe: manual rows carry no period or deadline and a labelled queue date; association needs the current revision, is idempotent, refuses a second target, changes neither row and writes two audit rows; legacy defer and reinstate refuse managed rows"
+  },
+  "release_boundary": "No hosted migration, deployment, schedule confirmation for any facility, binding for any real subject, occurrence generation on any hosted project, reminder delivery, completion receipt, provider transmission or operating acceptance",
+  "mission_alignment": "PASS",
+  "operating_readiness": "RISK"
+}

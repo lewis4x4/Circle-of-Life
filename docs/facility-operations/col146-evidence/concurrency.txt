@@ -1,0 +1,38 @@
+# COL-146 draft concurrency run: 2026-09-10T20:48:48Z UTC; tree c7dc9efc (COL-145 tip, final 343/344); baseline col146_base345 built from scripts/pg-verify-stub.sql + supabase/migrations/001..345 (345 sha256 prefix 8b38ed54101fd6f4) on the run-owned native PostgreSQL 17 cluster hfo-col139-20260910-105544 (socket-only, port 55443); waited_on is the relation read from pg_locks for the blocked backend, not assumed.
+{
+  "issue": "COL-146",
+  "baseline_database": "col146_base345",
+  "cases": [
+    {
+      "name": "two resumes of one draft",
+      "outcome": "second resume replayed the one receipt after the wait; draft reconciled once",
+      "receipts": 1,
+      "draft_state": "reconciled",
+      "waited_on": [
+        "operation_command_drafts"
+      ]
+    },
+    {
+      "name": "discard lands first, resume waits",
+      "outcome": "resume refused after the wait; nothing recorded from the discarded draft",
+      "sqlstate": "P0001",
+      "receipts": 0,
+      "draft_state": "discarded",
+      "waited_on": [
+        "operation_command_drafts"
+      ]
+    },
+    {
+      "name": "resume lands first, discard waits",
+      "outcome": "discard refused after the wait; the resumed record stands",
+      "sqlstate": "P0001",
+      "receipts": 1,
+      "draft_state": "reconciled",
+      "waited_on": [
+        "operation_command_drafts"
+      ]
+    }
+  ],
+  "boundary": "local PostgreSQL 17 with Supabase auth stubs; run-owned socket-only cluster"
+}
+COL-146 draft concurrency PASS

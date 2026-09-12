@@ -1,0 +1,4 @@
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+
+added 946 packages in 16s
+npm ci exit 0

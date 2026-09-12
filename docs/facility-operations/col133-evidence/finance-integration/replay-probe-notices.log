@@ -1,0 +1,700 @@
+
+=== family_portal_messages_one_way.sql exit=0 ===
+
+=== review_access_boundaries.sql exit=0 ===
+
+=== review_audit_export_authorization.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:49: NOTICE:  F01 PASS: current-restricted-authority
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:50: NOTICE:  F01 PASS: direct-audit-A-only
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:53: NOTICE:  F01 PASS: null-scope-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:54: NOTICE:  F01 PASS: B-scope-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:55: NOTICE:  F01 PASS: cross-org-facility-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:56: NOTICE:  F01 PASS: spoofed-requester-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:57: NOTICE:  F01 PASS: forged-completion-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:58: NOTICE:  F01 PASS: forged-checksum-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:59: NOTICE:  F01 PASS: forged-artifact-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:60: NOTICE:  F01 PASS: reversed-dates-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:61: NOTICE:  F01 PASS: scope-update-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:64: NOTICE:  F01 PASS: snapshot-complete-2505-before-after
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:67: NOTICE:  F01 PASS: exact-source-membership-and-tie-order
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:68: NOTICE:  F01 PASS: snapshot-checksum
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:69: NOTICE:  F01 PASS: formula-neutralized
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:70: NOTICE:  F01 PASS: direct-snapshot-read-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:71: NOTICE:  F01 PASS: direct-event-read-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:77: NOTICE:  F01 PASS: retry-preserves-exact-snapshot
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:79: NOTICE:  F01 PASS: durable-request-materialization-retrieval-events
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:80: NOTICE:  F01 PASS: snapshot-mutation-rejected-even-owner
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:81: NOTICE:  F01 PASS: event-deletion-rejected-even-owner
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:92: NOTICE:  F01 PASS: revoked-grant-retrieval-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:93: NOTICE:  F01 PASS: revoked-grant-processing-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:94: NOTICE:  F01 PASS: revoked-before-materialization-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:95: NOTICE:  F01 PASS: revoked-new-request-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:96: NOTICE:  F01 PASS: revoked-job-list-hidden
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:101: NOTICE:  F01 PASS: inactive-actor-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:106: NOTICE:  F01 PASS: deleted-profile-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:111: NOTICE:  F01 PASS: deleted-auth-user-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:116: NOTICE:  F01 PASS: banned-actor-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:121: NOTICE:  F01 PASS: revoked-session-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:126: NOTICE:  F01 PASS: stale-claim-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:132: NOTICE:  F01 PASS: downgraded-role-even-fresh-claim-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:141: NOTICE:  F01 PASS: owner-cross-org-facility-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:142: NOTICE:  F01 PASS: different-requester-retrieval-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:145: NOTICE:  F01 PASS: owner-null-complete-current-org
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:146: NOTICE:  F01 PASS: owner-B-excludes-null-history
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:155: NOTICE:  F01 PASS: pending-job-visible-for-forge-attempt
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:156: NOTICE:  F01 PASS: accidental-grant-does-not-forge-completion
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_authorization.sql:157: NOTICE:  F01 PASS: completed-job-hidden-from-forge
+
+=== review_audit_export_current_authority.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:60: NOTICE:  F01/COL-133 PASS: admin-current-site-a
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:62: NOTICE:  F01/COL-133 PASS: rls-admin-sees-plain-safe-task-and-asset-only
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:71: NOTICE:  F01/COL-133 PASS: admin-snapshot-excludes-col133-restricted-rows
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:73: NOTICE:  F01/COL-133 PASS: admin-snapshot-equals-rls-visible-set
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:74: NOTICE:  F01/COL-133 PASS: admin-snapshot-checksum
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:77: NOTICE:  F01/COL-133 PASS: edge-side-completion-superseded
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:78: NOTICE:  F01/COL-133 PASS: pending-job-unchanged
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:86: NOTICE:  F01/COL-133 PASS: legacy-access-holds-current-grant-expired
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:87: NOTICE:  F01/COL-133 PASS: expired-current-grant-retrieval-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:88: NOTICE:  F01/COL-133 PASS: expired-current-grant-materialization-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:90: NOTICE:  F01/COL-133 PASS: no-snapshot-after-denial
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:104: NOTICE:  F01/COL-133 PASS: owner-snapshot-respects-col133-site-and-row-limits
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:107: NOTICE:  F01/COL-133 PASS: owner-snapshot-equals-rls-visible-set
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_audit_export_current_authority.sql:109: NOTICE:  F01/COL-133 PASS: owner-site-b-without-current-grant-denied
+
+=== review_auth_sync_convergence.sql exit=0 ===
+
+=== review_authoritative_actor.sql exit=0 ===
+
+=== review_authorization_error_contract.sql exit=0 ===
+
+=== review_business_integrity.sql exit=0 ===
+
+=== review_clinical_integrity.sql exit=0 ===
+
+=== review_controlled_count_roles.sql exit=0 ===
+
+=== review_dietary_integrity.sql exit=0 ===
+
+=== review_employee_file_lifecycle.sql exit=0 ===
+
+=== review_finance_batch_approval.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:60: NOTICE:  BATCH PASS: coherent-stable-snapshot
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:61: NOTICE:  BATCH PASS: rules-unknown-null-field-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:62: NOTICE:  BATCH PASS: null-basis-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:63: NOTICE:  BATCH PASS: invalid-calendar-date-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:65: NOTICE:  BATCH PASS: restricted-preparer-cannot-register-entity-rules
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:66: NOTICE:  BATCH PASS: preparer-wrong-facility-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:68: NOTICE:  BATCH PASS: null-line-side-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:69: NOTICE:  BATCH PASS: nested-unknown-null-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:70: NOTICE:  BATCH PASS: numeric-json-amount-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:71: NOTICE:  BATCH PASS: noncanonical-cents-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:72: NOTICE:  BATCH PASS: signed64-overflow-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:73: NOTICE:  BATCH PASS: non-v4-batch-reference-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:74: NOTICE:  BATCH PASS: economic-date-cannot-silently-shift
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:75: NOTICE:  BATCH PASS: duplicate-event-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:76: NOTICE:  BATCH PASS: cross-organization-member-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:77: NOTICE:  BATCH PASS: batch-scope-excludes-other-facility
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:78: NOTICE:  BATCH PASS: balanced-wrong-source-gross-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:81: NOTICE:  BATCH PASS: four-billion-cents-and-complete-member-control
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:82: NOTICE:  BATCH PASS: review-does-not-approve-accounting-or-dispatch
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:83: NOTICE:  BATCH PASS: separate-canonical-source-and-accounting-date
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:85: NOTICE:  BATCH PASS: timezone-datestyle-order-independent-retry
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:87: NOTICE:  BATCH PASS: changed-balanced-content-replay-conflicts
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:88: NOTICE:  BATCH PASS: same-user-cannot-approve-own-batch
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:89: NOTICE:  BATCH PASS: raw-stale-status-table-read-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:91: NOTICE:  BATCH PASS: approval-wrong-binding-rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:93: NOTICE:  BATCH PASS: independent-local-review-remains-business-blocked
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:94: NOTICE:  BATCH PASS: approval-retry-idempotent
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:95: NOTICE:  BATCH PASS: decision-content-conflict
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:97: NOTICE:  BATCH PASS: outside-organization-snapshot-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:103: NOTICE:  BATCH PASS: expired-approver-session-invalidates-effective-status
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:105: NOTICE:  BATCH PASS: snapshot-read-does-not-mutate-history
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:110: NOTICE:  BATCH PASS: expired-current-session-cannot-change-staging-control
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:115: NOTICE:  BATCH PASS: inactive-approver-invalidates-effective-status
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:120: NOTICE:  BATCH PASS: moved-facility-denies-scoped-read
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:127: NOTICE:  BATCH PASS: new-rules-invalidate-old-local-approval
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:128: NOTICE:  BATCH PASS: rule-change-retains-original-payload
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:129: NOTICE:  BATCH PASS: invalidated-batch-still-reserves-members
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:130: NOTICE:  BATCH PASS: partial-overlap-supersession-cannot-steal-other-claim
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:132: NOTICE:  BATCH PASS: failed-supersession-rolls-back-old-state-and-claims
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:136: NOTICE:  BATCH PASS: explicit-supersession-retains-old-status-history
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:138: NOTICE:  BATCH PASS: old-members-approval-retained-claims-released-only-unsent
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:139: NOTICE:  BATCH PASS: opaque-policy-cannot-clear-business-blocker
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:140: NOTICE:  BATCH PASS: historical-members-immutable
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:150: NOTICE:  BATCH PASS: revoked-preparer-cannot-gain-approval
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:162: NOTICE:  BATCH PASS: silent-actor-loss-after-claims-aborts-prepare
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:164: NOTICE:  BATCH PASS: actor-loss-rolls-back-batch-claims-and-authority-change
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:175: NOTICE:  BATCH PASS: preparer-expiry-after-decision-aborts-approval
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:177: NOTICE:  BATCH PASS: late-approval-failure-retains-no-successful-decision
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:183: NOTICE:  BATCH PASS: period-close-invalidates-local-reviews
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:184: NOTICE:  BATCH PASS: closed-accounting-period-blocks-prepare
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:202: NOTICE:  BATCH PASS: original-and-reversal-gross-controls-stay-distinct-not-net
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:207: NOTICE:  BATCH PASS: connection-generation-change-invalidates-current-batch
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_batch_approval.sql:208: NOTICE:  BATCH PASS: stale-binding-never-becomes-approved
+
+=== review_finance_credential_lifecycle.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:91: NOTICE:  BATCH PASS: physical-grant-cannot-have-second-organization-owner
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:94: NOTICE:  BATCH PASS: same-client-shared-lineage
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:95: NOTICE:  BATCH PASS: distinct-client-distinct-lineage
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:97: NOTICE:  BATCH PASS: fresh-seed-while-stopped-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:99: NOTICE:  BATCH PASS: missing-vault-fails-closed
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:113: NOTICE:  BATCH PASS: unobserved-candidate-cannot-install
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:116: NOTICE:  BATCH PASS: identity-read-access-only-fixed-sandbox-host
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:119: NOTICE:  BATCH PASS: observed-seed-installed
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:124: NOTICE:  BATCH PASS: claim-no-credential
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:128: NOTICE:  BATCH PASS: reconnect-releases-never-started-claim
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:129: NOTICE:  BATCH PASS: reconnect-fresh-seed-needs-explicit-resume
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:131: NOTICE:  BATCH PASS: reconnect-unstarted-can-stage-fresh-candidate
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:139: NOTICE:  BATCH PASS: expired-known-hard-cap-blocks-start
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:146: NOTICE:  BATCH PASS: identity-observer-loss-at-final-start-receipt-rolls-back
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:148: NOTICE:  BATCH PASS: failed-final-start-delivery-does-not-mark-started
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:151: NOTICE:  BATCH PASS: start-first-delivery
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:152: NOTICE:  BATCH PASS: credential-no-store
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:155: NOTICE:  BATCH PASS: capture-wrong-completion-proof
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:160: NOTICE:  BATCH PASS: capture-final-write-injected-abort
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:162: NOTICE:  BATCH PASS: capture-abort-rolls-back-vault-and-metadata
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:173: NOTICE:  BATCH PASS: later-reported-hard-cap-conservative-bound
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:183: NOTICE:  BATCH PASS: earlier-reported-hard-cap-conservative-bound
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:186: NOTICE:  BATCH PASS: capture-identical-replay-retains
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:187: NOTICE:  BATCH PASS: capture-changed-response-conflict
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:190: NOTICE:  BATCH PASS: wrong-company-observation-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:191: NOTICE:  BATCH PASS: wrong-client-observation-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:192: NOTICE:  BATCH PASS: production-host-observation-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:199: NOTICE:  BATCH PASS: vault-outage-identity-read-is-storage-failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:201: NOTICE:  BATCH PASS: vault-outage-install-is-storage-failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:203: NOTICE:  BATCH PASS: vault-outage-does-not-write-invalid-provider-evidence
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:211: NOTICE:  BATCH PASS: expired-known-hard-cap-blocks-install
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:218: NOTICE:  BATCH PASS: identity-observer-loss-at-final-install-receipt-rolls-back
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:220: NOTICE:  BATCH PASS: failed-final-install-does-not-advance-revision
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:222: NOTICE:  BATCH PASS: normal-refresh-install-CAS-revision
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:223: NOTICE:  BATCH PASS: install-replay-no-double-revision
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:225: NOTICE:  BATCH PASS: omitted-hard-cap-preserves-prior-deadline
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:226: NOTICE:  BATCH PASS: single-active-revision-and-cleared-claim
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:227: NOTICE:  BATCH PASS: no-canary-in-lifecycle-receipts
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:228: NOTICE:  BATCH PASS: no-canary-in-candidate-metadata
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:230: NOTICE:  BATCH PASS: completed-start-replay-preserves-known-installed-outcome
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:233: NOTICE:  BATCH PASS: ready-credential-replacement-needs-explicit-reconnect
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:237: NOTICE:  BATCH PASS: existing-staging-stop-fences-identity-read-by-context
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:242: NOTICE:  BATCH PASS: stop-fences-preexisting-identity-access-read
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:243: NOTICE:  BATCH PASS: stop-fences-preexisting-identity-observation
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:247: NOTICE:  BATCH PASS: worker-no-table-or-vault-grants
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:248: NOTICE:  BATCH PASS: worker-not-human-or-service-member
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:250: NOTICE:  BATCH PASS: worker-table-read-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:251: NOTICE:  BATCH PASS: worker-human-status-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:254: NOTICE:  BATCH PASS: worker-exact-post-guard
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:256: NOTICE:  BATCH PASS: worker-get-guard-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:258: NOTICE:  BATCH PASS: worker-financial-dispatch-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:261: NOTICE:  BATCH PASS: malformed-exp-safe-denial
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:264: NOTICE:  BATCH PASS: malformed-sub-safe-denial
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:267: NOTICE:  BATCH PASS: human-scope-claims-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:270: NOTICE:  BATCH PASS: expired-worker-jwt-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:273: NOTICE:  BATCH PASS: wrong-worker-org-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:286: NOTICE:  BATCH PASS: explicit-reconnect-may-establish-new-grant-cap
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:294: NOTICE:  BATCH PASS: expired-known-hard-cap-blocks-claim
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:304: NOTICE:  BATCH PASS: unstarted-expired-lease-reclaim
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:306: NOTICE:  BATCH PASS: start-replay-never-returns-credential
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:307: NOTICE:  BATCH PASS: lost-start-blocks-automatic-refresh
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:316: NOTICE:  BATCH PASS: start-replay-unknown-capture-cannot-activate
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:323: NOTICE:  BATCH PASS: revoked-worker-capture-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:324: NOTICE:  BATCH PASS: worker-trusted-preserve-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:328: NOTICE:  BATCH PASS: trusted-preserve-needs-start-proof
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:330: NOTICE:  BATCH PASS: trusted-late-capture-preserves-without-secret-return
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:331: NOTICE:  BATCH PASS: service-preserver-cannot-install
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:333: NOTICE:  BATCH PASS: trusted-candidate-provenance-immutable
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:337: NOTICE:  BATCH PASS: trusted-late-candidate-cannot-release-access
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:339: NOTICE:  BATCH PASS: reactivated-worker-cannot-install-trusted-late
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:343: NOTICE:  BATCH PASS: reconnect-preserves-distributed-unknown
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:344: NOTICE:  BATCH PASS: reconnect-updates-only-shared-client-lineage
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:345: NOTICE:  BATCH PASS: unresolved-attempt-cannot-be-hidden-by-reseed
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:349: NOTICE:  BATCH PASS: production-seed-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:350: NOTICE:  BATCH PASS: production-resume-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:357: NOTICE:  BATCH PASS: invalid-json-sanitized-reconnect-state
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:366: NOTICE:  BATCH PASS: expired-access-never-blind-refresh
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:368: NOTICE:  BATCH PASS: human-status-no-raw-secret-or-body
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:370: NOTICE:  BATCH PASS: wrong-organization-human-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:372: NOTICE:  BATCH PASS: facility-admin-credential-control-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:374: NOTICE:  BATCH PASS: raw-token-metadata-field-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:375: NOTICE:  BATCH PASS: dispatch-and-production-default-disabled
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_credential_lifecycle.sql:377: NOTICE:  BATCH PASS: all-secrets-have-durable-candidates
+
+=== review_finance_event_outbox.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:70: NOTICE:  F03 PASS: event-primary-key-is-uuid
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:71: NOTICE:  F03 PASS: intent-primary-key-is-uuid
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:72: NOTICE:  F03 PASS: summary-uses-one-stable-read-snapshot
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:77: NOTICE:  F03 PASS: source-receipt-event-intent-commit-together
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:80: NOTICE:  F03 PASS: uuid-keys-preserve-deterministic-source-intent-hashes
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:81: NOTICE:  F03 PASS: new-entity-starts-stopped-dispatch-disabled
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:82: NOTICE:  F03 PASS: no-external-payload-or-enabled-dispatch
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:84: NOTICE:  F03 PASS: same-source-replay-one-event
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:85: NOTICE:  F03 PASS: same-source-identity-changed-content-conflict
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:88: NOTICE:  F03 PASS: payment-and-native-gl-never-two-economic-events
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:89: NOTICE:  F03 PASS: invoice-post-has-one-explicit-origin
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:102: NOTICE:  F03 PASS: single-journal-control-total-above-int32
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:102: NOTICE:  F03 PASS: aggregation-above-int32-as-exact-decimal-string
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:104: NOTICE:  F03 PASS: no-money-cancellation-has-no-outbound-intent
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:110: NOTICE:  F03 PASS: event-insert-failure-rejects-source-transaction
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:113: NOTICE:  F03 PASS: event-failure-leaves-no-payment-receipt-or-balance-change
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:118: NOTICE:  F03 PASS: intent-insert-failure-rejects-source-transaction
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:122: NOTICE:  F03 PASS: intent-failure-rolls-back-event-payment-allocation
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:126: NOTICE:  F03 PASS: stopped-entity-cannot-queue
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:129: NOTICE:  F03 PASS: control-replay-does-not-increment-generation
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:130: NOTICE:  F03 PASS: control-identity-content-conflict
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:133: NOTICE:  F03 PASS: queue-replay-one-immutable-command
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:134: NOTICE:  F03 PASS: different-request-cannot-duplicate-root-command
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:137: NOTICE:  F03 PASS: rebind-before-first-attempt-fences-old-command
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:139: NOTICE:  F03 PASS: stale-unattempted-command-can-be-superseded
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:140: NOTICE:  F03 PASS: supersede-chain-cannot-fork
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:143: NOTICE:  F03 PASS: superseded-command-reaches-current-worker-without-dispatch
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:146: NOTICE:  F03 PASS: human-cannot-impersonate-worker
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:151: NOTICE:  F03 PASS: unregistered-worker-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:152: NOTICE:  F03 PASS: worker-cannot-read-unbounded-source-events
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:156: NOTICE:  F03 PASS: worker-attempt-is-idempotent-blocked-evidence-only
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:160: NOTICE:  F03 PASS: stop-preserves-new-inbound-events-and-existing-evidence
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:161: NOTICE:  F03 PASS: stopped-command-replay-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:164: NOTICE:  F03 PASS: stop-revokes-worker-even-on-replay
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:168: NOTICE:  F03 PASS: rebind-fences-old-queue-generation
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:171: NOTICE:  F03 PASS: rebind-fences-old-worker-command
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:175: NOTICE:  F03 PASS: retry-freezes-new-generation-with-original-intent
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:176: NOTICE:  F03 PASS: retry-chain-cannot-fork
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:177: NOTICE:  F03 PASS: application-cannot-add-external-payload
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:179: NOTICE:  F03 PASS: source-events-immutable-even-owner
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:180: NOTICE:  F03 PASS: attempt-evidence-cannot-be-erased
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:186: NOTICE:  F03 PASS: revoked-session-summary-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:187: NOTICE:  F03 PASS: revoked-session-queue-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:188: NOTICE:  F03 PASS: revoked-session-controls-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:189: NOTICE:  F03 PASS: revoked-session-rls-hides-evidence
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:193: NOTICE:  F03 PASS: stale-claim-summary-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:203: NOTICE:  F03 PASS: owner-other-organization-summary-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:204: NOTICE:  F03 PASS: owner-other-organization-controls-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:232: NOTICE:  F03 PASS: owner-rls-hides-other-organization-events
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:242: NOTICE:  F03 PASS: historical-receipt-gap-is-visible-not-auto-approved
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:248: NOTICE:  F03 PASS: worker-scope-rechecks-archived-facility
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:254: NOTICE:  F03 PASS: current-facility-admin-can-read-own-staging
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:255: NOTICE:  F03 PASS: facility-admin-org-wide-summary-denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:256: NOTICE:  F03 PASS: facility-admin-cannot-queue
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:257: NOTICE:  F03 PASS: facility-admin-cannot-read-entity-controls
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_event_outbox.sql:259: NOTICE:  F03 PASS: facility-admin-rls-excludes-B-null-and-other-org-events
+
+=== review_finance_review_queue.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:76: NOTICE:  QUEUE PASS: both layers use stable statement snapshots
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:77: NOTICE:  QUEUE PASS: anonymous and service discovery execution denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:85: NOTICE:  QUEUE PASS: empty authorized events returns an explicit empty page
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:85: NOTICE:  QUEUE PASS: empty authorized batches returns an explicit empty page
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:85: NOTICE:  QUEUE PASS: empty authorized rules returns an explicit empty page
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:85: NOTICE:  QUEUE PASS: empty is live unready data, not dispatch or export acceptance
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:86: NOTICE:  BATCH PASS: unavailable entity is an error, not empty
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:87: NOTICE:  BATCH PASS: unknown queue kind denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:88: NOTICE:  BATCH PASS: explicit null kind denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:89: NOTICE:  BATCH PASS: zero page size denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:90: NOTICE:  BATCH PASS: oversized page denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:91: NOTICE:  BATCH PASS: explicit null page size denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:92: NOTICE:  BATCH PASS: timestamp-only cursor denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:93: NOTICE:  BATCH PASS: id-only cursor denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:94: NOTICE:  BATCH PASS: malformed timestamp rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:95: NOTICE:  BATCH PASS: infinite timestamp cursor denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:96: NOTICE:  BATCH PASS: negative infinite timestamp cursor denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:97: NOTICE:  BATCH PASS: malformed cursor UUID rejected
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:122: NOTICE:  QUEUE PASS: returned scope exactly matches current authorized facility
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:122: NOTICE:  QUEUE PASS: event projection has only authorized summary keys
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:122: NOTICE:  QUEUE PASS: broader claimed batch identity hidden from restricted preparer
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:122: NOTICE:  QUEUE PASS: facility B event excluded from A discovery
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:122: NOTICE:  QUEUE PASS: restricted batch discovery excludes broader entity batch
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:122: NOTICE:  QUEUE PASS: batch summary excludes payload members and sessions and preserves blockers
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:122: NOTICE:  QUEUE PASS: same-entity rule history has one explicit current version
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:122: NOTICE:  QUEUE PASS: rules expose declared references, not creator or session data
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:123: NOTICE:  BATCH PASS: restricted other-facility discovery denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:124: NOTICE:  BATCH PASS: restricted null-facility broad discovery denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:125: NOTICE:  BATCH PASS: other organization rules denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:127: NOTICE:  BATCH PASS: outsider cannot discover known batch scope
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:128: NOTICE:  QUEUE PASS: outsider sees only its own authorized fixture
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:130: NOTICE:  QUEUE PASS: owner can discover broader entity batches
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:144: NOTICE:  QUEUE PASS: owner facility page does not link to a broader batch detail
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:144: NOTICE:  QUEUE PASS: owner entity scope may resolve broader claimed batch
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:144: NOTICE:  QUEUE PASS: batches keyset visits distinct first and last rows
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:144: NOTICE:  QUEUE PASS: rules keyset visits distinct first and last rows
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:150: NOTICE:  QUEUE PASS: queue derives revoked-preparer invalidity instead of stale stored approval
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:152: NOTICE:  QUEUE PASS: discovery does not rewrite historical stored approval
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:155: NOTICE:  BATCH PASS: revoked caller cannot read queue
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:166: NOTICE:  QUEUE PASS: dropped predecessor member becomes discoverably unclaimed
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:166: NOTICE:  QUEUE PASS: retained member points only to successor claim
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:177: NOTICE:  QUEUE PASS: historical eligible receipt gap is explicit
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:178: NOTICE:  QUEUE PASS: coverage gap does not bleed into another facility
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: independent source oracle contains2509 scoped events
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 4
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 4
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 5
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 5
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 6
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 6
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 7
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 7
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 8
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 8
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 9
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 9
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 10
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 10
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 11
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 11
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 12
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 12
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 13
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 13
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 14
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 14
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 15
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 15
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 16
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 16
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 17
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 17
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 18
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 18
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 19
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 19
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 20
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 20
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 21
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 21
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 22
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 22
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 23
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 23
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 24
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 24
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 25
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: cursor equals final full-precision tuple on page 25
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: bounded coherent live page 26
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: last page has no continuation
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: all2509 events traversed without duplicate IDs
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: page sequence exactly matches independent timestamp UUID order
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: equal microsecond timestamps traverse every UUID tie
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_finance_review_queue.sql:223: NOTICE:  QUEUE PASS: exhausted cursor is empty without losing scope count
+
+=== review_finance_source_integrity.sql exit=0 ===
+
+=== review_hfo_activity_catalog.sql exit=0 ===
+
+=== review_hfo_current_authority.sql exit=0 ===
+
+=== review_ingest_generation.sql exit=0 ===
+
+=== review_office_integrity.sql exit=0 ===
+
+=== review_payroll_freshness.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_payroll_freshness.sql:116: NOTICE:  PASS: stale source rejected; explicit exclusion/restoration retains identity; forged data rejected; history stable
+
+=== review_report_outputs.sql exit=0 ===
+
+=== review_resident_money_snapshot.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_resident_money_snapshot.sql:47: NOTICE:  HFA-014/HFA-016:6 snapshot assertions passed
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_resident_money_snapshot.sql:54: NOTICE:  HFA-011/HFA-014:revoked reader denied
+
+=== review_rounding_completion_receipts.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 9
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 9
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 10
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 10
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 11
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 11
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 12
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 12
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 13
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 13
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 32
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 32
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 160
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 160
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 5760
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 5760
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8192
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8192
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8193
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8193
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8194
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8194
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8195
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8195
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8196
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8196
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8197
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8197
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8198
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8198
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8199
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8199
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8200
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8200
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8201
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8201
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8202
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8202
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8232
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8232
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8233
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8233
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8239
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8239
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 8287
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 8287
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 12288
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 12288
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: 65279
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 65279
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: whitespace-only late reason rejected: tab/newline/NBSP
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: blank reason rejection leaves no partial state: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:125: NOTICE:  PASS: core and late integrity commit together
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:126: NOTICE:  PASS: one task log
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:127: NOTICE:  PASS: one linked exception
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:128: NOTICE:  PASS: one linked integrity flag
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:129: NOTICE:  PASS: one durable receipt
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:131: NOTICE:  PASS: identical replay returns original response
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:132: NOTICE:  PASS: identical retry is acknowledged as replay
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:133: NOTICE:  PASS: online to offline replay ignores delivery and server-derived metadata
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:134: NOTICE:  PASS: replay does not append audit or clinical rows
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:135: NOTICE:  PASS: same request with changed clinical payload conflicts
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:136: NOTICE:  PASS: same request with changed task conflicts
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:137: NOTICE:  PASS: different request cannot complete finished task
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:138: NOTICE:  PASS: another authorized actor cannot replay somebody else receipt
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:139: NOTICE:  PASS: foreign organization task is hidden
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:140: NOTICE:  PASS: foreign facility task is hidden
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:141: NOTICE:  PASS: stale claimed role denies replay
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:145: NOTICE:  PASS: revocation denies receipt replay
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:150: NOTICE:  PASS: disabled actor cannot replay
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:155: NOTICE:  PASS: terminated staff cannot replay
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:160: NOTICE:  PASS: deleted session cannot replay
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:165: NOTICE:  PASS: changed assignment denies receipt replay
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: rollback on resident_observation_logs failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: no partial state after resident_observation_logs failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: rollback on resident_observation_exceptions failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: no partial state after resident_observation_exceptions failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: rollback on resident_observation_tasks failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: no partial state after resident_observation_tasks failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: rollback on resident_observation_integrity_flags failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: no partial state after resident_observation_integrity_flags failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: rollback on rounding_completion_receipts failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: no partial state after rounding_completion_receipts failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: rollback on audit_log failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: no partial state after audit_log failure
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:200: NOTICE:  PASS: direct observation edit denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:201: NOTICE:  PASS: direct observation insertion denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:202: NOTICE:  PASS: direct completed-log pointer denied
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:204: NOTICE:  PASS: caregiver cannot directly finalize assigned task
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:205: NOTICE:  PASS: receipts not visible to authenticated clients
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:206: NOTICE:  PASS: authenticated caller cannot invoke service command
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:210: NOTICE:  PASS: manager cannot forge completion using allowed status column
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:211: NOTICE:  PASS: manager cannot forge excusing actor
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:213: NOTICE:  PASS: manager excusal remains authorized and attributed
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:214: NOTICE:  PASS: stale manager excuse cannot overwrite completion
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: receipt immutable with accidental future grant
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:220: NOTICE:  PASS: clinical log immutable with accidental future grant
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:221: NOTICE:  PASS: stale service escalation cannot overwrite completion
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:222: NOTICE:  PASS: private core is unavailable to service role
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change task organization_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change task facility_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change task resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change task assigned_staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change task completed_log_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change task deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change task notes
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log observed_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log entered_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log created_by
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log task_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log quick_status
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log note
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot directly change log deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: owner cannot delete a task
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change task organization_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change task facility_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change task resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change task assigned_staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change task completed_log_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change task deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change task notes
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log observed_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log entered_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log created_by
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log task_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log quick_status
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log note
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot directly change log deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: org_admin cannot delete a task
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change task organization_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change task facility_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change task resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change task assigned_staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change task completed_log_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change task deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change task notes
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log observed_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log entered_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log created_by
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log task_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log quick_status
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log note
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot directly change log deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: facility_admin cannot delete a task
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change task organization_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change task facility_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change task resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change task assigned_staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change task completed_log_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change task deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change task notes
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log observed_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log entered_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log created_by
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log task_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log quick_status
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log note
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot directly change log deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: nurse cannot delete a task
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change task organization_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change task facility_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change task resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change task assigned_staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change task completed_log_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change task deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change task notes
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log observed_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log entered_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log created_by
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log task_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log quick_status
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log note
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot directly change log deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: caregiver cannot delete a task
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change task organization_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change task facility_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change task resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change task assigned_staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change task completed_log_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change task deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change task notes
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log observed_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log entered_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log staff_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log created_by
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log resident_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log task_id
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log quick_status
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log note
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot directly change log deleted_at
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:239: NOTICE:  PASS: family cannot delete a task
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: all_whitespace identical pattern flags after resident 1: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: all_whitespace/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: all_whitespace/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: all_whitespace/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: all_whitespace/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: all_whitespace identical pattern flags after resident 2: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: all_whitespace/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: all_whitespace/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: all_whitespace/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: all_whitespace/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: all_whitespace identical pattern flags after resident 3: 1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: all_whitespace/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: all_whitespace/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: all_whitespace/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: all_whitespace/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: control identical pattern flags after resident 1: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: control/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: control/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: control/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: control/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: control identical pattern flags after resident 2: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: control/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: control/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: control/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: control/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: control identical pattern flags after resident 3: 1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: control/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: control/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: control/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: control/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_location identical pattern flags after resident 1: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_location/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_location/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_location/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_location/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_location identical pattern flags after resident 2: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_location/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_location/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_location/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_location/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_location identical pattern flags after resident 3: 1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_location/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_location/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_location/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_location/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_position identical pattern flags after resident 1: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_position/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_position/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_position/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_position/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_position identical pattern flags after resident 2: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_position/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_position/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_position/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_position/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_position identical pattern flags after resident 3: 1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_position/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_position/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_position/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_position/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_state identical pattern flags after resident 1: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_state/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_state/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_state/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_state/1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_state identical pattern flags after resident 2: 0
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_state/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_state/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_state/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_state/2
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: resident_state identical pattern flags after resident 3: 1
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: clinical whitespace remains verbatim: resident_state/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: receipt preserves untrimmed input: resident_state/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: exact whitespace-bearing request replays: resident_state/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: pattern equivalence does not weaken receipt equivalence: resident_state/3
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: all fifteen whitespace pattern transactions completed
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_rounding_completion_receipts.sql:300: NOTICE:  PASS: five isolated groups reach the unchanged three-resident high-severity threshold
+
+=== review_section2_quality.sql exit=0 ===
+
+=== review_section2_search.sql exit=0 ===
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:32: NOTICE:  PASS: resident initially indexed in authorized facility
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:38: NOTICE:  PASS: former facility cannot retrieve transferred resident
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:40: NOTICE:  PASS: trigger updates denormalized authority columns
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:44: NOTICE:  PASS: new facility grant sees transferred resident
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:49: NOTICE:  PASS: fresh-version revoked grant denies search
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:54: NOTICE:  PASS: stale index scope is denied by live resident authority
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:59: NOTICE:  PASS: former tenant cannot retrieve moved resident
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:63: NOTICE:  PASS: new tenant sees its resident
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:68: NOTICE:  PASS: facility grant alone does not expose unlinked resident to family
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:72: NOTICE:  PASS: linked family source access is preserved
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:77: NOTICE:  PASS: revoked family link denies resident search
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:84: NOTICE:  PASS: soft-deleted source is hidden even with a stale live index row
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:89: NOTICE:  PASS: restored source is visible before account disable
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:93: NOTICE:  PASS: disabled account cannot search
+psql:/private/tmp/hfo-col133-integration/supabase/tests/review_section2_search.sql:97: NOTICE:  PASS: no-profile caller cannot search
+
+=== rpc_grant_posture.sql exit=0 ===
+
+=== team_space_rls_no_recursion.sql exit=0 ===

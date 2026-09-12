@@ -1,0 +1,49 @@
+{
+  "issue": "COL-143",
+  "scope": "checksum-verification amendment to the source-only portion; acceptance item 3 (hosted Storage HTTP proof) remains open and the issue stays In Progress",
+  "recorded_at": "2026-09-10T20:10:00Z",
+  "state": "local_source_amended_reviewed_gated_hosted_proof_open",
+  "base_commit": "5367f6e7 (codex/hfo-col143-evidence tip: closure docs over c7b5cc30)",
+  "branch": "codex/hfo-col143-evidence",
+  "contract": "docs/facility-operations/col143-evidence/checksum-contracts.md (amends engineering-contracts.md §2.1, §3, §4, §5)",
+  "mechanism": "the client declares the file MD5 (src/lib/operations/md5.ts, dependency-free, verified against Node crypto); the database verifies it against the Storage-computed object eTag at mark-uploaded and again at finalization; a mismatch or a changed object (id, owner, eTag, version when recorded, size, type) moves the row to failed durably in the same transaction and returns it; an eTag that is not a plain MD5 leaves the row uploaded and unverified and finalization refuses; nothing finalizes without checksum_verified (CHECK)",
+  "trust_precondition": "the eTag is client-unwritable only while storage.objects is reachable solely through the Storage service; the storage schema must not be an API-exposed schema (hosted proof step 0 confirms public, graphql_public)",
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/lib/operations",
+    "files": 31,
+    "tests": 347,
+    "status": "PASS",
+    "note": "md5 vectors, padding boundaries and chunking; evidence schemas (md5 required on object kinds, refused on linked_record); prepare/uploaded/finalize routes with checksum_mismatch and object_changed → 409 conflict carrying the failed row, checksum_unverifiable → 409 uncertain, unknown outcome → 500 uncertain; prepare returns the classified status"
+  },
+  "typecheck": "PASS",
+  "lint": "PASS (eslint src --max-warnings 0 and constitution lint)",
+  "native_replay": {
+    "migration_files": 346,
+    "numbered_through": "343",
+    "sql_probes": 27,
+    "probe": "supabase/tests/review_hfo_verified_evidence.sql: 158 assertions (90 assert, 49 expect, 19 denied), up from 126; fixtures write eTag = quoted md5 of known bytes and a version; adds mismatch at upload, mismatch at finalize-from-prepared, multipart eTag (unverifiable, finalize refused, explicit fail works), moved eTag, replaced object row, moved version, eTag normalisation (W/, quotes, upper-case), duplicate MD5 replay, missing or bad md5 refused, finalize-path failed event carrying the expected receipt revision, and the invariant that no finalized object row lacks a verified checksum",
+    "stub": "scripts/pg-verify-stub.sql gains storage.objects.version text",
+    "status": "PASS (lane run, SQL reviewer run and re-verification run, and the strict gate's qa.migrations-apply-postgres)",
+    "runtime": "native PostgreSQL 17.9, run-owned socket-only cluster under ~/.hermes/tmp/agent-runs (no Docker), Supabase stubs"
+  },
+  "lock_races": {
+    "script": "scripts/facility-operations/test-evidence-concurrency.py",
+    "baseline": "col143_base343 rebuilt from the amended stack on 2026-09-10 (the earlier baseline carried the pre-amendment 343 and was replaced; verified by the SQL reviewer)",
+    "output": "docs/facility-operations/col143-evidence/concurrency.txt (regenerated 2026-09-10T19:56:22Z)",
+    "cases": [
+      "two finalizations of one uploaded evidence: the second waits on the occurrence row and is refused as already finalized; one finalized event, one satisfaction",
+      "a finalization racing a receipt revision change held on the receipt row: refused with Receipt changed since it was read; no finalized or satisfied event",
+      "two finalizations on one receipt overlapping on the occurrence row: both finalize, one satisfaction, no deadlock"
+    ],
+    "status": "PASS"
+  },
+  "independent_review": "docs/facility-operations/col143-evidence/checksum-independent-review.json (SQL: two should-fix and notes, all remediated and re-verified PASS; TypeScript: pass with documentation should-fixes, applied)",
+  "strict_gate": {
+    "segment": "COL-143-HFO-EVIDENCE-CHECKSUM",
+    "artifact": "test-results/agent-gates/2026-09-10T20-02-21-103Z-COL-143-HFO-EVIDENCE-CHECKSUM.json",
+    "verdict": "PASS",
+    "ui": "design review and axe on the public route; the evidence routes are API-only"
+  },
+  "hosted_proof": "open; COL-143-HANDOFF.md 'Hosted proof to retain' now includes step 0 (exposed schemas) and the eTag-format confirmation with the stop rule and the app-tier fallback; STAGING-INTEGRATION-PACKAGE.md on the COL-145 branch carries the executable runbook",
+  "not_established": ["hosted Storage upload, download and eTag format", "hosted owner column population", "browser and staff acceptance"]
+}

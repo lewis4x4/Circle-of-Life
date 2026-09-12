@@ -238,18 +238,21 @@ END $$;
 -- AR with rows: a draft carrying a balance must NOT count; nor voided, paid or
 -- written-off rows. Sent, overdue and partial do, aged by due date. Invoice dates
 -- sit in the current UTC month so the same rows prove billed_revenue_mtd.
-INSERT INTO public.invoices(id,resident_id,facility_id,organization_id,entity_id,invoice_number,invoice_date,due_date,period_start,period_end,status,subtotal,total,balance_due,voided_at)
-  SELECT gen_random_uuid(),r.id,r.facility_id,r.organization_id,o.entity,'PROBE-AR-'||x.n,officer.utc_today(),x.d,officer.utc_today()-x.n,officer.utc_today(),x.s::public.invoice_status,x.t,x.t,x.bal,x.v
+INSERT INTO public.invoices(id,resident_id,facility_id,organization_id,entity_id,invoice_number,invoice_date,due_date,period_start,period_end,status,subtotal,total,balance_due,amount_paid,voided_at)
+  SELECT gen_random_uuid(),r.id,r.facility_id,r.organization_id,o.entity,'PROBE-AR-'||x.n,officer.utc_today(),x.d,officer.utc_today()-x.n,officer.utc_today(),(CASE WHEN x.s IN('paid','partial') THEN 'sent' ELSE x.s END)::public.invoice_status,x.t,x.t,x.t,0,x.v
   FROM oc o JOIN public.residents r ON r.organization_id=o.org AND r.last_name='One'
   CROSS JOIN (VALUES
     (1,'sent',10000,10000,officer.utc_today()-45,NULL::timestamptz),
     (2,'draft',2345,2345,officer.utc_today()-45,NULL),
     (3,'sent',500,500,officer.utc_today()-45,now()),
-    (4,'paid',9000,0,officer.utc_today()-45,NULL),
+    (4,'paid',8999,0,officer.utc_today()-45,NULL),
     (5,'overdue',700,700,officer.utc_today()-10,NULL),
-    (6,'partial',300,300,officer.utc_today()+5,NULL),
+    (6,'partial',301,300,officer.utc_today()+5,NULL),
     (7,'written_off',400,400,officer.utc_today()-200,NULL)
   ) AS x(n,s,t,bal,d,v);
+-- Settle synthetic history as the scratch database owner; finance guards remain enabled.
+UPDATE public.invoices SET status='paid',amount_paid=total,balance_due=0 WHERE organization_id=(SELECT org FROM oc) AND invoice_number='PROBE-AR-4';
+UPDATE public.invoices SET status='partial',amount_paid=1,balance_due=total-1 WHERE organization_id=(SELECT org FROM oc) AND invoice_number='PROBE-AR-6';
 INSERT INTO auth.users(id,email) SELECT reporter,reporter||'@probe.invalid' FROM oc;
 INSERT INTO public.incidents(id,facility_id,organization_id,incident_number,category,severity,occurred_at,shift,location_description,description,immediate_actions,reported_by)
   SELECT gen_random_uuid(),fac_a,org,'PROBE-INC-'||n,'fall_without_injury'::public.incident_category,'level_1'::public.incident_severity,now()-(n||' days')::interval,'day'::public.shift_type,'Probe','Probe','Probe',reporter FROM oc CROSS JOIN generate_series(1,2) n
@@ -268,14 +271,14 @@ DO $$ DECLARE r jsonb; BEGIN
   IF (SELECT (e->>'value')::bigint FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility A')<>11000
      OR (SELECT (e->>'invoice_count')::int FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility A')<>3 THEN RAISE EXCEPTION 'AR facility breakdown wrong: %', r->'data'; END IF;
   IF EXISTS (SELECT 1 FROM pg_temp.all_keys(r) k WHERE k ~ '(^|_)(name|first|last|dob|ssn|email|phone|address|mrn|resident_id|employee_id|person_id)$') THEN RAISE EXCEPTION 'forbidden key in AR envelope'; END IF;
-  -- Billed revenue month to date over the same rows: sent 10000 + paid 9000 + overdue 700 + partial 300; draft, voided and written-off excluded.
+  -- Billed revenue month to date over the same rows: sent 10000 + paid 8999 + overdue 700 + partial 301; draft, voided and written-off excluded.
   r := pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','billed_revenue_mtd',1,'{}');
   IF r->>'validity'<>'valid' OR (r->>'value')::bigint<>20000 OR (r->'data'->>'invoice_count')::int<>4
      OR (SELECT (e->>'value')::bigint FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility A')<>20000 THEN RAISE EXCEPTION 'billed_revenue_mtd wrong: %', r; END IF;
   IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(r->'qualifiers') q WHERE q ILIKE '%sent, paid, partial or overdue%' AND q ILIKE '%Drafts are not counted%') THEN RAISE EXCEPTION 'revenue qualifier wrong: %', r; END IF;
   IF EXISTS (SELECT 1 FROM pg_temp.all_keys(r) k WHERE k ~ '(^|_)(name|first|last|dob|ssn|email|phone|address|mrn|resident_id|employee_id|person_id)$') THEN RAISE EXCEPTION 'forbidden key in revenue envelope'; END IF;
   -- Invoices on file but nothing open: a valid zero, not no_data.
-  UPDATE public.invoices SET status='paid', balance_due=0 WHERE organization_id=(SELECT org FROM oc) AND invoice_number LIKE 'PROBE-AR-%';
+  UPDATE public.invoices SET status='paid', amount_paid=total, balance_due=0 WHERE organization_id=(SELECT org FROM oc) AND invoice_number LIKE 'PROBE-AR-%';
   r := pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','open_ar_balance',1,'{}');
   IF r->>'validity'<>'valid' OR (r->>'value')::bigint<>0 OR (r->'data'->>'invoice_count')::int<>0 THEN RAISE EXCEPTION 'AR with invoices and no balance must be a valid zero: %', r; END IF;
   r := pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','incidents_last_30_days',1,'{}');

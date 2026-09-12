@@ -1,0 +1,32 @@
+{
+  "issue": "COL-147",
+  "issue_id": "17ccab14-f6d0-4b90-a525-d29e99e644ca",
+  "before": {
+    "checked_at": "2026-09-10T23:50:00Z",
+    "state": "In Progress (moved by the orchestrator at 2026-09-10T22:07:22Z; no comments on the issue)",
+    "blockers": {
+      "COL-139": "Done",
+      "COL-142": "Done",
+      "COL-145": "Done"
+    },
+    "blocks": [
+      "COL-154",
+      "COL-155",
+      "COL-156",
+      "COL-157",
+      "COL-158",
+      "COL-159"
+    ],
+    "dependency_ready": true,
+    "source": "live Linear MCP read (get_issue with relations, list_comments) at session start"
+  },
+  "started": {
+    "branch": "codex/hfo-col147-source-adapters",
+    "base": "db451440 (codex/hfo-col148-workspace tip; 97ac1457 ancestor)",
+    "provisional_slot": "346_hfo_source_links.sql",
+    "contract": "docs/facility-operations/col147-evidence/engineering-contracts.md"
+  },
+  "after": {
+    "state": "pending closure record"
+  }
+}

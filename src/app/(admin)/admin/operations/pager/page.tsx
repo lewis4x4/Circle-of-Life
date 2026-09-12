@@ -19,7 +19,7 @@ type TaskRow = {
   license_threatening: boolean;
   assigned_to_name: string | null;
   due_at: string | null;
-  days_overdue: number;
+  days_overdue: number | null;
   facility_name: string;
 };
 
@@ -204,13 +204,13 @@ export default function OperationsPagerPage() {
                 <CardDescription>
                   {task.facility_name}
                   {task.assigned_to_name ? ` · ${task.assigned_to_name}` : ""}
-                  {task.due_at ? ` · due ${new Date(task.due_at).toLocaleString()}` : ""}
+                  {task.due_at ? ` · due ${new Date(task.due_at).toLocaleString()}` : " · schedule needs confirmation"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {task.days_overdue > 0 ? <AlertTriangle className="h-4 w-4 text-red-600" /> : <Clock className="h-4 w-4" />}
-                  {task.days_overdue > 0
+                  {(task.days_overdue ?? 0) > 0 ? <AlertTriangle className="h-4 w-4 text-red-600" /> : <Clock className="h-4 w-4" />}
+                  {(task.days_overdue ?? 0) > 0
                     ? `${task.days_overdue} day${task.days_overdue === 1 ? "" : "s"} overdue`
                     : `${task.priority} priority`}
                 </div>
@@ -236,9 +236,10 @@ export default function OperationsPagerPage() {
 }
 
 function scoreTask(task: TaskRow) {
-  if (task.license_threatening && task.days_overdue > 0) return 100;
-  if (task.priority === "critical" && task.days_overdue > 0) return 90;
-  if (task.priority === "high" && task.days_overdue > 0) return 80;
+  const overdue = (task.days_overdue ?? 0) > 0;
+  if (task.license_threatening && overdue) return 100;
+  if (task.priority === "critical" && overdue) return 90;
+  if (task.priority === "high" && overdue) return 80;
   if (task.priority === "critical") return 70;
   if (task.priority === "high") return 60;
   if (task.status === "in_progress") return 50;

@@ -1,0 +1,70 @@
+import { NextRequest, NextResponse } from "next/server";
+
+import { actorCanAccessFacility, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
+import { currentReceiptFields, mapReceiptRpcError, payloadProblem } from "@/lib/operations/receipts";
+import { SOURCE_RECORD_ROLES, drillLogCommandBodySchema, isSourceRecordOutcome, presentSourceRecordOutcome } from "@/lib/operations/source-records";
+import { logError } from "@/lib/observability/logger";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Finalize, correct or void one drill log (COL-154). A drill log written by
+ * the legacy page is a draft until a person finalizes it; finalization
+ * applies the late, on-behalf, future and failed-outcome rules up front and
+ * delivers the log through the COL-147 mechanism in the same transaction (a
+ * tornado drill is finalized but not delivered: it has no checklist
+ * activity). A correction restates the log as a new version under the
+ * expected version and a reason; a void reverses the source receipt into
+ * retained history. Whether the log links is the delivery's verdict.
+ */
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  if (!UUID.test(id)) return NextResponse.json({ error: "Drill log not found", outcome: "missing" }, { status: 404 });
+  const auth = await requireOperationsActor({ allowedRoles: SOURCE_RECORD_ROLES });
+  if ("response" in auth) return auth.response;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request", outcome: "validation" }, { status: 400 });
+  }
+  const parsed = drillLogCommandBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: payloadProblem(parsed.error) ?? "Provide a request key, an action and its payload", outcome: "validation" }, { status: 400 });
+  }
+  // The session read hides drill logs at sites without a current grant.
+  const { data: row, error: readError } = await auth.actor.currentActor.client
+    .from("drill_log" as never)
+    .select("id, facility_id, organization_id")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (readError) {
+    logError("admin.operations.drill-logs.command", readError, { action: "read", drillLogId: id });
+    return NextResponse.json({ error: "Drill log unavailable", outcome: "uncertain" }, { status: 503 });
+  }
+  const target = row as { id: string; facility_id: string; organization_id: string } | null;
+  if (!target || target.organization_id !== auth.actor.organizationId || !(await actorCanAccessFacility(auth.actor, target.facility_id))) {
+    return NextResponse.json({ error: "Drill log not found", outcome: "missing" }, { status: 404 });
+  }
+  const current = await revalidateOperationsActor(auth.actor);
+  if ("response" in current) return current.response;
+  const command = parsed.data;
+  const client = current.actor.currentActor.client;
+  const { data, error } =
+    command.action === "finalize"
+      ? await client.rpc("finalize_drill_log_review" as never, { p_id: id, p_request_key: command.request_key, p_payload: command.payload } as never)
+      : command.action === "correct"
+        ? await client.rpc("correct_drill_log_review" as never, { p_id: id, p_request_key: command.request_key, p_expected_version: command.expected_version, p_payload: command.payload } as never)
+        : await client.rpc("void_drill_log_review" as never, { p_id: id, p_request_key: command.request_key, p_payload: command.payload } as never);
+  if (error) {
+    logError("admin.operations.drill-logs.command", error, { action: command.action, drillLogId: id });
+    const mapped = mapReceiptRpcError(error, "source_record");
+    return NextResponse.json({ error: mapped.error, outcome: mapped.outcome, ...currentReceiptFields(mapped) }, { status: mapped.status });
+  }
+  const result: unknown = data;
+  if (!isSourceRecordOutcome(result)) {
+    return NextResponse.json({ error: "Drill log command could not be confirmed; re-read the drill log before retrying", outcome: "uncertain" }, { status: 500 });
+  }
+  return NextResponse.json(presentSourceRecordOutcome(result));
+}

@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "database": "hfo_catalog_evidence_happy",
+      "case": "happy",
+      "result": "one root activity; completed instance and audit byte-equivalent except activity link; 91 sources"
+    },
+    {
+      "database": "hfo_catalog_evidence_cycle",
+      "case": "cycle",
+      "result": "rejected atomically; historical receipt unchanged"
+    },
+    {
+      "database": "hfo_catalog_evidence_cross_org",
+      "case": "cross_org",
+      "result": "rejected atomically; historical receipt unchanged"
+    },
+    {
+      "database": "hfo_catalog_evidence_cross_site",
+      "case": "cross_site",
+      "result": "rejected atomically; historical receipt unchanged"
+    },
+    {
+      "case": "instance_no_added_wait",
+      "result": "INSERT finished under 5 seconds while template NO KEY UPDATE lock remained held"
+    },
+    {
+      "case": "revision_session_revoked_while_waiting",
+      "result": "Rejected after real lineage lock wait; no revision/catalog mutation committed"
+    }
+  ],
+  "migration_sha256": "a94bc4aef09db3b1f862d92e81c6489e35abba02d79d7d67b52089d28268ee47",
+  "command": "python3 scripts/facility-operations/test-catalog-backfill.py --host <owned-local-postgres-socket> --port 55442 --baseline hfo_catalog_pre336 --prefix hfo_catalog_evidence"
+}

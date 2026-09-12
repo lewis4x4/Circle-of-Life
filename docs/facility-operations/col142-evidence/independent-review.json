@@ -1,0 +1,96 @@
+{
+  "issue": "COL-142",
+  "recorded_at": "2026-09-10T17:20:00Z",
+  "method": "Two independent read-only reviewers on the uncommitted tree (SQL: migration 341, its probe, the receipt race script and the one-line 340 probe edit, against the settled contracts and the 337/338/340 guarantees, with rolled-back experiments on the run-owned native cluster; TypeScript: receipts library, five routes, tests and pass-through fields against the 341 wrapper signatures and RAISE wordings). Both ran the gates themselves. Every finding was verified against the source and dispositioned; remediations were applied before the commit and re-verified.",
+  "typescript_review": {
+    "verdict": "changes requested: no blockers, three should-fix, nine notes; should-fixes and the actionable notes remediated, the rest recorded",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "where": "receipts.ts error mapping, 42501 branch",
+        "claim": "the verification independence refusal is raised by the database as 42501 and was collapsed into the hidden 403, so a recorder verifying their own work got no reason; both tests encoded the wrong SQLSTATE",
+        "disposition": "Fixed: the independence wording is mapped to 409 conflict before the 42501 catch-all; tests use 42501."
+      },
+      {
+        "severity": "should-fix",
+        "where": "receipts.ts trusted fragments",
+        "claim": "operator-actionable 22023 messages the client cannot pre-check (performer not current staff at the site, vendor not linked to the site, outcome/reason couplings) were hidden behind the generic validation text",
+        "disposition": "Fixed: fragments widened (Performer, requires, are required, carries no identifier) with a mapper test for the staff and vendor wording."
+      },
+      {
+        "severity": "should-fix",
+        "where": "receipts.ts payloadProblem",
+        "claim": "only custom zod issues were surfaced, so structural failures (over-long reason, malformed uuid, missing issue kind, unknown key) returned a fixed sentence that misdescribed the problem",
+        "disposition": "Fixed: the first zod issue is reported as path and message; the fixed text remains only when no issue exists; test added."
+      },
+      {
+        "severity": "note",
+        "where": "generic wording per command; request_hash in POST replies; deleted_at on session reads; test gaps",
+        "disposition": "Fixed: per-command noun in the mapper (verify and issue replies no longer mention an existing receipt); request_hash stripped from POST replies; record/verify/receipts reads filter deleted rows so a removed occurrence is 404; tests added for the 42501 independence case, a session read error, an organisation mismatch, a 23505 without DETAIL and the 15-minute late-entry boundary wording."
+      },
+      {
+        "severity": "note",
+        "where": "zod stricter than the database in six places (empty performer, issue without kind, null severity or performed_at, other_staff label, task id with scope ids); generic 409 for the internal no-governing-version message; task-list select depends on 341 being applied",
+        "disposition": "Recorded as design choices: the stricter client shape refuses nothing the workspace needs; the deploy-order dependency is the same as COL-139's and is integration's concern."
+      }
+    ],
+    "clean": [
+      "RPC names and p_* arguments match the 341 wrappers; accepted key sets identical to the SQL allow-lists; server-owned fields refused",
+      "defaults agree (routine, self, normal severity, database now); performed_at passed through untransformed so replay hashes match; values key regex identical to the 338 input rule",
+      "request-key regex identical to the SQL; DETAIL current_receipt_id parsed from error.details with fallback; issue receipt keys cannot collide with client keys",
+      "22023 wordings map to 400 validation verbatim; state and idempotency P0001 wordings and 23505 map to 409 conflict; 42501 hides existence; unknown codes map to 500 uncertain without echo",
+      "route order: uuid guard, actor, strict body, session read, organisation and managed-row and site checks (404), revalidation, RPC, mapping; reads gate the site before any query",
+      "pass-through fields and the complete-route wording add no behaviour"
+    ]
+  },
+  "sql_review": {
+    "verdict": "changes requested: no blocker on authority or token gating; three should-fix and six notes; should-fixes and the actionable notes remediated, the rest recorded; re-verification recorded below",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "where": "341 verify_operation_work state check",
+        "claim": "a recorded occurrence awaiting verification is in_progress, which the 340 cancel command accepts, and verify checked only the execution state, so a cancelled occurrence could be verified into completed (reproduced with the audit sequence signed, cancelled, verified, completed)",
+        "disposition": "Fixed: verify refuses a cancelled or removed occurrence; cancel refuses a managed occurrence that carries recorded work (Occurrence has recorded work); both probed and recorded as policy 3d (vi)."
+      },
+      {
+        "severity": "should-fix",
+        "where": "341 record_operation_work ordering",
+        "claim": "role, performer, time and value validation ran before the request-key lookup, so an exact replay of an accepted request failed with a validation error once the world moved (performer access revoked; the fifteen-minute window passed), and the client would believe nothing was saved",
+        "disposition": "Fixed: the replay lookup runs right after the authority lock and managed check, before any drift-sensitive validation, in record and verify; probed with a revoked performer and an elapsed window."
+      },
+      {
+        "severity": "should-fix",
+        "where": "recorder authority via lock_operation_authority (337 operation_task_mutable)",
+        "claim": "a published recorder role outside the 337 broad list was denied unless it equalled the occurrence's assigned_role, which 340 sets to the first listed role, so list order decided who could record",
+        "disposition": "Fixed: haven.lock_operation_work_authority takes the same locks and COL-133 checks but gates on the governing recorder (or reviewer) list instead of the assigned role; probed with a second-listed housekeeper accepted and an unlisted manager denied; recorded as policy 3d (vii)."
+      },
+      {
+        "severity": "note",
+        "where": "lateness only enforced for routine entries; free-text label on other_staff; raw unique_violation on the receipt insert",
+        "disposition": "Fixed: lateness applies to every entry kind (a late non-self performer records as late with a reason); staff performers carry no label; unique violations are wrapped with the plain replay wording."
+      },
+      {
+        "severity": "note",
+        "where": "audit event type recorded; unreachable Required evidence is missing guard; legacy CHECK branch untested by data; probe gaps",
+        "disposition": "Contract text corrected to the recorded and issue_reported events; the evidence guard stays for COL-143; the legacy branch is all-NULL by construction; probe cases added for verify on cancelled, replay after drift, listed-role recording, on-behalf late, text and datetime inputs, a min bound, an issue with a performed outcome, a JSON-null optional value, and a two-reviewer verification race in the script."
+      }
+    ],
+    "clean": [
+      "complete_operation_task_review differs from 337 by exactly the managed-row refusal; guard_operation_occurrence differs from 340 by the execution-column reset on insert and the token-gated protection of the performance columns and status moves other than pending to in_progress",
+      "token gating on receipt and issue guards and managed occurrence updates; token and helper functions executable by the owner only; commands and wrappers executable by authenticated only; service_role has SELECT only and cannot call the commands",
+      "site, subject, can_record and session authority precede any read of the occurrence, version, performer or receipt; foreign-site admin denied and sees zero receipts or issues; reviewer independence holds for recorder and on-behalf performer",
+      "re-lock after writes; the occurrence row lock serialises same-occurrence races; the loser gets 23505 with the winner's receipt id",
+      "RLS on receipts and issues; restrictive generic-audit policy over the four operations tables; issue insert precedes the receipt so a failed receipt rolls the issue back",
+      "value validation matches the 338 shapes; evidence applicability by outcome and always unmet before COL-143; completion-state precedence; status mapping; sla_met; missed rows accept a late entry; legacy start still allowed; no unqualified extension functions; every function pins search_path"
+    ],
+    "re_verification": {
+      "verdict": "PASS",
+      "method": "the reviewer reproduced every original counter-example on a clone of the rebuilt 341 base: cancel of an occurrence with recorded work refused and verify of a cancelled occurrence refused; exact replays after the performer's grant was revoked, after the fifteen-minute window passed and after the recorder's own role changed all return replayed true; a broad-list role outside the published recorder list denied for recording and issue reporting while a listed housekeeper records regardless of the assigned role; on-behalf entries older than fifteen minutes require late and staff performers refuse a label; a cross-task same-key race yields the plain replay wording; the work-authority lock takes the 337 lock sequence verbatim and drops only the assigned-role clause, is executable by nobody but the owner-run commands, and its authority-only form is used only before the replay lookup with the governing list re-locked before and after every write; the one-line 337 guard change is reached only by commands that already hold an equivalent lock and a forged setting is still denied; both probes and the four-case race script pass",
+      "notes": [
+        {"where": "report_operation_issue on a task", "claim": "issue reporting on a managed occurrence is gated on the published recorder list and refuses legacy tasks", "disposition": "Recorded in the spec and handoff as the rule (roles come from the versions); a standalone subject-scoped report remains available to any actor with subject authority."},
+        {"where": "verify evidence guard", "claim": "unreachable while published rules are immutable", "disposition": "Kept for COL-143; recorded as untested as worded."},
+        {"where": "contract audit wording", "claim": "the contract named updated where the code writes recorded", "disposition": "Contract text already corrected."}
+      ]
+    }
+  }
+}

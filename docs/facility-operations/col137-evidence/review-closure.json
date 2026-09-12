@@ -1,0 +1,12 @@
+{
+  "issue": "COL-137",
+  "closed_at": "2026-09-10T14:33:23.182100+00:00",
+  "reviewed_head": "caca9592026dead75ef60e3dbf21b04f73e95850",
+  "manifest_files": 38,
+  "all_hashes_match": true,
+  "strict_gate": "test-results/agent-gates/2026-09-10T12-48-37-467Z-COL-137-HFO-EVALUATOR.json",
+  "verdict": "PASS",
+  "independent_review": "docs/facility-operations/col137-evidence/independent-review.json",
+  "review_findings": "Previously dispositioned and remediated; no repeated review",
+  "completion_meaning": "reviewed,gated,unmerged source only; no hosted/operating acceptance"
+}

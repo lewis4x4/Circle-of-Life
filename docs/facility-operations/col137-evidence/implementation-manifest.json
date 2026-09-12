@@ -1,0 +1,158 @@
+{
+  "base_commit": "520ccbde",
+  "branch": "codex/hfo-col137-evaluator",
+  "files": [
+    {
+      "path": "docs/facility-operations/CHECKPOINT.md",
+      "sha256": "e1ac4515ea80721190e63140cce63fafa99b44ba2cf8850d6c3cfd71eabe2d2a"
+    },
+    {
+      "path": "docs/facility-operations/COL-137-HANDOFF.md",
+      "sha256": "b74904a4cbe4aa4c17a662e8c09a877f0b5da51fdeb2249591ecb1b7b9132d24"
+    },
+    {
+      "path": "docs/facility-operations/HANDOFF.md",
+      "sha256": "a781ef5eb49f1d7b9d27e9b358be100a7b77234059b2ecac67311502d4b681f6"
+    },
+    {
+      "path": "docs/facility-operations/OWNER-DECISIONS.md",
+      "sha256": "42fef9154170e5b48693f939ed4cfc13e36a086f4b6603c714f55d98b2d0d1f7"
+    },
+    {
+      "path": "docs/facility-operations/col137-evidence/hosted-ledger.json",
+      "sha256": "155327cd7f1deeaee167a6e69068181c4530f7fb207bfd253e7e22e1e06042ae"
+    },
+    {
+      "path": "docs/facility-operations/col137-evidence/independent-review.json",
+      "sha256": "223d1779dc0e683ec40aee1abbd9132a6b078b6e537d81ed88beaa70126a6955"
+    },
+    {
+      "path": "docs/facility-operations/col137-evidence/linear-state.json",
+      "sha256": "18595f6a1c0dbc9d36e6d5fc93d075c8d4cef47e9751b3fc4f9f3b9fbf0686f3"
+    },
+    {
+      "path": "docs/facility-operations/col137-evidence/verification.json",
+      "sha256": "93fdb7fa2393c0b6bf5b386ef3e2bd2f4a4989bbbdceb5cd273440b58fb2e03f"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-evaluator.md",
+      "sha256": "141cd010980540c747406d8104a9489fffa2633c29f4c111b29aee659c8659f4"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "ff8d1056041ee0fccc487c3fc81522ed3c0be3d628624ef817a4a8e4c392d64d"
+    },
+    {
+      "path": "src/app/(admin)/admin/kanban/page.tsx",
+      "sha256": "4ceaf616d7b1f87876dccda91ee4e41cd24e5d7b6331b9a83c27f56e4e2ef75c"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/overdue/page.tsx",
+      "sha256": "6173b41ab951821ce244ba5baaf8af1d423cfd30db68bde4c4088f3243a52ae8"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/page.tsx",
+      "sha256": "0b7a5d13591f950d2da7419824489054ecae7450fdc93264ecc10781d296c182"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/pager/page.tsx",
+      "sha256": "109c7595002c9fdaea81832a787584e1ffcf29c8ceb7e05645ac3aef12e06f58"
+    },
+    {
+      "path": "src/app/api/admin/operations/facility-requirements/route.test.ts",
+      "sha256": "ad5d53be3221e8e9f2d815e51f713ee00d157bf3985cc522de8919885db70f53"
+    },
+    {
+      "path": "src/app/api/admin/operations/facility-requirements/route.ts",
+      "sha256": "0ea15a1a65a6c780ca922c64d9f13447d9a224828980a26954c0d1991ca096a1"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/route.ts",
+      "sha256": "7d1907bfcdd7e2618b860b715342efeb3ace69b9508d2e3817706896b014aa72"
+    },
+    {
+      "path": "src/components/operations/OperationsCalendarPage.tsx",
+      "sha256": "c562bc3edbb908a6c116c7604cdaa48f135abb8beb7e5ca5bada4ca03a0b922d"
+    },
+    {
+      "path": "src/components/operations/OperationsTaskRangePage.tsx",
+      "sha256": "547812b7f47ee7704fd237623c736a5b622d6844c1990c655770bdd57c028be3"
+    },
+    {
+      "path": "src/lib/operations/automation-authority.test.ts",
+      "sha256": "5e56f87153e857c940e45ffd983b59d46d50783a581f436d5701da8387d4655c"
+    },
+    {
+      "path": "src/lib/operations/due-judgment.test.ts",
+      "sha256": "eeef9f323d5b3ec18ae33e1ac35837cf5c91487f3b90dff6562c539d9c7af580"
+    },
+    {
+      "path": "src/lib/operations/miss-prediction.ts",
+      "sha256": "705a8000dc752ee7acc3cd499f019c51e8eb1171d01e086f2d331e663645d43a"
+    },
+    {
+      "path": "src/lib/operations/requirement-publication.ts",
+      "sha256": "7390aa17a2366b14393caa227e287e357acb2ed4d4b07b4629a742d87e2844e8"
+    },
+    {
+      "path": "src/lib/operations/requirements.test.ts",
+      "sha256": "01d7af81fdc0a39335910779b80ebb1ec2aab27a54ed079a39fec272d06bcad7"
+    },
+    {
+      "path": "src/lib/operations/requirements.ts",
+      "sha256": "c0e06b6f7214b0c8141bef19e1a3cc273e691c2a7837b1acc0d835be5ef443a7"
+    },
+    {
+      "path": "src/lib/operations/schedule-evaluator.test.ts",
+      "sha256": "70c0a203fc663b096bb800371b589fd00cfd980cecdc98acc082894c95942a3a"
+    },
+    {
+      "path": "src/lib/operations/schedule-evaluator.ts",
+      "sha256": "07eaca38f658e9156975783d6af1bbc5bf18d64e5ae077c728a7e34e7f03940d"
+    },
+    {
+      "path": "src/lib/operations/schedule-rule-fixtures.json",
+      "sha256": "1372c0d702efa0b33e9910957d876600995beb669d09fcda7a6d04a2daa3c269"
+    },
+    {
+      "path": "src/lib/operations/scheduler-evaluator.test.ts",
+      "sha256": "96a72b3f952493d5106b5592bfaa30bae9b5b8ed84601a472164ce516bf1a60d"
+    },
+    {
+      "path": "src/lib/operations/server.ts",
+      "sha256": "385a895aef29d89a1e7611c721a9101fb1edfd80c4154b98b02baeb31ae76f02"
+    },
+    {
+      "path": "src/lib/operations/types.ts",
+      "sha256": "e794a4640ff2aa7331ed72bd7bcb6d586924dad8a47902be8c38d547b45a2259"
+    },
+    {
+      "path": "supabase/functions/oce-task-scheduler/index.ts",
+      "sha256": "0144f334863cf85d6e91054fe5ce9319305448c137e49517046077a5a941ae52"
+    },
+    {
+      "path": "supabase/functions/risk-nightly-scorer/index.ts",
+      "sha256": "be1b6de31d8e689c5f64004d8a24ce3716a701b8f7ffb2fa37dd64066642ec34"
+    },
+    {
+      "path": "supabase/migrations/339_hfo_schedule_evaluator.sql",
+      "sha256": "aed8adbc78410af7912c778fa140c0850bda5b38d7f4389ed41bbed1d22c0330"
+    },
+    {
+      "path": "supabase/tests/review_hfo_applicability.sql",
+      "sha256": "9987149abe0ac36368636fe0b28b9b14209124875f5d7dc64ee30510305770f0"
+    },
+    {
+      "path": "supabase/tests/review_hfo_schedule_evaluator.sql",
+      "sha256": "fab01560a7c66ddbf69db3e2323ba99a27982be14b6bf9b47980bc4cb52e878f"
+    },
+    {
+      "path": "test-results/agent-gates/2026-09-10T12-24-46-085Z-COL-137-HFO-EVALUATOR.json",
+      "sha256": "2246153f6066d64f591c77b07fab50cb74bc9ffbce9e60cb37f98f6fe2f22045"
+    },
+    {
+      "path": "test-results/agent-gates/2026-09-10T12-48-37-467Z-COL-137-HFO-EVALUATOR.json",
+      "sha256": "647220c14c69eae5a6a63d2c200b20e064a2c3f32439efb10ecc6ae441ea4a29"
+    }
+  ]
+}

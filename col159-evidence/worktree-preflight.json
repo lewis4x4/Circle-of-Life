@@ -1,0 +1,12 @@
+{
+  "issue": "COL-159",
+  "uuid": "1ed5af55-72be-4b41-af3a-0c6fb718333b",
+  "title": "[HFO-22] Connect dietary, facility services and general admin evidence",
+  "worktree": "/Users/brianlewis/Circle of Life/Haven Facility Dietary Admin",
+  "branch": "codex/hfo-col159-dietary-admin",
+  "base_tip": "47455a13",
+  "base_branch": "codex/hfo-col154-drill-generators",
+  "migration_347": "taken",
+  "fable_probe": "FABLE_OK claude-fable-5-1",
+  "col143_parked": true
+}

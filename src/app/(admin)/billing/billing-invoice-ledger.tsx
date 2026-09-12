@@ -696,7 +696,6 @@ function BillingInvoiceLedgerInner({
     isOverviewChrome,
     period,
     sortedTableRows,
-    router,
   ]);
 
   const listEmptyCopy = useMemo(() => {

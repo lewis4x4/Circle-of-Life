@@ -1,0 +1,31 @@
+{
+  "readback": {
+    "identifier": "COL-217",
+    "title": "Identify authorized staging target and integrator for Haven evidence proof",
+    "description": "Agent-created decision request \u2014 not human acknowledgement. September 12, 2026.\n\n## Decision or approval requested\n\nWhich separate non-production Supabase project and app revision may be used for COL-143 hosted evidence proof, and who is the authorized integrator for preparing that target?\n\n## Authorized decision maker\n\nBrian Lewis identifies or routes this question to the environment owner. The environment owner must establish target authority and the approved integration scope. Assignment here requests that decision; it does not make Brian the deployment operator.\n\n## Context, recommendation, and alternatives\n\nCOL-143 source exists, but its September 12 proof attempt stopped before any hosted request: only excluded production project `manfqmasfqppukpobpld` was identified. The target ledger, Auth hook, Storage behavior, and deployed app revision remain unverified. This holds corporate history COL-149 and downstream core release work.\n\nRecommend an existing authorized isolated staging target, if one exists, with synthetic fixtures and the reviewed Finance-first/HFO stack. If none exists, identify an owner and approve a separately scoped staging setup. Do not substitute production or a guessed project; no purchase, resource creation, merge, migration, deployment, or activation is authorized by this decision request.\n\n## Required by\n\nBefore COL-143 hosted proof resumes. COL-152 in-app reminder source work can proceed independently.\n\n## Blocked work and sufficient answer\n\nDirectly blocks COL-143. Supply attributable owner decision, non-production project ref, authorized integrator, approved source/app revision and scope. Provide access through the normal secret channel, never in this issue. The integrator must separately verify current configuration/ledger before execution. Canonical prior evidence: `Haven Facility Workspace/docs/facility-operations/col143-evidence/hosted-proof/RESULT.md`.\n\n## Outcome record\n\nPending. Record actual decision maker, date, scope and conditions. This decision cannot close hosted proof, staff acceptance, or Homewood go-live.",
+    "assignee": {
+      "name": "Brian Lewis"
+    },
+    "state": {
+      "name": "Todo"
+    },
+    "relations": {
+      "nodes": [
+        {
+          "type": "blocks",
+          "relatedIssue": {
+            "identifier": "COL-143"
+          }
+        }
+      ]
+    }
+  },
+  "linked_delivery": {
+    "issueUpdate": {
+      "success": true,
+      "issue": {
+        "identifier": "COL-143"
+      }
+    }
+  }
+}

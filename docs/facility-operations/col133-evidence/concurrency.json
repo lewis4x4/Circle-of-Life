@@ -1,0 +1,54 @@
+{
+  "cases": [
+    {
+      "case": "session revoked while task locked",
+      "outcome": "PASS",
+      "sqlstate": "42501",
+      "observed_lock_wait": true,
+      "mutation_rolled_back": true
+    },
+    {
+      "case": "site grant revoked while task locked",
+      "outcome": "PASS",
+      "sqlstate": "42501",
+      "observed_lock_wait": true,
+      "mutation_rolled_back": true
+    },
+    {
+      "case": "temporary coverage expired while task locked",
+      "outcome": "PASS",
+      "sqlstate": "42501",
+      "observed_lock_wait": true,
+      "mutation_rolled_back": true
+    },
+    {
+      "case": "site grant revoked during grant-row wait",
+      "outcome": "PASS",
+      "sqlstate": "42501",
+      "observed_lock_wait": true,
+      "mutation_rolled_back": true
+    },
+    {
+      "case": "resident transfer during native subject wait",
+      "outcome": "PASS",
+      "sqlstate": "42501",
+      "observed_lock_wait": true,
+      "mutation_rolled_back": true
+    },
+    {
+      "case": "recorder grant revoked while task locked",
+      "outcome": "PASS",
+      "sqlstate": "42501",
+      "observed_lock_wait": true,
+      "mutation_rolled_back": true
+    },
+    {
+      "case": "coverage expires during linked meeting AFTER-trigger wait",
+      "outcome": "PASS",
+      "sqlstate": "42501",
+      "observed_lock_wait": true,
+      "mutation_rolled_back": true
+    }
+  ],
+  "boundary": "local PostgreSQL with Supabase auth stubs"
+}

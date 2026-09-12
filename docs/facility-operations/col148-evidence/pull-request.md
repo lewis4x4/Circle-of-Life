@@ -1,0 +1,7 @@
+Admins and assistants now reach one site work surface with Today, Upcoming and History. Routine work completes in one action; published rules drive inline inputs/evidence, server receipts own status, and corrections, reversals and interrupted saves retain history, attribution and list position.
+
+The server reads through provider row caps, preserves microsecond history keys and exact counts, and refuses inconsistent receipt/occurrence snapshots. Independent reviews also repaired correction attribution, draft switching, attachment replay/recovery and focus. No new migration or dependency.
+
+Validation: 63 files / 619 tests; independent server, client and evidence approvals; production typecheck; strict UI gate PASS (`2026-09-10T21-53-29-562Z-COL-148-HFO-WORKSPACE.json`), including lint,348-migration/29-probe native replay, build, public design review and axe. Real page and calendar structural axe tests pass. Authenticated workspace axe could not run because this isolated worktree lacks connection settings/test credentials; recorded explicitly.
+
+Source only under the owner’s limited dependency exception. COL-143 remains In Progress with hosted Storage proof open. Nothing merged, applied to hosted systems, deployed, scheduled or activated. Base: `codex/hfo-col146-recovery`. Details and rollback: `docs/facility-operations/COL-148-HANDOFF.md`. COL-147 is left untouched for the requested Fable 5.1 handoff.

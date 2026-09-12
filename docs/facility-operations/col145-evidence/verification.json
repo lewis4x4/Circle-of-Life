@@ -1,0 +1,47 @@
+{
+  "issue": "COL-145",
+  "scope": "source-only; built under the owner's limited dependency exception against the reviewed COL-143 interface (COL-143 In Progress, hosted Storage proof open, not marked complete)",
+  "recorded_at": "2026-09-10T20:50:00Z",
+  "state": "local_source_implemented_reviewed_gated",
+  "base_commit": "45ea4ea9 (codex/hfo-col143-evidence tip: checksum amendment over c7b5cc30; branch started at 5367f6e7 and fast-forwarded)",
+  "branch": "codex/hfo-col145-corrections",
+  "contract": "docs/facility-operations/col145-evidence/engineering-contracts.md",
+  "legacy_writer_inventory": "docs/facility-operations/col145-evidence/legacy-writers.md (made before code; every reachable legacy mutation of a managed occurrence already refused, dead or revoked except the deliberate COL-142 start transition)",
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/lib/operations",
+    "files": 32,
+    "tests": 371,
+    "status": "PASS",
+    "note": "347 at the COL-143 checksum tip; added: correction/reversal/bound-verify schemas and mapping (conflict carrying current receipt id and revision), correct and reverse routes, verify binding, receipts history columns and ordering, managed-row refusals mapped in defer/reinstate routes"
+  },
+  "typecheck": "PASS",
+  "lint": "PASS (eslint src --max-warnings 0 and constitution lint)",
+  "native_replay": {
+    "migration_files": 347,
+    "numbered_through": "344",
+    "sql_probes": 28,
+    "probe": "supabase/tests/review_hfo_corrections.sql: 176 assertions (91 assert, 56 expect, 32 denied), rolls back; fixtures mirror the 343 checksum convention (declared md5, quoted MD5 eTag, version); covers verbatim corrected receipt, chain and seq, evidence across the chain and not across a reversal, corrected default and bounded performed time, review binding and supersession, reversal projection, reply key pins, every legacy-writer refusal, forced audit-insert failure, generic reset, DELETE/TRUNCATE, structural guard pairing including the deferred-pointer case, other-site invisibility; the 341 and 343 probes pass unchanged",
+    "status": "PASS (SQL lane, SQL reviewer twice, and the strict gate's qa.migrations-apply-postgres)",
+    "runtime": "native PostgreSQL 17.9, run-owned socket-only cluster under ~/.hermes/tmp/agent-runs (no Docker), Supabase stubs"
+  },
+  "lock_races": {
+    "script": "scripts/facility-operations/test-correction-concurrency.py",
+    "baseline": "col145_base344 (stub + migrations 001..344 at 45ea4ea9)",
+    "output": "docs/facility-operations/col145-evidence/concurrency.txt (2026-09-10T20:41:09Z)",
+    "cases": [
+      "two corrections with the same expected revision: the second waits on the occurrence row and conflicts naming the winner's correction id and revision; one correction",
+      "correction racing an evidence finalization, both orders: correction first → finalization refused (Evidence attaches to the effective performance receipt), evidence stays uploaded on the superseded receipt; finalization first → the correction carries the finalized evidence (complete)",
+      "correction racing a verification, both orders: verification first → the review is superseded and the occurrence awaits review again; correction first → the verification conflicts naming the correction, no review written"
+    ],
+    "lock_waits": "observed on the occurrence row in all five orderings (pg_stat_activity transactionid/tuple)",
+    "status": "PASS"
+  },
+  "independent_review": "docs/facility-operations/col145-evidence/independent-review.json (TypeScript: one blocker and should-fixes remediated, re-verified PASS; SQL: one should-fix, gate blocker after the rebase and a guard NULL hole all remediated, re-verified PASS twice)",
+  "strict_gate": {
+    "segment": "COL-145-HFO-CORRECTIONS",
+    "artifact": "test-results/agent-gates/2026-09-10T20-40-49-826Z-COL-145-HFO-CORRECTIONS.json",
+    "verdict": "PASS",
+    "ui": "not run (no route or visual change; API-only routes)"
+  },
+  "not_established": ["hosted migration", "provider, staff and operating acceptance", "COL-143 hosted Storage proof (open, unaffected)"]
+}

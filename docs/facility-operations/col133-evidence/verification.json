@@ -1,0 +1,232 @@
+{
+  "issue": "COL-133",
+  "state": "local_implementation_verified_in_review",
+  "started_at": "2026-09-10T00:06:25.199369+00:00",
+  "baseline": {
+    "focused_tests": {
+      "files": 10,
+      "passed": 66
+    },
+    "migration_replay": {
+      "migration_files": 339,
+      "database": "hfo_col133_baseline336",
+      "runtime": "native PostgreSQL17 with Supabase stubs"
+    }
+  },
+  "required_acceptance": [
+    "Site A identifier, search, count, list and export exclude Site B and unauthorized native subjects",
+    "Corporate has explicit active site access plus native domain permission; coverage expiry fails closed",
+    "Task/subject/grant/profile/Auth/session authority revalidated after blocking lock and before replay",
+    "Protected evidence cannot be exposed by task row, audit, meeting linkage, delivery, download or service bypass",
+    "Immutable historical identity and authenticated actor attribution retained"
+  ],
+  "release_boundary": "No hosted migration, deployment, provider transmission, schedule activation, or operating acceptance",
+  "mission_alignment": "PASS",
+  "operating_readiness": "RISK",
+  "updated_at": "2026-09-10T00:31:42.356322+00:00",
+  "focused_tests": {
+    "passed": 131,
+    "failed": 0,
+    "files": 17,
+    "command": "npm test -- src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts",
+    "suites": [
+      {
+        "path": "src/lib/auth/current-api-actor.test.ts",
+        "status": "passed",
+        "assertions": 10
+      },
+      {
+        "path": "src/lib/operations/activity-catalog.test.ts",
+        "status": "passed",
+        "assertions": 12
+      },
+      {
+        "path": "src/lib/operations/activity-history.test.ts",
+        "status": "passed",
+        "assertions": 2
+      },
+      {
+        "path": "src/lib/operations/audit-export-authority.test.ts",
+        "status": "passed",
+        "assertions": 9
+      },
+      {
+        "path": "src/lib/operations/auth.test.ts",
+        "status": "passed",
+        "assertions": 5
+      },
+      {
+        "path": "src/lib/operations/automation-authority.test.ts",
+        "status": "passed",
+        "assertions": 27
+      },
+      {
+        "path": "src/lib/operations/operations-display-copy.test.ts",
+        "status": "passed",
+        "assertions": 10
+      },
+      {
+        "path": "src/lib/operations/task-command.test.ts",
+        "status": "passed",
+        "assertions": 8
+      },
+      {
+        "path": "src/lib/admin/operations/operations-templates-display-copy.test.ts",
+        "status": "passed",
+        "assertions": 12
+      },
+      {
+        "path": "src/app/api/admin/operations/staffing-adequacy/route.test.ts",
+        "status": "passed",
+        "assertions": 2
+      },
+      {
+        "path": "src/app/api/admin/operations/tasks/route.test.ts",
+        "status": "passed",
+        "assertions": 5
+      },
+      {
+        "path": "src/app/api/admin/meetings/[id]/actions/route.test.ts",
+        "status": "passed",
+        "assertions": 10
+      },
+      {
+        "path": "src/app/api/admin/operations/tasks/bulk-complete/route.test.ts",
+        "status": "passed",
+        "assertions": 2
+      },
+      {
+        "path": "src/app/api/admin/operations/templates/[id]/route.test.ts",
+        "status": "passed",
+        "assertions": 4
+      },
+      {
+        "path": "src/app/api/admin/operations/tasks/[id]/complete/route.test.ts",
+        "status": "passed",
+        "assertions": 6
+      },
+      {
+        "path": "src/app/api/admin/operations/tasks/[id]/defer/route-wall-clock.test.ts",
+        "status": "passed",
+        "assertions": 2
+      },
+      {
+        "path": "src/app/api/admin/operations/tasks/[id]/defer/route.test.ts",
+        "status": "passed",
+        "assertions": 5
+      }
+    ]
+  },
+  "typecheck": "PASS",
+  "deno_edge_typecheck": "PASS (4 changed Edge entrypoints, --no-lock)",
+  "strict_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T00-23-57-980Z-COL-133-HFO-CURRENT-AUTHORITY.json",
+    "verdict": "FAIL",
+    "checks": [
+      {
+        "id": "hygiene.env-example",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.tracked-secrets-scan",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.npm-audit",
+        "status": "failed",
+        "required": true
+      },
+      {
+        "id": "security.gitleaks",
+        "status": "failed",
+        "required": true
+      },
+      {
+        "id": "qa.eslint",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.migration-sequence",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.migrations-apply-postgres",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.root-build",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.nextjs-deprecation-signal",
+        "status": "passed",
+        "required": false
+      },
+      {
+        "id": "qa.web-build",
+        "status": "skipped",
+        "required": false
+      },
+      {
+        "id": "chaos.stress-suite",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "cdo.design-review",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "cdo.a11y-axe",
+        "status": "passed",
+        "required": true
+      }
+    ]
+  },
+  "ui_scope": "Public login redirect only: four viewport screenshots, one axe route. No authenticated Kanban or hosted operations workflow proof.",
+  "dependency_audit": {
+    "critical": 1,
+    "high": 2,
+    "moderate": 3,
+    "baseline_findings": true
+  },
+  "shared_ref_gitleaks": {
+    "matches": 3,
+    "source_commit": "2973ca39e00d2848137ad547463fa3fd13702cac",
+    "baseline_findings": true
+  },
+  "other_worktrees_preserved": 19,
+  "dirty_files_preserved": 13,
+  "git_publication": "Not committed or pushed; CODEX.md conditions completed segment commit/push on required gate PASS.",
+  "latest_schema_followup": "Template link locks and service-only automation projection verified by final340+21 replay,131 focused tests and no-lock Deno checks.",
+  "final_sql_replay": {
+    "status": "PASS",
+    "summary": "[migrations:verify:pg] PASS (340 migration files, 21 SQL probes; native PostgreSQL with Supabase stubs)",
+    "migration_sha256": "b45506534158f6bb2bddbcec3b6c8b231b958478f8c04fc9bbeca837e080dbe5"
+  },
+  "concurrency": {
+    "cases": 7,
+    "passed": 7,
+    "artifact": "docs/facility-operations/col133-evidence/concurrency.json"
+  },
+  "completed_at": "2026-09-10T00:34:17.635513+00:00",
+  "next_issue": {
+    "identifier": "COL-135",
+    "state": "Backlog",
+    "blocker": "COL-132 In Review",
+    "started": false
+  },
+  "regression_adaptations": [
+    "Actor positive OCE assertions use current authenticated session; service impersonation denied; replay and rollback assertions retained.",
+    "Clinical dual-sign fixtures explicitly facility typed; witness authenticates as self and spoofed witness argument denied.",
+    "Office typed fixtures preserve task-meeting synchronization and transactional failure rollback; unclassified legacy create/reopen denied.",
+    "Bulk completion and unverified staffing tests assert explicit unavailability under core-release scope."
+  ]
+}

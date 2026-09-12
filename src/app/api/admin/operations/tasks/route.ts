@@ -6,11 +6,18 @@ import { buildOperationTaskResponse, parseOperationTaskFilters, summarizeOperati
 import type { OperationTaskResponse } from "@/lib/operations/types";
 import { logError } from "@/lib/observability/logger";
 
+const AUTHORIZED_TASK_COVERAGE = {
+  scope: "currently_authorized_classified_tasks",
+  legacy_classification_required: true,
+  evidence_scope: "classified_only",
+} as const;
+
 type OperationTaskRow = {
   id: string;
   organization_id: string;
   facility_id: string;
   template_id: string | null;
+  activity_id?: string | null;
   template_name: string;
   template_category: string;
   template_cadence_type: string;
@@ -46,7 +53,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const filters = parseOperationTaskFilters(searchParams);
 
-  let accessibleFacilityIds = await listActorAccessibleFacilityIds(actor);
+  let accessibleFacilityIds: string[];
+  try {
+    accessibleFacilityIds = await listActorAccessibleFacilityIds(actor);
+  } catch {
+    return NextResponse.json({ error: "Could not verify facility access" }, { status: 503 });
+  }
   if (filters.facilityId) {
     const canAccess = await actorCanAccessFacility(actor, filters.facilityId);
     if (!canAccess) {
@@ -56,7 +68,7 @@ export async function GET(request: Request) {
   }
 
   if (accessibleFacilityIds.length === 0) {
-    return NextResponse.json(emptyTaskResponse(filters.dateFrom, filters.dateTo));
+    return NextResponse.json({ ...emptyTaskResponse(filters.dateFrom, filters.dateTo), coverage: AUTHORIZED_TASK_COVERAGE });
   }
 
   // Bound the result set. Caller can request more via ?limit up to a hard ceiling.
@@ -68,13 +80,14 @@ export async function GET(request: Request) {
       ? Math.min(requestedLimit, MAX_TASK_LIMIT)
       : DEFAULT_TASK_LIMIT;
 
-  let query = actor.admin
+  let query = actor.currentActor.client
     .from("operation_task_instances" as never)
     .select(`
       id,
       organization_id,
       facility_id,
       template_id,
+      activity_id,
       template_name,
       template_category,
       template_cadence_type,
@@ -93,7 +106,15 @@ export async function GET(request: Request) {
       estimated_minutes,
       current_escalation_level,
       created_at,
-      updated_at
+      updated_at,
+      occurrence_kind,
+      subject_id,
+      period_start_date,
+      period_end_date,
+      occurrence_revision,
+      execution_state,
+      performed_at,
+      effective_receipt_id
     `)
     .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
@@ -130,27 +151,34 @@ export async function GET(request: Request) {
   }
 
   const rows = ((data ?? []) as unknown as OperationTaskRow[]);
-  const facilityNames = await loadFacilityNames(actor, accessibleFacilityIds);
-  const assigneeNames = await loadAssigneeNames(actor, rows);
+  let facilities: { names: Map<string, string>; timezones: Map<string, string | null> };
+  let assigneeNames: Map<string, string>;
+  try {
+    facilities = await loadFacilityDetails(actor, accessibleFacilityIds);
+    assigneeNames = await loadAssigneeNames(actor, rows);
+  } catch {
+    return NextResponse.json({ error: "Failed to load task details" }, { status: 503 });
+  }
 
   const response = buildOperationTaskResponse({
     rows,
-    facilityNames,
+    facilityNames: facilities.names,
+    facilityTimezones: facilities.timezones,
     assigneeNames,
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
   });
 
   if (!filters.overdueOnly) {
-    return NextResponse.json(response);
+    return NextResponse.json({ ...response, coverage: AUTHORIZED_TASK_COVERAGE });
   }
 
-  const overdueTasks = response.tasks.filter((task) =>
-    task.days_overdue > 0 && (task.status === "pending" || task.status === "in_progress")
-  );
+  // Only the evaluator's judgment makes a task overdue; unknown schedules are excluded.
+  const overdueTasks = response.tasks.filter((task) => task.due_judgment === "overdue");
 
   return NextResponse.json({
     ...response,
+    coverage: AUTHORIZED_TASK_COVERAGE,
     tasks: overdueTasks,
     summary: summarizeOperationTasks(overdueTasks, filters.dateFrom, filters.dateTo),
     pagination: {
@@ -173,17 +201,23 @@ function emptyTaskResponse(dateFrom: string, dateTo: string): OperationTaskRespo
   };
 }
 
-async function loadFacilityNames(
+/** Names for display and each facility's own timezone for the due judgment (COL-137). */
+async function loadFacilityDetails(
   actor: OperationsActor,
   facilityIds: string[],
 ) {
-  const { data } = await actor.admin
+  const { data, error } = await actor.currentActor.client
     .from("facilities")
-    .select("id, name")
+    .select("id, name, timezone")
     .eq("organization_id", actor.organizationId)
     .in("id", facilityIds);
 
-  return new Map((data ?? []).map((facility) => [facility.id, facility.name]));
+  if (error) throw new Error("Task details unavailable");
+  const facilities = data ?? [];
+  return {
+    names: new Map(facilities.map((facility) => [facility.id, facility.name])),
+    timezones: new Map(facilities.map((facility) => [facility.id, facility.timezone ?? null])),
+  };
 }
 
 async function loadAssigneeNames(
@@ -195,11 +229,12 @@ async function loadAssigneeNames(
     return new Map<string, string>();
   }
 
-  const { data } = await actor.admin
+  const { data, error } = await actor.currentActor.client
     .from("user_profiles")
     .select("id, full_name")
     .in("id", assigneeIds)
     .is("deleted_at", null);
 
+  if (error) throw new Error("Task details unavailable");
   return new Map((data ?? []).map((profile) => [profile.id, profile.full_name]));
 }
