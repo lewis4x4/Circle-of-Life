@@ -286,6 +286,129 @@ DO $$ DECLARE r jsonb; BEGIN
 END $$;
 
 -- ---------------------------------------------------------------------------
+-- Reconciliation (P1-1) and unknown coverage (P1-2): the two ways a figure can
+-- look authoritative and be wrong. Facility C is soft-deleted and carries a
+-- resident, an open invoice billed this month, an incident and a certification.
+-- Facility D exists, carries the same, and has NO officer.facility_coverage row
+-- -- the default state of every facility onboarded from now on.
+-- Invariant asserted for every read: headline == sum(by_facility).
+-- Runs on its own key and its own seat so it does not spend the rate-limit
+-- budgets the windows below depend on.
+-- ---------------------------------------------------------------------------
+INSERT INTO officer.gateway_keys(key_id,secret_env,enabled,allowed_capabilities)
+  VALUES ('probe_recon','OFFICER_GATEWAY_HMAC_PROBE_RECON',true,
+    ARRAY['occupied_beds','licensed_capacity','open_ar_balance','billed_revenue_mtd','incidents_last_30_days','staff_certifications_expiring_30_days']);
+DO $$
+DECLARE
+  v_org uuid := (SELECT org FROM oc); v_ent uuid := (SELECT entity FROM oc);
+  v_rep uuid := (SELECT reporter FROM oc);
+  v_seat uuid := gen_random_uuid();
+  fac_c uuid := gen_random_uuid(); fac_d uuid := gen_random_uuid();
+  res_c uuid := gen_random_uuid(); res_d uuid := gen_random_uuid();
+  r jsonb; cap text; sum_by numeric; head numeric;
+BEGIN
+  INSERT INTO officer.federated_officers(front_office_profile_id,officer_role,email,organization_id,is_active,created_by)
+    VALUES (v_seat,'owner','recon@probe.invalid',v_org,true,'review probe');
+  INSERT INTO public.facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds,deleted_at)
+  VALUES (fac_c,v_ent,v_org,'Probe Facility C Deleted','3 Probe St','Lake City','32025',40,now()),
+         (fac_d,v_ent,v_org,'Probe Facility D Unclassified','4 Probe St','Lake City','32025',5,NULL);
+  -- C is classified live: deletion, not coverage, is what takes it out of scope.
+  -- D is deliberately left unclassified.
+  INSERT INTO officer.facility_coverage(facility_id,coverage,note) VALUES (fac_c,'live','probe deleted facility');
+
+  INSERT INTO public.residents(id,facility_id,organization_id,first_name,last_name,date_of_birth,gender,status)
+  VALUES (res_c,fac_c,v_org,'Probe','Cee','1940-01-01','female','active'),
+         (res_d,fac_d,v_org,'Probe','Dee','1940-01-01','female','active');
+  INSERT INTO public.invoices(id,resident_id,facility_id,organization_id,entity_id,invoice_number,invoice_date,due_date,period_start,period_end,status,subtotal,total,balance_due)
+  VALUES (gen_random_uuid(),res_c,fac_c,v_org,v_ent,'PROBE-DEL-1',officer.utc_today(),officer.utc_today()-5,officer.utc_today()-5,officer.utc_today(),'sent',777,777,777),
+         (gen_random_uuid(),res_d,fac_d,v_org,v_ent,'PROBE-UNK-1',officer.utc_today(),officer.utc_today()-5,officer.utc_today()-5,officer.utc_today(),'sent',111,111,111);
+  INSERT INTO public.incidents(id,facility_id,organization_id,incident_number,category,severity,occurred_at,shift,location_description,description,immediate_actions,reported_by)
+  VALUES (gen_random_uuid(),fac_c,v_org,'PROBE-INC-DEL','fall_without_injury','level_1',now()-interval '1 day','day','Probe','Probe','Probe',v_rep),
+         (gen_random_uuid(),fac_d,v_org,'PROBE-INC-UNK','fall_without_injury','level_1',now()-interval '1 day','day','Probe','Probe','Probe',v_rep);
+  INSERT INTO public.staff_certifications(staff_id,facility_id,organization_id,certification_type,certification_name,issue_date,expiration_date,status)
+  VALUES (v_rep,fac_c,v_org,'probe','Probe',current_date,current_date+7,'active'),
+         (v_rep,fac_d,v_org,'probe','Probe',current_date,current_date+7,'active');
+
+  FOREACH cap IN ARRAY ARRAY['occupied_beds','licensed_capacity','open_ar_balance','billed_revenue_mtd','incidents_last_30_days','staff_certifications_expiring_30_days'] LOOP
+    r := pg_temp.run(v_seat,'recon@probe.invalid','owner','session',cap,1,'{}',NULL,NULL,NULL,'probe_recon');
+    -- The soft-deleted facility never appears; the unclassified one always does.
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility C Deleted') THEN
+      RAISE EXCEPTION '%: a soft-deleted facility appeared in the breakdown', cap; END IF;
+    IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility D Unclassified') THEN
+      RAISE EXCEPTION '%: the unclassified facility vanished from the breakdown', cap; END IF;
+
+    -- P1-2: every row keeps its coverage key, and unclassified reads as unknown.
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE NOT (e ? 'coverage')) THEN
+      RAISE EXCEPTION '%: a by_facility row lost its coverage key: %', cap, r->'data'->'by_facility'; END IF;
+    IF (SELECT e->>'coverage' FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility D Unclassified') <> 'unknown' THEN
+      RAISE EXCEPTION '%: unclassified coverage must read unknown, not %', cap, r->'data'->'by_facility'; END IF;
+    IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(r->'qualifiers') q WHERE q=officer.unknown_coverage_qualifier()) THEN
+      RAISE EXCEPTION '%: unknown-coverage qualifier missing', cap; END IF;
+    IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(r->'qualifiers') q WHERE q=officer.scope_qualifier()) THEN
+      RAISE EXCEPTION '%: scope qualifier missing', cap; END IF;
+
+    -- P1-1: the headline IS the sum of the breakdown. licensed_capacity's
+    -- breakdown is capacity per facility, so the identity holds there too.
+    SELECT COALESCE(sum((e->>'value')::numeric),0) INTO sum_by FROM jsonb_array_elements(r->'data'->'by_facility') e;
+    head := (r->>'value')::numeric;
+    IF head IS DISTINCT FROM sum_by THEN
+      RAISE EXCEPTION '%: headline % does not equal the sum of its breakdown % -- %', cap, head, sum_by, r->'data'->'by_facility'; END IF;
+
+    -- What was left out is stated, not dropped.
+    IF (r->'missing'->>'count')::int <> 1 THEN
+      RAISE EXCEPTION '%: rows on the deleted facility were dropped without being counted as missing: %', cap, r->'missing'; END IF;
+    IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(r->'qualifiers') q WHERE q ILIKE '%does not cover%' AND q ILIKE '%deleted%') THEN
+      RAISE EXCEPTION '%: nothing in the qualifiers names the excluded rows: %', cap, r->'qualifiers'; END IF;
+  END LOOP;
+
+  -- Named figures, so a regression cannot pass by moving both sides together.
+  r := pg_temp.run(v_seat,'recon@probe.invalid','owner','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_recon');
+  IF (r->>'value')::int<>4 THEN RAISE EXCEPTION 'occupied_beds with a deleted facility: %', r; END IF;
+  -- 10 + 20 + 5 = 35 covered beds; the deleted facility's 40 are out, and
+  -- occupancy divides 4 into 35 -- the same population on both sides. Mixing an
+  -- organization-wide census into a covered-facility capacity gave 5/35 = 14.3.
+  r := pg_temp.run(v_seat,'recon@probe.invalid','owner','session','licensed_capacity',1,'{}',NULL,NULL,NULL,'probe_recon');
+  IF (r->>'value')::int<>35 OR (r->'data'->>'occupied_beds')::int<>4 OR (r->'data'->>'occupancy_percent')::numeric<>11.4 THEN
+    RAISE EXCEPTION 'licensed_capacity with a deleted facility: %', r; END IF;
+  -- Every earlier invoice is paid with a zero balance by now, so the only open
+  -- money is 111 cents inside scope and 777 cents outside it.
+  r := pg_temp.run(v_seat,'recon@probe.invalid','owner','session','open_ar_balance',1,'{}',NULL,NULL,NULL,'probe_recon');
+  IF (r->>'value')::bigint<>111
+     OR (SELECT (e->>'value')::bigint FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility D Unclassified')<>111
+     OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(r->'qualifiers') q WHERE q ILIKE '%excluded balance is 777 cents%') THEN
+    RAISE EXCEPTION 'open_ar_balance with a deleted facility: %', r; END IF;
+  r := pg_temp.run(v_seat,'recon@probe.invalid','owner','session','billed_revenue_mtd',1,'{}',NULL,NULL,NULL,'probe_recon');
+  IF (SELECT (e->>'value')::bigint FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility D Unclassified')<>111
+     OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(r->'qualifiers') q WHERE q ILIKE '%excluded billed total is 777 cents%') THEN
+    RAISE EXCEPTION 'billed_revenue_mtd with a deleted facility: %', r; END IF;
+
+  -- Classify D and the unknown qualifier goes away. coverage none still counts.
+  INSERT INTO officer.facility_coverage(facility_id,coverage,note) VALUES (fac_d,'none','probe classified');
+  r := pg_temp.run(v_seat,'recon@probe.invalid','owner','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_recon');
+  IF EXISTS (SELECT 1 FROM jsonb_array_elements_text(r->'qualifiers') q WHERE q=officer.unknown_coverage_qualifier()) THEN
+    RAISE EXCEPTION 'unknown-coverage qualifier survived classification'; END IF;
+  IF (SELECT e->>'coverage' FROM jsonb_array_elements(r->'data'->'by_facility') e WHERE e->>'facility'='Probe Facility D Unclassified')<>'none' THEN
+    RAISE EXCEPTION 'classified coverage not reflected: %', r->'data'; END IF;
+  IF (r->>'value')::int<>4 THEN RAISE EXCEPTION 'a coverage=none facility must still be counted: %', r; END IF;
+
+  -- Undeleting C restores its records to BOTH figures at once.
+  UPDATE public.facilities SET deleted_at=NULL WHERE id=fac_c;
+  r := pg_temp.run(v_seat,'recon@probe.invalid','owner','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_recon');
+  SELECT COALESCE(sum((e->>'value')::numeric),0) INTO sum_by FROM jsonb_array_elements(r->'data'->'by_facility') e;
+  IF (r->>'value')::int<>5 OR sum_by<>5 OR (r->'missing'->>'count')::int<>0 THEN
+    RAISE EXCEPTION 'undeleting a facility must restore headline and breakdown together: %', r; END IF;
+
+  -- Return the fixture to what the blocks below expect.
+  UPDATE public.staff_certifications SET deleted_at=now() WHERE facility_id IN (fac_c,fac_d);
+  UPDATE public.incidents SET deleted_at=now() WHERE facility_id IN (fac_c,fac_d);
+  UPDATE public.invoices SET deleted_at=now() WHERE facility_id IN (fac_c,fac_d);
+  UPDATE public.residents SET deleted_at=now() WHERE id IN (res_c,res_d);
+  UPDATE public.facilities SET deleted_at=now() WHERE id IN (fac_c,fac_d);
+  UPDATE officer.federated_officers SET is_active=false WHERE front_office_profile_id=v_seat;
+  UPDATE officer.gateway_keys SET enabled=false WHERE key_id='probe_recon';
+END $$;
+
+-- ---------------------------------------------------------------------------
 -- Command: ping writes one receipt and one audit row; replay and reuse rules.
 -- ---------------------------------------------------------------------------
 DO $$ DECLARE intent uuid := gen_random_uuid(); r jsonb; again jsonb; before_audit int; BEGIN

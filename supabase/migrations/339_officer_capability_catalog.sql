@@ -16,8 +16,15 @@
 --   public.officer_record_refusal(...)        -> audit a refusal after rollback
 --
 -- Scope: every read is organization-wide for the organization stored on the
--- officer's registry row (officer.federated_officers.organization_id) and
--- reports a per-facility breakdown. Nothing in the request envelope is ever
+-- officer's registry row (officer.federated_officers.organization_id), over
+-- the organization's facilities that are not soft-deleted, capped at fifty.
+-- Headline and per-facility breakdown come from the SAME facility set
+-- (officer.scope_facilities), so a total can never disagree with the breakdown
+-- printed under it; whatever falls outside that set is counted into
+-- missing.count and named in a qualifier rather than being folded in silently.
+-- A facility with no coverage classification reports coverage 'unknown' and
+-- raises a qualifier: its numbers count, and the officer is told nobody has
+-- classified it. Nothing in the request envelope is ever
 -- used as scope, no haven.* helper is called (they read auth.uid(), which is
 -- NULL on this path), and no ai_tool_* or exec-kpi function is reused: they
 -- take caller context as parameters, the confused-deputy shape this design
@@ -172,7 +179,7 @@ CREATE TABLE IF NOT EXISTS officer.facility_coverage (
   note text NOT NULL DEFAULT '',
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-COMMENT ON TABLE officer.facility_coverage IS 'Operator-maintained: live = operations data, demo = seeded demonstration rows, none = no records. Drives the coverage label and the demo qualifier on every read.';
+COMMENT ON TABLE officer.facility_coverage IS 'Operator-maintained: live = operations data, demo = seeded demonstration rows, none = no records. A facility with no row here reports coverage unknown and raises its own qualifier; the key is never absent. Drives the coverage label and the demo and unknown qualifiers on every read.';
 
 ALTER TABLE officer.federated_officers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE officer.gateway_keys ENABLE ROW LEVEL SECURITY;
@@ -246,15 +253,27 @@ STABLE
 SET search_path = ''
 AS $fn$ SELECT to_char(pg_catalog.now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') $fn$;
 
--- The organization's non-deleted facilities with their coverage label
--- (NULL when the operator has not classified a facility).
+-- THE facility set. Every figure in this catalog -- headline and per-facility
+-- breakdown alike -- is derived from this one function, so the two can never
+-- disagree. A facility the organization has soft-deleted is OUT of scope: its
+-- residents, invoices, incidents and certifications are excluded from the
+-- headline exactly as they are excluded from the breakdown, and the rows so
+-- excluded are counted into missing.count and named in a qualifier. The
+-- fifty-facility cap works the same way. Scoping the headline to the whole
+-- organization while the breakdown showed only these facilities is how a
+-- number ends up disagreeing with its own breakdown; that must not be
+-- reachable from here.
+--
+-- Coverage is never NULL on the way out. An unclassified facility reports
+-- 'unknown' so that the label is present and honest, rather than having the
+-- key stripped out and looking identical to a facility nobody asked about.
 CREATE OR REPLACE FUNCTION officer.scope_facilities(p_organization_id uuid)
 RETURNS TABLE (facility_id uuid, facility_name text, coverage text, licensed_beds integer)
 LANGUAGE sql
 STABLE
 SET search_path = ''
 AS $fn$
-  SELECT f.id, left(f.name, 80), c.coverage, f.total_licensed_beds
+  SELECT f.id, left(f.name, 80), COALESCE(c.coverage, 'unknown'), f.total_licensed_beds
   FROM public.facilities f
   LEFT JOIN officer.facility_coverage c ON c.facility_id = f.id
   WHERE f.organization_id = p_organization_id
@@ -263,6 +282,16 @@ AS $fn$
   LIMIT 50
 $fn$;
 
+-- The same facility set as ids only, for joining a source table to it. An inner
+-- join restricts a figure to the reported facilities; a left join with a NULL
+-- test finds exactly the rows the report leaves out.
+CREATE OR REPLACE FUNCTION officer.scope_facility_ids(p_organization_id uuid)
+RETURNS TABLE (facility_id uuid)
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $fn$ SELECT s.facility_id FROM officer.scope_facilities(p_organization_id) s $fn$;
+
 CREATE OR REPLACE FUNCTION officer.demo_qualifier()
 RETURNS text
 LANGUAGE sql
@@ -270,15 +299,52 @@ IMMUTABLE
 SET search_path = ''
 AS $fn$ SELECT 'Figures for facilities marked demo come from seeded demonstration data, not operations.'::text $fn$;
 
--- Append the demo qualifier when any covered facility is a demo facility.
-CREATE OR REPLACE FUNCTION officer.with_demo_qualifier(p_qualifiers text[], p_organization_id uuid)
+-- Stated on every read, so the scope decision is never something the officer has
+-- to infer from a total that does not add up.
+CREATE OR REPLACE FUNCTION officer.scope_qualifier()
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $fn$ SELECT 'Covers the organization''s facilities that are not deleted, up to fifty of them. A deleted facility''s records are outside this figure and outside its per-facility breakdown alike, so the breakdown always adds up to the headline; anything left out is counted in missing.'::text $fn$;
+
+-- An unclassified facility is a real facility contributing real numbers that
+-- nobody has labelled. Saying so is the point: an absent coverage key and an
+-- unknown coverage look identical on screen and only one of them is true.
+CREATE OR REPLACE FUNCTION officer.unknown_coverage_qualifier()
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $fn$ SELECT 'At least one facility in this figure has coverage unknown: nobody has recorded whether its records are live operations data, seeded demonstration data, or absent. Its numbers are included.'::text $fn$;
+
+-- Append the scope statement, then the demo and unknown-coverage warnings when
+-- the covered facilities call for them.
+CREATE OR REPLACE FUNCTION officer.with_coverage_qualifiers(p_qualifiers text[], p_organization_id uuid)
 RETURNS text[]
 LANGUAGE sql
 STABLE
 SET search_path = ''
 AS $fn$
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM officer.scope_facilities(p_organization_id) s WHERE s.coverage = 'demo')
-              THEN p_qualifiers || officer.demo_qualifier()
+  SELECT p_qualifiers
+       || officer.scope_qualifier()
+       || CASE WHEN EXISTS (SELECT 1 FROM officer.scope_facilities(p_organization_id) s WHERE s.coverage = 'demo')
+               THEN ARRAY[officer.demo_qualifier()] ELSE '{}'::text[] END
+       || CASE WHEN EXISTS (SELECT 1 FROM officer.scope_facilities(p_organization_id) s WHERE s.coverage = 'unknown')
+               THEN ARRAY[officer.unknown_coverage_qualifier()] ELSE '{}'::text[] END
+$fn$;
+
+-- Name what was left out, in the officer's units, whenever anything was.
+CREATE OR REPLACE FUNCTION officer.with_excluded_qualifier(p_qualifiers text[], p_missing integer, p_noun text, p_detail text DEFAULT NULL)
+RETURNS text[]
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $fn$
+  SELECT CASE WHEN COALESCE(p_missing, 0) > 0
+              THEN p_qualifiers || (COALESCE(p_missing, 0)::text || ' ' || p_noun
+                   || ' belong to facilities this report does not cover, because the facility is deleted or falls past the fifty-facility limit. They are excluded from the headline figure and from the breakdown alike.'
+                   || COALESCE(' ' || p_detail, ''))
               ELSE p_qualifiers END
 $fn$;
 
@@ -418,8 +484,10 @@ AS $fn$
 $fn$;
 
 -- =============================================================================
--- 4. Read capabilities (fixed SQL, organization-wide, scoped by the registry
---    organization only; each returns data.by_facility with a coverage label)
+-- 4. Read capabilities (fixed SQL, scoped by the registry organization and by
+--    officer.scope_facilities; headline and data.by_facility derive from that
+--    one facility set, every by_facility row carries a coverage label, and any
+--    row outside the set lands in missing.count with a qualifier)
 -- =============================================================================
 
 -- occupied_beds: residents with status active / hospital_hold / loa and
@@ -433,16 +501,22 @@ SET search_path = ''
 AS $fn$
 DECLARE
   v_total bigint;
+  v_missing integer;
   v_by_facility jsonb;
   v_facilities integer;
 BEGIN
-  SELECT count(*) INTO v_total
+  -- Headline restricted to the reported facilities; everything else on the
+  -- organization is counted as missing, not silently folded into the total.
+  SELECT count(*) FILTER (WHERE sc.facility_id IS NOT NULL),
+         count(*) FILTER (WHERE sc.facility_id IS NULL)
+    INTO v_total, v_missing
   FROM public.residents r
+  LEFT JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = r.facility_id
   WHERE r.organization_id = p_organization_id
     AND r.deleted_at IS NULL
     AND r.status IN ('active', 'hospital_hold', 'loa');
 
-  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n) ORDER BY x.facility_name), '[]'::jsonb), count(*)
     INTO v_by_facility, v_facilities
   FROM (
     SELECT s.facility_name, s.coverage,
@@ -454,9 +528,11 @@ BEGIN
 
   RETURN officer.read_envelope(
     'occupied_beds', p_version, 'valid', v_total, 'beds',
-    officer.with_demo_qualifier(ARRAY['Counts residents whose status is active, hospital hold or leave of absence and who are not deleted, at the time of the read. Residents on hospital hold or leave keep their bed and are counted.'], p_organization_id),
+    officer.with_excluded_qualifier(
+      officer.with_coverage_qualifiers(ARRAY['Counts residents whose status is active, hospital hold or leave of absence and who are not deleted, at the time of the read. Residents on hospital hold or leave keep their bed and are counted.'], p_organization_id),
+      v_missing, 'residents'),
     jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility),
-    0, p_audit_id);
+    v_missing, p_audit_id);
 END;
 $fn$;
 
@@ -473,29 +549,43 @@ DECLARE
   v_capacity bigint;
   v_facilities integer;
   v_missing integer;
+  v_no_bed_count integer;
   v_occupied bigint;
   v_by_facility jsonb;
   v_data jsonb;
-  v_qualifiers text[] := officer.with_demo_qualifier(ARRAY['Sum of licensed beds across the organization''s facilities that are not deleted. Occupancy percent divides occupied beds (active, hospital hold or leave residents) by this figure.'], p_organization_id);
+  v_qualifiers text[] := officer.with_coverage_qualifiers(ARRAY['Sum of licensed beds across the organization''s facilities that are not deleted. Occupancy percent divides occupied beds (active, hospital hold or leave residents) by this figure.'], p_organization_id);
 BEGIN
   SELECT COALESCE(sum(s.licensed_beds), 0), count(*), count(*) FILTER (WHERE COALESCE(s.licensed_beds, 0) <= 0),
-         COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', s.facility_name, 'coverage', s.coverage, 'value', s.licensed_beds)) ORDER BY s.facility_name), '[]'::jsonb)
-    INTO v_capacity, v_facilities, v_missing, v_by_facility
+         COALESCE(jsonb_agg(jsonb_build_object('facility', s.facility_name, 'coverage', s.coverage, 'value', s.licensed_beds) ORDER BY s.facility_name), '[]'::jsonb)
+    INTO v_capacity, v_facilities, v_no_bed_count, v_by_facility
   FROM officer.scope_facilities(p_organization_id) s;
+
+  -- Facilities of this organization the report does not cover.
+  SELECT count(*) - v_facilities INTO v_missing
+  FROM public.facilities f
+  WHERE f.organization_id = p_organization_id;
+
+  v_qualifiers := officer.with_excluded_qualifier(v_qualifiers, v_missing, 'facilities');
+  IF v_no_bed_count > 0 THEN
+    v_qualifiers := v_qualifiers || (v_no_bed_count::text || ' of the covered facilities have no licensed bed count on file and contribute zero to this total.')::text;
+  END IF;
 
   IF v_facilities = 0 THEN
     RETURN officer.read_envelope('licensed_capacity', p_version, 'no_data', NULL, 'beds',
       v_qualifiers || 'No facilities are registered for this organization.'::text,
-      jsonb_build_object('facilities_covered', 0, 'by_facility', '[]'::jsonb), 0, p_audit_id);
+      jsonb_build_object('facilities_covered', 0, 'by_facility', '[]'::jsonb, 'facilities_without_bed_count', 0), v_missing, p_audit_id);
   END IF;
 
+  -- Occupied beds over exactly the facilities whose capacity is in the
+  -- denominator, so the percent divides one population by itself.
   SELECT count(*) INTO v_occupied
   FROM public.residents r
+  JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = r.facility_id
   WHERE r.organization_id = p_organization_id
     AND r.deleted_at IS NULL
     AND r.status IN ('active', 'hospital_hold', 'loa');
 
-  v_data := jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility, 'occupied_beds', v_occupied);
+  v_data := jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility, 'occupied_beds', v_occupied, 'facilities_without_bed_count', v_no_bed_count);
   -- total_licensed_beds is NOT NULL, but a zero (or, defensively, null) sum is
   -- the same fact to an officer: the percent is unknown, stated as JSON null
   -- with a qualifier, never silently absent.
@@ -533,13 +623,32 @@ DECLARE
   v_by_facility jsonb;
   v_facilities integer;
   v_data jsonb;
-  v_qualifiers text[] := officer.with_demo_qualifier(ARRAY[
+  v_missing integer;
+  v_missing_cents bigint;
+  v_qualifiers text[] := officer.with_coverage_qualifiers(ARRAY[
     'Sum of invoice balance_due, in cents, over invoices where deleted_at IS NULL AND voided_at IS NULL AND balance_due > 0 AND status NOT IN (draft, void, written_off, paid). Draft invoices never count. Aging buckets are by due date against today.',
     'The billing AR aging materialized view and the executive KPI dashboard use different predicates (the view excludes draft and void by status only and keeps zero balances; the KPI applies no status filter), so those three figures will not agree.'
   ], p_organization_id);
 BEGIN
-  SELECT EXISTS (SELECT 1 FROM public.invoices i WHERE i.organization_id = p_organization_id AND i.deleted_at IS NULL)
+  SELECT EXISTS (
+    SELECT 1 FROM public.invoices i
+    JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = i.facility_id
+    WHERE i.organization_id = p_organization_id AND i.deleted_at IS NULL)
     INTO v_invoices_exist;
+
+  -- Open invoices on facilities this report does not cover: excluded from the
+  -- headline and from the breakdown together, and reported as missing.
+  SELECT count(*), COALESCE(sum(i.balance_due), 0) INTO v_missing, v_missing_cents
+  FROM public.invoices i
+  LEFT JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = i.facility_id
+  WHERE i.organization_id = p_organization_id
+    AND sc.facility_id IS NULL
+    AND i.deleted_at IS NULL
+    AND i.voided_at IS NULL
+    AND i.balance_due > 0
+    AND i.status NOT IN ('draft', 'void', 'written_off', 'paid');
+  v_qualifiers := officer.with_excluded_qualifier(v_qualifiers, v_missing, 'open invoices',
+    'Their excluded balance is ' || v_missing_cents::text || ' cents.');
 
   SELECT COALESCE(sum(i.balance_due), 0), count(*),
          COALESCE(sum(CASE WHEN (v_today - i.due_date) <= 0 THEN i.balance_due ELSE 0 END), 0),
@@ -550,13 +659,14 @@ BEGIN
          COALESCE(max(CASE WHEN (v_today - i.due_date) > 0 THEN (v_today - i.due_date) END), 0)
     INTO v_cents, v_count, v_current, v_1_30, v_31_60, v_61_90, v_over_90, v_oldest
   FROM public.invoices i
+  JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = i.facility_id
   WHERE i.organization_id = p_organization_id
     AND i.deleted_at IS NULL
     AND i.voided_at IS NULL
     AND i.balance_due > 0
     AND i.status NOT IN ('draft', 'void', 'written_off', 'paid');
 
-  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.cents, 'invoice_count', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.cents, 'invoice_count', x.n) ORDER BY x.facility_name), '[]'::jsonb), count(*)
     INTO v_by_facility, v_facilities
   FROM (
     SELECT s.facility_name, s.coverage,
@@ -578,9 +688,9 @@ BEGIN
 
   IF NOT v_invoices_exist THEN
     RETURN officer.read_envelope('open_ar_balance', p_version, 'no_data', NULL, 'cents',
-      v_qualifiers || 'No invoices exist for this organization, so there is no balance to report.'::text, v_data, 0, p_audit_id);
+      v_qualifiers || 'No invoices exist on the facilities this report covers, so there is no balance to report.'::text, v_data, v_missing, p_audit_id);
   END IF;
-  RETURN officer.read_envelope('open_ar_balance', p_version, 'valid', v_cents, 'cents', v_qualifiers, v_data, 0, p_audit_id);
+  RETURN officer.read_envelope('open_ar_balance', p_version, 'valid', v_cents, 'cents', v_qualifiers, v_data, v_missing, p_audit_id);
 END;
 $fn$;
 
@@ -605,24 +715,40 @@ DECLARE
   v_by_facility jsonb;
   v_facilities integer;
   v_data jsonb;
+  v_missing integer;
+  v_missing_cents bigint;
   v_qualifiers text[];
 BEGIN
-  v_qualifiers := officer.with_demo_qualifier(ARRAY[
+  v_qualifiers := officer.with_coverage_qualifiers(ARRAY[
     'Sum of invoice totals, in cents, for invoices dated ' || to_char(v_month_start, 'YYYY-MM-DD') || ' through ' || to_char(v_today, 'YYYY-MM-DD') || ' with status sent, paid, partial or overdue, excluding deleted and voided invoices. Drafts are not counted. Same definition as the executive KPI dashboard.'
   ], p_organization_id);
 
   SELECT count(*) INTO v_in_period
   FROM public.invoices i
+  JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = i.facility_id
   WHERE i.organization_id = p_organization_id AND i.deleted_at IS NULL
     AND i.invoice_date >= v_month_start AND i.invoice_date <= v_today;
 
   SELECT COALESCE(sum(i.total), 0), count(*) INTO v_cents, v_count
   FROM public.invoices i
+  JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = i.facility_id
   WHERE i.organization_id = p_organization_id AND i.deleted_at IS NULL AND i.voided_at IS NULL
     AND i.invoice_date >= v_month_start AND i.invoice_date <= v_today
     AND i.status IN ('sent', 'paid', 'partial', 'overdue');
 
-  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.cents, 'invoice_count', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+  -- Billed invoices in the period on facilities this report does not cover.
+  SELECT count(*), COALESCE(sum(i.total), 0) INTO v_missing, v_missing_cents
+  FROM public.invoices i
+  LEFT JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = i.facility_id
+  WHERE i.organization_id = p_organization_id
+    AND sc.facility_id IS NULL
+    AND i.deleted_at IS NULL AND i.voided_at IS NULL
+    AND i.invoice_date >= v_month_start AND i.invoice_date <= v_today
+    AND i.status IN ('sent', 'paid', 'partial', 'overdue');
+  v_qualifiers := officer.with_excluded_qualifier(v_qualifiers, v_missing, 'billed invoices',
+    'Their excluded billed total is ' || v_missing_cents::text || ' cents.');
+
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.cents, 'invoice_count', x.n) ORDER BY x.facility_name), '[]'::jsonb), count(*)
     INTO v_by_facility, v_facilities
   FROM (
     SELECT s.facility_name, s.coverage,
@@ -644,9 +770,9 @@ BEGIN
 
   IF v_in_period = 0 THEN
     RETURN officer.read_envelope('billed_revenue_mtd', p_version, 'no_data', NULL, 'cents',
-      v_qualifiers || 'No invoices are dated inside the period, so there is no billed revenue to report.'::text, v_data, 0, p_audit_id);
+      v_qualifiers || 'No invoices on the facilities this report covers are dated inside the period, so there is no billed revenue to report.'::text, v_data, v_missing, p_audit_id);
   END IF;
-  RETURN officer.read_envelope('billed_revenue_mtd', p_version, 'valid', v_cents, 'cents', v_qualifiers, v_data, 0, p_audit_id);
+  RETURN officer.read_envelope('billed_revenue_mtd', p_version, 'valid', v_cents, 'cents', v_qualifiers, v_data, v_missing, p_audit_id);
 END;
 $fn$;
 
@@ -664,17 +790,21 @@ DECLARE
   v_from timestamptz := ((v_today - 29)::timestamp AT TIME ZONE 'UTC');
   v_to timestamptz := ((v_today + 1)::timestamp AT TIME ZONE 'UTC');
   v_total bigint;
+  v_missing integer;
   v_by_facility jsonb;
   v_facilities integer;
 BEGIN
-  SELECT count(*) INTO v_total
+  SELECT count(*) FILTER (WHERE sc.facility_id IS NOT NULL),
+         count(*) FILTER (WHERE sc.facility_id IS NULL)
+    INTO v_total, v_missing
   FROM public.incidents i
+  LEFT JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = i.facility_id
   WHERE i.organization_id = p_organization_id
     AND i.deleted_at IS NULL
     AND i.occurred_at >= v_from
     AND i.occurred_at < v_to;
 
-  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n) ORDER BY x.facility_name), '[]'::jsonb), count(*)
     INTO v_by_facility, v_facilities
   FROM (
     SELECT s.facility_name, s.coverage,
@@ -686,9 +816,11 @@ BEGIN
 
   RETURN officer.read_envelope(
     'incidents_last_30_days', p_version, 'valid', v_total, 'incidents',
-    officer.with_demo_qualifier(ARRAY['Counts incident reports whose occurrence time falls in the last 30 UTC days including today, excluding deleted reports. All severities and statuses are included.'], p_organization_id),
+    officer.with_excluded_qualifier(
+      officer.with_coverage_qualifiers(ARRAY['Counts incident reports whose occurrence time falls in the last 30 UTC days including today, excluding deleted reports. All severities and statuses are included.'], p_organization_id),
+      v_missing, 'incident reports'),
     jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility, 'window_days', 30),
-    0, p_audit_id);
+    v_missing, p_audit_id);
 END;
 $fn$;
 
@@ -705,11 +837,15 @@ AS $fn$
 DECLARE
   v_today date := officer.utc_today();
   v_total bigint;
+  v_missing integer;
   v_by_facility jsonb;
   v_facilities integer;
 BEGIN
-  SELECT count(*) INTO v_total
+  SELECT count(*) FILTER (WHERE sc.facility_id IS NOT NULL),
+         count(*) FILTER (WHERE sc.facility_id IS NULL)
+    INTO v_total, v_missing
   FROM public.staff_certifications c
+  LEFT JOIN officer.scope_facility_ids(p_organization_id) sc ON sc.facility_id = c.facility_id
   WHERE c.organization_id = p_organization_id
     AND c.deleted_at IS NULL
     AND c.status = 'active'
@@ -717,7 +853,7 @@ BEGIN
     AND c.expiration_date >= v_today
     AND c.expiration_date <= v_today + 30;
 
-  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n) ORDER BY x.facility_name), '[]'::jsonb), count(*)
     INTO v_by_facility, v_facilities
   FROM (
     SELECT s.facility_name, s.coverage,
@@ -730,9 +866,11 @@ BEGIN
 
   RETURN officer.read_envelope(
     'staff_certifications_expiring_30_days', p_version, 'valid', v_total, 'certifications',
-    officer.with_demo_qualifier(ARRAY['Counts staff certifications with status active and an expiration date between today and 30 days from today, excluding deleted records. Certifications already expired are not counted.'], p_organization_id),
+    officer.with_excluded_qualifier(
+      officer.with_coverage_qualifiers(ARRAY['Counts staff certifications with status active and an expiration date between today and 30 days from today, excluding deleted records. Certifications already expired are not counted.'], p_organization_id),
+      v_missing, 'certifications'),
     jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility, 'window_days', 30),
-    0, p_audit_id);
+    v_missing, p_audit_id);
 END;
 $fn$;
 
