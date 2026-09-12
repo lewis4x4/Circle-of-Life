@@ -14,6 +14,7 @@ import type {
 } from "@/lib/operations/workspace";
 import { SaveStateNotice } from "../../_components/save-state-notice";
 import { EvidencePanel } from "./evidence-panel";
+import { TaskHelpHandover } from "./task-help-handover";
 import {
   ReceiptHistory,
   ReceiptSummary,
@@ -829,6 +830,7 @@ export function WorkRow({
           }}
         />
       ) : null}
+      {item.occurrence.activity_id ? <TaskHelpHandover activityId={item.occurrence.activity_id} facilityId={facilityId} occurrenceId={id} actorId={actorId} timezone={timezone} /> : null}
       {history ? (
         <ReceiptHistory
           occurrenceId={id}

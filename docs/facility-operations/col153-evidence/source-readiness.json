@@ -1,0 +1,214 @@
+{
+  "recorded_at": "2026-09-12T01:26:42.958919+00:00",
+  "base": "205ac0305473acdf8f0aba3e50ae17b3d7f4b345",
+  "main": "f3eb237ecd2523c169fc43edce00010034552c19",
+  "stack": [
+    {
+      "ref": "origin/codex/hfo-col132-catalog",
+      "head": "92dea9b9897bc3826f452e3bfe4b752b944a8457",
+      "ancestor_of_base": false,
+      "last_migration": "supabase/migrations/336_hfo_activity_catalog.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col133-authority",
+      "head": "476f02d1ca6c215a1cc315485fe0e511a0a0a6f8",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/337_hfo_current_authority.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col135-applicability",
+      "head": "520ccbde972830f26fb5d1011731c7b7595d2fbc",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/338_hfo_requirement_versions.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col137-evaluator",
+      "head": "caca9592026dead75ef60e3dbf21b04f73e95850",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/339_hfo_schedule_evaluator.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col139-occurrences",
+      "head": "335bd6c770f2cc2d6bc8b006a22b3a3244fc7ba2",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/340_hfo_occurrences.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col142-receipts",
+      "head": "0c61def2ac1ed2388622a8b55cff488163758abd",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/341_hfo_execution_receipts.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col143-evidence",
+      "head": "45ea4ea98c1f3eb7b99622387fcb6f6f73b7cd97",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/343_hfo_verified_evidence.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col144-issues",
+      "head": "89ed6acac1556226f841ab9a08d8dd203bf35ef9",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/342_hfo_issue_lifecycle.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col145-corrections",
+      "head": "c7dc9efc1ba29f0774b4c94ca819a1ef28cf7358",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/344_hfo_corrections.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col146-recovery",
+      "head": "d9f5ffb2bbb57effdff9d9a817e05263534ed28f",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/345_hfo_command_drafts.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col147-source-adapters",
+      "head": "a625b75a0c5b549473abd283940c4c4a832465c6",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/346_hfo_source_links.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col148-workspace",
+      "head": "db451440b44ca67662dceb6018844943b42a456c",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/345_hfo_command_drafts.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col154-drill-generators",
+      "head": "47455a13d812ba638b9f75b2606cd5b957a6f653",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/347_hfo_drill_generator_sources.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col159-dietary-admin",
+      "head": "205ac0305473acdf8f0aba3e50ae17b3d7f4b345",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/348_hfo_dietary_admin_sources.sql"
+    },
+    {
+      "ref": "origin/codex/hfo-col18-baseline",
+      "head": "39d41591e8c8110d1df2251ecfc10dd0edb08ae4",
+      "ancestor_of_base": true,
+      "last_migration": "supabase/migrations/335_employee_file_lifecycle.sql"
+    }
+  ],
+  "draft_prs": [
+    {
+      "baseRefName": "codex/hfo-col154-drill-generators",
+      "headRefName": "codex/hfo-col159-dietary-admin",
+      "isDraft": true,
+      "number": 479
+    },
+    {
+      "baseRefName": "codex/hfo-col147-source-adapters",
+      "headRefName": "codex/hfo-col154-drill-generators",
+      "isDraft": true,
+      "number": 477
+    },
+    {
+      "baseRefName": "codex/hfo-col148-workspace",
+      "headRefName": "codex/hfo-col147-source-adapters",
+      "isDraft": true,
+      "number": 476
+    },
+    {
+      "baseRefName": "codex/hfo-col146-recovery",
+      "headRefName": "codex/hfo-col148-workspace",
+      "isDraft": true,
+      "number": 475
+    },
+    {
+      "baseRefName": "codex/hfo-col145-corrections",
+      "headRefName": "codex/hfo-col146-recovery",
+      "isDraft": true,
+      "number": 474
+    },
+    {
+      "baseRefName": "codex/hfo-col143-evidence",
+      "headRefName": "codex/hfo-col145-corrections",
+      "isDraft": true,
+      "number": 473
+    },
+    {
+      "baseRefName": "codex/hfo-col144-issues",
+      "headRefName": "codex/hfo-col143-evidence",
+      "isDraft": true,
+      "number": 472
+    },
+    {
+      "baseRefName": "codex/hfo-col142-receipts",
+      "headRefName": "codex/hfo-col144-issues",
+      "isDraft": true,
+      "number": 471
+    },
+    {
+      "baseRefName": "codex/hfo-col139-occurrences",
+      "headRefName": "codex/hfo-col142-receipts",
+      "isDraft": true,
+      "number": 470
+    },
+    {
+      "baseRefName": "codex/hfo-col137-evaluator",
+      "headRefName": "codex/hfo-col139-occurrences",
+      "isDraft": true,
+      "number": 469
+    },
+    {
+      "baseRefName": "codex/hfo-col135-applicability",
+      "headRefName": "codex/hfo-col137-evaluator",
+      "isDraft": true,
+      "number": 468
+    },
+    {
+      "baseRefName": "codex/hfo-col133-authority",
+      "headRefName": "codex/hfo-col135-applicability",
+      "isDraft": true,
+      "number": 467
+    },
+    {
+      "baseRefName": "codex/hfo-col132-catalog",
+      "headRefName": "codex/hfo-col133-authority",
+      "isDraft": true,
+      "number": 466
+    },
+    {
+      "baseRefName": "codex/hfo-col18-baseline",
+      "headRefName": "codex/hfo-col132-catalog",
+      "isDraft": true,
+      "number": 465
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "codex/hfo-col18-baseline",
+      "isDraft": true,
+      "number": 464
+    },
+    {
+      "baseRefName": "codex/haven-insurance-workspace",
+      "headRefName": "codex/haven-insureflow-receiver",
+      "isDraft": true,
+      "number": 463
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "codex/haven-insurance-workspace",
+      "isDraft": true,
+      "number": 462
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "codex/haven-finance-integration",
+      "isDraft": true,
+      "number": 461
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "codex/resident-detail-state-guards",
+      "isDraft": true,
+      "number": 446
+    }
+  ],
+  "catalog_tip_note": "COL-132 catalog tip is not an ancestor by SHA because 92dea9b9 was cherry-picked as 8ee6d8f2. Verified 336 migration identical; subsequent current-authority probe changes are intentional. No missing catalog guard."
+}
