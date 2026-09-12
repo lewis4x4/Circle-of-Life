@@ -361,7 +361,9 @@ export default function LoginPage() {
                       <p className="text-center text-sm font-medium text-red-200">
                         {globalError}
                       </p>
-                      <p className="mt-2 text-center text-xs text-red-100">Stand Up administrators during a Haven outage: <a className="underline underline-offset-2" href={STAND_UP_WORKBOOK_URL} target="_blank" rel="noopener noreferrer">{STAND_UP_WORKBOOK_LINK_TEXT}</a>.</p>
+                      {globalError === SIGN_IN_UNAVAILABLE_MESSAGE && (
+                        <p className="mt-2 text-center text-xs text-red-100">Stand Up administrators during a Haven outage: <a className="underline underline-offset-2" href={STAND_UP_WORKBOOK_URL} target="_blank" rel="noopener noreferrer">{STAND_UP_WORKBOOK_LINK_TEXT}</a>.</p>
+                      )}
                     </div>
                   )}
 

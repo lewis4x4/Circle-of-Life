@@ -45,23 +45,33 @@ DO $$ DECLARE r jsonb; BEGIN
  -- Metrics that carry a value never report a disposition even if the source named one.
  IF r->'field_dispositions' ? 'current_total_census' THEN RAISE EXCEPTION 'Disposition leaked onto a provided metric'; END IF;
 END $$;
--- An unrelated administrator edit that leaves overtime blank keeps it held.
-INSERT INTO fs_results SELECT 'edited',public.stand_up_command('save',jsonb_build_object('facility_id',f.facility,'week_start','2020-10-05','expected_version',1,'request_id',gen_random_uuid(),'status','draft','reason','Probe census correction',
+-- Reversing the import restores the pre-import figures and ends the hold; the raw import stays in its own revision.
+INSERT INTO fs_results SELECT 'reversed',public.stand_up_command('reverse_import',value||'{"reason":"Probe reversal"}') FROM fs_results WHERE name='batch';
+DO $$ DECLARE r jsonb; w jsonb; BEGIN
+ SELECT value INTO r FROM fs_results WHERE name='reversed';
+ IF jsonb_array_length(r->'restored')<>1 THEN RAISE EXCEPTION 'Reversal did not restore the imported row: %',r; END IF;
+ SELECT value INTO w FROM jsonb_array_elements((SELECT value->'reports' FROM (SELECT public.stand_up_command('workspace','{}') value) x)) WHERE value->>'week_start'='2020-10-05';
+ IF w->'field_dispositions'<>'{}'::jsonb OR w->'values'->'overtime_reported'<>'null'::jsonb THEN RAISE EXCEPTION 'Reversed import still reported as held: %',w; END IF;
+END $$;
+-- A fresh import of the same row is held again; an unrelated administrator edit that leaves overtime blank keeps it held.
+INSERT INTO fs_results SELECT 'batch2',public.stand_up_command('stage_import',jsonb_build_object('request_id',gen_random_uuid(),'reason','Held import fixture again','provenance','{"file_id":"fixture"}'::jsonb,'rows',jsonb_build_array(value||'{"expected_version":2}'))) FROM fs_results WHERE name='row';
+INSERT INTO fs_results SELECT 'imported2',public.stand_up_command('commit_import',value) FROM fs_results WHERE name='batch2';
+INSERT INTO fs_results SELECT 'edited',public.stand_up_command('save',jsonb_build_object('facility_id',f.facility,'week_start','2020-10-05','expected_version',3,'request_id',gen_random_uuid(),'status','draft','reason','Probe census correction',
  'values',(SELECT value->'values' FROM fs_results WHERE name='row')||'{"current_total_census":4}')) FROM fs_fixture f;
 DO $$ DECLARE r jsonb; BEGIN
  SELECT value INTO r FROM fs_results WHERE name='edited';
  IF r->>'entry_origin'<>'manual' OR r->'field_dispositions'->>'overtime_reported'<>'historical_unit_unconfirmed' THEN RAISE EXCEPTION 'Held stays held until a value is entered: %',r; END IF;
 END $$;
 -- Entering hours and minutes clears the disposition; the raw import is untouched in its own revision.
-INSERT INTO fs_results SELECT 'entered',public.stand_up_command('save',jsonb_build_object('facility_id',f.facility,'week_start','2020-10-05','expected_version',2,'request_id',gen_random_uuid(),'status','draft','reason','Probe overtime entry',
+INSERT INTO fs_results SELECT 'entered',public.stand_up_command('save',jsonb_build_object('facility_id',f.facility,'week_start','2020-10-05','expected_version',4,'request_id',gen_random_uuid(),'status','draft','reason','Probe overtime entry',
  'values',(SELECT value->'values' FROM fs_results WHERE name='row')||'{"current_total_census":4,"overtime_reported":3.16}')) FROM fs_fixture f;
 DO $$ DECLARE r jsonb; h jsonb; BEGIN
  SELECT value INTO r FROM fs_results WHERE name='entered';
  IF r->'field_dispositions'<>'{}'::jsonb OR r->>'overtime_minutes'<>'196' THEN RAISE EXCEPTION 'Entered value still reported as held: %',r; END IF;
  h:=public.stand_up_command('revisions',jsonb_build_object('facility_id',(SELECT facility FROM fs_fixture),'week_start','2020-10-05'));
- IF jsonb_array_length(h->'revisions')<>3 OR h->'revisions'->0->>'version'<>'1' OR h->'revisions'->0->>'entry_origin'<>'imported'
-  OR h->'revisions'->0->'values'->'overtime_reported'<>'null'::jsonb OR h->'revisions'->2->'values'->>'overtime_reported'<>'3.16'
-  OR h->'revisions'->1->>'updated_by_name'<>'Field state probe' OR h->'revisions'->2->>'created_at' IS NULL
+ IF jsonb_array_length(h->'revisions')<>5 OR h->'revisions'->0->>'version'<>'1' OR h->'revisions'->0->>'entry_origin'<>'imported'
+  OR h->'revisions'->0->'values'->'overtime_reported'<>'null'::jsonb OR h->'revisions'->4->'values'->>'overtime_reported'<>'3.16'
+  OR h->'revisions'->3->>'updated_by_name'<>'Field state probe' OR h->'revisions'->4->>'created_at' IS NULL
  THEN RAISE EXCEPTION 'Revision history incomplete: %',h; END IF;
  h:=public.stand_up_command('revisions',jsonb_build_object('facility_id',(SELECT facility FROM fs_fixture),'week_start','2020-10-12'));
  IF jsonb_array_length(h->'revisions')<>0 THEN RAISE EXCEPTION 'Missing report must return an empty revision list'; END IF;
@@ -74,7 +84,7 @@ SET LOCAL ROLE authenticated;
 SELECT pg_temp.fs_fail(format('SELECT public.stand_up_command(''revisions'',%L::jsonb)',jsonb_build_object('facility_id',other_facility,'week_start','2020-10-05')),'access denied') FROM fs_fixture;
 DO $$ DECLARE h jsonb; BEGIN
  h:=public.stand_up_command('revisions',jsonb_build_object('facility_id',(SELECT facility FROM fs_fixture),'week_start','2020-10-05'));
- IF jsonb_array_length(h->'revisions')<>3 THEN RAISE EXCEPTION 'Granted facility revisions must stay readable'; END IF;
+ IF jsonb_array_length(h->'revisions')<>5 THEN RAISE EXCEPTION 'Granted facility revisions must stay readable'; END IF;
 END $$;
 RESET ROLE;
 -- The service archive carries the disposition for the held revision and nothing personal.

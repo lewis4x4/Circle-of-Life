@@ -6,18 +6,21 @@ BEGIN;
 -- Dispositions written by the historical import live in the revision provenance
 -- (provenance.row.field_dispositions). A later revision that still leaves the
 -- metric null keeps the disposition of the most recent revision that carried
--- one, so a held import stays held until an administrator enters a value.
+-- one, so a held import stays held until an administrator enters a value. A
+-- reversal revision (provenance.reverses_batch_id) restores the pre-import
+-- figures and ends the carry-forward: a reversed import is no longer held.
 CREATE FUNCTION haven.stand_up_field_dispositions(p_revision uuid) RETURNS jsonb
 LANGUAGE sql STABLE SET search_path='' AS $$
  SELECT coalesce((
   SELECT jsonb_object_agg(d.key,d.value)
   FROM public.stand_up_revisions v
   CROSS JOIN LATERAL (
-   SELECT CASE WHEN jsonb_typeof(x)='object' THEN x ELSE '{}'::jsonb END AS dispositions FROM (
-    SELECT coalesce(s.provenance->'row'->'field_dispositions',s.provenance->'field_dispositions') AS x
+   SELECT CASE WHEN reversal OR jsonb_typeof(x)<>'object' THEN '{}'::jsonb ELSE x END AS dispositions FROM (
+    SELECT coalesce(s.provenance->'row'->'field_dispositions',s.provenance->'field_dispositions') AS x,
+     (s.provenance ? 'reverses_batch_id') AS reversal
     FROM public.stand_up_revisions s
     WHERE s.report_id=v.report_id AND s.version<=v.version
-     AND coalesce(s.provenance->'row'->'field_dispositions',s.provenance->'field_dispositions') IS NOT NULL
+     AND (coalesce(s.provenance->'row'->'field_dispositions',s.provenance->'field_dispositions') IS NOT NULL OR s.provenance ? 'reverses_batch_id')
     ORDER BY s.version DESC LIMIT 1
    ) latest
   ) held
