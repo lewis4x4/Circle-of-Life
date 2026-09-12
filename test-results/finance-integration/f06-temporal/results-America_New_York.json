@@ -1,0 +1,1589 @@
+{
+  "status": "PASS",
+  "timezone": "America/New_York",
+  "layer": "actual source transpiled in isolated VM with synthetic query transport; no Auth/database/provider proof",
+  "sources": {
+    "src/lib/billing/generate-monthly-invoices.ts": "df86fbcda1991e3f0a0d8df0d9b6de605a441ca1e9e9bb3230c9abc77e6d0b25",
+    "supabase/functions/_shared/billing/generate-monthly-invoices.ts": "09bc62372da4214cd68c003e1fe4315efc1f3ccca94695f4f61cae44844a10df",
+    "supabase/functions/generate-monthly-invoices/index.ts": "9877826411b54fa6d1504925b295f911e6181c8af656392fd374a5f486451616"
+  },
+  "driver_sha256": "3aa6cbcd3c0462ad886d30e07698872d24bacfda0430fe61cabb50c8607d3768",
+  "counts": {
+    "total": 133,
+    "passed": 133,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "producer": "app",
+      "case": "future June payer leaves May private",
+      "order": "original",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "future June payer leaves May private",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "May16 admission Medicaid starts exact admission",
+      "order": "original",
+      "status": "PASS",
+      "expected": 51613,
+      "actual": {
+        "cents": 51613,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "May16 admission Medicaid starts exact admission",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 51613,
+      "actual": {
+        "cents": 51613,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "discharge day inclusive",
+      "order": "original",
+      "status": "PASS",
+      "expected": 48387,
+      "actual": {
+        "cents": 48387,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "discharge day inclusive",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 48387,
+      "actual": {
+        "cents": 48387,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "private hospital hold retains full monthly",
+      "order": "original",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "private hospital hold retains full monthly",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "private loa discharge prorates",
+      "order": "original",
+      "status": "PASS",
+      "expected": 180000,
+      "actual": {
+        "cents": 180000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "private loa discharge prorates",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 180000,
+      "actual": {
+        "cents": 180000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "expired April payer plus future June payer",
+      "order": "original",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "expired April payer plus future June payer",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "one active primary among past and future rows",
+      "order": "original",
+      "status": "PASS",
+      "expected": 100000,
+      "actual": {
+        "cents": 100000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "one active primary among past and future rows",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 100000,
+      "actual": {
+        "cents": 100000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "secondary future coverage ignored",
+      "order": "original",
+      "status": "PASS",
+      "expected": 100000,
+      "actual": {
+        "cents": 100000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "secondary future coverage ignored",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 100000,
+      "actual": {
+        "cents": 100000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "same-day admit discharge",
+      "order": "original",
+      "status": "PASS",
+      "expected": 3226,
+      "actual": {
+        "cents": 3226,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "same-day admit discharge",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 3226,
+      "actual": {
+        "cents": 3226,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "payer starts one day after admission blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "payer starts one day after admission blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "payer ends one day before discharge blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "payer ends one day before discharge blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "two fully overlapping primaries block",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "two fully overlapping primaries block",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "nonoverlapping midmonth transition still needs split",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "nonoverlapping midmonth transition still needs split",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "one day double coverage blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "one day double coverage blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "missing payer date blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "missing payer date blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "undefined payer end blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "undefined payer end blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "February30 payer date blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "February30 payer date blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "timestamp payer date blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "timestamp payer date blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "payer reverse dates block",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "payer reverse dates block",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "unknown admission blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "unknown admission blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "invalid discharge blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "invalid discharge blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "resident reverse interval blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "resident reverse interval blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "future admission empty",
+      "order": "original",
+      "status": "PASS",
+      "expected": 0,
+      "actual": {
+        "cents": 0,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "future admission empty",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 0,
+      "actual": {
+        "cents": 0,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "past discharge empty",
+      "order": "original",
+      "status": "PASS",
+      "expected": 0,
+      "actual": {
+        "cents": 0,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "past discharge empty",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 0,
+      "actual": {
+        "cents": 0,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "leap February15 through29",
+      "order": "original",
+      "status": "PASS",
+      "expected": 51724,
+      "actual": {
+        "cents": 51724,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "leap February15 through29",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 51724,
+      "actual": {
+        "cents": 51724,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "nonleap February15 through28",
+      "order": "original",
+      "status": "PASS",
+      "expected": 50000,
+      "actual": {
+        "cents": 50000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "nonleap February15 through28",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 50000,
+      "actual": {
+        "cents": 50000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "spring DST monthly civil days",
+      "order": "original",
+      "status": "PASS",
+      "expected": 77419,
+      "actual": {
+        "cents": 77419,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "spring DST monthly civil days",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 77419,
+      "actual": {
+        "cents": 77419,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "fall DST monthly civil days",
+      "order": "original",
+      "status": "PASS",
+      "expected": 3333,
+      "actual": {
+        "cents": 3333,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "fall DST monthly civil days",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 3333,
+      "actual": {
+        "cents": 3333,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "daily catalog across spring DST",
+      "order": "original",
+      "status": "PASS",
+      "expected": 3000,
+      "actual": {
+        "cents": 3000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "daily catalog across spring DST",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 3000,
+      "actual": {
+        "cents": 3000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "daily catalog across fall DST",
+      "order": "original",
+      "status": "PASS",
+      "expected": 2200,
+      "actual": {
+        "cents": 2200,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "app",
+      "case": "daily catalog across fall DST",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 2200,
+      "actual": {
+        "cents": 2200,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "future June payer leaves May private",
+      "order": "original",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "future June payer leaves May private",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "May16 admission Medicaid starts exact admission",
+      "order": "original",
+      "status": "PASS",
+      "expected": 51613,
+      "actual": {
+        "cents": 51613,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "May16 admission Medicaid starts exact admission",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 51613,
+      "actual": {
+        "cents": 51613,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "discharge day inclusive",
+      "order": "original",
+      "status": "PASS",
+      "expected": 48387,
+      "actual": {
+        "cents": 48387,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "discharge day inclusive",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 48387,
+      "actual": {
+        "cents": 48387,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "private hospital hold retains full monthly",
+      "order": "original",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "private hospital hold retains full monthly",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "private loa discharge prorates",
+      "order": "original",
+      "status": "PASS",
+      "expected": 180000,
+      "actual": {
+        "cents": 180000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "private loa discharge prorates",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 180000,
+      "actual": {
+        "cents": 180000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "expired April payer plus future June payer",
+      "order": "original",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "expired April payer plus future June payer",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 372000,
+      "actual": {
+        "cents": 372000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "one active primary among past and future rows",
+      "order": "original",
+      "status": "PASS",
+      "expected": 100000,
+      "actual": {
+        "cents": 100000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "one active primary among past and future rows",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 100000,
+      "actual": {
+        "cents": 100000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "secondary future coverage ignored",
+      "order": "original",
+      "status": "PASS",
+      "expected": 100000,
+      "actual": {
+        "cents": 100000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "secondary future coverage ignored",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 100000,
+      "actual": {
+        "cents": 100000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "same-day admit discharge",
+      "order": "original",
+      "status": "PASS",
+      "expected": 3226,
+      "actual": {
+        "cents": 3226,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "same-day admit discharge",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 3226,
+      "actual": {
+        "cents": 3226,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "payer starts one day after admission blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "payer starts one day after admission blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "payer ends one day before discharge blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "payer ends one day before discharge blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "two fully overlapping primaries block",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "two fully overlapping primaries block",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "nonoverlapping midmonth transition still needs split",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "nonoverlapping midmonth transition still needs split",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "one day double coverage blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "one day double coverage blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "missing payer date blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "missing payer date blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "undefined payer end blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "undefined payer end blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "February30 payer date blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "February30 payer date blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "timestamp payer date blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "timestamp payer date blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "payer reverse dates block",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "payer reverse dates block",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "unknown admission blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "unknown admission blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "invalid discharge blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "invalid discharge blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "resident reverse interval blocks",
+      "order": "original",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "resident reverse interval blocks",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": "blocked",
+      "actual": {
+        "cents": 0,
+        "error_present": true,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "future admission empty",
+      "order": "original",
+      "status": "PASS",
+      "expected": 0,
+      "actual": {
+        "cents": 0,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "future admission empty",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 0,
+      "actual": {
+        "cents": 0,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "past discharge empty",
+      "order": "original",
+      "status": "PASS",
+      "expected": 0,
+      "actual": {
+        "cents": 0,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "past discharge empty",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 0,
+      "actual": {
+        "cents": 0,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "leap February15 through29",
+      "order": "original",
+      "status": "PASS",
+      "expected": 51724,
+      "actual": {
+        "cents": 51724,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "leap February15 through29",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 51724,
+      "actual": {
+        "cents": 51724,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "nonleap February15 through28",
+      "order": "original",
+      "status": "PASS",
+      "expected": 50000,
+      "actual": {
+        "cents": 50000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "nonleap February15 through28",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 50000,
+      "actual": {
+        "cents": 50000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "spring DST monthly civil days",
+      "order": "original",
+      "status": "PASS",
+      "expected": 77419,
+      "actual": {
+        "cents": 77419,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "spring DST monthly civil days",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 77419,
+      "actual": {
+        "cents": 77419,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "fall DST monthly civil days",
+      "order": "original",
+      "status": "PASS",
+      "expected": 3333,
+      "actual": {
+        "cents": 3333,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "fall DST monthly civil days",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 3333,
+      "actual": {
+        "cents": 3333,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "daily catalog across spring DST",
+      "order": "original",
+      "status": "PASS",
+      "expected": 3000,
+      "actual": {
+        "cents": 3000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "daily catalog across spring DST",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 3000,
+      "actual": {
+        "cents": 3000,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "daily catalog across fall DST",
+      "order": "original",
+      "status": "PASS",
+      "expected": 2200,
+      "actual": {
+        "cents": 2200,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "edge",
+      "case": "daily catalog across fall DST",
+      "order": "reversed",
+      "status": "PASS",
+      "expected": 2200,
+      "actual": {
+        "cents": 2200,
+        "error_present": false,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "payer starts one day after admission blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "payer ends one day before discharge blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "two fully overlapping primaries block",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "nonoverlapping midmonth transition still needs split",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "one day double coverage blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "missing payer date blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "undefined payer end blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "February30 payer date blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "timestamp payer date blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "payer reverse dates block",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "unknown admission blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "invalid discharge blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    },
+    {
+      "producer": "actual-edge-handler",
+      "case": "resident reverse interval blocks",
+      "status": "PASS",
+      "actual": {
+        "status": 422,
+        "created": 0,
+        "writes": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+name: Finance and platform audit verification
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+jobs:
+  deterministic-finance-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install verified Gitleaks binary
+        shell: bash
+        run: |
+          scanner_dir="$RUNNER_TEMP/haven-gitleaks-8.30.1"
+          mkdir -p "$scanner_dir"
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
+            --output "$scanner_dir/gitleaks.tar.gz"
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $scanner_dir/gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf "$scanner_dir/gitleaks.tar.gz" -C "$scanner_dir" gitleaks
+          "$scanner_dir/gitleaks" version
+          echo "$scanner_dir" >> "$GITHUB_PATH"
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Full unit suite including optional benchmark fixtures
+        run: |
+          mkdir -p test-results/finance-integration/performance
+          npm test
+        env:
+          HAVEN_PERF_BENCH: test-results/finance-integration/performance
+      - run: npm run test:finance-integration
+      - run: npm run test:platform-audit
+      - run: npm run test:audit-edge
+      - run: npm run test:finance-webhook
+      - run: npm run test:finance-read
+      - run: npm run test:finance-provider-contract
+      - name: Required segment gates including SQL replay
+        run: npm run segment:gates -- --segment HFA-CI
+        env:
+          CI: 'true'
+          REQUIRE_PG_VERIFY: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: finance-audit-evidence
+          path: |
+            test-results/finance-integration/
+            test-results/agent-gates/
+          if-no-files-found: error
+# Provider/live tests require verified identities and separate activation authority.
+# No production credentials or writes belong in this deterministic PR job.

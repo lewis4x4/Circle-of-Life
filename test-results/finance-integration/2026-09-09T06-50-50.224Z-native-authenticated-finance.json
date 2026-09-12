@@ -1,0 +1,464 @@
+{
+  "schema_version": 1,
+  "run_id": "ff9bdfde-88af-4bba-a7f0-781704a74e69",
+  "suite": "finance",
+  "status": "PASS",
+  "evidence_layer": "native-real-GoTrue-PostgREST",
+  "target_identity": {
+    "project_id": "hfa-native-01a08335",
+    "api_url": "http://127.0.0.1:59831",
+    "database_port": 55448,
+    "transport": "native-services",
+    "services": [
+      {
+        "service": "auth",
+        "pid": 17228,
+        "port": 59833,
+        "executable_sha256": "1f0f24492845ae411e409eebaddc790b97324f5b398f881dbd493fda34a183e5"
+      },
+      {
+        "service": "rest",
+        "pid": 14357,
+        "port": 59832,
+        "executable_sha256": "3e2beec9c4103f5d97524b01ba892156cf993ffc18e6fc0858b8131bc7be6730"
+      },
+      {
+        "service": "gateway",
+        "pid": 14361,
+        "port": 59831,
+        "executable_sha256": "08dad0581f00a0cabf4d49ec92ca1f25fdfd01c2c18fa8e92b35f04d4c24c164"
+      }
+    ]
+  },
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "scripts/finance-integration/authenticated-smoke.mjs",
+    "--config=<run-private-configuration>",
+    "--suite=finance"
+  ],
+  "exit_code": 0,
+  "commit": "cbd94135481ba2ba28095677a17cef09d8e9525b",
+  "source_sha256": "bd32d4dfb580cad37f1d08bea6ae686e94491a27957984b987b24cb045f9af9b",
+  "schema_bootstrap_sha256": "a20432e496fe09ab788a4c9bd043d043ff385d3ef6ebd7ce89f41da69a8d7ad7",
+  "fixture_seed_sha256": "1a965d65dcda087a3d70fd842df481d72f92e6e31c3f166b9a6acb5fe5f6905a",
+  "cases": [
+    {
+      "name": "native run ownership and database identity match",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "auth: native executable and loopback listener verified",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "rest: native executable and loopback listener verified",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "gateway: native executable and loopback listener verified",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "all three native services verified",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 3,
+      "actual": 3
+    },
+    {
+      "name": "genuine GoTrue auth schema exists",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "restricted: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "owner: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "outsider: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "finance336 command is installed",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "concurrent authenticated requests return one identical receipt",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": [
+        200,
+        200
+      ],
+      "actual": [
+        200,
+        200
+      ]
+    },
+    {
+      "name": "independent SQL control totals prove one economic effect",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "payments": 1,
+        "allocations": 1,
+        "receipts": 1,
+        "paid": 2500,
+        "balance": 7500
+      },
+      "actual": {
+        "payments": 1,
+        "allocations": 1,
+        "receipts": 1,
+        "paid": 2500,
+        "balance": 7500
+      }
+    },
+    {
+      "name": "receipt distinguishes allocated and unapplied cash",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "allocated": 2500,
+        "unapplied": 0
+      },
+      "actual": {
+        "allocated": 2500,
+        "unapplied": 0
+      }
+    },
+    {
+      "name": "same command with different content is an explicit conflict",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "name": "cross-organization resident payment denied",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": "401 or 403",
+      "actual": 403
+    },
+    {
+      "name": "invoice from another scope cannot allocate resident money",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "status": 400,
+        "code": "P0001",
+        "reason": "resident-scope rejection"
+      },
+      "actual": {
+        "status": 400,
+        "code": "P0001",
+        "reason_matches": true
+      }
+    },
+    {
+      "name": "rejected scope leaves no payment or receipt",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 0,
+      "actual": 0
+    },
+    {
+      "name": "exact injected final receipt failure propagates through PostgREST",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "http": 400,
+        "sqlstate": "P0001",
+        "marker": true
+      },
+      "actual": {
+        "http": 400,
+        "sqlstate": "P0001",
+        "marker": true
+      }
+    },
+    {
+      "name": "final receipt failure rolls back all source money",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "newRows": 0,
+        "paid": 2500,
+        "balance": 7500
+      },
+      "actual": {
+        "newRows": 0,
+        "payments": 1,
+        "allocations": 1,
+        "receipts": 1,
+        "paid": 2500,
+        "balance": 7500
+      }
+    },
+    {
+      "name": "uncommitted request resolves to its exact cancellation identity",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "http": 200,
+        "state": "cancelled",
+        "identity_matches": true
+      },
+      "actual": {
+        "http": 200,
+        "state": "cancelled",
+        "identity_matches": true
+      }
+    },
+    {
+      "name": "delayed cancelled command cannot create money",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "name": "cancellation retains one durable tombstone and no money",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": {
+        "tombstones": 1,
+        "payments": 0,
+        "allocations": 0
+      },
+      "actual": {
+        "tombstones": 1,
+        "payments": 0,
+        "allocations": 0
+      }
+    },
+    {
+      "name": "revoked current facility authority blocks old signed token",
+      "acceptance_ids": [
+        "HFA-007",
+        "HFA-008",
+        "HFA-011"
+      ],
+      "status": "PASS",
+      "expected": "401 or 403",
+      "actual": 401
+    }
+  ],
+  "counts": {
+    "total": 29,
+    "passed": 29,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "failure": null,
+  "started_at": "2026-09-09T06:50:50.224Z",
+  "completed_at": "2026-09-09T06:50:51.527Z",
+  "duration_ms": 1303,
+  "limits": [
+    "Real pinned GoTrue and PostgREST on a run-owned native PostgreSQL cluster; synthetic fixtures only. Native proxy is not Kong or a deployed Edge gateway. No hosted production/provider/business or completed342 dynamic-security review proof."
+  ]
+}

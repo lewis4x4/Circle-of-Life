@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "scope": "342 source inspection; separate from unfinished independent dynamic security review",
+  "reviewer": "root (not credential migration author)",
+  "verdict": "COMMENT",
+  "source_sha256": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+  "reviewed_at": "2026-09-09T06:21:58.481849+00:00",
+  "resolved_findings": [
+    {
+      "finding": "Seed after stop could capture current stopped fence and still disclose access credentials",
+      "resolution": "Explicit sandbox resume before seed and current stop/binding/entity checks before access delivery/installation",
+      "evidence": "review_finance_credential_lifecycle.sql and independent lifecycle probes"
+    },
+    {
+      "finding": "Routine refresh could erase or extend known hard expiry",
+      "resolution": "Conservative minimum of known deadlines within connection epoch; newer explicit reconnect may establish a new grant cap",
+      "evidence": "83-case current SQL probe"
+    },
+    {
+      "finding": "Test guard followed auth and fixture mutation",
+      "resolution": "Exact owned-database/no-Vault guard moved immediately after BEGIN",
+      "test_sha256": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8"
+    }
+  ],
+  "source_checks": [
+    "Reviewed complete migration and contract, including worker claims/current registry, private grants, Vault exception handling, claim/start/capture/install branches, immutable evidence, global physical-grant ownership and final authority checks.",
+    "All financial dispatch and production credential starts remain disabled; worker identity observations remain unverified."
+  ],
+  "open_review": [
+    "Independent dynamic security reviewer was blocked by an automatic safety filter citing possible cybersecurity risk; no final security verdict was emitted.",
+    "Root source inspection and author/native checks do not replace the missing dynamic review or real Vault/JWT/provider/recovery proof."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "acceptance_ids": [
+    "HFA-002",
+    "HFA-028"
+  ],
+  "mode": "read-only",
+  "environment": "sandbox",
+  "commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "started_at": "2026-09-08T23:04:39.877Z",
+  "status": "BLOCKED_EXTERNAL",
+  "target_identity": null,
+  "checks": [],
+  "counts": {
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "limits": [
+    "Company identity smoke only; not complete provider import, posting, reconciliation or business acceptance."
+  ],
+  "blocked_by": [
+    "HFA_QBO_REALM_ID, HFA_QBO_EXPECTED_REALM_ID and HFA_QBO_ACCESS_TOKEN required"
+  ],
+  "completed_at": "2026-09-08T23:04:39.900Z",
+  "duration_ms": 23,
+  "exit_code": 2
+}

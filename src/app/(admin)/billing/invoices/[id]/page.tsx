@@ -95,8 +95,13 @@ export default function AdminInvoiceDetailPage() {
   const [glResult, setGlResult] = useState<{ journalEntryId: string; alreadyPosted?: boolean } | null>(null);
   const [glError, setGlError] = useState<string | null>(null);
   const [canPost, setCanPost] = useState(false);
+  const [glBlocked, setGlBlocked] = useState(false);
 
   const load = useCallback(async () => {
+    setGlResult(null);
+    setGlError(null);
+    setGlBlocked(false);
+    setCanPost(false);
     if (!id) {
       setNotFound(true);
       setIsLoading(false);
@@ -154,13 +159,23 @@ export default function AdminInvoiceDetailPage() {
         setCanPost(true);
         const existingJe = await supabase
           .from("journal_entries")
-          .select("id")
+          .select("id, status")
           .eq("source_type", "invoice")
           .eq("source_id", inv.id)
           .is("deleted_at", null)
           .maybeSingle();
-        if (existingJe.data) {
-          setGlResult({ journalEntryId: existingJe.data.id, alreadyPosted: true });
+        if (existingJe.error) throw existingJe.error;
+        if (existingJe.data?.status === "posted") {
+          const receipt = (await supabase.from("finance_command_receipts" as never)
+            .select("result").eq("command_type" as never, "invoice_post" as never).eq("id" as never, inv.id as never)
+            .maybeSingle()) as unknown as QueryResult<{ result: { journal_entry_id?: string } }>;
+          if (receipt.error) throw receipt.error;
+          if (receipt.data?.result?.journal_entry_id === existingJe.data.id) {
+            setGlResult({ journalEntryId: existingJe.data.id, alreadyPosted: true });
+          } else {
+            setGlBlocked(true);
+            setGlError("This existing journal needs receipt reconciliation before further posting.");
+          }
         }
       }
     } catch (err) {
@@ -362,7 +377,7 @@ export default function AdminInvoiceDetailPage() {
       {canPost && (
         <RecordDetailSection
           title="General ledger"
-          description="Post this invoice to the GL as a balanced journal entry (Debit AR / Credit Revenue)."
+          description="Post this invoice using its approved accounting classification and account mapping."
         >
           <div className="space-y-4 max-w-xl">
             {glError && (
@@ -375,7 +390,7 @@ export default function AdminInvoiceDetailPage() {
                 <div className="flex flex-col">
                   <span className="text-[11px] font-medium uppercase tracking-wider text-success mb-1">Status</span>
                   <span className="text-sm text-success">
-                    {glResult.alreadyPosted ? "Reconciliation confirmed. Previously posted to GL." : "Commit successful. Posted to GL."}
+                    {glResult.alreadyPosted ? "Previously posted to GL; local receipt verified." : "Posted to GL with a committed local receipt."}
                   </span>
                 </div>
                 <Link
@@ -389,7 +404,7 @@ export default function AdminInvoiceDetailPage() {
               <Button
                 type="button"
                 onClick={() => void postToGl()}
-                disabled={glPosting || invoice.total <= 0}
+                disabled={glPosting || glBlocked || invoice.total <= 0}
               >
                 {glPosting ? "Posting…" : "Post to GL"}
               </Button>

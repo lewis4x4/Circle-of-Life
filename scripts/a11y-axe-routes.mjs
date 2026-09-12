@@ -14,7 +14,7 @@ import { chromium } from "playwright";
 import process from "node:process";
 
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
-const storageState = process.env.UI_REVIEW_STORAGE_STATE || undefined;
+const storageState = process.env.UI_REVIEW_STORAGE_STATE || process.env.HAVEN_UI_STORAGE_STATE || undefined;
 const routes = (
   process.env.AXE_ROUTES ??
   process.env.DESIGN_REVIEW_ROUTES ??

@@ -1,0 +1,41 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import payloadModule from '/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance-integration/payload.ts';
+const root='/Users/brianlewis/Circle of Life/Haven Finance Integration';
+const run='/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335';
+const database='hfa_batch_340_review_01a08335';
+const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+const schemaSha=hash(root+'/supabase/migrations/340_finance_batch_approval.sql');
+if(schemaSha!=='0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201')throw Error('Re-review changed340 before reusing this proof');
+const sql=statement=>spawnSync('psql',['-h',run,'-p','55447','-U','postgres','-d',database,'-X','-A','-t','-v','ON_ERROR_STOP=1'],{input:statement,encoding:'utf8'});
+const {summaryPayloadSchema,sumCents}=payloadModule;
+const base=[{accountReference:'100',side:'debit',amountCents:'100'},{accountReference:'200',side:'credit',amountCents:'100'}];
+const tests=[['valid',base,true],['null-side',[base[0],{...base[1],side:null}],false],['numeric-cents',[{...base[0],amountCents:100},base[1]],false],['leading-zero',base.map(x=>({...x,amountCents:'0100'})),false],['exponent',base.map(x=>({...x,amountCents:'1e2'})),false],['trailing-newline',base.map(x=>({...x,amountCents:'100\n'})),false],['null-extra',[{...base[0],memo:null},base[1]],false],['above-json-safe',base.map(x=>({...x,amountCents:'9007199254740993'})),true],['max-i64',base.map(x=>({...x,amountCents:'9223372036854775807'})),true],['overflow',base.map(x=>({...x,amountCents:'9223372036854775808'})),false],['empty',[],false],['group-duplicates',[base[0],base[0],{...base[1],amountCents:'200'}],true]];
+const cases=[];
+for(const [name,lines,expected] of tests){
+ const serialized=JSON.stringify(lines).replaceAll("'","''");
+ const r=sql(`SELECT haven.finance_batch_lines('${serialized}'::jsonb,'["100","200"]'::jsonb)`);
+ const envelope={schemaVersion:1,companyReference:'123',batchReference:'11111111-1111-4111-8111-111111111111',accountingDate:'2026-09-09',currency:'USD'};
+ const sqlAccepted=r.status===0,zodInputAccepted=summaryPayloadSchema.safeParse({...envelope,lines}).success,zodOutputAccepted=sqlAccepted?summaryPayloadSchema.safeParse({...envelope,lines:JSON.parse(r.stdout)}).success:null;
+ cases.push({name,expected,sqlAccepted,zodInputAccepted,zodOutputAccepted,status:sqlAccepted===expected&&zodInputAccepted===expected&&(!sqlAccepted||zodOutputAccepted)?'PASS':'FAIL'});
+}
+const setup=fs.readFileSync(root+'/supabase/tests/review_finance_batch_approval.sql','utf8').split('-- ASSERTIONS_BEGIN')[0];
+const prepared=sql(setup+`
+SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='main'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),pg_temp.batch_members(ARRAY['p1','p2'])) FROM bf;
+SELECT 'REVIEW_FIRST:'||public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))::text;
+SET LOCAL DateStyle='SQL, DMY';
+SELECT public.prepare_finance_batch((SELECT id FROM bi WHERE label='main'),entity,a,current_date,(SELECT id FROM bi WHERE label='rules'),(SELECT jsonb_agg(item ORDER BY item->>'eventId' DESC) FROM jsonb_array_elements(pg_temp.batch_members(ARRAY['p1','p2'])) item)) FROM bf;
+SELECT 'REVIEW_REPLAY:'||public.finance_batch_snapshot((SELECT id FROM bi WHERE label='main'))::text;
+ROLLBACK;
+`);
+if(prepared.status!==0)throw Error(prepared.stderr);
+const read=prefix=>JSON.parse(prepared.stdout.split('\n').find(line=>line.startsWith(prefix)).slice(prefix.length));
+const first=read('REVIEW_FIRST:'),replay=read('REVIEW_REPLAY:');
+const parsed=summaryPayloadSchema.parse(first.batch.payload);
+const amount=sumCents(parsed.lines.filter(l=>l.side==='debit').map(l=>l.amountCents));
+cases.push({name:'actual-public-batch-payload-and-binding',status:amount==='4000000000'&&first.members.length===2&&first.batch.binding_sha256===replay.batch.binding_sha256&&first.accounting_classification==='unverified'&&first.business_release_eligible===false&&first.dispatch_enabled===false?'PASS':'FAIL',exactDebitCents:amount,members:first.members.length,dateStyleAndMemberOrderPreserveBinding:first.batch.binding_sha256===replay.batch.binding_sha256,classification:first.accounting_classification,businessReleaseEligible:first.business_release_eligible,dispatchEnabled:first.dispatch_enabled});
+const report={schema_version:1,scope:'independent340-money-member-payload',schemaSha,fixtureSha:hash(root+'/supabase/tests/review_finance_batch_approval.sql'),zodSchemaSha:hash(root+'/src/lib/finance-integration/payload.ts'),driverSha:hash(new URL(import.meta.url)),target:{socket:run,port:55447,database},status:cases.every(c=>c.status==='PASS')?'PASS':'FAIL',cases,limitations:['Native PostgreSQL with synthetic Auth stubs; no hosted/provider/dispatch proof.'],timestamp:new Date().toISOString()};
+fs.writeFileSync(run+'/batch-340-parity.json',JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify({status:report.status,cases:cases.length,artifact:run+'/batch-340-parity.json'}));
+process.exitCode=report.status==='PASS'?0:1;

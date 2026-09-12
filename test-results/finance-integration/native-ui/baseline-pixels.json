@@ -1,0 +1,24 @@
+[
+  {
+    "mode": "light-mobile",
+    "changed_pixels": 2,
+    "difference_bbox": [
+      3,
+      3,
+      4,
+      95
+    ],
+    "ring_color_pixels": 0
+  },
+  {
+    "mode": "dark-mobile",
+    "changed_pixels": 2,
+    "difference_bbox": [
+      3,
+      3,
+      4,
+      95
+    ],
+    "ring_color_pixels": 0
+  }
+]

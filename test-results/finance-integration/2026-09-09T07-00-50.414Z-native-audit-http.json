@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "evidence_layer": "standalone-Deno-real-Auth-PostgREST",
+  "source_sha256": "54b928e26c0d72e6fe98b3ea092dff14346450473e47ea12456e7583c6458133",
+  "driver_sha256": "570ab31ff8674908cc6cb3556a5d25c267a4923b1208340bd4aed356de059d68",
+  "cases": [
+    {
+      "name": "restricted real sign-in",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider real sign-in",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "actual Deno handler returns complete immutable CSV",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "status": 200,
+        "rows": 2505,
+        "sha": "ad8f7766f608c9d5c02f745f9adeb35f607bac45621591765baa1da51c4d829b"
+      },
+      "actual": {
+        "status": 200,
+        "sha": "ad8f7766f608c9d5c02f745f9adeb35f607bac45621591765baa1da51c4d829b"
+      }
+    },
+    {
+      "name": "actual HTTP checksum and no-store headers",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "actual HTTP CORS exposes checksum to permitted origin",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "HTTP retry returns identical saved bytes",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "missing bearer denied through actual handler",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "name": "other organization denied through actual handler",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 403,
+      "actual": 403
+    },
+    {
+      "name": "service role denied through actual handler",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 403,
+      "actual": 403
+    },
+    {
+      "name": "invalid signed request denied through actual handler",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "name": "actual GoTrue logout succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 204,
+      "actual": 204
+    },
+    {
+      "name": "still-signed revoked session denied through actual handler",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 401,
+      "actual": 401
+    }
+  ],
+  "counts": {
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0
+  },
+  "failure": null,
+  "limits": [
+    "Native standalone Deno is not the deployed Supabase Edge JWT gateway; actual handler delegates JWT/current authorization to real PostgREST.",
+    "Synthetic fixtures only; not hosted production, provider,342 dynamic-security or business acceptance."
+  ]
+}

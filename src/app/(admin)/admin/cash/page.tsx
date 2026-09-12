@@ -50,7 +50,15 @@ export default function AdminCashLedgersPage() {
   const [pettyTx, setPettyTx] = useState<PettyCashTxRow[]>([]);
   const [trustAccounts, setTrustAccounts] = useState<TrustAccountRow[]>([]);
   const [trustTx, setTrustTx] = useState<TrustTxRow[]>([]);
+  const [loadedFacilityId, setLoadedFacilityId] = useState<string | null>(null);
+  const [trustTxScope, setTrustTxScope] = useState<{ facilityId: string; accountId: string } | null>(null);
+  const [trustTxError, setTrustTxError] = useState<string | null>(null);
+  const [trustTxLoading, setTrustTxLoading] = useState(false);
+  const loadGeneration = useRef(0);
+  const trustLoadGeneration = useRef(0);
+  const mounted = useRef(false);
   const [selectedTrustId, setSelectedTrustId] = useState<string>("");
+  const selectedTrustRef = useRef("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -74,18 +82,28 @@ export default function AdminCashLedgersPage() {
   const [newRepPayee, setNewRepPayee] = useState(false);
   const [newSsa787, setNewSsa787] = useState(false);
 
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
   const load = useCallback(async () => {
+    // A completed mutation may still hold the previous facility's callback.
+    if (!mounted.current || selectedFacilityId !== useFacilityStore.getState().selectedFacilityId) return;
+    const generation = ++loadGeneration.current;
     if (!facilityReady) {
       setResidents([]);
       setPettyAccount(null);
       setPettyTx([]);
       setTrustAccounts([]);
       setTrustTx([]);
+      setLoadedFacilityId(null);
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     setLoadError(null);
+    setNotice(null);
     try {
       const fid = selectedFacilityId as string;
       const residentsQ = supabase
@@ -114,11 +132,8 @@ export default function AdminCashLedgersPage() {
       ]);
       const err: QueryError | null = rRes.error ?? paRes.error ?? taRes.error;
       if (err) throw new Error(err.message);
-      setResidents(rRes.data ?? []);
       const account = (paRes.data ?? [])[0] ?? null;
-      setPettyAccount(account);
-      setTrustAccounts(taRes.data ?? []);
-
+      let transactions: PettyCashTxRow[] = [];
       if (account) {
         const ptxRes = (await supabase
           .from("petty_cash_transactions" as never)
@@ -130,24 +145,42 @@ export default function AdminCashLedgersPage() {
           .order("occurred_at", { ascending: false })
           .limit(100)) as unknown as QueryResult<PettyCashTxRow>;
         if (ptxRes.error) throw new Error(ptxRes.error.message);
-        setPettyTx(ptxRes.data ?? []);
-      } else {
-        setPettyTx([]);
+        transactions = ptxRes.data ?? [];
       }
+      if (generation !== loadGeneration.current) return;
+      setResidents(rRes.data ?? []);
+      setPResident(id => (rRes.data ?? []).some(resident => resident.id === id) ? id : "");
+      setNewTrustResident(id => (rRes.data ?? []).some(resident => resident.id === id) ? id : "");
+      setPettyAccount(account);
+      setTrustAccounts(taRes.data ?? []);
+      setPettyTx(transactions);
+      setLoadedFacilityId(fid);
     } catch (err) {
+      if (generation !== loadGeneration.current) return;
       setLoadError(err instanceof Error ? err.message : "Failed to load ledgers.");
     } finally {
-      setIsLoading(false);
+      if (generation === loadGeneration.current) setIsLoading(false);
     }
   }, [supabase, selectedFacilityId, facilityReady]);
 
   useEffect(() => {
+    const requests = loadGeneration;
     void load();
+    return () => { requests.current++; };
   }, [load]);
 
   const loadTrustTx = useCallback(
     async (accountId: string) => {
-      const res = (await supabase
+      const facilityId = selectedFacilityId;
+      if (!mounted.current || !facilityId || facilityId !== useFacilityStore.getState().selectedFacilityId || accountId !== selectedTrustRef.current
+        || loadedFacilityId !== facilityId || !trustAccounts.some(account => account.id === accountId)) return;
+      const generation = ++trustLoadGeneration.current;
+      setTrustTxLoading(true);
+      setTrustTxScope(null);
+      setTrustTxError(null);
+      setTrustTx([]);
+      try {
+        const res = (await supabase
         .from("resident_trust_transactions" as never)
         .select(
           "id, account_id, resident_id, direction, amount_cents, balance_after_cents, category, description, occurred_at",
@@ -156,18 +189,26 @@ export default function AdminCashLedgersPage() {
         .is("deleted_at", null)
         .order("occurred_at", { ascending: false })
         .limit(100)) as unknown as QueryResult<TrustTxRow>;
-      if (res.error) {
-        setNotice(res.error.message);
-        return;
+        if (res.error) throw new Error(res.error.message);
+        if (generation !== trustLoadGeneration.current) return;
+        setTrustTx(res.data ?? []);
+        setTrustTxScope({ facilityId, accountId });
+      } catch (err) {
+        if (generation !== trustLoadGeneration.current) return;
+        setTrustTxError(err instanceof Error ? err.message : "Failed to load this ledger.");
+        setTrustTxScope({ facilityId, accountId });
+      } finally {
+        if (generation === trustLoadGeneration.current) setTrustTxLoading(false);
       }
-      setTrustTx(res.data ?? []);
     },
-    [supabase],
+    [supabase, selectedFacilityId, loadedFacilityId, trustAccounts],
   );
 
   useEffect(() => {
+    const requests = trustLoadGeneration;
     if (selectedTrustId) void loadTrustTx(selectedTrustId);
     else setTrustTx([]);
+    return () => { requests.current++; };
   }, [selectedTrustId, loadTrustTx]);
 
   const residentName = useCallback(
@@ -180,12 +221,14 @@ export default function AdminCashLedgersPage() {
   );
 
   const createPettyAccount = useCallback(async () => {
-    if (!facilityReady) return;
+    if (!facilityReady || loadedFacilityId !== selectedFacilityId) return;
+    const stillSelected = () => mounted.current && selectedFacilityId === useFacilityStore.getState().selectedFacilityId;
     setBusy(true);
     setNotice(null);
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
+      if (!stillSelected()) return;
       const { error } = await supabase.from("petty_cash_accounts" as never).insert({
         organization_id: actor.organizationId,
         facility_id: selectedFacilityId as string,
@@ -195,17 +238,18 @@ export default function AdminCashLedgersPage() {
       if (error) throw new Error(error.message);
       await load();
     } catch (err) {
-      setNotice(err instanceof Error ? err.message : "Failed to open the petty cash drawer.");
+      if (stillSelected()) setNotice(err instanceof Error ? err.message : "Failed to open the petty cash drawer.");
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
-  }, [supabase, facilityReady, selectedFacilityId, load]);
+  }, [supabase, facilityReady, selectedFacilityId, loadedFacilityId, load]);
 
   const pettyRequestId = useRef<string | null>(null);
   const trustRequestId = useRef<string | null>(null);
 
   const postPetty = useCallback(async () => {
-    if (!pettyAccount) return;
+    if (!pettyAccount || loadedFacilityId !== selectedFacilityId) return;
+    const stillSelected = () => mounted.current && selectedFacilityId === useFacilityStore.getState().selectedFacilityId;
     const cents = parseDollarsToCents(pAmount);
     if (!cents || cents <= 0 || !pDesc.trim()) {
       setNotice("Enter a positive amount and a description.");
@@ -216,6 +260,7 @@ export default function AdminCashLedgersPage() {
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
+      if (!stillSelected()) return;
       pettyRequestId.current ??= crypto.randomUUID();
       const { error: txErr } = await supabase.rpc("post_cash_transaction" as never, {
         p_kind: "petty", p_id: pettyRequestId.current, p_account_id: pettyAccount.id,
@@ -224,24 +269,27 @@ export default function AdminCashLedgersPage() {
       } as never);
       if (txErr) throw new Error(txErr.message);
       pettyRequestId.current = null;
+      if (!stillSelected()) return;
       setPAmount("");
       setPDesc("");
       setPResident("");
       await load();
     } catch (err) {
-      setNotice(err instanceof Error ? err.message : "Failed to post the transaction.");
+      if (stillSelected()) setNotice(err instanceof Error ? err.message : "Failed to post the transaction.");
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
-  }, [supabase, pettyAccount, pAmount, pDir, pCategory, pDesc, pResident, load]);
+  }, [supabase, pettyAccount, pAmount, pDir, pCategory, pDesc, pResident, load, loadedFacilityId, selectedFacilityId]);
 
   const openTrustAccount = useCallback(async () => {
-    if (!facilityReady || !newTrustResident) return;
+    if (!facilityReady || !newTrustResident || loadedFacilityId !== selectedFacilityId) return;
+    const stillSelected = () => mounted.current && selectedFacilityId === useFacilityStore.getState().selectedFacilityId;
     setBusy(true);
     setNotice(null);
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
+      if (!stillSelected()) return;
       const { error } = await supabase.from("resident_trust_accounts" as never).insert({
         organization_id: actor.organizationId,
         facility_id: selectedFacilityId as string,
@@ -252,24 +300,26 @@ export default function AdminCashLedgersPage() {
         updated_by: actor.userId,
       } as never);
       if (error) throw new Error(error.message);
+      if (!stillSelected()) return;
       setNewTrustResident("");
       setNewRepPayee(false);
       setNewSsa787(false);
       await load();
     } catch (err) {
-      setNotice(err instanceof Error ? err.message : "Failed to open trust account.");
+      if (stillSelected()) setNotice(err instanceof Error ? err.message : "Failed to open trust account.");
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
-  }, [supabase, facilityReady, selectedFacilityId, newTrustResident, newRepPayee, newSsa787, load]);
+  }, [supabase, facilityReady, selectedFacilityId, loadedFacilityId, newTrustResident, newRepPayee, newSsa787, load]);
 
   const selectedTrust = useMemo(
-    () => trustAccounts.find((a) => a.id === selectedTrustId) ?? null,
-    [trustAccounts, selectedTrustId],
+    () => loadedFacilityId === selectedFacilityId ? trustAccounts.find((a) => a.id === selectedTrustId) ?? null : null,
+    [trustAccounts, selectedTrustId, loadedFacilityId, selectedFacilityId],
   );
 
   const postTrust = useCallback(async () => {
     if (!selectedTrust) return;
+    const stillSelected = () => mounted.current && selectedFacilityId === useFacilityStore.getState().selectedFacilityId && selectedTrust.id === selectedTrustRef.current;
     const cents = parseDollarsToCents(tAmount);
     if (!cents || cents <= 0 || !tDesc.trim()) {
       setNotice("Enter a positive amount and a description.");
@@ -280,6 +330,7 @@ export default function AdminCashLedgersPage() {
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
+      if (!stillSelected()) return;
       trustRequestId.current ??= crypto.randomUUID();
       const { error: txErr } = await supabase.rpc("post_cash_transaction" as never, {
         p_kind: "trust", p_id: trustRequestId.current, p_account_id: selectedTrust.id,
@@ -288,16 +339,17 @@ export default function AdminCashLedgersPage() {
       } as never);
       if (txErr) throw new Error(txErr.message);
       trustRequestId.current = null;
+      if (!stillSelected()) return;
       setTAmount("");
       setTDesc("");
       await load();
       await loadTrustTx(selectedTrust.id);
     } catch (err) {
-      setNotice(err instanceof Error ? err.message : "Failed to post the transaction.");
+      if (stillSelected()) setNotice(err instanceof Error ? err.message : "Failed to post the transaction.");
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
-  }, [supabase, selectedTrust, tAmount, tDir, tCategory, tDesc, load, loadTrustTx]);
+  }, [supabase, selectedTrust, selectedFacilityId, tAmount, tDir, tCategory, tDesc, load, loadTrustTx]);
 
   const residentsWithoutTrust = useMemo(() => {
     const taken = new Set(trustAccounts.map((a) => a.resident_id));
@@ -306,6 +358,8 @@ export default function AdminCashLedgersPage() {
 
   const inputCls =
     "rounded-[9px] border border-border bg-background px-3 py-2 text-sm text-foreground";
+  const scopeReady = facilityReady && loadedFacilityId === selectedFacilityId;
+  const trustTxReady = trustTxScope?.facilityId === selectedFacilityId && trustTxScope?.accountId === selectedTrustId;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -327,7 +381,7 @@ export default function AdminCashLedgersPage() {
           </p>
         ) : null}
 
-        {notice ? (
+        {notice && scopeReady ? (
           <p className="rounded-[var(--radius)] border border-danger/30 bg-danger/10 px-6 py-3 text-sm text-danger">
             {notice}
           </p>
@@ -348,12 +402,12 @@ export default function AdminCashLedgersPage() {
           </div>
         ) : null}
 
-        {facilityReady && isLoading ? <AdminTableLoadingState /> : null}
+        {facilityReady && (isLoading || (!scopeReady && !loadError)) ? <AdminTableLoadingState /> : null}
         {facilityReady && !isLoading && loadError ? (
           <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void load()} />
         ) : null}
 
-        {facilityReady && !isLoading && !loadError && tab === "petty" ? (
+        {scopeReady && !isLoading && !loadError && tab === "petty" ? (
           <section className="space-y-3">
             {!pettyAccount ? (
               <div className="rounded-[var(--radius)] border border-border bg-card p-6 text-center space-y-3">
@@ -422,7 +476,7 @@ export default function AdminCashLedgersPage() {
           </section>
         ) : null}
 
-        {facilityReady && !isLoading && !loadError && tab === "trust" ? (
+        {scopeReady && !isLoading && !loadError && tab === "trust" ? (
           <section className="grid gap-4 lg:grid-cols-[minmax(0,320px)_1fr]">
             <div className="space-y-3">
               <div className="rounded-[var(--radius)] border border-border bg-card p-4 space-y-2">
@@ -449,7 +503,7 @@ export default function AdminCashLedgersPage() {
                 ) : (
                   trustAccounts.map((a) => (
                     <li key={a.id}>
-                      <button type="button" onClick={() => setSelectedTrustId(a.id)}
+                      <button type="button" onClick={() => { selectedTrustRef.current = a.id; setSelectedTrustId(a.id); }}
                         className={cn("w-full text-left px-[13px] py-2 rounded-[9px] border bg-card transition-colors",
                           selectedTrustId === a.id ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50")}>
                         <div className="flex items-center justify-between gap-2">
@@ -491,7 +545,9 @@ export default function AdminCashLedgersPage() {
                       Post
                     </Button>
                   </div>
-                  {trustTx.length === 0 ? (
+                  {trustTxLoading ? <p role="status">Loading this ledger…</p> : trustTxReady && trustTxError ? (
+                    <AdminLiveDataFallbackNotice message={trustTxError} onRetry={() => void loadTrustTx(selectedTrust.id)} />
+                  ) : !trustTxReady ? null : trustTx.length === 0 ? (
                     <p className="text-sm text-muted-foreground pl-2">No transactions yet.</p>
                   ) : (
                     <ul className="space-y-2">

@@ -1,0 +1,74 @@
+{
+  "source_sha256": "ed72b25ef3a452cd870bcb2806b0583c54371432445cc893654e9a0655305faf",
+  "scope": "Synthetic fetch and bounded streams only; no network or provider calls",
+  "results": [
+    {
+      "name": "ready-empty-chunks-respect-1ms-io-deadline",
+      "expected": "timeout",
+      "actual": "timeout",
+      "pass": true,
+      "elapsed_ms": 2.98,
+      "captured_bytes": 0,
+      "capture_complete": false
+    },
+    {
+      "name": "report-invalid-calendar-timestamp",
+      "expected": "invalid_response",
+      "actual": "invalid_response",
+      "pass": true,
+      "elapsed_ms": 2.12,
+      "captured_bytes": 340,
+      "capture_complete": true
+    },
+    {
+      "name": "report-invalid-hour-timestamp",
+      "expected": "invalid_response",
+      "actual": "invalid_response",
+      "pass": true,
+      "elapsed_ms": 0.86,
+      "captured_bytes": 340,
+      "capture_complete": true
+    },
+    {
+      "name": "identity-content-encoding-length-mismatch",
+      "expected": "body_incomplete",
+      "actual": "body_incomplete",
+      "pass": true,
+      "elapsed_ms": 0.23,
+      "captured_bytes": 34,
+      "capture_complete": false
+    },
+    {
+      "name": "unknown-report-row-group-member",
+      "expected": "invalid_response",
+      "actual": "invalid_response",
+      "pass": true,
+      "elapsed_ms": 0.72,
+      "captured_bytes": 404,
+      "capture_complete": true
+    },
+    {
+      "name": "unknown-data-row-member",
+      "expected": "invalid_response",
+      "actual": "invalid_response",
+      "pass": true,
+      "elapsed_ms": 0.37,
+      "captured_bytes": 417,
+      "capture_complete": true
+    },
+    {
+      "name": "decoded-duplicate-key",
+      "expected": "invalid_response",
+      "actual": "invalid_response",
+      "pass": true,
+      "elapsed_ms": 0.3,
+      "captured_bytes": 54,
+      "capture_complete": true
+    },
+    {
+      "name": "log-summary-does-not-expose-raw-canary",
+      "pass": true,
+      "actual": "invalid_response"
+    }
+  ]
+}

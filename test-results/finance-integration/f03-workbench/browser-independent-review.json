@@ -1,0 +1,38 @@
+{
+  "verdict": "APPROVE",
+  "scope": "Bounded source reader/client/routes/nav/RPC types and synthetic actual-component visual review only",
+  "source_sha256": {
+    "src/lib/finance-integration/review-queue.ts": "476ed784b389a4883c6bc1fac24bad4b43a004b1a5d58c144665d7d8bbe22ccd",
+    "src/components/finance/FinanceReviewQueueClient.tsx": "845a4f2ba2e37f7dcc920af9b2c166018c8d0ceb62d4f8572a2a7846fc43ca97",
+    "src/lib/finance-integration/review-queue.test.ts": "18d8a67b0ef01aaccb9fe0312f32ade9e118f35c33262b39bf6f74fb7154133d",
+    "src/components/finance/FinanceReviewQueueClient.test.tsx": "6b277aef6beacedbd25c3c0ab068a9ddacc28dd394fa43823ddbe84c2829c220",
+    "src/app/(admin)/finance/integration/page.tsx": "93ec6b36522926b698e6a56ec4c6ee81c14e7281ac3672a11e41b049d6184888",
+    "src/app/(admin)/admin/finance/integration/page.tsx": "a6a66e2b8c4fa9eb9c73c68a9fce08b49989cf035e40959c092aa96a4961bdef",
+    "src/app/(admin)/finance/finance-hub-nav.tsx": "4306855af2aeba59f059e4b51c60dcac03dc6da1593ff0502e9c9ea564a13a82",
+    "src/types/database.ts": "2ef9e8a3c8055cdc442e367113ca7d336d6b84e5ff52f29f45faae4932d67f91"
+  },
+  "executed": {
+    "focused_unit_tests": "36 PASS in 2 files",
+    "actual_component_browser_checks": "32 PASS; zero skips; includes Axe zero violations",
+    "source_command": "npx vitest run src/lib/finance-integration/review-queue.test.ts src/components/finance/FinanceReviewQueueClient.test.tsx",
+    "browser_command": "node /Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/workbench-visual/verify.mjs"
+  },
+  "resolved_findings": [
+    "Role downgrade invalidates authorized selector names even with identical user/session object references.",
+    "Inactive workbench tabs now meet contrast threshold.",
+    "Long entity selectors retain their dropdown arrow inside the narrow viewport."
+  ],
+  "reviewed_boundaries": [
+    "Queue validates organization/entity/facility/kind, cursor ordering/cardinality and disabled flags.",
+    "Page and detail state masked immediately on load identity change; deliberately ignored-abort stale responses do not restore old content.",
+    "Actor/session/role changes invalidate selector and child page state without raw session identifiers in DOM.",
+    "Batch detail strips historical session identifiers before state; transient random canary never logged or persisted.",
+    "Exact cents above Number safe integer remain decimal strings/BigInt; gross controls are not misleading net totals.",
+    "Readonly viewer has no prepare/approve/release/dispatch actions; unverified business/provider copy remains visible."
+  ],
+  "limitations": [
+    "No real Next route navigation, live Supabase Auth, hosted RLS, provider, dispatch, accounting policy or business acceptance proof.",
+    "Fixture uses synthetic Auth/RPC data and actual component/CSS/primitives; production app chrome is intentionally omitted.",
+    "Axe coverage is the captured light-theme actual-component detail state; it is not exhaustive assistive-technology or full-application accessibility certification."
+  ]
+}

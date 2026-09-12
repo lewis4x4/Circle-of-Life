@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { billingCurrency } from "@/lib/billing/currency";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Check, ChevronRight, Download, Filter, HelpCircle, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
@@ -274,10 +275,7 @@ function downloadInvoiceLedgerCsv(rows: BillingRow[], filename: string, facility
   URL.revokeObjectURL(url);
 }
 
-export const billingCurrency = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+export { billingCurrency } from "@/lib/billing/currency";
 
 export type BillingInvoiceLedgerProps = {
   title?: string;
@@ -698,6 +696,7 @@ function BillingInvoiceLedgerInner({
     isOverviewChrome,
     period,
     sortedTableRows,
+    router,
   ]);
 
   const listEmptyCopy = useMemo(() => {

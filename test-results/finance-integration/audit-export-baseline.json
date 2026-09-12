@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "phase": "F01",
+  "scope": "local PostgreSQL real authenticated DB role with Supabase Auth stubs and unmodified Haven current-actor helpers",
+  "productionExploit": false,
+  "target": "run-owned Unix socket:55447/hfa_audit_335",
+  "baselineCommit": "3dec84bbdc216d1c58e7296568b007ebe6f101be",
+  "timestamp": "2026-09-08T22:57:31.398841+00:00",
+  "commandExitCode": 0,
+  "result": "FAIL_SECURITY_REPRODUCED",
+  "assertions": [
+    {
+      "case": "HFA-F01-audit-baseline",
+      "effective_role": "authenticated",
+      "restricted_role": "facility_admin",
+      "facility_b_accepted": true,
+      "null_scope_accepted": true,
+      "unauthorized_jobs_accepted": 2
+    }
+  ],
+  "setupNote": "First custom replay omitted three timestamp migrations and failed at 221; recreated own DB and successfully replayed all 336 baseline files in repository lexical order.",
+  "initialProbe": "Fixture fixed to read current profile claim version after access-grant trigger bumped it; initial probe failed closed before attack assertions."
+}

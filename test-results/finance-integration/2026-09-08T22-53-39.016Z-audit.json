@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "suite": "audit",
+  "status": "PASS",
+  "evidence_layer": "unit",
+  "target_identity": "synthetic-local-no-network",
+  "commit": "3dec84bbdc216d1c58e7296568b007ebe6f101be",
+  "tracked_diff_sha256": "28a52bca1a61cb530a47f52fdb6603636a3b21159d3891558c42ccde371daa14",
+  "started_at": "2026-09-08T22:53:39.016Z",
+  "completed_at": "2026-09-08T22:53:39.930Z",
+  "duration_ms": 914,
+  "counts": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"=1+1\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.652040999999997
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"+123\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.1792080000000169
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"-123\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.05133299999999963
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"@SUM(A1)\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.07941700000003493
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"\\tformula\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.09083300000003192
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety neutralizes spreadsheet formula prefix \"\\rformula\"",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.046582999999998265
+    },
+    {
+      "name": "HFA-059 shared CSV export cell safety escapes quotes, commas and newlines without losing evidence bytes",
+      "acceptance_ids": [
+        "HFA-059"
+      ],
+      "status": "passed",
+      "duration_ms": 0.048790999999994256
+    }
+  ],
+  "limits": [
+    "Unit assertions only; does not satisfy provider, Auth/PostgREST, complete financial workflow or business acceptance."
+  ],
+  "raw_artifact": "test-results/finance-integration/2026-09-08T22-53-39.016Z-audit-vitest.json"
+}

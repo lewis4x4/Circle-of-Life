@@ -1,0 +1,12 @@
+[
+  {
+    "mode": "light-mobile",
+    "changed_pixels": 1448,
+    "ring_color_pixels": 1418
+  },
+  {
+    "mode": "dark-mobile",
+    "changed_pixels": 1448,
+    "ring_color_pixels": 1418
+  }
+]

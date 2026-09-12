@@ -1,0 +1,132 @@
+{
+  "status": "PASS",
+  "scope": "Independent integer-rational charge references and proposed decisions; not an integrated producer test",
+  "cases": [
+    {
+      "name": "future-June-payer-May-private",
+      "decision": "private",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": 372000
+    },
+    {
+      "name": "May16-admission-May16-Medicaid",
+      "decision": "single",
+      "month_days": 31,
+      "billable_days": 16,
+      "expected_cents": 51613
+    },
+    {
+      "name": "discharge-inclusive-payer-end",
+      "decision": "single",
+      "month_days": 31,
+      "billable_days": 15,
+      "expected_cents": 48387
+    },
+    {
+      "name": "wholly-ended-April-primary",
+      "decision": "private",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": 372000
+    },
+    {
+      "name": "primary-ends-before-billable-end",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": null
+    },
+    {
+      "name": "primary-starts-after-billable-start",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": null
+    },
+    {
+      "name": "mid-month-primary-transition",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": null
+    },
+    {
+      "name": "multiple-covering-primaries",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": null
+    },
+    {
+      "name": "partially-overlapping-primaries",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": null
+    },
+    {
+      "name": "reversed-payer-interval",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": null
+    },
+    {
+      "name": "invalid-payer-calendar-date",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": null
+    },
+    {
+      "name": "reversed-resident-interval",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": null,
+      "expected_cents": null
+    },
+    {
+      "name": "unknown-admission-window",
+      "decision": "review",
+      "month_days": 31,
+      "billable_days": null,
+      "expected_cents": null
+    },
+    {
+      "name": "leap-February-admission",
+      "decision": "single",
+      "month_days": 29,
+      "billable_days": 15,
+      "expected_cents": 51724
+    },
+    {
+      "name": "DST-March-admission",
+      "decision": "single",
+      "month_days": 31,
+      "billable_days": 24,
+      "expected_cents": 77419
+    },
+    {
+      "name": "future-admission-no-May-days",
+      "decision": "no_days",
+      "month_days": 31,
+      "billable_days": 0,
+      "expected_cents": 0
+    },
+    {
+      "name": "single-inclusive-day",
+      "decision": "single",
+      "month_days": 31,
+      "billable_days": 1,
+      "expected_cents": 3226
+    },
+    {
+      "name": "no-current-payer-private-default",
+      "decision": "private",
+      "month_days": 31,
+      "billable_days": 31,
+      "expected_cents": 372000
+    }
+  ]
+}

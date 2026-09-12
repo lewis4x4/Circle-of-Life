@@ -89,6 +89,7 @@ async function main() {
   }
 
   const name = `haven-pg-verify-${Date.now()}`;
+  const database = `haven_verify_${process.pid}_${Date.now()}`;
   const stubPath = path.join(root, "scripts", "pg-verify-stub.sql");
 
   let up = docker(
@@ -99,6 +100,8 @@ async function main() {
       name,
       "-e",
       "POSTGRES_HOST_AUTH_METHOD=trust",
+      "-e",
+      `POSTGRES_DB=${database}`,
       // pgvector required for migration 126 (Knowledge Base embeddings)
       "pgvector/pgvector:pg17",
     ],
@@ -122,7 +125,7 @@ async function main() {
     let ready = false;
     for (let i = 0; i < 90; i++) {
       const r = docker(
-        ["exec", name, "pg_isready", "-h", "127.0.0.1", "-U", "postgres"],
+        ["exec", name, "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", database],
         { stdio: "pipe" },
       );
       if (r.status === 0) {
@@ -148,7 +151,7 @@ async function main() {
       "-U",
       "postgres",
       "-d",
-      "postgres",
+      database,
       "-v",
       "ON_ERROR_STOP=1",
     ];

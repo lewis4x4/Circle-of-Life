@@ -1,0 +1,1271 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "seed": "0x342342",
+  "cases": [
+    {
+      "name": "generated-json-0",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-1",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-2",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-3",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-4",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-5",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-6",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-7",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-8",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-9",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-10",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-11",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-12",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-13",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-14",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-15",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-16",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-17",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-18",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-19",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-20",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-21",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-22",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-23",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-24",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-25",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-26",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-27",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-28",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-29",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-30",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-31",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-32",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-33",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-34",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-35",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-36",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-37",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-38",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-39",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-40",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-41",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-42",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-43",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-44",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-45",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-46",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-47",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-48",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-49",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-50",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-51",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-52",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-53",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-54",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-55",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-56",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-57",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-58",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-59",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-60",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-61",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-62",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-63",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-64",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-65",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-66",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-67",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-68",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-69",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-70",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-71",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-72",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-73",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-74",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-75",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-76",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-77",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-78",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-79",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-80",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-81",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-82",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-83",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-84",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-85",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-86",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-87",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-88",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-89",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-90",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-91",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-92",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-93",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-94",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-95",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-96",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-97",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-98",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-99",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-100",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-101",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-102",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-103",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-104",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-105",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-106",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-107",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-108",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-109",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-110",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-111",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-112",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-113",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-114",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-115",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-116",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-117",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-118",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-119",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-120",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-121",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-122",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-123",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-124",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-125",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-126",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-127",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-128",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-129",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-130",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-131",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-132",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-133",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-134",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-135",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-136",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-137",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-138",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-139",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-140",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-141",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-142",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-143",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-144",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-145",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-146",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-147",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-148",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-149",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-150",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-151",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-152",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-153",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-154",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-155",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-156",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-157",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-158",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-159",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-160",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-161",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-162",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-163",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-164",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-165",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-166",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-167",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-168",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-169",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-170",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-171",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-172",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-173",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-174",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-175",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-176",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-177",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-178",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-179",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-180",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-181",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-182",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-183",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-184",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-185",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-186",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-187",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-188",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-189",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-190",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-191",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-192",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-193",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-194",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-195",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-196",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-197",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-198",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-199",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-200",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-201",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-202",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-203",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-204",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-205",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-206",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-207",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-208",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-209",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-210",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-211",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-212",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-213",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-214",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-215",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-216",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-217",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-218",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-219",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-220",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-221",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-222",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-223",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-224",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-225",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-226",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-227",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-228",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-229",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-230",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-231",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-232",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-233",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-234",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-235",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-236",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-237",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-238",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-239",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-240",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-241",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-242",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-243",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-244",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-245",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-246",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-247",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-248",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-249",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-250",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-251",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-252",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-253",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-254",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-255",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-256",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-257",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-258",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-259",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-260",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-261",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-262",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-263",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-264",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-265",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-266",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-267",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-268",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-269",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-270",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-271",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-272",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-273",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-274",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-275",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-276",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-277",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-278",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-279",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-280",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-281",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-282",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-283",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-284",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-285",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-286",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-287",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-288",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-289",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-290",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-291",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-292",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-293",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-294",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-295",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-296",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-297",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-298",
+      "status": "PASS"
+    },
+    {
+      "name": "generated-json-299",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-01",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token---1",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-+.1",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-.1",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-1.",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-1e",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-1e+",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-truefalse",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-NaN",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-Infinity",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-undefined",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-{x:1}",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-{\"a\":1,}",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-json-token-[1,]",
+      "status": "PASS"
+    }
+  ],
+  "counts": {
+    "passed": 314,
+    "failed": 0,
+    "skipped": 0
+  },
+  "limits": [
+    "Independent synthetic HMAC/JSON/byte-range corpus; no provider, receiver or durable-inbox proof"
+  ]
+}

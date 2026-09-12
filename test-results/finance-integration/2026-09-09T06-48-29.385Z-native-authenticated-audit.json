@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "run_id": "a2043c7a-f740-4336-ba13-f3d09d09cf5d",
+  "suite": "audit",
+  "status": "FAIL",
+  "evidence_layer": "native-real-GoTrue-PostgREST",
+  "target_identity": {
+    "project_id": "hfa-native-01a08335",
+    "api_url": "http://127.0.0.1:59831",
+    "database_port": 55448,
+    "transport": "native-services",
+    "services": [
+      {
+        "service": "auth",
+        "pid": 14355,
+        "port": 59833,
+        "executable_sha256": "1f0f24492845ae411e409eebaddc790b97324f5b398f881dbd493fda34a183e5"
+      },
+      {
+        "service": "rest",
+        "pid": 14357,
+        "port": 59832,
+        "executable_sha256": "3e2beec9c4103f5d97524b01ba892156cf993ffc18e6fc0858b8131bc7be6730"
+      },
+      {
+        "service": "gateway",
+        "pid": 14361,
+        "port": 59831,
+        "executable_sha256": "08dad0581f00a0cabf4d49ec92ca1f25fdfd01c2c18fa8e92b35f04d4c24c164"
+      }
+    ]
+  },
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "scripts/finance-integration/authenticated-smoke.mjs",
+    "--config=<run-private-configuration>",
+    "--suite=audit"
+  ],
+  "exit_code": 1,
+  "commit": "cbd94135481ba2ba28095677a17cef09d8e9525b",
+  "source_sha256": "bd32d4dfb580cad37f1d08bea6ae686e94491a27957984b987b24cb045f9af9b",
+  "schema_bootstrap_sha256": "a20432e496fe09ab788a4c9bd043d043ff385d3ef6ebd7ce89f41da69a8d7ad7",
+  "fixture_seed_sha256": "a1d4779c7210ec51306c2e8a4dd47c60d3c01b93200e096506fc2c1361b6e019",
+  "cases": [
+    {
+      "name": "native run ownership and database identity match",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "auth: native executable and loopback listener verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "rest: native executable and loopback listener verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "gateway: native executable and loopback listener verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "all three native services verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 3,
+      "actual": 3
+    },
+    {
+      "name": "genuine GoTrue auth schema exists",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "restricted: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "owner: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "outsider: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "real REST row cap is exercised",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "FAIL",
+      "expected": {
+        "status": 206,
+        "rows": 1000,
+        "count": 2505
+      },
+      "actual": {
+        "status": 401,
+        "range": null
+      }
+    }
+  ],
+  "counts": {
+    "total": 16,
+    "passed": 15,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "failure": "Assertion failed: real REST row cap is exercised",
+  "started_at": "2026-09-09T06:48:29.385Z",
+  "completed_at": "2026-09-09T06:48:30.530Z",
+  "duration_ms": 1145,
+  "limits": [
+    "Real pinned GoTrue and PostgREST on a run-owned native PostgreSQL cluster; synthetic fixtures only. Native proxy is not Kong or a deployed Edge gateway. No hosted production/provider/business or completed342 dynamic-security review proof."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "observed_at": "2026-09-08T23:16:28.770Z",
+  "layer": "hosted-read-only-Netlify-API",
+  "id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+  "name": "circleoflifealf",
+  "url": "https://circleoflifealf.com",
+  "repo_url": "https://github.com/lewis4x4/Circle-of-Life",
+  "production_branch": "main",
+  "published_deploy": {
+    "id": "6aa054790bc9d700089b72cb",
+    "commit_ref": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+    "state": "ready",
+    "published_at": "2026-09-08T18:33:52.882Z"
+  }
+}

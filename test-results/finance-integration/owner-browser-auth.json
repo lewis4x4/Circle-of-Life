@@ -1,0 +1,12 @@
+{
+  "started_at": "2026-09-09T00:25:56.479Z",
+  "target": "http://127.0.0.1:4317",
+  "layer": "browser-real-local-Auth",
+  "status": "FAIL",
+  "responses": [],
+  "error": "TimeoutError",
+  "alerts": [
+    ""
+  ],
+  "completed_at": "2026-09-09T00:26:41.751Z"
+}

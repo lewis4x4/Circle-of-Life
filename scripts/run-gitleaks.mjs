@@ -10,6 +10,9 @@ import process from "node:process";
 const root = process.cwd();
 const GITLEAKS_PROBE_TIMEOUT_MS = 3_000;
 const DOCKER_PROBE_TIMEOUT_MS = 5_000;
+// Match the verified native CLI: 8.21.2 treats report-path "-" as a literal
+// filename, so it detects the probe but cannot return its JSON on stdout.
+const GITLEAKS_DOCKER_IMAGE = "zricethezav/gitleaks:v8.30.1";
 
 function gitHasCommits() {
   try {
@@ -101,7 +104,7 @@ function assertGenericApiKeyDetector(useBinary) {
           `${root}:/repo`,
           "-w",
           "/repo",
-          "zricethezav/gitleaks:v8.21.2",
+          GITLEAKS_DOCKER_IMAGE,
           ...detectorProbeArgs("/repo/.gitleaks.toml"),
         ],
         { cwd: root, encoding: "utf8", input: GENERIC_API_KEY_PROBE },
@@ -145,7 +148,7 @@ function runGitleaksDocker() {
       `${root}:/repo`,
       "-w",
       "/repo",
-      "zricethezav/gitleaks:v8.21.2",
+      GITLEAKS_DOCKER_IMAGE,
       ...detectArgs,
     ],
     { encoding: "utf8", stdio: "inherit" },

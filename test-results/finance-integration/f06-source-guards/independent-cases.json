@@ -1,0 +1,563 @@
+{
+  "date": "2026-09-09T06:57:03.262Z",
+  "layer": "Actual app/Edge producer and actual registered Edge handler executed via TypeScript/CommonJS VM; synthetic query-semantic transport, not Deno hosting or database/provider proof",
+  "source_sha256": {
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/billing/generate-monthly-invoices.ts": "8bb8f636ba77ce38c3250e219b66a9b0246ce31f58aca28cc09dad98cff127ac",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/billing/generate-monthly-invoices.ts": "9348579072d7b6b44f5cc34fcc71ede7c883b3fe7787cd5fdf78479ee2ad863d",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/generate-monthly-invoices/index.ts": "9877826411b54fa6d1504925b295f911e6181c8af656392fd374a5f486451616",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/cors.ts": "b9aef573def741647d164585c1a38a50f8dc593ca45c527a8d18705bf5360ab4",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/structured-log.ts": "f1ce9faa7d7a912e5f35fc50444098534acc6b0b01cee7135f5bd9330008c527",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/functions/_shared/redact-pii.ts": "322f19217aa7cf85e5e6c6cd058cde84f9d98bfccc76f68ab2f902184e1ebf6b",
+    "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/observability/redact.ts": "00c9cf369ff2d0fc61c9ca20afffe237e6758a31d458a5990a17ca5237a53889"
+  },
+  "driver_sha256": "d446e4f5c4ccf7e83064686f6e21234759e88f947b6d50864a6f00b5be8ec2d5",
+  "passed": 131,
+  "failed": 0,
+  "skipped": 0,
+  "cases": [
+    {
+      "name": "app independently expected charges preserve holds/proration/Medicaid/concessions",
+      "status": "PASS"
+    },
+    {
+      "name": "app historical superseded schedule remains eligible",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete residents null count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete residents missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete residents negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete residents fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete residents string count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete residents null data",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete residents mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete residents query error",
+      "status": "PASS"
+    },
+    {
+      "name": "app actual2501 residents capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_payers null count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_payers missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_payers negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_payers fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_payers string count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_payers null data",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_payers mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_payers query error",
+      "status": "PASS"
+    },
+    {
+      "name": "app actual2501 resident_payers capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete facility_medicaid_providers null count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete facility_medicaid_providers missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete facility_medicaid_providers negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete facility_medicaid_providers fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete facility_medicaid_providers string count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete facility_medicaid_providers null data",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete facility_medicaid_providers mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete facility_medicaid_providers query error",
+      "status": "PASS"
+    },
+    {
+      "name": "app actual2501 facility_medicaid_providers capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_rate_agreements null count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_rate_agreements missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_rate_agreements negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_rate_agreements fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_rate_agreements string count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_rate_agreements null data",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_rate_agreements mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete resident_rate_agreements query error",
+      "status": "PASS"
+    },
+    {
+      "name": "app actual2501 resident_rate_agreements capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete invoices null count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete invoices missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete invoices negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete invoices fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete invoices string count",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete invoices null data",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete invoices mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "app incomplete invoices query error",
+      "status": "PASS"
+    },
+    {
+      "name": "app actual2501 invoices capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "app backend rowcap below requested count is incomplete",
+      "status": "PASS"
+    },
+    {
+      "name": "app facility list null count",
+      "status": "PASS"
+    },
+    {
+      "name": "app facility list missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "app facility list null data",
+      "status": "PASS"
+    },
+    {
+      "name": "app facility list mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "app facility list query error",
+      "status": "PASS"
+    },
+    {
+      "name": "app actual2501facilities with backendcap2000 rejects list",
+      "status": "PASS"
+    },
+    {
+      "name": "app fractional period rejected before queries",
+      "status": "PASS"
+    },
+    {
+      "name": "app persistence returned-error preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "app persistence timeout preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "app persistence missing-ack preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "app persistence malformed-ack preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "app persistence duplicate-then-timeout preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared independently expected charges preserve holds/proration/Medicaid/concessions",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared historical superseded schedule remains eligible",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete residents null count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete residents missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete residents negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete residents fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete residents string count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete residents null data",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete residents mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete residents query error",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared actual2501 residents capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_payers null count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_payers missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_payers negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_payers fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_payers string count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_payers null data",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_payers mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_payers query error",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared actual2501 resident_payers capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete facility_medicaid_providers null count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete facility_medicaid_providers missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete facility_medicaid_providers negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete facility_medicaid_providers fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete facility_medicaid_providers string count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete facility_medicaid_providers null data",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete facility_medicaid_providers mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete facility_medicaid_providers query error",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared actual2501 facility_medicaid_providers capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_rate_agreements null count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_rate_agreements missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_rate_agreements negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_rate_agreements fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_rate_agreements string count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_rate_agreements null data",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_rate_agreements mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete resident_rate_agreements query error",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared actual2501 resident_rate_agreements capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete invoices null count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete invoices missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete invoices negative count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete invoices fractional count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete invoices string count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete invoices null data",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete invoices mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared incomplete invoices query error",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared actual2501 invoices capped rows reject before persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared backend rowcap below requested count is incomplete",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared facility list null count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared facility list missing count",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared facility list null data",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared facility list mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared facility list query error",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared actual2501facilities with backendcap2000 rejects list",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared fractional period rejected before queries",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared persistence returned-error preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared persistence timeout preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared persistence missing-ack preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared persistence malformed-ack preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "edge-shared persistence duplicate-then-timeout preserves acknowledged progress and stable unknown identity",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge organization response resolves max_facilities and full success",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge incomplete residents never persist and block facility",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge incomplete facility listing has no persistence",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge blocked-only organization is not ok",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge truncated organization reports partial rather than full success",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge partial business warning does not report complete success",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge persistence failure preserves known-created truth",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge explicit invalid period types cannot default into invoice writes",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge mixed successful and blocked facilities marks organization partial",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge cross-facility unknown preserves partial organization progress",
+      "status": "PASS"
+    },
+    {
+      "name": "actualEdge logs exclude resident invoice and raw error while authorized response retains unresolved identity",
+      "status": "PASS"
+    }
+  ],
+  "observations": [
+    {
+      "name": "app future-effective payer influences earlier billing period",
+      "period": "2026-05",
+      "payer_effective_date": "2026-06-01",
+      "billing_source": "medicaid_resident_override",
+      "total": 100000,
+      "expected_without_future_payer": 372000,
+      "scope": "Concrete F06 source-selection defect for next bounded fix; not an external blocker or policy waiver"
+    },
+    {
+      "name": "edge-shared future-effective payer influences earlier billing period",
+      "period": "2026-05",
+      "payer_effective_date": "2026-06-01",
+      "billing_source": "medicaid_resident_override",
+      "total": 100000,
+      "expected_without_future_payer": 372000,
+      "scope": "Concrete F06 source-selection defect for next bounded fix; not an external blocker or policy waiver"
+    }
+  ]
+}

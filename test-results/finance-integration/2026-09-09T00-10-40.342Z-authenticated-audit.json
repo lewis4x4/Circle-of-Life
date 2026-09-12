@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "run_id": "c659f03f-dd85-4dd7-8d7f-5b66590fa6f7",
+  "suite": "audit",
+  "status": "FAIL",
+  "evidence_layer": "full-local-GoTrue-PostgREST",
+  "target_identity": {
+    "project_id": "hfa-01a08335",
+    "api_url": "http://127.0.0.1:59321",
+    "database_port": 59322,
+    "containers": [
+      {
+        "service": "db",
+        "container_id": "1ad3eb7f2a3a8fa1a827beceba3a630d500dafc529a80a8af767002ddaed22f5"
+      },
+      {
+        "service": "kong",
+        "container_id": "aa2a8b2fe8cdaea424b2d91ccaa139e5c10a8f159c5d3660c231bed9575ef9e2"
+      },
+      {
+        "service": "auth",
+        "container_id": "d227bed3bc99bcf091ad3724e4f861e9304ab33038fc9021305df528d92bf52e"
+      },
+      {
+        "service": "rest",
+        "container_id": "b7e7584ac5fd9655595927d1bc2a0d92eed76e06e4faf4054896ccb5bcefb3cb"
+      }
+    ]
+  },
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "scripts/finance-integration/authenticated-smoke.mjs",
+    "--config=<run-private-configuration>",
+    "--suite=audit"
+  ],
+  "exit_code": 1,
+  "commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "source_sha256": "4afc41b8d14fd09749bbdc30655618d635f0205400e8789b9b689ec2a9ebd686",
+  "fixture_seed_sha256": "219a3fc13e97ce0c031d6031dbb8315b845ae58a54cc4588220ab97a5a5beb70",
+  "cases": [
+    {
+      "name": "db: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "kong: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "auth: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "rest: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "genuine GoTrue auth schema exists",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "restricted: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "owner: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "FAIL",
+      "expected": 200,
+      "actual": 504
+    }
+  ],
+  "counts": {
+    "total": 10,
+    "passed": 9,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "failure": "Assertion failed: owner: real password sign-in succeeds",
+  "started_at": "2026-09-09T00:10:40.342Z",
+  "completed_at": "2026-09-09T00:11:20.091Z",
+  "duration_ms": 39749,
+  "limits": [
+    "Synthetic isolated local Auth/PostgREST only. Not hosted production, provider or business acceptance."
+  ]
+}
