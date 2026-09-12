@@ -1,0 +1,30 @@
+{
+  "base": "94b1f90a275c6dca7aa1550eeaa7093695a18edf",
+  "origin_main": "50bc07c4c877b65e17f471895e4446ff11c4d69c",
+  "scope": "source only, stacked unmerged HFO branch; hosted proof remains blocked",
+  "isolated_branch": "codex/hfo-col152-reminders",
+  "all_direct_implementation_prerequisites": "Done in live readback",
+  "unresolved": "COL-143 hosted Storage target and credentials; full stack integration and migration-number reconciliation",
+  "prerequisite_source_ancestry": {
+    "codex/hfo-col137-evaluator": {
+      "ancestor": true,
+      "head": "caca9592026dead75ef60e3dbf21b04f73e95850"
+    },
+    "codex/hfo-col148-workspace": {
+      "ancestor": true,
+      "head": "db451440b44ca67662dceb6018844943b42a456c"
+    },
+    "codex/hfo-col145-corrections": {
+      "ancestor": true,
+      "head": "c7dc9efc1ba29f0774b4c94ca819a1ef28cf7358"
+    },
+    "codex/hfo-col146-recovery": {
+      "ancestor": true,
+      "head": "d9f5ffb2bbb57effdff9d9a817e05263534ed28f"
+    },
+    "codex/hfo-col143-evidence": {
+      "ancestor": true,
+      "head": "45ea4ea98c1f3eb7b99622387fcb6f6f73b7cd97"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "run_id": "haven-col152-20260912",
+  "cluster": "stopped",
+  "file_batches": [
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col152-20260912/cleanup-files-0.json",
+      "validated_files": 700,
+      "removed_files": 700,
+      "validation": {
+        "planned_count": 700,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col152-20260912/cleanup-files-1.json",
+      "validated_files": 295,
+      "removed_files": 295,
+      "validation": {
+        "planned_count": 295,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    }
+  ],
+  "removed_empty_run_directories": 27,
+  "retained": "Private cleanup manifests under exact run root; isolated worktree and its development dependencies retained. No sibling artifact removed."
+}
