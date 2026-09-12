@@ -143,6 +143,10 @@ const PROBES = [
     migration: "310",
     args: { p_resident_id: NIL_UUID },
   },
+  // Officer capability catalog door (schema `officer` is not exposed through
+  // PostgREST, so only the service_role door can be probed). An unknown key
+  // raises key_disabled, which proves the function exists and refuses.
+  { kind: "rpc", name: "officer_catalog", args: { p_key_id: "verify-probe" }, migration: "339" },
 ];
 
 async function probeColumn(table, column) {

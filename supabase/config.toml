@@ -485,6 +485,14 @@ verify_jwt = false
 [functions."boldsign-webhook"]
 verify_jwt = false
 
+# Front Office capability federation (D-07). No user session on this path: the
+# caller is identified by the x-fo-* HMAC over the raw body (verified inside the
+# function before the body is parsed), then re-checked in the database against
+# officer.gateway_keys and officer.federated_officers. Design and operator
+# steps: docs/specs/OFFICER-CAPABILITY-CATALOG.md.
+[functions."officer-catalog"]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

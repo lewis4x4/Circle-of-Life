@@ -12,6 +12,12 @@
 --   * Staff/product RPCs: EXECUTE for authenticated (+ service_role where the
 --     repo already granted it), never anon.
 --
+-- Amended 2026-09-12: the four `officer_*` doors from migration 339 are named in
+-- the service-role-only list below. A full ordered replay runs 308 before 339 and
+-- so cannot see them, but a targeted re-run of 308 after 339 would otherwise flip
+-- all four to `authenticated`. Naming them here closes that class outright rather
+-- than relying on file ordering.
+--
 -- Re-run safe: idempotent REVOKE + GRANT sweep.
 
 DO $$
@@ -45,6 +51,16 @@ BEGIN
       fn.proname LIKE '\_%'
       OR fn.proname LIKE 'ai\_tool\_%'
       OR fn.proname IN (
+        -- Officer capability catalog doors (339). These are service_role-only by
+        -- design: the officer-catalog Edge Function is the only caller and it
+        -- verifies a request HMAC first. Without these four names this sweep
+        -- would grant every signed-in Haven user EXECUTE on organization-wide
+        -- aggregate financials, which the catalog design forbids as a MUST.
+        -- supabase/tests/review_officer_catalog.sql is the tripwire either way.
+        'officer_catalog',
+        'officer_execute',
+        'officer_key_secret_env',
+        'officer_record_refusal',
         'bulk_complete_operation_tasks',
         'grace_increment_usage',
         'persist_monthly_invoices_from_preview',

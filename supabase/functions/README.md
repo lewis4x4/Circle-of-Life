@@ -25,6 +25,7 @@
 | `grace-transcribe` | yes | `POST` multipart (audio file) — speech-to-text for Grace voice input. Auth: user JWT. Secrets: **`OPENAI_API_KEY`**. |
 | `grace-tts` | yes | `POST { "text" }` — text-to-speech for Grace narration. Auth: user JWT. Secrets: **`OPENAI_API_KEY`**. |
 | `grace-redteam-nightly` | no | `POST` — nightly red-team safety evaluation of Grace flows. Auth: **`x-cron-secret`** = **`GRACE_REDTEAM_SECRET`**. |
+| `officer-catalog` | no | `POST` `{ "op": "catalog" }` or `{ "op": "execute", ... }` — Front Office capability federation target (`front-office-capability-v1`, target `haven`). Auth: **`x-fo-key-id` / `x-fo-sent-at` / `x-fo-nonce` / `x-fo-signature`** HMAC-SHA256 over the raw body, verified before parsing; then `public.officer_catalog` / `public.officer_execute` (service_role-only doors into schema `officer`, migration **`339`**). Aggregate-only organization-wide reads (`occupied_beds`, `licensed_capacity`, `open_ar_balance`, `billed_revenue_mtd`, `incidents_last_30_days`, `staff_certifications_expiring_30_days`, each with `data.by_facility`) plus the synthetic `command_ping`. Secret named by `officer.gateway_keys.secret_env` (**`OFFICER_GATEWAY_HMAC_FRONT_OFFICE_V1`**). Ships with the key disabled. See `docs/specs/OFFICER-CAPABILITY-CATALOG.md`. |
 
 ## `generate-monthly-invoices` — request body
 
@@ -85,6 +86,7 @@ Do **not** send `facility_id` and `organization_id` together.
 - `OCE_TASK_SCHEDULER_SECRET` — required for `oce-task-scheduler`.
 - `FACILITY_EXPIRATION_SCANNER_SECRET` — required for `facility-expiration-scanner` (header `x-cron-secret`).
 - `GRACE_REDTEAM_SECRET` — required for `grace-redteam-nightly` (header `x-cron-secret`).
+- `OFFICER_GATEWAY_HMAC_FRONT_OFFICE_V1` — HMAC secret (at least 32 bytes) for `officer-catalog` key `front_office_v1`; the database stores only this NAME. Set from a file, never from a shell argument; see `docs/specs/OFFICER-CAPABILITY-CATALOG.md`.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 
