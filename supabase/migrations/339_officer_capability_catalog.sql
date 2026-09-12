@@ -151,7 +151,15 @@ CREATE TABLE IF NOT EXISTS officer.audit_events (
   error_code text NULL
 );
 CREATE INDEX IF NOT EXISTS idx_officer_audit_events_key_time ON officer.audit_events (key_id, occurred_at DESC);
-COMMENT ON TABLE officer.audit_events IS 'Append-only. One row per accepted call (written before the work, same transaction) and one per refusal (written by officer_record_refusal after rollback). Never carries names, figures or parameter values.';
+CREATE INDEX IF NOT EXISTS idx_officer_audit_events_officer_time ON officer.audit_events (officer_ref, occurred_at DESC);
+-- A sustained flood must leave an attributable trace without growing without
+-- bound: rate_limited refusals are recorded at most once per key per UTC
+-- minute (1440 rows per key per day). The explicit UTC cast makes the
+-- expression immutable so the partial unique index can build.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_officer_audit_events_rate_limited_minute
+  ON officer.audit_events (key_id, date_trunc('minute', occurred_at AT TIME ZONE 'UTC'))
+  WHERE outcome = 'refused' AND error_code = 'rate_limited';
+COMMENT ON TABLE officer.audit_events IS 'Append-only. One row per accepted call (written before the work, same transaction) and one per refusal (written by officer_record_refusal after rollback; rate_limited deduplicated to one row per key per minute). Never carries names, figures or parameter values.';
 
 -- Operator-maintained honesty table: which facilities carry live records. Only
 -- Homewood Lodge does today; facilities 001, 002, 004 and 005 hold seeded
@@ -846,7 +854,8 @@ DECLARE
   v_cap officer.capabilities%ROWTYPE;
   v_recent_ok integer;
   v_recent_refused integer;
-  v_recent_officer integer;
+  v_officer_ok integer;
+  v_officer_refused integer;
   v_intent_id uuid;
   v_request_sha256 text;
   v_args_sha256 text;
@@ -878,14 +887,17 @@ BEGIN
   -- checks below then see each other's commits in order.
   PERFORM pg_advisory_xact_lock(hashtextextended('officer_execute:' || p_key_id, 0));
 
-  -- Rate limits: three independent windows over officer.audit_events. A
-  -- rate_limited refusal is never recorded, so no window feeds itself.
-  --   successful work per key (outcome ok or replayed): 60 per minute; recorded
-  --     refusals do not count here, so they cannot starve legitimate traffic;
-  --   refusals per key (outcome refused): 120 per minute, bounding free
-  --     guesses at officer refs and capability names;
-  --   any outcome per officer ref: 30 per minute, so one compromised or
-  --     looping seat cannot starve the other four.
+  -- Rate limits: independent success and refusal windows at two levels over
+  -- officer.audit_events, so recorded refusals never consume a success budget
+  -- and a burst of refusals aimed at one seat cannot lock it out of real work:
+  --   per key:         successes (outcome ok or replayed) 60 per minute;
+  --                    refusals (outcome refused) 120 per minute, bounding
+  --                    free guesses at officer refs and capability names;
+  --   per officer ref: successes 30 per minute; refusals 60 per minute, so one
+  --                    compromised or looping seat cannot starve the other four.
+  -- A rate_limited refusal lands in the refusal windows only, recorded at most
+  -- once per key per minute (see officer_record_refusal), so it cannot lock a
+  -- flooded key out of successful work.
   SELECT count(*) FILTER (WHERE a.outcome IN ('ok', 'replayed')),
          count(*) FILTER (WHERE a.outcome = 'refused')
     INTO v_recent_ok, v_recent_refused
@@ -894,10 +906,12 @@ BEGIN
   IF v_recent_ok >= 60 OR v_recent_refused >= 120 THEN
     PERFORM officer.refuse('rate_limited', 'P0429');
   END IF;
-  SELECT count(*) INTO v_recent_officer
+  SELECT count(*) FILTER (WHERE a.outcome IN ('ok', 'replayed')),
+         count(*) FILTER (WHERE a.outcome = 'refused')
+    INTO v_officer_ok, v_officer_refused
   FROM officer.audit_events a
   WHERE a.officer_ref = p_officer_ref AND a.occurred_at > pg_catalog.now() - interval '1 minute';
-  IF v_recent_officer >= 30 THEN
+  IF v_officer_ok >= 30 OR v_officer_refused >= 60 THEN
     PERFORM officer.refuse('rate_limited', 'P0429');
   END IF;
 
@@ -1020,6 +1034,9 @@ COMMENT ON FUNCTION public.officer_execute(text,uuid,text,text,text,uuid,timesta
 -- Record a refusal after officer_execute rolled back. Called by the Edge
 -- Function only for requests whose HMAC verified, so unauthenticated callers
 -- cannot fill the audit table. Codes are constrained to the published set.
+-- rate_limited is recorded too, deduplicated to one row per key per UTC minute
+-- by the partial unique index, so a flood stays attributable without growing
+-- without bound and adds at most one row per minute to the refusal window.
 CREATE OR REPLACE FUNCTION public.officer_record_refusal(
   p_key_id text,
   p_officer_ref uuid,
@@ -1046,13 +1063,15 @@ BEGIN
   IF p_error_code IS NULL OR p_error_code NOT IN (
     'invalid_contract','invalid_args','idempotency_key_reused','expired_request',
     'key_disabled','capability_denied','principal_unknown','principal_inactive','assurance_required',
-    'replayed_request','version_conflict') THEN
+    'replayed_request','version_conflict','rate_limited') THEN
     RETURN;
   END IF;
   INSERT INTO officer.audit_events (key_id, officer_ref, capability, capability_version, nonce, outcome, error_code)
   VALUES (p_key_id, p_officer_ref,
           CASE WHEN p_capability ~ '^[a-z][a-z0-9_]{0,63}$' THEN p_capability END,
-          p_capability_version, p_nonce, 'refused', p_error_code);
+          p_capability_version, p_nonce, 'refused', p_error_code)
+  ON CONFLICT (key_id, date_trunc('minute', occurred_at AT TIME ZONE 'UTC'))
+    WHERE outcome = 'refused' AND error_code = 'rate_limited' DO NOTHING;
 END;
 $fn$;
 COMMENT ON FUNCTION public.officer_record_refusal(text,uuid,text,integer,uuid,text) IS 'officer-catalog Edge Function only. Writes the refusal audit row that the rolled-back officer_execute could not keep.';

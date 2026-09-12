@@ -61,7 +61,13 @@ export const PUBLISHED_STATUS: Readonly<Record<string, number>> = {
   target_unavailable: 503,
 };
 
-/** Refusals worth an audit row once the signature has verified. Never pre-signature codes, never rate_limited. */
+/**
+ * Refusals worth an audit row once the signature has verified. Never
+ * pre-signature codes. rate_limited is recorded too: the database
+ * deduplicates it to one row per key per minute and it counts only toward
+ * the refusal window, so a flood stays attributable without locking the key
+ * out of successful work.
+ */
 const RECORDED_REFUSALS = new Set([
   "invalid_contract",
   "invalid_args",
@@ -74,7 +80,7 @@ const RECORDED_REFUSALS = new Set([
   "assurance_required",
   "replayed_request",
   "version_conflict",
-  "catalog_stale",
+  "rate_limited",
 ]);
 
 export class OfficerCatalogError extends Error {

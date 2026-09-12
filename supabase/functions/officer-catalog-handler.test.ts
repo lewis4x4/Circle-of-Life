@@ -223,7 +223,7 @@ Deno.test("database refusals map to published codes and are audited; nothing els
     [{ code: "23505", message: "replayed_request" }, 409, "replayed_request", true],
     [{ code: "23505", message: 'duplicate key value violates unique constraint "request_nonces_pkey"' }, 409, "replayed_request", true],
     [{ code: "P0401", message: "expired_request" }, 401, "expired_request", true],
-    [{ code: "P0429", message: "rate_limited" }, 429, "rate_limited", false],
+    [{ code: "P0429", message: "rate_limited" }, 429, "rate_limited", true],
     [{ code: "42501", message: "permission denied for function officer_execute" }, 503, "target_unavailable", false],
     [{ code: "42P01", message: 'relation "officer.residents" does not exist' }, 503, "target_unavailable", false],
     [{ code: "XX000", message: "target_unavailable" }, 503, "target_unavailable", false],

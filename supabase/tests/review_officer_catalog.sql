@@ -356,16 +356,37 @@ END $$;
 -- (3) 60 successes in a minute close the success window for that key.
 INSERT INTO officer.audit_events(key_id,officer_ref,outcome) SELECT 'probe_third',(SELECT stranger FROM oc),'ok' FROM generate_series(1,60);
 SELECT pg_temp.expect('success window','P0429','rate_limited',(SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_third');
--- (4) 30 rows for one officer ref block that seat only; the other seat keeps working on the same key.
-INSERT INTO officer.audit_events(key_id,officer_ref,outcome) SELECT 'probe_second',(SELECT ceo FROM oc),'ok' FROM generate_series(1,30);
-SELECT pg_temp.expect('officer window','P0429','rate_limited',(SELECT ceo FROM oc),'ceo@probe.invalid','ceo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
+-- (4) Per officer, successes and refusals are separate windows too. 59 refusals
+--     aimed at the ceo do not block the ceo's real work; 30 successes do; the
+--     cfo keeps working on the same key throughout.
+INSERT INTO officer.audit_events(key_id,officer_ref,outcome,error_code) SELECT 'probe_second',(SELECT ceo FROM oc),'refused','invalid_args' FROM generate_series(1,59);
 DO $$ DECLARE r jsonb; BEGIN
-  r := pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
+  r := pg_temp.run((SELECT ceo FROM oc),'ceo@probe.invalid','ceo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
+  IF r->>'validity'<>'valid' THEN RAISE EXCEPTION 'refusals aimed at a seat locked it out of real work'; END IF;
+END $$;
+INSERT INTO officer.audit_events(key_id,officer_ref,outcome,error_code) SELECT 'probe_second',(SELECT ceo FROM oc),'refused','invalid_args' FROM generate_series(1,1);
+SELECT pg_temp.expect('officer refusal window','P0429','rate_limited',(SELECT ceo FROM oc),'ceo@probe.invalid','ceo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
+INSERT INTO officer.audit_events(key_id,officer_ref,outcome) SELECT 'probe_second',(SELECT cfo FROM oc),'ok' FROM generate_series(1,30);
+SELECT pg_temp.expect('officer success window','P0429','rate_limited',(SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
+UPDATE officer.federated_officers SET is_active=true, valid_until=NULL WHERE front_office_profile_id=(SELECT coo FROM oc);
+DO $$ DECLARE r jsonb; BEGIN
+  r := pg_temp.run((SELECT coo FROM oc),'coo@probe.invalid','coo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
   IF r->>'validity'<>'valid' THEN RAISE EXCEPTION 'one seat starved another'; END IF;
+END $$;
+-- (5) rate_limited is recorded, deduplicated to one row per key per minute: a flood leaves one row, not none and not one per request.
+DO $$ DECLARE n int; BEGIN
+  FOR n IN 1..25 LOOP PERFORM public.officer_record_refusal('probe_third',(SELECT cfo FROM oc),'occupied_beds',1,gen_random_uuid(),'rate_limited'); END LOOP;
+  IF (SELECT count(*) FROM officer.audit_events WHERE key_id='probe_third' AND error_code='rate_limited') <> 1 THEN RAISE EXCEPTION 'rate_limited rows not deduplicated per key per minute'; END IF;
+  PERFORM public.officer_record_refusal('probe_second',(SELECT cfo FROM oc),'occupied_beds',1,gen_random_uuid(),'rate_limited');
+  IF (SELECT count(*) FROM officer.audit_events WHERE error_code='rate_limited') <> 2 THEN RAISE EXCEPTION 'rate_limited dedup must be per key'; END IF;
+  -- Other refusal codes are not deduplicated.
+  PERFORM public.officer_record_refusal('probe_third',(SELECT cfo FROM oc),'occupied_beds',1,gen_random_uuid(),'invalid_args');
+  PERFORM public.officer_record_refusal('probe_third',(SELECT cfo FROM oc),'occupied_beds',1,gen_random_uuid(),'invalid_args');
+  IF (SELECT count(*) FROM officer.audit_events WHERE key_id='probe_third' AND error_code='invalid_args') <> 2 THEN RAISE EXCEPTION 'ordinary refusals must all be recorded'; END IF;
 END $$;
 -- Nonces older than 15 minutes are pruned on the next call.
 UPDATE officer.request_nonces SET seen_at=now()-interval '16 minutes' WHERE key_id='front_office_v1';
-DO $$ BEGIN PERFORM pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second'); END $$;
+DO $$ BEGIN PERFORM pg_temp.run((SELECT coo FROM oc),'coo@probe.invalid','coo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second'); END $$;
 DO $$ BEGIN IF EXISTS (SELECT 1 FROM officer.request_nonces WHERE key_id='front_office_v1') THEN RAISE EXCEPTION 'stale nonces not pruned'; END IF; END $$;
 
 ROLLBACK;
