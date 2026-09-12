@@ -38,11 +38,34 @@ describe('Stand Up facility identity', () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, facilities: [] }); render(<StandUpWorkspace />);
     await screen.findByText('No facility assignment'); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
   });
-  it('rejects another actor cached facility, but honors a validated explicit selection', async () => {
-    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'different' });
+  it('rejects another actor cached facility, but honors a validated explicit selection from the open period', async () => {
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'different', selectedReportingPeriod: '2026-09-14' });
     const view = await start(); expect(useFacilityStore.getState().selectedFacilityId).toBeNull(); view.unmount();
-    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u' }); render(<StandUpWorkspace />);
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u', selectedReportingPeriod: '2026-09-14' }); render(<StandUpWorkspace />);
     await screen.findByLabelText('Current census'); expect(screen.getByRole('heading', { name: 'Oakridge' })).toBeInTheDocument();
+  });
+  it('lands a multi-grant account on All facilities when the reporting period has changed since the choice', async () => {
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u', selectedReportingPeriod: '2026-09-07' });
+    const view = await start(); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+    expect(useFacilityStore.getState().selectedFacilityId).toBeNull(); expect(screen.getByLabelText('Reporting facility')).toHaveValue(''); view.unmount();
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u', selectedReportingPeriod: null }); render(<StandUpWorkspace />);
+    await screen.findByRole('heading', { name: 'All facilities' }); expect(useFacilityStore.getState().selectedFacilityId).toBeNull();
+  });
+  it('stamps the open period when an ALF is chosen so the same period keeps the choice', async () => {
+    await start(); await choose('b');
+    expect(useFacilityStore.getState()).toMatchObject({ selectedFacilityId: 'b', selectedReportingPeriod: '2026-09-14' });
+  });
+  it('keeps a single-grant account on its facility whatever period was stored', async () => {
+    useFacilityStore.setState({ selectedFacilityId: 'b', facilitiesCacheUserId: 'u', selectedReportingPeriod: '2026-08-31' });
+    mocks.request.mockResolvedValueOnce({ ...workspace, facilities: [workspace.facilities[1]] });
+    render(<StandUpWorkspace />); await screen.findByLabelText('Current census');
+    expect(screen.getByRole('heading', { name: 'Oakridge' })).toBeInTheDocument(); expect(useFacilityStore.getState().selectedFacilityId).toBe('b');
+  });
+  it('rejects a save for an ALF outside the grant and removes the editable surface', async () => {
+    await start(); await choose(); changeCensus('9');
+    mocks.request.mockRejectedValueOnce(new StandUpRequestError('Stand Up access denied', 403)); save();
+    await screen.findByText(/Your access changed/); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+    expect(mocks.request.mock.calls.at(-1)?.[0]).toBe('save');
   });
   it('vetoes dirty shell and meeting changes before moving the context', async () => {
     await start(); await choose(); changeCensus('25');
@@ -99,7 +122,7 @@ describe('Stand Up capture, autosave and review', () => {
   it('labels imported complete data as unreviewed and requires explicit named submission', async () => {
     const values = Object.fromEntries(Object.keys(emptyValues()).map(key => [key, 0])) as StandUpReport['values']; values.overtime_reported = 17.15;
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values, entry_origin: 'imported' })] });
-    await start(); await choose(); expect(screen.getByText('Imported — awaiting review')).toBeInTheDocument();
+    await start(); await choose(); expect(screen.getByText('Imported, awaiting review')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
     expect(within(screen.getByLabelText('Review report')).getByText('17h 15m')).toBeInTheDocument();
     expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
@@ -180,9 +203,59 @@ describe('Stand Up capture, autosave and review', () => {
   });
   it('shows the raw invalid duration and refuses unrelated autosave until explicitly corrected', async () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: { ...emptyValues(), overtime_reported: 15.65 } })] });
-    await start(); await choose(); expect(screen.getByText(/saved overtime notation 15.65 needs review/)).toBeInTheDocument();
+    await start(); await choose(); expect(screen.getByRole('alert')).toHaveTextContent(/saved overtime notation 15.65 needs review/);
     changeCensus('20'); save(); await screen.findByText('Correct the saved overtime with explicit hours and minutes before saving.');
     expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+  });
+  it('attaches the overtime review error to both inputs and says plainly that saving is blocked', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: { ...emptyValues(), overtime_reported: 15.65 } })] });
+    await start(); await choose();
+    for (const name of ['Overtime hours', 'Overtime minutes']) {
+      const input = screen.getByLabelText(name);
+      expect(input).toHaveAttribute('aria-invalid', 'true'); expect(input).toHaveAttribute('aria-describedby', 'overtime-review');
+    }
+    const message = document.getElementById('overtime-review'); expect(message).not.toBeNull();
+    expect(message).toHaveTextContent('The saved overtime notation 15.65 needs review. Enter hours and minutes. Until then this report cannot be saved, including autosave of other figures, or submitted.');
+    fireEvent.change(screen.getByLabelText('Overtime hours'), { target: { value: '16' } }); fireEvent.change(screen.getByLabelText('Overtime minutes'), { target: { value: '5' } });
+    mocks.request.mockResolvedValueOnce(report({ version: 2, values: { ...emptyValues(), overtime_reported: 16.05 } })); save(); await screen.findByText(/Saved Sep 14/);
+    expect(screen.getByLabelText('Overtime hours')).not.toHaveAttribute('aria-invalid');
+  });
+  it('counts a held raw notation as not provided in the overview, the sticky bar and the review', async () => {
+    const values = Object.fromEntries(Object.keys(emptyValues()).map(key => [key, 1])) as StandUpReport['values']; values.overtime_reported = 15.65;
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values })] });
+    await start();
+    const row = screen.getByRole('row', { name: /Homewood/ }); expect(row).toHaveTextContent('15/16 provided'); expect(row).toHaveTextContent('Needs duration review'); expect(row).toHaveTextContent('Draft');
+    await choose(); expect(screen.getByText(/15\/16 provided · Open beds/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Overtime hours'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
+    expect(screen.getByText('Still needed: Overtime last week.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Submit Homewood for/ })).toBeDisabled();
+  });
+  it('names why a reference figure is absent instead of calling a held import not provided', async () => {
+    const prior = report({ id: 'prior', week_start: '2026-09-07', values: { ...emptyValues(), current_total_census: 34, monthly_rent_roll_cents: 9645385 }, entry_origin: 'imported', field_dispositions: { overtime_reported: 'historical_unit_unconfirmed' } });
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [prior] });
+    await start(); await choose();
+    expect(screen.getByText('September 7, 2026: Held: unit unconfirmed')).toBeInTheDocument();
+    expect(screen.getByText('September 7, 2026: $96,453.85')).toBeInTheDocument();
+    expect(screen.getAllByText('September 7, 2026: Not provided').length).toBeGreaterThan(0);
+    fireEvent.change(screen.getByLabelText('Reporting facility'), { target: { value: '' } }); await screen.findByRole('heading', { name: 'All facilities' });
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
+    const row = screen.getByRole('row', { name: /Homewood/ }); expect(row).toHaveTextContent('Held: unit unconfirmed'); expect(row).toHaveTextContent('Imported, awaiting review');
+    expect(screen.getByRole('row', { name: /Oakridge/ })).toHaveTextContent('No report');
+  });
+  it('links the shared workbook from recovery with the internet-outage line and labels the management inputs', async () => {
+    mocks.auth.appRole = 'owner';
+    mocks.request.mockResolvedValueOnce({ ...workspace, can_import: true, reports: [report()] });
+    await start(); await choose();
+    fireEvent.click(screen.getByRole('button', { name: 'Spreadsheet recovery and backup' }));
+    const link = screen.getByRole('link', { name: 'Open the shared Stand Up workbook' });
+    expect(link).toHaveAttribute('href', 'https://docs.google.com/spreadsheets/d/1rUozaY9YLhD77lS_jjdRbUW2LsdvgS1r/edit');
+    expect(screen.getByText(/No internet: use the JSON or CSV backup you downloaded last week\./)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Download JSON backup' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Management tools' }));
+    expect(screen.getByLabelText('Import batch ID')).toHaveAttribute('id', 'import-batch-id');
+    expect(screen.getByLabelText('Reason for reversal')).toHaveAttribute('id', 'import-reversal-reason');
+    expect(screen.getByLabelText('Prepared historical import file')).toBeInTheDocument();
   });
   it('reloads a legacy SPA entry before enabling edits, but permits a verified document entry', async () => {
     Object.defineProperty(window, 'navigation', { configurable: true, value: undefined });
@@ -200,6 +273,23 @@ describe('Stand Up capture, autosave and review', () => {
     expect(screen.getByText(/Submission timing was not recorded/)).toBeInTheDocument(); expect(screen.queryByText(/target has passed/)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
     expect(screen.queryByText(/target has passed|Past target/)).not.toBeInTheDocument();
+  });
+  it('keeps historical figures readable but read-only until a reasoned correction is opened', async () => {
+    mocks.auth.appRole = 'owner';
+    mocks.request.mockResolvedValueOnce({ ...workspace, can_import: true, reports: [report({ id: 'old', week_start: '2026-09-07', values: { ...emptyValues(), current_total_census: 41 } })] });
+    await start(); await choose();
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
+    const census = screen.getByLabelText('Current census');
+    expect(census).toHaveValue(41); expect(census).toHaveAttribute('readonly'); expect(census).toBeEnabled();
+    expect(screen.getByLabelText('Overtime hours')).toHaveAttribute('readonly');
+    expect(screen.getByText(/Figures are read-only/)).toBeInTheDocument();
+    fireEvent.change(census, { target: { value: '42' } }); expect(screen.getByLabelText('Current census')).toHaveValue(41);
+    expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled(); expect(screen.getByRole('button', { name: 'Review and submit' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Make a correction with a recorded reason'));
+    expect(screen.getByLabelText('Current census')).not.toHaveAttribute('readonly');
+    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '42' } }); expect(screen.getByLabelText('Current census')).toHaveValue(42);
+    expect(screen.getByText('Unsaved changes')).toBeInTheDocument(); expect(screen.getByLabelText('Correction reason')).toBeInTheDocument();
   });
   it('keeps technical imports out of facility-admin entry', async () => {
     await start(); await choose(); expect(screen.queryByRole('button', { name: 'Management tools' })).not.toBeInTheDocument();

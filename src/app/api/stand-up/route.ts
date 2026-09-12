@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { standUpCommand } from '@/lib/stand-up/server';
 
 export const runtime = 'nodejs';
-const ACTIONS = new Set(['workspace', 'save', 'export', 'preview_recovery', 'commit_recovery', 'stage_import', 'commit_import', 'reverse_import']);
+const ACTIONS = new Set(['workspace', 'save', 'export', 'revisions', 'preview_recovery', 'commit_recovery', 'stage_import', 'commit_import', 'reverse_import']);
 
 function trustedOrigin(origin: string, request: Request): boolean {
   // Netlify can expose an internal URL to the handler. Use deployment-owned

@@ -32,6 +32,10 @@ FRONT_OFFICE = "https://wecsjfiituxlityaacba.supabase.co/functions/v1/ingest"
 PREFIXES = dict(zip(FACILITIES, ("homewood", "oakridge", "rising_oaks", "plantation", "grande_cypress")))
 HISTORY_REFRESH_INTERVAL = timedelta(hours=6)
 CURRENT_REFRESH_SECONDS = 240
+# Shared vocabulary: docs/specs/26-stand-up-field-state-vocabulary.md.
+FIELD_STATE_VERSION = 1
+FIELD_STATE_CODES = {"provided": 0, "not_provided": 1, "held_unit_unconfirmed": 2, "needs_duration_review": 3, "source_held": 4}
+HELD_UNIT_DISPOSITION = "historical_unit_unconfirmed"
 
 
 class BridgeError(RuntimeError):
@@ -261,12 +265,38 @@ def file_target(mode):
     return rehearsal
 
 
+def field_dispositions(report):
+    """Stored import dispositions for metrics that are still null; never inferred."""
+    dispositions = report.get("field_dispositions")
+    if dispositions is None:
+        return None
+    if not isinstance(dispositions, dict) or any(not isinstance(k, str) or not isinstance(v, str) for k, v in dispositions.items()):
+        raise BridgeError("Unexpected source field dispositions")
+    return dispositions
+
+
+def field_state(report, key, overtime_issue):
+    """One token per metric, derived only from the exported report (spec section 4.1)."""
+    if key == "overtime_reported" and overtime_issue:
+        return "needs_duration_review"
+    if report["values"][key] is None:
+        if (field_dispositions(report) or {}).get(key) == HELD_UNIT_DISPOSITION:
+            return "held_unit_unconfirmed"
+        return "not_provided"
+    return "provided"
+
+
 def source_payload(workspace, facility_map, week, sequence, now=None):
     reports = [r for r in workspace["reports"] if r["week_start"] == week.isoformat()]
     by_facility = {r["facility_id"]: r for r in reports}
     if len(by_facility) != len(reports):
         raise BridgeError("Duplicate source facility/week")
     rows = [{"metric": "week_of_day", "value": (week - date(1970, 1, 1)).days}, {"metric": "expected_facilities", "value": 5}]
+    # States are published only when every report carries stored dispositions;
+    # otherwise the payload is legacy and the consumer derives what it can.
+    versioned = all(field_dispositions(r) is not None for r in reports)
+    if versioned:
+        rows.append({"metric": "field_state_version", "value": FIELD_STATE_VERSION})
     times = []
     for name in FACILITIES:
         prefix = PREFIXES[name]
@@ -313,6 +343,9 @@ def source_payload(workspace, facility_map, week, sequence, now=None):
                 if isinstance(value, bool) or not isinstance(value, (int, float)):
                     raise BridgeError("Non-numeric aggregate refused")
                 rows.append({"metric": prefix + "_" + key, "value": value})
+        if versioned:
+            for key in KEYS:
+                rows.append({"metric": prefix + "_" + key + "_state", "value": FIELD_STATE_CODES[field_state(report, key, issue)]})
     observed_at = now or datetime.now(timezone.utc)
     as_of = min([observed_at, *times]) if times else observed_at
     return {"source": "col", "dataset": "standup_weekly", "contractVersion": 1, "batchId": str(uuid.uuid4()), "sequence": sequence, "sourceAsOf": as_of.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), "mode": "full", "complete": True, "rows": rows}

@@ -340,6 +340,61 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(payload['sourceAsOf'], '2026-09-07T12:00:00.000Z')
         self.assertNotIn('updated_at', json.dumps(payload))
 
+    def test_field_states_published_for_every_metric_when_dispositions_are_stored(self):
+        data = workspace()
+        held = {**dict.fromkeys(KEYS), 'monthly_rent_roll_cents': 9645385, 'current_total_census': 34}
+        data['reports'][0].update(values=held, entry_origin='imported', overtime_minutes=None, overtime_issue=False,
+                                  field_dispositions={'overtime_reported': 'historical_unit_unconfirmed'})
+        data['reports'].append({'facility_id': MAP['Oakridge'], 'week_start': '2026-09-07', 'status': 'draft', 'version': 2, 'source_as_of': None,
+                                'values': {**dict.fromkeys(KEYS), 'current_total_census': 49, 'overtime_reported': 15.65}, 'entry_origin': 'manual',
+                                'overtime_minutes': None, 'overtime_issue': True, 'field_dispositions': {}})
+        data['reports'].append({'facility_id': MAP['Rising Oaks'], 'week_start': '2026-09-07', 'status': 'draft', 'version': 1, 'source_as_of': None,
+                                'values': {**dict.fromkeys(KEYS), 'current_total_census': 49, 'overtime_reported': 1.42}, 'entry_origin': 'manual',
+                                'overtime_minutes': 102, 'overtime_issue': False, 'field_dispositions': {}})
+        data['reports'].append({'facility_id': MAP['Plantation'], 'week_start': '2026-09-07', 'status': 'draft', 'version': 1, 'source_as_of': None,
+                                'values': dict.fromkeys(KEYS), 'entry_origin': 'initialized', 'overtime_minutes': None, 'overtime_issue': False, 'field_dispositions': {}})
+        rows = {r['metric']: r['value'] for r in source_payload(data, MAP, date(2026, 9, 7), 1)['rows']}
+        self.assertEqual(rows['field_state_version'], 1)
+        self.assertEqual(rows['homewood_overtime_reported_state'], 2)  # held_unit_unconfirmed, raw value never converted
+        self.assertNotIn('homewood_overtime_reported', rows)
+        self.assertEqual(rows['homewood_monthly_rent_roll_cents_state'], 0)
+        self.assertEqual(rows['homewood_callouts_last_week_state'], 1)
+        self.assertEqual(rows['oakridge_overtime_reported_state'], 3)  # needs_duration_review keeps the raw 15.65 beside it
+        self.assertEqual(rows['oakridge_overtime_reported'], 15.65)
+        self.assertEqual(rows['oakridge_overtime_issue'], 1)
+        self.assertEqual(rows['rising_oaks_overtime_reported_state'], 0)
+        self.assertEqual(rows['rising_oaks_overtime_minutes'], 102)
+        self.assertEqual(rows['plantation_reported'], 0)  # initialized baseline: no report, so no state rows
+        self.assertFalse(any(m.startswith('plantation_') and m.endswith('_state') for m in rows))
+        self.assertFalse(any(m.startswith('grande_cypress_') and m.endswith('_state') for m in rows))
+        for prefix in ('homewood', 'oakridge', 'rising_oaks'):
+            self.assertEqual(sum(1 for m in rows if m.startswith(prefix + '_') and m.endswith('_state')), len(KEYS))
+        self.assertTrue(all(v in (0, 1, 2, 3, 4) for m, v in rows.items() if m.endswith('_state')))
+
+    def test_legacy_haven_without_dispositions_publishes_no_states(self):
+        rows = {r['metric']: r['value'] for r in source_payload(workspace(), MAP, date(2026, 9, 7), 1)['rows']}
+        self.assertNotIn('field_state_version', rows)
+        self.assertFalse(any(m.endswith('_state') for m in rows))
+        mixed = workspace()
+        mixed['reports'][0]['field_dispositions'] = {}
+        mixed['reports'].append({**mixed['reports'][0], 'facility_id': MAP['Oakridge']})
+        del mixed['reports'][1]['field_dispositions']
+        rows = {r['metric']: r['value'] for r in source_payload(mixed, MAP, date(2026, 9, 7), 1)['rows']}
+        self.assertNotIn('field_state_version', rows)
+        self.assertFalse(any(m.endswith('_state') for m in rows))
+
+    def test_malformed_dispositions_are_refused(self):
+        data = workspace()
+        data['reports'][0]['field_dispositions'] = ['historical_unit_unconfirmed']
+        with self.assertRaisesRegex(BridgeError, 'field dispositions'):
+            source_payload(data, MAP, date(2026, 9, 7), 1)
+
+    def test_empty_week_with_dispositions_everywhere_is_versioned_without_state_rows(self):
+        payload = source_payload({'reports': []}, MAP, date(2026, 9, 14), 1, datetime(2026, 9, 13, 12, tzinfo=timezone.utc))
+        rows = {r['metric']: r['value'] for r in payload['rows']}
+        self.assertEqual(rows['field_state_version'], 1)
+        self.assertFalse(any(m.endswith('_state') for m in rows))
+
     def test_unknown_historic_asof_not_import_time(self):
         data = workspace()
         data['reports'][0]['source_as_of'] = None

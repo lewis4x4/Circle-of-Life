@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useHavenAuth } from '@/contexts/haven-auth-context';
-import { useFacilityStore } from '@/hooks/useFacilityStore';
+import { selectionBelongsToPeriod, useFacilityStore } from '@/hooks/useFacilityStore';
 import { useRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
-import { dateLabel, reportDeadlineState, derivedValues, dollars, easternTime, metricDisplay, reportState, staffingPeriod, shiftDay, type StandUpReport } from '@/lib/stand-up/model';
+import { dateLabel, reportDeadlineState, derivedValues, easternTime, fieldDisplay, reportState, staffingPeriod, shiftDay, FIELD_STATE_TEXT, type StandUpReport } from '@/lib/stand-up/model';
 import { StandUpEditor } from './editor';
 import { HistoricalImports } from './imports';
 import { StandUpRequestError, standUpRequest } from './transport';
@@ -48,10 +48,11 @@ function StandUpSession({ userId }: { userId: string }) {
       if (initial) {
         setWeek(data.current_week);
         const current = useFacilityStore.getState();
-        // A cached choice belongs to its actor. The authorized response always
-        // validates it again before any form is mounted.
+        // A cached choice belongs to its actor and to one reporting period. The
+        // authorized response always validates it again before any form is mounted,
+        // and an account with more than one grant chooses again each new Monday.
         if (data.facilities.length === 1) current.setSelectedFacility(data.facilities[0].id);
-        else if (current.facilitiesCacheUserId !== userId || !data.facilities.some(f => f.id === current.selectedFacilityId)) current.setSelectedFacility(null);
+        else if (current.facilitiesCacheUserId !== userId || !data.facilities.some(f => f.id === current.selectedFacilityId) || !selectionBelongsToPeriod(current.selectedReportingPeriod, data.current_week)) current.setSelectedFacility(null);
         hydrated.current = true;
       }
     } catch (cause) {
@@ -72,6 +73,8 @@ function StandUpSession({ userId }: { userId: string }) {
     return () => { mounted.current = false; invalidate(); clearInterval(clock); clearInterval(refresh); window.removeEventListener('focus', focus); };
   }, [reload]);
   useLayoutEffect(() => useFacilityStore.getState().registerFacilityChangeGuard(() => guard.current()), []);
+  const currentWeek = workspace?.current_week;
+  useEffect(() => { if (hydrated.current && selectedId && currentWeek) useFacilityStore.getState().stampSelectionPeriod(currentWeek); }, [selectedId, currentWeek]);
   const bindGuard = useCallback((next: (silent?: boolean) => boolean) => { guards.current.add(next); return () => { guards.current.delete(next); }; }, []);
   const accept = useCallback((saved: StandUpReport) => {
     if (!mounted.current) return;
@@ -84,7 +87,7 @@ function StandUpSession({ userId }: { userId: string }) {
   const currentReports = workspace?.reports.filter(report => report.week_start === week) ?? [];
   const weeks = workspace ? [...new Set([workspace.current_week, ...workspace.reports.map(report => report.week_start)])].sort().reverse() : [];
   const late = !!workspace && workspace.facilities.some(facility => reportDeadlineState(currentReports.find(report => report.facility_id === facility.id), week, workspace.current_week, now) === 'past_target');
-  return <main className="mx-auto max-w-6xl space-y-6 p-4 pb-12 md:p-6">
+  return <div className="mx-auto max-w-6xl space-y-6 p-4 pb-12 md:p-6">
     <header className="flex flex-wrap items-start justify-between gap-4">
       <div><p className="text-xs font-medium text-muted-foreground">MONDAY OPERATIONS</p><h1 className="mt-1 text-2xl font-semibold">Weekly Stand Up</h1><p className="mt-2 text-sm text-muted-foreground">Complete by 8:45 a.m. Eastern · Management call at 9:15 a.m.</p></div>
       {workspace && <Button variant="outline" disabled={loading || routePending} onClick={() => { if (guard.current()) void reload(false); }}>Refresh reports</Button>}
@@ -102,12 +105,12 @@ function StandUpSession({ userId }: { userId: string }) {
         {!selected && <section aria-label="Reporting coverage" className="space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="text-lg font-semibold">Facility reports</h2><p className="text-sm">{currentReports.filter(report => report.status === 'ready').length} of {workspace.facilities.length} submitted{late ? ' · Haven submission target has passed' : week === workspace.current_week ? ' · Monday target: 8:45 a.m.' : ' · historical reports'}</p></div>
           <p className="text-sm text-muted-foreground">Choose the ALF you are reporting for. Populated figures still need administrator review before submission.</p>
-          <div className="overflow-x-auto rounded border border-border" role="region" aria-label="Facility reporting overview" tabIndex={0}><table className="w-full text-left text-sm"><caption className="sr-only">Facility status and current reported operating figures</caption><thead className="bg-muted/40"><tr>{['Facility', 'Report status', 'Census', 'Open beds', 'Monthly rent roll', 'Overtime', ''].map((label, i) => <th key={i} scope="col" className="p-3 font-medium">{label || <span className="sr-only">Open report</span>}</th>)}</tr></thead><tbody>{workspace.facilities.map(facility => { const report = currentReports.find(item => item.facility_id === facility.id); const derived = report && derivedValues(report.values); return <tr key={facility.id} className="border-t border-border"><th scope="row" className="min-w-40 p-3 font-medium">{facility.name}</th><td className="min-w-44 p-3"><span>{reportState(report)}</span><span className="mt-1 block text-xs text-muted-foreground">{derived?.completed_fields ?? 0}/16 provided{reportDeadlineState(report, week, workspace.current_week, now) === 'past_target' ? ' · Haven submission target passed' : reportDeadlineState(report, week, workspace.current_week, now) === 'timing_unknown' ? ' · Submission timing not recorded' : ''}</span>{report && <span className="mt-1 block text-xs text-muted-foreground">Saved {easternTime(report.updated_at)}</span>}</td><td className="p-3 tabular-nums">{report?.values.current_total_census ?? '—'}</td><td className="p-3 tabular-nums">{derived?.total_beds_open ?? '—'}</td><td className="whitespace-nowrap p-3 tabular-nums">{dollars(report?.values.monthly_rent_roll_cents ?? null)}</td><td className="whitespace-nowrap p-3 tabular-nums">{metricDisplay('overtime_reported', report?.values.overtime_reported ?? null)}</td><td className="p-3"><Button variant="outline" onClick={() => setSelectedFacility(facility.id)} aria-label={`Open ${facility.name} report`}>Open report</Button></td></tr>; })}</tbody></table></div>
+          <div className="overflow-x-auto rounded border border-border" role="region" aria-label="Facility reporting overview" tabIndex={0}><table className="w-full text-left text-sm"><caption className="sr-only">Facility status and current reported operating figures</caption><thead className="bg-muted/40"><tr>{['Facility', 'Report status', 'Census', 'Open beds', 'Monthly rent roll', 'Overtime', ''].map((label, i) => <th key={i} scope="col" className="p-3 font-medium">{label || <span className="sr-only">Open report</span>}</th>)}</tr></thead><tbody>{workspace.facilities.map(facility => { const report = currentReports.find(item => item.facility_id === facility.id); const derived = report && derivedValues(report.values); return <tr key={facility.id} className="border-t border-border"><th scope="row" className="min-w-40 p-3 font-medium">{facility.name}</th><td className="min-w-44 p-3"><span>{reportState(report)}</span><span className="mt-1 block text-xs text-muted-foreground">{derived?.completed_fields ?? 0}/16 provided{reportDeadlineState(report, week, workspace.current_week, now) === 'past_target' ? ' · Haven submission target passed' : reportDeadlineState(report, week, workspace.current_week, now) === 'timing_unknown' ? ' · Submission timing not recorded' : ''}</span>{report && <span className="mt-1 block text-xs text-muted-foreground">Saved {easternTime(report.updated_at)}</span>}</td><td className="p-3 tabular-nums">{fieldDisplay(report, 'current_total_census')}</td><td className="p-3 tabular-nums">{derived?.total_beds_open ?? (reportState(report) === 'Not started' ? FIELD_STATE_TEXT.no_report : FIELD_STATE_TEXT.not_provided)}</td><td className="whitespace-nowrap p-3 tabular-nums">{fieldDisplay(report, 'monthly_rent_roll_cents')}</td><td className="whitespace-nowrap p-3 tabular-nums">{fieldDisplay(report, 'overtime_reported')}</td><td className="p-3"><Button variant="outline" onClick={() => setSelectedFacility(facility.id)} aria-label={`Open ${facility.name} report`}>Open report</Button></td></tr>; })}</tbody></table></div>
           <p className="text-xs text-muted-foreground">Blank figures are not zero. Reported figures have not yet been checked against payroll or other operating records.</p>
         </section>}
         {selected && hydrated.current && <StandUpEditor key={`${selected.id}:${week}`} facility={selected} week={week} currentWeek={workspace.current_week} report={currentReports.find(report => report.facility_id === selected.id)} reports={workspace.reports} recoveries={(workspace.pending_recoveries ?? []).filter(item => item.facility_id === selected.id && item.week_start === week)} canManage={canManage} userId={userId} now={now} onSaved={accept} onDenied={deny} bindGuard={bindGuard} onReload={() => reload(false)} />}
         {canManage && <section className="border-t border-border pt-4"><Button variant="ghost" disabled={routePending} aria-expanded={tools} onClick={() => { if (guard.current()) setTools(value => !value); }}>{tools ? 'Close management tools' : 'Management tools'}</Button>{tools && <HistoricalImports onReload={() => reload(false)} bindGuard={bindGuard} onDenied={deny} />}</section>}
       </>}
     </>}
-  </main>;
+  </div>;
 }

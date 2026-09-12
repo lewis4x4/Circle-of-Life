@@ -22,6 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { STAND_UP_WORKBOOK_URL, STAND_UP_WORKBOOK_LINK_TEXT } from "@/lib/stand-up/model";
 import { Card, CardContent } from "@/components/ui/card";
 
 const SIGN_IN_UNAVAILABLE_MESSAGE =
@@ -278,6 +279,7 @@ export default function LoginPage() {
           {sessionProbeError ? (
             <div className="rounded-lg border border-amber-600/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
               {sessionProbeError}
+              <p className="mt-2">Stand Up administrators during a Haven outage: <a className="underline underline-offset-2" href={STAND_UP_WORKBOOK_URL} target="_blank" rel="noopener noreferrer">{STAND_UP_WORKBOOK_LINK_TEXT}</a>.</p>
             </div>
           ) : null}
 
@@ -359,6 +361,9 @@ export default function LoginPage() {
                       <p className="text-center text-sm font-medium text-red-200">
                         {globalError}
                       </p>
+                      {globalError === SIGN_IN_UNAVAILABLE_MESSAGE && (
+                        <p className="mt-2 text-center text-xs text-red-100">Stand Up administrators during a Haven outage: <a className="underline underline-offset-2" href={STAND_UP_WORKBOOK_URL} target="_blank" rel="noopener noreferrer">{STAND_UP_WORKBOOK_LINK_TEXT}</a>.</p>
+                      )}
                     </div>
                   )}
 
