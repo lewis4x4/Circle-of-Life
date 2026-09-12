@@ -2,7 +2,7 @@
 
 **This folder is the single source of truth for building Haven.** When spec content conflicts with the roadmap overview, trust these specs.
 
-**Unified forward roadmap (all tracks + proposed work):** [UNIFIED-ROADMAP.md](./UNIFIED-ROADMAP.md) — includes **Track F (Employee Workspace & Office Suite)**. The integrated repository has **328 migration files** covering numbered sequence **`001`–`325`**. The hosted ledger is recorded through **`318`**; remediation migrations **`319`–`325`** are pending. Next free: **`326`**.
+**Unified forward roadmap (all tracks + proposed work):** [UNIFIED-ROADMAP.md](./UNIFIED-ROADMAP.md) — includes **Track F (Employee Workspace & Office Suite)**. The integrated repository has **342 migration files** covering numbered sequence **`001`–`339`**. The hosted ledger is recorded through **`338`** (Stand Up review fixes); **`339`** (officer capability catalog) is pending. Next free: **`340`**.
 
 ## Supabase Project
 
@@ -12,7 +12,7 @@
 
 ## Current state (reconciled 2026-09-06)
 
-**Repo migrations:** **328 files**, numbered sequence **`001`–`325`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release. Next free file: **`326`**.
+**Repo migrations:** **342 files**, numbered sequence **`001`–`339`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release. Next free file: **`340`**.
 
 **Remote migration parity:** The hosted ledger is recorded through **`318`**. Remediation migrations **`319`–`325`** are not yet deployed. Re-run `npm run migrations:verify:remote` after controlled apply. Historical closeout notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
@@ -36,7 +36,7 @@
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`326`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`340`** — use for all new DDL after updating this README and the relevant spec.
 
 **Executive Standup status:** Board-packet track is in repo: workbook import jobs + importer script, packet archive + compare workflow, close/publish gating, premium board packet composition, authenticated PDF route, storage-backed packet PDF artifact persistence, and packet PDF smoke validation. Remote parity now depends on applying migrations `185`–`193`, especially the `report-exports` storage bucket in migration `193`.
 
@@ -540,6 +540,7 @@ Per-org provider routing is stored in **`ai_invocation_policies`**.
 | `098`–`101`, `107` | Resident Assurance Engine (schema, RLS, audit, seed, patch) |
 | `102`–`106` | Reporting module (`26-reporting-module.md`) |
 | `108`–`109` | Onboarding (responses + question tiers) |
+| `339` | Officer capability catalog — Front Office capability federation target (`docs/specs/OFFICER-CAPABILITY-CATALOG.md`; schema `officer`, Edge Function `officer-catalog`) |
 | **`326`+** | **Next** — expansion, regulatory intel, maintenance, digital twin, Phase 8 AI/ambient (renumber specs before DDL) |
 
 Phase 3 Core (`047`–`049`) is **shipped**; the “Phase 3 remaining” wording is obsolete for execution — use the closeout tracks for acceptance and hardening.
