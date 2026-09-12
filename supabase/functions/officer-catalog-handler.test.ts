@@ -99,6 +99,35 @@ Deno.test("method, content type and header gates answer before any database call
   assertEquals(calls.length, 0);
 });
 
+Deno.test("malformed key id, sent-at, nonce or signature are rejected before any secret lookup or signing", async () => {
+  const { rpc, calls } = fakeRpc({});
+  let secretReads = 0;
+  const spyDeps = { rpc, getSecret: () => { secretReads += 1; return SECRET; }, log: silent };
+  await expectError(await handleOfficerCatalogRequest(await signedRequest('{"op":"catalog"}', { keyId: "bad key!" }), spyDeps), 401, "invalid_authentication");
+  await expectError(await handleOfficerCatalogRequest(await signedRequest('{"op":"catalog"}', { sentAt: "12345" }), spyDeps), 401, "invalid_authentication");
+  await expectError(await handleOfficerCatalogRequest(await signedRequest('{"op":"catalog"}', { nonce: "not-a-uuid" }), spyDeps), 401, "invalid_authentication");
+  await expectError(await handleOfficerCatalogRequest(await signedRequest('{"op":"catalog"}', { signature: "zz" }), spyDeps), 401, "invalid_authentication");
+  assertEquals(secretReads, 0);
+  assertEquals(calls.length, 0);
+});
+
+Deno.test("unsigned or badly signed requests write nothing anywhere", async () => {
+  const { rpc, calls } = fakeRpc({});
+  const body = executeBody();
+  const unsigned = await signedRequest(body);
+  unsigned.headers.delete("x-fo-signature");
+  await expectError(await handleOfficerCatalogRequest(new Request(unsigned, { headers: unsigned.headers }), deps(rpc)), 401, "invalid_authentication");
+  await expectError(await handleOfficerCatalogRequest(await signedRequest(body, { secret: "z".repeat(40) }), deps(rpc)), 401, "invalid_authentication");
+  await expectError(await handleOfficerCatalogRequest(await signedRequest(body, { target: "cornerstone" }), deps(rpc)), 401, "invalid_authentication");
+  const good = await signedRequest(body);
+  await expectError(await handleOfficerCatalogRequest(new Request(good, { body: body + " " }), deps(rpc)), 401, "invalid_authentication");
+  // Only the secret NAME lookup ran; no execute, no catalog, no refusal row.
+  assert(calls.every((c) => c.name === "officer_key_secret_env"), JSON.stringify(calls.map((c) => c.name)));
+  // And a correctly signed request for haven passes the same gate.
+  const response = await handleOfficerCatalogRequest(await signedRequest(body), deps(rpc));
+  assertEquals(response.status, 200);
+});
+
 Deno.test("oversized body is refused while streaming", async () => {
   const { rpc, calls } = fakeRpc({});
   const big = new Uint8Array(MAX_BYTES + 1).fill(0x20);

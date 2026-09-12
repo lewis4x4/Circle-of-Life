@@ -325,14 +325,43 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM officer.audit_events WHERE key_id='front_office_v1' AND outcome='refused' AND error_code='principal_unknown') THEN RAISE EXCEPTION 'refusal not recorded'; END IF;
   PERFORM public.officer_record_refusal('front_office_v1',NULL,'occupied_beds',1,NULL,'select * from residents');
   IF EXISTS (SELECT 1 FROM officer.audit_events WHERE error_code NOT IN ('principal_unknown')) THEN RAISE EXCEPTION 'unpublished code recorded'; END IF;
+  -- An unregistered key id cannot leave a refusal row, whatever the Edge Function does.
+  PERFORM public.officer_record_refusal('no_such_key',(SELECT cfo FROM oc),'occupied_beds',1,gen_random_uuid(),'principal_unknown');
+  IF EXISTS (SELECT 1 FROM officer.audit_events WHERE key_id='no_such_key') THEN RAISE EXCEPTION 'unregistered key wrote a refusal row'; END IF;
 END $$;
--- 60 rows in the last minute close the door for that key only.
-INSERT INTO officer.audit_events(key_id,outcome) SELECT 'front_office_v1','ok' FROM generate_series(1,60);
-SELECT pg_temp.expect('rate limited','P0429','rate_limited',(SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}');
-INSERT INTO officer.gateway_keys(key_id,secret_env,enabled,allowed_capabilities) VALUES ('probe_second','OFFICER_GATEWAY_HMAC_PROBE_SECOND',true,ARRAY['occupied_beds']);
+-- Zero licensed beds: the percent is stated as unknown (JSON null + qualifier), never silently absent.
+UPDATE public.facilities SET total_licensed_beds=0 WHERE organization_id=(SELECT org FROM oc);
+DO $$ DECLARE r jsonb; BEGIN
+  r := pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','licensed_capacity',1,'{}');
+  IF r->>'validity'<>'valid' OR (r->>'value')::int<>0 OR NOT (r->'data' ? 'occupancy_percent') OR jsonb_typeof(r->'data'->'occupancy_percent')<>'null'
+     OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(r->'qualifiers') q WHERE q ILIKE '%cannot be computed%') THEN RAISE EXCEPTION 'zero licensed beds must report an unknown percent: %', r; END IF;
+END $$;
+UPDATE public.facilities SET total_licensed_beds=10 WHERE id=(SELECT fac_a FROM oc);
+UPDATE public.facilities SET total_licensed_beds=20 WHERE id=(SELECT fac_b FROM oc);
+-- Rate limits: three independent windows.
+-- (1) 60 recorded refusals must NOT starve legitimate work on the key.
+INSERT INTO officer.audit_events(key_id,officer_ref,outcome,error_code) SELECT 'front_office_v1',(SELECT stranger FROM oc),'refused','principal_unknown' FROM generate_series(1,60);
+DO $$ DECLARE r jsonb; BEGIN
+  r := pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}');
+  IF r->>'validity'<>'valid' THEN RAISE EXCEPTION 'recorded refusals starved legitimate work'; END IF;
+END $$;
+-- (2) 120 refusals in a minute close the refusal window for that key, and only that key.
+INSERT INTO officer.audit_events(key_id,officer_ref,outcome,error_code) SELECT 'front_office_v1',(SELECT stranger FROM oc),'refused','principal_unknown' FROM generate_series(1,60);
+SELECT pg_temp.expect('refusal window','P0429','rate_limited',(SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}');
+INSERT INTO officer.gateway_keys(key_id,secret_env,enabled,allowed_capabilities) VALUES ('probe_second','OFFICER_GATEWAY_HMAC_PROBE_SECOND',true,ARRAY['occupied_beds']),('probe_third','OFFICER_GATEWAY_HMAC_PROBE_THIRD',true,ARRAY['occupied_beds']);
 DO $$ DECLARE r jsonb; BEGIN
   r := pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
-  IF (r->>'value')::int<>3 THEN RAISE EXCEPTION 'second key blocked by first key limit'; END IF;
+  IF r->>'validity'<>'valid' THEN RAISE EXCEPTION 'second key blocked by first key window'; END IF;
+END $$;
+-- (3) 60 successes in a minute close the success window for that key.
+INSERT INTO officer.audit_events(key_id,officer_ref,outcome) SELECT 'probe_third',(SELECT stranger FROM oc),'ok' FROM generate_series(1,60);
+SELECT pg_temp.expect('success window','P0429','rate_limited',(SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_third');
+-- (4) 30 rows for one officer ref block that seat only; the other seat keeps working on the same key.
+INSERT INTO officer.audit_events(key_id,officer_ref,outcome) SELECT 'probe_second',(SELECT ceo FROM oc),'ok' FROM generate_series(1,30);
+SELECT pg_temp.expect('officer window','P0429','rate_limited',(SELECT ceo FROM oc),'ceo@probe.invalid','ceo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
+DO $$ DECLARE r jsonb; BEGIN
+  r := pg_temp.run((SELECT cfo FROM oc),'cfo@probe.invalid','cfo','session','occupied_beds',1,'{}',NULL,NULL,NULL,'probe_second');
+  IF r->>'validity'<>'valid' THEN RAISE EXCEPTION 'one seat starved another'; END IF;
 END $$;
 -- Nonces older than 15 minutes are pruned on the next call.
 UPDATE officer.request_nonces SET seen_at=now()-interval '16 minutes' WHERE key_id='front_office_v1';

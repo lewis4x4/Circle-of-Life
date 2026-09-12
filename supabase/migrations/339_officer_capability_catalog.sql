@@ -488,8 +488,14 @@ BEGIN
     AND r.status IN ('active', 'hospital_hold', 'loa');
 
   v_data := jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility, 'occupied_beds', v_occupied);
+  -- total_licensed_beds is NOT NULL, but a zero (or, defensively, null) sum is
+  -- the same fact to an officer: the percent is unknown, stated as JSON null
+  -- with a qualifier, never silently absent.
   IF v_capacity > 0 THEN
     v_data := v_data || jsonb_build_object('occupancy_percent', round((v_occupied::numeric / v_capacity::numeric) * 100, 1));
+  ELSE
+    v_data := v_data || jsonb_build_object('occupancy_percent', NULL::numeric);
+    v_qualifiers := v_qualifiers || 'Licensed bed count is zero for this organization, so occupancy percent cannot be computed and is reported as unknown.'::text;
   END IF;
 
   RETURN officer.read_envelope('licensed_capacity', p_version, 'valid', v_capacity, 'beds', v_qualifiers, v_data, v_missing, p_audit_id);
@@ -838,7 +844,9 @@ DECLARE
   v_key officer.gateway_keys%ROWTYPE;
   v_officer officer.federated_officers%ROWTYPE;
   v_cap officer.capabilities%ROWTYPE;
-  v_recent integer;
+  v_recent_ok integer;
+  v_recent_refused integer;
+  v_recent_officer integer;
   v_intent_id uuid;
   v_request_sha256 text;
   v_args_sha256 text;
@@ -870,11 +878,26 @@ BEGIN
   -- checks below then see each other's commits in order.
   PERFORM pg_advisory_xact_lock(hashtextextended('officer_execute:' || p_key_id, 0));
 
-  -- Rate limit: 60 execute calls per key per minute, counted in audit_events.
-  SELECT count(*) INTO v_recent
+  -- Rate limits: three independent windows over officer.audit_events. A
+  -- rate_limited refusal is never recorded, so no window feeds itself.
+  --   successful work per key (outcome ok or replayed): 60 per minute; recorded
+  --     refusals do not count here, so they cannot starve legitimate traffic;
+  --   refusals per key (outcome refused): 120 per minute, bounding free
+  --     guesses at officer refs and capability names;
+  --   any outcome per officer ref: 30 per minute, so one compromised or
+  --     looping seat cannot starve the other four.
+  SELECT count(*) FILTER (WHERE a.outcome IN ('ok', 'replayed')),
+         count(*) FILTER (WHERE a.outcome = 'refused')
+    INTO v_recent_ok, v_recent_refused
   FROM officer.audit_events a
   WHERE a.key_id = p_key_id AND a.occurred_at > pg_catalog.now() - interval '1 minute';
-  IF v_recent >= 60 THEN
+  IF v_recent_ok >= 60 OR v_recent_refused >= 120 THEN
+    PERFORM officer.refuse('rate_limited', 'P0429');
+  END IF;
+  SELECT count(*) INTO v_recent_officer
+  FROM officer.audit_events a
+  WHERE a.officer_ref = p_officer_ref AND a.occurred_at > pg_catalog.now() - interval '1 minute';
+  IF v_recent_officer >= 30 THEN
     PERFORM officer.refuse('rate_limited', 'P0429');
   END IF;
 
@@ -1012,6 +1035,12 @@ SET search_path = ''
 AS $fn$
 BEGIN
   IF p_key_id IS NULL OR p_key_id !~ '^[a-zA-Z0-9_-]{1,64}$' THEN
+    RETURN;
+  END IF;
+  -- Only a registered key (enabled or not) may leave a refusal row; the Edge
+  -- Function gates on a verified signature too, but that guard lives in another
+  -- process and this one is checked by the replay probe.
+  IF NOT EXISTS (SELECT 1 FROM officer.gateway_keys k WHERE k.key_id = p_key_id) THEN
     RETURN;
   END IF;
   IF p_error_code IS NULL OR p_error_code NOT IN (
