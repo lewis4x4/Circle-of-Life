@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/operations/auth", () => ({ requireOperationsActor: vi.fn(), actorCanAccessFacility: vi.fn() }));
@@ -40,6 +40,10 @@ const occurrenceId = "55555555-5555-4555-8555-555555555555";
 const get = (query: string) => GET(new NextRequest(`https://local.test/api/admin/operations/workspace${query}`) as never);
 
 beforeEach(() => {
+  // This fixture is due September 10; wall-clock drift must not move it to
+  // the outstanding group and invalidate the session-client assertion.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-09-10T15:00:00Z"));
   vi.clearAllMocks();
   reads.length = 0;
   for (const key of Object.keys(results)) delete results[key];
@@ -47,6 +51,8 @@ beforeEach(() => {
   vi.mocked(actorCanAccessFacility).mockResolvedValue(true);
   results.facilities = () => ({ data: { id: facilityId, name: "Homewood Lodge", timezone: "America/New_York" }, error: null });
 });
+
+afterEach(() => vi.useRealTimers());
 
 describe("workspace read", () => {
   it("refuses bad parameters before touching the site", async () => {

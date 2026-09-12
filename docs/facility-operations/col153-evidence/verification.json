@@ -1,0 +1,84 @@
+{
+  "issue": "COL-153",
+  "recorded_at": "2026-09-12T01:43:07.665879+00:00",
+  "branch": "codex/hfo-col153-help-handover",
+  "base": "205ac0305473acdf8f0aba3e50ae17b3d7f4b345",
+  "scope": "source only; unmerged, unapplied, undeployed",
+  "mission_alignment": "pass",
+  "checks": {
+    "full_suite": {
+      "command": "npm test",
+      "result": "PASS",
+      "files": 587,
+      "passed": 4024,
+      "skipped": 2,
+      "initial_failure": "Existing workspace route fixture used September10 as today against real clock; fixed Date-only test clock and reran whole suite",
+      "nonblocking_warning": "Dependency TypeScript source map absent; Vite warning, no failed test"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "result": "PASS"
+    },
+    "independent_tests": {
+      "files": 4,
+      "passed": 26,
+      "result": "PASS"
+    },
+    "native_replay": {
+      "result": "PASS",
+      "migration_files": 352,
+      "sql_probes": 33,
+      "environment": "PostgreSQL17 with synthetic Supabase stubs; full final gate replay"
+    },
+    "concurrency": {
+      "result": "PASS",
+      "cases": 4,
+      "evidence": "concurrency.json"
+    },
+    "strict_gate": {
+      "command": "CI=true REQUIRE_PG_VERIFY=1 PG_VERIFY_NATIVE_SOCKET=<run-owned> PG_VERIFY_NATIVE_BIN=/opt/homebrew/opt/postgresql@17/bin PG_VERIFY_NATIVE_PORT=55453 npm run segment:gates -- --segment COL-153-HFO-HELP-HANDOVER --ui",
+      "result": "PASS",
+      "artifact": "test-results/agent-gates/2026-09-12T01-38-20-284Z-COL-153-HFO-HELP-HANDOVER.json",
+      "copied_artifact": "strict-gate.json",
+      "waivers": []
+    },
+    "staged_secrets": {
+      "commands": [
+        "npm run check:secrets",
+        "gitleaks protect --staged --config .gitleaks.toml --redact --no-banner"
+      ],
+      "result": "PASS"
+    },
+    "independent_review": {
+      "verdict": "APPROVE",
+      "unresolved_findings": 0,
+      "evidence": "independent-review.json"
+    },
+    "sibling_preservation": {
+      "unchanged_worktrees": 35,
+      "evidence": "worktree-preservation.json"
+    }
+  },
+  "not_tested": [
+    "Authenticated hosted task-panel browser flow",
+    "Real hosted Auth/PostgREST/Storage transports",
+    "Staff acceptance or task-effort measurement",
+    "Operating-cycle acceptance",
+    "Migration integration with main (336-338 collision)"
+  ],
+  "browser_evidence": "Strict browser gate exercises public / on local production server (four viewports plus axe), not authenticated task panel. New panel behavior/accessibility tested with mocked component sessions.",
+  "source_sha256": {
+    "scripts/facility-operations/test-help-handover-concurrency.py": "6ff6c6cdf574bf36c3c2053ede335285990aa736b97886f68aef8bd248da83b9",
+    "src/app/(admin)/admin/operations/work/_components/task-help-handover.test.tsx": "85d9a8d98e7edc7a32088e758866a88714ef572fa8e0c2d1e67bf638b21f9196",
+    "src/app/(admin)/admin/operations/work/_components/task-help-handover.tsx": "7197ed9876a6e12f052a571e2af032debb45e34eae7bf5f3b9417af7585971a4",
+    "src/app/(admin)/admin/operations/work/_components/work-row.tsx": "9729b837fd607391c7d0e38f4f5586fd2c338a3f4313346efc9448e59a9344aa",
+    "src/app/api/admin/operations/help-handover/route.test.ts": "4ec7c6376d1e92505cf653472c4f2da93ee83f29504c1334c6661a29a8b5fd95",
+    "src/app/api/admin/operations/help-handover/route.ts": "bbcfb48d852431adca1470261ea0eb0e747e3f5a88b1dda0ce946e360d538b81",
+    "src/app/api/admin/operations/workspace/route.test.ts": "7ca75b94cb750a55d516f873b7628c9ce7902dd5670e19e900ccc7bec370c2c2",
+    "src/lib/operations/help-handover.test.ts": "0d486889bf84671487586cbd76fe08d3672b4fd5b0bbc093f6d49ed0001ef5b8",
+    "src/lib/operations/help-handover.ts": "8faa57fbefc0d5ee1fbfdb2eb7fd1f03b8fe0e402d859668a2044e7cba445ea3",
+    "supabase/migrations/349_hfo_task_help_handover.sql": "79d4dde7e252d04061a95b4658a39bb19534d12792a2a26132e5c4661175eaa4",
+    "supabase/tests/review_hfo_task_help_handover.sql": "8ad5281217088cb6b92a7eeebd674f6c0a67c2981a35481c22a91811fb2a2c4e"
+  },
+  "rollback": "Before application revert bounded segment; after future application preserve ledger and use reviewed forward retirement migration."
+}
