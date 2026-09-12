@@ -22,7 +22,7 @@ VALUES
 -- the operator can see the whole posture in one statement; DO NOTHING keeps it.
 INSERT INTO officer.gateway_keys (key_id, secret_env, enabled, allowed_capabilities)
 VALUES ('front_office_v1', 'OFFICER_GATEWAY_HMAC_FRONT_OFFICE_V1', false,
-        ARRAY['occupied_beds','occupancy_rate','ar_open_balance','billed_revenue_mtd','open_incidents','ping'])
+        ARRAY['occupied_beds','licensed_capacity','open_ar_balance','billed_revenue_mtd','incidents_last_30_days','staff_certifications_expiring_30_days','command_ping'])
 ON CONFLICT (key_id) DO NOTHING;
 
 COMMIT;

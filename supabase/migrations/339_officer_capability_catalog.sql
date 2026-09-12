@@ -15,18 +15,17 @@
 --   public.officer_execute(...)               -> one read or one command
 --   public.officer_record_refusal(...)        -> audit a refusal after rollback
 --
--- Scope: every read is scoped to the organization stored on the officer's
--- registry row (officer.federated_officers.organization_id) and to a facility
--- chosen by slug from a fixed list mapped in SQL to the seed UUIDs of
--- 008_seed_col_organization.sql. Nothing in the request envelope is ever used
--- as scope, no haven.* helper is called (they read auth.uid(), which is NULL on
--- this path), and no ai_tool_* or exec-kpi function is reused: they take caller
--- context as parameters, the confused-deputy shape this design refuses. Their
--- SQL predicates are copied here verbatim and cited per read.
+-- Scope: every read is organization-wide for the organization stored on the
+-- officer's registry row (officer.federated_officers.organization_id) and
+-- reports a per-facility breakdown. Nothing in the request envelope is ever
+-- used as scope, no haven.* helper is called (they read auth.uid(), which is
+-- NULL on this path), and no ai_tool_* or exec-kpi function is reused: they
+-- take caller context as parameters, the confused-deputy shape this design
+-- refuses. Their SQL predicates are copied here and cited per read.
 --
--- PHI: every capability returns counts, cents, percentages and facility names
--- only. No resident, staff or person identifier, name, note, incident number or
--- free text appears in any envelope, audit row or seed. phi_class is 'none'.
+-- PHI: every capability returns counts, cents and facility names only.
+-- No resident, staff or person identifier, name, note or free text appears in
+-- any envelope, audit row or seed. phi_class is constrained to 'none'.
 --
 -- GRANT DURABILITY: 308_revoke_anon_security_definer_rpc_execute.sql is an
 -- idempotent sweep that grants every public SECURITY DEFINER function it does
@@ -60,7 +59,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA officer REVOKE ALL ON FUNCTIONS FROM PUBLIC, 
 -- Registry of officer seats Front Office may act for. Keyed by the Front Office
 -- user_profiles.id. Rows are inserted by the Haven operator through a reviewed
 -- statement (scripts/officer/register-officers.example.sql), never by Front
--- Office and never by this migration. organization_id is the read scope.
+-- Office and never by this migration. organization_id is the ONLY read scope.
 CREATE TABLE IF NOT EXISTS officer.federated_officers (
   front_office_profile_id uuid PRIMARY KEY,
   officer_role text NOT NULL CHECK (officer_role IN ('owner','ceo','cfo','coo','ctdo')),
@@ -73,7 +72,7 @@ CREATE TABLE IF NOT EXISTS officer.federated_officers (
   created_by text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-COMMENT ON TABLE officer.federated_officers IS 'Officer seats Front Office may act for. organization_id is the read scope; the envelope is never trusted for scope.';
+COMMENT ON TABLE officer.federated_officers IS 'Officer seats Front Office may act for. organization_id is the only read scope; the envelope is never trusted for scope.';
 
 -- One row per calling system key. The secret itself is never stored: secret_env
 -- names the Edge Function secret that holds it.
@@ -157,16 +156,15 @@ COMMENT ON TABLE officer.audit_events IS 'Append-only. One row per accepted call
 -- Operator-maintained honesty table: which facilities carry live records. Only
 -- Homewood Lodge does today; facilities 001, 002, 004 and 005 hold seeded
 -- demonstration rows (033_seed_oakridge_demo_data.sql, 120_col_multi_facility_demo_seed.sql).
--- Every read returns coverage per facility and a fixed qualifier when a demo
--- facility is covered. A facility marked 'none' is reported as no_data and is
--- left out of portfolio totals.
+-- Every read labels each by_facility row with its coverage and appends a fixed
+-- qualifier whenever a demo facility is covered.
 CREATE TABLE IF NOT EXISTS officer.facility_coverage (
   facility_id uuid PRIMARY KEY REFERENCES public.facilities (id),
   coverage text NOT NULL CHECK (coverage IN ('live','demo','none')),
   note text NOT NULL DEFAULT '',
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-COMMENT ON TABLE officer.facility_coverage IS 'Operator-maintained: live = operations data, demo = seeded demonstration rows, none = no records. Drives coverage labels and the demo qualifier on every read.';
+COMMENT ON TABLE officer.facility_coverage IS 'Operator-maintained: live = operations data, demo = seeded demonstration rows, none = no records. Drives the coverage label and the demo qualifier on every read.';
 
 ALTER TABLE officer.federated_officers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE officer.gateway_keys ENABLE ROW LEVEL SECURITY;
@@ -240,67 +238,41 @@ STABLE
 SET search_path = ''
 AS $fn$ SELECT to_char(pg_catalog.now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') $fn$;
 
--- Facility slug -> fixed seed UUID (008_seed_col_organization.sql:13-18).
--- Never by name: display names changed in 318_col_facility_entity_names.sql.
--- 'all' and anything unknown map to NULL (portfolio); the args validator has
--- already enforced the enum, so unknown cannot reach here.
-CREATE OR REPLACE FUNCTION officer.facility_for_slug(p_slug text)
-RETURNS uuid
-LANGUAGE sql
-IMMUTABLE
-SET search_path = ''
-AS $fn$
-  SELECT CASE p_slug
-    WHEN 'oakridge'       THEN '00000000-0000-0000-0002-000000000001'::uuid
-    WHEN 'rising_oaks'    THEN '00000000-0000-0000-0002-000000000002'::uuid
-    WHEN 'homewood'       THEN '00000000-0000-0000-0002-000000000003'::uuid
-    WHEN 'plantation'     THEN '00000000-0000-0000-0002-000000000004'::uuid
-    WHEN 'grande_cypress' THEN '00000000-0000-0000-0002-000000000005'::uuid
-    ELSE NULL
-  END
-$fn$;
-
-CREATE OR REPLACE FUNCTION officer.slug_for_facility(p_facility_id uuid)
-RETURNS text
-LANGUAGE sql
-IMMUTABLE
-SET search_path = ''
-AS $fn$
-  SELECT CASE p_facility_id
-    WHEN '00000000-0000-0000-0002-000000000001'::uuid THEN 'oakridge'
-    WHEN '00000000-0000-0000-0002-000000000002'::uuid THEN 'rising_oaks'
-    WHEN '00000000-0000-0000-0002-000000000003'::uuid THEN 'homewood'
-    WHEN '00000000-0000-0000-0002-000000000004'::uuid THEN 'plantation'
-    WHEN '00000000-0000-0000-0002-000000000005'::uuid THEN 'grande_cypress'
-    ELSE NULL
-  END
-$fn$;
-
--- The facilities a read covers: the organization's non-deleted facilities,
--- narrowed to one when a slug was given, each with its coverage label.
-CREATE OR REPLACE FUNCTION officer.scope_facilities(p_organization_id uuid, p_facility_id uuid)
-RETURNS TABLE (facility_id uuid, facility_name text, slug text, coverage text, licensed_beds integer)
+-- The organization's non-deleted facilities with their coverage label
+-- (NULL when the operator has not classified a facility).
+CREATE OR REPLACE FUNCTION officer.scope_facilities(p_organization_id uuid)
+RETURNS TABLE (facility_id uuid, facility_name text, coverage text, licensed_beds integer)
 LANGUAGE sql
 STABLE
 SET search_path = ''
 AS $fn$
-  SELECT f.id, left(f.name, 80), officer.slug_for_facility(f.id), COALESCE(c.coverage, 'none'), f.total_licensed_beds
+  SELECT f.id, left(f.name, 80), c.coverage, f.total_licensed_beds
   FROM public.facilities f
   LEFT JOIN officer.facility_coverage c ON c.facility_id = f.id
   WHERE f.organization_id = p_organization_id
     AND f.deleted_at IS NULL
-    AND (p_facility_id IS NULL OR f.id = p_facility_id)
   ORDER BY f.name
   LIMIT 50
 $fn$;
 
--- Fixed qualifier strings.
 CREATE OR REPLACE FUNCTION officer.demo_qualifier()
 RETURNS text
 LANGUAGE sql
 IMMUTABLE
 SET search_path = ''
 AS $fn$ SELECT 'Figures for facilities marked demo come from seeded demonstration data, not operations.'::text $fn$;
+
+-- Append the demo qualifier when any covered facility is a demo facility.
+CREATE OR REPLACE FUNCTION officer.with_demo_qualifier(p_qualifiers text[], p_organization_id uuid)
+RETURNS text[]
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $fn$
+  SELECT CASE WHEN EXISTS (SELECT 1 FROM officer.scope_facilities(p_organization_id) s WHERE s.coverage = 'demo')
+              THEN p_qualifiers || officer.demo_qualifier()
+              ELSE p_qualifiers END
+$fn$;
 
 -- The one JSON shape every read returns (contract section 2.6). Building it in
 -- one place keeps the top-level key set exact: Front Office rejects anything else.
@@ -340,6 +312,7 @@ $fn$;
 
 -- Validate p_args against the capability's declared params: exact key set,
 -- scalar types, enum membership, string length <= 200. Raises invalid_args.
+-- Every v1 read declares no params, so only {} is accepted for them.
 CREATE OR REPLACE FUNCTION officer.assert_args(p_params jsonb, p_args jsonb)
 RETURNS void
 LANGUAGE plpgsql
@@ -437,14 +410,13 @@ AS $fn$
 $fn$;
 
 -- =============================================================================
--- 4. Read capabilities (fixed SQL; scope = registry organization + slug facility)
+-- 4. Read capabilities (fixed SQL, organization-wide, scoped by the registry
+--    organization only; each returns data.by_facility with a coverage label)
 -- =============================================================================
 
 -- occupied_beds: residents with status active / hospital_hold / loa and
--- deleted_at null. Predicate copied from exec-kpi-metrics.ts:318-323 and
--- haven.vw_v2_facility_rollup (211:36-45). Zero at a live or demo facility is
--- a valid zero; a 'none' facility is no_data.
-CREATE OR REPLACE FUNCTION officer.read_occupied_beds(p_organization_id uuid, p_facility_id uuid, p_args jsonb, p_version integer, p_audit_id uuid)
+-- deleted_at null (exec-kpi-metrics.ts:318-323; haven.vw_v2_facility_rollup 211:36-45).
+CREATE OR REPLACE FUNCTION officer.read_occupied_beds(p_organization_id uuid, p_version integer, p_audit_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
@@ -453,42 +425,36 @@ SET search_path = ''
 AS $fn$
 DECLARE
   v_total bigint;
-  v_covered integer;
-  v_any_demo boolean;
-  v_rows jsonb;
-  v_qualifiers text[] := ARRAY['Counts residents whose status is active, hospital hold or leave of absence and who are not deleted, at the time of the read. Residents on hospital hold or leave keep their bed and are counted.'];
+  v_by_facility jsonb;
+  v_facilities integer;
 BEGIN
-  WITH per AS (
-    SELECT s.facility_name, s.slug, s.coverage,
+  SELECT count(*) INTO v_total
+  FROM public.residents r
+  WHERE r.organization_id = p_organization_id
+    AND r.deleted_at IS NULL
+    AND r.status IN ('active', 'hospital_hold', 'loa');
+
+  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+    INTO v_by_facility, v_facilities
+  FROM (
+    SELECT s.facility_name, s.coverage,
            (SELECT count(*) FROM public.residents r
              WHERE r.facility_id = s.facility_id AND r.organization_id = p_organization_id
                AND r.deleted_at IS NULL AND r.status IN ('active', 'hospital_hold', 'loa')) AS n
-    FROM officer.scope_facilities(p_organization_id, p_facility_id) s
-  )
-  SELECT count(*) FILTER (WHERE coverage <> 'none'),
-         COALESCE(sum(n) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(bool_or(coverage = 'demo'), false),
-         COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-           'facility', facility_name, 'slug', slug, 'coverage', coverage,
-           'value', CASE WHEN coverage <> 'none' THEN n END)) ORDER BY facility_name), '[]'::jsonb)
-    INTO v_covered, v_total, v_any_demo, v_rows
-  FROM per;
+    FROM officer.scope_facilities(p_organization_id) s
+  ) x;
 
-  IF v_any_demo THEN v_qualifiers := v_qualifiers || officer.demo_qualifier(); END IF;
-  IF v_covered = 0 THEN
-    RETURN officer.read_envelope('occupied_beds', p_version, 'no_data', NULL, 'beds',
-      v_qualifiers || 'No facility with records is in the requested scope.'::text,
-      jsonb_build_object('facilities_covered', 0, 'by_facility', v_rows), 0, p_audit_id);
-  END IF;
-  RETURN officer.read_envelope('occupied_beds', p_version, 'valid', v_total, 'beds', v_qualifiers,
-    jsonb_build_object('facilities_covered', v_covered, 'by_facility', v_rows), 0, p_audit_id);
+  RETURN officer.read_envelope(
+    'occupied_beds', p_version, 'valid', v_total, 'beds',
+    officer.with_demo_qualifier(ARRAY['Counts residents whose status is active, hospital hold or leave of absence and who are not deleted, at the time of the read. Residents on hospital hold or leave keep their bed and are counted.'], p_organization_id),
+    jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility),
+    0, p_audit_id);
 END;
 $fn$;
 
--- occupancy_rate: occupied (as above) over facilities.total_licensed_beds,
--- percent to one decimal (exec-kpi-metrics.ts:489-499). invalid when licensed
--- beds are zero for the scope (211:42-51 returns NULL there).
-CREATE OR REPLACE FUNCTION officer.read_occupancy_rate(p_organization_id uuid, p_facility_id uuid, p_args jsonb, p_version integer, p_audit_id uuid)
+-- licensed_capacity: sum of facilities.total_licensed_beds, with occupancy
+-- percent against occupied_beds when both figures exist (exec-kpi-metrics.ts:489-499).
+CREATE OR REPLACE FUNCTION officer.read_licensed_capacity(p_organization_id uuid, p_version integer, p_audit_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
@@ -496,57 +462,48 @@ SECURITY DEFINER
 SET search_path = ''
 AS $fn$
 DECLARE
-  v_occupied bigint;
-  v_licensed bigint;
-  v_covered integer;
+  v_capacity bigint;
+  v_facilities integer;
   v_missing integer;
-  v_any_demo boolean;
-  v_rows jsonb;
+  v_occupied bigint;
+  v_by_facility jsonb;
   v_data jsonb;
-  v_qualifiers text[] := ARRAY['Residents with active, hospital hold or leave status over licensed beds, as a percent to one decimal. Licensed beds come from the facility record. The executive dashboard uses the same definition.'];
+  v_qualifiers text[] := officer.with_demo_qualifier(ARRAY['Sum of licensed beds across the organization''s facilities that are not deleted. Occupancy percent divides occupied beds (active, hospital hold or leave residents) by this figure.'], p_organization_id);
 BEGIN
-  WITH per AS (
-    SELECT s.facility_name, s.slug, s.coverage, s.licensed_beds,
-           (SELECT count(*) FROM public.residents r
-             WHERE r.facility_id = s.facility_id AND r.organization_id = p_organization_id
-               AND r.deleted_at IS NULL AND r.status IN ('active', 'hospital_hold', 'loa')) AS n
-    FROM officer.scope_facilities(p_organization_id, p_facility_id) s
-  )
-  SELECT count(*) FILTER (WHERE coverage <> 'none'),
-         COALESCE(sum(n) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(sum(licensed_beds) FILTER (WHERE coverage <> 'none'), 0),
-         count(*) FILTER (WHERE coverage <> 'none' AND COALESCE(licensed_beds, 0) <= 0),
-         COALESCE(bool_or(coverage = 'demo'), false),
-         COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-           'facility', facility_name, 'slug', slug, 'coverage', coverage,
-           'occupied', CASE WHEN coverage <> 'none' THEN n END,
-           'licensed', CASE WHEN coverage <> 'none' THEN licensed_beds END,
-           'value', CASE WHEN coverage <> 'none' AND COALESCE(licensed_beds, 0) > 0 THEN round(n::numeric / licensed_beds::numeric * 100, 1) END)) ORDER BY facility_name), '[]'::jsonb)
-    INTO v_covered, v_occupied, v_licensed, v_missing, v_any_demo, v_rows
-  FROM per;
+  SELECT COALESCE(sum(s.licensed_beds), 0), count(*), count(*) FILTER (WHERE COALESCE(s.licensed_beds, 0) <= 0),
+         COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', s.facility_name, 'coverage', s.coverage, 'value', s.licensed_beds)) ORDER BY s.facility_name), '[]'::jsonb)
+    INTO v_capacity, v_facilities, v_missing, v_by_facility
+  FROM officer.scope_facilities(p_organization_id) s;
 
-  IF v_any_demo THEN v_qualifiers := v_qualifiers || officer.demo_qualifier(); END IF;
-  v_data := jsonb_build_object('facilities_covered', v_covered, 'by_facility', v_rows, 'occupied_beds', v_occupied, 'licensed_beds', v_licensed);
-  IF v_covered = 0 THEN
-    RETURN officer.read_envelope('occupancy_rate', p_version, 'no_data', NULL, 'percent',
-      v_qualifiers || 'No facility with records is in the requested scope.'::text, v_data, v_missing, p_audit_id);
+  IF v_facilities = 0 THEN
+    RETURN officer.read_envelope('licensed_capacity', p_version, 'no_data', NULL, 'beds',
+      v_qualifiers || 'No facilities are registered for this organization.'::text,
+      jsonb_build_object('facilities_covered', 0, 'by_facility', '[]'::jsonb), 0, p_audit_id);
   END IF;
-  IF v_licensed <= 0 THEN
-    RETURN officer.read_envelope('occupancy_rate', p_version, 'invalid', NULL, 'percent',
-      v_qualifiers || 'Licensed bed count is zero for the requested scope, so no rate can be computed.'::text, v_data, v_missing, p_audit_id);
+
+  SELECT count(*) INTO v_occupied
+  FROM public.residents r
+  WHERE r.organization_id = p_organization_id
+    AND r.deleted_at IS NULL
+    AND r.status IN ('active', 'hospital_hold', 'loa');
+
+  v_data := jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility, 'occupied_beds', v_occupied);
+  IF v_capacity > 0 THEN
+    v_data := v_data || jsonb_build_object('occupancy_percent', round((v_occupied::numeric / v_capacity::numeric) * 100, 1));
   END IF;
-  RETURN officer.read_envelope('occupancy_rate', p_version, 'valid', round(v_occupied::numeric / v_licensed::numeric * 100, 1), 'percent',
-    v_qualifiers, v_data, v_missing, p_audit_id);
+
+  RETURN officer.read_envelope('licensed_capacity', p_version, 'valid', v_capacity, 'beds', v_qualifiers, v_data, v_missing, p_audit_id);
 END;
 $fn$;
 
--- ar_open_balance: open receivable balance in cents, aged by due_date.
+-- open_ar_balance: open receivable balance in cents, aged by due_date.
 -- Predicate: deleted_at IS NULL AND voided_at IS NULL AND balance_due > 0 AND
--- status NOT IN ('draft','void','written_off','paid'). Bucket SQL adapted from
--- ai_tool_ar_aging_by_facility (234:721-742), which ages by invoice_date; this
--- read ages by due_date and says so. no_data when the scope has no invoice rows
--- at all; a scope with invoices and no open balance is a valid zero.
-CREATE OR REPLACE FUNCTION officer.read_ar_open_balance(p_organization_id uuid, p_facility_id uuid, p_args jsonb, p_version integer, p_audit_id uuid)
+-- status NOT IN ('draft','void','written_off','paid'). Drafts never count.
+-- Bucket SQL adapted from ai_tool_ar_aging_by_facility (234:721-742), which
+-- ages by invoice_date; this read ages by due_date and says so. no_data when
+-- the organization has no invoice rows at all; invoices with no open balance
+-- are a valid zero.
+CREATE OR REPLACE FUNCTION officer.read_open_ar_balance(p_organization_id uuid, p_version integer, p_audit_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
@@ -555,22 +512,40 @@ SET search_path = ''
 AS $fn$
 DECLARE
   v_today date := officer.utc_today();
-  v_covered integer;
-  v_with_invoices integer;
-  v_any_demo boolean;
-  v_rows jsonb;
+  v_invoices_exist boolean;
   v_cents bigint;
   v_count bigint;
-  v_not_due bigint; v_1_30 bigint; v_31_60 bigint; v_61_90 bigint; v_over_90 bigint; v_oldest integer;
+  v_current bigint; v_1_30 bigint; v_31_60 bigint; v_61_90 bigint; v_over_90 bigint; v_oldest integer;
+  v_by_facility jsonb;
+  v_facilities integer;
   v_data jsonb;
-  v_qualifiers text[] := ARRAY[
-    'Sum of invoice balance due, in cents, over invoices with a balance greater than zero that are not deleted or voided and whose status is not draft, void, written off or paid. Aging buckets are by due date.',
-    'This is not the billing AR aging view (which excludes draft and void by status only and keeps zero balances) and not the executive KPI figure (which applies no status filter); those totals can differ.'
-  ];
+  v_qualifiers text[] := officer.with_demo_qualifier(ARRAY[
+    'Sum of invoice balance_due, in cents, over invoices where deleted_at IS NULL AND voided_at IS NULL AND balance_due > 0 AND status NOT IN (draft, void, written_off, paid). Draft invoices never count. Aging buckets are by due date against today.',
+    'The billing AR aging materialized view and the executive KPI dashboard use different predicates (the view excludes draft and void by status only and keeps zero balances; the KPI applies no status filter), so those three figures will not agree.'
+  ], p_organization_id);
 BEGIN
-  WITH per AS (
-    SELECT s.facility_id, s.facility_name, s.slug, s.coverage,
-           EXISTS (SELECT 1 FROM public.invoices i WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id AND i.deleted_at IS NULL) AS has_invoices,
+  SELECT EXISTS (SELECT 1 FROM public.invoices i WHERE i.organization_id = p_organization_id AND i.deleted_at IS NULL)
+    INTO v_invoices_exist;
+
+  SELECT COALESCE(sum(i.balance_due), 0), count(*),
+         COALESCE(sum(CASE WHEN (v_today - i.due_date) <= 0 THEN i.balance_due ELSE 0 END), 0),
+         COALESCE(sum(CASE WHEN (v_today - i.due_date) BETWEEN 1 AND 30 THEN i.balance_due ELSE 0 END), 0),
+         COALESCE(sum(CASE WHEN (v_today - i.due_date) BETWEEN 31 AND 60 THEN i.balance_due ELSE 0 END), 0),
+         COALESCE(sum(CASE WHEN (v_today - i.due_date) BETWEEN 61 AND 90 THEN i.balance_due ELSE 0 END), 0),
+         COALESCE(sum(CASE WHEN (v_today - i.due_date) > 90 THEN i.balance_due ELSE 0 END), 0),
+         COALESCE(max(CASE WHEN (v_today - i.due_date) > 0 THEN (v_today - i.due_date) END), 0)
+    INTO v_cents, v_count, v_current, v_1_30, v_31_60, v_61_90, v_over_90, v_oldest
+  FROM public.invoices i
+  WHERE i.organization_id = p_organization_id
+    AND i.deleted_at IS NULL
+    AND i.voided_at IS NULL
+    AND i.balance_due > 0
+    AND i.status NOT IN ('draft', 'void', 'written_off', 'paid');
+
+  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.cents, 'invoice_count', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+    INTO v_by_facility, v_facilities
+  FROM (
+    SELECT s.facility_name, s.coverage,
            (SELECT COALESCE(sum(i.balance_due), 0) FROM public.invoices i
              WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id
                AND i.deleted_at IS NULL AND i.voided_at IS NULL AND i.balance_due > 0
@@ -579,52 +554,28 @@ BEGIN
              WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id
                AND i.deleted_at IS NULL AND i.voided_at IS NULL AND i.balance_due > 0
                AND i.status NOT IN ('draft', 'void', 'written_off', 'paid')) AS n
-    FROM officer.scope_facilities(p_organization_id, p_facility_id) s
-  )
-  SELECT count(*) FILTER (WHERE coverage <> 'none'),
-         count(*) FILTER (WHERE coverage <> 'none' AND has_invoices),
-         COALESCE(bool_or(coverage = 'demo'), false),
-         COALESCE(sum(cents) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(sum(n) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-           'facility', facility_name, 'slug', slug, 'coverage', coverage,
-           'has_invoices', CASE WHEN coverage <> 'none' THEN has_invoices END,
-           'value', CASE WHEN coverage <> 'none' AND has_invoices THEN cents END,
-           'invoice_count', CASE WHEN coverage <> 'none' AND has_invoices THEN n END)) ORDER BY facility_name), '[]'::jsonb)
-    INTO v_covered, v_with_invoices, v_any_demo, v_cents, v_count, v_rows
-  FROM per;
+    FROM officer.scope_facilities(p_organization_id) s
+  ) x;
 
-  SELECT COALESCE(sum(CASE WHEN (v_today - i.due_date) <= 0 THEN i.balance_due ELSE 0 END), 0),
-         COALESCE(sum(CASE WHEN (v_today - i.due_date) BETWEEN 1 AND 30 THEN i.balance_due ELSE 0 END), 0),
-         COALESCE(sum(CASE WHEN (v_today - i.due_date) BETWEEN 31 AND 60 THEN i.balance_due ELSE 0 END), 0),
-         COALESCE(sum(CASE WHEN (v_today - i.due_date) BETWEEN 61 AND 90 THEN i.balance_due ELSE 0 END), 0),
-         COALESCE(sum(CASE WHEN (v_today - i.due_date) > 90 THEN i.balance_due ELSE 0 END), 0),
-         COALESCE(max(CASE WHEN (v_today - i.due_date) > 0 THEN (v_today - i.due_date) END), 0)
-    INTO v_not_due, v_1_30, v_31_60, v_61_90, v_over_90, v_oldest
-  FROM public.invoices i
-  JOIN officer.scope_facilities(p_organization_id, p_facility_id) s ON s.facility_id = i.facility_id AND s.coverage <> 'none'
-  WHERE i.organization_id = p_organization_id
-    AND i.deleted_at IS NULL AND i.voided_at IS NULL AND i.balance_due > 0
-    AND i.status NOT IN ('draft', 'void', 'written_off', 'paid');
-
-  IF v_any_demo THEN v_qualifiers := v_qualifiers || officer.demo_qualifier(); END IF;
   v_data := jsonb_build_object(
-    'facilities_covered', v_covered, 'by_facility', v_rows, 'invoice_count', v_count,
-    'aging_not_past_due_cents', v_not_due, 'aging_past_due_1_30_cents', v_1_30, 'aging_past_due_31_60_cents', v_31_60,
-    'aging_past_due_61_90_cents', v_61_90, 'aging_past_due_over_90_cents', v_over_90, 'oldest_past_due_days', v_oldest);
-  IF v_with_invoices = 0 THEN
-    RETURN officer.read_envelope('ar_open_balance', p_version, 'no_data', NULL, 'cents',
-      v_qualifiers || 'No invoices exist for the requested scope, so there is no balance to report.'::text, v_data, 0, p_audit_id);
+    'invoice_count', v_count, 'facilities_covered', v_facilities, 'by_facility', v_by_facility,
+    'aging_current_cents', v_current, 'aging_1_30_cents', v_1_30, 'aging_31_60_cents', v_31_60,
+    'aging_61_90_cents', v_61_90, 'aging_90_plus_cents', v_over_90, 'oldest_past_due_days', v_oldest);
+
+  IF NOT v_invoices_exist THEN
+    RETURN officer.read_envelope('open_ar_balance', p_version, 'no_data', NULL, 'cents',
+      v_qualifiers || 'No invoices exist for this organization, so there is no balance to report.'::text, v_data, 0, p_audit_id);
   END IF;
-  RETURN officer.read_envelope('ar_open_balance', p_version, 'valid', v_cents, 'cents', v_qualifiers, v_data, v_covered - v_with_invoices, p_audit_id);
+  RETURN officer.read_envelope('open_ar_balance', p_version, 'valid', v_cents, 'cents', v_qualifiers, v_data, 0, p_audit_id);
 END;
 $fn$;
 
 -- billed_revenue_mtd: sum of invoices.total for invoices dated from the first
--- of the month through today (or month end for a past month), status in
--- sent/paid/partial/overdue, deleted_at null, voided_at null; the predicate of
--- exec-kpi-metrics.ts:333-341. Optional `month` arg: any date in the month.
-CREATE OR REPLACE FUNCTION officer.read_billed_revenue_mtd(p_organization_id uuid, p_facility_id uuid, p_args jsonb, p_version integer, p_audit_id uuid)
+-- of the current UTC month through today, status in sent/paid/partial/overdue,
+-- deleted_at null, voided_at null (exec-kpi-metrics.ts:333-341). The seeded
+-- rev_mtd metric definition (151) cites a column that does not exist; ignored.
+-- no_data when no invoice rows at all are dated inside the period.
+CREATE OR REPLACE FUNCTION officer.read_billed_revenue_mtd(p_organization_id uuid, p_version integer, p_audit_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
@@ -633,70 +584,61 @@ SET search_path = ''
 AS $fn$
 DECLARE
   v_today date := officer.utc_today();
-  v_month_start date;
-  v_period_end date;
-  v_covered integer;
-  v_with_invoices integer;
-  v_any_demo boolean;
-  v_rows jsonb;
+  v_month_start date := date_trunc('month', officer.utc_today())::date;
+  v_in_period bigint;
   v_cents bigint;
   v_count bigint;
+  v_by_facility jsonb;
+  v_facilities integer;
   v_data jsonb;
   v_qualifiers text[];
 BEGIN
-  v_month_start := date_trunc('month', COALESCE((p_args->>'month')::date, v_today))::date;
-  IF v_month_start > v_today THEN
-    PERFORM officer.refuse('invalid_args', '22023');
-  END IF;
-  v_period_end := least(v_today, (v_month_start + interval '1 month' - interval '1 day')::date);
-  v_qualifiers := ARRAY[
-    'Sum of invoice totals, in cents, for invoices dated ' || to_char(v_month_start, 'YYYY-MM-DD') || ' through ' || to_char(v_period_end, 'YYYY-MM-DD') || ' with status sent, paid, partial or overdue, excluding deleted and voided invoices. Drafts are not counted. Same definition as the executive KPI dashboard.'
-  ];
+  v_qualifiers := officer.with_demo_qualifier(ARRAY[
+    'Sum of invoice totals, in cents, for invoices dated ' || to_char(v_month_start, 'YYYY-MM-DD') || ' through ' || to_char(v_today, 'YYYY-MM-DD') || ' with status sent, paid, partial or overdue, excluding deleted and voided invoices. Drafts are not counted. Same definition as the executive KPI dashboard.'
+  ], p_organization_id);
 
-  WITH per AS (
-    SELECT s.facility_name, s.slug, s.coverage,
-           EXISTS (SELECT 1 FROM public.invoices i WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id AND i.deleted_at IS NULL) AS has_invoices,
+  SELECT count(*) INTO v_in_period
+  FROM public.invoices i
+  WHERE i.organization_id = p_organization_id AND i.deleted_at IS NULL
+    AND i.invoice_date >= v_month_start AND i.invoice_date <= v_today;
+
+  SELECT COALESCE(sum(i.total), 0), count(*) INTO v_cents, v_count
+  FROM public.invoices i
+  WHERE i.organization_id = p_organization_id AND i.deleted_at IS NULL AND i.voided_at IS NULL
+    AND i.invoice_date >= v_month_start AND i.invoice_date <= v_today
+    AND i.status IN ('sent', 'paid', 'partial', 'overdue');
+
+  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.cents, 'invoice_count', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+    INTO v_by_facility, v_facilities
+  FROM (
+    SELECT s.facility_name, s.coverage,
            (SELECT COALESCE(sum(i.total), 0) FROM public.invoices i
              WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id
                AND i.deleted_at IS NULL AND i.voided_at IS NULL
-               AND i.invoice_date >= v_month_start AND i.invoice_date <= v_period_end
+               AND i.invoice_date >= v_month_start AND i.invoice_date <= v_today
                AND i.status IN ('sent', 'paid', 'partial', 'overdue')) AS cents,
            (SELECT count(*) FROM public.invoices i
              WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id
                AND i.deleted_at IS NULL AND i.voided_at IS NULL
-               AND i.invoice_date >= v_month_start AND i.invoice_date <= v_period_end
+               AND i.invoice_date >= v_month_start AND i.invoice_date <= v_today
                AND i.status IN ('sent', 'paid', 'partial', 'overdue')) AS n
-    FROM officer.scope_facilities(p_organization_id, p_facility_id) s
-  )
-  SELECT count(*) FILTER (WHERE coverage <> 'none'),
-         count(*) FILTER (WHERE coverage <> 'none' AND has_invoices),
-         COALESCE(bool_or(coverage = 'demo'), false),
-         COALESCE(sum(cents) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(sum(n) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-           'facility', facility_name, 'slug', slug, 'coverage', coverage,
-           'has_invoices', CASE WHEN coverage <> 'none' THEN has_invoices END,
-           'value', CASE WHEN coverage <> 'none' AND has_invoices THEN cents END,
-           'invoice_count', CASE WHEN coverage <> 'none' AND has_invoices THEN n END)) ORDER BY facility_name), '[]'::jsonb)
-    INTO v_covered, v_with_invoices, v_any_demo, v_cents, v_count, v_rows
-  FROM per;
+    FROM officer.scope_facilities(p_organization_id) s
+  ) x;
 
-  IF v_any_demo THEN v_qualifiers := v_qualifiers || officer.demo_qualifier(); END IF;
-  v_data := jsonb_build_object('facilities_covered', v_covered, 'by_facility', v_rows, 'invoice_count', v_count,
-    'period_start', to_char(v_month_start, 'YYYY-MM-DD'), 'period_end', to_char(v_period_end, 'YYYY-MM-DD'));
-  IF v_with_invoices = 0 THEN
+  v_data := jsonb_build_object('invoice_count', v_count, 'facilities_covered', v_facilities, 'by_facility', v_by_facility,
+    'period_start', to_char(v_month_start, 'YYYY-MM-DD'), 'period_end', to_char(v_today, 'YYYY-MM-DD'));
+
+  IF v_in_period = 0 THEN
     RETURN officer.read_envelope('billed_revenue_mtd', p_version, 'no_data', NULL, 'cents',
-      v_qualifiers || 'No invoices exist for the requested scope, so there is no billed revenue to report.'::text, v_data, 0, p_audit_id);
+      v_qualifiers || 'No invoices are dated inside the period, so there is no billed revenue to report.'::text, v_data, 0, p_audit_id);
   END IF;
-  RETURN officer.read_envelope('billed_revenue_mtd', p_version, 'valid', v_cents, 'cents', v_qualifiers, v_data, v_covered - v_with_invoices, p_audit_id);
+  RETURN officer.read_envelope('billed_revenue_mtd', p_version, 'valid', v_cents, 'cents', v_qualifiers, v_data, 0, p_audit_id);
 END;
 $fn$;
 
--- open_incidents: incidents with status open or investigating (exec-kpi-metrics.ts:343-348),
--- plus the trailing-30-day occurrence count by severity (:350-357 window) and
--- AHCA-reportable reports not yet marked reported. Counts only: never a
--- description, incident number or resident id (unlike ai_tool_incident_summary).
-CREATE OR REPLACE FUNCTION officer.read_open_incidents(p_organization_id uuid, p_facility_id uuid, p_args jsonb, p_version integer, p_audit_id uuid)
+-- incidents_last_30_days: incidents by occurred_at in the trailing 30 UTC days
+-- (today and the 29 days before it), deleted_at null (exec-kpi-metrics.ts:350-357).
+CREATE OR REPLACE FUNCTION officer.read_incidents_last_30_days(p_organization_id uuid, p_version integer, p_audit_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
@@ -707,51 +649,75 @@ DECLARE
   v_today date := officer.utc_today();
   v_from timestamptz := ((v_today - 29)::timestamp AT TIME ZONE 'UTC');
   v_to timestamptz := ((v_today + 1)::timestamp AT TIME ZONE 'UTC');
-  v_covered integer;
-  v_any_demo boolean;
-  v_rows jsonb;
-  v_open bigint;
-  v_l30 bigint; v_l1 bigint; v_l2 bigint; v_l3 bigint; v_l4 bigint; v_ahca bigint;
-  v_qualifiers text[] := ARRAY['Counts incident reports with status open or investigating, excluding deleted reports. Last-30-day figures count reports by occurrence time in the last 30 UTC days including today, split by severity level. The AHCA figure counts reports flagged reportable that are not yet marked reported. Counts only; no report details.'];
+  v_total bigint;
+  v_by_facility jsonb;
+  v_facilities integer;
 BEGIN
-  WITH per AS (
-    SELECT s.facility_name, s.slug, s.coverage,
-           (SELECT count(*) FROM public.incidents i WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id AND i.deleted_at IS NULL AND i.status IN ('open', 'investigating')) AS open_n,
-           (SELECT count(*) FROM public.incidents i WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id AND i.deleted_at IS NULL AND i.occurred_at >= v_from AND i.occurred_at < v_to) AS l30,
-           (SELECT count(*) FROM public.incidents i WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id AND i.deleted_at IS NULL AND i.ahca_reportable AND NOT i.ahca_reported) AS ahca_n
-    FROM officer.scope_facilities(p_organization_id, p_facility_id) s
-  )
-  SELECT count(*) FILTER (WHERE coverage <> 'none'),
-         COALESCE(bool_or(coverage = 'demo'), false),
-         COALESCE(sum(open_n) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(sum(l30) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(sum(ahca_n) FILTER (WHERE coverage <> 'none'), 0),
-         COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-           'facility', facility_name, 'slug', slug, 'coverage', coverage,
-           'value', CASE WHEN coverage <> 'none' THEN open_n END,
-           'last_30_days', CASE WHEN coverage <> 'none' THEN l30 END,
-           'ahca_reportable_unreported', CASE WHEN coverage <> 'none' THEN ahca_n END)) ORDER BY facility_name), '[]'::jsonb)
-    INTO v_covered, v_any_demo, v_open, v_l30, v_ahca, v_rows
-  FROM per;
-
-  SELECT count(*) FILTER (WHERE i.severity = 'level_1'), count(*) FILTER (WHERE i.severity = 'level_2'),
-         count(*) FILTER (WHERE i.severity = 'level_3'), count(*) FILTER (WHERE i.severity = 'level_4')
-    INTO v_l1, v_l2, v_l3, v_l4
+  SELECT count(*) INTO v_total
   FROM public.incidents i
-  JOIN officer.scope_facilities(p_organization_id, p_facility_id) s ON s.facility_id = i.facility_id AND s.coverage <> 'none'
-  WHERE i.organization_id = p_organization_id AND i.deleted_at IS NULL AND i.occurred_at >= v_from AND i.occurred_at < v_to;
+  WHERE i.organization_id = p_organization_id
+    AND i.deleted_at IS NULL
+    AND i.occurred_at >= v_from
+    AND i.occurred_at < v_to;
 
-  IF v_any_demo THEN v_qualifiers := v_qualifiers || officer.demo_qualifier(); END IF;
-  IF v_covered = 0 THEN
-    RETURN officer.read_envelope('open_incidents', p_version, 'no_data', NULL, 'incidents',
-      v_qualifiers || 'No facility with records is in the requested scope.'::text,
-      jsonb_build_object('facilities_covered', 0, 'by_facility', v_rows), 0, p_audit_id);
-  END IF;
-  RETURN officer.read_envelope('open_incidents', p_version, 'valid', v_open, 'incidents', v_qualifiers,
-    jsonb_build_object('facilities_covered', v_covered, 'by_facility', v_rows,
-      'last_30_days_total', v_l30, 'last_30_days_level_1', v_l1, 'last_30_days_level_2', v_l2,
-      'last_30_days_level_3', v_l3, 'last_30_days_level_4', v_l4,
-      'ahca_reportable_unreported', v_ahca, 'window_days', 30),
+  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+    INTO v_by_facility, v_facilities
+  FROM (
+    SELECT s.facility_name, s.coverage,
+           (SELECT count(*) FROM public.incidents i
+             WHERE i.facility_id = s.facility_id AND i.organization_id = p_organization_id
+               AND i.deleted_at IS NULL AND i.occurred_at >= v_from AND i.occurred_at < v_to) AS n
+    FROM officer.scope_facilities(p_organization_id) s
+  ) x;
+
+  RETURN officer.read_envelope(
+    'incidents_last_30_days', p_version, 'valid', v_total, 'incidents',
+    officer.with_demo_qualifier(ARRAY['Counts incident reports whose occurrence time falls in the last 30 UTC days including today, excluding deleted reports. All severities and statuses are included.'], p_organization_id),
+    jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility, 'window_days', 30),
+    0, p_audit_id);
+END;
+$fn$;
+
+-- staff_certifications_expiring_30_days: active certifications whose
+-- expiration_date is between today and today + 30 days (UTC dates), deleted_at
+-- null (exec-kpi-metrics.ts workforce predicate). Count only; never names.
+CREATE OR REPLACE FUNCTION officer.read_staff_certifications_expiring_30_days(p_organization_id uuid, p_version integer, p_audit_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $fn$
+DECLARE
+  v_today date := officer.utc_today();
+  v_total bigint;
+  v_by_facility jsonb;
+  v_facilities integer;
+BEGIN
+  SELECT count(*) INTO v_total
+  FROM public.staff_certifications c
+  WHERE c.organization_id = p_organization_id
+    AND c.deleted_at IS NULL
+    AND c.status = 'active'
+    AND c.expiration_date IS NOT NULL
+    AND c.expiration_date >= v_today
+    AND c.expiration_date <= v_today + 30;
+
+  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('facility', x.facility_name, 'coverage', x.coverage, 'value', x.n)) ORDER BY x.facility_name), '[]'::jsonb), count(*)
+    INTO v_by_facility, v_facilities
+  FROM (
+    SELECT s.facility_name, s.coverage,
+           (SELECT count(*) FROM public.staff_certifications c
+             WHERE c.facility_id = s.facility_id AND c.organization_id = p_organization_id
+               AND c.deleted_at IS NULL AND c.status = 'active' AND c.expiration_date IS NOT NULL
+               AND c.expiration_date >= v_today AND c.expiration_date <= v_today + 30) AS n
+    FROM officer.scope_facilities(p_organization_id) s
+  ) x;
+
+  RETURN officer.read_envelope(
+    'staff_certifications_expiring_30_days', p_version, 'valid', v_total, 'certifications',
+    officer.with_demo_qualifier(ARRAY['Counts staff certifications with status active and an expiration date between today and 30 days from today, excluding deleted records. Certifications already expired are not counted.'], p_organization_id),
+    jsonb_build_object('facilities_covered', v_facilities, 'by_facility', v_by_facility, 'window_days', 30),
     0, p_audit_id);
 END;
 $fn$;
@@ -759,8 +725,8 @@ $fn$;
 -- =============================================================================
 -- 5. The synthetic command
 -- =============================================================================
--- ping writes only officer.command_receipts (plus the audit row written by
--- officer_execute). It touches no domain table. It exists to prove signing,
+-- command_ping writes only officer.command_receipts (plus the audit row written
+-- by officer_execute). It touches no domain table. It exists to prove signing,
 -- nonce, registry, intent binding, idempotency and audit end to end.
 CREATE OR REPLACE FUNCTION officer.command_ping(
   p_key_id text,
@@ -782,7 +748,7 @@ BEGIN
   v_result := jsonb_build_object(
     'ok', true,
     'kind', 'command',
-    'capability', 'ping',
+    'capability', 'command_ping',
     'version', p_version,
     'receipt', jsonb_build_object('intent_id', p_intent_id, 'replayed', false, 'executed_at', v_now, 'audit_id', p_audit_id),
     'result', jsonb_build_object('pong', true, 'server_time', v_now)
@@ -878,7 +844,6 @@ DECLARE
   v_args_sha256 text;
   v_prior officer.command_receipts%ROWTYPE;
   v_audit_id uuid;
-  v_facility_id uuid;
   v_result jsonb;
 BEGIN
   -- PostgREST reproduces a JSON null for a jsonb parameter; treat it as absent.
@@ -969,7 +934,6 @@ BEGIN
     PERFORM officer.refuse('invalid_args', '22023');
   END IF;
   v_args_sha256 := encode(sha256(convert_to(p_args::text, 'UTF8')), 'hex');
-  v_facility_id := officer.facility_for_slug(p_args->>'facility');
 
   -- 9. Commands: intent required; idempotency by (key, intent) and request hash.
   IF v_cap.kind = 'command' THEN
@@ -1008,16 +972,18 @@ BEGIN
   -- Dispatch on the name. Never EXECUTE format() over a caller value.
   CASE p_capability
     WHEN 'occupied_beds' THEN
-      v_result := officer.read_occupied_beds(v_officer.organization_id, v_facility_id, p_args, p_version, v_audit_id);
-    WHEN 'occupancy_rate' THEN
-      v_result := officer.read_occupancy_rate(v_officer.organization_id, v_facility_id, p_args, p_version, v_audit_id);
-    WHEN 'ar_open_balance' THEN
-      v_result := officer.read_ar_open_balance(v_officer.organization_id, v_facility_id, p_args, p_version, v_audit_id);
+      v_result := officer.read_occupied_beds(v_officer.organization_id, p_version, v_audit_id);
+    WHEN 'licensed_capacity' THEN
+      v_result := officer.read_licensed_capacity(v_officer.organization_id, p_version, v_audit_id);
+    WHEN 'open_ar_balance' THEN
+      v_result := officer.read_open_ar_balance(v_officer.organization_id, p_version, v_audit_id);
     WHEN 'billed_revenue_mtd' THEN
-      v_result := officer.read_billed_revenue_mtd(v_officer.organization_id, v_facility_id, p_args, p_version, v_audit_id);
-    WHEN 'open_incidents' THEN
-      v_result := officer.read_open_incidents(v_officer.organization_id, v_facility_id, p_args, p_version, v_audit_id);
-    WHEN 'ping' THEN
+      v_result := officer.read_billed_revenue_mtd(v_officer.organization_id, p_version, v_audit_id);
+    WHEN 'incidents_last_30_days' THEN
+      v_result := officer.read_incidents_last_30_days(v_officer.organization_id, p_version, v_audit_id);
+    WHEN 'staff_certifications_expiring_30_days' THEN
+      v_result := officer.read_staff_certifications_expiring_30_days(v_officer.organization_id, p_version, v_audit_id);
+    WHEN 'command_ping' THEN
       v_result := officer.command_ping(p_key_id, p_officer_ref, v_intent_id, v_request_sha256, p_version, v_audit_id);
     ELSE
       PERFORM officer.refuse('capability_denied', '42501');
@@ -1051,7 +1017,7 @@ BEGIN
   IF p_error_code IS NULL OR p_error_code NOT IN (
     'invalid_contract','invalid_args','idempotency_key_reused','expired_request',
     'key_disabled','capability_denied','principal_unknown','principal_inactive','assurance_required',
-    'replayed_request','version_conflict','catalog_stale') THEN
+    'replayed_request','version_conflict') THEN
     RETURN;
   END IF;
   INSERT INTO officer.audit_events (key_id, officer_ref, capability, capability_version, nonce, outcome, error_code)
@@ -1070,36 +1036,36 @@ INSERT INTO officer.capabilities
   (name, version, kind, title, description, synonyms, meaning, params, unit, allowed_officer_roles, assurance, phi_class, requires_confirmation, effects, verb_phrase, reversible, undo_hint, enabled)
 VALUES
   ('occupied_beds', 1, 'read', 'Occupied beds',
-   'How many residents currently occupy a bed at one Circle of Life facility or across all five, with a per-facility breakdown.',
-   ARRAY['census','heads in beds','occupied beds','resident count','how many residents','current census'],
+   'How many residents currently occupy a bed across Circle of Life, with a per-facility breakdown.',
+   ARRAY['census','heads in beds','occupancy','occupied beds','resident count','how many residents'],
    'Residents with status active, hospital hold or leave of absence who are not deleted, counted at the time of the read. Residents on hold or leave keep their bed.',
-   '[{"name":"facility","type":"string","required":true,"description":"Facility slug, or all for the whole portfolio.","enum":["all","homewood","oakridge","rising_oaks","plantation","grande_cypress"]}]'::jsonb,
-   'beds', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
-  ('occupancy_rate', 1, 'read', 'Occupancy rate',
-   'Occupied beds as a percent of licensed beds at one facility or across all five, with a per-facility breakdown.',
-   ARRAY['occupancy','occupancy rate','occupancy percent','how full','capacity','licensed beds','utilization'],
-   'Residents with active, hospital hold or leave status over licensed beds, as a percent to one decimal. Invalid when the licensed bed count is zero.',
-   '[{"name":"facility","type":"string","required":true,"description":"Facility slug, or all for the whole portfolio.","enum":["all","homewood","oakridge","rising_oaks","plantation","grande_cypress"]}]'::jsonb,
-   'percent', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
-  ('ar_open_balance', 1, 'read', 'Open accounts receivable balance',
-   'Outstanding invoice balance in cents at one facility or across all five, aged by due date, with the number of open invoices and a per-facility breakdown.',
+   '[]'::jsonb, 'beds', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
+  ('licensed_capacity', 1, 'read', 'Licensed capacity',
+   'Total licensed beds across Circle of Life facilities, with occupancy percent and a per-facility breakdown.',
+   ARRAY['capacity','licensed beds','occupancy rate','occupancy percent','how full','bed capacity'],
+   'Sum of licensed beds over facilities that are not deleted. Occupancy percent is occupied beds divided by this figure.',
+   '[]'::jsonb, 'beds', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
+  ('open_ar_balance', 1, 'read', 'Open accounts receivable balance',
+   'Outstanding invoice balance in cents across Circle of Life, aged by due date, with the number of open invoices and a per-facility breakdown. Drafts never count.',
    ARRAY['AR','accounts receivable','receivables','outstanding invoices','open invoices','unpaid invoices','balance due','money owed','aging','past due'],
-   'Sum of invoice balance due over invoices with a balance above zero, not deleted or voided, status not draft, void, written off or paid, aged by due date. Differs from the billing aging view and the executive KPI figure.',
-   '[{"name":"facility","type":"string","required":true,"description":"Facility slug, or all for the whole portfolio.","enum":["all","homewood","oakridge","rising_oaks","plantation","grande_cypress"]}]'::jsonb,
-   'cents', ARRAY['owner','ceo','cfo','coo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
+   'Sum of invoice balance due where not deleted, not voided, balance above zero and status not draft, void, written off or paid, aged by due date. The billing aging view and the executive KPI use different predicates and will not agree.',
+   '[]'::jsonb, 'cents', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
   ('billed_revenue_mtd', 1, 'read', 'Billed revenue month to date',
-   'Invoiced total in cents for the month so far (or a named past month) at one facility or across all five, with a per-facility breakdown.',
+   'Invoiced total in cents from the first of the current month through today across Circle of Life, with a per-facility breakdown.',
    ARRAY['revenue','billed revenue','invoiced','billing this month','month to date','MTD revenue','rent roll billed'],
-   'Sum of invoice totals dated from the first of the month through today (or month end for a past month) with status sent, paid, partial or overdue, excluding deleted and voided invoices. Drafts are not counted.',
-   '[{"name":"facility","type":"string","required":true,"description":"Facility slug, or all for the whole portfolio.","enum":["all","homewood","oakridge","rising_oaks","plantation","grande_cypress"]},{"name":"month","type":"date","required":false,"description":"Any date inside the month to report (YYYY-MM-DD). Defaults to the current month."}]'::jsonb,
-   'cents', ARRAY['owner','ceo','cfo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
-  ('open_incidents', 1, 'read', 'Open incidents',
-   'How many incident reports are open or under investigation at one facility or across all five, with last-30-day counts by severity and AHCA-reportable reports not yet reported.',
-   ARRAY['incidents','open incidents','incident reports','falls','safety incidents','under investigation','AHCA reportable','incidents this month'],
-   'Incident reports with status open or investigating, excluding deleted reports. Last-30-day counts use occurrence time in UTC. AHCA figure counts reportable reports not yet marked reported. Counts only.',
-   '[{"name":"facility","type":"string","required":true,"description":"Facility slug, or all for the whole portfolio.","enum":["all","homewood","oakridge","rising_oaks","plantation","grande_cypress"]}]'::jsonb,
-   'incidents', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
-  ('ping', 1, 'command', 'Test note',
+   'Sum of invoice totals dated from the first of the current month through today with status sent, paid, partial or overdue, excluding deleted and voided invoices. Drafts are not counted.',
+   '[]'::jsonb, 'cents', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
+  ('incidents_last_30_days', 1, 'read', 'Incidents in the last 30 days',
+   'How many incident reports occurred across Circle of Life in the trailing 30 days, with a per-facility breakdown.',
+   ARRAY['incidents','incident reports','falls','events','safety incidents','incidents this month'],
+   'Incident reports whose occurrence time falls in the last 30 UTC days including today, excluding deleted reports. All severities and statuses.',
+   '[]'::jsonb, 'incidents', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
+  ('staff_certifications_expiring_30_days', 1, 'read', 'Staff certifications expiring within 30 days',
+   'How many active staff certifications expire in the next 30 days across Circle of Life, with a per-facility breakdown.',
+   ARRAY['expiring certifications','certifications expiring','certs expiring','staff credentials','training expirations','expiring licenses'],
+   'Active staff certifications with an expiration date between today and 30 days from today, excluding deleted records and already expired certifications.',
+   '[]'::jsonb, 'certifications', ARRAY['owner','ceo','cfo','coo','ctdo'], 'session', 'none', false, NULL, NULL, NULL, NULL, true),
+  ('command_ping', 1, 'command', 'Test note',
    'Synthetic command that records a test note in Circle of Life. Proves the confirm step end to end and changes nothing in the business.',
    ARRAY['ping','test note','test the connection','connection test'],
    'Writes one receipt and one audit row in Circle of Life. No resident, staff, billing or facility record is touched.',
@@ -1143,7 +1109,7 @@ ON CONFLICT (facility_id) DO NOTHING;
 -- inserted (docs/specs/OFFICER-CAPABILITY-CATALOG.md section 6).
 INSERT INTO officer.gateway_keys (key_id, secret_env, enabled, allowed_capabilities)
 VALUES ('front_office_v1', 'OFFICER_GATEWAY_HMAC_FRONT_OFFICE_V1', false,
-        ARRAY['occupied_beds','occupancy_rate','ar_open_balance','billed_revenue_mtd','open_incidents','ping'])
+        ARRAY['occupied_beds','licensed_capacity','open_ar_balance','billed_revenue_mtd','incidents_last_30_days','staff_certifications_expiring_30_days','command_ping'])
 ON CONFLICT (key_id) DO NOTHING;
 
 -- =============================================================================
