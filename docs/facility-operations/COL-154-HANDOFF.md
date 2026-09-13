@@ -1,5 +1,13 @@
 # COL-154 — connect drill and generator records to the checklist first
 
+> **Integration status corrected 2026-09-13 (COL-245).** The statements below were true when written and are kept as history. What is true now:
+> - the source work **is merged to `main`**, so "Nothing is merged to `main`" no longer holds;
+> - the migration is **`359_hfo_drill_generator_sources.sql`**, not `347_…`. Slot 347 in `main` is a different migration, `347_hfo_activity_catalog.sql`;
+> - PR477 was closed as superseded on 2026-09-13 because its head is an ancestor of `main`;
+> - the staff entry surface the original text excluded ("no … UI") was delivered by **COL-241 / COL-242** and merged in `837281a9`.
+>
+> Everything the original text says about hosted apply, deployment, provider behaviour, policy activation and operating acceptance still stands: none of those are established. Merged is not applied, applied is not deployed, deployed is not accepted.
+
 **Implemented, independently reviewed and verified locally on the feature branch as source only.** The first two domain adapters are registered on the COL-147 source-link mechanism; no Homewood rule, day, time, count or deadline is set (Q06, Q09, Q14 stay open); no occurrence, schedule, reminder, UI, hosted migration, deployment, provider behaviour, policy activation or operating acceptance has occurred. Nothing is merged to `main`.
 
 Worktree: `/Users/brianlewis/Circle of Life/Haven Facility Drill Generators`; branch `codex/hfo-col154-drill-generators`, stacked on COL-147 (`codex/hfo-col147-source-adapters`, `a625b75a`). Blockers COL-147 and COL-144 were verified Done as reviewed, gated, unmerged source; COL-154 was moved In Progress by the orchestrator before this work started. Model: Fable 5.1.
