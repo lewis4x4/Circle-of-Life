@@ -1,0 +1,73 @@
+{
+  "result": "FAIL",
+  "results": [
+    {
+      "route": "/admin/billing/invoices",
+      "width": 375,
+      "status": "BASELINE_CAPTURED",
+      "rEvents": 0,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": false,
+        "reason": "No R event expected in invoices baseline"
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "width": 1440,
+      "status": "BASELINE_CAPTURED",
+      "rEvents": 0,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": false,
+        "reason": "No R event expected in invoices baseline"
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing",
+      "width": 375,
+      "status": "FAIL",
+      "failure": "Error: Browser errors/accessibility failure\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Invoice%20Refresh%20Shortcut/docs/facility-operations/col227-evidence/browser-proof.mjs:32:115",
+      "rEvents": 1,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing",
+      "width": 1440,
+      "status": "FAIL",
+      "failure": "Error: Browser errors/accessibility failure\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Invoice%20Refresh%20Shortcut/docs/facility-operations/col227-evidence/browser-proof.mjs:32:115",
+      "rEvents": 1,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    }
+  ]
+}

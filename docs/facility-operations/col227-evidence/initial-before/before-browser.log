@@ -1,0 +1,73 @@
+{
+  "result": "FAIL",
+  "results": [
+    {
+      "route": "/admin/billing/invoices",
+      "width": 375,
+      "status": "BASELINE_CAPTURED",
+      "rEvents": 0,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": false,
+        "reason": "No R event expected in invoices baseline"
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "width": 1440,
+      "status": "BASELINE_CAPTURED",
+      "rEvents": 0,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": false,
+        "reason": "No R event expected in invoices baseline"
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing",
+      "width": 375,
+      "status": "FAIL",
+      "failure": "locator.waitFor: Error: strict mode violation: getByText('No invoices in this scope', { exact: true }) resolved to 2 elements:\n    1) <span class=\"px-2 text-[13px] font-medium leading-snug text-muted-foreground\">No invoices in this scope</span> aka getByRole('link', { name: 'No invoices in this scope' })\n    2) <p class=\"text-[13px] font-medium text-foreground\">No invoices in this scope</p> aka getByRole('cell').getByText('No invoices in this scope')\n\nCall log:\n\u001b[2m  - waiting for getByText('No invoices in this scope', { exact: true }) to be visible\u001b[22m\n\n    at /Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col227-evidence/browser-proof.mjs:29:322",
+      "rEvents": 1,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing",
+      "width": 1440,
+      "status": "FAIL",
+      "failure": "locator.waitFor: Error: strict mode violation: getByText('No invoices in this scope', { exact: true }) resolved to 2 elements:\n    1) <span class=\"px-2 text-[13px] font-medium leading-snug text-muted-foreground\">No invoices in this scope</span> aka getByRole('link', { name: 'No invoices in this scope' })\n    2) <p class=\"text-[13px] font-medium text-foreground\">No invoices in this scope</p> aka getByRole('cell').getByText('No invoices in this scope')\n\nCall log:\n\u001b[2m  - waiting for getByText('No invoices in this scope', { exact: true }) to be visible\u001b[22m\n\n    at /Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col227-evidence/browser-proof.mjs:29:322",
+      "rEvents": 1,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    }
+  ]
+}

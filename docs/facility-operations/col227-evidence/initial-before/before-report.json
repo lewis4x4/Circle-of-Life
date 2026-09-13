@@ -1,0 +1,622 @@
+{
+  "phase": "before",
+  "at": "2026-09-13T06:40:15.865Z",
+  "target": "iwcnajanvjvynolltflw",
+  "source_manifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col227-evidence/before-source-manifest.json",
+    "sha256": "61ca98e35844073a3c74033c12b4b8d212386ca1561733a186baeeaf18cc321d"
+  },
+  "results": [
+    {
+      "route": "/admin/billing/invoices",
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "scopedInvoiceReads": [
+        {
+          "status": 200
+        },
+        {
+          "status": 200
+        }
+      ],
+      "focusBefore": {
+        "tag": "BUTTON",
+        "text": "Refresh",
+        "id": ""
+      },
+      "rEvents": 0,
+      "rScopedRefetch": {
+        "observed": false,
+        "reason": "No R event expected in invoices baseline"
+      },
+      "focusAfter": {
+        "tag": "BUTTON",
+        "text": "Refresh",
+        "id": ""
+      },
+      "buttonEvents": 1,
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…"
+      },
+      "guards": [
+        {
+          "target": "actual search input",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM textarea",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM select",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM contenteditable",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic ctrl KeyboardEvent (browser reload intentionally not invoked)",
+          "nativeKey": false,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic meta KeyboardEvent (browser reload intentionally not invoked)",
+          "nativeKey": false,
+          "refreshEvents": 0
+        }
+      ],
+      "export": {
+        "filename": "invoices-col227-5d2e661fd1a1-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "keys": [
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "/",
+          "tag": "BODY",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "INPUT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "Delete",
+          "tag": "INPUT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "TEXTAREA",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "SELECT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "DIV",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": false,
+          "ctrl": true,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": false,
+          "ctrl": false,
+          "meta": true
+        },
+        {
+          "key": "e",
+          "tag": "BODY",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        }
+      ],
+      "scopePreserved": true,
+      "axeViolations": [],
+      "status": "BASELINE_CAPTURED"
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "scopedInvoiceReads": [
+        {
+          "status": 200
+        },
+        {
+          "status": 200
+        }
+      ],
+      "focusBefore": {
+        "tag": "BUTTON",
+        "text": "Refresh",
+        "id": ""
+      },
+      "rEvents": 0,
+      "rScopedRefetch": {
+        "observed": false,
+        "reason": "No R event expected in invoices baseline"
+      },
+      "focusAfter": {
+        "tag": "BUTTON",
+        "text": "Refresh",
+        "id": ""
+      },
+      "buttonEvents": 1,
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…"
+      },
+      "guards": [
+        {
+          "target": "actual search input",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM textarea",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM select",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM contenteditable",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic ctrl KeyboardEvent (browser reload intentionally not invoked)",
+          "nativeKey": false,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic meta KeyboardEvent (browser reload intentionally not invoked)",
+          "nativeKey": false,
+          "refreshEvents": 0
+        }
+      ],
+      "export": {
+        "filename": "invoices-col227-5d2e661fd1a1-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "keys": [
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "/",
+          "tag": "BODY",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "INPUT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "Delete",
+          "tag": "INPUT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "TEXTAREA",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "SELECT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "DIV",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": false,
+          "ctrl": true,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": false,
+          "ctrl": false,
+          "meta": true
+        },
+        {
+          "key": "e",
+          "tag": "BODY",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        }
+      ],
+      "scopePreserved": true,
+      "axeViolations": [],
+      "status": "BASELINE_CAPTURED"
+    },
+    {
+      "route": "/admin/billing",
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "scopedInvoiceReads": [
+        {
+          "status": 200
+        },
+        {
+          "status": 200
+        }
+      ],
+      "focusBefore": {
+        "tag": "BUTTON",
+        "text": "Refresh",
+        "id": ""
+      },
+      "rEvents": 1,
+      "rScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "focusAfter": {
+        "tag": "BUTTON",
+        "text": "Refresh",
+        "id": ""
+      },
+      "buttonEvents": 1,
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…"
+      },
+      "guards": [
+        {
+          "target": "actual search input",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM textarea",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM select",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM contenteditable",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic ctrl KeyboardEvent (browser reload intentionally not invoked)",
+          "nativeKey": false,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic meta KeyboardEvent (browser reload intentionally not invoked)",
+          "nativeKey": false,
+          "refreshEvents": 0
+        }
+      ],
+      "export": {
+        "filename": "billing-ledger_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "keys": [
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "/",
+          "tag": "BODY",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "INPUT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "Delete",
+          "tag": "INPUT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "TEXTAREA",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "SELECT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "DIV",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": false,
+          "ctrl": true,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": false,
+          "ctrl": false,
+          "meta": true
+        },
+        {
+          "key": "e",
+          "tag": "BODY",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        }
+      ],
+      "scopePreserved": true,
+      "status": "FAIL",
+      "failure": "locator.waitFor: Error: strict mode violation: getByText('No invoices in this scope', { exact: true }) resolved to 2 elements:\n    1) <span class=\"px-2 text-[13px] font-medium leading-snug text-muted-foreground\">No invoices in this scope</span> aka getByRole('link', { name: 'No invoices in this scope' })\n    2) <p class=\"text-[13px] font-medium text-foreground\">No invoices in this scope</p> aka getByRole('cell').getByText('No invoices in this scope')\n\nCall log:\n\u001b[2m  - waiting for getByText('No invoices in this scope', { exact: true }) to be visible\u001b[22m\n\n    at /Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col227-evidence/browser-proof.mjs:29:322"
+    },
+    {
+      "route": "/admin/billing",
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "scopedInvoiceReads": [
+        {
+          "status": 200
+        },
+        {
+          "status": 200
+        }
+      ],
+      "focusBefore": {
+        "tag": "BUTTON",
+        "text": "Refresh",
+        "id": ""
+      },
+      "rEvents": 1,
+      "rScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "focusAfter": {
+        "tag": "BUTTON",
+        "text": "Refresh",
+        "id": ""
+      },
+      "buttonEvents": 1,
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…"
+      },
+      "guards": [
+        {
+          "target": "actual search input",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM textarea",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM select",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic DOM contenteditable",
+          "nativeKey": true,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic ctrl KeyboardEvent (browser reload intentionally not invoked)",
+          "nativeKey": false,
+          "refreshEvents": 0
+        },
+        {
+          "target": "synthetic meta KeyboardEvent (browser reload intentionally not invoked)",
+          "nativeKey": false,
+          "refreshEvents": 0
+        }
+      ],
+      "export": {
+        "filename": "billing-ledger_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "keys": [
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "/",
+          "tag": "BODY",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "INPUT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "Delete",
+          "tag": "INPUT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "TEXTAREA",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "SELECT",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "DIV",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": false,
+          "ctrl": true,
+          "meta": false
+        },
+        {
+          "key": "r",
+          "tag": "BUTTON",
+          "trusted": false,
+          "ctrl": false,
+          "meta": true
+        },
+        {
+          "key": "e",
+          "tag": "BODY",
+          "trusted": true,
+          "ctrl": false,
+          "meta": false
+        }
+      ],
+      "scopePreserved": true,
+      "status": "FAIL",
+      "failure": "locator.waitFor: Error: strict mode violation: getByText('No invoices in this scope', { exact: true }) resolved to 2 elements:\n    1) <span class=\"px-2 text-[13px] font-medium leading-snug text-muted-foreground\">No invoices in this scope</span> aka getByRole('link', { name: 'No invoices in this scope' })\n    2) <p class=\"text-[13px] font-medium text-foreground\">No invoices in this scope</p> aka getByRole('cell').getByText('No invoices in this scope')\n\nCall log:\n\u001b[2m  - waiting for getByText('No invoices in this scope', { exact: true }) to be visible\u001b[22m\n\n    at /Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col227-evidence/browser-proof.mjs:29:322"
+    }
+  ],
+  "result": "FAIL"
+}

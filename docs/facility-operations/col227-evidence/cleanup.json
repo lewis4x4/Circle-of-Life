@@ -1,0 +1,14 @@
+{
+  "active": false,
+  "banned": true,
+  "live_grants": 0,
+  "site_retired": true,
+  "entity_retired": true,
+  "port_4343_closed": true,
+  "owned_app_pids": [
+    24031,
+    24058,
+    24060
+  ],
+  "shared_COL228_retention_obligation": "Completed: COL227 final proof finished; shared fixture now retired"
+}
