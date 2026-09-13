@@ -1,0 +1,188 @@
+{
+  "reviewedAt": "2026-09-13T21:27:52.753069+00:00",
+  "independent": true,
+  "result": "FAIL \u2014 missing-site meeting JSON null projection",
+  "sourceSha": "0d2cfa8004cf50f76ea3e21892fc30afdd64bf48",
+  "stagingReadback": {
+    "identity": {
+      "id": "iwcnajanvjvynolltflw",
+      "name": "Haven HFO Staging",
+      "organization_id": "macizkpxodsegtptaytu",
+      "status": "ACTIVE_HEALTHY"
+    },
+    "transactionReadOnly": "on",
+    "migrationCount": 374,
+    "migration371": {
+      "count": 1,
+      "sha256": "fe88a2a0e79247b4664d4712d682f866d9fcdb6ca2465056ed9e7e186f89d5d5",
+      "name": "hfo_corporate_deliverables"
+    },
+    "maxNumberedMigration": 371,
+    "posture": [
+      {
+        "signature": "corporate_deliverable_snapshot(uuid,date,date)",
+        "securityDefiner": true,
+        "emptySearchPath": true,
+        "authenticatedExecute": true,
+        "anonDenied": true,
+        "serviceDenied": true,
+        "publicDenied": true
+      },
+      {
+        "signature": "corporate_deliverable_history(uuid,uuid,integer,bigint)",
+        "securityDefiner": true,
+        "emptySearchPath": true,
+        "authenticatedExecute": true,
+        "anonDenied": true,
+        "serviceDenied": true,
+        "publicDenied": true
+      },
+      {
+        "signature": "corporate_deliverable_command(uuid,text,text,jsonb)",
+        "securityDefiner": true,
+        "emptySearchPath": true,
+        "authenticatedExecute": true,
+        "anonDenied": true,
+        "serviceDenied": true,
+        "publicDenied": true
+      }
+    ],
+    "readOnly": true
+  },
+  "sourceManifest": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/final-source-manifest.json",
+    "sha256": "b200c079d976a261ef903840c3e3de3d35161f3151681121a0bf39185b88f619",
+    "currentEquality": true
+  },
+  "remoteMutationsByReviewer": 0,
+  "findings": [
+    {
+      "readAt": "2026-09-13T21:31:27.793274+00:00",
+      "sourceSha": "0d2cfa8004cf50f76ea3e21892fc30afdd64bf48",
+      "result": "FAIL \u2014 missing-site meeting JSON null projection",
+      "priority": "P2",
+      "path": "supabase/migrations/371_hfo_corporate_deliverables.sql",
+      "sourceFunction": "haven.corporate_meeting_projection(jsonb)",
+      "facts": {
+        "readOnly": "on",
+        "requests": 1,
+        "meetings": [
+          {
+            "id": "f7dab9d2-a250-4697-92f5-481e86a9b58d",
+            "capturedAt": "2026-09-13T21:28:45.66058+00:00",
+            "sites": [
+              {
+                "status": "missing",
+                "expectation": {
+                  "id": null,
+                  "due_on": null,
+                  "follow_up": null,
+                  "resident_id": null,
+                  "backup_label": null,
+                  "subject_kind": null,
+                  "component_key": null,
+                  "current_state": null,
+                  "current_version": null,
+                  "recipient_label": null,
+                  "current_version_id": null
+                },
+                "facility_id": "6151c329-d562-4251-84a6-5e10d2e8de0a",
+                "facility_label": "col160-3c393324d261 other_site"
+              },
+              {
+                "status": "expected",
+                "expectation": {
+                  "id": "ffd931ee-46b8-490c-9391-83d11b8b02e3",
+                  "due_on": null,
+                  "follow_up": null,
+                  "resident_id": null,
+                  "backup_label": null,
+                  "subject_kind": "facility",
+                  "component_key": "hfo-al-m09-01",
+                  "current_state": "expected",
+                  "current_version": null,
+                  "recipient_label": null,
+                  "current_version_id": null
+                },
+                "facility_id": "b157381a-bd6d-40fd-bc10-f72dbef32913",
+                "facility_label": "col160-3c393324d261 site"
+              }
+            ]
+          }
+        ]
+      },
+      "actualCurrentActorSnapshotMatchesStoredMalformedProjection": true,
+      "currentActorSnapshotHttpStatus": 200,
+      "pendingCheckpoint": "http_missing_meeting",
+      "safeRecovery": "One command and one immutable capture already committed. Do not retry with a new request key or erase malformed historical capture. Preserve failed evidence, repair source/current read compatibility under fresh reviewed guard, and reassess same-key receipt recovery.",
+      "remoteWritesByReviewer": 0
+    }
+  ],
+  "boundaries": "No production, provider/email/Front Office receiver or staff/operating acceptance.",
+  "malformedCaptureScopeReadback": {
+    "malformedMissingMembers": 1,
+    "allBelongToExactFailedFixture": true,
+    "distinctOrganizations": 1
+  },
+  "failedFixtureIndependentRetirement": {
+    "readAt": "2026-09-13T21:33:41.029997+00:00",
+    "result": "RETIREMENT PASS \u2014 workflow remains FAIL",
+    "fixtureRun": "col160-3c393324d261",
+    "facts": {
+      "inactiveProfiles": true,
+      "activeSiteGrants": 0,
+      "activeSubjectGrants": 0,
+      "retiredSites": true,
+      "retiredEntity": true,
+      "retiredOrg": true,
+      "retainedCaptureCount": 1,
+      "retainedCaptureSha256": "520fe050a80282a3aaae73e334a0dad3fa2ebcd08424b38e165d887dd8cfa302",
+      "retainedRequestCount": 1
+    },
+    "all3AuthBansVerified": true,
+    "ownedPort4360Absent": true,
+    "originalPendingPreserved": "http_missing_meeting",
+    "retainedStatePath": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/failed-fixture-state.json",
+    "remoteMutationsByReviewer": 0,
+    "archiveStateSha256": "26837fa2f7e942a4878fc5015d1196cd27dfe76047636d9212048ea7ce29cd0b",
+    "archiveProvenancePath": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/failed-fixture-archive-provenance.json"
+  },
+  "independentLocalProofDatabases": [
+    {
+      "database": "col160_independent_meeting_green_01a09c89",
+      "template": "col158_native_ff910631_final",
+      "purpose": "Independent372native+actualTypeScript schema verification",
+      "recordedBeforeCreation": "2026-09-13T21:37:26.917133+00:00",
+      "dropped": true
+    }
+  ],
+  "independentForward372LocalProof": {
+    "readAt": "2026-09-13T21:37:32.381221+00:00",
+    "result": "PASS \u2014 local372native and actual TypeScript reply schema",
+    "hashes": {
+      "supabase/migrations/371_hfo_corporate_deliverables.sql": "fe88a2a0e79247b4664d4712d682f866d9fcdb6ca2465056ed9e7e186f89d5d5",
+      "supabase/migrations/372_hfo_corporate_missing_meeting_expectation.sql": "5bab09edc15611ec19382ac702a652740e18388ac31ce6d9bfe8a0d2b77ae42f",
+      "supabase/tests/review_hfo_corporate_deliverables.sql": "08f297b325a1f316b142105f49861495502a6c8326d5bc0590d46fc61d74f1ae"
+    },
+    "nativeMarker": "COL160 corporate deliverables primary PASS",
+    "nativeStdoutSha256": "33433f04625e853231cfd1015b63a4ed00b32836001a89c9e6edd41b9b7d966b",
+    "schemaResults": [
+      {
+        "stage": "capture_missing",
+        "passed": true
+      },
+      {
+        "stage": "read_after_identical_retry",
+        "passed": true
+      }
+    ],
+    "assertedSemantics": [
+      "missing member expectation is JSON null",
+      "registered member keeps native identity",
+      "one request and one meeting",
+      "same-key replay retains exact raw canonical captured bytes",
+      "whole reply unchanged after replay"
+    ],
+    "remoteActions": 0
+  }
+}

@@ -12,6 +12,7 @@ BASE=os.environ["HFO_CORPORATE_BASELINE_DB"];assert BASE.startswith("col158_")
 def conn(db):return psycopg.connect(host=str(SOCKET),port=PORT,user="postgres",dbname=db,autocommit=True)
 def setup(db):
     migration=(ROOT/"supabase/migrations/371_hfo_corporate_deliverables.sql").read_text()
+    migration+=(ROOT/"supabase/migrations/372_hfo_corporate_missing_meeting_expectation.sql").read_text()
     fixture=(ROOT/"supabase/tests/review_hfo_corporate_deliverables.sql").read_text().split("-- CONCURRENCY_SETUP_END")[0]+"\nCOMMIT;"
     with conn(db) as c:
         c.execute(migration);c.execute(fixture)
