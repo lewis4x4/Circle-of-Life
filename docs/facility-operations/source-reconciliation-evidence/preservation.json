@@ -1,0 +1,427 @@
+{
+  "scope": "All pre-existing worktrees and local/origin refs; no resetting concurrent work",
+  "worktrees": [
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life",
+      "before_head": "50bc07c4c877b65e17f471895e4446ff11c4d69c",
+      "after_head": "50bc07c4c877b65e17f471895e4446ff11c4d69c",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/private/tmp/circle-of-life-ci-fix",
+      "before_head": null,
+      "result": "pre-existing unavailable worktree retained"
+    },
+    {
+      "path": "/Users/brianlewis/.codex/worktrees/haven-linear-workflow",
+      "before_head": "d498dbaabec4e90a6ad671ccd1ecd86b599938e0",
+      "after_head": "d498dbaabec4e90a6ad671ccd1ecd86b599938e0",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/eager-ishizaka-4a54b8",
+      "before_head": "814ada6df64b759bf2614e76427d5d713cbad018",
+      "after_head": "814ada6df64b759bf2614e76427d5d713cbad018",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/laughing-mendel-8c7c7b",
+      "before_head": "ca2400ad79fac648777d81a3d826d7026d5a91d7",
+      "after_head": "ca2400ad79fac648777d81a3d826d7026d5a91d7",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/modest-heisenberg-6818c9",
+      "before_head": "1205b48fb6ce06946e6e235b7e534d13c79a003d",
+      "after_head": "1205b48fb6ce06946e6e235b7e534d13c79a003d",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/sad-curie-3e04c5",
+      "before_head": "ffbe30df67721679293f880ca8620fc3103e34a5",
+      "after_head": "ffbe30df67721679293f880ca8620fc3103e34a5",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/sweet-moser-4ae591",
+      "before_head": "798c4c3f7a19376fdc0bffe386e1b6ed8bea0d61",
+      "after_head": "798c4c3f7a19376fdc0bffe386e1b6ed8bea0d61",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Corporate Activity History",
+      "before_head": "c7859efa307f3b64c227633bc4fa3c1cfedf7ad2",
+      "after_head": "c7859efa307f3b64c227633bc4fa3c1cfedf7ad2",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Employee Lifecycle",
+      "before_head": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+      "after_head": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Applicability",
+      "before_head": "520ccbde972830f26fb5d1011731c7b7595d2fbc",
+      "after_head": "520ccbde972830f26fb5d1011731c7b7595d2fbc",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Authority",
+      "before_head": "476f02d1ca6c215a1cc315485fe0e511a0a0a6f8",
+      "after_head": "476f02d1ca6c215a1cc315485fe0e511a0a0a6f8",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Catalog",
+      "before_head": "92dea9b9897bc3826f452e3bfe4b752b944a8457",
+      "after_head": "92dea9b9897bc3826f452e3bfe4b752b944a8457",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Dietary Admin",
+      "before_head": "205ac0305473acdf8f0aba3e50ae17b3d7f4b345",
+      "after_head": "205ac0305473acdf8f0aba3e50ae17b3d7f4b345",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Drill Generators",
+      "before_head": "47455a13d812ba638b9f75b2606cd5b957a6f653",
+      "after_head": "47455a13d812ba638b9f75b2606cd5b957a6f653",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Evaluator",
+      "before_head": "caca9592026dead75ef60e3dbf21b04f73e95850",
+      "after_head": "caca9592026dead75ef60e3dbf21b04f73e95850",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Evidence",
+      "before_head": "45ea4ea98c1f3eb7b99622387fcb6f6f73b7cd97",
+      "after_head": "45ea4ea98c1f3eb7b99622387fcb6f6f73b7cd97",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Help Handover",
+      "before_head": "94b1f90a275c6dca7aa1550eeaa7093695a18edf",
+      "after_head": "94b1f90a275c6dca7aa1550eeaa7093695a18edf",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Occurrences",
+      "before_head": "c7dc9efc1ba29f0774b4c94ca819a1ef28cf7358",
+      "after_head": "c7dc9efc1ba29f0774b4c94ca819a1ef28cf7358",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Operations",
+      "before_head": "39d41591e8c8110d1df2251ecfc10dd0edb08ae4",
+      "after_head": "39d41591e8c8110d1df2251ecfc10dd0edb08ae4",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Recovery",
+      "before_head": "d9f5ffb2bbb57effdff9d9a817e05263534ed28f",
+      "after_head": "d9f5ffb2bbb57effdff9d9a817e05263534ed28f",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Reminders",
+      "before_head": "b83bf7b5fe8830c9d2be29c0a16d8cf7b3b48580",
+      "after_head": "b83bf7b5fe8830c9d2be29c0a16d8cf7b3b48580",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Source Adapters",
+      "before_head": "a625b75a0c5b549473abd283940c4c4a832465c6",
+      "after_head": "a625b75a0c5b549473abd283940c4c4a832465c6",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Workspace",
+      "before_head": "db451440b44ca67662dceb6018844943b42a456c",
+      "after_head": "db451440b44ca67662dceb6018844943b42a456c",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Finance Integration",
+      "before_head": "0d0e7763e9fcccbe957a48fba3da7564e9356fd5",
+      "after_head": "0d0e7763e9fcccbe957a48fba3da7564e9356fd5",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Google Connection",
+      "before_head": "9a071cacf5cc54190703df103667c073fb06fab7",
+      "after_head": "9a071cacf5cc54190703df103667c073fb06fab7",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven HFO Staging Integration",
+      "before_head": "08fd3a43da2fbfaa42d2d37051774ab7d196eb07",
+      "after_head": "08fd3a43da2fbfaa42d2d37051774ab7d196eb07",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Insurance Workspace",
+      "before_head": "a94b21df423e67ddd82bfd2e84ecbe95f2460784",
+      "after_head": "a94b21df423e67ddd82bfd2e84ecbe95f2460784",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver",
+      "before_head": "7bed5c903603d8ed1eb06f223080817f342bf0d5",
+      "after_head": "7bed5c903603d8ed1eb06f223080817f342bf0d5",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Needs Attention",
+      "before_head": "c7859efa307f3b64c227633bc4fa3c1cfedf7ad2",
+      "after_head": "c7859efa307f3b64c227633bc4fa3c1cfedf7ad2",
+      "head_unchanged": true,
+      "status_unchanged": false,
+      "original_dirty_bytes_unchanged": false,
+      "changed_original_dirty_paths": [
+        "docs/facility-operations/col150-evidence/engineering-contracts.md",
+        "src/lib/operations/needs-attention.test.ts",
+        "src/lib/operations/needs-attention.ts"
+      ],
+      "result": "concurrent change observed; this run did not write this worktree"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Officer Catalog",
+      "before_head": "4f423b4d8344fa50358b1ce6357d70e51dbe59c7",
+      "after_head": "4f423b4d8344fa50358b1ce6357d70e51dbe59c7",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Operating Evidence",
+      "before_head": "be3f25a2c7e68ea5e93499a345e325f63704b476",
+      "after_head": "be3f25a2c7e68ea5e93499a345e325f63704b476",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Payroll Release",
+      "before_head": "2aa8d5720e55405926e54274878dab923bbbab5a",
+      "after_head": "2aa8d5720e55405926e54274878dab923bbbab5a",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Remaining Roadmap",
+      "before_head": "a49d765c9b1cd862e571c30e0f7eb6b9962af7ef",
+      "after_head": "a49d765c9b1cd862e571c30e0f7eb6b9962af7ef",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Remediation 2026-09-06",
+      "before_head": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+      "after_head": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2",
+      "before_head": "9db72d2d8a16e4206e2f62c68712c0775bf8c225",
+      "after_head": "9db72d2d8a16e4206e2f62c68712c0775bf8c225",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2 Independent Review 2026-09-07/source",
+      "before_head": "6d90e3197ac59e757addd2ac3e401dcbd12865f1",
+      "after_head": "6d90e3197ac59e757addd2ac3e401dcbd12865f1",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2 Staging",
+      "before_head": "05c9a1792c909186eae6b0865ed87ddbbb03acee",
+      "after_head": "05c9a1792c909186eae6b0865ed87ddbbb03acee",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Stand Up Experience",
+      "before_head": "ce73d171c91bac38cf5c69c112e2988b6841988e",
+      "after_head": "ce73d171c91bac38cf5c69c112e2988b6841988e",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Stand Up Origin Fix",
+      "before_head": "142bfa53f88b5dd36e278a29ef194af91ca9031b",
+      "after_head": "142bfa53f88b5dd36e278a29ef194af91ca9031b",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Stand Up Pilot",
+      "before_head": "094946ebefb18755478afb3550ed228f450d1fc1",
+      "after_head": "094946ebefb18755478afb3550ed228f450d1fc1",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Stand Up Review Fixes",
+      "before_head": "afe641c48fe6eea2201038683af45f42eda4b4bd",
+      "after_head": "afe641c48fe6eea2201038683af45f42eda4b4bd",
+      "head_unchanged": true,
+      "status_unchanged": true,
+      "original_dirty_bytes_unchanged": true,
+      "changed_original_dirty_paths": [],
+      "result": "unchanged"
+    }
+  ],
+  "existing_ref_changes": [],
+  "preexisting_ref_count": 320,
+  "recorded_at": "2026-09-13T01:14:55.041198+00:00"
+}

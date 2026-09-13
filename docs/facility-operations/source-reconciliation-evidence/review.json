@@ -1,0 +1,23 @@
+{
+  "reviewer": "Codex independent subagent migration_audit; not human approval",
+  "result": "APPROVE",
+  "scope": [
+    "main/Finance/HFO migration mapping and checksums",
+    "historical canonical and synthetic installed boundaries",
+    "new source reconciliation record and read-only verifier"
+  ],
+  "findings": [],
+  "checks": [
+    "All 342 main migrations byte-identical",
+    "All 15 HFO mapped migrations byte-identical",
+    "366 canonical installed-source hashes match",
+    "27 synthetic variants preserved with original and applied hashes",
+    "Source verifier output reproduced",
+    "Python AST parsed",
+    "Pinned main, Finance and HFO inputs are ancestors"
+  ],
+  "limits": [
+    "No hosted query, deployment or staff acceptance",
+    "Review covers reconciliation and new evidence tooling, not a new whole-application review"
+  ]
+}
