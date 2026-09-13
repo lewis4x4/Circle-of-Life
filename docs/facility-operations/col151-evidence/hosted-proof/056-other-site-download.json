@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-13T02:12:32.017663+00:00",
+  "method": "GET",
+  "path": "/api/admin/operations/activity-history/exports/143b9d15-3fd6-4d67-919a-5d4dd8df91ab/download",
+  "status": 403,
+  "result": {
+    "error": "Export is no longer accessible"
+  },
+  "expected": [
+    403
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "at": "2026-09-13T02:09:30.054814+00:00",
+  "exit": 0,
+  "result": "[{\"db\":\"postgres\",\"actor\":\"postgres\",\"amended\":true,\"hook_exists\":true}]"
+}

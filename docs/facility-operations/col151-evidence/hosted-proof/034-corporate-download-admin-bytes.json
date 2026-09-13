@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-13T02:11:03.105484+00:00",
+  "method": "GET",
+  "path": "/storage/v1/object/sign/operation-evidence/f2b19452-966e-4909-bfca-3a658419e3d7/65bb8c8e-3b1e-463a-9f28-78dcb6915060/prepare.png",
+  "status": 200,
+  "result": {
+    "length": 70,
+    "md5": "b357a19c87624c7c4d131aeeb4ae677f",
+    "sha256": "497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581"
+  },
+  "expected": [
+    200
+  ]
+}

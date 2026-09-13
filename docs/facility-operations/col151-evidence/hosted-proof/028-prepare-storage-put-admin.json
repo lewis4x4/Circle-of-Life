@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-13T02:10:55.823159+00:00",
+  "method": "PUT",
+  "path": "/storage/v1/object/upload/sign/operation-evidence/f2b19452-966e-4909-bfca-3a658419e3d7/65bb8c8e-3b1e-463a-9f28-78dcb6915060/prepare.png",
+  "status": 200,
+  "result": {
+    "Key": "operation-evidence/f2b19452-966e-4909-bfca-3a658419e3d7/65bb8c8e-3b1e-463a-9f28-78dcb6915060/prepare.png"
+  },
+  "expected": [
+    200
+  ]
+}

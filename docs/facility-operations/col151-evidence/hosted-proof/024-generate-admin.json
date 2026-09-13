@@ -1,0 +1,35 @@
+{
+  "at": "2026-09-13T02:10:51.369142+00:00",
+  "method": "POST",
+  "path": "/rest/v1/rpc/generate_operation_occurrences_service",
+  "status": 200,
+  "result": {
+    "counts": {
+      "created": 1,
+      "invalid": 0,
+      "conflict": 0,
+      "existing": 0,
+      "no_binding": 0,
+      "binding_not_current": 0,
+      "configuration_not_in_force": 0
+    },
+    "run_id": "col151-fa3f27672f1c-admin",
+    "outcomes": [
+      {
+        "shift": null,
+        "outcome": "created",
+        "task_id": "f790a56c-6d4c-4852-b5e3-4b59ded00035",
+        "binding_id": null,
+        "subject_id": "56f3cf25-84ad-4746-934d-a50e371bf561",
+        "occurrence_date": "2026-09-12"
+      }
+    ],
+    "rule_sha256": "5efbd500b96e5732f1eac17f09524d6a5b0f86afbb87e33d8cfabc23700220e9",
+    "configuration_id": "a7da2d96-da69-43b4-bc16-950864034a4f",
+    "evaluator_version": "hfo-evaluator/1",
+    "requirement_version_id": "7954828e-2856-44ae-8a51-5b4d32ed3c93"
+  },
+  "expected": [
+    200
+  ]
+}

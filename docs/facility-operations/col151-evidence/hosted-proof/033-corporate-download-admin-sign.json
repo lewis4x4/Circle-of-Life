@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-13T02:11:02.782184+00:00",
+  "method": "GET",
+  "path": "/api/admin/operations/evidence/65bb8c8e-3b1e-463a-9f28-78dcb6915060/download",
+  "status": 200,
+  "result": {
+    "outcome": "receipt",
+    "download": {
+      "signedUrl": "<REDACTED>",
+      "expires_in": 60
+    }
+  },
+  "expected": [
+    200
+  ]
+}

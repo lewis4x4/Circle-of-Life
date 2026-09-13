@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-13T02:11:42.140421+00:00",
+  "method": "GET",
+  "path": "/api/admin/operations/activity-history/exports/143b9d15-3fd6-4d67-919a-5d4dd8df91ab/download",
+  "status": 200,
+  "result": {
+    "length": 653726,
+    "md5": "72ff6915d0b1091c3fc7ee6c7621a104",
+    "sha256": "5c987b8325c42656262061848861fb9aa84b0b591c36043f236f8adedb97770a"
+  },
+  "expected": [
+    200
+  ]
+}

@@ -1,3 +1,11 @@
+# Current checkpoint — COL-151 source and staged API proof
+
+September12 overnight: sourceceb98113, PR#494, independent local/native and hosted [PROOF PASS — CLEAN]. Full suite4500 passed/two existing skips;368 migrations48 probes; strict UI gate PASS. Staging364/365 applied atomically; actual CSV1001 occurrences and correction/revocation proof passed. Owned synthetic actors deactivated/banned and local app stopped. Main/production remains pending coordinated inherited finance/Edge/schema release.
+
+Continue the authorized overnight loop from `/Users/brianlewis/Circle of Life/Haven Overnight Delivery 2026-09-12/RUN-LEDGER.md`. Next live ready core defect: COL-222, then COL-223. PR490 parent Linux gates/finance audit pass after196cc1cd/de8ed0e9; updated491/493 exact-head checks running. Preserve old worktrees; no operating acceptance inferred.
+
+## Previous checkpoint retained
+
 # Current checkpoint — COL-150 source delivery
 
 September 12, 2026: Needs Attention is implemented and technically reviewed on `codex/hfo-col150-needs-attention`, based on COL-149 `c7859efa`. See [COL-150-HANDOFF.md](COL-150-HANDOFF.md) and [verification](col150-evidence/verification.json). Full suite: 4,467 passed, two skips; final focused suite: 30 passed. Strict UI gate PASS, 367 migrations/47 SQL probes. Migration364 is source-only and unapplied to hosted systems. Next bounded source item: COL-151, after current Linear recheck.
