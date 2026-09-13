@@ -1,0 +1,31 @@
+{
+  "reviewer": "Separate Codex technical reviewer",
+  "recommendation": "APPROVE",
+  "blocking_findings": 0,
+  "focused_tests_passed": 29,
+  "test_files": [
+    "src/lib/operations/needs-attention.test.ts",
+    "src/app/api/admin/operations/needs-attention/route.test.ts",
+    "src/app/(admin)/admin/operations/attention/page.test.tsx"
+  ],
+  "scope": [
+    "Current task and issue ownership semantics",
+    "Guarded SQL projection and invoker exposure",
+    "Current permitted facility and subject filtering",
+    "Complete pagination and independent issue state",
+    "Explicit denominators and unknown configuration",
+    "Severe issue visibility and facility timezones"
+  ],
+  "sql_probe_execution": "Parent strict gate",
+  "not_claimed": [
+    "Hosted verification",
+    "Human staff or operating acceptance"
+  ],
+  "nonblocking_observations": [
+    "React act warning in detail expansion test"
+  ],
+  "post_review_fixture_correction": "Current evidence fixture uses schema-valid complete instead of satisfied; nine classifier tests rerun PASS; runtime unchanged",
+  "final_focused_tests_passed": 30,
+  "sql_cast_correction": "Pinned owner_role enum explicitly cast to text; re-reviewed and native probe passed",
+  "final_ui_review": "Approved readable partial labels; independent eight UI tests passed"
+}

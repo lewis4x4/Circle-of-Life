@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Needs Attention
+
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  21:08:20
+   Duration  10.79s (transform 1.57s, setup 129ms, import 1.39s, tests 8.66s, environment 483ms)

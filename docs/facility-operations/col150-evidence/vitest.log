@@ -1,0 +1,40 @@
+
+> circle-of-life@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Needs Attention
+
+ ❯ src/components/layout/AppShell.test.tsx (11 tests | 1 failed) 23489ms
+     × still surfaces non-common destinations when the operator searches 5060ms
+9:07:49 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Needs Attention/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven Needs Attention/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Needs%20Attention/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Needs%20Attention/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Needs%20Attention/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Needs%20Attention/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Needs%20Attention/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Needs%20Attention/node_modules/vite/dist/node/chunks/node.js:19691:22)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/layout/AppShell.test.tsx > AppShell all-sections jump list > still surfaces non-common destinations when the operator searches
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/layout/AppShell.test.tsx:230:3
+    228|   });
+    229|
+    230|   it("still surfaces non-common destinations when the operator searche…
+       |   ^
+    231|     const user = userEvent.setup();
+    232|     renderAppShell();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 619 passed (620)
+      Tests  1 failed | 4466 passed | 2 skipped (4469)
+   Start at  21:06:12
+   Duration  109.28s (transform 68.91s, setup 117.54s, import 643.97s, tests 213.53s, environment 473.24s)

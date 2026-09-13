@@ -1,3 +1,9 @@
+# Current checkpoint — COL-150 source delivery
+
+September 12, 2026: Needs Attention is implemented and technically reviewed on `codex/hfo-col150-needs-attention`, based on COL-149 `c7859efa`. See [COL-150-HANDOFF.md](COL-150-HANDOFF.md) and [verification](col150-evidence/verification.json). Full suite: 4,467 passed, two skips; final focused suite: 30 passed. Strict UI gate PASS, 367 migrations/47 SQL probes. Migration364 is source-only and unapplied to hosted systems. Next bounded source item: COL-151, after current Linear recheck.
+
+## Previous checkpoint retained as history
+
 # Current checkpoint — COL-149 source delivery
 
 September 12, 2026: corporate Facility → Activity → complete History is implemented and technically reviewed on `codex/hfo-col149-corporate-history`, based on reconciled integration `08fd3a43`. See [COL-149-HANDOFF.md](COL-149-HANDOFF.md) and [verification](col149-evidence/verification.json). Final result: 4,438 tests passed, two existing skips, strict UI gate PASS, 366 migrations/46 SQL probes, independent review approved. Source delivery only; hosted new-page and staff acceptance remain unproven. Next bounded dependency-ready item: COL-150, subject to live Linear recheck.

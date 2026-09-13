@@ -1,0 +1,35 @@
+{
+  "mission_alignment": "pass",
+  "base": "c7859efa",
+  "branch": "codex/hfo-col150-needs-attention",
+  "full_suite": {
+    "passed": 4467,
+    "skipped": 2,
+    "files": 620,
+    "log": "vitest-verified.log"
+  },
+  "final_focused_tests": {
+    "passed": 30,
+    "files": 3,
+    "log": "focused-final.log",
+    "note": "Includes final UI wording regression after full-suite run"
+  },
+  "typecheck": "PASS",
+  "lint": "PASS including final scoped UI lint",
+  "strict_ui_gate": {
+    "verdict": "PASS",
+    "artifact": "test-results/agent-gates/2026-09-13T01-14-39-871Z-COL-150-HFO-NEEDS-ATTENTION.json"
+  },
+  "migration_files": 367,
+  "sql_probes": 47,
+  "technical_review": "APPROVE",
+  "source_migration": "364_hfo_attention_ownership.sql",
+  "new_dependencies": 0,
+  "environment": "Local source, native PostgreSQL with Supabase stubs, public UI preview and component axe",
+  "not_tested": [
+    "Authenticated hosted Needs Attention browser",
+    "Real Homewood staff or operating acceptance"
+  ],
+  "hosted_migration_applied": false,
+  "main_merged_or_deployed": false
+}
