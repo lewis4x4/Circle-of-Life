@@ -1,0 +1,20 @@
+{
+  "result": "PASS",
+  "target": "iwcnajanvjvynolltflw",
+  "sourceSha": "30b2a45d183526e04d99a536af277344acc09036",
+  "migration_sha256": "1f1bf3f7bb39c3cb79842a121edaf92aeeb8056f0b8ad2d23a59879f12c8eb68",
+  "project": {
+    "id": "iwcnajanvjvynolltflw",
+    "name": "Haven HFO Staging",
+    "organization_id": "macizkpxodsegtptaytu",
+    "status": "ACTIVE_HEALTHY"
+  },
+  "posture": {
+    "invoker": true,
+    "authenticated": true,
+    "anon_denied": true,
+    "service_denied": true
+  },
+  "at": "2026-09-13T18:32:24.660572+00:00",
+  "scope": "Staging additive370 only; no rule publication or operating acceptance"
+}

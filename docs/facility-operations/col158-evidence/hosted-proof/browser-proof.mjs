@@ -26,19 +26,29 @@ try{for(const width of mode==='intake'?[1440]:[1440,375]){
   }
   if(!row||body.resident_id!==state.resident||!body.complete||!body.can_intake)throw Error('Exact task/patient/current writer scope unavailable');
   if(mode==='intake'){
+   if(state.browser_contact){
+    if(!body.contacts.some(contact=>contact.id===state.browser_contact))throw Error('Recorded contact not currently visible for this exact patient/task');
+    result.reusedRecordedContact=true;
+   }else{
    await row.getByText('Add native resident contact',{exact:true}).click();await row.getByLabel('Contact name',{exact:true}).fill('Synthetic Caseworker Example');await row.getByLabel('Contact type',{exact:true}).fill('caseworker');
    const contactRead=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/operations/provider-reports/contacts'&&r.request().method()==='POST');
    state.pendingBrowser='contact';save();await row.getByRole('button',{name:'Create native contact',exact:true}).click();const contactResponse=await contactRead,contact=await contactResponse.json();
    if(contactResponse.status()!==200||contact.task_id!==target||contact.resident_id!==state.resident)throw Error('Contact not verified');state.browser_contact=contact.contact.id;delete state.pendingBrowser;save();
-   await row.getByText('Native report document intake',{exact:true}).click();await row.getByLabel('Document title',{exact:true}).fill('Synthetic report One');await row.getByLabel('Document type',{exact:true}).selectOption('support_plan');await row.getByLabel('Native report file',{exact:true}).setInputFiles(state.pdf_One);
+   }
+   const refreshedRead=page.waitForResponse(r=>{const url=new URL(r.url());return url.pathname==='/api/admin/operations/provider-reports'&&url.searchParams.get('task_id')===target&&r.request().method()==='GET'&&r.status()===200;});
+   await row.getByRole('button',{name:'Reload provider reports',exact:true}).click();
+   const refreshed=await(await refreshedRead).json();
+   if(refreshed.task_id!==target||refreshed.resident_id!==state.resident||!refreshed.complete||!refreshed.can_intake||!refreshed.contacts.some(contact=>contact.id===state.browser_contact))throw Error('Fresh contact/task binding failed');
+   await row.getByText('Native report document intake',{exact:true}).waitFor({state:'visible'});
+   await row.getByText('Native report document intake',{exact:true}).click();await row.getByLabel('Document title',{exact:true}).fill('Synthetic report One');await row.getByRole('combobox',{name:'Document type',exact:true}).selectOption('support_plan');await row.getByLabel('Native report file',{exact:true}).setInputFiles(state.pdf_One);
    const finalizedRead=page.waitForResponse(r=>/^\/api\/admin\/operations\/provider-reports\/documents\/[^/]+\/finalize$/.test(new URL(r.url()).pathname)&&r.request().method()==='POST',{timeout:90000});
    state.pendingBrowser='native_intake';save();await row.getByRole('button',{name:'Upload and finalize native version',exact:true}).click();const finalizedResponse=await finalizedRead,version=(await finalizedResponse.json()).version;
    if(finalizedResponse.status()!==200||version.task_id!==target||version.resident_id!==state.resident||version.facility_id!==state.site||version.state!=='finalized'||!version.checksum_verified||version.declared_sha256!==state.pdf_hashes.One)throw Error('Native finalization not verified');
-   state.browser_version=version.id;state.browserIntakePassed=true;delete state.pendingBrowser;save();result.nativeVersion=version.id;result.sha256=version.declared_sha256;result.realBrowserContactAndUpload=true;
+   state.browser_version=version.id;state.browserIntakePassed=true;delete state.pendingBrowser;save();result.nativeVersion=version.id;result.sha256=version.declared_sha256;result.realBrowserContactAndUpload=true;result.contactCreationSource=result.reusedRecordedContact?'Preserved first browser attempt200 plus current scoped readback':'Current browser attempt';
    await row.getByText('Native document version finalized. Receipt, review and signature observations remain separate.',{exact:true}).waitFor();
   }else{
    const expectation=body.expectations.find(e=>e.id===state.expectation);if(!expectation||expectation.current_version_id!==state.version_two)throw Error('Existing patient report not reused');
-   await row.getByText('Record a distinct report event',{exact:true}).click();await row.getByLabel('Report event',{exact:true}).selectOption('review');await row.getByLabel('Exact native document version',{exact:true}).selectOption(state.version_two);await row.getByLabel('Review result',{exact:true}).selectOption('reviewed');await row.getByLabel('Review findings',{exact:true}).fill('Synthetic independent task review via actual UI');
+   await row.getByText('Record a distinct report event',{exact:true}).click();await row.getByRole('combobox',{name:'Report event',exact:true}).selectOption('review');await row.getByRole('combobox',{name:'Exact native document version',exact:true}).selectOption(state.version_two);await row.getByRole('combobox',{name:'Review result',exact:true}).selectOption('reviewed');await row.getByLabel('Review findings',{exact:true}).fill('Synthetic independent task review via actual UI');
    const eventRead=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/operations/provider-reports'&&r.request().method()==='POST');
    state.pendingBrowser='review-'+width;save();const form=row.getByLabel('Review findings',{exact:true}).locator('xpath=ancestor::form');await form.getByRole('button',{name:'Save factual report event',exact:true}).click();const eventResponse=await eventRead,updated=await eventResponse.json();
    if(eventResponse.status()!==200||updated.task_id!==target||updated.expectations.find(e=>e.id===state.expectation)?.review_state!=='reviewed')throw Error('Current task review not recorded');delete state.pendingBrowser;save();result.currentTaskReview=true;result.task=target;
