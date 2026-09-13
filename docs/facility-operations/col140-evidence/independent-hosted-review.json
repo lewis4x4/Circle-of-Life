@@ -1,0 +1,34 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "sourceSha": "fbafd6f829d760a8a7b1d9336f1773adf10eb64b",
+  "target": "iwcnajanvjvynolltflw",
+  "at": "2026-09-13T05:23:15.044113+00:00",
+  "artifacts_sha256": {
+    "staging-readiness.json": "09e9b9d37bad3fcf87bbec085367bdb7a08f750f2afc2b575b50caa2e37f0f72",
+    "http-proof.json": "97ccd70272065dc277e6d7a24b2b7196e677bb023135bf6231a49221cdaa45f0",
+    "browser-report.json": "2315fd8e62ae60e978ef6d437c422bf76b783140c12ce200bef219234cfd3af6",
+    "cleanup.json": "1a6132c24a0d08a3fb6fd783df46fd4e08e2bc72baf09d0c4fb15423b3004adb",
+    "source-manifest.json": "9b5b80029fe1858c775ecb886a406d45c7d258995b0f467f5623d7399024d901"
+  },
+  "criteria": {
+    "source_items": 91,
+    "components": 110,
+    "prepared_components": 97,
+    "unresolved_components": 13,
+    "existing_rows_preserved": 17,
+    "retry_new_components": 0,
+    "no_rule_activation": true,
+    "authenticated_browser_widths": [
+      1440,
+      375
+    ],
+    "axe_console_http_failures": 0,
+    "cross_site_revoked_denied": true,
+    "fixture_actor_banned_inactive": true,
+    "live_grants": 0
+  },
+  "findings": [],
+  "scope": "Synthetic authenticated local application with hosted staging DB/Auth; exact366 application, persisted catalog coverage, existing draft preservation, safe repeat preparation and browser accessibility. No actual approved Homewood rules, production deployment, staff or operating acceptance claimed."
+}

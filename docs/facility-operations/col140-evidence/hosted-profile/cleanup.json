@@ -1,0 +1,17 @@
+{
+  "result": "PASS",
+  "cross_site_denied": true,
+  "revoked_denied": true,
+  "banned": true,
+  "inactive": true,
+  "live_grants": 0,
+  "retired_sites": 2,
+  "entity_retired": true,
+  "preexisting_rows_preserved_after_browser": 17,
+  "owned_app_pids": [
+    95434,
+    95507,
+    95514
+  ],
+  "port_4340_closed": true
+}
