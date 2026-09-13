@@ -1,0 +1,14 @@
+{
+  "score": 92,
+  "verdict": "pass",
+  "category_match": true,
+  "threshold": 90,
+  "threshold_passed": true,
+  "differences": [
+    "The narrow viewport wraps long version and actor identifiers across many lines, making the event history dense."
+  ],
+  "suggestions": [
+    "Consider a later presentation-only pass that labels or truncates identifiers while preserving a copyable full value."
+  ],
+  "reasoning": "The required current-state, version, due, review and provenance facts are readable at 1440 and 375 pixels. Controls remain usable, navigation stays intact, and the narrow layout has no horizontal overflow; the remaining concern is density rather than a functional defect."
+}

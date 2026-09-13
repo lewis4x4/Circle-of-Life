@@ -1,0 +1,27 @@
+{
+  "at": "2026-09-13T18:45:05.728443+00:00",
+  "target": "iwcnajanvjvynolltflw",
+  "project": {
+    "id": "iwcnajanvjvynolltflw",
+    "name": "Haven HFO Staging",
+    "organization_id": "macizkpxodsegtptaytu",
+    "status": "ACTIVE_HEALTHY"
+  },
+  "old_source": "30b2a45d183526e04d99a536af277344acc09036",
+  "new_source": "1b53a7096eb2cee6117accd263a1ebb913179998",
+  "changed_file": "docs/facility-operations/col158-evidence/hosted-proof/browser-proof.mjs",
+  "core_and_migration_unchanged": true,
+  "facts": {
+    "contacts": 1,
+    "retained_contact_matches": true,
+    "versions": 0,
+    "documents": 0,
+    "objects": 0,
+    "expectations": 0,
+    "active_profiles": 3
+  },
+  "same_contact_users_tasks_preserved": true,
+  "no_grants_restored": true,
+  "database_mutation_performed": false,
+  "private_backup_sha256": "7aacf5a995673441ed2990d83f5aaa3b9b821b1e5f99668528d65725cc8c7e00"
+}

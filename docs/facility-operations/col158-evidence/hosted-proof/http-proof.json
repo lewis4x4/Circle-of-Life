@@ -1,0 +1,12 @@
+{
+  "result": "PASS",
+  "sourceSha": "1b53a7096eb2cee6117accd263a1ebb913179998",
+  "serviceWithoutReportOutstanding": true,
+  "dateOnlyNoClock": true,
+  "signatureRolesSeparatelyObserved": 3,
+  "signatureDates": "unknown",
+  "futureEffectiveDueNotOverdue": true,
+  "monthlyReuseOneNativeFile": true,
+  "supersessionNoInheritedReviewOrSignatures": true,
+  "nativeHashesUnchangedByReportEvents": true
+}

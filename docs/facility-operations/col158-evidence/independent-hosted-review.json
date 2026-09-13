@@ -1,0 +1,32 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "sourceSha": "1b53a7096eb2cee6117accd263a1ebb913179998",
+  "coreSource": "30b2a45d183526e04d99a536af277344acc09036",
+  "target": "iwcnajanvjvynolltflw",
+  "at": "2026-09-13T18:58:59.343572+00:00",
+  "artifacts_sha256": {
+    "staging-readiness.json": "0e7c07f5053703134280696811faefb70b8119e71895212a71df9012a34957b8",
+    "browser-intake-report.json": "e48144b5dfcb88b449795a2ec58137cccc736331ffe7de22bc7b8a8fb4a344b7",
+    "http-proof.json": "91dee55b04d2290ff26526d4d1a5df1691b9c08b28b61f210cea200aa6a10342",
+    "browser-review-report.json": "1cec5a9b94a00e580fb3966008960ef67ac3f43ab379e61bb7430d7bb5fd996b",
+    "denial-proof.json": "6652458e98bb16d38e55a1fa151fdf15823b6afcca0cc53f99933e8de0879498",
+    "cleanup.json": "0e84ea310a096894981ec9b599ed41633194fcfdeab7c879b849a0afdfdd8674",
+    "selector-source-transition.json": "a1b13ab9d78074b4cbaea5ce2aecedd05785236d6de1fbda3d8e995d6fa9ad43",
+    "intake-failure-readback.json": "877e270e11690dde49c5bf58858840399e06b29e1473c8837be05cc44d6b5119",
+    "intake-selector-readonly.json": "8e96a8c95bea4991624009d6fd4b35516001dc73b62ec10d1e806127471a676d",
+    "interruption-readback.json": "f6e599f0696e5626061fe0c1701c655a066701c43ea8ee2dc7ed6354087b6c4f",
+    "generated-pdf-facts.json": "8c8f0d6e56dcd844972e3e4ad9904066550fca3b8776767dff523c45351aed14",
+    "stream-byte-evidence.json": "a761ef5461bbe41d52b5e003ef838ee5e141f6d30024e5f7cdc86941d7855dc9"
+  },
+  "findings": [],
+  "scope": "Composed actual staged UI native contact/intake and server-verified PDF bytes, date-only operator service/due provenance, distinct version/page signature observations, monthly same-plan reuse with separate current-task review, supersession without inherited review/signatures, native hash preservation, scoped streamed bytes, both browser widths and separate HFO/native/read-only/cross-patient/overwrite denial controls; exact fixture retirement and4358shutdown.",
+  "source_hashes_verified": 3264,
+  "limits": [
+    "Original30b selector attempt remains failed;1b53 runner-only repair reused one existing contact after scoped readback.",
+    "Intake case PASS was written before intentional turn interruption; overall intake result field was not written. Subsequent exact-state readback confirmed no pending mutation or duplication; no original overall-script PASS claimed.",
+    "Signature observations are synthetic operator-observed marks with dates unknown, not real provider signatures or clinical approval. PDF page count remains unverified in product.",
+    "Dense mobile history is noted; no pixel-perfect claim. No production cutover; user stop boundary remains COL158/COL160 main integration then summary."
+  ]
+}

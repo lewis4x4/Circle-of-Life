@@ -1,6 +1,6 @@
 {
   "mode": "intake",
-  "sourceSha": "30b2a45d183526e04d99a536af277344acc09036",
+  "sourceSha": "1b53a7096eb2cee6117accd263a1ebb913179998",
   "target": "iwcnajanvjvynolltflw",
   "cases": [
     {
@@ -8,12 +8,18 @@
       "pageErrors": [],
       "consoleErrors": [],
       "httpFailures": [],
-      "result": "FAIL",
-      "failure": {
-        "message": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('listitem', { name: 'COL158 Synthetic provider report', exact: true }).nth(2).getByLabel('Document type', { exact: true })\u001b[22m\n",
-        "stack": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('listitem', { name: 'COL158 Synthetic provider report', exact: true }).nth(2).getByLabel('Document type', { exact: true })\u001b[22m\n\n    at /Users/brianlewis/Circle of Life/Haven Provider Report Workflows/docs/facility-operations/col158-evidence/hosted-proof/browser-proof.mjs:33:210"
-      }
+      "reusedRecordedContact": true,
+      "nativeVersion": "787830ac-2abb-454c-b721-ececfb7709c2",
+      "sha256": "aa3a0344e116283106021d9446a19e530dcd497c0f722bb3a08486a36b0e67e0",
+      "realBrowserContactAndUpload": true,
+      "contactCreationSource": "Preserved first browser attempt200 plus current scoped readback",
+      "viewportCaptures": [
+        "intake-1440-0.png",
+        "intake-1440-1.png"
+      ],
+      "horizontalOverflow": false,
+      "axeViolations": [],
+      "result": "PASS"
     }
-  ],
-  "result": "FAIL"
+  ]
 }

@@ -1,0 +1,40 @@
+{
+  "mode": "review",
+  "sourceSha": "1b53a7096eb2cee6117accd263a1ebb913179998",
+  "target": "iwcnajanvjvynolltflw",
+  "cases": [
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "currentTaskReview": true,
+      "task": "ea23a1d6-d041-45f3-a076-052140e78a0c",
+      "viewportCaptures": [
+        "review-1440-0.png",
+        "review-1440-1.png",
+        "review-1440-2.png"
+      ],
+      "horizontalOverflow": false,
+      "axeViolations": [],
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "currentTaskReview": true,
+      "task": "9b720525-1547-4dda-9fcc-2c4d530ca51b",
+      "viewportCaptures": [
+        "review-375-0.png",
+        "review-375-1.png",
+        "review-375-2.png"
+      ],
+      "horizontalOverflow": false,
+      "axeViolations": [],
+      "result": "PASS"
+    }
+  ],
+  "result": "PASS"
+}
