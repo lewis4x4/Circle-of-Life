@@ -1,0 +1,45 @@
+{
+  "canonical": "00000000-0000-0000-0002-000000000003",
+  "results": [
+    {
+      "surface": "z.string().uuid / COL151 POST export facility_id",
+      "canonicalAccepted": false,
+      "randomFixtureAccepted": true,
+      "errors": [
+        "Invalid UUID"
+      ]
+    },
+    {
+      "surface": "facility-requirements POST facility_id",
+      "canonicalAccepted": false,
+      "randomFixtureAccepted": true,
+      "errors": [
+        "Invalid UUID"
+      ]
+    },
+    {
+      "surface": "manual occurrence POST facility_id",
+      "canonicalAccepted": false,
+      "randomFixtureAccepted": true,
+      "errors": [
+        "Invalid UUID"
+      ]
+    },
+    {
+      "surface": "binding enrollment POST facility_id",
+      "canonicalAccepted": false,
+      "randomFixtureAccepted": true,
+      "errors": [
+        "Invalid UUID"
+      ]
+    },
+    {
+      "surface": "help/handover target facility_id",
+      "canonicalAccepted": false,
+      "randomFixtureAccepted": true,
+      "errors": [
+        "Invalid UUID"
+      ]
+    }
+  ]
+}

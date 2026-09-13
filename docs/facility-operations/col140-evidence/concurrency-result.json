@@ -1,0 +1,26 @@
+{
+  "probe_sha256": "902947a1e9904971d919cec4585c79a3b26c2b09e4080a6c107cc88539c4af51",
+  "migration_sha256": "6526a62ef4a9708a275efc0ea86b91edcf242f9dfcfbe510436537947e54474d",
+  "database": "col140_concurrency_59d702caf883",
+  "environment": "native PostgreSQL with synthetic Supabase stubs",
+  "cases": [
+    {
+      "case": "concurrent normal human draft create and edit preserved after observed activity lock wait",
+      "result": "PASS",
+      "observed_lock": true,
+      "existing_draft_unchanged": true,
+      "repeat_prepared": 0,
+      "components": 110
+    },
+    {
+      "case": "facility grant revocation committed while preparation waits on authority grant lock",
+      "result": "PASS",
+      "observed_lock": true,
+      "sqlstate": "42501",
+      "no_new_drafts": true
+    }
+  ],
+  "cleaned": true,
+  "focused_sql_probe": "PASS",
+  "result": "PASS"
+}
