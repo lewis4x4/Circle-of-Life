@@ -1,3 +1,4 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { z } from "zod";
 
 import { validateScheduleRule } from "@/lib/operations/schedule-evaluator";
@@ -25,7 +26,7 @@ export const REQUIREMENT_VIEW_ROLES = [
   "housekeeper",
 ] as const;
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 const identifier = z.string().regex(/^[a-z][a-z0-9_]{0,63}$/);
 const nonEmpty = z.string().trim().min(1).max(8000);
 

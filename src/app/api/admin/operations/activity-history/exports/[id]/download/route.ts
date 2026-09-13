@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { requireOperationsActor, revalidateOperationsActor, actorCanViewOperations } from "@/lib/operations/auth";
 import { OPERATIONS_VIEW_ROLES } from "@/lib/operations/constants";
 import { collectHistoryExport, historyExportCsv, historyExportRpc, HistoryExportError } from "@/lib/operations/history-export";
@@ -7,7 +7,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const auth = await requireOperationsActor({ allowedRoles: OPERATIONS_VIEW_ROLES });
   if ("response" in auth) return auth.response;
   const { id } = await params;
-  if (!z.string().uuid().safeParse(id).success) return NextResponse.json({ error: "Invalid export id" }, { status: 400 });
+  if (!databaseUuidSchema.safeParse(id).success) return NextResponse.json({ error: "Invalid export id" }, { status: 400 });
   try {
     const result = await collectHistoryExport(offset => historyExportRpc(auth.actor, "read_operation_history_export", { p_id: id, p_offset: offset, p_limit: 250 }), id);
     // Buffer and validate ALL pages before sending any bytes; no successful partial file.

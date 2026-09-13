@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { databaseUuidSchema } from "./database-uuid";
 
 import catalogData from "./activity-catalog.json";
 
@@ -19,7 +20,7 @@ const componentSchema = z.object({
   // Persist these allocated identities when wording or source versions change.
   // Neither an activity key nor its UUID is recalculated from the source label.
   key: z.string().regex(/^hfo-[a-z0-9-]+$/),
-  id: z.uuid(),
+  id: databaseUuidSchema,
   label: nonblank,
   kind: z.enum(ACTIVITY_KINDS),
   subjectKind,

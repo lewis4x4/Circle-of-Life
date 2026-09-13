@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "sourceUnchanged": true,
+  "requests": [
+    {
+      "label": "/activity-history/exports/ba9923ce-9f0d-491b-b9da-d71e27a0613f/download",
+      "method": "GET",
+      "path": "/activity-history/exports/ba9923ce-9f0d-491b-b9da-d71e27a0613f/download",
+      "status": 200
+    },
+    {
+      "label": "cross-site requirement",
+      "method": "POST",
+      "path": "/facility-requirements",
+      "status": 404
+    },
+    {
+      "label": "cross-site manual",
+      "method": "POST",
+      "path": "/occurrences/manual",
+      "status": 404
+    },
+    {
+      "label": "cross-site export",
+      "method": "POST",
+      "path": "/activity-history/exports",
+      "status": 403
+    },
+    {
+      "label": "revoked requirement",
+      "method": "POST",
+      "path": "/facility-requirements",
+      "status": 401
+    },
+    {
+      "label": "revoked manual",
+      "method": "POST",
+      "path": "/occurrences/manual",
+      "status": 401
+    },
+    {
+      "label": "revoked export",
+      "method": "POST",
+      "path": "/activity-history/exports",
+      "status": 401
+    },
+    {
+      "label": "revoked existing export download",
+      "method": "GET",
+      "path": "/activity-history/exports/ba9923ce-9f0d-491b-b9da-d71e27a0613f/download",
+      "status": 401
+    }
+  ]
+}

@@ -1,13 +1,15 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { z } from "zod";
 
 /** No channel or recipient inputs: the command derives both from current source authority. */
+// expected_revision/revision are generated concurrency tokens, not entity IDs.
 export const reminderCommandSchema = z.discriminatedUnion("command", [
-  z.object({ command: z.literal("refresh"), issue_id: z.string().uuid().optional() }).strict(),
-  z.object({ command: z.literal("acknowledge"), expected_revision: z.string().uuid(), issue_id: z.string().uuid().optional(), request_key: z.string().min(8).max(200) }).strict(),
-  z.object({ command: z.literal("snooze"), expected_revision: z.string().uuid(), issue_id: z.string().uuid().optional(), request_key: z.string().min(8).max(200), until: z.string().datetime({ offset: true }) }).strict(),
+  z.object({ command: z.literal("refresh"), issue_id: databaseUuidSchema.optional() }).strict(),
+  z.object({ command: z.literal("acknowledge"), expected_revision: z.string().uuid(), issue_id: databaseUuidSchema.optional(), request_key: z.string().min(8).max(200) }).strict(),
+  z.object({ command: z.literal("snooze"), expected_revision: z.string().uuid(), issue_id: databaseUuidSchema.optional(), request_key: z.string().min(8).max(200), until: z.string().datetime({ offset: true }) }).strict(),
 ]);
 export const reminderSchema = z.object({
-  id: z.string().uuid(), issue_id: z.string().uuid().nullable(), source_label: z.string(), state: z.enum(["configuration_needed", "upcoming", "active", "resolved"]),
+  id: databaseUuidSchema, issue_id: databaseUuidSchema.nullable(), source_label: z.string(), state: z.enum(["configuration_needed", "upcoming", "active", "resolved"]),
   phase: z.enum(["due", "overdue", "follow_up"]).nullable(), problem: z.string().nullable(),
   revision: z.string().uuid(), generation: z.number().int().positive(),
   acknowledged_at: z.string().nullable(), snoozed_until: z.string().nullable(),

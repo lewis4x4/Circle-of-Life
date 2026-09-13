@@ -1,0 +1,39 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "reviewer": "/root/release_preflight",
+  "independent": true,
+  "at": "2026-09-13T04:36:45.273096+00:00",
+  "sourceFiles": {
+    "src/app/api/admin/operations/activity-history/exports/[id]/download/route.ts": "111b59a65b49e54084107f946d3bcfeaec9d37c88164a70de50369522893afe2",
+    "src/app/api/admin/operations/activity-history/exports/route.test.ts": "86bcfb752b7cd182b14da6280ab0e96ab50136cb83141084008cd6c0cfdd873d",
+    "src/app/api/admin/operations/activity-history/exports/route.ts": "19fca3aae482feb83c36c39e9a3d3db6bc058064d1033bd0b08ed51b41e18afd",
+    "src/lib/operations/activity-catalog.ts": "c9303c18464ad8b747cf42435434d239bd8041f9a6ad2e777c153641066d4577",
+    "src/lib/operations/canonical-database-ids.test.ts": "e9e632418c80c8142e4f204b465caabace14ff53ea6ad14819138bf35a9e17e7",
+    "src/lib/operations/database-uuid.ts": "8b482b9ced871c65dc6f363045ccdbacea623b3b1c3adb0b8b5e9f401fbddad6",
+    "src/lib/operations/evidence.ts": "53eaeb7e8facc92df16538f9a23cadefa81348ee928dd870862a66b6accfea78",
+    "src/lib/operations/help-handover.ts": "d56439db9e723e72d57f37a16f665cf3a58db0bea41b47ef170f2fc3abec4c0c",
+    "src/lib/operations/issues.ts": "2a55f64f1c6cf481eaa841394b13f2eab2a480b89e065446bb374a30e7d0ef06",
+    "src/lib/operations/occurrences.ts": "3fcc1d0c1e22d15aba1a78a55ea1435ddfa27ab4734470b7e8f1b03957471b94",
+    "src/lib/operations/receipts.ts": "76841a131ae3f03e5a4ff6fd2ea89b15c1fcc782db1355b2a7e1b40ea495c397",
+    "src/lib/operations/recovery.ts": "5c2caf5400e1b831675204fde1d3f753cbd4577d85f8ae2dcbc293e8e113202a",
+    "src/lib/operations/reminders.ts": "a3dad172b1dd47f52a3847b3dd86b414aa3a43139ea44d9ee0b756981b9b4179",
+    "src/lib/operations/requirements.ts": "6cbd07339aa0addeda5d00fb5c6ceaac8989d22c9c90fa1e77a8351051e98716",
+    "src/lib/operations/source-links.ts": "224b3d8b605a10629650ea22a599dcd3cf53ddbec5d491cb27e77bba33c2fe19",
+    "src/lib/operations/source-records.ts": "ab35b745c9f72d0997323cbe8bf4d561468b42463cb6ee19e15bd31513333f97"
+  },
+  "findings": [],
+  "verification": {
+    "focused_tests": 151,
+    "full_tests": 4514,
+    "existing_skips": 2,
+    "typecheck": "PASS",
+    "strict_gate": "test-results/agent-gates/2026-09-13T04-27-34-616Z-COL-225-CANONICAL-UUIDS-FINAL.json",
+    "required_checks_all_passed": true,
+    "native_migrations": 368,
+    "native_sql_probes": 48,
+    "actual_legacy_id_http": "PASS",
+    "cross_site_and_revocation": "PASS",
+    "fixture_cleanup": "PASS"
+  },
+  "scope": "Canonical database-ID syntax plus authenticated synthetic staging HTTP; no RLS/schema or production change"
+}
