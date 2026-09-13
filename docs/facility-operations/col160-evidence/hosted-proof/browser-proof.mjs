@@ -8,7 +8,7 @@ const out=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(out,'..
 export async function main(ready){
  if(!ready)throw Error('Explicit parent readiness required');
  const verify=()=>execFileSync('python3',['-B',path.join(out,'guarded.py'),'verify','--ready',ready],{cwd:root,stdio:'pipe'});verify();
- const readiness=JSON.parse(fs.readFileSync(ready)),privatePath=path.join(os.homedir(),'.config/haven-staging/col160-fixture.json'),state=JSON.parse(fs.readFileSync(privatePath));
+ const readiness=JSON.parse(fs.readFileSync(ready)),privatePath=path.join(os.homedir(),'.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/fixture-state.json'),state=JSON.parse(fs.readFileSync(privatePath));
  if((fs.statSync(privatePath).mode&0o077)!==0||state.cleaned||!state.setupPassed||!state.httpProofPassed||state.sourceSha!==readiness.sourceSha||state.target!=='iwcnajanvjvynolltflw')throw Error('Fresh exact private fixture required');
  if(state.pendingBrowser)throw Error('Uncertain prior browser mutation: inspect exact requests before resuming');
  if(state.browserProofPassed)throw Error('Browser proof already complete');

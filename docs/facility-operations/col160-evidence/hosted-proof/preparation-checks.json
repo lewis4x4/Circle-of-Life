@@ -9,7 +9,7 @@
     "tasks": 8,
     "setupPassed": true,
     "fullCorporateSqlAssertionsPassed": true,
-    "finalDatabase": "col160_runner_092ded988e",
+    "finalDatabase": "col160_runner_c913b2a828",
     "transport": "Auth and app HTTP stubbed, actual guarded SQL functions run against disposable PostgreSQL17 clone",
     "localOnlyCompatibility": "auth.uid shim, auth schema usage and authenticated SELECT on public tables mirror native review harness; no hosted grant mutation",
     "priorAttempts": [
@@ -38,6 +38,11 @@
         "dropped": true
       },
       {
+        "database": "col160_runner_70c61c5278",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_70c61c5278-state.json",
+        "dropped": true
+      },
+      {
         "database": "col160_runner_99b2be987a",
         "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_99b2be987a-state.json",
         "dropped": true
@@ -46,17 +51,70 @@
         "database": "col160_runner_befd8581bf",
         "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_befd8581bf-state.json",
         "dropped": true
+      },
+      {
+        "database": "col160_runner_c913b2a828",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_c913b2a828-state.json",
+        "dropped": true
       }
-    ]
+    ],
+    "finalMigrationSha256": "fe88a2a0e79247b4664d4712d682f866d9fcdb6ca2465056ed9e7e186f89d5d5",
+    "finalValidationLog": {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/local-runner-unicode-validation-final.log",
+      "sha256": "7775fba9b5619599e1d2b9e44b3fa2f8850e0df411ae6cf75b0295fcee3fcfa1",
+      "scope": "Local SQL with stubbed Auth/app transport, including NBSP/BOM denials"
+    },
+    "inFlightPreparationObservation": {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/local-runner-unicode-validation.log",
+      "scope": "Read of unfinished backend edit before stable notification; syntax typo subsequently fixed; not finalcandidate failure"
+    }
   },
   "runtimeFilesUntouchedByRunnerAgent": true,
   "remoteActions": 0,
   "runnerHashes": {
-    "apply-staging.py": "4f80ae44ae536da60bc930b3ff6137f887cb40fd00caab38f33a3a957c486e08",
-    "browser-proof.mjs": "90262021888e7b57485d8f176ae05d484cd383f557ce022cff635938c515d70c",
-    "fixture.py": "cb65cca806ce132b4a6a4c41068a727a1c565b75dec35755d9555b11071eff09",
+    "apply-staging.py": "4686d70b34319f8fc7517e04b0a63bbe60cc2b47c9d212aa1088bc8d0fdbbaee",
+    "browser-proof.mjs": "390747256c7e0cfb3f4b6a662daee8659830f49dc3333b733a10ecaafe4e1265",
+    "fixture.py": "8963aed6fd380be67c88522f7568f07c66f8c6d414f266cbfdf58cd7f42b6795",
     "guarded.py": "07485eed9b8f88046f4a9857e9d604dab4d9533108dd7b3cabf86eac0eb9ba0a",
-    "http-proof.py": "b479cab478f712d871397e11dfb397542eca127168855e3bd3b994f6eaf6f8b0"
+    "http-proof.py": "0aaf496c07537107270f6d66676aef25ed873137caeb0c934b439cab5007db64"
   },
-  "browserSelectorBinding": "Exact state task_id verified for both resident component panels; no first-row inference"
+  "browserSelectorBinding": "Exact state task_id verified for both resident component panels; no first-row inference",
+  "directRpcWhitespaceRegression": "Hosted exercise includes ASCII blank, NBSP, BOM, and1001character due provenance denials after corrected371",
+  "disposableFixtureState": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/fixture-state.json",
+  "catalogPosture": {
+    "result": "PASS",
+    "scope": "Actual local PostgreSQL17 catalog; exact apply runner read_posture function",
+    "database": "col160_runner_catalog_99a47d66",
+    "posture": {
+      "public.corporate_deliverable_snapshot(uuid,date,date)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      },
+      "public.corporate_deliverable_command(uuid,text,text,jsonb)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      },
+      "public.corporate_deliverable_history(uuid,uuid,integer,bigint)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      }
+    },
+    "receipt": {
+      "database": "col160_runner_catalog_99a47d66",
+      "dropped": true
+    },
+    "correctedAssumption": "Initial inherited invoker assertion was wrong; reviewed371 uses SECURITY DEFINER with explicit current-authority checks. Runtime posture unchanged."
+  }
 }

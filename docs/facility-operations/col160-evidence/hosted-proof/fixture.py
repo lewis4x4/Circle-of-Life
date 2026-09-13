@@ -2,8 +2,8 @@
 """Isolated synthetic corporate fixture; network is confined to guarded main."""
 import argparse,base64,datetime,json,os,pathlib,secrets,subprocess,urllib.request,uuid
 from guarded import Runtime,ROOT,OUT,REF,NoRedirect,require
-PRIVATE=pathlib.Path.home()/'.config/haven-staging/col160-fixture.json'
 SCRATCH=pathlib.Path.home()/'.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89'
+PRIVATE=SCRATCH/'fixture-state.json'
 def lit(value):return "'"+str(value).replace("'","''")+"'"
 def save(s):
  fd=os.open(PRIVATE,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)

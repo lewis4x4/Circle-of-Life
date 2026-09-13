@@ -26,6 +26,14 @@ def build_apply_query(source,versions):
  expected_array='ARRAY['+','.join(literal(v) for v in sorted(versions))+']::text[]'
  return "BEGIN; SET LOCAL lock_timeout='5s'; SET LOCAL statement_timeout='120s'; LOCK TABLE supabase_migrations.schema_migrations IN EXCLUSIVE MODE; DO $$ BEGIN IF (SELECT count(*) FROM supabase_migrations.schema_migrations)<>"+str(len(versions))+" OR EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='371') OR NOT EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='370') OR (SELECT array_agg(version ORDER BY version) FROM supabase_migrations.schema_migrations) IS DISTINCT FROM "+expected_array+" THEN RAISE EXCEPTION 'Ledger changed'; END IF; END $$;\n"+body+"\nINSERT INTO supabase_migrations.schema_migrations(version,name,statements) VALUES('371','hfo_corporate_deliverables',ARRAY["+literal(source)+"]); NOTIFY pgrst,'reload schema'; COMMIT;"
 
+def read_posture(runtime):
+ """The reviewed371 API uses current-authority-checked definers, not invokers."""
+ posture={}
+ for signature in ['public.corporate_deliverable_snapshot(uuid,date,date)','public.corporate_deliverable_command(uuid,text,text,jsonb)','public.corporate_deliverable_history(uuid,uuid,integer,bigint)']:
+  query="SELECT json_build_object('security_definer',p.prosecdef,'fixed_empty_search_path',coalesce(p.proconfig,ARRAY[]::text[])=ARRAY['search_path=\"\"']::text[],'authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'anon_denied',NOT has_function_privilege('anon',p.oid,'EXECUTE'),'service_denied',NOT has_function_privilege('service_role',p.oid,'EXECUTE'),'public_denied',NOT EXISTS(SELECT 1 FROM aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE')) FROM pg_proc p WHERE p.oid=to_regprocedure("+literal(signature)+")"
+  value=json.loads(runtime.sql(query));require(isinstance(value,dict) and len(value)==6 and all(v is True for v in value.values()),'Unexpected reviewed corporate RPC posture: '+signature);posture[signature]=value
+ return posture
+
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['inspect','apply']);p.add_argument('--ready',required=True);args=p.parse_args()
  r=Runtime(args.ready);project=r.identify();source=(ROOT/'supabase/migrations'/MIGRATION).read_text();sha=digest(source.encode())
@@ -39,10 +47,7 @@ def main():
   r.identify();r.sql(query)
  else:
   print(json.dumps({'target':REF,'pending':'371','mutation':False}));return
- posture=json.loads(r.sql("SELECT json_build_object('invoker',NOT p.prosecdef,'authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'anon_denied',NOT has_function_privilege('anon',p.oid,'EXECUTE'),'service_denied',NOT has_function_privilege('service_role',p.oid,'EXECUTE')) FROM pg_proc p WHERE p.oid=to_regprocedure('public.corporate_deliverable_snapshot(uuid,date,date)')"))
- require(all(posture.values()),'Unexpected RPC posture')
- for signature in ['public.corporate_deliverable_command(uuid,text,text,jsonb)','public.corporate_deliverable_history(uuid,uuid,integer,bigint)']:
-  require(r.sql("SELECT NOT prosecdef AND has_function_privilege('authenticated',oid,'EXECUTE') AND NOT has_function_privilege('anon',oid,'EXECUTE') AND NOT has_function_privilege('service_role',oid,'EXECUTE') FROM pg_proc WHERE oid=to_regprocedure("+literal(signature)+")")=='t','Unexpected command/history posture')
+ posture=read_posture(r)
  result={'result':'PASS','target':REF,'sourceSha':r.ready['sourceSha'],'migration_sha256':sha,'project':project,'posture':posture,'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'scope':'Staging additive371 only; no rule publication or operating acceptance'}
  (OUT/'staging-readiness.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
 if __name__=='__main__':main()

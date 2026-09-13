@@ -54,11 +54,12 @@ SELECT pg_temp.cd_assert((pg_temp.cd_private_stats((SELECT facility FROM cd_site
 -- Direct authenticated RPC must enforce due evidence independently of the HTTP schema.
 -- Roll back this focused check so existing lifecycle and pagination fixture counts stay exact.
 SAVEPOINT cd_due_provenance;
-DO $$ DECLARE s cd_sites;before_detail jsonb;after_detail jsonb;bad text;payload jsonb;refused boolean;
+DO $$ DECLARE s cd_sites;before_detail jsonb;after_detail jsonb;bad jsonb;payload jsonb;refused boolean;trim_chars CONSTANT text:=U&'\0009\000A\000B\000C\000D\0020\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF';
 BEGIN
  SELECT * INTO s FROM cd_sites WHERE n=1;before_detail:=pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date);
  payload:=jsonb_build_object('expectation_id',before_detail->>'id','expected_revision',before_detail->>'revision','recipient_label',NULL,'backup_label',NULL,'due_on',current_date-1,'configuration_provenance','Synthetic due evidence validation');
- FOREACH bad IN ARRAY ARRAY['   ',E'\t\n\r',repeat('x',1001)] LOOP
+ PERFORM pg_temp.cd_assert(length(trim_chars)=25,'ECMAScript trim set must contain all 25 whitespace codepoints');
+ FOR bad IN SELECT to_jsonb(substring(trim_chars FROM i FOR 1)) FROM generate_series(1,length(trim_chars))i UNION ALL SELECT to_jsonb(unnest(ARRAY['',trim_chars,reverse(trim_chars),repeat('x',1001),trim_chars||repeat('x',1001)||trim_chars])) UNION ALL SELECT value FROM jsonb_array_elements('[null,42,true,false,{},[],["evidence"],{"source":"evidence"}]'::jsonb) LOOP
   refused:=false;
   BEGIN PERFORM public.corporate_deliverable_command(s.task,'col160-invalid-due-evidence','configure',payload||jsonb_build_object('due_provenance',bad));
   EXCEPTION WHEN SQLSTATE '22023' THEN refused:=true;END;
@@ -66,9 +67,16 @@ BEGIN
   after_detail:=pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date);
   PERFORM pg_temp.cd_assert(after_detail=before_detail,'refused due evidence mutated configuration or history');
  END LOOP;
- PERFORM public.corporate_deliverable_command(s.task,'col160-valid-due-evidence','configure',payload||jsonb_build_object('due_provenance','  Approved synthetic close calendar  '));
+ refused:=false;
+ BEGIN PERFORM public.corporate_deliverable_command(s.task,'col160-unpaired-due-evidence','configure',payload||jsonb_build_object('due_on',NULL,'due_provenance','Evidence without a due date'));
+ EXCEPTION WHEN SQLSTATE '22023' THEN refused:=true;END;
+ PERFORM pg_temp.cd_assert(refused AND pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date)=before_detail,'unpaired due evidence accepted or mutated state');
+ PERFORM public.corporate_deliverable_command(s.task,'col160-valid-due-evidence','configure',payload||jsonb_build_object('due_provenance',trim_chars||'Approved synthetic café close calendar'||reverse(trim_chars)));
  after_detail:=pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date);
- PERFORM pg_temp.cd_assert(after_detail->>'due_state'='documented' AND (after_detail->>'due_on')::date=current_date-1 AND after_detail#>>'{events,0,details,due_provenance}'='Approved synthetic close calendar','valid attributable due evidence lost');
+ PERFORM pg_temp.cd_assert(after_detail->>'due_state'='documented' AND (after_detail->>'due_on')::date=current_date-1 AND after_detail#>>'{events,0,details,due_provenance}'='Approved synthetic café close calendar','valid attributable due evidence lost');
+ PERFORM public.corporate_deliverable_command(s.task,'col160-max-valid-due-evidence','configure',payload||jsonb_build_object('expected_revision',after_detail->>'revision','due_provenance',trim_chars||repeat('x',1000)||reverse(trim_chars)));
+ after_detail:=pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date);
+ PERFORM pg_temp.cd_assert(after_detail#>>'{events,1,details,due_provenance}'=repeat('x',1000),'normalized 1000-character due evidence must remain valid');
 END $$;
 ROLLBACK TO SAVEPOINT cd_due_provenance;
 RELEASE SAVEPOINT cd_due_provenance;
