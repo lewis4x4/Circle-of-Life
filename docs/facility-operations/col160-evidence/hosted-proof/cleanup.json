@@ -1,0 +1,15 @@
+{
+  "result": "PASS",
+  "sourceSha": "0d2cfa8004cf50f76ea3e21892fc30afdd64bf48",
+  "facts": {
+    "inactive": true,
+    "site_grants": true,
+    "subject_grants": true,
+    "sites_retired": true,
+    "entity_retired": true,
+    "org_retired": true
+  },
+  "bansVerified": true,
+  "syntheticSourceAndAuditRetained": true,
+  "ownedListenerClosed": false
+}
