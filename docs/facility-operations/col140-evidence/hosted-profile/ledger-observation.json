@@ -1,0 +1,11 @@
+{
+  "source": "Parent live ledger observation supplied to this runner-fix task; not a fresh hosted query",
+  "target": "iwcnajanvjvynolltflw",
+  "count": 368,
+  "numeric_through": "365",
+  "legacy_timestamp_migrations": [
+    {"version": "20260514180000", "name": "staff_role_enum_values"},
+    {"version": "20260514180707", "name": "homewood_round2_employee_seed"},
+    {"version": "20260514203302", "name": "homewood_round2_ar_intake_may_2026"}
+  ]
+}
