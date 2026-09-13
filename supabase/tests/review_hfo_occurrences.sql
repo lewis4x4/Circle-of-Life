@@ -32,6 +32,8 @@ CREATE TEMP TABLE of AS SELECT gen_random_uuid() owner_actor,gen_random_uuid() o
  gen_random_uuid() asset1,gen_random_uuid() asset2,gen_random_uuid() asset_b,gen_random_uuid() res1,gen_random_uuid() emp1,
  gen_random_uuid() subj_asset1,gen_random_uuid() subj_asset2,gen_random_uuid() subj_asset_b,gen_random_uuid() subj_res1,gen_random_uuid() subj_emp1,gen_random_uuid() subj_fac,gen_random_uuid() legacy_task,
  (current_date+((2-extract(dow FROM current_date)::int+7)%7)+7)::date d1,
+ -- Manual queue dates follow the facility day, independently of the SQL session timezone.
+ (clock_timestamp() AT TIME ZONE coalesce(f.timezone,'America/New_York'))::date site_today,
  f.id site_a,f.organization_id org,f.entity_id entity FROM public.facilities f WHERE deleted_at IS NULL ORDER BY created_at LIMIT 1;
 ALTER TABLE of ADD COLUMN d2 date,ADD COLUMN d3 date,ADD COLUMN d4 date;
 UPDATE of SET d2=d1+7,d3=d1+14,d4=d1+21;
@@ -384,11 +386,11 @@ SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_revi
 SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_review((SELECT act_asset FROM of),(SELECT site_a FROM of),(SELECT subj_asset1 FROM of),'manual-m1-000002','{"due_at":"2026-01-01"}')$q$,'not editable');
 SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_review((SELECT act_asset FROM of),(SELECT site_a FROM of),(SELECT subj_asset1 FROM of),'short','{}')$q$,'request key is required');
 SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_review((SELECT act_na FROM of),(SELECT site_a FROM of),(SELECT subj_fac FROM of),'manual-na-000001','{}')$q$,'not applicable');
-INSERT INTO of_results SELECT 'm_q',public.create_operation_manual_occurrence_review(act_asset,site_a,subj_asset1,'manual-mq-000001',jsonb_build_object('queue_date',to_char(current_date,'YYYY-MM-DD'),'note','Queued explicitly for today')) FROM of;
-SELECT pg_temp.o_assert((SELECT (result->>'assigned_shift_date')::date=current_date AND result->'schedule_snapshot'->>'queue_date'=to_char(current_date,'YYYY-MM-DD') AND result->>'due_at' IS NULL FROM of_results WHERE label='m_q'),'explicit queue date not kept as a labelled compatibility date');
+INSERT INTO of_results SELECT 'm_q',public.create_operation_manual_occurrence_review(act_asset,site_a,subj_asset1,'manual-mq-000001',jsonb_build_object('queue_date',to_char(site_today,'YYYY-MM-DD'),'note','Queued explicitly for today')) FROM of;
+SELECT pg_temp.o_assert((SELECT (result->>'assigned_shift_date')::date=(SELECT site_today FROM of) AND result->'schedule_snapshot'->>'queue_date'=to_char((SELECT site_today FROM of),'YYYY-MM-DD') AND result->>'due_at' IS NULL FROM of_results WHERE label='m_q'),'explicit queue date not kept as a labelled compatibility date');
 -- The in-force configuration closes at the revision cutover, so tomorrow lies outside its window.
-SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_review((SELECT act_asset FROM of),(SELECT site_a FROM of),(SELECT subj_asset1 FROM of),'manual-mq-000004',jsonb_build_object('queue_date',to_char(current_date+1,'YYYY-MM-DD')))$q$,'outside the governing configuration window');
-SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_review((SELECT act_asset FROM of),(SELECT site_a FROM of),(SELECT subj_asset1 FROM of),'manual-mq-000002',jsonb_build_object('queue_date',to_char(current_date+400,'YYYY-MM-DD')))$q$,'within a year of today');
+SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_review((SELECT act_asset FROM of),(SELECT site_a FROM of),(SELECT subj_asset1 FROM of),'manual-mq-000004',jsonb_build_object('queue_date',to_char((SELECT site_today FROM of)+1,'YYYY-MM-DD')))$q$,'outside the governing configuration window');
+SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_review((SELECT act_asset FROM of),(SELECT site_a FROM of),(SELECT subj_asset1 FROM of),'manual-mq-000002',jsonb_build_object('queue_date',to_char((SELECT site_today FROM of)+400,'YYYY-MM-DD')))$q$,'within a year of today');
 SELECT pg_temp.o_expect($q$SELECT public.create_operation_manual_occurrence_review((SELECT act_asset FROM of),(SELECT site_a FROM of),(SELECT subj_asset1 FROM of),'manual-mq-000003','{"queue_date":"not-a-date"}')$q$,'must be a calendar date');
 INSERT INTO of_results SELECT 'm2',public.create_operation_manual_occurrence_review(act_asset,site_a,subj_asset2,'manual-m2-000001','{"note":"Wing B unit tested","shift":"evening"}') FROM of;
 INSERT INTO of_ids SELECT 'm2',(result->>'id')::uuid FROM of_results WHERE label='m2';
