@@ -1,0 +1,76 @@
+{
+  "issue": "COL-152",
+  "recorded_at": "2026-09-12T22:21:16.790559+00:00",
+  "branch": "codex/hfo-col152-reminders",
+  "base": "94b1f90a",
+  "scope": "local source only; unmerged, unapplied, undeployed",
+  "mission_alignment": "pass",
+  "checks": {
+    "full_suite": {
+      "result": "PASS",
+      "files": 590,
+      "passed": 4049,
+      "skipped": 2,
+      "command": "npm test -- --reporter=dot"
+    },
+    "typecheck": {
+      "result": "PASS",
+      "command": "npm run typecheck"
+    },
+    "native_replay": {
+      "result": "PASS",
+      "migration_files": 353,
+      "sql_probes": 34,
+      "environment": "run-owned PostgreSQL17 with synthetic Supabase stubs"
+    },
+    "concurrency": {
+      "result": "PASS",
+      "cases": 4,
+      "evidence": "concurrency.json"
+    },
+    "independent_sql_review": {
+      "result": "APPROVE_SOURCE",
+      "unresolved_findings": 0,
+      "evidence": "independent-review.json"
+    },
+    "parent_route_ui_review": {
+      "result": "PASS",
+      "scope": "request validation, output projection, final session revalidation, user-change keys, exact uncertain retry, bounded issue rendering and unique input ids"
+    },
+    "staged_secret_scan": {
+      "result": "PASS",
+      "command": "gitleaks protect --staged --config .gitleaks.toml --redact --no-banner"
+    },
+    "strict_gate": {
+      "result": "PASS",
+      "artifact": "test-results/agent-gates/2026-09-12T22-15-53-312Z-COL-152-HFO-REMINDERS.json",
+      "copied_artifact": "strict-gate.json",
+      "waivers": [],
+      "command": "CI=true REQUIRE_PG_VERIFY=1 PG_VERIFY_NATIVE_SOCKET=<run-owned> PG_VERIFY_NATIVE_BIN=/opt/homebrew/opt/postgresql@17/bin PG_VERIFY_NATIVE_PORT=55462 npm run segment:gates -- --segment COL-152-HFO-REMINDERS --ui"
+    },
+    "sibling_preservation": {
+      "result": "PASS",
+      "worktrees": 37,
+      "evidence": "worktree-preservation.json"
+    }
+  },
+  "not_tested": [
+    "Real hosted Auth/PostgREST/Storage flow",
+    "Authenticated deployed reminder panel",
+    "Homewood staff and operating-cycle acceptance",
+    "Integration of provisional migration350 with current main"
+  ],
+  "source_sha256": {
+    "scripts/facility-operations/test-reminder-concurrency.py": "da5cdaa86d5d3a9cf227e428c5a7e1d81f2e57e3ae650c60457845b2bbf23cd3",
+    "src/app/(admin)/admin/operations/work/_components/task-reminder.test.tsx": "9fd806df32bd6885dae114645ca37fdd4d6e333c375804fa9c35c118489252d4",
+    "src/app/(admin)/admin/operations/work/_components/task-reminder.tsx": "0757f7d48f6ac00f4fd73ca9aa4df7c23ed308317fa9a3dd4be1cbaf70462c79",
+    "src/app/(admin)/admin/operations/work/_components/work-row.tsx": "016b3e91e2024f9eb825ddd81716c9c12b0adb3c6b942614c06d5064c8e344f9",
+    "src/app/api/admin/operations/occurrences/[id]/reminder/route.test.ts": "8f62e1eba08cf2097e1dfebd45a1bac76b03c08ab3e2639144ffa126b5793529",
+    "src/app/api/admin/operations/occurrences/[id]/reminder/route.ts": "e2b26c76feab5c1b6ffc98ded3e85b5b845c5f755a5f4132e9d604a787c5bbee",
+    "src/lib/operations/reminders.test.ts": "81d6ba9faf5dda4fdea45267fd60f15d8d5a262f5c29c7a3955e1274b4831066",
+    "src/lib/operations/reminders.ts": "775499420f9902f00e7c329ab0ed5fdfd85198816d5acc1bb56bad646d378677",
+    "supabase/migrations/350_hfo_in_app_reminders.sql": "e680798916c37ac25eb51abe6d62d2dd51fa73f43cedd757d04a878ace7a1021",
+    "supabase/tests/review_hfo_reminders.sql": "8eb9b63572bb09bb37f7c230144a064694eb005fffa1272a38c8d9ecd32e4d69"
+  },
+  "browser_limits": "Strict UI gate covers local public route with four viewport screenshots and axe. The reminder component is covered by mocked behavioral tests, not authenticated hosted browser acceptance."
+}

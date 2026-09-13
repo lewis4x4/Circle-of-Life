@@ -1,0 +1,15 @@
+{
+  "target": "iwcnajanvjvynolltflw",
+  "recorded_at": "2026-09-12T23:45:54.609892+00:00",
+  "after": {
+    "users": 0,
+    "sessions": 0,
+    "objects": 0,
+    "haven_table": null,
+    "ledger": 0,
+    "seed_table": null
+  },
+  "result": "PASS",
+  "method": "CLI single-transaction reset hit53200 and rolled back; same run-owned objects cleared in small committed transactions. Final helper JSON parse issue repaired by direct verification; zero users/sessions/objects/application schema/ledger verified.",
+  "sequences": "Remaining standalone public sequences cleared after zero-data guard"
+}

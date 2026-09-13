@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-09-09T22:05:46.161329+00:00",
+  "services_stopped": [
+    "run-owned native PostgreSQL 17 port 55587, unix socket only"
+  ],
+  "steward_results": [
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col18-01a08827/cleanup-manifests/files-0.json",
+      "manifest_sha256": "91b62d0b2a46f18f8800c439ff11333f78a4d5d7e607cc543a3b3515b33282f0",
+      "exit_code": 0,
+      "stdout": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}\n",
+      "stderr": ""
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col18-01a08827/cleanup-manifests/files-1.json",
+      "manifest_sha256": "2d5642cbe6bed2c1b6f704bf44caea00da11522bbeb69c97b6fd460547a14070",
+      "exit_code": 0,
+      "stdout": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}\n",
+      "stderr": ""
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col18-01a08827/cleanup-manifests/files-2.json",
+      "manifest_sha256": "4956e95028382ade56eaf21ea3ab21f1a5727a305aefd6c3d41e49431bac0883",
+      "exit_code": 0,
+      "stdout": "{\"planned_count\": 168, \"removed_count\": 0, \"status\": \"planned\"}\n",
+      "stderr": ""
+    }
+  ],
+  "exact_owned_files_removed": 1968,
+  "empty_owned_directories_removed": 54,
+  "retained": [
+    "isolated source worktree and build/dependency environment",
+    "repository evidence",
+    "private cleanup manifests"
+  ],
+  "unrelated_deleted": false
+}

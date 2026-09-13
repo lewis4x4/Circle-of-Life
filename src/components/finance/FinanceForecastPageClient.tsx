@@ -95,7 +95,7 @@ export default function FinanceForecastPageClient({
               icon={Wallet}
               label="Gross AR exposure"
               value={formatCents(snapshot.dso.summary.openArCents)}
-              detail={`Trust coverage ${formatCents(snapshot.dso.summary.trustCoverageCents)}`}
+              detail={snapshot.residentMoneyNeedsReview ? "Resident funds incomplete; legacy or ledger review required" : `Resident funds held separately ${formatCents(snapshot.dso.summary.trustCoverageCents)}; bank and books unverified`}
             />
             <ForecastMetricCard
               icon={TrendingUp}
@@ -136,7 +136,7 @@ export default function FinanceForecastPageClient({
                 <MetricInline label="Trailing 90d billed" value={formatCents(snapshot.dso.summary.trailing90BilledCents)} />
                 <MetricInline label="Trailing 90d collected" value={formatCents(snapshot.dso.summary.trailing90CollectedCents)} />
                 <MetricInline label="Collection efficiency" value={formatPct(snapshot.dso.summary.collectionEfficiencyPct)} />
-                <MetricInline label="Net uncovered AR" value={formatCents(snapshot.dso.summary.netExposureCents)} />
+                <MetricInline label="Open receivables" value={formatCents(snapshot.dso.summary.netExposureCents)} />
               </div>
 
               {snapshot.dso.rows.length === 0 ? (
@@ -151,7 +151,7 @@ export default function FinanceForecastPageClient({
                       <tr className="border-b border-slate-200 dark:border-slate-800">
                         <th className="pb-2 pr-4 font-medium">Facility</th>
                         <th className="pb-2 pr-4 font-medium">Open AR</th>
-                        <th className="pb-2 pr-4 font-medium">Trust coverage</th>
+                        <th className="pb-2 pr-4 font-medium">Resident funds</th>
                         <th className="pb-2 pr-4 font-medium">Current DSO</th>
                         <th className="pb-2 pr-4 font-medium">Projected 30d</th>
                         <th className="pb-2 pr-4 font-medium">Collections / 90d</th>
@@ -163,7 +163,7 @@ export default function FinanceForecastPageClient({
                         <tr key={row.facilityId} className="border-b border-slate-100 dark:border-slate-900">
                           <td className="py-3 pr-4">{row.facilityName}</td>
                           <td className="py-3 pr-4">{formatCents(row.openArCents)}</td>
-                          <td className="py-3 pr-4">{formatCents(row.trustCoverageCents)}</td>
+                          <td className="py-3 pr-4">{snapshot.residentMoneyReviewFacilityIds.includes(row.facilityId) ? "Not established / review required" : formatCents(row.trustCoverageCents)}</td>
                           <td className="py-3 pr-4">{formatDays(row.currentDsoDays)}</td>
                           <td className="py-3 pr-4">
                             <span

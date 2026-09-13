@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "phase": "F01",
+  "status": "PASS",
+  "timestamp": "2026-09-08T23:12:10.611293+00:00",
+  "commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "target": "local Deno handler and static TypeScript verification; injected RPC fixtures",
+  "counts": {
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0
+  },
+  "commands": [
+    {
+      "command": [
+        "deno",
+        "test",
+        "--allow-env=CORS_ALLOWED_ORIGINS",
+        "supabase/functions/export-audit-log/handler.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "running 11 tests from ./supabase/functions/export-audit-log/handler.test.ts\naudit export rejects missing bearer and invalid job before constructing client ... ok (2ms)\naudit export handles preflight and rejects non POST ... ok (1ms)\naudit export rejects malformed JSON ... ok (0ms)\naudit export returns byte-identical durable CSV with verified checksum and no-store ... ok (7ms)\naudit export preserves complete large snapshot and retries return same evidence ... ok (30ms)\naudit export unauthorized materialization never retrieves data ... ok (0ms)\naudit export revocation between materialization and retrieval returns no bytes ... ok (0ms)\naudit export missing legacy snapshot returns actionable conflict ... ok (0ms)\naudit export rejects wrong job identity and malformed snapshot ... ok (0ms)\naudit export checksum mismatch returns no source bytes ... ok (1ms)\naudit export transport failures do not expose provider errors or source values ... ok (0ms)\n\nok | 11 passed | 0 failed (84ms)\n\n",
+      "stderr": "Check supabase/functions/export-audit-log/handler.test.ts\n"
+    },
+    {
+      "command": [
+        "deno",
+        "check",
+        "supabase/functions/export-audit-log/index.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "Check supabase/functions/export-audit-log/index.ts\n"
+    },
+    {
+      "command": [
+        "npx",
+        "eslint",
+        "src/app/(admin)/admin/compliance/audit-export/page.tsx",
+        "src/app/(admin)/admin/compliance/audit-export/page.test.tsx",
+        "src/lib/audit-export.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "files": {
+    "supabase/migrations/337_audit_export_scope_and_snapshot.sql": "0a7448bbc48458f40d96440f66918e2cd83332a8b8e60bbc5fb636de4d4db41c",
+    "supabase/tests/review_audit_export_authorization.sql": "8dc71af1461ea547251a9fe504d0732065451dfb101597e22f837c9a5a366ed4",
+    "supabase/functions/export-audit-log/index.ts": "ae6adae627a6f46038052aab5d0c076ef7e13ac4eb3c4324ce95959c7ae6e0cc",
+    "supabase/functions/export-audit-log/handler.ts": "4a522dd5fa457dcedf43fd112d5ac76291489a77f9fd9746be7ed418a5ce3bfc",
+    "supabase/functions/export-audit-log/handler.test.ts": "d3e45d9688628a1e5e9b05aeb6cb7c2ab0e91eaba21321a0bb50cca77652b9f5",
+    "src/lib/audit-export.ts": "b3dd55437f2254252d9fcd83d1e7cce9b3ea62e8b15c0d4b5e71f58bee67d078",
+    "src/app/(admin)/admin/compliance/audit-export/page.tsx": "56d34143fc2c40885bca7ea068cce77a1740fee6358607bde54aa0f4149cabc0",
+    "src/app/(admin)/admin/compliance/audit-export/page.test.tsx": "0c9f19709a7c12d8125157e1506d80f60ef510818ff617749f361e39e60a73c4"
+  },
+  "limits": [
+    "Handler tests inject database responses; SQL authorization tested separately",
+    "No hosted Edge deployment or browser download acceptance"
+  ],
+  "additionalVerification": [
+    {
+      "command": "npx vitest run src/app/(admin)/admin/compliance/audit-export/page.test.tsx",
+      "exitCode": 0,
+      "tests": 6,
+      "skipped": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "firstAttempts": [
+    "New UI test initially used the wrong accessible button name; corrected to observed Download CSV and awaited job load"
+  ]
+}

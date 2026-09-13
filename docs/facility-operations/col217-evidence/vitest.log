@@ -1,0 +1,1029 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven HFO Staging Integration
+
+································································································································································································································································································································································································································································································································································································································································································································································································································································stderr | src/app/(admin)/admin/operations/work/page.test.tsx > Site work > removes the previous person's recording surface immediately
+An update to PersonWorkspace inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+····································································································································································································stderr | src/components/executive/ExecutiveOverviewPageClient.test.tsx > ExecutiveOverviewPageClient role-home subtitle > shows the hydrated role home once auth resolves
+An update to ExecutiveOverviewPageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ExecutiveOverviewPageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·························································stderr | src/components/staffing/AdminStaffingConsolePageClient.test.tsx > <AdminStaffingConsolePageClient /> > shows named loading copy while staffing data refetches
+An update to AdminStaffingConsolePageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminStaffingConsolePageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminStaffingConsolePageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminStaffingConsolePageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminStaffingConsolePageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminStaffingConsolePageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminStaffingConsolePageClient inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·································································stderr | src/app/(admin)/billing/payments/new/page.test.tsx > HFA-007 HFA-008 payment command and prefill reconciliation > defaults payment date to Eastern calendar today after 8pm ET, not UTC ISO slice
+An update to AdminNewPaymentPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminNewPaymentPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+··············································-····························································································································································································································································································stderr | src/design-system/components/DataTable/DataTable.test.tsx > <DataTable /> > renders headers, rows, and the implicit status column
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/components/DataTable/DataTable.test.tsx > <DataTable /> > renders headers, rows, and the implicit status column
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/components/DataTable/DataTable.test.tsx > <DataTable /> > applies threshold tone classes to numeric cells
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/components/DataTable/DataTable.test.tsx > <DataTable /> > applies threshold tone classes to numeric cells
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/components/DataTable/DataTable.test.tsx > <DataTable /> > renders an empty state when rows is empty
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/components/DataTable/DataTable.test.tsx > <DataTable /> > renders an empty state when rows is empty
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/components/DataTable/DataTable.test.tsx > <DataTable /> > renders skeleton rows when loading
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/components/DataTable/DataTable.test.tsx > <DataTable /> > renders skeleton rows when loading
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·······stderr | src/app/(admin)/transportation/drivers/new/page.test.tsx > AdminTransportationDriverNewPage auth hydration > shows the named quiet gap when auth resolved without an organization
+An update to AdminTransportationDriverNewPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminTransportationDriverNewPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·stderr | src/app/(admin)/transportation/drivers/new/page.test.tsx > AdminTransportationDriverNewPage auth hydration > labels the license expiry field with Eastern (ET)
+An update to AdminTransportationDriverNewPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminTransportationDriverNewPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+··········································································stderr | src/app/(admin)/admin/rounding/insights/page.test.tsx > InsightsPage auth hydration > surfaces real fetch failures after auth resolves
+[Haven] live data load failed: permission denied for table resident_safety_insights { message: 'permission denied for table resident_safety_insights' }
+
+···················stderr | src/app/(admin)/admin/rounding/safety/page.test.tsx > SafetyScoresPage auth hydration > surfaces unexpected fetch failures after auth resolves
+[Haven] live data load failed: permission denied for table resident_safety_scores { message: 'permission denied for table resident_safety_scores' }
+
+··························stderr | src/app/(admin)/admin/dietary/new/page.test.tsx > AdminDietaryNewPage auth hydration > shows the named quiet gap when auth resolved without an organization
+An update to AdminDietaryNewPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminDietaryNewPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+······································stderr | src/app/(admin)/executive/facility/[id]/page.test.tsx > ExecutiveFacilityDetailPage auth hydration > names facility scope in the header subtitle
+An update to ExecutiveFacilityDetailPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ExecutiveFacilityDetailPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/app/(admin)/executive/facility/[id]/page.test.tsx > ExecutiveFacilityDetailPage auth hydration > names facility scope in the header subtitle
+An update to ExecutiveFacilityDetailPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/app/(admin)/executive/facility/[id]/page.test.tsx > ExecutiveFacilityDetailPage auth hydration > names facility scope in the header subtitle
+An update to ExecutiveFacilityDetailPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ExecutiveFacilityDetailPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ExecutiveFacilityDetailPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ExecutiveFacilityDetailPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ExecutiveFacilityDetailPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+··················································································································································································stderr | src/app/(admin)/transportation/requests/new/page.test.tsx > NewResidentTransportRequestPage auth hydration > shows the named quiet gap when auth resolved without an organization
+An update to NewResidentTransportRequestPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to NewResidentTransportRequestPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·························································································stderr | src/app/(admin)/billing/collections/new/page.test.tsx > AdminNewCollectionActivityPage facility derivation > defaults activity date to Eastern calendar today after 8pm ET, not UTC ISO slice
+An update to AdminNewCollectionActivityPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AdminNewCollectionActivityPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+··············································································································································································································································stderr | src/app/(admin)/executive/standup/[week]/page.test.tsx > ExecutiveStandupWeekDetailPage auth hydration > surfaces real fetch failures after auth resolves with retry
+[Haven] live data load failed: Could not load standup detail. Error: Could not load standup detail.
+    at /Users/brianlewis/Circle of Life/Haven HFO Staging Integration/src/app/(admin)/executive/standup/[week]/page.test.tsx:100:54
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+
+··························································································································································································································································stderr | src/lib/observability/logger.test.ts > logError > forwards to Sentry with scope tag and safe error fields only
+[error] care-plans.approve {"error_name":"Error","error_message":"user not found","error_code":"PGRST116","residentId":"abc-123"}
+
+stderr | src/lib/observability/logger.test.ts > logError > never serialises the full error object — extras shape is fixed
+[error] rounding.complete {"error_name":"Object","error_message":"RLS denied","error_code":"42501"}
+
+stderr | src/lib/observability/logger.test.ts > logError > redacts known PHI patterns in the context payload
+[error] rounding.complete {"error_name":"Error","error_message":"oops","note":"resident SSN [REDACTED_SSN] on chart","counts":{"logs":4}}
+
+stderr | src/lib/observability/logger.test.ts > logError > accepts a string err and wraps it as a synthetic Error for Sentry
+[error] executive.refresh.edge {"error_name":"Unknown","error_message":"edge invocation failed","status":500}
+
+stderr | src/lib/observability/logger.test.ts > logError > does not throw when Sentry forwarding errors
+[error] scope {"error_name":"Error","error_message":"oops"}
+
+stderr | src/lib/observability/logger.test.ts > logWarn > forwards a warning message + redacted context to Sentry
+[warn] admin.users.audit {"message":"audit insert failed","userId":"u-1","note":"[REDACTED_DOB]"}
+
+··················stderr | src/app/(admin)/executive/standup/[week]/board/page.test.tsx > ExecutiveStandupBoardPage auth hydration > surfaces real fetch failures after auth resolves with retry
+[Haven] live data load failed: Could not load board packet. Error: Could not load board packet.
+    at /Users/brianlewis/Circle of Life/Haven HFO Staging Integration/src/app/(admin)/executive/standup/[week]/board/page.test.tsx:109:54
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+
+······························································································································stderr | src/app/(admin)/transportation/settings/page.test.tsx > TransportationOrgSettingsPage auth hydration > names the organization-wide scope on the page
+An update to TransportationOrgSettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TransportationOrgSettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TransportationOrgSettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TransportationOrgSettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TransportationOrgSettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TransportationOrgSettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·····································································································································································································································stderr | src/design-system/components/KPITile/KPITile.test.tsx > <KPITile /> > becomes a button when onClick is provided
+In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  <KPITile label="Alerts" value={7} info="Open alert..." onClick={function Mock}>
+>   <button
+>     type="button"
+>     onClick={function Mock}
+>     aria-label="Alerts: 7. Open details."
+>     data-tone="default"
+>     className="group relative flex min-w-0 flex-col gap-2 rounded-md border px-4 py-3 text-left focus-visible:outlin..."
+>   >
+      <div className="flex items...">
+        <span>
+        <span className="relative">
+>         <button
+>           type="button"
+>           aria-label="Info for Alerts"
+>           aria-describedby={undefined}
+>           aria-expanded={false}
+>           onClick={function onClick}
+>           onBlur={function onBlur}
+>           className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border bg-surface-el..."
+>         >
+      ...
+
+<button> cannot contain a nested <button>.
+See this log for the ancestor stack trace.
+
+·····································stderr | src/lib/admin/user-facility-route.test.ts > reports a changed-payload receipt conflict instead of success
+[error] admin.users.facility_access {"error_name":"Object","error_message":"Lifecycle request key payload mismatch","error_code":"23505","action":"grant","targetUserId":"10000000-0000-4000-8000-000000000001"}
+
+······························································································································································································stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders all required regions
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders all required regions
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·········stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders exactly 6 KPI tiles
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders exactly 6 KPI tiles
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders the right rail with priority alerts and action queue panels
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders the right rail with priority alerts and action queue panels
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+····stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders top-bar extras for flagship hub navigation
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders top-bar extras for flagship hub navigation
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+··stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders a full-width below-header hub strip
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T1Dashboard.test.tsx > <T1Dashboard /> > renders a full-width below-header hub strip
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+··················································································································································································································stderr | src/design-system/templates/T4Analytics.test.tsx > <T4Analytics /> > renders kpi strip, two charts, breakdown table, and audit footer
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T4Analytics.test.tsx > <T4Analytics /> > renders kpi strip, two charts, breakdown table, and audit footer
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T4Analytics.test.tsx > <T4Analytics /> > supports a single chart configuration
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T4Analytics.test.tsx > <T4Analytics /> > supports a single chart configuration
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T4Analytics.test.tsx > <T4Analytics /> > renders top-bar extras for executive hub navigation
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T4Analytics.test.tsx > <T4Analytics /> > renders top-bar extras for executive hub navigation
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+···········································································stderr | src/app/(admin)/executive/standup/compare/page.test.tsx > ExecutiveStandupComparePage auth hydration > surfaces real fetch failures after auth resolves
+[Haven] live data load failed: Could not load standup comparison. Error: Could not load standup comparison.
+    at /Users/brianlewis/Circle of Life/Haven HFO Staging Integration/src/app/(admin)/executive/standup/compare/page.test.tsx:70:47
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+
+··················································································································································································································································································································································································stderr | src/app/(admin)/finance/journal-entries/new/page.test.tsx > NewJournalEntryPage entry date > defaults to the Eastern calendar date at 8:05pm ET, not the next UTC date
+An update to NewJournalEntryPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to NewJournalEntryPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·············································································································-stderr | src/app/(admin)/admin/infection-control/new/page.test.tsx > NewInfectionSurveillancePage > defaults onset date to Eastern calendar today after 8pm ET, not the UTC date
+An update to NewInfectionSurveillancePage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/app/(admin)/admin/infection-control/new/page.test.tsx > NewInfectionSurveillancePage > defaults onset date to Eastern calendar today after 8pm ET, not the UTC date
+An update to NewInfectionSurveillancePage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+······················································································································································································stderr | src/design-system/templates/T2List.test.tsx > <T2List /> > renders title, table region, and audit footer
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T2List.test.tsx > <T2List /> > renders title, table region, and audit footer
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·······stderr | src/design-system/templates/T2List.test.tsx > <T2List /> > renders the optional side-panel as right rail
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/design-system/templates/T2List.test.tsx > <T2List /> > renders the optional side-panel as right rail
+An update to DataTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+·····························································7:08:35 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven HFO Staging Integration/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven HFO Staging Integration/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19691:22)
+····················stderr | src/lib/live-data-fallback.test.ts > formatLiveDataLoadError > returns fallback in production
+[Haven] live data load failed: column x missing { message: 'column x missing' }
+
+stderr | src/lib/live-data-fallback.test.ts > formatLiveDataLoadError > appends detail in development
+[Haven] live data load failed: column x missing { message: 'column x missing' }
+
+········································································································································································································································································································································································
+
+ Test Files  613 passed (613)
+      Tests  4410 passed | 2 skipped (4412)
+   Start at  19:07:25
+   Duration  83.64s (transform 55.02s, setup 84.96s, import 509.04s, tests 148.44s, environment 357.78s)
+

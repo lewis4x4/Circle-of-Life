@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, AlertTriangle, Zap, Calendar, MoreHorizontal, Filter, BarChart3, Users, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, Zap, Calendar, ListTodo, MoreHorizontal, Filter, BarChart3, Users, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
@@ -34,7 +34,8 @@ type TaskInstance = {
   current_escalation_level: number;
   facility_id: string;
   facility_name: string;
-  days_overdue: number;
+  due_judgment?: "unknown" | "settled" | "not_due" | "overdue";
+  days_overdue: number | null;
 };
 
 type AdequacySnapshot = {
@@ -302,8 +303,9 @@ export default function OperationsTodayPage() {
   // Group tasks by status
   const pendingTasks = tasks.filter((t: TaskInstance) => t.status === "pending");
   const inProgressTasks = tasks.filter((t: TaskInstance) => t.status === "in_progress");
+  // Overdue only on the evaluator's judgment; an unknown schedule is not overdue.
   const overdueTasks = tasks.filter((t: TaskInstance) =>
-    (t.status === "pending" || t.status === "in_progress") && t.days_overdue > 0
+    (t.status === "pending" || t.status === "in_progress") && (t.days_overdue ?? 0) > 0
   );
   const selectedTask = selectedTaskId ? tasks.find((task) => task.id === selectedTaskId) ?? null : null;
   if (isLoading) {
@@ -335,6 +337,13 @@ export default function OperationsTodayPage() {
 
         <div className="flex items-center gap-3">
           {adequacy && getAdequacyBadge()}
+
+          <Link href="/admin/operations/work">
+            <Button variant="outline" size="sm">
+              <ListTodo className="h-4 w-4 mr-2" />
+              Site work
+            </Button>
+          </Link>
 
           <Link href="/admin/operations/calendar">
             <Button variant="outline" size="sm">
@@ -723,7 +732,7 @@ export default function OperationsTodayPage() {
                   <p className="text-foreground">
                     {selectedTask.due_at
                       ? new Date(selectedTask.due_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
-                      : "No due time"}
+                      : "Schedule needs confirmation"}
                   </p>
                 </div>
                 <div>

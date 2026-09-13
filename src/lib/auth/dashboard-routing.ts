@@ -108,7 +108,7 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     suppressedSections: ["clinical_risk_rollups", "finance_risk", "staffing_exceptions"],
     mobileTabletExpectation: "desktop-first",
     visibleGroups: ["Command", "Pipeline", "Clinical Ops", "Workforce", "Knowledge"],
-    visibleItemKeys: ["referrals", "admissions", "family-messages", "residents", "transportation", "staff", "kb-admin"],
+    visibleItemKeys: ["site-work", "referrals", "admissions", "family-messages", "residents", "transportation", "staff", "kb-admin"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: false,
       compliance: false, financials: false, watchlist: false,

@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-09-12T23:18:05.570Z",
+  "baseUrl": "http://127.0.0.1:4317",
+  "authenticatedContextProvided": false,
+  "routes": [
+    "/",
+    "/login",
+    "/admin/operations",
+    "/admin/billing/invoices"
+  ],
+  "authentication": "anonymous",
+  "readySelector": null,
+  "viewports": [
+    "375",
+    "768",
+    "1024",
+    "1440"
+  ],
+  "shots": [
+    {
+      "route": "/",
+      "viewport": "375",
+      "url": "http://127.0.0.1:4317/",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4317/login",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_-375.png"
+    },
+    {
+      "route": "/",
+      "viewport": "768",
+      "url": "http://127.0.0.1:4317/",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4317/login",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_-768.png"
+    },
+    {
+      "route": "/",
+      "viewport": "1024",
+      "url": "http://127.0.0.1:4317/",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4317/login",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_-1024.png"
+    },
+    {
+      "route": "/",
+      "viewport": "1440",
+      "url": "http://127.0.0.1:4317/",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4317/login",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_-1440.png"
+    },
+    {
+      "route": "/login",
+      "viewport": "375",
+      "url": "http://127.0.0.1:4317/login",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4317/login",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_login-375.png"
+    },
+    {
+      "route": "/login",
+      "viewport": "768",
+      "url": "http://127.0.0.1:4317/login",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4317/login",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_login-768.png"
+    },
+    {
+      "route": "/login",
+      "viewport": "1024",
+      "url": "http://127.0.0.1:4317/login",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4317/login",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_login-1024.png"
+    },
+    {
+      "route": "/login",
+      "viewport": "1440",
+      "url": "http://127.0.0.1:4317/login",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4317/login",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_login-1440.png"
+    }
+  ],
+  "errors": [
+    {
+      "route": "/admin/operations",
+      "viewport": "375",
+      "message": "Authentication required for requested route; screenshot would only cover login."
+    },
+    {
+      "route": "/admin/operations",
+      "viewport": "768",
+      "message": "Authentication required for requested route; screenshot would only cover login."
+    },
+    {
+      "route": "/admin/operations",
+      "viewport": "1024",
+      "message": "Authentication required for requested route; screenshot would only cover login."
+    },
+    {
+      "route": "/admin/operations",
+      "viewport": "1440",
+      "message": "Authentication required for requested route; screenshot would only cover login."
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": "375",
+      "message": "Authentication required for requested route; screenshot would only cover login."
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": "768",
+      "message": "Authentication required for requested route; screenshot would only cover login."
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": "1024",
+      "message": "Authentication required for requested route; screenshot would only cover login."
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": "1440",
+      "message": "Authentication required for requested route; screenshot would only cover login."
+    }
+  ]
+}

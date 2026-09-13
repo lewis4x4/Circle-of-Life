@@ -1,0 +1,17 @@
+{
+  "reviewer": "baseline_review",
+  "verdict": "APPROVED",
+  "scope": "COL-18 documentation-only baseline completion",
+  "checks": [
+    "52 focused tests",
+    "typecheck",
+    "UTF8 338 migrations / 19 probes",
+    "unchanged full-gate FAIL artifact hash",
+    "17 other heads / 17 dirty files preserved",
+    "local Markdown links",
+    "git diff --check"
+  ],
+  "release_ready": false,
+  "next_issue": "COL-132",
+  "also_ready_after_col18": "COL-133"
+}

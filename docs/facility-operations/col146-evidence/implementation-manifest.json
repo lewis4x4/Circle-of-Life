@@ -1,0 +1,120 @@
+{
+  "base_commit": "c7dc9efc",
+  "branch": "codex/hfo-col146-recovery",
+  "scope": "COL-146 source segment under the limited dependency exception",
+  "recorded_at": "2026-09-10T21:01:48.954Z",
+  "files": [
+    {
+      "path": "docs/facility-operations/HANDOFF.md",
+      "sha256": "b8673f1929a77a43c39fc97187e554435d19ec3452ed348d0fdfe6c2dbf18dc0"
+    },
+    {
+      "path": "docs/facility-operations/OWNER-DECISIONS.md",
+      "sha256": "f0171c080807afe50cdbd8760cfbfa3086a90886f15116e215c2ab5205089424"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "e99d614760b695b2e600a74b28123440156b0f85029e8c06dc8b32f54b031a6f"
+    },
+    {
+      "path": "docs/facility-operations/COL-146-HANDOFF.md",
+      "sha256": "b67a2a1b6fa604126301eeb5db90e0cfc85c679f32b54323fb59114dd1480f34"
+    },
+    {
+      "path": "docs/facility-operations/col146-evidence/concurrency.txt",
+      "sha256": "dc2210983d01145dd639f12f9a094a7cd57636b1424ac4340c0b3a9af5fd83e8"
+    },
+    {
+      "path": "docs/facility-operations/col146-evidence/engineering-contracts.md",
+      "sha256": "fbad3814610151cbbfe62b2ffac6c0e6837819e1a1e61ef97749854bd7070e23"
+    },
+    {
+      "path": "docs/facility-operations/col146-evidence/independent-review.json",
+      "sha256": "013a831fe1b7c1ba297eab39c79545af5a8c3cffd3c28caf2beccd9d1069e06b"
+    },
+    {
+      "path": "docs/facility-operations/col146-evidence/linear-state.json",
+      "sha256": "7f0a9676a910cba616023e8f831bea37f0f287b886c73040fdaab69ef0672935"
+    },
+    {
+      "path": "docs/facility-operations/col146-evidence/verification.json",
+      "sha256": "300ead44e75fa561f32076383f4ef1a4b7cb26501e41674f4ef2c20068c0305c"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-recovery.md",
+      "sha256": "ab28ba2ec3bbd7b6a0649e80c1a1ef5e9c4d816e6bd8ce51d2ff4f8c7b0dab3f"
+    },
+    {
+      "path": "scripts/facility-operations/test-draft-concurrency.py",
+      "sha256": "fa9c3615cbd0783dd29c07fd431004b29408234980920eb672a08bc050ffc91e"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/_components/save-state-notice.test.tsx",
+      "sha256": "fe63c1ca0077195c4d47ecc85ef69d1a59b9c9b903b7c591fb0a589c25b4e450"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/_components/save-state-notice.tsx",
+      "sha256": "37e3b3423e31874f4352ffcb2bb8fd3a3267ae47951723a4b0cac72d7c2a6088"
+    },
+    {
+      "path": "src/app/api/admin/operations/drafts/[id]/discard/route.ts",
+      "sha256": "d2f0798db673e5a49c22a5fe4dd901d0e1abbf4ab3ae38336931785e34b95fc6"
+    },
+    {
+      "path": "src/app/api/admin/operations/drafts/[id]/resume/route.ts",
+      "sha256": "863ea1407dc23dd0a2006bb4c5c994450eb00b13a5eb6e365bea064b47221de3"
+    },
+    {
+      "path": "src/app/api/admin/operations/drafts/[id]/route.test.ts",
+      "sha256": "7825bafc8f2bb1622e7c9203c0c04a1fd8582e0827a8b78111e82eafe1f4f6cd"
+    },
+    {
+      "path": "src/app/api/admin/operations/drafts/[id]/route.ts",
+      "sha256": "cf073d263386e4fba3d3501bead10ac6fb96cb1417d2ec94500a6b62870ed021"
+    },
+    {
+      "path": "src/app/api/admin/operations/drafts/route.test.ts",
+      "sha256": "b20426abf5f9307043457282f7830df19ba7a6afbc8dee8d0a3974a2e9e06450"
+    },
+    {
+      "path": "src/app/api/admin/operations/drafts/route.ts",
+      "sha256": "a3f60d1bbb7a1e6e8b1ac0064b0c5794a58928cee4196a8874ea9d415c1bb730"
+    },
+    {
+      "path": "src/hooks/use-pending-save.test.tsx",
+      "sha256": "48124c749c830b21533841b519c151c0225adcd046b564100b3c7679ec6290f4"
+    },
+    {
+      "path": "src/hooks/use-pending-save.ts",
+      "sha256": "d18d6f5a8a43e8e20431dcbf6797828c4c2c501395f3fda043494d46ac382126"
+    },
+    {
+      "path": "src/lib/operations/recovery-client.test.ts",
+      "sha256": "1c1d5a02fc7cfcdcc8ee71b9a652c6cb80347c16170b48824a252e25b5f55039"
+    },
+    {
+      "path": "src/lib/operations/recovery-client.ts",
+      "sha256": "5500013b98caa49afa74bcf1b4af27ae01f91c07115b0e952ffe81c8c1c1b465"
+    },
+    {
+      "path": "src/lib/operations/recovery.test.ts",
+      "sha256": "ff45f184b0e9406f72e96cb613180f48c1f3e6351b220a15fb42f04ffbb05e89"
+    },
+    {
+      "path": "src/lib/operations/recovery.ts",
+      "sha256": "7e3141bf2debd0ead21991d405b3700190e449e5d88712fb57a607113b15a265"
+    },
+    {
+      "path": "supabase/migrations/345_hfo_command_drafts.sql",
+      "sha256": "8b38ed54101fd6f486468206a629485add1ed9891ef8b5e722aaaf6c72180318"
+    },
+    {
+      "path": "supabase/tests/review_hfo_command_drafts.sql",
+      "sha256": "4233f44fe6c56169eb498a8f5489a397520b1d055714471c8fa81d35db45e618"
+    },
+    {
+      "path": "test-results/agent-gates/2026-09-10T20-51-02-880Z-COL-146-HFO-RECOVERY.json",
+      "sha256": "b49cb908c318c0e96f91dcca57625b04df5e745cf4b85e9acf798c9f07e0f0f1"
+    }
+  ]
+}

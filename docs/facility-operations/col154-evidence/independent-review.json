@@ -1,0 +1,148 @@
+{
+  "issue": "COL-154",
+  "uuid": "1d27f038-74ed-42f3-92a6-72d69dfcd657",
+  "title": "[HFO-18] Connect drill and generator records to the checklist first",
+  "scope": "source only; first two domain adapters on the COL-147 mechanism; no hosted apply, deploy, rule, schedule, deadline, reminder, UI, provider, staff or operating acceptance",
+  "status": "APPROVED AFTER FIXES (re-verified)",
+  "reviewed_at": "2026-09-11T02:20:00Z",
+  "model_used": "Fable 5.1 / claude-fable-5-1 (implementer); independent reviewer seat: general-purpose subagent, read-only, SQL scenarios run inside BEGIN…ROLLBACK on col154_base347",
+  "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/477",
+  "reviewer_verdict_before_fixes": "APPROVE WITH FIXES",
+  "surfaces": [
+    "supabase/migrations/347_hfo_drill_generator_sources.sql",
+    "supabase/tests/review_hfo_drill_generator_sources.sql",
+    "supabase/tests/review_hfo_source_links.sql (two allowlist assertions)",
+    "scripts/facility-operations/test-drill-generator-concurrency.py",
+    "src/lib/operations/source-records.ts",
+    "src/lib/operations/receipts.ts",
+    "src/app/api/admin/operations/asset-observations/",
+    "src/app/api/admin/operations/drill-logs/[id]/"
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "blocking",
+      "finding": "A final fire/elopement drill corrected to tornado stranded its live receipt: the new version delivered nothing, the void delivered nothing, and the fire occurrence stayed satisfied by version 1 forever (reproduced by the reviewer).",
+      "disposition": "fixed",
+      "fix": "correct_drill_log refuses any change between a linked type and tornado on a final log ('Drill type cannot change to or from tornado; void the log and record it again', 22023). A fire↔elopement change is delivered and handled by 346 by source identity.",
+      "reverified": "probe 5a: fire→tornado and tornado→fire refused with no restatement (version and type unchanged); fire→elopement onto an occurrence another record satisfied is a visible conflict with attention and the earlier receipt stays effective, exactly one effective receipt for the record; both probes PASS"
+    },
+    {
+      "id": "F2",
+      "severity": "should-fix (high)",
+      "finding": "Voiding an observation after its asset was retired marked the record voided while the 346 delivery was unmatched/subject_not_current, leaving the occurrence completed by the voided record's receipt (reproduced).",
+      "disposition": "fixed (in 347, not by changing 346)",
+      "fix": "void_asset_observation refuses by name when the asset is retired, deleted or moved ('Asset is not current at this site; the observation stays as history until a historical-record scope exists'); correct already refused. The COL-133 retired-subject boundary hides the occurrence and the 341 authority lock would deny the reversal in any case, so a clean refusal is the honest behaviour; recorded as OWNER-DECISIONS 3k(xii). Reordering 346's subject check for voided deliveries was considered and rejected for this segment because the session authority lock still denies work on a hidden occurrence and a subject-less invalidated row would be unreadable.",
+      "reverified": "probe 3a: with the generator retired, void and correct are refused by name; record, occurrence, receipts and request ledger unchanged; un-retiring restores the path"
+    },
+    {
+      "id": "F3",
+      "severity": "should-fix",
+      "finding": "The 220 unique constraint (site, type, date, time) is not partial, so a voided drill blocks re-entering a log at the same slot (23505); a partial index would break the legacy page's ON CONFLICT upsert.",
+      "disposition": "documented, not changed",
+      "fix": "Recorded as OWNER-DECISIONS 3k(x) and in the contract/spec: a voided log keeps its slot, a restatement is a correction, re-entry at the same minute is refused. Changing the constraint is an integrator decision because the legacy page depends on it.",
+      "reverified": "probe 5 asserts the 23505 at the voided slot as documented behaviour"
+    },
+    {
+      "id": "F4",
+      "severity": "should-fix",
+      "finding": "finalize_drill_log checked deleted_at only on the unlocked read; a service/owner soft delete racing the FOR UPDATE could finalize a deleted draft.",
+      "disposition": "fixed",
+      "fix": "Every finalize/correct/void command re-checks deleted_at after the FOR UPDATE re-read (Operation unavailable, 42501).",
+      "reverified": "migration applies; probes PASS; the reviewer confirmed authenticated cannot soft-delete a draft under the 220 policy, so the reachable path was service/owner only"
+    },
+    {
+      "id": "F5",
+      "severity": "should-fix",
+      "finding": "The migration self-check asserted no operation_source_events at all (would fail hosted once 346 is exercised) and returned silently when the organisation constant was absent.",
+      "disposition": "fixed",
+      "fix": "Assertion scoped to source keys drill-log/asset-observation; RAISE NOTICE on the missing-organisation path.",
+      "reverified": "migration applies on the clone; probe §0 unchanged"
+    },
+    {
+      "id": "F6",
+      "severity": "note",
+      "finding": "Contract §2/§4 (as first written) said recorded_at = version_recorded_at; the code anchors on finalized_at.",
+      "disposition": "fixed (document)",
+      "fix": "Contract §2 'Recording act' / 'Version act' and the reader table now state finalized_at as the recording instant on every version and version_recorded_by as the recorder, matching 344.",
+      "reverified": "n/a (documentation)"
+    },
+    {
+      "id": "F7",
+      "severity": "note",
+      "finding": "A correction by someone other than the observer flips the entry to on_behalf and needs an entry_reason (policy (ii) consequence; UX trap).",
+      "disposition": "documented and probed",
+      "fix": "OWNER-DECISIONS 3k(ix), contract §5 and the spec API section state it.",
+      "reverified": "probe 3a: administrator correcting maintenance's observation is refused without entry_reason and recorded on_behalf with it (recorder administrator, performer maintenance)"
+    },
+    {
+      "id": "F8",
+      "severity": "note",
+      "finding": "The legacy upsert with identical content on a final row succeeds silently (touches updated_at); the page can no longer attach evidence paths to a final log.",
+      "disposition": "documented",
+      "fix": "Contract §3.1 and OWNER-DECISIONS 3k(x) state the accepted regression; the 343 evidence mechanism is the path.",
+      "reverified": "n/a"
+    },
+    {
+      "id": "F9",
+      "severity": "note",
+      "finding": "Request keys are unique globally, not per organisation (key-existence oracle across organisations); same shape as 346.",
+      "disposition": "accepted (single organisation today)",
+      "fix": "Revisit with multi-tenant hardening alongside 346.",
+      "reverified": "n/a"
+    },
+    {
+      "id": "F10",
+      "severity": "note",
+      "finding": "Two different records under the same key from two sessions: the second failed at the request insert with a generic 23505 (no partial state).",
+      "disposition": "fixed",
+      "fix": "finalize/correct/void now take the request-key advisory lock before the record lock (same order as record), so the second waits and is answered by the replay/conflict check.",
+      "reverified": "race script same_key_twice PASS; lock order key → record → 346 per-record; no deadlock observed across the six cases"
+    },
+    {
+      "id": "F11",
+      "severity": "note",
+      "finding": "Opposite-direction concurrent moves of two records between two occurrences could deadlock in 346's moved branch (40P01 → uncertain).",
+      "disposition": "accepted (inherited from 346, rare, safe failure)",
+      "fix": "None in this segment.",
+      "reverified": "n/a"
+    },
+    {
+      "id": "F12",
+      "severity": "note",
+      "finding": "Route details: list query 'voided' filter was missing from the contract; builder usage correct; no wording leak found.",
+      "disposition": "fixed (document)",
+      "fix": "Contract §6 lists the voided filter.",
+      "reverified": "route tests PASS"
+    }
+  ],
+  "probe_gaps_closed": [
+    "drill_type change to/from tornado refused (5a)",
+    "fire→elopement type change onto a satisfied occurrence is a visible conflict (5a)",
+    "retired-asset void and correct refused by name with nothing changed (3a)",
+    "cross-person correction recorded on behalf with a reason (3a)",
+    "failed drill opens an issue that its void leaves open (5a)",
+    "re-entry at a voided slot refused under the 220 constraint, as documented (5)"
+  ],
+  "acceptance_coverage": [
+    { "requirement": "A final approved drill/source log satisfies the correct site/activity/period once; separate review stays outstanding where required", "result": "PASS", "evidence": ["probe 5, 5a, 5b; review activities never allowlisted (347 registration block, probe §0/§9)", "race finalize vs human recording both orders"] },
+    { "requirement": "Two generators and source correction/void/replay behave correctly; a failed observation leaves the issue open", "result": "PASS", "evidence": ["probe 1, 2, 3, 3a", "race two_records_one_generator, correction_first_then_void, void_first_then_correction, same_key_twice"] },
+    { "requirement": "No automatic self-test or photo alone claims staff observation; unconfirmed Homewood day/time does not invent deadline", "result": "PASS", "evidence": ["basis CHECK staff_observed; refusals by name (probe 4)", "no rule, schedule, deadline or occurrence written by 347; fixture rule is probe-only and rolled back", "OWNER-DECISIONS 3k records policies and the legacy drill-consumer boundary"] }
+  ],
+  "reviewer_confirmations": [
+    "direct DML on asset_observations and the request ledger revoked and token-gated; drill_log lifecycle columns refuse non-token writes; forged setting compared to the owner secret",
+    "trigger order drill_log_lifecycle_guard → tr_drill_log_set_updated_at → audit AFTER; no interaction",
+    "finalize does not bump the version, content does, void does not; content frozen after finalization so a version is never delivered twice with different content; 346 live index keys on version+kind",
+    "operation_source_record_actor locks profile/user/session/grant FOR SHARE as 341; expired operation_expires_at excluded; other site 42501; ledger/observation RLS site-scoped; audit rows site-scoped",
+    "request hashes cover every accepted field; lock order shared authority → advisory → row → 346 advisory → occurrence rows",
+    "reader timezone arithmetic correct; voided returns no statement; deleted draft exists:false; tornado raises to a recorded reader_failed",
+    "hosted: haven schema usage granted; invoker wrappers over definer commands; no FORCE RLS; auth.jwt session_id pattern as 341/346"
+  ],
+  "re_verification": {
+    "probes": "review_hfo_drill_generator_sources.sql PASS; review_hfo_source_links.sql PASS (fresh clone col154_base347 with the fixed 347)",
+    "race": "test-drill-generator-concurrency.py 6/6 PASS",
+    "vitest": "43 files / 533 tests PASS (operations lib + routes)",
+    "typecheck_lint": "PASS / PASS",
+    "gate": "see verification.json (strict gate re-run after the fixes)"
+  }
+}

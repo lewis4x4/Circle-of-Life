@@ -1,0 +1,102 @@
+{
+  "at": "2026-09-12T23:52:34.046893+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "Cookie": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "request_key": "col143-95d3102349:record-admin:e28462ab",
+      "payload": {
+        "outcome": "performed",
+        "note": "col143-95d3102349 admin"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "X-DNS-Prefetch-Control": "on",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://iwcnajanvjvynolltflw.supabase.co; media-src 'self' https://cdn.pixabay.com; font-src 'self'; connect-src 'self' https://iwcnajanvjvynolltflw.supabase.co wss://iwcnajanvjvynolltflw.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+      "content-type": "application/json",
+      "Date": "Sat, 12 Sep 2026 23:52:34 GMT",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    },
+    "body": {
+      "outcome": "receipt",
+      "receipt": {
+        "id": "169955e5-6edb-43dc-9a7d-241ac3833047",
+        "note": "col143-95d3102349 admin",
+        "values": {},
+        "outcome": "performed",
+        "chain_id": "169955e5-6edb-43dc-9a7d-241ac3833047",
+        "issue_id": null,
+        "revision": "136c56c6390526d2d386a697f58b4cea4c157f7ed51ef47feee7930f41c988ff",
+        "created_at": "2026-09-12T23:52:33.984623+00:00",
+        "entry_kind": "routine",
+        "source_key": null,
+        "subject_id": "a4c58494-a502-4f20-af68-57321414086e",
+        "activity_id": "ba7de087-bfe6-488c-a4a8-d67e19d0d394",
+        "facility_id": "ba40a958-0747-4751-9b33-b3326bf7b802",
+        "recorded_at": "2026-09-12T23:52:33.998432+00:00",
+        "recorder_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "request_key": "col143-95d3102349:record-admin:e28462ab",
+        "entry_reason": null,
+        "performed_at": "2026-09-12T23:52:33.998432+00:00",
+        "receipt_kind": "performance",
+        "recorder_role": "facility_admin",
+        "superseded_at": null,
+        "correction_seq": 0,
+        "performer_kind": "self",
+        "authority_class": "facility",
+        "evidence_status": "missing",
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "performer_label": null,
+        "source_event_id": null,
+        "completion_state": "performed_missing_evidence",
+        "missing_evidence": [
+          {
+            "kind": "photo",
+            "when": "always",
+            "label": "Panel photo",
+            "min_count": 1
+          }
+        ],
+        "source_record_id": null,
+        "task_instance_id": "2e6fe631-6d8f-4f92-beb0-a36d665e2ffe",
+        "correction_reason": null,
+        "performer_user_id": null,
+        "corrects_receipt_id": null,
+        "performer_vendor_id": null,
+        "verifies_receipt_id": null,
+        "evidence_satisfied_at": null,
+        "source_record_version": null,
+        "requirement_version_id": "e01f5d11-9b57-495e-bdba-c970aa1fbc8b",
+        "evidence_status_current": "missing",
+        "facility_requirement_id": "a18b9008-f98e-489e-b78b-b07120b071b0",
+        "superseded_by_receipt_id": null,
+        "verified_receipt_revision": null
+      },
+      "occurrence": {
+        "id": "2e6fe631-6d8f-4f92-beb0-a36d665e2ffe",
+        "status": "in_progress",
+        "performed_at": "2026-09-12T23:52:33.998432+00:00",
+        "execution_state": "performed_missing_evidence",
+        "occurrence_revision": "e0431d952abf6eca921ab4b98fd22e792c7e32d3c0673fdda4f981ff0ad5746f"
+      },
+      "issue": null,
+      "replayed": false
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

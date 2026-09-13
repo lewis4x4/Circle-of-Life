@@ -65,9 +65,23 @@ describe('employee file rendered workflows', () => {
     const user = await open();
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/catalog'))).toBe(false);
     let resolveCatalog!: (value: unknown) => void;
-    fetchMock.mockImplementationOnce(() => new Promise((resolve) => { resolveCatalog = resolve; }));
+    const catalogUrl = '/api/admin/staff/staff-1/employee-file/catalog';
+    const defaultFetch = fetchMock.getMockImplementation()!;
+    const catalogResponse = new Promise((resolve) => { resolveCatalog = resolve; });
+    let firstCatalogRequest = true;
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (url === catalogUrl && firstCatalogRequest) {
+        firstCatalogRequest = false;
+        return catalogResponse;
+      }
+      return defaultFetch(url, init);
+    });
+    // The training effect may start after open() resolves. Its request must not
+    // consume the deferred catalog response, regardless of effect scheduling.
+    const lateTraining = fetch('/api/admin/staff/staff-1/employee-file/training', { cache: 'no-store' });
     await user.click(screen.getByRole('button', { name: 'Requirements' }));
     expect(screen.getByRole('status')).toHaveTextContent('Loading packet sources');
+    await expect(lateTraining).resolves.toMatchObject({ ok: true });
     expect(screen.queryByRole('button', { name: 'Save draft version' })).not.toBeInTheDocument();
     resolveCatalog({ ok: false, json: async () => ({ error: 'Catalog is temporarily unavailable.' }) });
     expect(await screen.findByRole('alert')).toHaveTextContent('Catalog is temporarily unavailable.');

@@ -1,0 +1,283 @@
+{
+  "source": "b3e1d819874c942afb737f46eaa632ba54de247c",
+  "at": "2026-09-12T23:58:06.962Z",
+  "target": "iwcnajanvjvynolltflw",
+  "base": "http://127.0.0.1:4317",
+  "actor": "synthetic corporate fixture",
+  "readOnly": true,
+  "results": [
+    {
+      "route": "/admin/operations/work",
+      "viewport": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "todayText": "Skip to main content\nH\naven\nAll facilities\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nFind a page…\n⌘K\nReport incident\nCC\nHome\nExecutive\nWeekly Stand Up\nReports hub\nFacilities\nBilling & AR\nSite work\n\nCurrent person: col143-95d3102349 corp\n\nSite\nChoose a site\ncol143-95d3102349 sitea\ncol143-95d3102349 siteb\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\nDue today\n\nNo work in this view.\n\nOutstanding from earlier\n\nNo work in this view.\n\nUnknown schedule\n\nNo work in this view.\n\nLegacy tasks\n\nNo unfinished legacy tasks.\n\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "selectedSite": "col143-95d3102349 sitea",
+      "selectedView": "history",
+      "finalPath": "/admin/operations/work",
+      "heading": [
+        "Site work",
+        "History"
+      ],
+      "alerts": [
+        "Site work"
+      ],
+      "loadingText": [],
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nFind a page…\n⌘K\nReport incident\nCC\nHome\nExecutive\nWeekly Stand Up\nReports hub\nFacilities\nBilling & AR\nSite work\n\nCurrent person: col143-95d3102349 corp\n\nSite\nChoose a site\ncol143-95d3102349 sitea\ncol143-95d3102349 siteb\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\n\n4 total entries across this site\n\nHistory\ncol143-95d3102349 required-mismatch\n\ncol143-95d3102349 sitea · Sep 12, 2026, 11:00 PM\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: col143-95d3102349 corp\n\nRefresh receipt\n\nRecorded by 6c578969-864a-467b-88ee-a7ca3a782506 at Sep 12, 2026, 7:56 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: complete\n\nReceipt state: performed_missing_evidence\n\nPerformed at Sep 12, 2026, 7:56 PM (America/New_York)\n\nPerformer: self\n\nNote: col143-95d3102349 required-mismatch\n\nTask help and handover\ncol143-95d3102349 assistant\n\ncol143-95d3102349 sitea · Sep 12, 2026, 11:00 PM\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: col143-95d3102349 corp\n\nRefresh receipt\n\nRecorded by e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a at Sep 12, 2026, 7:52 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: complete\n\nReceipt state: performed_missing_evidence\n\nPerformed at Sep 12, 2026, 7:52 PM (America/New_York)\n\nPerformer: self\n\nNote: col143-95d3102349 assistant\n\nTask help and handover\ncol143-95d3102349 admin\n\ncol143-95d3102349 sitea · Sep 12, 2026, 11:00 PM\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: col143-95d3102349 corp\n\nRefresh receipt\n\nRecorded by 6c578969-864a-467b-88ee-a7ca3a782506 at Sep 12, 2026, 7:52 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: complete\n\nReceipt state: performed_missing_evidence\n\nPerformed at Sep 12, 2026, 7:52 PM (America/New_York)\n\nPerformer: self\n\nNote: col143-95d3102349 admin\n\nTask help and handover\ncol143-95d3102349 late\n\ncol143-95d3102349 sitea · Sep 12, 2026, 11:00 PM\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: col143-95d3102349 corp\n\nRefresh receipt\n\nRecorded by 6c578969-864a-467b-88ee-a7ca3a782506 at Sep 12, 2026, 7:53 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: complete\n\nReceipt state: performed_missing_evidence\n\nPerformed at Sep 12, 2026, 5:53 PM (America/New_York)\n\nPerformer: self\n\nNote: col143-95d3102349 late\n\nTask help and handover\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "screenshot": "_admin_operations_work-1440.png",
+      "axeViolations": [
+        {
+          "id": "landmark-banner-is-top-level",
+          "impact": "moderate",
+          "help": "Banner landmark should not be contained in another landmark",
+          "nodes": [
+            {
+              "target": [
+                ".md\\:items-start"
+              ],
+              "failureSummary": "Fix any of the following:\n  The banner landmark is contained in another landmark."
+            }
+          ]
+        },
+        {
+          "id": "landmark-contentinfo-is-top-level",
+          "impact": "moderate",
+          "help": "Contentinfo landmark should not be contained in another landmark",
+          "nodes": [
+            {
+              "target": [
+                "footer"
+              ],
+              "failureSummary": "Fix any of the following:\n  The contentinfo landmark is contained in another landmark."
+            }
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "help": "Main landmark should not be contained in another landmark",
+          "nodes": [
+            {
+              "target": [
+                "#page-shell-main"
+              ],
+              "failureSummary": "Fix any of the following:\n  The main landmark is contained in another landmark."
+            }
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-banner",
+          "impact": "moderate",
+          "help": "Document should not have more than one banner landmark",
+          "nodes": [
+            {
+              "target": [
+                ".z-30"
+              ],
+              "failureSummary": "Fix any of the following:\n  Document has more than one banner landmark"
+            }
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "help": "Document should not have more than one main landmark",
+          "nodes": [
+            {
+              "target": [
+                ".border-l"
+              ],
+              "failureSummary": "Fix any of the following:\n  Document has more than one main landmark"
+            }
+          ]
+        },
+        {
+          "id": "landmark-unique",
+          "impact": "moderate",
+          "help": "Landmarks should have a unique role or role/label/title (i.e. accessible name) combination",
+          "nodes": [
+            {
+              "target": [
+                ".border-l"
+              ],
+              "failureSummary": "Fix any of the following:\n  The landmark must have a unique aria-label, aria-labelledby, or title to make landmarks distinguishable"
+            }
+          ]
+        }
+      ],
+      "axePassCount": 43,
+      "status": "FAIL"
+    },
+    {
+      "route": "/admin/operations/work",
+      "viewport": 375,
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "todayText": "Skip to main content\nH\naven\nAll facilities\nCC\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nSite work\n\nCurrent person: col143-95d3102349 corp\n\nSite\nChoose a site\ncol143-95d3102349 sitea\ncol143-95d3102349 siteb\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\nDue today\n\nNo work in this view.\n\nOutstanding from earlier\n\nNo work in this view.\n\nUnknown schedule\n\nNo work in this view.\n\nLegacy tasks\n\nNo unfinished legacy tasks.\n\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "selectedSite": "col143-95d3102349 sitea",
+      "selectedView": "history",
+      "finalPath": "/admin/operations/work",
+      "heading": [
+        "Site work",
+        "History"
+      ],
+      "alerts": [
+        "Site work"
+      ],
+      "loadingText": [],
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCC\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nSite work\n\nCurrent person: col143-95d3102349 corp\n\nSite\nChoose a site\ncol143-95d3102349 sitea\ncol143-95d3102349 siteb\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\n\n4 total entries across this site\n\nHistory\ncol143-95d3102349 required-mismatch\n\ncol143-95d3102349 sitea · Sep 12, 2026, 11:00 PM\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: col143-95d3102349 corp\n\nRefresh receipt\n\nRecorded by 6c578969-864a-467b-88ee-a7ca3a782506 at Sep 12, 2026, 7:56 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: complete\n\nReceipt state: performed_missing_evidence\n\nPerformed at Sep 12, 2026, 7:56 PM (America/New_York)\n\nPerformer: self\n\nNote: col143-95d3102349 required-mismatch\n\nTask help and handover\ncol143-95d3102349 assistant\n\ncol143-95d3102349 sitea · Sep 12, 2026, 11:00 PM\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: col143-95d3102349 corp\n\nRefresh receipt\n\nRecorded by e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a at Sep 12, 2026, 7:52 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: complete\n\nReceipt state: performed_missing_evidence\n\nPerformed at Sep 12, 2026, 7:52 PM (America/New_York)\n\nPerformer: self\n\nNote: col143-95d3102349 assistant\n\nTask help and handover\ncol143-95d3102349 admin\n\ncol143-95d3102349 sitea · Sep 12, 2026, 11:00 PM\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: col143-95d3102349 corp\n\nRefresh receipt\n\nRecorded by 6c578969-864a-467b-88ee-a7ca3a782506 at Sep 12, 2026, 7:52 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: complete\n\nReceipt state: performed_missing_evidence\n\nPerformed at Sep 12, 2026, 7:52 PM (America/New_York)\n\nPerformer: self\n\nNote: col143-95d3102349 admin\n\nTask help and handover\ncol143-95d3102349 late\n\ncol143-95d3102349 sitea · Sep 12, 2026, 11:00 PM\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: col143-95d3102349 corp\n\nRefresh receipt\n\nRecorded by 6c578969-864a-467b-88ee-a7ca3a782506 at Sep 12, 2026, 7:53 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: complete\n\nReceipt state: performed_missing_evidence\n\nPerformed at Sep 12, 2026, 5:53 PM (America/New_York)\n\nPerformer: self\n\nNote: col143-95d3102349 late\n\nTask help and handover\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "screenshot": "_admin_operations_work-375.png",
+      "axeViolations": [
+        {
+          "id": "landmark-banner-is-top-level",
+          "impact": "moderate",
+          "help": "Banner landmark should not be contained in another landmark",
+          "nodes": [
+            {
+              "target": [
+                ".md\\:items-start"
+              ],
+              "failureSummary": "Fix any of the following:\n  The banner landmark is contained in another landmark."
+            }
+          ]
+        },
+        {
+          "id": "landmark-contentinfo-is-top-level",
+          "impact": "moderate",
+          "help": "Contentinfo landmark should not be contained in another landmark",
+          "nodes": [
+            {
+              "target": [
+                "footer"
+              ],
+              "failureSummary": "Fix any of the following:\n  The contentinfo landmark is contained in another landmark."
+            }
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "help": "Main landmark should not be contained in another landmark",
+          "nodes": [
+            {
+              "target": [
+                "#page-shell-main"
+              ],
+              "failureSummary": "Fix any of the following:\n  The main landmark is contained in another landmark."
+            }
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-banner",
+          "impact": "moderate",
+          "help": "Document should not have more than one banner landmark",
+          "nodes": [
+            {
+              "target": [
+                ".z-30"
+              ],
+              "failureSummary": "Fix any of the following:\n  Document has more than one banner landmark"
+            }
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "help": "Document should not have more than one main landmark",
+          "nodes": [
+            {
+              "target": [
+                ".border-l"
+              ],
+              "failureSummary": "Fix any of the following:\n  Document has more than one main landmark"
+            }
+          ]
+        },
+        {
+          "id": "landmark-unique",
+          "impact": "moderate",
+          "help": "Landmarks should have a unique role or role/label/title (i.e. accessible name) combination",
+          "nodes": [
+            {
+              "target": [
+                ".border-l"
+              ],
+              "failureSummary": "Fix any of the following:\n  The landmark must have a unique aria-label, aria-labelledby, or title to make landmarks distinguishable"
+            }
+          ]
+        }
+      ],
+      "axePassCount": 42,
+      "status": "FAIL"
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "finalPath": "/admin/billing/invoices",
+      "heading": [
+        "Billing & AR",
+        "Invoices"
+      ],
+      "alerts": [],
+      "loadingText": [],
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nFind a page…\n⌘K\nReport incident\nCC\nHome\nExecutive\nWeekly Stand Up\nReports hub\nFacilities\nBilling & AR\nBilling & AR\n\nOrganization receivables and cash signals for the scope you pick below. Open Invoices for the full ledger, AR aging for buckets, Rate library for posted rates, Revenue for recognition views, and Per-facility AR for a facility-by-facility roll-up.\n\nScope\nAll facilities\ncol143-95d3102349 sitea\ncol143-95d3102349 siteb\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\n\nAs of Sep 12, 2026, 7:58 PM ET\nRefresh\nShortcuts: / search · R refresh · E export\n\nOverview\nInvoices\nOpening balance\nAR aging\nRate library\nConcessions\nRevenue\nPer-facility AR\nInvoices\n\nInvoices in scope\n\n0\n\n2026-09-01 → 2026-09-30\n\nTotal billed\n\n$0.00\n\nOutstanding\n\n$0.00\n\nOverdue\n\n0\n\nThis month\nAll statuses\nAll payer types\nFacilities · All\nGenerate invoices\nExport\nRange: 2026-09-01 → 2026-09-30\nSaved views\nCustom (current filters)\nSave current…\nAll (0)\nDraft (0)\nSent (0)\nPaid (0)\nPartial (0)\nOverdue (0)\nVoided (0)\n\nAll invoices\n\nFull invoice ledger for the selected scope. Click any row for line items, payment history, and status timeline.\n\nSelect invoice\n\tInvoice\tFacility\tResident\tPayer\tInvoice date\n↓\n\tBilled\tOutstanding\tStatus\tDue date\tActions\n\n\nNo invoices in this scope\n\nLive billing returned no invoices for the selected facility or organization filter for this invoice date range.\n\nGenerate invoices or widen filters.",
+      "screenshot": "_admin_billing_invoices-1440.png",
+      "axeViolations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".text-muted-foreground\\/80"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.5 (foreground color: #847d76, background color: #f0eeeb, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "axePassCount": 46,
+      "status": "FAIL"
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": 375,
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "finalPath": "/admin/billing/invoices",
+      "heading": [
+        "Billing & AR",
+        "Invoices"
+      ],
+      "alerts": [],
+      "loadingText": [],
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCC\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nBilling & AR\n\nOrganization receivables and cash signals for the scope you pick below. Open Invoices for the full ledger, AR aging for buckets, Rate library for posted rates, Revenue for recognition views, and Per-facility AR for a facility-by-facility roll-up.\n\nScope\nAll facilities\ncol143-95d3102349 sitea\ncol143-95d3102349 siteb\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\n\nAs of Sep 12, 2026, 7:58 PM ET\nRefresh\nShortcuts: / search · R refresh · E export\n\nOverview\nInvoices\nOpening balance\nAR aging\nRate library\nConcessions\nRevenue\nPer-facility AR\nInvoices\n\nInvoices in scope\n\n0\n\n2026-09-01 → 2026-09-30\n\nTotal billed\n\n$0.00\n\nOutstanding\n\n$0.00\n\nOverdue\n\n0\n\nThis month\nAll statuses\nAll payer types\nFacilities · All\nGenerate invoices\nExport\nRange: 2026-09-01 → 2026-09-30\nSaved views\nCustom (current filters)\nSave current…\nAll (0)\nDraft (0)\nSent (0)\nPaid (0)\nPartial (0)\nOverdue (0)\nVoided (0)\n\nAll invoices\n\nFull invoice ledger for the selected scope. Click any row for line items, payment history, and status timeline.\n\nSelect invoice\n\tInvoice\tFacility\tResident\tPayer\tInvoice date\n↓\n\tBilled\tOutstanding\tStatus\tDue date\tActions\n\n\nNo invoices in this scope\n\nLive billing returned no invoices for the selected facility or organization filter for this invoice date range.\n\nGenerate invoices or widen filters.",
+      "screenshot": "_admin_billing_invoices-375.png",
+      "axeViolations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".text-muted-foreground\\/80"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.5 (foreground color: #847d76, background color: #f0eeeb, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "axePassCount": 45,
+      "status": "FAIL"
+    }
+  ],
+  "status": "FAIL"
+}

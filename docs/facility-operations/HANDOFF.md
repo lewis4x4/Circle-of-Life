@@ -1,0 +1,25 @@
+# Current handoff
+
+Read [COL-148-HANDOFF.md](COL-148-HANDOFF.md) for the completed source workspace and [FABLE-5.1-HANDOFF.md](FABLE-5.1-HANDOFF.md) for the owner-requested next-module handoff (COL-147; not started here). Final gate and source/Linear references are under `col148-evidence/`.
+
+Read [COL-146-HANDOFF.md](COL-146-HANDOFF.md) (interrupted-save recovery on `codex/hfo-col146-recovery`, stacked on COL-145), [COL-145-HANDOFF.md](COL-145-HANDOFF.md) (corrections, reversals and bound reviews on `codex/hfo-col145-corrections`, stacked on COL-143 at `45ea4ea9`; built under the owner's limited dependency exception), [COL-143-HANDOFF.md](COL-143-HANDOFF.md) (source portion in progress on `codex/hfo-col143-evidence`, stacked on COL-144; checksum verification amended at `45ea4ea9`; hosted Storage proof open, runbook in [STAGING-INTEGRATION-PACKAGE.md](STAGING-INTEGRATION-PACKAGE.md)), [COL-144-HANDOFF.md](COL-144-HANDOFF.md) (issue lifecycle, Done on `codex/hfo-col144-issues`, draft PR #471), [COL-142-HANDOFF.md](COL-142-HANDOFF.md) (execution receipts, Done on `codex/hfo-col142-receipts`, draft PR #470) and [COL-139-HANDOFF.md](COL-139-HANDOFF.md). Subject-scoped occurrence generation is implemented on `codex/hfo-col139-occurrences`, stacked on COL-137. COL-132, COL-133, COL-135 and COL-137 are Done in Linear as reviewed, gated, unmerged source (closure records under each `col13x-evidence/review-closure.json`); nothing is merged, applied or deployed, and [CHECKPOINT.md](CHECKPOINT.md) holds the resume state. [COL-137 history](COL-137-HANDOFF.md), [COL-135 history](COL-135-HANDOFF.md), [COL-133 history](COL-133-HANDOFF.md) and [COL-132 history](COL-132-HANDOFF.md) are retained.
+
+# Earlier COL-18 handoff
+
+Complete this COL-18 baseline closeout before selecting the next issue. **COL-132 / HFO-01 is next**, with COL-133 / HFO-05 also dependent only on COL-18. Recheck live Linear blockers and source/main before claiming either is ready at a later time. Neither implementation began in this segment.
+
+Use `/Users/brianlewis/Circle of Life/Haven Facility Operations`, branch `codex/hfo-col18-baseline`, based on `fad17dcc`. Retained evidence and integration manifest are in this directory. Documentation-only changes from COL-18 do not change the deployed application. Preserve other worktrees; do not reset, stash, bulk-stage, merge or renumber their work.
+
+For COL-132 read:
+
+1. `BUILD-SCOPE.md`, `DELIVERY-ROADMAP.md`, `LINEAR-INDEX.md` in the September 9 Admin Roadmap package; live COL-132 acceptance.
+2. `COL-18-BASELINE.md`, `INTEGRATION-MANIFEST.md`, source/hosted/concurrent-migration manifests.
+3. Only current-issue supporting material: `ADMIN-LOG-COVERAGE.md`, `SOURCE-INVENTORY.json`, HFO-01/R01 in the backlog, and Q01/Q11 in `TOMORROW-QUESTIONS.md`. Reuse migrations 195/196/199/201; inspect current identities before final schema decisions.
+
+Deliver stable activity/source provenance and exactly one disposition mapping for each of 91 AL IDs, potentially linking multiple supported activities; preserve split/composite/data-field kinds. Version changes retain activity identity. Subjects validate against existing facility/resident/staff/asset records. Never import historical Y/N cells as performed work; never invent a missing-header duty. Do not activate unknown rules or schedules. Provide the canonical repository spec entry for this new capability.
+
+**Migration warning:** main ends at 335, but parallel branches already use 335–342 with incompatible files. Fetch and reconcile/reserve the next number immediately before writing DDL. Branch existence or a larger number does not establish deployed truth.
+
+Keep release gates separate: full baseline segment gate FAIL (current npm advisories; shared all-ref scan), latest nightly FAIL; Security Advisor 1 error/45 warnings/6 info; positive Storage transport, HFO complete-loop proof, current PHI controls and named Homewood/device/staff/first-month evidence remain open. None requires guessing Q01/Q11 or prevents bounded foundation design/implementation. No deployment is authorized by a baseline-complete badge alone.
+
+After the next issue: focused behavior tests, applicable segment gates, independent security/data review, exact source/migration/rollback evidence, live Linear update and one next dependency-ready handoff. Mission alignment for COL-18: PASS; overall operating readiness: RISK / NOT READY.

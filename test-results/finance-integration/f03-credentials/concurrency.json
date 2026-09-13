@@ -1,0 +1,47 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-09-09T06:16:16.824628+00:00",
+  "database": "hfa_credentials_342_races",
+  "scope": "Native PostgreSQL metadata concurrency; no Vault schema/API, no secret values, no gateway/provider proof",
+  "cases": [
+    {
+      "case": "simultaneous-identical-claims-one-attempt",
+      "pass": true,
+      "observed_waiters": 2
+    },
+    {
+      "case": "simultaneous-distinct-claims-one-lineage-authority",
+      "pass": true,
+      "observed_waiters": 2
+    },
+    {
+      "case": "revoke-worker-while-org-lock-waiting",
+      "pass": true,
+      "sqlstate": "42501"
+    },
+    {
+      "case": "expire-worker-jwt-during-org-lock-wait",
+      "pass": true,
+      "sqlstate": "42501"
+    },
+    {
+      "case": "stop-control-wins-before-claim",
+      "pass": true,
+      "sqlstate": "42501"
+    },
+    {
+      "case": "two-org-global-physical-grant-owner-index-wait",
+      "pass": true,
+      "observed_waiters": 2,
+      "second_owner_sqlstate": "42501"
+    },
+    {
+      "case": "human-session-revoke-during-global-unique-wait",
+      "pass": true,
+      "observed_waiters": 1,
+      "sqlstate": "42501"
+    }
+  ],
+  "migration_sha256": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+  "driver_sha256": "7d1417ccd7888efe10748505ef228506885a34ddf8ead01de127467b056c5e4e"
+}

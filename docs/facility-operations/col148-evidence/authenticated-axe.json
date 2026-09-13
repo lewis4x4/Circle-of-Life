@@ -1,0 +1,9 @@
+{
+  "command": "AXE_AUTH_ROUTES=/admin/operations/work node scripts/a11y-authenticated.mjs",
+  "exit_code": 2,
+  "status": "NOT_RUN_MISSING_CONFIGURATION",
+  "output": "Missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+  "env_local_exists": false,
+  "test_credentials_present": false,
+  "coverage": "In-test structural axe and public route UI gate are separate; no authenticated workspace browser acceptance established."
+}

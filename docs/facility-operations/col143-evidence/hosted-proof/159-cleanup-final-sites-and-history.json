@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-13T00:00:12.794357+00:00",
+  "sql": "SELECT coalesce(json_agg(q),'[]'::json) FROM (SELECT (SELECT count(*) FROM public.facilities WHERE id IN ('ba40a958-0747-4751-9b33-b3326bf7b802','a0a26431-e232-48d5-bcc6-4ef62f0cc512') AND deleted_at IS NULL) as live_sites,(SELECT count(*) FROM public.entities WHERE id='f655c191-aaf5-4abb-b5b9-d17fb6743d71' AND deleted_at IS NULL) as live_entities,(SELECT count(*) FROM public.operation_execution_receipts WHERE facility_id='ba40a958-0747-4751-9b33-b3326bf7b802') as retained_receipts,(SELECT count(*) FROM public.operation_evidence WHERE facility_id='ba40a958-0747-4751-9b33-b3326bf7b802') as retained_evidence,(SELECT count(*) FROM public.operation_evidence_events WHERE facility_id='ba40a958-0747-4751-9b33-b3326bf7b802') as retained_evidence_events) q;",
+  "exit": 0,
+  "stdout": "[{\"live_sites\":0,\"live_entities\":0,\"retained_receipts\":4,\"retained_evidence\":7,\"retained_evidence_events\":22}]\n",
+  "stderr": ""
+}

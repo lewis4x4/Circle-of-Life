@@ -1,0 +1,8 @@
+{
+  "score": 95,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [],
+  "suggestions": [],
+  "reasoning": "Haven layout and controls are preserved. Header contrast, visible table focus, keyboard scrolling and all four tested theme/viewport states pass."
+}

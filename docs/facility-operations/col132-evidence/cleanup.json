@@ -1,0 +1,168 @@
+{
+  "checked_at": "2026-09-09T23:26:04.419581+00:00",
+  "services_stopped": [
+    "run-owned PostgreSQL17 socket-only port55442"
+  ],
+  "exact_files_removed": 26326,
+  "empty_owned_directories_removed": 37,
+  "steward_validation": [
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-0.json",
+      "sha256": "cf8566a0842f53a035028f80ebc93c6e090eec44d483149187362c3eb7efd3f6",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-1.json",
+      "sha256": "c070c59b603426c0ba7f485a518a1c4eb12371417b16001a9e943724a478f609",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-2.json",
+      "sha256": "44d00c90d7bbad00b7f4c9a6481c9fe52089ba6657381a247a1da8dfd4366095",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-3.json",
+      "sha256": "33be8f2bdb9fe99ffd8c616aaa62183649091835f509dabc62ef17e36a7cd63a",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-4.json",
+      "sha256": "e2f6f74e0195f371493f853157166eacd4dc956f0cec0b353046682918dff7af",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-5.json",
+      "sha256": "0f06faf324927713fbae1144a42233784f002be87771a208dca4f8f8f3f04938",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-6.json",
+      "sha256": "1584290c9920cee355c3f622b5e25700a1a3bbfd87cfef8f2012d5a407187420",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-7.json",
+      "sha256": "ef441d8f0a8a1d3ad9fe39b6520ab3201cffd77030d4f1998b40981ca05ed4a9",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-8.json",
+      "sha256": "18fa345ccb16ad3ae2aa3580df7e3d0ef999a3994956449dc821fb551ac793ce",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-9.json",
+      "sha256": "29d1d0d01cb641e841f19aa7e466bc120b4bfba8bbd79b6f0957d6f56193cf58",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-10.json",
+      "sha256": "2e5e2887579e2a45b08f6fb9662ddefd9d9684769c8130554f687e050fad95e4",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-11.json",
+      "sha256": "d593a50e3af092e1cde16d1b3896250d397bf1710fb914bb5656e53fe04eb56d",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-12.json",
+      "sha256": "906b4e0213756b610591bf9d63698c1acdb0b9a2ef39989678c2e59b5f5f8fb2",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-13.json",
+      "sha256": "6130aba6923a081a16f2b91a0c92afa8438719061192163cc62cc3374c0283a6",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-14.json",
+      "sha256": "ffc952652f2eccd0e4ce0f2d6a34f0d7c5f0edd1acfd8b75e4a8f5c63a420f66",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-15.json",
+      "sha256": "11b776aa2dd3e68d96c07f3632aae61a416abf42a2cebf59825b37c8f3d099c8",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-16.json",
+      "sha256": "3ac02cc30e55d053677cc5c7130581bf96c51e92462eec913d8b69837110330a",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-17.json",
+      "sha256": "30b24c9089aeaf18b92481ed008ac3309c87ef0f01a5915b6b0d97804d8dc8db",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-18.json",
+      "sha256": "82d8d8e061f85aae851e4ba5c3a1f2b2802ae94552ee68140c6eac1bf59e19e2",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-19.json",
+      "sha256": "37e13314c464e84571ec10fcf28c1dafcf39d428bdc1dab85614a6f8c58b823d",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-20.json",
+      "sha256": "58cafe85c2c379e792e4ddd1a6fa4e76c4d1d3383247c3013d02a7b08a25b2d2",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-21.json",
+      "sha256": "8059b2aacdb8808d82a326cda972b0be2eb5cf4f3299aefb0bed031bbc006194",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-22.json",
+      "sha256": "908282c9340bcddec22aab5a2ec4ade57298069e31ddae3b172cece63760b8a2",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-23.json",
+      "sha256": "fbe4b3b0a9239b6e53733e3bc44530c27fd8833ad27cee66cd1cc6291ce90b4e",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-24.json",
+      "sha256": "876dea931102776c8f62434d9636832162894ee93b45600860934f0a7aa71b4f",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-25.json",
+      "sha256": "a2bf6146c5b15ce33879b130f4f72be1b924c55dd7399d31dfe5a17f40dfb87e",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-26.json",
+      "sha256": "3ac09e7eaaeb9263075535fa15bdf378b340da4e70890c3b321bd1d9812fb7f1",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-27.json",
+      "sha256": "dcb6874cacebe436d621866a59d061f1ea13c6c87bba25e58156e4dac41cb597",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-28.json",
+      "sha256": "37bee9603ba3968a8b407dc086aa9e47a7be418ab53abc358960eaa4a326ade5",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/files-29.json",
+      "sha256": "9e337a252b658844936cdd2a54fd1dd493fdf3b6fec28cce60319bd74e73e446",
+      "result": "{\"planned_count\": 226, \"removed_count\": 0, \"status\": \"planned\"}"
+    }
+  ],
+  "retained": [
+    "source worktree and dependency/build environment",
+    "durable evidence",
+    "private ownership and cleanup manifests"
+  ],
+  "unrelated_deleted": false,
+  "exact_empty_directory_manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-col132-20260909-2310/cleanup-manifests/empty-directories.json",
+  "directory_paths_reconstructed_from_owned_file_manifest": 24
+}

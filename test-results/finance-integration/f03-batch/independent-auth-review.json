@@ -1,0 +1,204 @@
+{
+  "review": "340 authorization/concurrency/period/control invalidation",
+  "candidateSHA256": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+  "target": "run-owned Unix socket55447/hfa_340_auth_review",
+  "timestamp": "2026-09-09T03:04:03.375509+00:00",
+  "result": "PASS",
+  "cases": [
+    {
+      "case": "prepare-revoked-at-request-wait",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchRows": 0
+      }
+    },
+    {
+      "case": "prepare-revoked-at-period-wait",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchRows": 0
+      }
+    },
+    {
+      "case": "prepare-revoked-at-control-wait",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchRows": 0
+      }
+    },
+    {
+      "case": "prepare-revoked-at-event-wait",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchRows": 0
+      }
+    },
+    {
+      "case": "approval-revoked-at-request-wait",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "approvalRows": 0
+      }
+    },
+    {
+      "case": "approval-revoked-at-period-wait",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "approvalRows": 0
+      }
+    },
+    {
+      "case": "approval-revoked-at-control-wait",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "approvalRows": 0
+      }
+    },
+    {
+      "case": "approval-revoked-at-batch-wait",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "approvalRows": 0
+      }
+    },
+    {
+      "case": "historical-preparer-revoke-at-decision-persistence",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "approvalRows": 0
+      }
+    },
+    {
+      "case": "historical-preparer-expiry-at-decision-persistence",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "approvalRows": 0
+      }
+    },
+    {
+      "case": "control-invalidation-nested-wait-expiry-rolls-back",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchStatus": "prepared"
+      }
+    },
+    {
+      "case": "period-invalidation-nested-wait-expiry-rolls-back",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchStatus": "prepared"
+      }
+    },
+    {
+      "case": "stop-versus-approval-change-first",
+      "status": "PASS",
+      "detail": {
+        "approvalRows": 0,
+        "finalStatus": "invalidated"
+      }
+    },
+    {
+      "case": "stop-versus-approval-approve-first",
+      "status": "PASS",
+      "detail": {
+        "approvalRows": 1,
+        "finalStatus": "invalidated"
+      }
+    },
+    {
+      "case": "rules-versus-approval-change-first",
+      "status": "PASS",
+      "detail": {
+        "approvalRows": 0,
+        "finalStatus": "invalidated"
+      }
+    },
+    {
+      "case": "rules-versus-approval-approve-first",
+      "status": "PASS",
+      "detail": {
+        "approvalRows": 1,
+        "finalStatus": "invalidated"
+      }
+    },
+    {
+      "case": "period-versus-approval-change-first",
+      "status": "PASS",
+      "detail": {
+        "approvalRows": 0,
+        "finalStatus": "invalidated"
+      }
+    },
+    {
+      "case": "period-versus-approval-approve-first",
+      "status": "PASS",
+      "detail": {
+        "approvalRows": 1,
+        "finalStatus": "invalidated"
+      }
+    },
+    {
+      "case": "no-raw-batch-table-grants-for-app-anon-or-worker",
+      "status": "PASS",
+      "detail": {
+        "checks": 72
+      }
+    },
+    {
+      "case": "control-change-rolls-back-on-invalidation-receipt-failure",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchStatus": "prepared"
+      }
+    },
+    {
+      "case": "rules-change-rolls-back-on-invalidation-receipt-failure",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchStatus": "prepared"
+      }
+    },
+    {
+      "case": "period-change-rolls-back-on-invalidation-receipt-failure",
+      "status": "PASS",
+      "detail": {
+        "expectedExit": 3,
+        "batchStatus": "prepared"
+      }
+    }
+  ],
+  "skips": 0,
+  "expanded_regression_assertions": 53,
+  "testSHA256": "2a3aff69d7a79c84e279a095a385b1c093fbd91161e27e49754533c2a3ffc974",
+  "contractSHA256": "df92d3e1dad9d67534e4df5fd44720af69ad98c52fb5461c37e5148fc476d02d",
+  "setupNotes": [
+    "Initial private autocommit seed used transaction-local JWT setting, failed source authorization before probes; corrected private harness to connection-local JWT settings. No authority helper or source changed."
+  ],
+  "verdict": "APPROVE",
+  "verdictScope": "Bounded340 native SQL authorization, concurrency, period/control invalidation; not release or fullF03 acceptance",
+  "verifiedFiles": {
+    "supabase/migrations/340_finance_batch_approval.sql": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+    "supabase/tests/review_finance_batch_approval.sql": "2a3aff69d7a79c84e279a095a385b1c093fbd91161e27e49754533c2a3ffc974",
+    "docs/finance-integration/F03-BATCH-APPROVAL-CONTRACT.md": "df92d3e1dad9d67534e4df5fd44720af69ad98c52fb5461c37e5148fc476d02d"
+  },
+  "reviewCompletedAt": "2026-09-09T03:16:39.079619+00:00",
+  "limitations": [
+    "Supabase Auth stubs with real PostgreSQL authenticated roles; no hosted JWT/PostgREST proof",
+    "Persisted session.not_after deadlines verified; no invented inactivity or AAL2 policy",
+    "Accounting classification, provider/privacy approval, recovery and dispatch remain disabled/open; monetary/member/payload review belongs to separate reviewer"
+  ]
+}

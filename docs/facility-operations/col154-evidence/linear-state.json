@@ -1,0 +1,28 @@
+{
+  "issue": "COL-154",
+  "issue_id": "1d27f038-74ed-42f3-92a6-72d69dfcd657",
+  "title": "[HFO-18] Connect drill and generator records to the checklist first",
+  "before": {
+    "checked_at": "2026-09-11T01:10:00Z",
+    "state": "In Progress (moved by the orchestrator at 2026-09-11T01:05:11Z; no comments on the issue)",
+    "blockers": {
+      "COL-144": "Done",
+      "COL-147": "Done"
+    },
+    "blocks": [
+      "COL-159",
+      "COL-161"
+    ],
+    "dependency_ready": true,
+    "source": "live Linear MCP read (get_issue with relations) at session start"
+  },
+  "started": {
+    "branch": "codex/hfo-col154-drill-generators",
+    "base": "a625b75a (codex/hfo-col147-source-adapters tip)",
+    "provisional_slot": "347_hfo_drill_generator_sources.sql",
+    "contract": "docs/facility-operations/col154-evidence/engineering-contracts.md"
+  },
+  "after": {
+    "state": "pending closure record (Lewi owns Done; no Linear note written by the implementer)"
+  }
+}

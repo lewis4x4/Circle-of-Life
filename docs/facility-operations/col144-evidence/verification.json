@@ -1,0 +1,60 @@
+{
+  "issue": "COL-144",
+  "recorded_at": "2026-09-10T18:40:00Z",
+  "state": "local_source_implemented_reviewed_gated",
+  "base_commit": "0c61def2 (codex/hfo-col142-receipts tip: closure docs over 006a12ff)",
+  "branch": "codex/hfo-col144-issues",
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts",
+    "files": 31,
+    "tests": 328,
+    "status": "PASS",
+    "note": "307 at the COL-142 tip; added: issues library (schemas, per-command nouns, outcome classes rebuilt from the migration's RAISE list), detail and backlog routes, seven command routes, list status filter, cancel-route open-issue conflict; review remediation added event_seq ordering, real state wordings, malformed body and backlog scope tests"
+  },
+  "typecheck": "PASS",
+  "lint": "PASS (eslint src --max-warnings 0 and constitution lint)",
+  "deno_check": "not applicable (no Edge function changed)",
+  "native_replay": {
+    "migration_files": 345,
+    "numbered_through": "342",
+    "sql_probes": 26,
+    "probe": "supabase/tests/review_hfo_issue_lifecycle.sql (128 assertions after review remediation, rolls back); review_hfo_execution_receipts.sql retargeted at two lines so its cancellation case uses an occurrence without an open issue (the new cancel guard refuses the other); the earlier probes otherwise unchanged and passing",
+    "status": "PASS (SQL lane run; re-run recorded under strict_gate)",
+    "runtime": "native PostgreSQL 17.9, run-owned socket-only cluster under ~/.hermes/tmp/agent-runs (no Docker), Supabase stubs"
+  },
+  "lock_races": {
+    "script": "scripts/facility-operations/test-issue-concurrency.py",
+    "output": "docs/facility-operations/col144-evidence/concurrency.txt",
+    "cases": [
+      "two managers assign with the same expected revision: the second waits on the issue row, then gets Issue changed since it was read; one assigned event, the first owner stands",
+      "two identical replays concurrently: one event, the second returns it with replayed true",
+      "two resolutions with the same expected revision: one resolved event, the loser refused by the moved revision"
+    ],
+    "status": "PASS"
+  },
+  "strict_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T17-22-18-024Z-COL-144-HFO-ISSUES.json",
+    "verdict": "PASS",
+    "prior_artifacts": [
+      "2026-09-10T17-00-50-068Z-COL-144-HFO-ISSUES.json PASS (before review remediation; native replay 345 files / 26 probes included)",
+      "2026-09-10T17-14-52-740Z-COL-144-HFO-ISSUES.json PASS (after review remediation, before the cancel-guard reorder)"
+    ],
+    "summary": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "blocking_failures": []
+    },
+    "checks": "hygiene.env-example, hygiene.tracked-secrets-scan, hygiene.npm-audit, security.gitleaks, qa.eslint, qa.migration-sequence, qa.migrations-apply-postgres (native replay 345 files / 26 probes), qa.root-build, hygiene.nextjs-deprecation-signal, chaos.stress-suite, cdo.design-review, cdo.a11y-axe passed; qa.web-build skipped (no apps/web)"
+  },
+  "independent_review": "docs/facility-operations/col144-evidence/independent-review.json (TypeScript: four should-fix and the actionable notes remediated; SQL: two should-fix and the actionable notes remediated, re-verified PASS by the reviewer; the one re-verification note applied before the final replay and gate)",
+  "hosted_ledger": "docs/facility-operations/col137-evidence/hosted-ledger.json (numbered through 335 on both 2026-09-10 reads; 342 provisional, not re-read for this source-only segment)",
+  "acceptance": {
+    "failed_check_creates_or_links_without_reversal": "probe: the COL-142 failed receipt keeps its issue; link connects it to an earlier open issue with the receipt link set once; receipts and occurrences byte-identical before and after every lifecycle command; the inspection fact (failed, in progress) never reversed",
+    "unassigned_waiting_reassigned_visible_and_covered": "probe: backlog projection lists open, assigned and waiting issues with owner and backup currentness and overdue follow-up; reassignment records the previous owner and whether they were current; backup covers after the owner's grant is revoked or with an explicit reason, recorded as covered",
+    "resolve_reopen_authority_version_audit": "probe and race script: every command takes the issue lock and current authority, requires the expected revision, replays return the recorded event, changed content conflicts, events immutable, task audit rows written; problem status independent of performance"
+  },
+  "release_boundary": "No hosted migration, deployment, real assignment, notification, reminder, escalation route or operating acceptance",
+  "mission_alignment": "PASS",
+  "operating_readiness": "RISK"
+}

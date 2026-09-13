@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:52:58.279437+00:00",
+  "sql": "SELECT coalesce(json_agg(q),'[]'::json) FROM (SELECT id FROM public.operation_task_instances WHERE activity_id='e91b1f65-f0e5-47a0-b95b-76d8cb073ec0' AND facility_id='ba40a958-0747-4751-9b33-b3326bf7b802' AND deleted_at IS NULL) q;",
+  "exit": 0,
+  "stdout": "[{\"id\":\"3745041e-2dc7-4040-81dc-db49d9acbc2a\"}]\n",
+  "stderr": ""
+}

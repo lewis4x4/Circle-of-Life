@@ -1,0 +1,95 @@
+{
+  "status": "PASS",
+  "layer": "native PostgreSQL with Auth stubs",
+  "tests": [
+    {
+      "name": "overlapping-event-single-active-claim",
+      "status": "PASS",
+      "details": {
+        "exit_codes": [
+          0,
+          3
+        ],
+        "waits_observed": 2,
+        "claims": 1
+      }
+    },
+    {
+      "name": "overlap-error-is-claim-uniqueness",
+      "status": "PASS",
+      "details": {
+        "sqlstate": "23505"
+      }
+    },
+    {
+      "name": "same-id-concurrent-idempotency",
+      "status": "PASS",
+      "details": {
+        "exit_codes": [
+          0,
+          0
+        ],
+        "waits_observed": 2,
+        "claims": 1
+      }
+    },
+    {
+      "name": "prepare-rechecks-after-control",
+      "status": "PASS",
+      "details": {
+        "wait_observed": true,
+        "sqlstate": "42501",
+        "batch_rows": 0
+      }
+    },
+    {
+      "name": "prepare-rechecks-after-event",
+      "status": "PASS",
+      "details": {
+        "wait_observed": true,
+        "sqlstate": "42501",
+        "batch_rows": 0
+      }
+    },
+    {
+      "name": "prepare-rechecks-after-expiry",
+      "status": "PASS",
+      "details": {
+        "wait_observed": true,
+        "sqlstate": "42501",
+        "batch_rows": 0
+      }
+    },
+    {
+      "name": "approval-period-wait-revocation",
+      "status": "PASS",
+      "details": {
+        "wait_observed": true,
+        "approval_rows": 0
+      }
+    },
+    {
+      "name": "nested-control-invalidation-wait-expiry",
+      "status": "PASS",
+      "details": {
+        "wait_observed": true,
+        "batch_status": "prepared",
+        "sqlstate": "42501"
+      }
+    },
+    {
+      "name": "nested-period-invalidation-wait-expiry",
+      "status": "PASS",
+      "details": {
+        "wait_observed": true,
+        "batch_status": "prepared",
+        "sqlstate": "42501"
+      }
+    }
+  ],
+  "passed": 9,
+  "failed": 0,
+  "skipped": 0,
+  "migration_sha256": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+  "harness_sha256": "473644fc4faec877973b6ec5b355241c03ec9b3bf93fe5bf338c594e13e71675"
+}

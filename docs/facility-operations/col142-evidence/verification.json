@@ -1,0 +1,55 @@
+{
+  "issue": "COL-142",
+  "recorded_at": "2026-09-10T17:05:00Z",
+  "state": "local_source_implemented_reviewed_gated",
+  "base_commit": "335bd6c7 (codex/hfo-col139-occurrences tip: closure docs over 120b7f03)",
+  "branch": "codex/hfo-col142-receipts",
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts",
+    "files": 29,
+    "tests": 307,
+    "status": "PASS",
+    "note": "278 at the COL-139 tip; added: receipts library (schemas, entry/performer coupling, outcome classes, per-command wording, structural zod problems), record/verify/receipts routes, issues routes, complete-route managed refusal wording, task-list pass-through, cancel-route recorded-work conflict; review remediation added independence with the real 42501, read error 503, organisation mismatch 404, 23505 without DETAIL, late-boundary wording"
+  },
+  "typecheck": "PASS",
+  "lint": "PASS (eslint src --max-warnings 0 and constitution lint)",
+  "deno_check": "not applicable (no Edge function changed)",
+  "native_replay": {
+    "migration_files": 344,
+    "numbered_through": "341",
+    "sql_probes": 25,
+    "probe": "supabase/tests/review_hfo_execution_receipts.sql (133 assertions after review remediation, rolls back); review_hfo_occurrences.sql adjusted at one line to complete a managed occurrence through the receipt command instead of the now-refused legacy command",
+    "status": "PASS (SQL lane run; re-run recorded under strict_gate)",
+    "runtime": "native PostgreSQL 17.9, run-owned socket-only cluster under ~/.hermes/tmp/agent-runs (no Docker), Supabase stubs"
+  },
+  "lock_races": {
+    "script": "scripts/facility-operations/test-receipt-concurrency.py",
+    "output": "docs/facility-operations/col142-evidence/concurrency.txt",
+    "cases": [
+      "two differing record attempts for one occurrence: the second waits on the occurrence row, then receives 23505 naming the winner's receipt; one receipt",
+      "two identical replays concurrently: one receipt, the second returns it with replayed true",
+      "can_record revoked and committed while the recorder waits: denied, zero receipts, occurrence still pending/none",
+      "two reviewers verify concurrently: exactly one verification receipt, the loser refused with not awaiting verification, the occurrence completed pointing at the winner"
+    ],
+    "status": "PASS"
+  },
+  "strict_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T16-37-51-790Z-COL-142-HFO-RECEIPTS.json",
+    "verdict": "PASS",
+    "summary": {"passed": 12, "failed": 0, "skipped": 1, "blocking_failures": []},
+    "checks": "hygiene.env-example, hygiene.tracked-secrets-scan, hygiene.npm-audit, security.gitleaks, qa.eslint, qa.migration-sequence, qa.migrations-apply-postgres (native replay 344 files / 25 probes), qa.root-build, hygiene.nextjs-deprecation-signal, chaos.stress-suite, cdo.design-review, cdo.a11y-axe passed; qa.web-build skipped (no apps/web)",
+    "prior_artifacts": [
+      "2026-09-10T16-19-44-972Z-COL-142-HFO-RECEIPTS.json PASS (before review remediation; native replay 344 files / 25 probes included)"
+    ]
+  },
+  "independent_review": "docs/facility-operations/col142-evidence/independent-review.json (TypeScript: three should-fix and the actionable notes remediated; SQL: three should-fix and the actionable notes remediated, re-verified PASS by the reviewer)",
+  "hosted_ledger": "docs/facility-operations/col137-evidence/hosted-ledger.json (numbered through 335 on both 2026-09-10 reads; 341 provisional, not re-read for this source-only segment)",
+  "acceptance": {
+    "one_receipt_replay_conflict": "probe: same key/content returns the same receipt; same key/different content conflicts; a different key on a recorded occurrence conflicts naming the current receipt; race script cases 1-2",
+    "performed_vs_recorded_explicit_performer": "probe: future performed time rejected; two-hour-old routine rejected, accepted as late with a reason keeping both instants; on-behalf staff, vendor and unknown-historical performers explicit; revoked staff and unlinked vendor rejected",
+    "atomic_commit_and_missing_evidence": "probe: failed outcome without an issue rejected, with an issue creates the open issue and links both ways in one transaction; evidence-requiring activity records as performed_missing_evidence and never completes; review-required activity awaits an independent verifier; direct DML by service or session cannot complete a managed row"
+  },
+  "release_boundary": "No hosted migration, deployment, real work record, real verification, real issue, evidence transport, provider transmission or operating acceptance",
+  "mission_alignment": "PASS",
+  "operating_readiness": "RISK"
+}

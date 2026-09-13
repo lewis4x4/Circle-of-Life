@@ -1,0 +1,175 @@
+{
+  "checked_at": "2026-09-10T00:31:07.848638+00:00",
+  "other_worktrees": 19,
+  "dirty_files": 13,
+  "all_match_start": true,
+  "changed_worktrees": [],
+  "worktrees": [
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life",
+      "head": "3dec84bbdc216d1c58e7296568b007ebe6f101be",
+      "dirty": [
+        {
+          "status": "??",
+          "path": "docs/Brand Guide/",
+          "sha256": null
+        },
+        {
+          "status": "??",
+          "path": "test-results/agent-gates/2026-09-06T15-57-09-155Z-REVIEW-20260906.json",
+          "sha256": "d4a31e8a091242f437a37652b99954d96d340d0e1d4f47eca0eccc1b283baef5"
+        },
+        {
+          "status": "??",
+          "path": "test-results/agent-gates/2026-09-06T16-15-59-004Z-REVIEW-20260906.json",
+          "sha256": "8e70d17de69748ba06a523c18a3ced7a71e92da9ce593f5647713229cfd156a7"
+        },
+        {
+          "status": "??",
+          "path": "test-results/agent-gates/2026-09-06T22-00-29-600Z-REVIEW-20260906.json",
+          "sha256": "81953ac792f347adb328a741bfd76c4703d4b4cba0f5f17c86d2e9ca4ba5126e"
+        }
+      ]
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/eager-ishizaka-4a54b8",
+      "head": "814ada6df64b759bf2614e76427d5d713cbad018",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/laughing-mendel-8c7c7b",
+      "head": "ca2400ad79fac648777d81a3d826d7026d5a91d7",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/modest-heisenberg-6818c9",
+      "head": "1205b48fb6ce06946e6e235b7e534d13c79a003d",
+      "dirty": [
+        {
+          "status": " M",
+          "path": "src/components/layout/AppShell.tsx",
+          "sha256": "0433ce602ffda2eb6b1ff20ed5f199b4ecf50d067df6645ebe39784518c6c351"
+        },
+        {
+          "status": "??",
+          "path": "src/components/layout/AllSectionsMenu.test.tsx",
+          "sha256": "7010a6223385e8bcf3ef1ad2aae71e5d6aa772ab30e1e77e0e81e156c0756f84"
+        },
+        {
+          "status": "??",
+          "path": "src/components/layout/AllSectionsMenu.tsx",
+          "sha256": "9b12f189fe9d14a7e9f16bdfaa583826d5b226a90e902c1544f126b450e54e36"
+        }
+      ]
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/sad-curie-3e04c5",
+      "head": "ffbe30df67721679293f880ca8620fc3103e34a5",
+      "dirty": [
+        {
+          "status": "??",
+          "path": "docs/specs/DRIVE-ARTIFACT-INDEX-2026-05-13.md",
+          "sha256": "31d2b2304b68241c2afb482de233872396e81b3fa91994ab75d6534c1a82416c"
+        }
+      ]
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/sweet-moser-4ae591",
+      "head": "798c4c3f7a19376fdc0bffe386e1b6ed8bea0d61",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Employee Lifecycle",
+      "head": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Catalog",
+      "head": "64cc31b8ea7bf2f9cec69ad934cf619882eb1c39",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Facility Operations",
+      "head": "39d41591e8c8110d1df2251ecfc10dd0edb08ae4",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Finance Integration",
+      "head": "0d0e7763e9fcccbe957a48fba3da7564e9356fd5",
+      "dirty": [
+        {
+          "status": " M",
+          "path": "docs/finance-integration/RESUMPTION.md",
+          "sha256": "1f6fd9b46f9d579cab4f764043ea6a2ae7d452774ece7b73ac00634b4ed9bfdb"
+        },
+        {
+          "status": "??",
+          "path": "src/lib/billing/billing-run.test.ts",
+          "sha256": "2d46cb70de1c59777be68a800dcf4f2580496c6082742edabbff09ad45bcde6a"
+        },
+        {
+          "status": "??",
+          "path": "src/lib/billing/billing-run.ts",
+          "sha256": "f72c63241e2993006784123322277e39f6940eb12e4969222ac8c70134139ce0"
+        }
+      ]
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Insurance Workspace",
+      "head": "a94b21df423e67ddd82bfd2e84ecbe95f2460784",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver",
+      "head": "7bed5c903603d8ed1eb06f223080817f342bf0d5",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Operating Evidence",
+      "head": "be3f25a2c7e68ea5e93499a345e325f63704b476",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Payroll Release",
+      "head": "2aa8d5720e55405926e54274878dab923bbbab5a",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Remaining Roadmap",
+      "head": "a49d765c9b1cd862e571c30e0f7eb6b9962af7ef",
+      "dirty": [
+        {
+          "status": "??",
+          "path": "docs/remediation/2026-09-review/NATIVE-INTEGRATION-RUNTIME.md",
+          "sha256": "31c7fa42eb2205f590d869397cc2e698bf17bda6876289e3f4341739aa1a85ab"
+        }
+      ]
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Remediation 2026-09-06",
+      "head": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2",
+      "head": "9db72d2d8a16e4206e2f62c68712c0775bf8c225",
+      "dirty": []
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2 Independent Review 2026-09-07/source",
+      "head": "6d90e3197ac59e757addd2ac3e401dcbd12865f1",
+      "dirty": [
+        {
+          "status": "??",
+          "path": "test-results/agent-gates/2026-09-07T22-11-01-234Z-section-2-independent-review.json",
+          "sha256": "434487ed677e7192677557d307c6717fed5107c1115fbf38e9232b90f157f36a"
+        }
+      ]
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Section 2 Staging",
+      "head": "05c9a1792c909186eae6b0865ed87ddbbb03acee",
+      "dirty": []
+    }
+  ]
+}

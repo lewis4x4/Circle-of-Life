@@ -1,0 +1,70 @@
+{
+  "at": "2026-09-12T23:56:06.487835+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "Cookie": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "effective_from": "2026-09-12T23:54:04.545729+00:00"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "X-DNS-Prefetch-Control": "on",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://iwcnajanvjvynolltflw.supabase.co; media-src 'self' https://cdn.pixabay.com; font-src 'self'; connect-src 'self' https://iwcnajanvjvynolltflw.supabase.co wss://iwcnajanvjvynolltflw.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+      "content-type": "application/json",
+      "Date": "Sat, 12 Sep 2026 23:56:06 GMT",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    },
+    "body": {
+      "version": {
+        "id": "bc3a6711-d4a0-46ef-921c-ceddf6191839",
+        "title": "col143-95d3102349 required-mismatch",
+        "status": "published",
+        "version": 1,
+        "wording": "Synthetic panel photo test",
+        "procedure": null,
+        "created_at": "2026-09-12T23:56:05.817838+00:00",
+        "created_by": "5c7b9219-73a5-41ae-9e34-528a404f9e12",
+        "updated_at": "2026-09-12T23:56:06.451942+00:00",
+        "activity_id": "51f700e1-9949-4fb2-acde-face46c41c4e",
+        "effective_to": null,
+        "published_at": "2026-09-12T23:56:06.451704+00:00",
+        "published_by": "5c7b9219-73a5-41ae-9e34-528a404f9e12",
+        "subject_kind": "facility",
+        "effective_from": "2026-09-12T23:54:04.545729+00:00",
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "required_inputs": [],
+        "review_required": false,
+        "source_authority": {},
+        "required_evidence": [
+          {
+            "kind": "photo",
+            "when": "always",
+            "label": "Panel photo",
+            "min_count": 1
+          }
+        ],
+        "previous_version_id": null,
+        "allowed_recorder_roles": [
+          "facility_admin",
+          "admin_assistant"
+        ],
+        "allowed_reviewer_roles": []
+      }
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

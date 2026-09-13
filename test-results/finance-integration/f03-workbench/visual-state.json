@@ -1,0 +1,27 @@
+{
+  "score": 93,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "The synthetic fixture omits the production application sidebar and header; the reference is used only for Finance typography, colors, navigation and Card styling.",
+    "Dense tables retain horizontal scrolling on narrow screens; the page and scope selectors remain within the viewport."
+  ],
+  "suggestions": [],
+  "reasoning": "The actual component now follows the established Finance style with clear current-scope context, readable Eastern timestamps, explicit external-posting blockers and distinct empty/error/invalidated states. Final browser checks include zero Axe WCAG A/AA violations and a visible long-name selector arrow; real route and Auth acceptance remain unverified.",
+  "threshold": 90,
+  "threshold_pass": true,
+  "next_actions": [
+    "Verify real routed Auth/session/RLS behavior when the isolated Auth environment becomes available; fixture approval does not close that gate."
+  ],
+  "reference_image": "/Users/brianlewis/Circle of Life/Haven Finance Integration/test-results/finance-integration/trust-empty-owner.png",
+  "screenshots": [
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/workbench-visual/empty-owner.png",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/workbench-visual/populated-owner.png",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/workbench-visual/batch-detail-owner.png",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/workbench-visual/invalidated-detail.png",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/workbench-visual/error-owner.png",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/workbench-visual/declared-rules.png",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/workbench-visual/mobile-long-names.png"
+  ],
+  "environment": "private Vite actual-component fixture; synthetic Auth/RPC; no real route/Auth/provider/business proof"
+}

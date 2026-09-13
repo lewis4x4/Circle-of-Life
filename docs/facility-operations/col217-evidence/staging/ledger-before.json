@@ -1,0 +1,7 @@
+{
+  "ref": "iwcnajanvjvynolltflw",
+  "observed": {
+    "ledger_table": "supabase_migrations.schema_migrations",
+    "haven_table": null
+  }
+}

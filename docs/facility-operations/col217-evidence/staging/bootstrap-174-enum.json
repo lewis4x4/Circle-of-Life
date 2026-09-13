@@ -1,0 +1,16 @@
+{
+  "recorded_at": "2026-09-12T23:21:05.689572+00:00",
+  "ref": "iwcnajanvjvynolltflw",
+  "reason": "CLI wraps legacy migration174 in a transaction; new dietary_aide enum value cannot be used until committed. Preserved historical file byte-for-byte and separately committed its idempotent enum addition.",
+  "before": {
+    "ledger_count": 173,
+    "max_version": "173",
+    "dietary_aide": false
+  },
+  "after": {
+    "ledger_count": 173,
+    "max_version": "173",
+    "dietary_aide": true
+  },
+  "migration_174_marked_applied": false
+}

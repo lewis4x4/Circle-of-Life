@@ -8,6 +8,7 @@ import {
   formatRoleHomeBounceMessage,
   formatRoleHomeSubtitle,
   getResolvedRoleLabel,
+  getRoleDashboardConfig,
   getRoleHomeLead,
   isRoleHomeLabelReady,
   isRoleHomePathname,
@@ -94,5 +95,28 @@ describe("role home chrome helpers", () => {
     expect(isRoleHomePathname("/admin/coordinator-dashboard")).toBe(true);
     expect(isRoleHomePathname("/admin/staff")).toBe(false);
     expect(isRoleHomePathname(null)).toBe(false);
+  });
+});
+
+describe("site work nav visibility (COL-148 / HFO-10)", () => {
+  it("allowlists site-work for admin_assistant alongside the existing assistant items", () => {
+    const config = getRoleDashboardConfig("admin_assistant");
+    expect(config.visibleGroups).toContain("Command");
+    expect(config.visibleItemKeys).toContain("site-work");
+    for (const key of ["referrals", "admissions", "family-messages", "residents", "transportation", "staff", "kb-admin"]) {
+      expect(config.visibleItemKeys).toContain(key);
+    }
+  });
+
+  it("leaves facility_admin unrestricted so every Command item, including site-work, is visible", () => {
+    const config = getRoleDashboardConfig("facility_admin");
+    expect(config.visibleGroups).toContain("Command");
+    expect(config.visibleItemKeys).toBeUndefined();
+  });
+
+  it("does not add site-work to other allowlisted roles", () => {
+    for (const role of ["coordinator", "nurse", "maintenance_role", "broker"]) {
+      expect(getRoleDashboardConfig(role).visibleItemKeys).not.toContain("site-work");
+    }
   });
 });

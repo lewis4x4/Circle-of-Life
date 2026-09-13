@@ -1,0 +1,48 @@
+{
+  "at": "2026-09-12T23:53:20.487046+00:00",
+  "request": {
+    "method": "PUT",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "image/png",
+      "x-upsert": "true"
+    },
+    "body": {
+      "length": 70,
+      "sha256": "c71bd109227e23434ecf71fd0a344a209136c79ae5a0bda2b5ca442d699a3cd9"
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:53:20 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "120",
+      "Connection": "close",
+      "CF-Ray": "a3a2d4bd2943bd30-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "Access-Control-Allow-Origin": "*",
+      "Server": "cloudflare",
+      "sb-gateway-mode": "direct",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a0980a-3247-7a53-ba90-32931e54cc62",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "set-cookie": "<REDACTED>",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "statusCode": "403",
+      "error": "Unauthorized",
+      "message": "new row violates row-level security policy",
+      "code": "AccessDenied"
+    }
+  },
+  "expected_status": [
+    400,
+    403,
+    404
+  ]
+}

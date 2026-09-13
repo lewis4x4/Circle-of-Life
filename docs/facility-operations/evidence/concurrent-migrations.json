@@ -1,0 +1,156 @@
+[
+  {
+    "worktree": "/Users/brianlewis/Circle of Life/Haven Finance Integration",
+    "head": "0d0e7763e9fcccbe957a48fba3da7564e9356fd5",
+    "migration_differences_from_main": [
+      {
+        "file": "336_finance_source_commands.sql",
+        "sha256": "57d5164db0f0195d6926617feb393336534dc39d836b454240582ebd16c35c1f",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "337_audit_export_scope_and_snapshot.sql",
+        "sha256": "0a7448bbc48458f40d96440f66918e2cd83332a8b8e60bbc5fb636de4d4db41c",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "338_resident_money_snapshot.sql",
+        "sha256": "44abf0be26386d51d938e5736d472ed941b83af61a85de986385d5f9f582f069",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "339_finance_event_outbox.sql",
+        "sha256": "ffb4f41d3454b4d8d89c90be538edeef894b8689ce0a16ecee9e431f602e65b3",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "340_finance_batch_approval.sql",
+        "sha256": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "341_finance_review_queue.sql",
+        "sha256": "65f4466fe88a7f2dd878de6b588075e21a01953bc2b11fad4af7fbbfb6bf7c56",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "342_finance_credential_lifecycle.sql",
+        "sha256": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+        "same_prefix_on_main": []
+      }
+    ]
+  },
+  {
+    "worktree": "/Users/brianlewis/Circle of Life/Haven Remaining Roadmap",
+    "head": "a49d765c9b1cd862e571c30e0f7eb6b9962af7ef",
+    "migration_differences_from_main": [
+      {
+        "file": "335_reconciliation_evidence_invariant.sql",
+        "sha256": "d235d1226cca6ede05dd7ce2dd418078f37b3250c28c3c74d2de28d6f4f62f98",
+        "same_prefix_on_main": [
+          "335_employee_file_lifecycle.sql"
+        ]
+      },
+      {
+        "file": "336_assessment_fall_risk_chronology.sql",
+        "sha256": "a7294a9e8063290695c6e812d86dcbae0e7d8b1c86f0b183c71f106655c5ac73",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "337_atomic_discharge_bed_release.sql",
+        "sha256": "88d5dcbc27abe4ba31306163e4a7d8f1c8a8c118bab849887cc89b0c088a46b8",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "338_operational_medication_shifts.sql",
+        "sha256": "af98ad489c19569334e07b16d4c8fcf4d9c4aa2638d30b3f7d0574ad2d9d1f1e",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "339_atomic_payment_recording.sql",
+        "sha256": "4fde33aca986e04af11852d9c9ecf9c99bb0b305c9eec1805218a547e93db336",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "340_atomic_purchase_order_creation.sql",
+        "sha256": "1688eaae91e58b73e992eb97ae42a790e96e774976adb9b24da66b8f99f907d4",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "341_atomic_source_gl_posting.sql",
+        "sha256": "f7ed989fa9eca3e5de6197114b0e540e296d90e3414ef57bc8132e20a36c9205",
+        "same_prefix_on_main": []
+      }
+    ]
+  },
+  {
+    "worktree": "/Users/brianlewis/Circle of Life/Haven Operating Evidence",
+    "head": "be3f25a2c7e68ea5e93499a345e325f63704b476",
+    "migration_differences_from_main": [
+      {
+        "file": "335_reviewed_standup_import.sql",
+        "sha256": "c1843a25871e36f2686aea431aa8314416e7177901f11ec0f1b7f43608d3f3aa",
+        "same_prefix_on_main": [
+          "335_employee_file_lifecycle.sql"
+        ]
+      },
+      {
+        "file": "336_resident_return_followups.sql",
+        "sha256": "c4fdbaf14b03c0694fbc4051175ed71d15cbc5517957d2137eb2562ede781198",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "337_referral_next_actions.sql",
+        "sha256": "8dd16e2708c310e2e3bc40f82d929b45333f2aee5e6987b90385334dde3865ae",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "338_business_conflict_http_status.sql",
+        "sha256": "64ebb4ae00975089c8f3b58092d95b52cd313e28348fd1e8392b2f9f3b535176",
+        "same_prefix_on_main": []
+      }
+    ]
+  },
+  {
+    "worktree": "/Users/brianlewis/Circle of Life/Haven Insurance Workspace",
+    "head": "a94b21df423e67ddd82bfd2e84ecbe95f2460784",
+    "migration_differences_from_main": [
+      {
+        "file": "336_insurance_verified_workspace.sql",
+        "sha256": "51d1493a1f13ac4eb6315c6eba53fa952e0926fe40c6e7c2f0a68ac5011e4092",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "337_insurance_servicing_records.sql",
+        "sha256": "aab046306b5b3ecce8d51af553504aa2f7150f6b94fb16131cf1cab001b889ce",
+        "same_prefix_on_main": []
+      }
+    ]
+  },
+  {
+    "worktree": "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver",
+    "head": "7bed5c903603d8ed1eb06f223080817f342bf0d5",
+    "migration_differences_from_main": [
+      {
+        "file": "336_insurance_verified_workspace.sql",
+        "sha256": "51d1493a1f13ac4eb6315c6eba53fa952e0926fe40c6e7c2f0a68ac5011e4092",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "337_insurance_servicing_records.sql",
+        "sha256": "aab046306b5b3ecce8d51af553504aa2f7150f6b94fb16131cf1cab001b889ce",
+        "same_prefix_on_main": []
+      },
+      {
+        "file": "338_insureflow_synthetic_receiver.sql",
+        "sha256": "fcb20df440de9286232c1e62f9282cea3e41554662714cd618703bbbba72a5df",
+        "same_prefix_on_main": []
+      }
+    ]
+  },
+  {
+    "worktree": "/Users/brianlewis/Circle of Life/Haven Employee Lifecycle",
+    "head": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+    "migration_differences_from_main": []
+  }
+]

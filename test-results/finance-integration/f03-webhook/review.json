@@ -1,0 +1,31 @@
+{
+  "scope": "F03 private QBO webhook authentication and exact-byte schema primitive",
+  "verdict": "APPROVE",
+  "reviewers": [
+    "root (independent of helper author f00_independent_review)"
+  ],
+  "source_sha256": {
+    "supabase/functions/_shared/qbo-webhook.ts": "7ec61aeba462e6d9395e1fda617f3c00e00e0ed9eddc74f73b7c02c470a27449",
+    "supabase/functions/_shared/qbo-webhook.test.ts": "d376f3c722c39ec4169aab64a8651374b601bac61370a9b3d89772eba6f002c2"
+  },
+  "reviewed_at": "2026-09-09T06:06:44.929740+00:00",
+  "evidence": [
+    "test-results/finance-integration/2026-09-09T05-47-00.574Z-qbo-webhook.json",
+    "test-results/finance-integration/f03-webhook/independent-corpus.json",
+    "test-results/finance-integration/f03-webhook/independent-probe.mjs",
+    "test-results/agent-gates/2026-09-09T06-06-52-862Z-HFA-F03-WEBHOOK.json"
+  ],
+  "checks": {
+    "deno_assertions": 24,
+    "independent_corpus_assertions": 314,
+    "skipped": 0,
+    "typecheck": "PASS",
+    "deno_lint": "PASS"
+  },
+  "limits": [
+    "Synthetic keys and payloads only; no actual Intuit signature or delivery.",
+    "No receiver, durable inbox, tenant binding, acknowledgment, catch-up, processed-event or business proof.",
+    "Root authored the small suite-runner extension; its syntax/lint and both audit15 and webhook24 executions passed separately. The helper review is independent.",
+    "The copied independent driver records the exact original run paths; execution writes only to its private run-owned output."
+  ]
+}

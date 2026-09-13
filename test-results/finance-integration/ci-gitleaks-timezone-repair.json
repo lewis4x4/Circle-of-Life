@@ -1,0 +1,1645 @@
+{
+  "schemaVersion": 1,
+  "scope": "PR461 CI detector reporting compatibility and business-date fixtures",
+  "timestamp": "2026-09-09T02:18:06.800387+00:00",
+  "sourceCommit": "1e0a36eec5542d537b15c20f20b50b533d819a82",
+  "files": {
+    "scripts/run-gitleaks.mjs": "2f78c4f1a9613c9ca6b3b8df678b7e4301feb9377a6abeada4327c59899943a8",
+    "supabase/tests/review_clinical_integrity.sql": "218503e7816c6427e056d0283fe771cd82c5d7446970380802f02056d45d4715",
+    "supabase/tests/review_employee_file_lifecycle.sql": "5d8f7049228208517a1dcff23826f07a778a1fcf53dc163cf017e818280d85af"
+  },
+  "gitleaks": {
+    "archiveSHA256": "cad3de5dc9a4d5447d967a70a4d49499c557f04db028274cc324f9ff983f6502",
+    "results": [
+      {
+        "version": "8.21.2",
+        "reportPath": "-",
+        "exitCode": 73,
+        "stdoutReportsGenericRule": false,
+        "literalDashFileExists": true
+      },
+      {
+        "version": "8.21.2",
+        "reportPath": "/dev/stdout",
+        "exitCode": 1,
+        "stdoutReportsGenericRule": false,
+        "literalDashFileExists": true
+      },
+      {
+        "version": "8.30.1",
+        "reportPath": "-",
+        "exitCode": 73,
+        "stdoutReportsGenericRule": true,
+        "literalDashFileExists": true
+      },
+      {
+        "version": "8.30.1",
+        "reportPath": "/dev/stdout",
+        "exitCode": 1,
+        "stdoutReportsGenericRule": false,
+        "literalDashFileExists": true
+      }
+    ]
+  },
+  "dockerImage": {
+    "tag": "zricethezav/gitleaks:v8.30.1",
+    "verifiedMetadataUrl": "https://hub.docker.com/v2/repositories/zricethezav/gitleaks/tags/v8.30.1",
+    "tagStatus": "active",
+    "manifestDigest": "sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f",
+    "architectures": [
+      "amd64",
+      "arm64"
+    ]
+  },
+  "nativeScanner": {
+    "version": "8.30.1",
+    "command": "node scripts/run-gitleaks.mjs",
+    "exitCode": 0,
+    "detectorRegression": "PASS",
+    "historyCommitsScanned": 1933,
+    "leaks": 0
+  },
+  "timezones": [
+    {
+      "phase": "before",
+      "file": "review_clinical_integrity.sql",
+      "timezone": "UTC",
+      "exitCode": 3,
+      "error": "psql:/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/tests/review_clinical_integrity.sql:153: ERROR:  Choose an actual arrival date, not a future date"
+    },
+    {
+      "phase": "before",
+      "file": "review_employee_file_lifecycle.sql",
+      "timezone": "UTC",
+      "exitCode": 3,
+      "error": "psql:/Users/brianlewis/Circle of Life/Haven Finance Integration/supabase/tests/review_employee_file_lifecycle.sql:127: ERROR:  Completion cannot be in the future"
+    },
+    {
+      "phase": "after",
+      "file": "review_clinical_integrity.sql",
+      "timezone": "UTC",
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "phase": "after",
+      "file": "review_employee_file_lifecycle.sql",
+      "timezone": "UTC",
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "phase": "after",
+      "file": "review_clinical_integrity.sql",
+      "timezone": "America/New_York",
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "phase": "after",
+      "file": "review_employee_file_lifecycle.sql",
+      "timezone": "America/New_York",
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "phase": "after",
+      "file": "review_clinical_integrity.sql",
+      "timezone": "Pacific/Kiritimati",
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "phase": "after",
+      "file": "review_employee_file_lifecycle.sql",
+      "timezone": "Pacific/Kiritimati",
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "phase": "after",
+      "file": "review_clinical_integrity.sql",
+      "timezone": "Pacific/Honolulu",
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "phase": "after",
+      "file": "review_employee_file_lifecycle.sql",
+      "timezone": "Pacific/Honolulu",
+      "exitCode": 0,
+      "error": ""
+    }
+  ],
+  "fullUtcReplay": {
+    "timestamp": "2026-09-09T02:15:38.080247+00:00",
+    "result": "PASS",
+    "timezone": "UTC",
+    "target": "run-owned Unix socket55447/hfa_ci_repair_clean",
+    "migrations": 342,
+    "sqlProbes": 23,
+    "commands": [
+      {
+        "file": "pg-verify-stub.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "001_enum_types.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "002_core_hierarchy.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "003_user_rbac.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "004_haven_rls_helpers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "005_rls_policies.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "006_audit_triggers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "007_census_daily_log.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "008_seed_col_organization.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "009_residents.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "010_care_plans.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "011_resident_clinical_assets.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "012_assessment_templates.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "013_resident_profile_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "014_resident_profile_audit_triggers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "015_daily_logs_and_adl.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "016_resident_medications_emar.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "017_behavioral_condition_handoff.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "018_activities.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "019_daily_operations_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "020_daily_operations_audit_triggers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "021_incident_reporting_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "022_incident_reporting_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "023_incident_reporting_audit_triggers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "024_staff_management_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "025_staff_management_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "026_staff_management_audit_triggers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "027_billing_and_collections_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "028_billing_and_collections_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "029_billing_and_collections_audit_triggers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "030_allocate_incident_number.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "031_family_calendar_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "032_family_portal_messages.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "033_seed_oakridge_demo_data.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "034_tighten_resident_profile_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "035_care_planning_advanced.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "036_care_plan_review_alerts_insert_policy.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "037_medication_management_advanced.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "038_infection_control.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "039_compliance_engine.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "040_entity_facility_finance.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "041_journal_draft_soft_delete.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "042_enhanced_finance_gl_settings.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "043_gl_budget_lines.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "044_insurance_risk_finance.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "045_insurance_date_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "046_vendor_contract_management.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "047_executive_intelligence.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "048_finance_enhanced.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "049_insurance_enhanced.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "050_platform_audit_log_access.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "051_platform_auth_role_reconciliation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "052_platform_regulatory_jurisdiction.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "053_platform_search_index.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "054_pwa_offline_emar.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "055_pwa_push_notifications.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "056_resident_advance_directives.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "057_emar_witness_device.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "058_incident_regulatory_timers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "059_staff_credentials_background.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "060_billing_trust_ar_matview.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "061_care_plan_billing_version_lock.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "062_medication_rxnorm_witness.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "063_infection_jurisdiction_labs.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "064_compliance_citation_keys.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "065_finance_intercompany.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "066_insurance_osha_allocation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "067_vendor_match_storage_scorecard.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "068_ai_invocation_framework.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "069_shift_swap_requests_rls_tighten.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "070_incident_rca.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "071_invoices_facility_resident_period_unique.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "072_staffing_ratio_snapshots_insert_policy.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "073_time_records_admin_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "074_incident_rca_investigation_status.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "075_referral_inquiry_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "076_referral_inquiry_rls_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "077_admissions_move_in_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "078_admissions_move_in_rls_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "079_discharge_transition_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "080_discharge_transition_rls_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "081_quality_metrics_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "082_quality_metrics_rls_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "083_family_portal_module_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "084_family_portal_module_rls_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "085_executive_intelligence_v2.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "086_competency_demonstrations_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "087_competency_demonstrations_rls_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "088_payroll_integration.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "089_dietary_nutrition.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "090_transportation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "091_referral_hl7_inbound.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "092_reputation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "093_backfill_oakridge_demo_auth_users.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "094_normalize_oakridge_demo_emails.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "095_restore_default_auth_instance.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "096_executive_intelligence_v3.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "097_fix_exec_intelligence_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "098_resident_assurance_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "099_resident_assurance_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "100_resident_assurance_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "101_resident_assurance_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "102_reporting_module_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "103_reporting_module_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "104_reporting_module_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "105_reporting_module_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "106_reporting_saved_views_backfill.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "107_resident_assurance_indexes_rls_patch.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "108_onboarding_responses.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "109_onboarding_question_tiers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "110_oakridge_demo_auth_app_role_metadata.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "111_user_profiles_updated_by_and_email_sync.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "112_resident_transport_requests.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "113_mileage_logs_and_fleet_wheelchair.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "114_organization_transport_settings.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "115_competency_certificate_storage.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "116_training_programs_staff_completions.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "117_training_completion_certificate_storage_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "118_inservice_log_sessions.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "119_reputation_google_oauth_credentials.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "120_col_multi_facility_demo_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "121_user_management_enum_columns.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "122_role_permissions_audit_log.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "123_user_management_rls_updates.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "124_compliance_rules.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "125_emergency_preparedness.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "126_knowledge_base.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "127_compliance_rule_executor.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "128_compliance_rules_expanded.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "129_resident_assurance_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "130_kb_security_and_schema_reconciliation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "131_facility_admin_portal.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "132_kb_markdown_column.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "133_reporting_module_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "134_reporting_module_rls.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "135_reporting_module_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "136_kb_compliance_integration.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "137_track_e_col_seed_corrections.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "138_track_e_facility_alf_license_type.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "139_track_e_adl_assessments.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "140_track_e_rate_confirmed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "141_track_e_form_1823_and_admission_docs.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "142_track_e_discharge_reason_expansion.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "143_track_e_staff_discipline_records.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "144_track_e_enum_parity_batch.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "145_track_e_fl_statutes_module_links.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "146_kb_seed_getting_started.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "147_grace_foundation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "148_grace_flow_engine.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "149_search_tool_dashboard.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "150_seed_search_tool_policy_defaults.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "151_seed_col_executive_metrics.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "152_seed_col_payroll_and_assurance_facilities.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "153_care_plan_signature.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "154_exec_alert_threshold_rules.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "155_resident_assurance_intelligence.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "156_watch_protocol_auto_trigger.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "157_resident_assurance_alert_rules.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "158_fix_watch_trigger_race_condition.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "159_col_licensure_survey_data.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "160_reset_demo_user_passwords.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "161_seed_missing_role_demo_users.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "162_reload_postgrest_schema_cache.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "163_force_postgrest_schema_reload.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "164_fix_demo_auth_identities.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "165_nuke_and_rebuild_broken_demo_auth.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "166_rebuild_demo_auth_with_triggers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "167_diagnose_auth_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "168_fix_null_token_columns.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "169_add_med_tech_role.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "170_seed_med_tech_demo_user.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "171_med_tech_cockpit_tables.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "172_extend_emar_for_med_passes.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "173_seed_med_tech_cockpit_demo.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "174_dietary_command_deck_tables.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "175_seed_dietary_demo.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "176_grace_memory_compiler.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "177_pilot_feedback_submissions.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "178_promote_demo_admin_to_owner.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "179_update_col_admin_contacts.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "180_allow_med_tech_incident_capture.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "181_fix_watch_auto_trigger_for_current_incident_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "182_seed_specialist_role_demo_users.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "183_fix_incident_sequence_audit_trigger.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "184_harden_incident_number_allocator_against_seeded_data.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "185_executive_standup_metric_registry.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "186_executive_standup_snapshots.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "187_executive_standup_rls_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "188_executive_standup_import_jobs.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "189_staff_attendance_callouts.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "190_staff_requisitions.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "191_referral_outreach_activities.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "192_bed_inventory_classification.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "193_report_export_storage_bucket.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "194_resident_assurance_integrity_assignment.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "195_operation_task_templates.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "196_operation_task_instances.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "197_facility_assets.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "198_staffing_adequacy_snapshots.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "199_operation_audit_log.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "200_oce_seed_data.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "201_oce_reconciliation_and_generation_guard.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "20260514180000_staff_role_enum_values.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "20260514180707_homewood_round2_employee_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "20260514203302_homewood_round2_ar_intake_may_2026.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "202_workflow_events.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "203_admission_case_form_1823_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "204_operations_escalation_deliveries.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "205_risk_score_snapshots.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "206_cross_operator_benchmark_settings.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "207_user_dashboard_preferences.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "208_facility_metric_targets.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "209_alert_audit_log.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "210_rollback_ui_v2.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "211_v2_facility_rollup_view.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "212_v2_residents_list_view.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "213_v2_incidents_list_view.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "214_v2_alerts_list_view.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "215_v2_admissions_list_view.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "216_facility_launch_document_parser.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "217_col_v2_status_and_medicaid_provider_foundation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "218_col_v2_physical_plant_and_posted_rates.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "219_col_v2_observation_vocab_and_templates.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "220_col_v2_operational_logs.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "221_col_v2_staff_compliance_and_notifications.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "222_col_v2_resident_contracts_boldsign_schema.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "223_col_v2_boldsign_events.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "224_col_v2_admissions_medicaid_pipeline.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "225_col_v2_activity_and_family_message_metadata.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "226_facility_launch_promotion_runs.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "227_facility_launch_promotion_run_items.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "228_facility_launch_promotion_run_links.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "229_facility_launch_tier1_promoters.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "230_facility_launch_promotion_runs_updated_by.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "231_retire_legacy_executive_demo_data.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "232_facility_launch_round2_config_promoters.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "233_audit_p1_db_remediation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "234_ai_tool_layer_v1.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "235_restore_legal_entities_and_background_screenings.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "236_restore_transport_vendor_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "237_restore_dietary_command_deck.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "238_restore_089_columns_on_diet_orders.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "239_ai_governance_closeout.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "240_kb_rrf_hybrid_retrieval.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "241_kb_metadata_filters.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "242_kb_citation_anchors.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "243_kb_seed_targets.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "244_kb_ingestion_upgrades.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "245_exec_nlq_feedback.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "246_kb_gaps_loop_coverage.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "247_facility_license_scope_coll_enhanced_alf_homewood.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "248_facility_document_vault_taxonomy.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "249_vendor_facility_compliance_and_categories.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "250_operational_threshold_org_defaults.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "251_staffing_ratio_threshold_org_facility_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "252_facility_audit_log_trigger_null_actor.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "253_referral_leads_preferred_contact_inquiry.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "254_admission_intake_program_and_resident_dob_nullable.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "255_discharge_med_reconciliation_plan_fields.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "256_admission_case_draft_and_anticipated_payer.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "257_residents_override_audit_columns.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "258_admissions_direct_intake_fields.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "259_residents_clinical_verification_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "260_observation_plan_form_hardening.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "261_escalation_resolution_rationale.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "262_exec_intelligence_updated_by_alignment.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "263_exec_metric_snapshots_atomic_replace.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "264_operation_bulk_complete_atomic_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "265_upsert_facility_operational_thresholds_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "266_persist_monthly_invoices_from_preview_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "267_survey_deficiencies_facility_tag_survey_date_active_idx.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "268_facility_launch_m3_transaction_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "269_facility_launch_scalar_config_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "270_facility_launch_simple_collection_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "271_facility_launch_vendor_contacts_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "272_facility_launch_m6_rates_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "273_slice1_p1_security_hardening.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "274_exec_nlq_threads.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "275_exec_nlq_threads_rpc.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "276_exec_nlq_threads_hardening.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "277_p2_cleanup.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "278_round2_hotfixes.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "279_p2_sweep.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "280_phase1_facilities_enhancement.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "281_phase1_staff_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "282_phase1_vendor_seed.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "283_phase1_compliance_skeleton.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "284_user_management_audit_password_reset_action.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "285_round3_hardening.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "286_hard_delete_audit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "287_align_facilities_ahca_expiration_to_date.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "288_apply_invoice_payment.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "289_office_meetings.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "290_office_letters.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "291_office_internal_forms.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "292_office_document_acknowledgments.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "293_office_contact_directory.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "294_office_front_desk_kit.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "295_office_cash_trust_ledgers.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "296_workspace_pages.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "297_workspace_files.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "298_workspace_publish_requests.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "299_workspace_team_spaces.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "300_workspace_cards.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "301_shift_handoff_notes.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "302_workspace_comments.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "303_survey_binder_items.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "304_drive_import.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "305_drive_cutover.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "306_resident_rate_agreements_concessions.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "307_michelle_bed_hold_medicaid_catalog.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "308_revoke_anon_security_definer_rpc_execute.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "309_family_portal_messages_one_way.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "310_col_discovery_round_cadence_jessica_2026_08_14.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "311_snack_logs_time_and_passer_only.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "312_revoke_anon_col_discovery_round_rpcs.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "313_admin_command_center_projection.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "314_fix_team_space_members_rls_recursion.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "315_admin_command_center_projection_workspace_cast.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "316_admin_command_center_manager_access.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "317_referral_lead_closure_reasons.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "318_col_facility_entity_names.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "319_review_access_boundaries.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "320_september_business_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "321_clinical_review_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "322_dietary_verified_actions.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "323_review_report_outputs.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "324_september_office_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "325_review_med_tech_controlled_count_access.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "326_sys_001_authoritative_actor_state.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "327_sys_001e_lifecycle_authorization.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "328_ingest_generation_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "329_authorization_error_http_contract.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "330_quality_caller_scope_and_corrections.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "331_rounding_completion_receipts.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "332_resident_search_current_scope.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "333_rounding_javascript_whitespace.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "334_payroll_source_freshness.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "335_employee_file_lifecycle.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "336_finance_source_commands.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "337_audit_export_scope_and_snapshot.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "338_resident_money_snapshot.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "339_finance_event_outbox.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "family_portal_messages_one_way.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_access_boundaries.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_audit_export_authorization.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_auth_sync_convergence.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_authoritative_actor.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_authorization_error_contract.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_business_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_clinical_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_controlled_count_roles.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_dietary_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_employee_file_lifecycle.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_finance_event_outbox.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_finance_source_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_ingest_generation.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_office_integrity.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_payroll_freshness.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_report_outputs.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_resident_money_snapshot.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_rounding_completion_receipts.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_section2_quality.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "review_section2_search.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "rpc_grant_posture.sql",
+        "exitCode": 0
+      },
+      {
+        "file": "team_space_rls_no_recursion.sql",
+        "exitCode": 0
+      }
+    ]
+  },
+  "staticChecks": [
+    {
+      "command": "node --check scripts/run-gitleaks.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "npx eslint scripts/run-gitleaks.mjs --no-ignore",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "limits": [
+    "Docker daemon was not changed or used; Docker fallback requires fresh CI runner verification",
+    "Native SQL uses Supabase Auth stubs, not hosted Auth/PostgREST"
+  ],
+  "notes": [
+    "8.21.2 returns detector exit73 but writes JSON to literal dash filename; absence of stdout RuleID caused false harness failure",
+    "The literal dash file in subsequent comparison rows remains from the first old-version run",
+    "Both guards and existing future-date negative assertions are preserved; clinical adds a future-arrival/no-mutation assertion",
+    "Other date-bearing probes were inspected; only these two call tested guard paths with mismatched server current_date"
+  ],
+  "independentReview": {
+    "reviewer": "finance_source_inventory",
+    "verdict": "APPROVE",
+    "scope": "exact three source hashes in files",
+    "executed": [
+      "Both SQL probes under UTC in separately owned review DB passed",
+      "Native 8.30.1 unchanged regression fixture exits73 with generic-api-key RuleID",
+      "Syntax, explicit ESLint and diff checks passed"
+    ],
+    "limits": [
+      "Docker fallback execution awaits fresh CI"
+    ]
+  }
+}

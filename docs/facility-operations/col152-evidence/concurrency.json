@@ -1,0 +1,51 @@
+{
+  "scope": "Local native PostgreSQL 17 with Supabase stubs and synthetic fixtures",
+  "recorded_at": "2026-09-12T22:16:13.685694+00:00",
+  "cases": [
+    {
+      "case": "distinct_issues_same_task",
+      "result": "PASS",
+      "observed_wait": "advisory",
+      "sqlstate": null,
+      "replayed": false,
+      "episode_count": 2,
+      "response_count": 0,
+      "work_receipt_count": 0
+    },
+    {
+      "case": "same_request_exact_replay",
+      "result": "PASS",
+      "observed_wait": "advisory",
+      "sqlstate": null,
+      "replayed": true,
+      "episode_count": 1,
+      "response_count": 1,
+      "work_receipt_count": 0
+    },
+    {
+      "case": "revoked_during_wait",
+      "result": "PASS",
+      "observed_wait": "advisory",
+      "sqlstate": "42501",
+      "replayed": null,
+      "episode_count": 0,
+      "response_count": 0,
+      "work_receipt_count": 0
+    },
+    {
+      "case": "expired_during_wait",
+      "result": "PASS",
+      "observed_wait": "advisory",
+      "sqlstate": "42501",
+      "replayed": null,
+      "episode_count": 0,
+      "response_count": 0,
+      "work_receipt_count": 0
+    }
+  ],
+  "provenance": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col152-20260912/reminder-concurrency-05904ae47b92486b.json",
+  "migration_count": 353,
+  "migration_350_sha256": "e680798916c37ac25eb51abe6d62d2dd51fa73f43cedd757d04a878ace7a1021",
+  "postgres_version": "17.9 (Homebrew)",
+  "result": "PASS"
+}

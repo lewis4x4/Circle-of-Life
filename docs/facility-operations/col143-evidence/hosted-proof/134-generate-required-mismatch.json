@@ -1,0 +1,101 @@
+{
+  "at": "2026-09-12T23:56:08.227992+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "p_facility": "ba40a958-0747-4751-9b33-b3326bf7b802",
+      "p_configuration": "db67dd98-ade8-4965-974f-855251eb7478",
+      "p_occurrences": [
+        {
+          "occurrence_date": "2026-09-12",
+          "period": {
+            "start_date": "2026-09-12",
+            "end_date": "2026-09-18"
+          },
+          "due_at": "2026-09-12T23:00:00-04:00",
+          "grace_ends_at": null,
+          "remind_at": null,
+          "timezone": "America/New_York",
+          "adjustments": []
+        }
+      ],
+      "p_run": {
+        "run_id": "col143-95d3102349-required-mismatch",
+        "evaluator_version": "hfo-evaluator/1",
+        "date_from": "2026-09-12",
+        "date_to": "2026-09-12",
+        "rule": {
+          "rule_version": 1,
+          "timezone": "America/New_York",
+          "recurrence": {
+            "kind": "weekly",
+            "weekday": "saturday"
+          },
+          "deadline": {
+            "time": "23:00"
+          }
+        },
+        "occurrence_kind": "scheduled"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:56:08 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Content-Range": "0-0/*",
+      "CF-Ray": "a3a2d8d699b0483f-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "set-cookie": "<REDACTED>",
+      "Server": "cloudflare",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "Vary": "Accept-Encoding",
+      "X-Content-Type-Options": "nosniff",
+      "content-profile": "public",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a0980c-c21f-72e0-abea-a2d0a812b5fd",
+      "x-envoy-attempt-count": "1",
+      "x-envoy-upstream-service-time": "72",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "counts": {
+        "created": 1,
+        "invalid": 0,
+        "conflict": 0,
+        "existing": 0,
+        "no_binding": 0,
+        "binding_not_current": 0,
+        "configuration_not_in_force": 0
+      },
+      "run_id": "col143-95d3102349-required-mismatch",
+      "outcomes": [
+        {
+          "shift": null,
+          "outcome": "created",
+          "task_id": "64a65fd4-e99c-4191-86db-6450ba64ac6f",
+          "binding_id": null,
+          "subject_id": "a4c58494-a502-4f20-af68-57321414086e",
+          "occurrence_date": "2026-09-12"
+        }
+      ],
+      "rule_sha256": "5efbd500b96e5732f1eac17f09524d6a5b0f86afbb87e33d8cfabc23700220e9",
+      "configuration_id": "db67dd98-ade8-4965-974f-855251eb7478",
+      "evaluator_version": "hfo-evaluator/1",
+      "requirement_version_id": "bc3a6711-d4a0-46ef-921c-ceddf6191839"
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

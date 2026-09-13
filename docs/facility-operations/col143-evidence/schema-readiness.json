@@ -1,0 +1,27 @@
+{
+  "ref": "iwcnajanvjvynolltflw",
+  "recorded_at": "2026-09-12T23:48:30.521756+00:00",
+  "checks": {
+    "enabled_profiles": 0,
+    "unbanned_seed_users": 0,
+    "nonsynthetic_auth_emails": 0,
+    "sessions": 0,
+    "bucket": {
+      "id": "operation-evidence",
+      "public": false,
+      "file_size_limit": 20971520,
+      "allowed_mime_types": [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ]
+    },
+    "storage_policies": 6,
+    "checksum_column": true,
+    "auth_hook": true,
+    "authenticator_config": [
+      "pgrst.db_pre_request=public.haven_assert_authorized_request"
+    ]
+  }
+}

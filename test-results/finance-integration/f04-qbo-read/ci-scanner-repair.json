@@ -1,0 +1,35 @@
+{
+  "status": "FAIL_REPAIRED_PENDING_CI",
+  "commit": "e5102f70d17f462d330ea4b45fba778e7bc684ab",
+  "ci_run": 34361896568,
+  "failure": "Required Gitleaks scanner unavailable: native binary absent and Docker readiness probe failed",
+  "unchanged_test_results": {
+    "qbo_read": 98,
+    "finance": 272,
+    "audit": 7,
+    "audit_edge": 15,
+    "qbo_webhook": 24
+  },
+  "repair": "Install checksum-pinned official Linux x64 Gitleaks8.30.1 before tests; existing detector/regression and fail-closed runner unchanged",
+  "official_release": {
+    "assets": [
+      {
+        "browser_download_url": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz",
+        "digest": "sha256:551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+        "name": "gitleaks_8.30.1_linux_x64.tar.gz"
+      }
+    ],
+    "tag_name": "v8.30.1"
+  },
+  "download_sha256": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+  "archive_members": [
+    "LICENSE",
+    "README.md",
+    "gitleaks"
+  ],
+  "local_detector_check": "CI=true npm run secrets:gitleaks PASS: regression detected,1952commits scanned,0leaks",
+  "limits": [
+    "Downloaded Linux binary not executable on local macOS; actual Linux installation awaitsCI",
+    "No required gate bypass or timeout expansion"
+  ]
+}

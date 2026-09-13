@@ -1,6 +1,6 @@
 BEGIN;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
-CREATE TEMP TABLE office_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,gen_random_uuid() reader,gen_random_uuid() reader_session,gen_random_uuid() manager,gen_random_uuid() manager_session,gen_random_uuid() outsider,gen_random_uuid() outsider_session,gen_random_uuid() meeting,gen_random_uuid() action,
+CREATE TEMP TABLE office_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,gen_random_uuid() reader,gen_random_uuid() reader_session,gen_random_uuid() manager,gen_random_uuid() manager_session,gen_random_uuid() outsider,gen_random_uuid() outsider_session,gen_random_uuid() meeting,gen_random_uuid() action,gen_random_uuid() failure_action,
  gen_random_uuid() team,gen_random_uuid() page,gen_random_uuid() file,gen_random_uuid() document,gen_random_uuid() requirement,
  f.id facility,f.organization_id org FROM public.facilities f WHERE f.deleted_at IS NULL LIMIT 1;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
@@ -51,8 +51,9 @@ SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.manager,'sessi
 FROM office_fixture f JOIN public.user_profiles p ON p.id=f.manager;
 SET LOCAL ROLE service_role;
 DO $$ DECLARE f record; created_action uuid:=gen_random_uuid(); BEGIN SELECT * INTO f FROM office_fixture;
- PERFORM public.create_meeting_action(created_action,f.meeting,'Authorized manager action',f.manager,current_date,f.manager);
- IF NOT EXISTS(SELECT 1 FROM public.meeting_action_items WHERE id=created_action AND created_by=f.manager) THEN RAISE EXCEPTION 'Scoped manager creation failed'; END IF;
+ -- COL-133 closes the unclassified legacy constructor, including service callers.
+ BEGIN PERFORM public.create_meeting_action(created_action,f.meeting,'Unclassified manager action',f.manager,current_date,f.manager); RAISE EXCEPTION 'Unclassified service creation accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.meeting_action_items WHERE id=created_action) OR EXISTS(SELECT 1 FROM public.operation_task_instances WHERE id=created_action) THEN RAISE EXCEPTION 'Denied creation left an orphan'; END IF;
  BEGIN PERFORM public.create_meeting_action(gen_random_uuid(),f.meeting,'Unauthorized manager',NULL,current_date,f.outsider); RAISE EXCEPTION 'Unscoped actor created task'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.create_meeting_action(gen_random_uuid(),f.meeting,'Unauthorized role',NULL,current_date,f.reader); RAISE EXCEPTION 'Caregiver authored manager task'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
@@ -64,14 +65,44 @@ SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session
   'app_metadata',jsonb_build_object('app_role','owner','organization_id',f.org))::text,true)
 FROM office_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 
-DO $$ DECLARE f record; BEGIN SELECT * INTO f FROM office_fixture;
- PERFORM public.create_meeting_action(f.action,f.meeting,'Review action',f.actor,'2026-09-06',f.actor);
- PERFORM public.create_meeting_action(f.action,f.meeting,'Review action',f.actor,'2026-09-06',f.actor);
- IF (SELECT count(*) FROM public.meeting_action_items WHERE id=f.action)<>1 OR (SELECT due_at FROM public.operation_task_instances WHERE id=f.action)<>'2026-09-07 03:59:59Z'::timestamptz THEN RAISE EXCEPTION 'Meeting task retry/deadline failed'; END IF;
- UPDATE public.operation_task_instances SET status='completed' WHERE id=f.action;
+-- Trusted synthetic arrangement only: classify two facility tasks explicitly.
+-- No guard is disabled and no revoked constructor is invoked with elevated grants.
+-- These fixtures exercise the current authenticated completion command and its
+-- meeting synchronization; they do not claim new meeting-action creation works.
+INSERT INTO public.operation_activity_subjects(organization_id,facility_id,subject_kind)
+ SELECT org,facility,'facility' FROM office_fixture ON CONFLICT DO NOTHING;
+INSERT INTO public.operation_task_instances(id,organization_id,facility_id,subject_id,authority_class,
+ template_name,template_category,template_cadence_type,assigned_shift_date,assigned_to,due_at)
+ SELECT f.action,f.org,f.facility,s.id,'facility','Review action','meeting_action','event_driven',
+ '2026-09-06'::date,f.actor,'2026-09-07 03:59:59Z'::timestamptz FROM office_fixture f
+ JOIN public.operation_activity_subjects s ON s.organization_id=f.org AND s.facility_id=f.facility AND s.subject_kind='facility'
+ UNION ALL
+ SELECT f.failure_action,f.org,f.facility,s.id,'facility','Rollback action','meeting_action','event_driven',
+ current_date,f.actor,now() FROM office_fixture f
+ JOIN public.operation_activity_subjects s ON s.organization_id=f.org AND s.facility_id=f.facility AND s.subject_kind='facility';
+INSERT INTO public.meeting_action_items(id,organization_id,facility_id,meeting_id,description,assigned_to,due_date,oce_task_instance_id,created_by,updated_by)
+ SELECT action,org,facility,meeting,'Review action',actor,'2026-09-06'::date,action,actor,actor FROM office_fixture
+ UNION ALL SELECT failure_action,org,facility,meeting,'Rollback action',actor,current_date,failure_action,actor,actor FROM office_fixture;
+GRANT USAGE ON SCHEMA auth TO authenticated;
+GRANT SELECT ON office_fixture TO authenticated;
+GRANT SELECT,UPDATE ON public.meeting_action_items TO authenticated;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; completed_at timestamptz; BEGIN SELECT * INTO f FROM office_fixture;
+ IF public.complete_operation_task_review(f.action,f.actor,'owner','Reviewed facility work','{}')<>'completed' THEN RAISE EXCEPTION 'Authorized task completion failed'; END IF;
+ SELECT i.completed_at INTO completed_at FROM public.operation_task_instances i WHERE id=f.action;
+ IF public.complete_operation_task_review(f.action,f.actor,'owner','Reviewed facility work','{}')<>'completed' THEN RAISE EXCEPTION 'Authorized task replay failed'; END IF;
+ IF (SELECT count(*) FROM public.meeting_action_items WHERE id=f.action)<>1
+ OR (SELECT count(*) FROM public.operation_audit_log WHERE task_instance_id=f.action AND event_type='completed')<>1
+ OR (SELECT i.completed_at FROM public.operation_task_instances i WHERE id=f.action) IS DISTINCT FROM completed_at
+ OR (SELECT due_at FROM public.operation_task_instances WHERE id=f.action)<>'2026-09-07 03:59:59Z'::timestamptz THEN RAISE EXCEPTION 'Completion replay changed identity, audit, or existing deadline'; END IF;
  IF (SELECT status FROM public.meeting_action_items WHERE id=f.action)<>'completed' THEN RAISE EXCEPTION 'OCE completion did not reach meeting'; END IF;
- UPDATE public.meeting_action_items SET status='open' WHERE id=f.action;
- IF (SELECT status FROM public.operation_task_instances WHERE id=f.action)<>'pending' THEN RAISE EXCEPTION 'Meeting state did not reach task'; END IF;
+ BEGIN UPDATE public.meeting_action_items SET status='open' WHERE id=f.action; RAISE EXCEPTION 'Minutes reopened completed task'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF (SELECT status FROM public.operation_task_instances WHERE id=f.action)<>'completed'
+ OR (SELECT status FROM public.meeting_action_items WHERE id=f.action)<>'completed'
+ OR (SELECT i.completed_at FROM public.operation_task_instances i WHERE id=f.action) IS DISTINCT FROM completed_at THEN RAISE EXCEPTION 'Denied meeting change erased performance history'; END IF;
+END $$;
+RESET ROLE;
+DO $$ DECLARE f record; BEGIN SELECT * INTO f FROM office_fixture;
  PERFORM public.save_workspace_page(f.page,1,'Saved title','Saved body');
  BEGIN PERFORM public.save_workspace_page(f.page,1,'Stale title','Stale body'); RAISE EXCEPTION 'Stale workspace save accepted';
  EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Page changed. Preserve your draft and reload before merging changes' THEN RAISE; END IF; END;
@@ -82,12 +113,19 @@ DO $$ DECLARE f record; BEGIN SELECT * INTO f FROM office_fixture;
 END $$;
 
 CREATE FUNCTION pg_temp.office_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected office failure'; END $$;
-CREATE TRIGGER office_item_fail BEFORE INSERT ON public.meeting_action_items FOR EACH ROW EXECUTE FUNCTION pg_temp.office_fail();
+CREATE TRIGGER office_item_fail BEFORE UPDATE ON public.meeting_action_items FOR EACH ROW EXECUTE FUNCTION pg_temp.office_fail();
 CREATE TRIGGER office_lead_fail BEFORE INSERT ON public.team_space_members FOR EACH ROW EXECUTE FUNCTION pg_temp.office_fail();
 CREATE TRIGGER office_page_fail BEFORE UPDATE ON public.workspace_pages FOR EACH ROW EXECUTE FUNCTION pg_temp.office_fail();
-DO $$ DECLARE f record; action_id uuid:=gen_random_uuid(); team_id uuid:=gen_random_uuid(); BEGIN SELECT * INTO f FROM office_fixture;
- BEGIN PERFORM public.create_meeting_action(action_id,f.meeting,'Failure',f.actor,current_date,f.actor); RAISE EXCEPTION 'Expected action failure'; EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'injected office failure' THEN RAISE; END IF; END;
- IF EXISTS(SELECT 1 FROM public.operation_task_instances WHERE id=action_id) THEN RAISE EXCEPTION 'Orphan task survived'; END IF;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; BEGIN SELECT * INTO f FROM office_fixture;
+ BEGIN PERFORM public.complete_operation_task_review(f.failure_action,f.actor,'owner','Injected completion failure','{}'); RAISE EXCEPTION 'Expected task/meeting synchronization failure'; EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'injected office failure' THEN RAISE; END IF; END;
+ IF (SELECT status FROM public.operation_task_instances WHERE id=f.failure_action)<>'pending'
+ OR (SELECT signed_by FROM public.operation_task_instances WHERE id=f.failure_action) IS NOT NULL
+ OR (SELECT status FROM public.meeting_action_items WHERE id=f.failure_action)<>'open'
+ OR EXISTS(SELECT 1 FROM public.operation_audit_log WHERE task_instance_id=f.failure_action AND event_type='completed') THEN RAISE EXCEPTION 'Task or audit survived failed meeting synchronization'; END IF;
+END $$;
+RESET ROLE;
+DO $$ DECLARE f record; team_id uuid:=gen_random_uuid(); BEGIN SELECT * INTO f FROM office_fixture;
  BEGIN PERFORM public.create_team_with_lead(team_id,'Failure team',NULL); RAISE EXCEPTION 'Expected lead failure'; EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'injected office failure' THEN RAISE; END IF; END;
  IF EXISTS(SELECT 1 FROM public.team_spaces WHERE id=team_id) THEN RAISE EXCEPTION 'Orphan team survived'; END IF;
  BEGIN PERFORM public.save_workspace_page(f.page,2,'Failure title','Failure body'); RAISE EXCEPTION 'Expected version failure'; EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'injected office failure' THEN RAISE; END IF; END;

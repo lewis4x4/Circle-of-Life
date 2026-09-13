@@ -1,0 +1,81 @@
+{
+  "viewer": {
+    "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+    "name": "Brian Lewis"
+  },
+  "issue": {
+    "id": "c23aa279-82da-4934-876c-eaf89b6956a7",
+    "identifier": "COL-153",
+    "title": "[HFO-16] Add task help, local duty split and replacement-person handover",
+    "description": "The system should make a new administrator effective without adding steps for experienced staff.\n\n**Scope**\nAttach concise versioned how-to/examples/contact to activities, expose current local owner/backup, and show open responsibilities on handover. Do not add mandatory training dialogs to every completion.\n\n**Acceptance**\n\n- [ ] Experienced user completes without opening help; new user can find procedure/contact from the task.\n- [ ] Duty changes retain prior ownership and accepted coverage with effective times.\n- [ ] Procedure publication preserves historical rule references and sensitive documents stay protected.\n\n**Dependencies:** [COL-135](https://linear.app/jarvislewis/issue/COL-135/hfo-02-version-facility-applicability-evidence-rules-and-local), [COL-148](https://linear.app/jarvislewis/issue/COL-148/hfo-10-build-the-staff-today-upcoming-and-history-workspace), [COL-144](https://linear.app/jarvislewis/issue/COL-144/hfo-14-track-problems-next-actions-backup-ownership-and-resolution)\n**Related existing work:** See source pointers below\n**Release:** Core. Implementation not started; this issue is not proof of deployment or staff acceptance.\n**Source items:** Shared core contract across all applicable Admin Log items\n**Source/code pointers:** `R02 R03, INT-17 INT-25`. Migration filenames are under `supabase/migrations/`; source paths are relative to Circle-of-Life unless explicitly named otherwise. Reconcile current main before editing.\n**Open configuration questions:** Q02, Q12 See [Haven Facility Operations \u2014 Source Coverage and Open Decisions](https://linear.app/jarvislewis/document/haven-facility-operations-source-coverage-and-open-decisions-0bf9ab4bebce).\n\n**Build contract:** [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). **Sequence:** [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\nOne bounded implementation segment at a time. Record exact source/commit, focused behavioral tests, applicable repository segment gates, review and rollback/handoff evidence. Preserve current authority after waits and on retries, existing dirty/concurrent work, source truth and unknown rules. No new dependency, external transmission, clinical/employment decision or policy activation is implied. Keep source/local/hosted/provider/staff/operating-cycle acceptance distinct. No named assignee, estimate or date has been invented.\n\nRoadmap key: HFO-16 / HAVEN-ADMIN-20260909",
+    "state": {
+      "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+      "name": "Backlog"
+    },
+    "team": {
+      "states": {
+        "nodes": [
+          {
+            "id": "f2309805-cd22-4e1b-8c0f-2c8123ae4e96",
+            "name": "In Review"
+          },
+          {
+            "id": "af3a460c-b120-4488-8523-0b2c35a94ee1",
+            "name": "Canceled"
+          },
+          {
+            "id": "83cab057-2557-4e0b-8267-366ad7066b9e",
+            "name": "Done"
+          },
+          {
+            "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+            "name": "Todo"
+          },
+          {
+            "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+            "name": "Backlog"
+          },
+          {
+            "id": "5b3cb55d-7bbd-44cf-b766-c6070137eabe",
+            "name": "Duplicate"
+          },
+          {
+            "id": "04843145-120c-4879-85ea-2d2370ca45a4",
+            "name": "In Progress"
+          }
+        ]
+      }
+    },
+    "inverseRelations": {
+      "nodes": [
+        {
+          "type": "blocks",
+          "issue": {
+            "identifier": "COL-144",
+            "state": {
+              "name": "Done"
+            }
+          }
+        },
+        {
+          "type": "blocks",
+          "issue": {
+            "identifier": "COL-148",
+            "state": {
+              "name": "Done"
+            }
+          }
+        },
+        {
+          "type": "blocks",
+          "issue": {
+            "identifier": "COL-135",
+            "state": {
+              "name": "Done"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

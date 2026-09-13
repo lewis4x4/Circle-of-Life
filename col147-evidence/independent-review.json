@@ -1,0 +1,121 @@
+{
+  "issue": "COL-147",
+  "uuid": "17ccab14-f6d0-4b90-a525-d29e99e644ca",
+  "title": "[HFO-09] Link final source records to requirements with replay and invalidation handling",
+  "scope": "source only; no hosted apply, deploy, policy activation, domain adapters (COL-154..159), staff/clinical/operating-cycle acceptance",
+  "status": "APPROVED",
+  "reviewed_at": "2026-09-11T01:01:45Z",
+  "model_used": "Fable 5.1 / claude-fable-5-1",
+  "implementer_session": "97e09ee8-25e1-4023-b71b-7f27e95e1ef7",
+  "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/476",
+  "shas": {
+    "base": "db451440b44ca67662dceb6018844943b42a456c",
+    "checkpoint": "5dafa6e0b2a84f00d53b1d1bad07a93d3e0c56a9",
+    "gate_md": "594eeeb25a540cb9e5c1d14f078698806c92ff53",
+    "prior_ir_stub": "5a92304eda09d9533f6533a279bc5dc57818efe1"
+  },
+  "sql_runtime_review": {
+    "reviewer": "Claude seat adversarial SQL/runtime review for Haven re-GATE (COL-147 closeout)",
+    "verdict": "APPROVE",
+    "surfaces": [
+      "supabase/migrations/346_hfo_source_links.sql",
+      "supabase/tests/review_hfo_source_links.sql",
+      "scripts/facility-operations/test-source-link-concurrency.py",
+      "src/lib/operations/source-links.ts",
+      "src/app/api/admin/operations/source-events/"
+    ],
+    "acceptance_coverage": [
+      {
+        "requirement": "Final matching source satisfies intended occurrence once; replay/concurrent delivery does not duplicate",
+        "result": "PASS",
+        "evidence": [
+          "346 UNIQUE live ledger index operation_source_event_live on (org,source_key,record_id,version,event_kind) WHERE state<>refused",
+          "346 UNIQUE effective source receipt index operation_receipt_effective_source",
+          "probe asserts same-key replay + second-key same-version converge on one ledger row / one receipt",
+          "concurrency same_version_twice PASS (advisory wait; ledger_rows=1 receipts=1)",
+          "concurrency retry_vs_redelivery PASS (advisory wait; live_rows=1 receipts=1)"
+        ]
+      },
+      {
+        "requirement": "Wrong period/site/subject, draft or invalid source cannot satisfy",
+        "result": "PASS",
+        "evidence": [
+          "346 refuses final+draft (source_not_final), final+voided (source_voided), voided+non-voided (source_not_voided)",
+          "346 unmatched/ambiguous for no_candidate / several_candidates / subject_not_enrolled / subject_not_current",
+          "346 site agreement + activity allowlist refusals before satisfaction",
+          "probe covers draft, voided, stale, missing, wrong-site, wrong-subject, non-allowlisted, off-period, cancelled",
+          "API/unit tests map allowlist refusal, denial, validation before command"
+        ]
+      },
+      {
+        "requirement": "Source correction/void retains invalidation + needs-attention history; neither erases proof nor leaves false completion",
+        "result": "PASS",
+        "evidence": [
+          "346 voided path writes 344 reversal, supersedes effective source receipt, sets invalidated + attention",
+          "346 attention clear is forward-only; settled rows reject content mutation",
+          "concurrency correction_first_then_void PASS (void source_not_effective + attention; human correction stays effective)",
+          "concurrency void_first_then_correction PASS (correction refused; reversed chain retained; occurrence unrecorded)",
+          "concurrency version1/version2 ordering PASS (stale source_version_changed; one effective receipt at live version)"
+        ]
+      },
+      {
+        "requirement": "Domain proof vs administrator review separation",
+        "result": "PASS",
+        "evidence": [
+          "Satisfaction writes performance receipt from source statement; admin review remains 344/341 path, not implied by delivery",
+          "Reconcile actions retry/select/dismiss require SOURCE_EVENT_RECONCILE_ROLES; deliver uses view/deliver roles",
+          "List defaults to attention rows for admin reconciliation without marking domain proof complete",
+          "Already-recorded human receipt yields conflict pending attention rather than overwriting domain proof"
+        ]
+      },
+      {
+        "requirement": "Current authority preserved after lock waits and on replay",
+        "result": "PASS",
+        "evidence": [
+          "concurrency human_first_then_delivery / delivery_first_then_human PASS (transactionid waits; single effective receipt)",
+          "concurrency cases report waited_on advisory|transactionid without deadlock",
+          "346 guard_operation_current_authority extension for source commands; probe includes cross-site admin_b denials",
+          "Replay conflict maps to conflict naming current revision (API tests)"
+        ]
+      }
+    ],
+    "native_concurrency_confirmation": {
+      "artifact": "docs/facility-operations/col147-evidence/concurrency.txt",
+      "script": "scripts/facility-operations/test-source-link-concurrency.py",
+      "baseline": "col147_base346",
+      "runtime": "native PostgreSQL scratch cluster hfo-col139-20260910-105544",
+      "recorded_at": "2026-09-11T00:55:11Z",
+      "status": "PASS",
+      "cases": [
+        "same_version_twice",
+        "human_first_then_delivery",
+        "delivery_first_then_human",
+        "correction_first_then_void",
+        "void_first_then_correction",
+        "version1_first_then_version2",
+        "version2_first_then_version1",
+        "retry_vs_redelivery"
+      ],
+      "reviewed": true,
+      "reviewer_note": "All 8 recorded cases PASS; outcomes match acceptance for duplicate, human race, void/correction, version skew, retry vs redelivery."
+    }
+  },
+  "segment_gate": {
+    "segment": "COL-147-HFO-SOURCE-ADAPTERS",
+    "artifact": "test-results/agent-gates/2026-09-11T00-24-04-243Z-COL-147-HFO-SOURCE-ADAPTERS.json",
+    "verdict": "PASS",
+    "summary": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 3,
+      "blocking_failures": []
+    }
+  },
+  "residual_notes": [
+    "Migration 346 number is provisional on this HFO stack; Finance integration may renumber later.",
+    "Domain adapters remain empty allowlist \u2014 COL-154..159.",
+    "COL-143 hosted Storage acceptance untouched.",
+    "No merge/deploy from this closeout."
+  ],
+  "feature_freeze": "Further feature edits frozen unless Haven names a GATE miss."
+}

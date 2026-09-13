@@ -1,0 +1,102 @@
+{
+  "at": "2026-09-12T23:52:59.193049+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "Cookie": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "request_key": "col143-95d3102349:record-assistant:32eaea61",
+      "payload": {
+        "outcome": "performed",
+        "note": "col143-95d3102349 assistant"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "X-DNS-Prefetch-Control": "on",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://iwcnajanvjvynolltflw.supabase.co; media-src 'self' https://cdn.pixabay.com; font-src 'self'; connect-src 'self' https://iwcnajanvjvynolltflw.supabase.co wss://iwcnajanvjvynolltflw.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+      "content-type": "application/json",
+      "Date": "Sat, 12 Sep 2026 23:52:59 GMT",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    },
+    "body": {
+      "outcome": "receipt",
+      "receipt": {
+        "id": "0a30982f-fe32-4c6e-96b1-09c142cbcd73",
+        "note": "col143-95d3102349 assistant",
+        "values": {},
+        "outcome": "performed",
+        "chain_id": "0a30982f-fe32-4c6e-96b1-09c142cbcd73",
+        "issue_id": null,
+        "revision": "52c64c9a67d4e40507b3739638e5c8f83aefb2038a7ce05d7aeca9b0da13e077",
+        "created_at": "2026-09-12T23:52:59.133112+00:00",
+        "entry_kind": "routine",
+        "source_key": null,
+        "subject_id": "a4c58494-a502-4f20-af68-57321414086e",
+        "activity_id": "e91b1f65-f0e5-47a0-b95b-76d8cb073ec0",
+        "facility_id": "ba40a958-0747-4751-9b33-b3326bf7b802",
+        "recorded_at": "2026-09-12T23:52:59.144963+00:00",
+        "recorder_id": "e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a",
+        "request_key": "col143-95d3102349:record-assistant:32eaea61",
+        "entry_reason": null,
+        "performed_at": "2026-09-12T23:52:59.144963+00:00",
+        "receipt_kind": "performance",
+        "recorder_role": "admin_assistant",
+        "superseded_at": null,
+        "correction_seq": 0,
+        "performer_kind": "self",
+        "authority_class": "facility",
+        "evidence_status": "missing",
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "performer_label": null,
+        "source_event_id": null,
+        "completion_state": "performed_missing_evidence",
+        "missing_evidence": [
+          {
+            "kind": "photo",
+            "when": "always",
+            "label": "Panel photo",
+            "min_count": 1
+          }
+        ],
+        "source_record_id": null,
+        "task_instance_id": "3745041e-2dc7-4040-81dc-db49d9acbc2a",
+        "correction_reason": null,
+        "performer_user_id": null,
+        "corrects_receipt_id": null,
+        "performer_vendor_id": null,
+        "verifies_receipt_id": null,
+        "evidence_satisfied_at": null,
+        "source_record_version": null,
+        "requirement_version_id": "370888d9-2734-41b3-ab90-d9a745082927",
+        "evidence_status_current": "missing",
+        "facility_requirement_id": "722fe3c4-cd59-49f2-b577-5262e487d532",
+        "superseded_by_receipt_id": null,
+        "verified_receipt_revision": null
+      },
+      "occurrence": {
+        "id": "3745041e-2dc7-4040-81dc-db49d9acbc2a",
+        "status": "in_progress",
+        "performed_at": "2026-09-12T23:52:59.144963+00:00",
+        "execution_state": "performed_missing_evidence",
+        "occurrence_revision": "940fa7f78190ce37602c1f524358fbd2a6eeba7e42d66e9cb10afa1782fbfa58"
+      },
+      "issue": null,
+      "replayed": false
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

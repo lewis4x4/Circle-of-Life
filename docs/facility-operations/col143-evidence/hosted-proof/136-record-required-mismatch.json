@@ -1,0 +1,102 @@
+{
+  "at": "2026-09-12T23:56:09.819554+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "Cookie": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "request_key": "col143-95d3102349:record-required-mismatch:f527fa37",
+      "payload": {
+        "outcome": "performed",
+        "note": "col143-95d3102349 required-mismatch"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "X-DNS-Prefetch-Control": "on",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://iwcnajanvjvynolltflw.supabase.co; media-src 'self' https://cdn.pixabay.com; font-src 'self'; connect-src 'self' https://iwcnajanvjvynolltflw.supabase.co wss://iwcnajanvjvynolltflw.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+      "content-type": "application/json",
+      "Date": "Sat, 12 Sep 2026 23:56:09 GMT",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    },
+    "body": {
+      "outcome": "receipt",
+      "receipt": {
+        "id": "bbdb39be-9fc8-4690-9fb4-d73d4100718c",
+        "note": "col143-95d3102349 required-mismatch",
+        "values": {},
+        "outcome": "performed",
+        "chain_id": "bbdb39be-9fc8-4690-9fb4-d73d4100718c",
+        "issue_id": null,
+        "revision": "80aeee01a3ed00f84aa32b6b1e41dc35e821e90d36047a4d2972703cd3378e28",
+        "created_at": "2026-09-12T23:56:09.723914+00:00",
+        "entry_kind": "routine",
+        "source_key": null,
+        "subject_id": "a4c58494-a502-4f20-af68-57321414086e",
+        "activity_id": "51f700e1-9949-4fb2-acde-face46c41c4e",
+        "facility_id": "ba40a958-0747-4751-9b33-b3326bf7b802",
+        "recorded_at": "2026-09-12T23:56:09.740615+00:00",
+        "recorder_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "request_key": "col143-95d3102349:record-required-mismatch:f527fa37",
+        "entry_reason": null,
+        "performed_at": "2026-09-12T23:56:09.740615+00:00",
+        "receipt_kind": "performance",
+        "recorder_role": "facility_admin",
+        "superseded_at": null,
+        "correction_seq": 0,
+        "performer_kind": "self",
+        "authority_class": "facility",
+        "evidence_status": "missing",
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "performer_label": null,
+        "source_event_id": null,
+        "completion_state": "performed_missing_evidence",
+        "missing_evidence": [
+          {
+            "kind": "photo",
+            "when": "always",
+            "label": "Panel photo",
+            "min_count": 1
+          }
+        ],
+        "source_record_id": null,
+        "task_instance_id": "64a65fd4-e99c-4191-86db-6450ba64ac6f",
+        "correction_reason": null,
+        "performer_user_id": null,
+        "corrects_receipt_id": null,
+        "performer_vendor_id": null,
+        "verifies_receipt_id": null,
+        "evidence_satisfied_at": null,
+        "source_record_version": null,
+        "requirement_version_id": "bc3a6711-d4a0-46ef-921c-ceddf6191839",
+        "evidence_status_current": "missing",
+        "facility_requirement_id": "db67dd98-ade8-4965-974f-855251eb7478",
+        "superseded_by_receipt_id": null,
+        "verified_receipt_revision": null
+      },
+      "occurrence": {
+        "id": "64a65fd4-e99c-4191-86db-6450ba64ac6f",
+        "status": "in_progress",
+        "performed_at": "2026-09-12T23:56:09.740615+00:00",
+        "execution_state": "performed_missing_evidence",
+        "occurrence_revision": "6024b00041063a812d55395465e078236f649ce330895a3013f3a0e0c274d7cd"
+      },
+      "issue": null,
+      "replayed": false
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

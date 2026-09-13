@@ -1,0 +1,46 @@
+{
+  "at": "2026-09-12T23:52:45.676471+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "expiresIn": 60
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:52:45 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "88",
+      "Connection": "close",
+      "CF-Ray": "a3a2d3e4c8d526b2-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "Access-Control-Allow-Origin": "*",
+      "Server": "cloudflare",
+      "sb-gateway-mode": "direct",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a09809-ab06-7d56-b326-8e0ac8739a86",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "set-cookie": "<REDACTED>",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "statusCode": "404",
+      "error": "not_found",
+      "message": "Object not found",
+      "code": "NoSuchKey"
+    }
+  },
+  "expected_status": [
+    400,
+    403,
+    404
+  ]
+}

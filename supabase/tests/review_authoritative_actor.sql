@@ -98,18 +98,21 @@ INSERT INTO public.family_resident_links(user_id,resident_id,organization_id,rel
 SELECT family_user,resident,organization,'family' FROM actor_fixture;
 INSERT INTO public.onboarding_questions(id,prompt,department,importance,answer_type)
 VALUES('sys001.authorization','SYS-001 authorization probe','Security','critical','long_text');
+-- Synthetic OCE fixtures are explicitly facility-scoped under COL-133.
+INSERT INTO public.operation_activity_subjects(organization_id,facility_id,subject_kind)
+SELECT organization,facility,'facility' FROM actor_fixture ON CONFLICT DO NOTHING;
 INSERT INTO public.operation_task_instances(
-  id,organization_id,facility_id,template_name,template_category,template_cadence_type,assigned_shift_date,status
+  id,organization_id,facility_id,template_name,template_category,template_cadence_type,assigned_shift_date,status,subject_id,authority_class
 )
-SELECT operation_task,organization,facility,'SYS-001 service actor task','safety','daily',current_date,'pending'
+SELECT operation_task,organization,facility,'SYS-001 service actor task','safety','daily',current_date,'pending',(SELECT id FROM public.operation_activity_subjects WHERE facility_id=actor_fixture.facility AND subject_kind='facility'),'facility'
 FROM actor_fixture;
 INSERT INTO public.operation_task_instances(
-  id,organization_id,facility_id,template_name,template_category,template_cadence_type,assigned_shift_date,status
+  id,organization_id,facility_id,template_name,template_category,template_cadence_type,assigned_shift_date,status,subject_id,authority_class
 )
-SELECT defer_task,organization,facility,'SYS-001 atomic defer task','safety','daily',current_date,'pending'
+SELECT defer_task,organization,facility,'SYS-001 atomic defer task','safety','daily',current_date,'pending',(SELECT id FROM public.operation_activity_subjects WHERE facility_id=actor_fixture.facility AND subject_kind='facility'),'facility'
 FROM actor_fixture
 UNION ALL
-SELECT defer_failure_task,organization,facility,'SYS-001 atomic defer failure task','safety','daily',current_date,'pending'
+SELECT defer_failure_task,organization,facility,'SYS-001 atomic defer failure task','safety','daily',current_date,'pending',(SELECT id FROM public.operation_activity_subjects WHERE facility_id=actor_fixture.facility AND subject_kind='facility'),'facility'
 FROM actor_fixture;
 
 INSERT INTO public.staff(
@@ -863,9 +866,10 @@ RESET ROLE;
 UPDATE public.staff SET employment_status='active' WHERE id=(SELECT rounding_other_staff FROM actor_fixture);
 SET LOCAL ROLE service_role;
 DO $$ DECLARE f actor_fixture%ROWTYPE; first_result jsonb; replay_result jsonb; request_key text; rounding_plan uuid; rounding_replay uuid; terminal_audit_before integer; defer_at timestamptz:=pg_catalog.clock_timestamp()+interval '1 second'; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
-  IF public.complete_operation_task_review(f.operation_task,f.actor,'owner','current owner completion','{}')<>'completed' THEN
-    RAISE EXCEPTION 'Current service task actor could not complete task';
-  END IF;
+  BEGIN
+    PERFORM public.complete_operation_task_review(f.operation_task,f.actor,'owner','service impersonation','{}');
+    RAISE EXCEPTION 'Service actor bypassed authenticated OCE command';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   IF (public.complete_rounding_task_review(
       f.rounding_task,f.actor,'owner',f.actor_session,
       (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),
@@ -936,6 +940,20 @@ DO $$ DECLARE f actor_fixture%ROWTYPE; first_result jsonb; replay_result jsonb; 
      OR (SELECT created_by FROM public.resident_observation_plans WHERE id=rounding_plan) IS DISTINCT FROM f.actor THEN
     RAISE EXCEPTION 'Current service rounding actor did not receive one attributed replay-safe plan';
   END IF;
+END $$;
+RESET ROLE;
+
+-- OCE now uses session authority; retain the original receipt/replay assertions.
+SELECT pg_temp.set_claims(f.actor,f.actor_session,to_jsonb(p.auth_claim_version),'owner')
+FROM actor_fixture f JOIN public.user_profiles p ON p.id=f.actor;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f actor_fixture%ROWTYPE; first_result jsonb; replay_result jsonb; request_key text;
+ defer_at timestamptz:=clock_timestamp()+interval '1 second';
+BEGIN
+ SELECT * INTO STRICT f FROM actor_fixture;
+ IF public.complete_operation_task_review(f.operation_task,f.actor,'owner','current owner completion','{}')<>'completed' THEN
+   RAISE EXCEPTION 'Current authenticated task actor could not complete task';
+ END IF;
   request_key:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
     'operation-defer-v1:'||f.actor::text||':'||f.defer_task::text,'UTF8'
   )),'hex');
@@ -957,7 +975,8 @@ DO $$ DECLARE f actor_fixture%ROWTYPE; first_result jsonb; replay_result jsonb; 
 END $$;
 RESET ROLE;
 
-SET LOCAL ROLE service_role;
+
+SET LOCAL ROLE authenticated;
 DO $$ DECLARE f actor_fixture%ROWTYPE; request_key text; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
   request_key:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
     'operation-defer-v1:'||f.actor::text||':'||f.defer_failure_task::text,'UTF8'
@@ -979,7 +998,7 @@ CREATE FUNCTION pg_temp.fail_defer_audit() RETURNS trigger LANGUAGE plpgsql AS $
 END $$;
 CREATE TRIGGER sys001_fail_defer_audit BEFORE INSERT ON public.operation_audit_log
 FOR EACH ROW EXECUTE FUNCTION pg_temp.fail_defer_audit();
-SET LOCAL ROLE service_role;
+SET LOCAL ROLE authenticated;
 DO $$ DECLARE f actor_fixture%ROWTYPE; request_key text; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
   request_key:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
     'operation-defer-v1:'||f.actor::text||':'||f.defer_failure_task::text,'UTF8'

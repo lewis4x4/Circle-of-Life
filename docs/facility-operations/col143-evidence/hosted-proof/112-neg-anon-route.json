@@ -1,0 +1,43 @@
+{
+  "at": "2026-09-12T23:53:30.607034+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "receipt_id": "169955e5-6edb-43dc-9a7d-241ac3833047",
+      "request_key": "col143-95d3102349:anon:e5a51624",
+      "payload": {
+        "kind": "photo",
+        "filename": "anon.png",
+        "mime": "image/png",
+        "size_bytes": 70,
+        "md5": "b357a19c87624c7c4d131aeeb4ae677f"
+      }
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "X-DNS-Prefetch-Control": "on",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://iwcnajanvjvynolltflw.supabase.co; media-src 'self' https://cdn.pixabay.com; font-src 'self'; connect-src 'self' https://iwcnajanvjvynolltflw.supabase.co wss://iwcnajanvjvynolltflw.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+      "content-type": "application/json",
+      "Date": "Sat, 12 Sep 2026 23:53:30 GMT",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    },
+    "body": {
+      "error": "Not authenticated"
+    }
+  },
+  "expected_status": [
+    401
+  ]
+}

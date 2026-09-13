@@ -1,0 +1,11 @@
+{
+  "issue": "COL-154",
+  "uuid": "1d27f038-74ed-42f3-92a6-72d69dfcd657",
+  "worktree": "/Users/brianlewis/Circle of Life/Haven Facility Drill Generators",
+  "branch": "codex/hfo-col154-drill-generators",
+  "base_tip": "a625b75a",
+  "base_branch": "codex/hfo-col147-source-adapters",
+  "migration_346": "taken",
+  "fable_probe": "FABLE_OK claude-fable-5-1",
+  "col147_worktree_frozen": "/Users/brianlewis/Circle of Life/Haven Facility Source Adapters"
+}

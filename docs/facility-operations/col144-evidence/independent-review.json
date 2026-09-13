@@ -1,0 +1,105 @@
+{
+  "issue": "COL-144",
+  "recorded_at": "2026-09-10T18:55:00Z",
+  "method": "Two independent read-only reviewers on the uncommitted tree (SQL: migration 342, its probe and the issue race script against the settled contracts and the 337/341 guarantees, with rolled-back experiments on the run-owned native cluster; TypeScript: issues library, nine routes and tests against the 342 wrapper signatures, RAISE wordings and view columns). Both ran the gates themselves. Every finding was verified against the source and dispositioned; remediations were applied before the commit and re-verified.",
+  "typescript_review": {
+    "verdict": "changes requested: no blockers, four should-fix, five notes; should-fixes and the actionable notes remediated, the rest recorded",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "where": "issues.ts fragments",
+        "claim": "the wait command's state refusal (Issue cannot wait from this state) and the resolved-state refusal matched no fragment and were hidden behind the generic text",
+        "disposition": "Fixed: both wordings added to the trusted and conflict fragments with mapper tests."
+      },
+      {
+        "severity": "should-fix",
+        "where": "issues.ts fragments, cover reason",
+        "claim": "the actionable 22023 telling a backup to supply a cover reason was hidden, and the tests asserted wordings the migration never raises",
+        "disposition": "Fixed: fragments widened; phantom assertions replaced with the real wording; the ownership rule is a validation class as the SQL raises it."
+      },
+      {
+        "severity": "should-fix",
+        "where": "issue detail route event ordering",
+        "claim": "events were ordered by created_at and event_seq was not selected although the migration declares event_seq the ordering key",
+        "disposition": "Fixed: event_seq selected and used for ordering; asserted in the route test."
+      },
+      {
+        "severity": "should-fix",
+        "where": "resolve payload schema",
+        "claim": "resolution_summary was capped at 2000 characters while the database accepts 4000",
+        "disposition": "Fixed: 4000."
+      },
+      {
+        "severity": "note",
+        "where": "phantom fragments and tests; unused ISSUE_SELECT export; backlog status set; unused columns in the session read; test gaps",
+        "disposition": "Fixed: fragments and tests aligned with the migration's actual RAISE wordings; dead export removed (the list select no longer returns request_key, which no consumer read); resolved dropped from the backlog route's accepted statuses because the view excludes resolved rows; unused columns dropped; tests added for a malformed body and the backlog query scope."
+      },
+      {
+        "severity": "note",
+        "where": "42501 for role and ownership refusals after the session read confirmed existence; zod refusing JSON null for optional keys; definer currentness helpers executable by authenticated",
+        "disposition": "The first two are recorded design choices (one denial wording, stricter client shape); the helper grant was forwarded to the SQL lane as a should-fix (an authenticated user could probe whether an arbitrary user is a current member of a site)."
+      }
+    ],
+    "clean": [
+      "RPC names and p_* arguments match the seven wrappers; accepted payload keys identical to the SQL allow-lists in both directions; server-owned fields refused; role enum equals app_role",
+      "request-key and 64-hex revision regexes identical to the SQL; reply shape validated; request_hash stripped from POST replies and absent from selects",
+      "route order: uuid guard, actor, strict body, session read, organisation and site checks (404), revalidation, RPC, bounded mapping; no RPC or revalidation on 404/503",
+      "backlog: grant before the view read, status validated, query scoped by organisation and facility; list route behaviour preserved",
+      "42501 hides existence; 22023 wordings map to 400 verbatim; state and idempotency wordings map to 409 verbatim; guard and unknown codes never echoed"
+    ]
+  },
+  "sql_review": {
+    "verdict": "changes requested: no blocker on token gating, authority ordering or state integrity; two should-fix and seven notes; should-fixes and the actionable notes remediated, the rest recorded; re-verification recorded below",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "where": "342 currentness helpers used by the backlog projection",
+        "claim": "the definer helpers answered for any user, organisation and site, so an authenticated session could probe whether an arbitrary person holds a current grant at a site it cannot see (reproduced by the site B admin for site A)",
+        "disposition": "Fixed: the helpers return NULL unless the caller's organisation and a current site grant match; probed for the foreign-site admin."
+      },
+      {
+        "severity": "should-fix",
+        "where": "342 wait_operation_issue ordering",
+        "claim": "the future check on follow_up_at ran before the lock and replay lookup, so an accepted wait could not be replayed once its follow-up instant passed (reproduced)",
+        "disposition": "Fixed: the future check runs after the replay lookup; probed with an elapsed follow-up."
+      },
+      {
+        "severity": "note",
+        "where": "orphaned open issues when an occurrence is cancelled or removed, or its native subject stops being current",
+        "disposition": "Fixed for cancellation: an occurrence with an unresolved linked issue can no longer be cancelled or removed (Occurrence has an open issue). Recorded as an owner decision for native retirement or transfer: the issue hides with its subject under the COL-133 rule (OWNER-DECISIONS 3e vi)."
+      },
+      {
+        "severity": "note",
+        "where": "stale acceptance after a backup swap; owner and backup role validation; wait hash rendering follow_up_at in the session time zone; event kind for the first owner named from waiting; unlocked grant read during owner validation; contract wording of the third race case and a vacuous closing block",
+        "disposition": "Fixed: acceptance cleared when the acceptor is no longer owner, owner-role holder or backup; owner and backup roles and users restricted to the operations role list and backup role must differ from owner role when no user is named; the wait hash uses the supplied text; the first owner records assigned; the closing block asserts a meaningful invariant; contract text corrected. The unlocked grant read is recorded (currentness is computed at read time, so a revocation between check and commit shows as not current)."
+      }
+    ],
+    "clean": [
+      "token gating on every issue update and event insert; the replaced issue guard keeps every 341 protection and adds only revision stamping and token-gated lifecycle columns; forged settings denied for authenticated and service_role",
+      "the issue-authority lock takes the 337/341 sequence and asserts organisation, site, subject and task-readable authority with one wording before any issue fact leaves the function; actor classes derived after the lock; per-command gates match the contract",
+      "every command: shape, lock, replay (hash includes actor, command and issue), expected revision, class, status rule, write, re-lock; one event per accepted command; monotonic event sequence; lost races re-read and refuse on revision (three race cases pass)",
+      "transition table and lifecycle checks hold; reopen keeps the resolution verbatim in events; no lifecycle command writes receipts or occurrences (row JSON identical before and after); resolution and link receipts validated by kind, scope and readability",
+      "events readable only with the issue; backlog is a security-invoker view over RLS with left joins; the other site sees nothing; generic audit payloads hidden; status check swapped safely; every function pins search_path; wrappers are invoker and the only public issue RPCs; no deadlock cycle with the 341 lock order"
+    ],
+    "re_verification": {
+      "verdict": "PASS",
+      "method": "the reviewer reproduced every original counter-example on a clone of the rebuilt 342 base: the currentness helpers return NULL for a site the caller does not hold and a real boolean for a held site, with no other route to the oracle; an accepted wait replays after its follow-up passed from the same session and from a session in another time zone; cancel and remove refuse an occurrence with an unresolved linked issue and succeed once it is resolved (cancel body diff against 341 is exactly the added guard); acceptance is kept when the acceptor still holds the owner role and cleared with history otherwise; family and broker roles, a family-role grant holder and nurse/nurse are refused while operations roles are accepted; the first owner named from waiting records assigned; the receipts probe retarget asserts what it did; both probes and the three race cases pass; the role helpers are revoked from every client role",
+      "notes": [
+        {
+          "where": "cancel open-issue guard ordering",
+          "claim": "the guard ran before the replay branch, so an exact replay of an earlier cancel failed once an issue was reported on the cancelled occurrence",
+          "disposition": "Fixed: the guard runs only for a new cancellation and for removal; replays stay idempotent. Native replay and the strict gate were rerun after the change."
+        },
+        {
+          "where": "resolved issue on a later-removed occurrence",
+          "claim": "becomes unreadable with the occurrence because issue readability follows task readability",
+          "disposition": "Recorded as a known limit in OWNER-DECISIONS 3e (vi); rows and events stay in the tables."
+        },
+        {
+          "where": "spec wording of the third race case",
+          "disposition": "Corrected to two resolutions refused by the moved revision."
+        }
+      ]
+    }
+  }
+}

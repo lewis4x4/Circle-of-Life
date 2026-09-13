@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
   const { data: facilityData, error: facilityError } = await facilityQuery;
   if (facilityError) {
     t.log({ event: "facility_query_failed", outcome: "error", error_message: facilityError.message });
-    return jsonResponse({ error: facilityError.message }, 500, origin);
+    return jsonResponse({ error: "Facility data unavailable" }, 500, origin);
   }
 
   const facilities = (facilityData ?? []) as FacilityRow[];
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     const date = body.date ?? currentDateInTimezone(timezone);
     const shift = body.shift ?? currentShiftInTimezone(timezone);
 
-    const [residentRes, staffRes, ratioRes, taskRes] = await Promise.all([
+    const [residentRes, staffRes, ratioRes, taskRes, taskPopulation] = await Promise.all([
       admin
         .from("residents" as never)
         .select("acuity_level")
@@ -98,15 +98,28 @@ Deno.serve(async (req) => {
         .is("deleted_at", null)
         .maybeSingle(),
       admin
-        .from("operation_task_instances" as never)
+        .from("operation_automation_tasks" as never)
         .select("status, priority, estimated_minutes")
+        .eq("authority_class", "facility")
+        .not("subject_id", "is", null)
+        .or("completion_evidence_paths.is.null,completion_evidence_paths.eq.{}")
         .eq("organization_id", facility.organization_id)
         .eq("facility_id", facility.id)
         .eq("assigned_shift_date", date)
         .eq("assigned_shift", shift)
         .is("deleted_at", null)
         .in("status", ["pending", "in_progress"]),
+      admin.from("operation_task_instances" as never).select("id", { count: "exact", head: true })
+        .eq("organization_id", facility.organization_id).eq("facility_id", facility.id)
+        .eq("assigned_shift_date", date).eq("assigned_shift", shift).is("deleted_at", null)
+        .in("status", ["pending", "in_progress"]),
     ]);
+
+    // A partial or unclassified population cannot produce an all-clear score.
+    if ([residentRes, staffRes, ratioRes, taskRes, taskPopulation].some((result) => result.error)
+      || taskPopulation.count === null || taskPopulation.count !== (taskRes.data ?? []).length) {
+      return jsonResponse({ error: "Staffing calculation requires complete authorized operations coverage" }, 503, origin);
+    }
 
     const residents = (residentRes.data ?? []) as unknown as ResidentRow[];
     const staff = (staffRes.data ?? []) as unknown as StaffRow[];
@@ -171,6 +184,7 @@ Deno.serve(async (req) => {
       organization_id: facility.organization_id,
       facility_id: facility.id,
       snapshot_date: date,
+      operation_authority_version: 1,
       shift_type: shift,
       snapshot_period_start: new Date().toISOString(),
       snapshot_period_end: new Date().toISOString(),
@@ -193,13 +207,13 @@ Deno.serve(async (req) => {
     };
 
     if (!body.dry_run) {
-      await admin
+      const { error } = await admin
         .from("staffing_adequacy_snapshots" as never)
         .upsert(payload as never, { onConflict: "facility_id,snapshot_date,shift_type" });
+      if (error) return jsonResponse({ error: "Staffing snapshot could not be saved" }, 500, origin);
     }
 
     results.push({
-      facility_id: facility.id,
       facility_name: facility.name,
       dry_run: Boolean(body.dry_run),
       ...payload,

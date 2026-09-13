@@ -1,0 +1,8 @@
+{
+  "target": "local browser4317 tolocal Supabase59321",
+  "status": "FAIL_CSP_REPRODUCED",
+  "errors": [
+    "Connecting to 'http://127.0.0.1:59321/auth/v1/token?grant_type=password' violates the following Content Security Policy directive: \"connect-src 'self' https://127.0.0.1:59321 wss://127.0.0.1:59321\". The action has been blocked.",
+    "Fetch API cannot load http://127.0.0.1:59321/auth/v1/token?grant_type=password. Refused to connect because it violates the document's Content Security Policy."
+  ]
+}

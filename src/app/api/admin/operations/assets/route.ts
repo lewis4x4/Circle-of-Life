@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireAdminApiActor, actorCanAccessFacility } from "@/lib/admin/api-auth";
+import { requireOperationsActor, actorCanAccessFacility } from "@/lib/operations/auth";
 import { parseJsonBody } from "@/lib/http/json-body";
 import type { AppRole } from "@/lib/rbac";
 
@@ -48,7 +48,7 @@ type VendorNameRow = { id: string; name: string };
 type TemplateSummaryRow = { id: string; asset_ref: string | null };
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminApiActor({ allowedRoles: VIEW_ROLES });
+  const auth = await requireOperationsActor({ allowedRoles: VIEW_ROLES });
   if ("response" in auth) return auth.response;
   const { actor } = auth;
 
@@ -60,42 +60,43 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data: assetData, error: assetError } = await actor.admin
+  const { data: assetData, error: assetError } = await actor.currentActor.client
     .from("facility_assets" as never)
     .select("*")
     .eq("facility_id", facilityId)
-    .eq("organization_id", actor.organization_id)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .order("next_service_due_at", { ascending: true });
 
   if (assetError) {
-    return NextResponse.json({ error: assetError.message }, { status: 500 });
+    return NextResponse.json({ error: "Assets unavailable" }, { status: 500 });
   }
 
   const assets = (assetData ?? []) as unknown as AssetRow[];
   const vendorIds = Array.from(new Set(assets.map((asset) => asset.last_service_vendor_id).filter(Boolean))) as string[];
   const assetIds = assets.map((asset) => asset.id);
 
-  const [{ data: vendorData }, { data: templateData }] = await Promise.all([
+  const [{ data: vendorData, error: vendorError }, { data: templateData, error: templateError }] = await Promise.all([
     vendorIds.length > 0
-      ? actor.admin
+      ? actor.currentActor.client
           .from("vendors")
           .select("id, name")
           .in("id", vendorIds)
-          .eq("organization_id", actor.organization_id)
+          .eq("organization_id", actor.organizationId)
           .is("deleted_at", null)
-      : Promise.resolve({ data: [] as VendorNameRow[] }),
+      : Promise.resolve({ data: [] as VendorNameRow[], error: null }),
     assetIds.length > 0
-      ? actor.admin
+      ? actor.currentActor.client
           .from("operation_task_templates" as never)
           .select("id, asset_ref")
           .in("asset_ref", assetIds)
-          .eq("organization_id", actor.organization_id)
+          .eq("organization_id", actor.organizationId)
           .eq("facility_id", facilityId)
           .is("deleted_at", null)
-      : Promise.resolve({ data: [] as TemplateSummaryRow[] }),
+      : Promise.resolve({ data: [] as TemplateSummaryRow[], error: null }),
   ]);
 
+  if (vendorError || templateError) return NextResponse.json({ error: "Asset details unavailable" }, { status: 503 });
   const vendorMap = new Map((vendorData ?? []).map((vendor) => [vendor.id, vendor.name]));
   const templateCounts = new Map<string, number>();
   for (const template of ((templateData ?? []) as unknown as TemplateSummaryRow[])) {
@@ -113,10 +114,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminApiActor({ allowedRoles: VIEW_ROLES });
+  const auth = await requireOperationsActor({ allowedRoles: VIEW_ROLES });
   if ("response" in auth) return auth.response;
   const { actor } = auth;
-  if (!MANAGE_ROLES.has(actor.app_role)) {
+  if (!MANAGE_ROLES.has(actor.appRole)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
@@ -130,10 +131,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data, error } = await actor.admin
+  const { data, error } = await actor.currentActor.client
     .from("facility_assets" as never)
     .insert({
-      organization_id: actor.organization_id,
+      organization_id: actor.organizationId,
       facility_id: body.facility_id,
       asset_type: body.asset_type,
       asset_tag: body.asset_tag ?? null,
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Operation request could not be completed" }, { status: 500 });
   }
 
   return NextResponse.json({ id: (data as { id: string }).id });

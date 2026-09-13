@@ -1,0 +1,153 @@
+{
+  "issue": "COL-154",
+  "uuid": "1d27f038-74ed-42f3-92a6-72d69dfcd657",
+  "title": "[HFO-18] Connect drill and generator records to the checklist first",
+  "scope": "source only; first two domain adapters on the COL-147 mechanism; no hosted apply, deploy, rule, schedule, deadline, reminder, UI, provider, staff or operating acceptance",
+  "model_used": "Fable 5.1 / claude-fable-5-1",
+  "recorded_at": "2026-09-11T02:25:00Z",
+  "branch": "codex/hfo-col154-drill-generators",
+  "base": "codex/hfo-col147-source-adapters @ a625b75a0c5b549473abd283940c4c4a832465c6",
+  "draft_pr": "https://github.com/lewis4x4/Circle-of-Life/pull/477",
+  "commits": {
+    "contract_and_migration": "c80d1bdb",
+    "probe": "71741ffe",
+    "routes_schemas_race": "840b6272",
+    "docs": "c5bab9b9",
+    "review_fixes": "(the commit that carries this file; see GATE.md and git log)"
+  },
+  "migration_slot": {
+    "file": "supabase/migrations/347_hfo_drill_generator_sources.sql",
+    "status": "provisional on this stack; no local or remote branch carried a 347_* file at 2026-09-10 fetch (204 remote refs); origin/main ends at 335; Finance-first renumbering at integration"
+  },
+  "checks": {
+    "focused_vitest": {
+      "command": "npx vitest run src/lib/operations/source-records.test.ts src/lib/operations/source-links.test.ts src/lib/operations/receipts.test.ts src/app/api/admin/operations/asset-observations src/app/api/admin/operations/drill-logs src/app/api/admin/operations/source-events",
+      "result": "PASS",
+      "files": 6,
+      "tests": 57
+    },
+    "full_vitest": {
+      "command": "npx vitest run",
+      "result": "PASS",
+      "files": 582,
+      "tests": 3983,
+      "skipped": 2,
+      "log": "col154-evidence/vitest-full.log"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "result": "PASS"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "result": "PASS (eslint --max-warnings 0; constitution lint 30 files)"
+    },
+    "migrations_check": {
+      "command": "npm run migrations:check",
+      "result": "PASS (350 migrations, sequence 001..347)"
+    },
+    "native_probe_col154": {
+      "database": "col154_base347 (clone of col147_base346 plus 347) on scratch cluster hfo-col139-20260910-105544 port 55443",
+      "file": "supabase/tests/review_hfo_drill_generator_sources.sql",
+      "result": "PASS",
+      "sections": [
+        "0 registration exact; no review activity allowlisted; nothing delivered/recorded/finalized by the migration",
+        "1 staff-observed generator test satisfies once; replay; same key different content conflicts; duplicate record is a visible conflict",
+        "2 failed observation on behalf opens a failed_result issue; void reverses, leaves attention row, issue stays open; void replay; already voided; correct voided refused",
+        "3 correction chains; stale expected version conflicts with current_record_version; no-op refused; asset move invalidates first occurrence and satisfies the other as a fresh chain",
+        "3a cross-person correction refused without entry_reason and recorded on_behalf with it; retired-asset void and correct refused by name with record, occurrence, receipts and ledger unchanged",
+        "4 refusals by name write nothing (self-test, photo only, future, unstated late, failed without issue, wrong asset type x2, retired asset, other site's asset, stranger observer, malformed readings x2, unknown field, unknown kind, short key); late with reason recorded as late; undefined reading is a recorded statement_invalid; aide outside recorder list refused with attention; second CO record is a conflict",
+        "5 legacy draft is source_not_final; finalize refuses unstated late; finalize satisfies as awaiting_verification; separate review occurrence untouched; already final; direct content change/soft delete/hard delete/identity/lifecycle insert refused; review by owner completes; correction reopens review; stale version; corrected time after original refused; invalid drill value; void reverses and retains; voided immutable; re-entry at the voided slot refused (220 unique, documented)",
+        "5a failed elopement drill needs its issue summary, opens a failed_result issue, void leaves it open; elopement satisfies its activity; tornado finalizes undelivered and a direct delivery is reader_failed with attention; previous-period drill matches the older occurrence and a corrected date moves it; type change to/from tornado refused with no restatement; fire\u2192elopement onto a satisfied occurrence is a visible conflict with the earlier receipt still effective; draft cannot be corrected or voided",
+        "6 other site denied for finalize/correct/void/record and reads nothing; site B record is unmatched; generic audit payloads of the request ledger hidden",
+        "7 direct DML on observations and requests denied for session and service, with and without the forged setting; owner definer with the real token cannot rewrite voided/identity/deleted/silent restatement/un-finalize/delete; adapter registration outside a migration refused",
+        "8 forced audit failure leaves no observation, request, delivery or receipt",
+        "9 invariants: every observation final and staff-observed; request rows keep their delivery; receipt source columns together; one effective receipt per record; public RPCs are invokers; no record_review activity allowlisted"
+      ]
+    },
+    "native_probe_col147_adjusted": {
+      "file": "supabase/tests/review_hfo_source_links.sql",
+      "change": "two allowlist assertions now exclude the two COL-154 adapters (drill-log, asset-observation)",
+      "result": "PASS on col154_base347"
+    },
+    "race_script": {
+      "file": "scripts/facility-operations/test-drill-generator-concurrency.py",
+      "baseline": "col154_base347",
+      "result": "PASS 6/6",
+      "cases": [
+        "two_records_one_generator (transactionid)",
+        "human_first_then_finalize (transactionid)",
+        "finalize_first_then_human (transactionid, 23505)",
+        "correction_first_then_void (advisory)",
+        "void_first_then_correction (advisory, P0001)",
+        "same_key_twice (advisory, replayed)"
+      ],
+      "evidence": "docs/facility-operations/col154-evidence/concurrency.txt"
+    },
+    "segment_gate": {
+      "command": "CI=true REQUIRE_PG_VERIFY=1 npm run segment:gates -- --segment COL-154-HFO-DRILL-GENERATORS (PG_VERIFY_NATIVE_SOCKET/BIN/PORT set; no --ui: no UI changed)",
+      "artifact": "test-results/agent-gates/2026-09-11T02-11-47-121Z-COL-154-HFO-DRILL-GENERATORS.json",
+      "verdict": "PASS",
+      "summary": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 3,
+        "blocking_failures": []
+      },
+      "native_replay": "350 migration files, 31 SQL probes; native PostgreSQL with Supabase stubs",
+      "skipped": [
+        "qa.web-build (optional)",
+        "cdo.design-review (optional)",
+        "cdo.a11y-axe (optional)"
+      ],
+      "log": "col154-evidence/gate-run-2.log",
+      "run_after": "the independent-review fixes (F1, F2, F4, F5, F10) and the extended probe",
+      "superseded_run": {
+        "artifact": "test-results/agent-gates/2026-09-11T01-52-44-137Z-COL-154-HFO-DRILL-GENERATORS.json",
+        "verdict": "PASS",
+        "log": "col154-evidence/gate-run-1.log",
+        "note": "before the review fixes; retained as history"
+      }
+    },
+    "focused_vitest_after_fixes": {
+      "command": "npx vitest run src/lib/operations src/app/api/admin/operations",
+      "result": "PASS",
+      "files": 43,
+      "tests": 533
+    }
+  },
+  "fixture_notes": [
+    "Probe dates are anchored on the facility-local day: versions publish at 23:59 yesterday (the latest backdate 338 allows) and d0 is today; a run in the first twenty minutes after local midnight is outside the fixture (the drill instants would fall in the previous period).",
+    "Hosted Supabase default table privileges for authenticated/service_role on drill_log are stubbed in the probe header (the replay stub lacks them); RLS and the lifecycle guard are the real controls.",
+    "The previous-period fire occurrence is minted directly under the occurrence token, as the 346 probe does, because the 340 generator pins governing versions at the due instant."
+  ],
+  "not_established": [
+    "hosted migration apply, deploy, PostgREST exposure, browser/staff/device acceptance",
+    "any Homewood drill or generator rule, day, time, count or deadline (Q06, Q09, Q14 open)",
+    "retirement of the legacy drill consumers (220/221/250/125/200)",
+    "COL-143 hosted Storage acceptance (untouched)"
+  ],
+  "independent_review": {
+    "file": "docs/facility-operations/col154-evidence/independent-review.json",
+    "verdict_before_fixes": "APPROVE WITH FIXES",
+    "status": "APPROVED AFTER FIXES (re-verified)",
+    "fixed": [
+      "F1",
+      "F2",
+      "F4",
+      "F5",
+      "F6",
+      "F10",
+      "F12"
+    ],
+    "documented": [
+      "F3",
+      "F7",
+      "F8"
+    ],
+    "accepted": [
+      "F9",
+      "F11"
+    ]
+  }
+}

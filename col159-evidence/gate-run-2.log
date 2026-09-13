@@ -1,0 +1,753 @@
+gate start Fri Sep 11 03:01:00 EDT 2026
+
+> circle-of-life@0.1.0 segment:gates
+> node scripts/agent-gates/run-segment-gates.mjs --segment COL-159-HFO-DIETARY-ADMIN
+
+[segment:gates][hygiene.env-example] start node scripts/check-env-example.mjs
+[segment:gates][hygiene.env-example][stdout] [check:env-example] PASS
+[segment:gates][hygiene.env-example] finish status=passed required=true duration_ms=31
+[segment:gates][hygiene.tracked-secrets-scan] start node scripts/check-tracked-secrets.mjs
+[segment:gates][hygiene.tracked-secrets-scan][stdout] [check:secrets] PASS
+[segment:gates][hygiene.tracked-secrets-scan] finish status=passed required=true duration_ms=452
+[segment:gates][hygiene.npm-audit] start npm run audit:ci
+[segment:gates][hygiene.npm-audit][stdout] found 0 vulnerabilities
+[segment:gates][hygiene.npm-audit] finish status=passed required=true duration_ms=786
+[segment:gates][security.gitleaks] start npm run secrets:gitleaks
+[segment:gates][security.gitleaks][stdout] [gitleaks] detector regression PASS: generic-api-key remains active
+[segment:gates][security.gitleaks][stderr] 
+[segment:gates][security.gitleaks][stderr]     ○
+[segment:gates][security.gitleaks][stderr]     │╲
+[segment:gates][security.gitleaks][stderr]     │ ○
+[segment:gates][security.gitleaks][stderr]     ○ ░
+[segment:gates][security.gitleaks][stderr]     ░    gitleaks
+[segment:gates][security.gitleaks][stderr] 
+[segment:gates][security.gitleaks][stderr] 3:01AM INF 2003 commits scanned.
+[segment:gates][security.gitleaks][stderr] 3:01AM INF scanned ~79470080 bytes (79.47 MB) in 14.1s
+[segment:gates][security.gitleaks][stderr] 3:01AM INF no leaks found
+[segment:gates][security.gitleaks][stdout] [gitleaks] PASS
+[segment:gates][security.gitleaks] finish status=passed required=true duration_ms=15210
+[segment:gates][qa.eslint] start npm run lint
+[segment:gates][qa.eslint] still running elapsed_ms=30098 command="npm run lint"
+[segment:gates][qa.eslint] still running elapsed_ms=60204 command="npm run lint"
+[segment:gates][qa.eslint][stderr] [BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/src/types/database.ts as it exceeds the max of 500KB.
+[segment:gates][qa.eslint][stdout] Constitution lint passed for smart-rounding scope (30 files).
+[segment:gates][qa.eslint] finish status=passed required=true duration_ms=62930
+[segment:gates][qa.migration-sequence] start npm run migrations:check
+[segment:gates][qa.migration-sequence][stdout] [migrations:check] PASS: 351 migration(s) in /Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/supabase/migrations — sequence 001..348
+[segment:gates][qa.migration-sequence] finish status=passed required=true duration_ms=252
+[segment:gates][qa.migrations-apply-postgres] start npm run migrations:verify:pg
+[segment:gates][qa.migrations-apply-postgres][stdout] [migrations:verify:pg] PASS (351 migration files, 32 SQL probes; native PostgreSQL with Supabase stubs)
+[segment:gates][qa.migrations-apply-postgres] finish status=passed required=true duration_ms=22692
+[segment:gates][qa.root-build] start npm run build
+[segment:gates][qa.root-build][stdout] [migrations:check] PASS: 351 migration(s) in /Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/supabase/migrations — sequence 001..348
+[segment:gates][qa.root-build][stdout] [check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated
+[segment:gates][qa.root-build][stdout] [check-memory-care] PASS
+[segment:gates][qa.root-build][stdout] ▲ Next.js 16.3.4 (Turbopack)
+[segment:gates][qa.root-build][stdout] ✓ Running next.config.ts took 430ms
+[segment:gates][qa.root-build][stdout] - Experiments (use with caution):
+[segment:gates][qa.root-build][stdout]   · clientTraceMetadata
+[segment:gates][qa.root-build][stdout]   · optimizePackageImports
+[segment:gates][qa.root-build][stdout] 
+[segment:gates][qa.root-build][stdout]   Creating an optimized production build ...
+[segment:gates][qa.root-build][stdout] ✓ Compiled successfully in 5.4s
+[segment:gates][qa.root-build][stdout]   Running next.config.js provided runAfterProductionCompile ...
+[segment:gates][qa.root-build][stdout] ✓ Completed runAfterProductionCompile in 527ms
+[segment:gates][qa.root-build][stdout]   Running TypeScript ...
+[segment:gates][qa.root-build][stdout]   Finished TypeScript in 4.3s ...
+[segment:gates][qa.root-build][stdout]   Collecting page data using 15 workers ...
+[segment:gates][qa.root-build][stdout]   Generating static pages using 15 workers (0/469) ...
+[segment:gates][qa.root-build][stdout]   Generating static pages using 15 workers (117/469) 
+[segment:gates][qa.root-build][stdout]   Generating static pages using 15 workers (234/469) 
+[segment:gates][qa.root-build][stdout]   Generating static pages using 15 workers (351/469) 
+[segment:gates][qa.root-build][stdout] ✓ Generating static pages using 15 workers (469/469) in 2.4s
+[segment:gates][qa.root-build][stdout]   Finalizing page optimization ...
+[segment:gates][qa.root-build][stdout] 
+[segment:gates][qa.root-build][stdout] Route (app)
+[segment:gates][qa.root-build][stdout] ┌ ○ /
+[segment:gates][qa.root-build][stdout] ├ ○ /_not-found
+[segment:gates][qa.root-build][stdout] ├ ○ /about
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/acknowledgments
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/acknowledgments/my
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/activities
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/admissions
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/admissions/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/admissions/blocked
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/admissions/move-in-ready
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/admissions/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/admissions/onboarding
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/approvals
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/assessments/overdue
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/assistant-dashboard
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/billing
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/ar-aging
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/collections
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/collections/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/concessions
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/invoices
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/billing/invoices/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/invoices/generate
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/invoices/opening-balance
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/org-ar-aging
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/payments
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/payments/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/rates
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/rates/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/revenue
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/billing/settings
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/briefing
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/calendar
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/care-plans/reviews-due
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/cash
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/certifications
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/certifications/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/compliance
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/audit-export
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/compliance/deficiencies/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/deficiencies/analysis
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/deficiencies/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/emergency-preparedness
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/policies
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/compliance/policies/[id]/edit
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/policies/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/rules
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/compliance/rules/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/rules/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/compliance/scan
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/contacts
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/coordinator-dashboard
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/data-cleanup/migration-residue/[residueId]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/dietary
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/dietary-dashboard
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/dietary/clinical-review
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/dietary/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/discharge
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/discharge/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/discharge/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/drive-cutover
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/drive-import
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/drive-import/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/alerts
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/executive/benchmarks
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/executive/ceo
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/cfo
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/coo
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/entity
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/executive/entity/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/executive/facility/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/executive/league
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/nlq
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/reports
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/scenarios
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/settings
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/standup
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/executive/standup/[week]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/executive/standup/[week]/board
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/standup/compare
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/executive/standup/history
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/facilities
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/facilities/[facilityId]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/facilities/[facilityId]/emergency-contacts/print
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/facilities/[facilityId]/surveys/[surveyId]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/family-messages
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/family-portal
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/family-portal/conferences/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/family-portal/consents/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/feedback
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/files
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/finance
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/finance/budget
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/finance/chart-of-accounts
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/finance/close
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/finance/forecast
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/finance/gl-settings
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/finance/journal-entries
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/finance/journal-entries/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/finance/journal-entries/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/finance/ledger
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/finance/period-close
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/finance/posting-rules
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/finance/trial-balance
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/finance/trust
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/forms
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/forms/submit
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/front-desk
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/handoff
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/incidents
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/incidents/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/incidents/[id]/rca
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/incidents/followups
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/incidents/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/incidents/obligations
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/incidents/overdue-followups
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/incidents/trends
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/infection-control
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/infection-control/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/infection-control/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/infection-control/outbreaks/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/infection-control/staff-illness
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance/claims
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/insurance/claims/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance/coi
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance/loss-runs
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance/policies
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/insurance/policies/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance/policies/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance/renewal-packages
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/insurance/renewal-packages/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance/renewals
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/insurance/workers-comp
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/kanban
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/knowledge
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/knowledge/admin
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/knowledge/admin/review/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/knowledge/coverage
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/knowledge/documents/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/knowledge/seed-targets
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/letters
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/letters/generate
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/medications
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/medications/controlled
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/medications/errors
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/medications/errors/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/medications/verbal-orders
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/medications/verbal-orders/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/medications/verbal-orders/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/meetings
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/meetings/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/meetings/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/mentions
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/nurse-dashboard
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/assets
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/calendar
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/missed
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/month
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/overdue
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/pager
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/quarter
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/templates
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/vendors
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/week
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/work
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/operations/year
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/payroll
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/payroll/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/payroll/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/profile
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/quality
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/quality/measures/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/referrals
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/referrals/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/referrals/hl7-inbound
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/referrals/hl7-inbound/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/referrals/in-admissions
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/referrals/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/referrals/sources
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports/admin
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports/benchmarks
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports/history
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/reports/history/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports/nlq
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports/packs
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/reports/run/[sourceType]/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports/saved
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports/scheduled
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reports/templates
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/reports/templates/[slug]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reputation
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reputation/accounts/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reputation/integrations
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/reputation/replies/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents/[id]/assessments
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents/[id]/assessments/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents/[id]/billing
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents/[id]/care-plan
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents/[id]/medications
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents/[id]/vitals
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/residents/[id]/vitals/thresholds
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/residents/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/risk
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/risk/survey-bundle
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/rounding
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/escalations
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/insights
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/integrity
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/live
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/plans
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/rounding/plans/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/plans/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/reports
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/safety
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/rounding/watches
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/schedules
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/schedules/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/schedules/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/search
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/settings
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/settings/notifications
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/settings/search-tools
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/settings/thresholds
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/settings/users
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/shift-swaps
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/staff
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/staff/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/staff/[id]/employee-file
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/staff/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/staffing
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/staffing/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/survey-binder
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/teams
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/teams/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/time-records
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/time-records/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/training
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/training/completions/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/training/inservice/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/training/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/transportation
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/transportation/calendar
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/transportation/drivers/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/transportation/inspections/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/transportation/mileage-approvals
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/transportation/requests/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/transportation/requests/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/transportation/settings
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/transportation/vehicles/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/admissions
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/admissions/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/admissions/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/design-preview
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/design-preview/[component]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/executive
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/executive/alerts
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/executive/alerts/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/executive/benchmarks
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/executive/facility/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/executive/reports
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/executive/standup
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/finance
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/finance/ledger
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/finance/trial-balance
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/incidents
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/incidents/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/incidents/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/quality
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/residents
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/residents/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/residents/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/rounding
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/settings/audit-log
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/settings/notifications
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/v2/settings/thresholds
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/v2/settings/users
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/vendors/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors/contracts
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/vendors/contracts/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors/directory
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors/invoices
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/vendors/invoices/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors/payments
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors/purchase-orders
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/vendors/purchase-orders/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors/purchase-orders/new
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/vendors/spend
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/workspace
+[segment:gates][qa.root-build][stdout] ├ ƒ /admin/workspace/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/workspace/publish-queue
+[segment:gates][qa.root-build][stdout] ├ ○ /admin/workspace/search
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/executive/refresh
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/audit-log
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/audit-log/metrics
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/audit-log/participants
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/building-profile
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/communication-settings
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/documents
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/documents/[documentId]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/documents/[documentId]/signed-url
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/documents/metrics
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/emergency-contacts
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/rates
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/rates/[rateId]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/surveys
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/thresholds
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/timeline
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/facilities/[facilityId]/vendors
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/meetings/[id]/actions
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/asset-observations
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/asset-observations/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/assets
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/dietary-records
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/dietary-records/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/drafts
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/drafts/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/drafts/[id]/discard
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/drafts/[id]/resume
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/drill-logs/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/evidence
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/evidence/[id]/download
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/evidence/[id]/fail
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/evidence/[id]/finalize
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/evidence/[id]/uploaded
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/facility-requirements
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/facility-requirements/[id]/preview
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/facility-requirements/[id]/publish
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/[id]/accept
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/[id]/assign
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/[id]/link
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/[id]/reopen
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/[id]/resolve
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/[id]/resume
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/[id]/wait
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/issues/backlog
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/maintenance-templates
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/[id]/associate
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/[id]/cancel
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/[id]/correct
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/[id]/receipts
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/[id]/record
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/[id]/reverse
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/[id]/verify
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/bindings
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/bindings/[id]/retire
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/occurrences/manual
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/requirements
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/requirements/[id]/preview
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/requirements/[id]/publish
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/service-records
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/service-records/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/source-events
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/source-events/[id]/reconcile
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/staffing-adequacy
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/tasks
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/tasks/[id]/complete
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/tasks/[id]/defer
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/tasks/[id]/escalate
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/tasks/[id]/reinstate
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/tasks/[id]/start
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/tasks/bulk-complete
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/templates
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/templates/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/vendors
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/vendors/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/operations/workspace
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/profile
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/rounding/insights/run
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/staff/[id]/employee-file
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/staff/[id]/employee-file/catalog
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/staff/[id]/employee-file/download
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/staff/[id]/employee-file/requirements
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/staff/[id]/employee-file/training
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users/[id]/audit
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users/[id]/facility-access
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users/[id]/facility-access/[facilityId]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users/[id]/hard-delete
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users/[id]/login-email
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users/[id]/reactivate
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/users/[id]/reset-password
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/workflows/admission-cases
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/workflows/admission-cases/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/workflows/admission-cases/[id]/confirm-arrival
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/workflows/admission-cases/[id]/form-1823
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/admin/workflows/collection-activities
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/care-plans/[id]/approve
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/controlled-substance/verify-co-sign
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/cron/reputation/google-reviews
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/dietary/temperature
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/dietary/tray-pass
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/executive/league/pdf
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/executive/standup/[week]/pdf
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/incidents/followup-assignees
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/infection-control/evaluate-outbreak
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/infection-control/evaluate-vitals
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/insurance/renewal-narrative
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/knowledge/document-audit
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/knowledge/obsidian-draft
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/med-tech/incidents
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/med-tech/passes/[id]/witness
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/pilot-feedback
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reports/scheduler
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reputation/integrations/google
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reputation/integrations/status
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reputation/oauth/google
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reputation/oauth/google/callback
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reputation/replies/[id]/post-google
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reputation/replies/[id]/post-yelp
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reputation/sync/google
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/reputation/sync/yelp
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/risk/survey-bundle/[facilityId]/pdf
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/escalations/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/generate-tasks
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/integrity-flags/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/integrity-flags/history
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/plans
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/plans/apply-discovery-default
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/plans/templates
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/reports/completion
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/tasks
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/tasks/[id]/complete
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/tasks/[id]/excuse
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/tasks/[id]/reassign
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/vocabulary
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/rounding/watch-instances/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/v2/alerts/[id]/ack
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/v2/dashboards/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/v2/exports
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/v2/forms/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/v2/lists/[listId]
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/v2/preferences
+[segment:gates][qa.root-build][stdout] ├ ƒ /api/v2/thresholds/[facilityId]
+[segment:gates][qa.root-build][stdout] ├ ○ /assessment-quiz
+[segment:gates][qa.root-build][stdout] ├ ƒ /assessments/overdue
+[segment:gates][qa.root-build][stdout] ├ ƒ /billing
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/ar-aging
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/collections
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/collections/new
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/concessions
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/invoices
+[segment:gates][qa.root-build][stdout] ├ ƒ /billing/invoices/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/invoices/generate
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/invoices/opening-balance
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/org-ar-aging
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/payments
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/payments/new
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/rates
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/rates/new
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/revenue
+[segment:gates][qa.root-build][stdout] ├ ○ /billing/settings
+[segment:gates][qa.root-build][stdout] ├ ○ /campuses
+[segment:gates][qa.root-build][stdout] ├ ƒ /campuses/[slug]
+[segment:gates][qa.root-build][stdout] ├ ○ /care-services
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/acknowledgments
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/clock
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/controlled-count
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/followups
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/handoff
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/housekeeper
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/incident-draft
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/me
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/meds
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/policies
+[segment:gates][qa.root-build][stdout] ├ ƒ /caregiver/policies/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/prn-followup
+[segment:gates][qa.root-build][stdout] ├ ƒ /caregiver/resident/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /caregiver/resident/[id]/adl
+[segment:gates][qa.root-build][stdout] ├ ƒ /caregiver/resident/[id]/behavior
+[segment:gates][qa.root-build][stdout] ├ ƒ /caregiver/resident/[id]/condition-change
+[segment:gates][qa.root-build][stdout] ├ ƒ /caregiver/resident/[id]/log
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/rounds
+[segment:gates][qa.root-build][stdout] ├ ƒ /caregiver/rounds/[residentId]
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/schedules
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/shift-swaps
+[segment:gates][qa.root-build][stdout] ├ ○ /caregiver/tasks
+[segment:gates][qa.root-build][stdout] ├ ○ /certifications
+[segment:gates][qa.root-build][stdout] ├ ○ /certifications/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /clinical/residents
+[segment:gates][qa.root-build][stdout] ├ ƒ /clinical/residents/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /clinical/residents/add
+[segment:gates][qa.root-build][stdout] ├ ○ /clock
+[segment:gates][qa.root-build][stdout] ├ ○ /contact
+[segment:gates][qa.root-build][stdout] ├ ○ /dietary
+[segment:gates][qa.root-build][stdout] ├ ○ /dietary/acknowledgments
+[segment:gates][qa.root-build][stdout] ├ ƒ /employee-file
+[segment:gates][qa.root-build][stdout] ├ ƒ /employee-file/reviews
+[segment:gates][qa.root-build][stdout] ├ ƒ /employee-file/reviews/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /executive
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/alerts
+[segment:gates][qa.root-build][stdout] ├ ƒ /executive/benchmarks
+[segment:gates][qa.root-build][stdout] ├ ƒ /executive/ceo
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/cfo
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/coo
+[segment:gates][qa.root-build][stdout] ├ ƒ /executive/facility/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /executive/league
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/nlq
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/reports
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/scenarios
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/settings
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/standup
+[segment:gates][qa.root-build][stdout] ├ ƒ /executive/standup/[week]
+[segment:gates][qa.root-build][stdout] ├ ƒ /executive/standup/[week]/board
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/standup/compare
+[segment:gates][qa.root-build][stdout] ├ ○ /executive/standup/history
+[segment:gates][qa.root-build][stdout] ├ ○ /facility-launch
+[segment:gates][qa.root-build][stdout] ├ ○ /family
+[segment:gates][qa.root-build][stdout] ├ ○ /family/billing
+[segment:gates][qa.root-build][stdout] ├ ○ /family/calendar
+[segment:gates][qa.root-build][stdout] ├ ○ /family/care-plan
+[segment:gates][qa.root-build][stdout] ├ ○ /family/invoices
+[segment:gates][qa.root-build][stdout] ├ ○ /family/messages
+[segment:gates][qa.root-build][stdout] ├ ○ /family/payments
+[segment:gates][qa.root-build][stdout] ├ ƒ /finance
+[segment:gates][qa.root-build][stdout] ├ ○ /finance/budget
+[segment:gates][qa.root-build][stdout] ├ ○ /finance/chart-of-accounts
+[segment:gates][qa.root-build][stdout] ├ ƒ /finance/close
+[segment:gates][qa.root-build][stdout] ├ ƒ /finance/forecast
+[segment:gates][qa.root-build][stdout] ├ ○ /finance/gl-settings
+[segment:gates][qa.root-build][stdout] ├ ○ /finance/journal-entries
+[segment:gates][qa.root-build][stdout] ├ ƒ /finance/journal-entries/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /finance/journal-entries/new
+[segment:gates][qa.root-build][stdout] ├ ○ /finance/ledger
+[segment:gates][qa.root-build][stdout] ├ ƒ /finance/period-close
+[segment:gates][qa.root-build][stdout] ├ ƒ /finance/posting-rules
+[segment:gates][qa.root-build][stdout] ├ ƒ /finance/trial-balance
+[segment:gates][qa.root-build][stdout] ├ ƒ /finance/trust
+[segment:gates][qa.root-build][stdout] ├ ○ /followups
+[segment:gates][qa.root-build][stdout] ├ ○ /handoff
+[segment:gates][qa.root-build][stdout] ├ ○ /icon.svg
+[segment:gates][qa.root-build][stdout] ├ ○ /incident-draft
+[segment:gates][qa.root-build][stdout] ├ ƒ /incidents
+[segment:gates][qa.root-build][stdout] ├ ƒ /incidents/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /incidents/[id]/rca
+[segment:gates][qa.root-build][stdout] ├ ○ /incidents/followups
+[segment:gates][qa.root-build][stdout] ├ ○ /incidents/new
+[segment:gates][qa.root-build][stdout] ├ ○ /incidents/obligations
+[segment:gates][qa.root-build][stdout] ├ ○ /incidents/overdue-followups
+[segment:gates][qa.root-build][stdout] ├ ○ /incidents/trends
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance/claims
+[segment:gates][qa.root-build][stdout] ├ ƒ /insurance/claims/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance/coi
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance/loss-runs
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance/policies
+[segment:gates][qa.root-build][stdout] ├ ƒ /insurance/policies/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance/policies/new
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance/renewal-packages
+[segment:gates][qa.root-build][stdout] ├ ƒ /insurance/renewal-packages/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance/renewals
+[segment:gates][qa.root-build][stdout] ├ ○ /insurance/workers-comp
+[segment:gates][qa.root-build][stdout] ├ ○ /login
+[segment:gates][qa.root-build][stdout] ├ ○ /manifest.webmanifest
+[segment:gates][qa.root-build][stdout] ├ ○ /me
+[segment:gates][qa.root-build][stdout] ├ ○ /med-tech
+[segment:gates][qa.root-build][stdout] ├ ○ /med-tech/acknowledgments
+[segment:gates][qa.root-build][stdout] ├ ○ /med-tech/controlled-count
+[segment:gates][qa.root-build][stdout] ├ ○ /meds
+[segment:gates][qa.root-build][stdout] ├ ○ /onboarding
+[segment:gates][qa.root-build][stdout] ├ ○ /onboarding/departments
+[segment:gates][qa.root-build][stdout] ├ ○ /onboarding/questions
+[segment:gates][qa.root-build][stdout] ├ ○ /payroll
+[segment:gates][qa.root-build][stdout] ├ ƒ /payroll/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /payroll/new
+[segment:gates][qa.root-build][stdout] ├ ○ /pipeline/admissions/new
+[segment:gates][qa.root-build][stdout] ├ ○ /pipeline/discharge-management
+[segment:gates][qa.root-build][stdout] ├ ○ /pipeline/discharge-management/new-reconciliation
+[segment:gates][qa.root-build][stdout] ├ ○ /pipeline/recent-admissions
+[segment:gates][qa.root-build][stdout] ├ ○ /pipeline/recent-admissions/new
+[segment:gates][qa.root-build][stdout] ├ ○ /pipeline/referrals-crm
+[segment:gates][qa.root-build][stdout] ├ ƒ /pipeline/referrals/[leadId]
+[segment:gates][qa.root-build][stdout] ├ ○ /pipeline/referrals/new
+[segment:gates][qa.root-build][stdout] ├ ○ /pricing
+[segment:gates][qa.root-build][stdout] ├ ○ /prn-followup
+[segment:gates][qa.root-build][stdout] ├ ○ /reports
+[segment:gates][qa.root-build][stdout] ├ ○ /reports/admin
+[segment:gates][qa.root-build][stdout] ├ ○ /reports/benchmarks
+[segment:gates][qa.root-build][stdout] ├ ○ /reports/history
+[segment:gates][qa.root-build][stdout] ├ ƒ /reports/history/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /reports/nlq
+[segment:gates][qa.root-build][stdout] ├ ○ /reports/packs
+[segment:gates][qa.root-build][stdout] ├ ƒ /reports/run/[sourceType]/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /reports/saved
+[segment:gates][qa.root-build][stdout] ├ ○ /reports/scheduled
+[segment:gates][qa.root-build][stdout] ├ ○ /reports/templates
+[segment:gates][qa.root-build][stdout] ├ ƒ /reports/templates/[slug]
+[segment:gates][qa.root-build][stdout] ├ ○ /reputation
+[segment:gates][qa.root-build][stdout] ├ ○ /reputation/accounts/new
+[segment:gates][qa.root-build][stdout] ├ ○ /reputation/integrations
+[segment:gates][qa.root-build][stdout] ├ ○ /reputation/replies/new
+[segment:gates][qa.root-build][stdout] ├ ○ /reset-password
+[segment:gates][qa.root-build][stdout] ├ ƒ /resident/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /resident/[id]/adl
+[segment:gates][qa.root-build][stdout] ├ ƒ /resident/[id]/behavior
+[segment:gates][qa.root-build][stdout] ├ ƒ /resident/[id]/condition-change
+[segment:gates][qa.root-build][stdout] ├ ƒ /resident/[id]/log
+[segment:gates][qa.root-build][stdout] ├ ƒ /residents
+[segment:gates][qa.root-build][stdout] ├ ƒ /residents/[id]
+[segment:gates][qa.root-build][stdout] ├ ƒ /residents/[id]/assessments
+[segment:gates][qa.root-build][stdout] ├ ƒ /residents/[id]/assessments/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /residents/[id]/billing
+[segment:gates][qa.root-build][stdout] ├ ƒ /residents/[id]/care-plan
+[segment:gates][qa.root-build][stdout] ├ ƒ /residents/[id]/medications
+[segment:gates][qa.root-build][stdout] ├ ○ /residents/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /risk
+[segment:gates][qa.root-build][stdout] ├ ƒ /risk/survey-bundle
+[segment:gates][qa.root-build][stdout] ├ ○ /robots.txt
+[segment:gates][qa.root-build][stdout] ├ ƒ /schedules
+[segment:gates][qa.root-build][stdout] ├ ƒ /schedules/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /schedules/new
+[segment:gates][qa.root-build][stdout] ├ ○ /search
+[segment:gates][qa.root-build][stdout] ├ ƒ /staff
+[segment:gates][qa.root-build][stdout] ├ ƒ /staff/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /staff/new
+[segment:gates][qa.root-build][stdout] ├ ƒ /staffing
+[segment:gates][qa.root-build][stdout] ├ ○ /staffing/new
+[segment:gates][qa.root-build][stdout] ├ ○ /tasks
+[segment:gates][qa.root-build][stdout] ├ ○ /time-records
+[segment:gates][qa.root-build][stdout] ├ ○ /time-records/new
+[segment:gates][qa.root-build][stdout] ├ ○ /tour
+[segment:gates][qa.root-build][stdout] ├ ○ /training
+[segment:gates][qa.root-build][stdout] ├ ○ /training/completions/new
+[segment:gates][qa.root-build][stdout] ├ ○ /training/inservice/new
+[segment:gates][qa.root-build][stdout] ├ ○ /training/new
+[segment:gates][qa.root-build][stdout] ├ ○ /transportation
+[segment:gates][qa.root-build][stdout] ├ ○ /transportation/calendar
+[segment:gates][qa.root-build][stdout] ├ ○ /transportation/drivers/new
+[segment:gates][qa.root-build][stdout] ├ ○ /transportation/inspections/new
+[segment:gates][qa.root-build][stdout] ├ ○ /transportation/mileage-approvals
+[segment:gates][qa.root-build][stdout] ├ ƒ /transportation/requests/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /transportation/requests/new
+[segment:gates][qa.root-build][stdout] ├ ○ /transportation/settings
+[segment:gates][qa.root-build][stdout] ├ ○ /transportation/vehicles/new
+[segment:gates][qa.root-build][stdout] ├ ○ /vendors
+[segment:gates][qa.root-build][stdout] ├ ƒ /vendors/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /vendors/contracts
+[segment:gates][qa.root-build][stdout] ├ ƒ /vendors/contracts/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /vendors/directory
+[segment:gates][qa.root-build][stdout] ├ ○ /vendors/invoices
+[segment:gates][qa.root-build][stdout] ├ ƒ /vendors/invoices/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /vendors/payments
+[segment:gates][qa.root-build][stdout] ├ ○ /vendors/purchase-orders
+[segment:gates][qa.root-build][stdout] ├ ƒ /vendors/purchase-orders/[id]
+[segment:gates][qa.root-build][stdout] ├ ○ /vendors/purchase-orders/new
+[segment:gates][qa.root-build][stdout] └ ○ /vendors/spend
+[segment:gates][qa.root-build][stdout] 
+[segment:gates][qa.root-build][stdout] 
+[segment:gates][qa.root-build][stdout] ƒ Proxy (Middleware)
+[segment:gates][qa.root-build][stdout] 
+[segment:gates][qa.root-build][stdout] ○  (Static)   prerendered as static content
+[segment:gates][qa.root-build][stdout] ƒ  (Dynamic)  server-rendered on demand
+[segment:gates][qa.root-build][stdout] 
+[segment:gates][qa.root-build] finish status=passed required=true duration_ms=18425
+[segment:gates][hygiene.nextjs-deprecation-signal] start (derived from npm run build output)
+[segment:gates][hygiene.nextjs-deprecation-signal] finish status=passed required=false
+[segment:gates][qa.web-build] start npm run build (apps/web)
+[segment:gates][qa.web-build] finish status=skipped required=false
+[segment:gates][chaos.stress-suite] start npm run stress:test
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: suite loaded
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: Number.parseInt rejects garbage
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: parallel microtasks both ran
+[segment:gates][chaos.stress-suite][stdout] ADVISORY	stress: add ALF/home-care workflow simulations when resident and census models exist
+[segment:gates][chaos.stress-suite] finish status=passed required=true duration_ms=837
+[segment:gates][cdo.design-review] start npm run design:review
+[segment:gates][cdo.design-review] finish status=skipped required=false
+[segment:gates][cdo.a11y-axe] start npm run a11y:routes
+[segment:gates][cdo.a11y-axe] finish status=skipped required=false
+
+[segment:gates] verdict=PASS artifact=/Users/brianlewis/Circle of Life/Haven Facility Dietary Admin/test-results/agent-gates/2026-09-11T07-01-00-750Z-COL-159-HFO-DIETARY-ADMIN.json
+
+gate exit 0 Fri Sep 11 03:03:02 EDT 2026

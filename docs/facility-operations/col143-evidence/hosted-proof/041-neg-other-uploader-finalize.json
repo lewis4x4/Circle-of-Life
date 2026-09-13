@@ -1,0 +1,39 @@
+{
+  "at": "2026-09-12T23:52:42.329574+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "Cookie": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "request_key": "col143-95d3102349:neg-assistant-finalize:ae6bf7d4",
+      "expected_receipt_revision": "136c56c6390526d2d386a697f58b4cea4c157f7ed51ef47feee7930f41c988ff",
+      "payload": {}
+    }
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "X-DNS-Prefetch-Control": "on",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://iwcnajanvjvynolltflw.supabase.co; media-src 'self' https://cdn.pixabay.com; font-src 'self'; connect-src 'self' https://iwcnajanvjvynolltflw.supabase.co wss://iwcnajanvjvynolltflw.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+      "content-type": "application/json",
+      "Date": "Sat, 12 Sep 2026 23:52:42 GMT",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    },
+    "body": {
+      "error": "Evidence not found",
+      "outcome": "missing"
+    }
+  },
+  "expected_status": [
+    404
+  ]
+}

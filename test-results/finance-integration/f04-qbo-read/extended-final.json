@@ -1,0 +1,50 @@
+{
+  "source_sha256": "ed72b25ef3a452cd870bcb2806b0583c54371432445cc893654e9a0655305faf",
+  "scope": "Bounded synthetic transport and400000-cell fixture; no network/environment permissions",
+  "results": [
+    {
+      "name": "count-largest-safe-integer",
+      "pass": true
+    },
+    {
+      "name": "unsafe-count-rejected-before-rounding",
+      "pass": true
+    },
+    {
+      "name": "inactive-page-exact-decimal-raw-and-defensive-copy",
+      "pass": true
+    },
+    {
+      "name": "page-position-mismatch",
+      "pass": true
+    },
+    {
+      "name": "active-string-rejected",
+      "pass": true
+    },
+    {
+      "name": "nested-duplicate-decoded-key",
+      "pass": true
+    },
+    {
+      "name": "partial-http-status-not-success",
+      "pass": true
+    },
+    {
+      "name": "auth-error-raw-canary-only-in-private-evidence",
+      "pass": true
+    },
+    {
+      "name": "bounded-prefix-hash",
+      "pass": true
+    },
+    {
+      "name": "400000-cell-report-cannot-be-success",
+      "pass": true
+    },
+    {
+      "name": "malformed-cancellation-shape-normalized",
+      "pass": true
+    }
+  ]
+}

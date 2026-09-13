@@ -1,0 +1,892 @@
+{
+  "numTotalTestSuites": 14,
+  "numPassedTestSuites": 14,
+  "numFailedTestSuites": 0,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 66,
+  "numPassedTests": 66,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1788922474520,
+  "success": true,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts accepts balanced non-identifying structural fixture beyond 32-bit cents",
+          "status": "passed",
+          "title": "accepts balanced non-identifying structural fixture beyond 32-bit cents",
+          "duration": 1.8781250000000682,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts retains precision beyond JSON safe integer and rejects storage overflow",
+          "status": "passed",
+          "title": "retains precision beyond JSON safe integer and rejects storage overflow",
+          "duration": 0.7154590000000098,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary residentId at top level and nested levels",
+          "status": "passed",
+          "title": "rejects arbitrary residentId at top level and nested levels",
+          "duration": 0.5624169999999822,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary memo at top level and nested levels",
+          "status": "passed",
+          "title": "rejects arbitrary memo at top level and nested levels",
+          "duration": 0.18449999999995725,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary description at top level and nested levels",
+          "status": "passed",
+          "title": "rejects arbitrary description at top level and nested levels",
+          "duration": 0.1666250000000673,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary filename at top level and nested levels",
+          "status": "passed",
+          "title": "rejects arbitrary filename at top level and nested levels",
+          "duration": 0.19408399999997528,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary attachments at top level and nested levels",
+          "status": "passed",
+          "title": "rejects arbitrary attachments at top level and nested levels",
+          "duration": 0.20508299999994506,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary source at top level and nested levels",
+          "status": "passed",
+          "title": "rejects arbitrary source at top level and nested levels",
+          "duration": 0.1661669999999731,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts rejects arbitrary error at top level and nested levels",
+          "status": "passed",
+          "title": "rejects arbitrary error at top level and nested levels",
+          "duration": 0.2808750000000373,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-027 HFA-036 structural privacy and exact amounts"
+          ],
+          "fullName": "HFA-027 HFA-036 structural privacy and exact amounts rejects invalid dates, amounts, identifiers, currency and unbalanced journals",
+          "status": "passed",
+          "title": "rejects invalid dates, amounts, identifiers, currency and unbalanced journals",
+          "duration": 0.32054100000004837,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922475597,
+      "endTime": 1788922475602.3206,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance-integration/payload.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-016 resident funds remain separate from receivables"
+          ],
+          "fullName": "HFA-014 HFA-016 resident funds remain separate from receivables does not offset open AR with trust money",
+          "status": "passed",
+          "title": "does not offset open AR with trust money",
+          "duration": 0.9446659999999838,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922475488,
+      "endTime": 1788922475488.9446,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/forecast.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 12.34 as exact cents",
+          "status": "passed",
+          "title": "parses 12.34 as exact cents",
+          "duration": 1.9508329999999887,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 1234 as exact cents",
+          "status": "passed",
+          "title": "parses 1234 as exact cents",
+          "duration": 6.032249999999976,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses  $1,234.56  as exact cents",
+          "status": "passed",
+          "title": "parses  $1,234.56  as exact cents",
+          "duration": 0.1403330000000551,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses .29 as exact cents",
+          "status": "passed",
+          "title": "parses .29 as exact cents",
+          "duration": 0.1732920000000604,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 0.01 as exact cents",
+          "status": "passed",
+          "title": "parses 0.01 as exact cents",
+          "duration": 0.39920900000004167,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 12. as exact cents",
+          "status": "passed",
+          "title": "parses 12. as exact cents",
+          "duration": 0.4552080000000842,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 12.3 as exact cents",
+          "status": "passed",
+          "title": "parses 12.3 as exact cents",
+          "duration": 0.6152499999999463,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses -$1,234.56 as exact cents",
+          "status": "passed",
+          "title": "parses -$1,234.56 as exact cents",
+          "duration": 0.09199999999998454,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses +12.34 as exact cents",
+          "status": "passed",
+          "title": "parses +12.34 as exact cents",
+          "duration": 0.9254580000000487,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 0 as exact cents",
+          "status": "passed",
+          "title": "parses 0 as exact cents",
+          "duration": 0.5943749999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses 90071992547409.91 as exact cents",
+          "status": "passed",
+          "title": "parses 90071992547409.91 as exact cents",
+          "duration": 0.08395800000005238,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input parses -90071992547409.91 as exact cents",
+          "status": "passed",
+          "title": "parses -90071992547409.91 as exact cents",
+          "duration": 0.05304100000000744,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1.005 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 1.005 without rounding or reinterpretation",
+          "duration": 0.8387500000000045,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 0.009 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 0.009 without rounding or reinterpretation",
+          "duration": 0.07479200000000219,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1.999 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 1.999 without rounding or reinterpretation",
+          "duration": 0.04683300000010604,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1e3 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 1e3 without rounding or reinterpretation",
+          "duration": 0.04579200000000583,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 0x10 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 0x10 without rounding or reinterpretation",
+          "duration": 0.044334000000048945,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1,2,3 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 1,2,3 without rounding or reinterpretation",
+          "duration": 0.04129199999999855,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 12,34.56 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 12,34.56 without rounding or reinterpretation",
+          "duration": 0.04145800000003419,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 1$2 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 1$2 without rounding or reinterpretation",
+          "duration": 0.04279199999996308,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects 90071992547409.92 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects 90071992547409.92 without rounding or reinterpretation",
+          "duration": 0.11304200000006404,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects -90071992547409.92 without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects -90071992547409.92 without rounding or reinterpretation",
+          "duration": 0.054583999999977095,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects  without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects  without rounding or reinterpretation",
+          "duration": 0.046666999999956715,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects $ without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects $ without rounding or reinterpretation",
+          "duration": 0.05079200000000128,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects . without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects . without rounding or reinterpretation",
+          "duration": 0.11674999999991087,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects NaN without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects NaN without rounding or reinterpretation",
+          "duration": 0.05741699999998673,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 exact dollar input"
+          ],
+          "fullName": "HFA-006 exact dollar input rejects Infinity without rounding or reinterpretation",
+          "status": "passed",
+          "title": "rejects Infinity without rounding or reinterpretation",
+          "duration": 0.040334000000029846,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922475505,
+      "endTime": 1788922475519.1167,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/format-cents.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity keeps exact line amounts and ignores only wholly empty rows",
+          "status": "passed",
+          "title": "keeps exact line amounts and ignores only wholly empty rows",
+          "duration": 4.778291999999965,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1.005\",\"credit\":\"\"}",
+          "status": "passed",
+          "title": "rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1.005\",\"credit\":\"\"}",
+          "duration": 0.21737499999994725,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1e3\",\"credit\":\"\"}",
+          "status": "passed",
+          "title": "rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1e3\",\"credit\":\"\"}",
+          "duration": 0.10387500000001637,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"bad\",\"credit\":\"\"}",
+          "status": "passed",
+          "title": "rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"bad\",\"credit\":\"\"}",
+          "duration": 0.09958300000005238,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"-1\",\"credit\":\"\"}",
+          "status": "passed",
+          "title": "rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"-1\",\"credit\":\"\"}",
+          "duration": 6.440249999999992,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1\",\"credit\":\"1\"}",
+          "status": "passed",
+          "title": "rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"1\",\"credit\":\"1\"}",
+          "duration": 0.8295829999999569,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"\",\"debit\":\"1\",\"credit\":\"\"}",
+          "status": "passed",
+          "title": "rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"\",\"debit\":\"1\",\"credit\":\"\"}",
+          "duration": 0.6202910000000657,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"\",\"credit\":\"\"}",
+          "status": "passed",
+          "title": "rejects an invalid entered line even alongside a balanced journal: {\"gl_account_id\":\"cash\",\"debit\":\"\",\"credit\":\"\"}",
+          "duration": 0.1652080000000069,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity preserves unbalanced drafts for further editing",
+          "status": "passed",
+          "title": "preserves unbalanced drafts for further editing",
+          "duration": 1.8455000000000155,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity rejects aggregate overflow without rounding",
+          "status": "passed",
+          "title": "rejects aggregate overflow without rounding",
+          "duration": 0.25758300000006784,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal input integrity"
+          ],
+          "fullName": "HFA-006 HFA-011 journal input integrity supports aggregate totals beyond 32-bit cents",
+          "status": "passed",
+          "title": "supports aggregate totals beyond 32-bit cents",
+          "duration": 0.6105000000000018,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922475497,
+      "endTime": 1788922475512.6106,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/journal-form-lines.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-009 HFA-011 atomic source posting"
+          ],
+          "fullName": "HFA-009 HFA-011 atomic source posting posts invoice through one command",
+          "status": "passed",
+          "title": "posts invoice through one command",
+          "duration": 4.410000000000082,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-009 HFA-011 atomic source posting"
+          ],
+          "fullName": "HFA-009 HFA-011 atomic source posting posts payment through one command",
+          "status": "passed",
+          "title": "posts payment through one command",
+          "duration": 0.5541249999999991,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-009 HFA-011 atomic source posting"
+          ],
+          "fullName": "HFA-009 HFA-011 atomic source posting preserves a failed posting result instead of treating a draft as posted",
+          "status": "passed",
+          "title": "preserves a failed posting result instead of treating a draft as posted",
+          "duration": 0.2815419999999449,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-009 HFA-011 atomic source posting"
+          ],
+          "fullName": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt (null)",
+          "status": "passed",
+          "title": "requires a committed journal receipt (null)",
+          "duration": 0.6434590000000071,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-009 HFA-011 atomic source posting"
+          ],
+          "fullName": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt ({})",
+          "status": "passed",
+          "title": "requires a committed journal receipt ({})",
+          "duration": 0.27966700000001765,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-009 HFA-011 atomic source posting"
+          ],
+          "fullName": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt (undefined)",
+          "status": "passed",
+          "title": "requires a committed journal receipt (undefined)",
+          "duration": 0.6409590000000662,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-009 HFA-011 atomic source posting"
+          ],
+          "fullName": "HFA-009 HFA-011 atomic source posting requires a committed journal receipt ({\"journal_entry_id\":5})",
+          "status": "passed",
+          "title": "requires a committed journal receipt ({\"journal_entry_id\":5})",
+          "duration": 0.2377920000000131,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922475546,
+      "endTime": 1788922475553.2378,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/post-to-gl.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-014 mapped resident-money response contract"
+          ],
+          "fullName": "HFA-014 mapped resident-money response contract accepts existing PostgreSQL portfolio UUIDs without inventing a canonical zero",
+          "status": "passed",
+          "title": "accepts existing PostgreSQL portfolio UUIDs without inventing a canonical zero",
+          "duration": 1.7752500000000282,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-014 mapped resident-money response contract"
+          ],
+          "fullName": "HFA-014 mapped resident-money response contract rejects malformed scope identities",
+          "status": "passed",
+          "title": "rejects malformed scope identities",
+          "duration": 0.46916699999997036,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922475613,
+      "endTime": 1788922475615.4692,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/lib/finance/resident-money.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-065 Cash ledger response scope"
+          ],
+          "fullName": "HFA-014 HFA-065 Cash ledger response scope hides the previous facility ledger immediately while the new facility loads",
+          "status": "passed",
+          "title": "hides the previous facility ledger immediately while the new facility loads",
+          "duration": 112.2472499999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-065 Cash ledger response scope"
+          ],
+          "fullName": "HFA-014 HFA-065 Cash ledger response scope does not replace the current facility with a late response from the prior facility",
+          "status": "passed",
+          "title": "does not replace the current facility with a late response from the prior facility",
+          "duration": 107.58233300000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-065 Cash ledger response scope"
+          ],
+          "fullName": "HFA-014 HFA-065 Cash ledger response scope does not show another resident's late transaction response under the selected resident",
+          "status": "passed",
+          "title": "does not show another resident's late transaction response under the selected resident",
+          "duration": 123.06529099999989,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-065 Cash ledger response scope"
+          ],
+          "fullName": "HFA-014 HFA-065 Cash ledger response scope clears previous transactions when the newly selected account fails to load",
+          "status": "passed",
+          "title": "clears previous transactions when the newly selected account fails to load",
+          "duration": 138.84175000000005,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-065 Cash ledger response scope"
+          ],
+          "fullName": "HFA-014 HFA-065 Cash ledger response scope does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: false)",
+          "status": "passed",
+          "title": "does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: false)",
+          "duration": 253.5594170000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-065 Cash ledger response scope"
+          ],
+          "fullName": "HFA-014 HFA-065 Cash ledger response scope does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: true)",
+          "status": "passed",
+          "title": "does not let an old mutation completion interrupt a new ledger or clear its form (facility switch: true)",
+          "duration": 272.8519590000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-065 Cash ledger response scope"
+          ],
+          "fullName": "HFA-014 HFA-065 Cash ledger response scope ignores a rejected ledger request after a different account has loaded",
+          "status": "passed",
+          "title": "ignores a rejected ledger request after a different account has loaded",
+          "duration": 106.68529100000023,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-014 HFA-065 Cash ledger response scope"
+          ],
+          "fullName": "HFA-014 HFA-065 Cash ledger response scope does not restart ledger requests when an outstanding mutation completes after unmount",
+          "status": "passed",
+          "title": "does not restart ledger requests when an outstanding mutation completes after unmount",
+          "duration": 45.611875000000055,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922476370,
+      "endTime": 1788922477530.6118,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/app/(admin)/admin/cash/page.test.tsx"
+    }
+  ],
+  "acceptance_mapping_correction": {
+    "HFA-006": "HFA-036",
+    "HFA-011": "HFA-036",
+    "reason": "Early new-money test labels were incorrect; exact monetary representation is HFA-036. Preserve actual run case names; use corrected final report for acceptance mapping."
+  },
+  "superseded_by": "2026-09-09T03-06-27.061Z-finance.json"
+}

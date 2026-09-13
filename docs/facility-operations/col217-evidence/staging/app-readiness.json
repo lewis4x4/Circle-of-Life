@@ -1,0 +1,26 @@
+{
+  "url": "http://127.0.0.1:4317",
+  "runtime": "Next development server against hosted synthetic staging",
+  "checks": [
+    {
+      "path": "/api/health",
+      "status": 404,
+      "body_length": 16431,
+      "signin_unavailable": false
+    },
+    {
+      "path": "/login",
+      "status": 200,
+      "body_length": 24314,
+      "signin_unavailable": false
+    },
+    {
+      "path": "/api/admin/operations/workspace",
+      "status": 401,
+      "body_length": 29,
+      "signin_unavailable": false
+    }
+  ],
+  "result": "PASS for source-defined routes",
+  "probe_correction": "/api/health was a guessed endpoint and is absent from this source; its404 is retained and is not a product failure. Readiness uses actual login and protected workspace routes."
+}

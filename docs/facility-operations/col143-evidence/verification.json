@@ -1,0 +1,61 @@
+{
+  "issue": "COL-143",
+  "scope": "source-only portion; acceptance item 3 (hosted Storage HTTP proof) remains open and the issue stays In Progress",
+  "recorded_at": "2026-09-10T20:30:00Z",
+  "state": "local_source_implemented_reviewed_gated_hosted_proof_open",
+  "base_commit": "89ed6aca (codex/hfo-col144-issues tip: closure docs over f97fb50f)",
+  "branch": "codex/hfo-col143-evidence",
+  "focused_tests": {
+    "command": "vitest run src/app/api/admin/operations src/app/api/admin/meetings src/lib/operations src/lib/admin/operations src/lib/auth/current-api-actor.test.ts",
+    "files": 33,
+    "tests": 360,
+    "status": "PASS",
+    "note": "328 at the COL-144 tip; added: evidence library (schemas, outcome classes rebuilt from the migration's RAISE list, path presentation), prepare/list/uploaded/finalize/fail/download routes with session-only Storage signing, receipts select; review remediation added the linked-record satisfaction reply, download revalidation and the real satisfaction shape"
+  },
+  "typecheck": "PASS",
+  "lint": "PASS (eslint src --max-warnings 0 and constitution lint)",
+  "deno_check": "not applicable (no Edge function changed)",
+  "native_replay": {
+    "migration_files": 346,
+    "numbered_through": "343",
+    "sql_probes": 27,
+    "probe": "supabase/tests/review_hfo_verified_evidence.sql (126 assertions after review remediation, rolls back; storage.objects rows inserted directly as upload stand-ins, as the 335 probe does); the seven earlier review_hfo_* probes and the employee-file probe unchanged and passing",
+    "status": "PASS (SQL lane run; re-run recorded under strict_gate)",
+    "runtime": "native PostgreSQL 17.9, run-owned socket-only cluster under ~/.hermes/tmp/agent-runs (no Docker), Supabase stubs"
+  },
+  "lock_races": {
+    "script": "scripts/facility-operations/test-evidence-concurrency.py",
+    "output": "docs/facility-operations/col143-evidence/concurrency.txt",
+    "cases": [
+      "two finalizations of one uploaded evidence: the second waits on the occurrence row (the first lock every evidence command takes) and is refused as already finalized; one finalized event, one satisfaction, the occurrence completed once",
+      "a finalization racing a receipt revision change held on the receipt row (stand-in for an HFO-08 correction): refused with Receipt changed since it was read; no finalized or satisfied event; evidence stays uploaded and the occurrence stays performed with missing evidence",
+      "two finalizations on one receipt overlapping on the occurrence row (session A holds the occurrence mid-command, B waits, A finalizes): both complete without a deadlock, two finalized events, exactly one satisfaction, the occurrence completed once"
+    ],
+    "status": "PASS"
+  },
+  "strict_gate": {
+    "artifact": "test-results/agent-gates/2026-09-10T17-58-13-779Z-COL-143-HFO-EVIDENCE.json",
+    "verdict": "PASS",
+    "prior_artifacts": [
+      "2026-09-10T17-45-07-647Z-COL-143-HFO-EVIDENCE.json PASS (before review remediation; native replay 346 files / 27 probes included)"
+    ],
+    "summary": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "blocking_failures": []
+    },
+    "checks": "hygiene.env-example, hygiene.tracked-secrets-scan, hygiene.npm-audit, security.gitleaks, qa.eslint, qa.migration-sequence, qa.migrations-apply-postgres (native replay 346 files / 27 probes), qa.root-build, hygiene.nextjs-deprecation-signal, chaos.stress-suite, cdo.design-review, cdo.a11y-axe passed; qa.web-build skipped (no apps/web)"
+  },
+  "independent_review": "docs/facility-operations/col143-evidence/independent-review.json (TypeScript: three should-fix and the actionable notes remediated; SQL: one blocker and three should-fix and the actionable notes remediated, re-verified PASS by the reviewer)",
+  "hosted_ledger": "docs/facility-operations/col137-evidence/hosted-ledger.json (numbered through 335 on both 2026-09-10 reads; 343 provisional, not re-read for this source-only segment)",
+  "acceptance": {
+    "wrong_or_unfinished_objects_satisfy_nothing_no_leak": "probe: wrong kind, unknown rule, wrong-site path, foreign or unowned object, prepared row without its object, failed row and linked records from another site all refuse or count for nothing; another recorder cannot write the uploader's path nor read an unfinalized object or its metadata; no receipt or task column carries an object path; the other site reads nothing",
+    "required_failure_stays_incomplete_optional_never_attached_retries_dedupe": "probe: failed required upload leaves performed_missing_evidence; supplementary failed row absent from the attached list; retry with a new prepare finalizes once; same declared checksum after finalization refused naming the existing evidence",
+    "hosted_upload_finalize_completion_download_proof": "OPEN: requires the hosted Supabase project's Storage and a signed-in client; steps for the owner or integrator are in COL-143-HANDOFF.md",
+    "later_retry_satisfies_same_performance_once_concurrent_correction_conflicts": "probe: finalization satisfies the receipt (current status complete, satisfied instant, recorded missing list untouched), completes or awaits verification with the original performer, performed_at, recorded_at and effective receipt unchanged, one satisfied event, no second receipt; race script cases 1-2"
+  },
+  "release_boundary": "No hosted migration, deployment, byte transfer, real upload or download, provider transmission or operating acceptance; the hosted proof is a separate acceptance step",
+  "mission_alignment": "PASS",
+  "operating_readiness": "RISK"
+}

@@ -21,3 +21,15 @@ export function isValidFacilityIdForQuery(id: string | null): id is string {
   if (id == null) return false;
   return UUID_STRING_RE.test(id);
 }
+
+/** Exact CSP origins; plaintext transport is permitted only for local fixtures. */
+export function supabaseCspOrigins(value: string | undefined): { http: string; websocket: string } {
+  if (!value?.trim()) return { http: "", websocket: "" };
+  const url = new URL(value);
+  if (url.hostname.startsWith("[")) throw new Error("CSP does not support IPv6 literals; use localhost or 127.0.0.1 for local Supabase");
+  const loopback = ["localhost", "127.0.0.1"].includes(url.hostname);
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) {
+    throw new Error("Supabase requires HTTPS except for a loopback test endpoint");
+  }
+  return { http: url.origin, websocket: url.origin.replace(/^http/, "ws") };
+}

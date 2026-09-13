@@ -1,0 +1,134 @@
+{
+  "base_commit": "335bd6c7",
+  "branch": "codex/hfo-col142-receipts",
+  "files": [
+    {
+      "path": "docs/facility-operations/CHECKPOINT.md",
+      "sha256": "59964df6266aca16241fe1ab11ce1030f0e0e5c70b73bca16bad9868ca80e9eb"
+    },
+    {
+      "path": "docs/facility-operations/COL-142-HANDOFF.md",
+      "sha256": "dd6ee2d04927c3fd7b7674e7cfc6f24d497c069b2431b3747f107f9d448d2bb6"
+    },
+    {
+      "path": "docs/facility-operations/COL-142-PREPARATION.md",
+      "sha256": "45c23ad4aaafa560c4b8d7515f29306b03c3e39031d6e3d17c38d535f2b8c61f"
+    },
+    {
+      "path": "docs/facility-operations/HANDOFF.md",
+      "sha256": "da2742b5e9e19642ca3d79fa49f84e17d6e9e0c4b8849cb36df2ae8ec12c11e1"
+    },
+    {
+      "path": "docs/facility-operations/OWNER-DECISIONS.md",
+      "sha256": "3b34a8ada0163f20dc4d1e02fe510c915b413cd7df334f16c9110fb81b491973"
+    },
+    {
+      "path": "docs/facility-operations/col142-evidence/concurrency.txt",
+      "sha256": "8be7da66396e27f80dc5bfae5e5896cdf3df52a1e22174072bfa5f0e2f0a284c"
+    },
+    {
+      "path": "docs/facility-operations/col142-evidence/engineering-contracts.md",
+      "sha256": "3526c5a6844e5676d95f63521cb4ebc63167e7bb5b5bd581415b15d02c21050f"
+    },
+    {
+      "path": "docs/facility-operations/col142-evidence/independent-review.json",
+      "sha256": "9dc59c586ea6900e5f78078f93c3faae02027eed5b2a9a048fe14676a9b63434"
+    },
+    {
+      "path": "docs/facility-operations/col142-evidence/linear-state.json",
+      "sha256": "c377790d8f2f6ecdba0730719c10374b50f205b5a6524134dce72afd97d51fe2"
+    },
+    {
+      "path": "docs/facility-operations/col142-evidence/verification.json",
+      "sha256": "70958d40d5800f0778f9f9e2d61b91208bbb4870b34d6bc1b013a8c15c7c35e5"
+    },
+    {
+      "path": "docs/specs/27-facility-operations-receipts.md",
+      "sha256": "63f7d686b2989e8925c49d632cc851315f92202a32e92a7e705170440d283855"
+    },
+    {
+      "path": "docs/specs/README.md",
+      "sha256": "079d3ddb25c23d34eef908fcf857033e1c35ea64522f700cb9fef32edbc44ce7"
+    },
+    {
+      "path": "scripts/facility-operations/__pycache__/test-receipt-concurrency.cpython-314.pyc",
+      "sha256": "9c76725f0d33ea3e85fda258de1850a5c974bc86ac42131b60715456d93c560f"
+    },
+    {
+      "path": "scripts/facility-operations/test-receipt-concurrency.py",
+      "sha256": "d87298a0a8d00681ecaee896b52e3d9ee339abdcb3edde277910b361506e2ec2"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/route.test.ts",
+      "sha256": "6d0852e18aa224a20276fa7a445e3b0916237a47ebce3f616e51b202b9fdceaf"
+    },
+    {
+      "path": "src/app/api/admin/operations/issues/route.ts",
+      "sha256": "58e94eee9d82075cd092e678f61e36d98911a381214816519b7fe6cf90ccc8c7"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/receipts/route.ts",
+      "sha256": "ba61695ff60346efc5114e5bbc127804f81ca20173d1a3bfa4c13794c5469c33"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/record/route.test.ts",
+      "sha256": "97d99e1bcf39346b172fe7425f054bf3ad5346a04cafa686eaa4cacf89818b00"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/record/route.ts",
+      "sha256": "03edf916a96af5fb82050bab39ce7344600cfecf154993814ac505088e94b4f0"
+    },
+    {
+      "path": "src/app/api/admin/operations/occurrences/[id]/verify/route.ts",
+      "sha256": "9d5046dfe2b9960fcb0cddfa4ffa1becc2b277584fe597242ec9ad9197a16a77"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/complete/route.test.ts",
+      "sha256": "153f1301b6940278e17c9aed92adb8ec637b2596d9b7e28218b73c769f94a4a3"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/[id]/complete/route.ts",
+      "sha256": "1d216a90b7bab43fc2f4a42a22b7c47642db10ceb8645a0b0f4b7c04cc6e2286"
+    },
+    {
+      "path": "src/app/api/admin/operations/tasks/route.ts",
+      "sha256": "47aaed74f227bd05070dd95d162178b787f168635e6e3095fcee7ea7dd009fe1"
+    },
+    {
+      "path": "src/lib/operations/occurrences.test.ts",
+      "sha256": "8c10e5f325406f081dfa70fcb668508180f892d638df831564ad1bb7942ea199"
+    },
+    {
+      "path": "src/lib/operations/occurrences.ts",
+      "sha256": "7201f9118161597c13a96141cea39354023728aaecd69f865e726eafa88fb697"
+    },
+    {
+      "path": "src/lib/operations/receipts.test.ts",
+      "sha256": "1f74f846b7444fcac334e1d0083e27771b98d69cf0b804e6c9ba699971a046e3"
+    },
+    {
+      "path": "src/lib/operations/receipts.ts",
+      "sha256": "d417dd042bb61a137c7e10be25f1e09ec5f0f5195ea9d3ed5b8bd1db1889768d"
+    },
+    {
+      "path": "src/lib/operations/server.ts",
+      "sha256": "3ea29568806c9285d283cdbafe691a9588f217ec9478944045bd2a967715090e"
+    },
+    {
+      "path": "src/lib/operations/types.ts",
+      "sha256": "aad6fd3fd74a5ade8dc742c4197c3d8cd22a05e5718f55576fcacc6d4f84849d"
+    },
+    {
+      "path": "supabase/migrations/341_hfo_execution_receipts.sql",
+      "sha256": "e9afdc08722882a0bd2c621357fbeb6ecc0c838b77587f66d915662091e8736f"
+    },
+    {
+      "path": "supabase/tests/review_hfo_execution_receipts.sql",
+      "sha256": "35a434b9c5e32f2307e83c2a143d6719a29954adb32a9aea9f9d6abdcb5049b7"
+    },
+    {
+      "path": "supabase/tests/review_hfo_occurrences.sql",
+      "sha256": "1278b0ba41cd55992bb714e8950f8fc2687139fa035d09e392304bae4522ae50"
+    }
+  ]
+}

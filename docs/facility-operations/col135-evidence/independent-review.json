@@ -1,0 +1,90 @@
+{
+  "issue": "COL-135",
+  "recorded_at": "2026-09-10T02:38:38+00:00",
+  "method": "Two independent read-only reviewers on the uncommitted diff (SQL migration 338 + probe; TypeScript library, publication helper, routes and tests). Every finding verified and dispositioned; remediations applied before the commit and re-verified.",
+  "sql_review": {
+    "verdict": "no blocker; six should-fix; notes",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "claim": "published was conflated with effective: a future-dated publication immediately superseded the old version and became the single current row",
+        "disposition": "Fixed by design change: status is draft or published and a published row governs only inside its effective window; publishing a successor closes the predecessor's window; in-force resolvers drive the view, site applicability checks and the snapshot guard; the probe asserts that a version scheduled for tomorrow leaves today's version in force and appears as scheduled."
+      },
+      {
+        "severity": "should-fix",
+        "claim": "service_role could publish, supersede, edit or truncate outside the commands and the publication setting is freely settable",
+        "disposition": "Fixed: ALL revoked from service_role on both tables (SELECT only), BEFORE TRUNCATE guards added; the setting only matters inside the definer commands. Probe: service identity UPDATE, DELETE, TRUNCATE and command calls denied even with the setting set."
+      },
+      {
+        "severity": "should-fix",
+        "claim": "snapshot guard gaps: activity match skipped when activity_id is null, no agreement between site configuration and central version, no effective-window check",
+        "disposition": "Fixed: version-backed template-less occurrences receive the version's activity identity (336 bind function replaced in 338) and the guard requires activity match, published status, the window covering the occurrence's local date (facility timezone) and site/central agreement. Probes added for each."
+      },
+      {
+        "severity": "should-fix",
+        "claim": "schedule confirmation reachable with an unvalidated rule",
+        "disposition": "Fixed: a confirmed draft must carry a rule (plain 22023 message), and publication rejects schedule_status confirmed until the COL-137 evaluator defines rule shapes; probe asserts no published row is confirmed."
+      },
+      {
+        "severity": "should-fix",
+        "claim": "a version could classify an unclassified activity through subject_kind",
+        "disposition": "Fixed: publication requires the activity to carry a subject kind and the version to match it; probe publishes a legacy unclassified activity and is denied."
+      },
+      {
+        "severity": "should-fix",
+        "claim": "local inputs/evidence not constrained to the central rule",
+        "disposition": "Fixed: local evidence and inputs must keep every central requirement (jsonb containment); probe rejects an empty local evidence list against a central photo requirement."
+      },
+      {
+        "severity": "note",
+        "claim": "central publication needs no site grant; handoff cited an evidence directory that did not yet exist and a migration count including timestamp files",
+        "disposition": "Stated in the spec (organisation-level rules); evidence directory now committed; counts clarified as 341 files, numbered through 338."
+      }
+    ],
+    "clean": [
+      "SECURITY DEFINER search paths and grants",
+      "authority before and after DML in every command",
+      "cross-organisation references",
+      "RLS draft visibility and site gating",
+      "invoker view",
+      "replay after renumbering",
+      "recording availability",
+      "probe assertions are value checks"
+    ]
+  },
+  "typescript_review": {
+    "verdict": "no blocker; three should-fix; six notes",
+    "findings": [
+      {
+        "severity": "should-fix",
+        "claim": "zod accepted confirmed schedule with null rule and the database rejected it with a raw constraint message",
+        "disposition": "Fixed: schema rejects the combination; the command pre-checks it with a named 22023 message; tests flipped."
+      },
+      {
+        "severity": "should-fix",
+        "claim": "no uniqueness for input keys, evidence labels or roles; non-finite numbers accepted",
+        "disposition": "Fixed with superRefine uniqueness and .finite(); tests added."
+      },
+      {
+        "severity": "should-fix",
+        "claim": "request-validation rejections and true state conflicts both mapped to 409",
+        "disposition": "Fixed: not-editable, invalid-value and non-object payload rejections map to 400; state conflicts stay 409; tests added."
+      },
+      {
+        "severity": "note",
+        "claim": "facility preview/publish rely on the database site gate; malformed id 404 vs unauthorised 403; 503 vs 500 on list failures; one untrusted trigger message; untyped RPC name; no facility preview test",
+        "disposition": "Documented in the helper and spec; malformed ids now 403 like unauthorised ones; 503 kept (tasks precedent); 'site unavailable' trusted; RPC names narrowed to a union; facility preview test added."
+      }
+    ],
+    "clean": [
+      "no service-role client",
+      "no caller-supplied actor or approver",
+      "facility gating before reads and site drafts",
+      "zod key sets match the command whitelists",
+      "trusted fragments cannot carry row data",
+      "no fail-open",
+      "no as any",
+      "only UUIDs logged"
+    ]
+  }
+}

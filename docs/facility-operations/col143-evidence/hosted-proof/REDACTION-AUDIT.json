@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "files_scanned": 164,
+  "checks": [
+    "Exact staging service/anon/db credentials absent",
+    "Exact fixture passwords absent",
+    "JWT patterns absent",
+    "Unredacted signed URL token values absent",
+    "Raw PNG base64 absent"
+  ],
+  "scope": "Retained numbered hosted HTTP and SQL evidence files only"
+}

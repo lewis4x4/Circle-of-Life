@@ -1,0 +1,194 @@
+{
+  "data": {
+    "viewer": {
+      "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+      "name": "Brian Lewis"
+    },
+    "issue": {
+      "id": "4b5b7588-d9f3-45c1-941f-1e2b07d26d47",
+      "identifier": "COL-152",
+      "title": "[HFO-15] Connect approved reminders to the existing audit calendar",
+      "description": "Useful reminders should surface due work without duplicate alerts or invented delivery claims.\n\n**Scope**\nReuse COL-32's calendar ownership and approved rule inputs. Implement in-app reminders/escalation acknowledgment with digest/duplicate suppression, backup routing and explicit unknown recipient/window; external SMS/email/voice only under later verified channel activation.\n\n**Acceptance**\n\n- [ ] Known due/overdue rules create one appropriate in-app episode; resolving/reopening tracks the episode correctly.\n- [ ] Unknown deadlines/recipients stay configuration-needed and do not send external messages.\n- [ ] Acknowledge/snooze/delivery are not completion; only authorized configured channels can claim actual delivery.\n\n**Dependencies:** [COL-137](https://linear.app/jarvislewis/issue/COL-137/hfo-03-implement-one-recurrence-and-due-date-evaluator), [COL-148](https://linear.app/jarvislewis/issue/COL-148/hfo-10-build-the-staff-today-upcoming-and-history-workspace), [COL-144](https://linear.app/jarvislewis/issue/COL-144/hfo-14-track-problems-next-actions-backup-ownership-and-resolution)\n**Related existing work:** [COL-32](https://linear.app/jarvislewis/issue/COL-32/audit-reminder-and-escalation-around-the-building-audits)\n**Release:** Connected. Implementation not started; this issue is not proof of deployment or staff acceptance.\n**Source items:** Shared core contract across all applicable Admin Log items\n**Source/code pointers:** `COL-32, OPS-001, R03 R12`. Migration filenames are under `supabase/migrations/`; source paths are relative to Circle-of-Life unless explicitly named otherwise. Reconcile current main before editing.\n**Open configuration questions:** Q05, Q29 See [Haven Facility Operations \u2014 Source Coverage and Open Decisions](https://linear.app/jarvislewis/document/haven-facility-operations-source-coverage-and-open-decisions-0bf9ab4bebce).\n\n**Build contract:** [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). **Sequence:** [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\nOne bounded implementation segment at a time. Record exact source/commit, focused behavioral tests, applicable repository segment gates, review and rollback/handoff evidence. Preserve current authority after waits and on retries, existing dirty/concurrent work, source truth and unknown rules. No new dependency, external transmission, clinical/employment decision or policy activation is implied. Keep source/local/hosted/provider/staff/operating-cycle acceptance distinct. No named assignee, estimate or date has been invented.\n\nRoadmap key: HFO-15 / HAVEN-ADMIN-20260909",
+      "state": {
+        "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+        "name": "Backlog"
+      },
+      "team": {
+        "id": "f410a3d9-f495-4637-8014-cc7bd9ef5282",
+        "states": {
+          "nodes": [
+            {
+              "id": "f2309805-cd22-4e1b-8c0f-2c8123ae4e96",
+              "name": "In Review"
+            },
+            {
+              "id": "af3a460c-b120-4488-8523-0b2c35a94ee1",
+              "name": "Canceled"
+            },
+            {
+              "id": "83cab057-2557-4e0b-8267-366ad7066b9e",
+              "name": "Done"
+            },
+            {
+              "id": "81cc5f08-5a50-46e6-9e5f-7a2c60b66b7e",
+              "name": "Todo"
+            },
+            {
+              "id": "5bd01bc7-0355-4597-b8dc-a2f8fbcf8f56",
+              "name": "Backlog"
+            },
+            {
+              "id": "5b3cb55d-7bbd-44cf-b766-c6070137eabe",
+              "name": "Duplicate"
+            },
+            {
+              "id": "04843145-120c-4879-85ea-2d2370ca45a4",
+              "name": "In Progress"
+            }
+          ]
+        }
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-148",
+              "state": {
+                "name": "Done"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-137",
+              "state": {
+                "name": "Done"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "related": {
+      "identifier": "COL-32",
+      "title": "Audit reminder and escalation around the building audits",
+      "description": "## September 9 \u2014 facility operations direction\n\nReuse this calendar/rule ownership issue for the new Haven operating catalog; do not create a parallel task/reminder engine. The Admin Log and interview now supply the source register, with Q01\u2013Q30 for unresolved cadence/evidence/roles. HFO-03 implements one evaluator and HFO-15 implements approved in-app reminders. Future authoritative schedule configuration belongs in Haven's versioned activity/facility catalog; retain any interim calendar until reconciled. External channels require actual authorization, configuration and delivery evidence. Preserve earlier source history below.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nJessica Murphy audits all five buildings and owns the compliance calendar. The ask from the 2026-09-03 meeting: reminder and escalation windows around every audit so nothing hits a deadline unflagged.\n\nStep one is the calendar itself, captured from Jessica: every recurring audit, inspection, license renewal and filing per building, with the owner, the due date rule and who gets told when it slips.\n\nStep two is the mechanism. Haven already has a task and escalation model. Do not build a second one; put the audit calendar into Haven's task model per building once that building is live, and run it from Notion reminders until then.\n\nOutput: the compliance calendar in Notion under Compliance & Standards, one issue per escalation rule to implement in Haven."
+    },
+    "issues": {
+      "nodes": [
+        {
+          "id": "405745e6-a0e8-486e-ab86-81f82fff8ab0",
+          "identifier": "COL-179",
+          "title": "Validate the Homewood referral-to-move-in baseline and bottlenecks",
+          "description": "Agent-created plan \u2014 not human acknowledgement. September 11, 2026.\n\n## Outcome\n\nProduce an operator-validated Homewood referral-to-move-in baseline and ranked list of evidenced bottlenecks, using the source/analysis contract from COL-35. This is measurement and workflow discovery, not a feature build.\n\n## Acceptance criteria\n\n- [ ] Declare a recent period (initially 30\u201360 days if evidence permits), channel coverage, facility population, unique case/episode definitions, missing data, unresolved outcomes, and limitations. A sample must not be presented as the full conversion denominator.\n- [ ] Review representative won, declined, stalled, after-hours, return, and cross-facility cases where available with the appointed reviewers. Distinguish verified absence from missing capture, and record unavailable categories as evidence limitations. Separate first receipt, owner acknowledgment, substantive response, review, financial/documentation readiness, and actual arrival; measure staff work separately from elapsed waiting.\n- [ ] Identify evidenced constraints: missed capture/coverage, resident preference, appropriate usable rooms, staffing/equipment/services, financial or paperwork dependencies, family explanations, and receiving-team/early-residency commitments. A refusal of another location is not automatically recoverable demand.\n- [ ] Reuse confirmed definitions and existing records. Current AR means monthly rent roll; promised funds, deposits, collections, contribution, and census are distinct. Do not fabricate unknown reasons or prices, infer diagnoses, or make placement decisions.\n- [ ] Deliver a ranked constraint list with counts, evidence strength, limitations, relevant quality/workload measures, and a recommended measurable outcome. Record reviewer's role, date, and substantive validation; recorded data alone is not acknowledgment.\n- [ ] Publish only non-identifying aggregates and findings in Linear. Maintain authorized source evidence in its approved location. No external messages, vendor trials, application edits, or data imports are authorized by this issue.\n\n## Dependencies and next actor\n\nBlocked by COL-35 and [COL-178](https://linear.app/jarvislewis/issue/COL-178/name-the-col-admissions-improvement-owner-and-homewood-baseline). Planned technical analyst: Codex; operating validation uses the appointed people. Keep human assignee empty until an actual human action is next, and retain separate Decision issues for approvals. Start only when source coverage and the owner/reviewer appointment support this work.\n\n## Evidence and rollback\n\nRecord source versions, cohort/period, actor/validation, limitations, and the next intervention-comparison issue. Record any process changes during observation so before/after differences are not falsely attributed to software. No production change, ROI, clinical acceptance, or release is implied.\n\nExisting implementation context: COL-155, COL-157, COL-166, COL-168. Their scope and priority are preserved. Roadmap: [COL admissions improvement \u2014 discovery, decisions, and investment criteria](https://linear.app/jarvislewis/document/col-admissions-improvement-discovery-decisions-and-investment-criteria-f775b2b7631a)",
+          "assignee": null
+        },
+        {
+          "id": "dbd564eb-d134-4aa9-929c-979066b1af64",
+          "identifier": "COL-178",
+          "title": "Name the COL admissions-improvement owner and Homewood baseline reviewers",
+          "description": "Agent-created plan \u2014 not human acknowledgement. September 11, 2026.\n\n## Decision or approval requested\n\nWho will be COL's accountable admissions-improvement operator, with a backup and named Homewood reviewers, for validating the referral-to-move-in baseline?\n\n## Authorized decision maker\n\nBrian Lewis makes or routes the appointment to the authorized COL operating leader. This does not grant Brian clinical, Finance, or facility admission authority by default. A routed appointment must retain the actual decision maker and attributable answer.\n\n## Recommendation and alternatives\n\nRecommend one operating owner and backup, with identified facility, clinical, and Finance reviewers for their own domains. Keep routine case coordination with that operating owner; keep technical discovery with Codex. Alternative: a Homewood-only owner for a smaller initial baseline, with portfolio ownership deferred. No person has accepted a new assignment through this agent-created issue.\n\n## Required by\n\nBefore operator validation of the Homewood baseline or any changed live workflow begins. No arbitrary due date; existing source inventory can proceed independently.\n\n## Blocked work and sufficient answer\n\nBlocks the baseline-validation Delivery issue. Record named owner/backup, reviewers and their authority boundaries, scope/site, and attributable acceptance of the assignment. Existing policy/readiness questions remain with their authorized owners and are resolved only when needed.\n\n## Outcome record\n\nPending. Completion requires the decision, authorized source, date, scope, and any conditions. This is not implementation, staff acceptance of Haven, or pilot launch approval.\n\nRoadmap: [COL admissions improvement \u2014 discovery, decisions, and investment criteria](https://linear.app/jarvislewis/document/col-admissions-improvement-discovery-decisions-and-investment-criteria-f775b2b7631a)",
+          "assignee": {
+            "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+            "name": "Brian Lewis"
+          }
+        },
+        {
+          "id": "52be8b56-8505-4baf-bad0-959a2c43d82d",
+          "identifier": "COL-140",
+          "title": "[HFO-26] Configure Homewood's approved task profile and preserve unresolved answers",
+          "description": "The first facility needs its actual rules and responsibilities without baking Homewood into shared code.\n\n**Scope**\nConfirm Homewood identity and site profile, map all applicable catalog items, enter approved schedules/evidence/roles/backup and procedure versions from answers. Keep unresolved rules visible; prepare the walkthrough and baseline paper/email step inventory.\n\n**Acceptance**\n\n- [ ] No hardcoded Homewood-specific logic in shared model/UI; same configuration shape works for another facility.\n- [ ] Every active rule has source/answer/approver/effective date; unknown tasks allow actual recording without due judgment.\n- [ ] Named reviewer/device plan and actual old steps to retire are recorded for COL-20/21; missing staff names do not block engineering.\n\n**Dependencies:** [COL-135](https://linear.app/jarvislewis/issue/COL-135/hfo-02-version-facility-applicability-evidence-rules-and-local), [COL-137](https://linear.app/jarvislewis/issue/COL-137/hfo-03-implement-one-recurrence-and-due-date-evaluator)\n**Related existing work:** See source pointers below\n**Release:** Core. Implementation not started; this issue is not proof of deployment or staff acceptance.\n**Source items:** Shared core contract across all applicable Admin Log items\n**Source/code pointers:** `FIRST-BUILD-SCOPE.md, TOMORROW-QUESTIONS.md, COL-20 COL-21`. Migration filenames are under `supabase/migrations/`; source paths are relative to Circle-of-Life unless explicitly named otherwise. Reconcile current main before editing.\n**Open configuration questions:** Q01, Q02, Q04, Q05, Q06, Q07, Q08, Q09, Q10, Q14, Q30 See [Haven Facility Operations \u2014 Source Coverage and Open Decisions](https://linear.app/jarvislewis/document/haven-facility-operations-source-coverage-and-open-decisions-0bf9ab4bebce).\n\n**Build contract:** [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). **Sequence:** [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\nOne bounded implementation segment at a time. Record exact source/commit, focused behavioral tests, applicable repository segment gates, review and rollback/handoff evidence. Preserve current authority after waits and on retries, existing dirty/concurrent work, source truth and unknown rules. No new dependency, external transmission, clinical/employment decision or policy activation is implied. Keep source/local/hosted/provider/staff/operating-cycle acceptance distinct. No named assignee, estimate or date has been invented.\n\nRoadmap key: HFO-26 / HAVEN-ADMIN-20260909",
+          "assignee": null
+        },
+        {
+          "id": "94ad9097-f1bf-48c9-bc32-180ee72c00b6",
+          "identifier": "COL-129",
+          "title": "Section 6 \u2014 Homewood release and continuity",
+          "description": "Prove the complete loop on real authorized surfaces, reconcile deployment and preserve operating acceptance.\n\n* [COL-161](https://linear.app/jarvislewis/issue/COL-161/hfo-25-prove-the-core-release-on-real-authorization-storage-and): Prove the core release on real authorization, storage and recovery surfaces\n* [COL-140](https://linear.app/jarvislewis/issue/COL-140/hfo-26-configure-homewoods-approved-task-profile-and-preserve): Configure Homewood's approved task profile and preserve unresolved answers\n* [COL-163](https://linear.app/jarvislewis/issue/COL-163/hfo-27-verify-the-offline-and-printed-emergencysurvey-packet): Verify the offline and printed emergency/survey packet\n\nRelease scope: Core / Continuity.\n\nThis is an organizational parent. Execute its bounded children, not the whole section in one task. Close only when the child scope and the release evidence in [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21) are satisfied. Facility milestone closure additionally needs actual staff/operating evidence.\n\nRoadmap section: S6 / HAVEN-ADMIN-20260909",
+          "assignee": null
+        },
+        {
+          "id": "e29f6457-bca0-46b9-a0bb-4432db913970",
+          "identifier": "COL-37",
+          "title": "Clear the Supabase Security Advisor findings before Homewood goes live",
+          "description": "Security Advisor run against project `manfqmasfqppukpobpld` on 2026-09-04. Every fix ships as a migration in the repository under `supabase/migrations/`, never by hand in the dashboard. Build authority is the repo.\n\n**Errors (2)**\n\n* View `public.quality_latest_facility_measures` is SECURITY DEFINER. Recreate with `security_invoker = true` (`CREATE OR REPLACE VIEW ... WITH (security_invoker = true)`), or move it to a non-exposed schema.\n* View `public.resident_billable_status` is SECURITY DEFINER. Same fix. This one reads resident data, so it is the first to fix.\n\n**Warnings: SECURITY DEFINER functions callable by the** `authenticated` **role over** `/rest/v1/rpc/` **(14)**\nDecide per function: keep SECURITY DEFINER and `REVOKE EXECUTE ON FUNCTION ... FROM authenticated, anon;` (then call it only from Edge Functions with the service role), or switch to `SECURITY INVOKER` and let RLS do the work.\n\n* `public.allocate_incident_number(uuid)`\n* `public.allocate_vendor_po_number(uuid)`\n* `public.apply_col_discovery_round_observation_plan(uuid)`\n* `public.apply_plantation_wing_observation_plan(uuid)`\n* `public.delete_nlq_thread(uuid)`\n* `public.execute_compliance_rule(uuid, uuid)`\n* `public.get_compliance_rule_status(uuid, uuid)`\n* `public.grace_top_flows(uuid)`\n* `public.haven_create_invoice_with_line_items(...)`\n* `public.haven_publish_rate_schedule(...)`\n* `public.haven_replace_active_resident_rate_agreement(...)`\n* `public.rename_nlq_thread(uuid, text)`\n* `public.search_nlq_threads(text, integer)`\n* `public.set_nlq_message_feedback(uuid, text)`, `public.set_nlq_thread_archived(uuid, boolean)`, `public.set_nlq_thread_pinned(uuid, boolean)`\n\n**Warnings: mutable search_path (12)**\nAdd `SET search_path = ''` (or the explicit schema list) to each: `public.haven_csc_discrepancy_defaults`, `public.document_role_can_view_audience`, `haven.role_tier`, `haven.can_manage_user`, `public.auto_trigger_watch_protocol`, `public.seed_admission_case_form_1823`, `public._ai_tool_role_allowed`, `public.haven_exec_nlq_messages_touch_session`, `public.increment_usage`, `public.normalize_alias_term`, `public._kb_seed_targets_touch`, `public.apply_invoice_payment`.\n\n**Warnings: extensions in** `public` **(3)**\n`vector`, `pg_trgm`, `btree_gist`. Create schema `extensions` if missing and `ALTER EXTENSION ... SET SCHEMA extensions;` then fix any unqualified references.\n\n**Warning: Auth**\nLeaked password protection is off. Turn on in Authentication > Providers > Email (HaveIBeenPwned check). Dashboard setting, no migration.\n\n**Info (2)**\nRLS enabled with no policies on `public.reputation_google_oauth_credentials` and `public.vendor_po_sequences`. Either intentional (service role only, document it) or add policies.\n\n**Exit criteria**: Security Advisor shows zero errors and zero warnings with High Compliance enabled ([COL-5](https://linear.app/jarvislewis/issue/COL-5/enable-the-supabase-hipaa-add-on-and-execute-the-baa)). Re-run `get_advisors` after each migration batch.\n\nNo resident data appears in this issue; object names only.",
+          "assignee": {
+            "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+            "name": "Brian Lewis"
+          }
+        },
+        {
+          "id": "03a50576-51e6-4a9e-a81e-de97db2eddcf",
+          "identifier": "COL-36",
+          "title": "Homewood Lodge: UniFi materials order for Darren's approval",
+          "description": "First building in the network order. The Home Office is the standard: same design, same vendor set, centrally monitored.\n\nBill of materials per the Notion Communities page for Homewood Lodge: 9 access points, 14 cameras, 6 doors, plus the gateway, switching, PoE budget, rack and cabling. Pull the exact SKUs and current pricing from the Home Office deployment log (COL_UniFi_Deployment_Log) so the order matches what is already running.\n\nPresent it as one number to Darren with the outside security contract it replaces (from the contract inventory) so he sees the cost against the savings. He directs the order of replacement per building.\n\nWaits on [COL-16](https://linear.app/jarvislewis/issue/COL-16/walk-darren-through-the-per-building-technology-cost-so-he-can-direct) (per-building cost walkthrough). Darren Decision.",
+          "assignee": {
+            "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+            "name": "Brian Lewis"
+          }
+        },
+        {
+          "id": "9b63bc5c-000e-4cf9-9262-7af9b3a85cc3",
+          "identifier": "COL-30",
+          "title": "HIPAA training for Brian and management before Homewood Lodge goes live on Haven",
+          "description": "Workforce training is required under 45 CFR 164.530(b) for anyone whose work touches PHI, paid or not. Brian is workforce under the W-2 letter and will hold admin access to every resident record in Haven. Nobody can be handed a Haven login before their training is on file.\n\nScope:\n\n* Brian: full privacy and security rule training, documented with date and content.\n* Management: Darren, Michelle, Jessica Murphy, the five administrators.\n* Homewood Lodge floor staff: covered inside the on-site Haven training ([COL-20](https://linear.app/jarvislewis/issue/COL-20/homewood-lodge-staff-training-on-site-every-shift)), with the HIPAA module recorded separately.\n\nDeliverables:\n\n* Training record per person (name, date, content, who delivered it), stored in the Notion People database, never in Haven and never in this issue.\n* The training deck and the acknowledgment form filed under Compliance & Standards in Notion.\n* Confirm with Jessica Murphy whether COL already has a HIPAA training program and who the designated Privacy Officer and Security Officer are today. If nobody is named, that is a Darren Decision.\n\nBlocks Homewood go-live.",
+          "assignee": {
+            "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+            "name": "Brian Lewis"
+          }
+        },
+        {
+          "id": "8275c621-84f8-40e7-8ea0-a57f056ba743",
+          "identifier": "COL-24",
+          "title": "Sit with the Homewood Lodge administrator: what eats your day",
+          "description": "One interview, one issue. Ask what eats the day, what gets written twice, what gets called about, what nobody trusts. Homewood Lodge is first because it is the Haven launch building and the concentration-risk building.\n\nOutput: one Linear issue per fix that comes out of the conversation, linked back here. Facts about the building go to the Notion Communities page, not into this issue.\n\nNo resident names or PHI in this issue or its children.",
+          "assignee": {
+            "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+            "name": "Brian Lewis"
+          }
+        },
+        {
+          "id": "e9808601-f31d-4314-a308-60d118344c26",
+          "identifier": "COL-21",
+          "title": "Homewood Lodge: go live and first month of clean checks",
+          "description": "## September 9 \u2014 facility operations direction\n\nRetain Homewood's controlled live rollout and first-month evidence milestone. The new facility operating loop and named training/acceptance are prerequisites. Record actual dated checks, truthful missing/late evidence and unresolved issues; clean checks cannot mean hiding honest problem reports. Core technical release alone does not close this issue. Keep applicable existing security, device, clinical and operating approvals explicit and use later verified evidence to resolve stale blockers.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nThe milestone closes when the building is live, staff are trained, and the first month of checks is clean. This is the first of five pieces of six-month review evidence.",
+          "assignee": {
+            "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+            "name": "Brian Lewis"
+          }
+        },
+        {
+          "id": "0485404c-8f8e-4c99-8278-68113d6ad504",
+          "identifier": "COL-20",
+          "title": "Homewood Lodge: staff training, on site, every shift",
+          "description": "## September 9 \u2014 facility operations direction\n\nRetain this actual staff-training and acceptance task. Once the new core release gate is proven, name the Homewood tester/role/device/deployed SHA and walk staff completion \u2192 required evidence \u2192 corporate activity history \u2192 reported problem \u2192 resolution/correction/retry. Record which paper/email step is replaced. Keep clinical UAT separate; no source test or synthetic browser closes this staff task. Reviewer names are not a prerequisite to engineering.\n\nBuild contract: [Haven Facility Operations \u2014 Build Scope](https://linear.app/jarvislewis/document/haven-facility-operations-build-scope-fa76df5ada21). Sequence: [Haven Facility Operations \u2014 Delivery Roadmap](https://linear.app/jarvislewis/document/haven-facility-operations-delivery-roadmap-eab29aa94849).\n\n---\n\n## Earlier scope retained for history\n\nMilton: \"you're not going to be able to do it without being able to be here with them, working through them.\" Sit with each shift. Fix what breaks in five minutes, capture what generates questions. This is where adoption happens or does not.",
+          "assignee": {
+            "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+            "name": "Brian Lewis"
+          }
+        },
+        {
+          "id": "5cb50da1-db8f-49b5-9606-724e46527864",
+          "identifier": "COL-19",
+          "title": "Homewood Lodge: tablets purchased, MDM enrolled, locked to Haven",
+          "description": "Five tablets plus a spare for Homewood. Decide iPad with Mosyle (the written budget) versus Samsung at $249 (what was said in the meeting). Kiosk mode locked to Haven. Enrolled before they leave the Home Office.",
+          "assignee": {
+            "id": "bc888813-9584-4e84-85f7-125676e49d9b",
+            "name": "Brian Lewis"
+          }
+        }
+      ]
+    }
+  }
+}

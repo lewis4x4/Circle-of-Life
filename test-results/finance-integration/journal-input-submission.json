@@ -1,0 +1,70 @@
+{
+  "numTotalTestSuites": 2,
+  "numPassedTestSuites": 2,
+  "numFailedTestSuites": 0,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 2,
+  "numPassedTests": 2,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1788922588682,
+  "success": true,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal form submission"
+          ],
+          "fullName": "HFA-006 HFA-011 journal form submission sends exact cents for a valid draft",
+          "status": "passed",
+          "title": "sends exact cents for a valid draft",
+          "duration": 73.471542,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        },
+        {
+          "ancestorTitles": [
+            "HFA-006 HFA-011 journal form submission"
+          ],
+          "fullName": "HFA-006 HFA-011 journal form submission does not discard an invalid third line and save only the balanced pair",
+          "status": "passed",
+          "title": "does not discard an invalid third line and save only the balanced pair",
+          "duration": 146.07341700000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": []
+        }
+      ],
+      "startTime": 1788922590573,
+      "endTime": 1788922590792.0735,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/brianlewis/Circle of Life/Haven Finance Integration/src/app/(admin)/finance/journal-entries/new/page.test.tsx"
+    }
+  ],
+  "acceptance_mapping_correction": {
+    "HFA-006": "HFA-036",
+    "HFA-011": "HFA-036",
+    "reason": "Early new-money test labels were incorrect; exact monetary representation is HFA-036. Preserve actual run case names; use corrected final report for acceptance mapping."
+  },
+  "superseded_by": "2026-09-09T03-06-27.061Z-finance.json"
+}

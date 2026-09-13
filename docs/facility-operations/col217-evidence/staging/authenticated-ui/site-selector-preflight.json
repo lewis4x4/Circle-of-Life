@@ -1,0 +1,95 @@
+{
+  "source": "b3e1d819874c942afb737f46eaa632ba54de247c",
+  "at": "2026-09-12T23:55:57.810Z",
+  "target": "iwcnajanvjvynolltflw",
+  "base": "http://127.0.0.1:4317",
+  "actor": "synthetic corporate fixture",
+  "readOnly": true,
+  "results": [
+    {
+      "route": "/admin/operations/work",
+      "viewport": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "status": "FAIL",
+      "failure": "Expected exactly one visible synthetic Site A option"
+    },
+    {
+      "route": "/admin/operations/work",
+      "viewport": 375,
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "status": "FAIL",
+      "failure": "Expected exactly one visible synthetic Site A option"
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "finalPath": "/admin/billing/invoices",
+      "heading": [
+        "Billing & AR",
+        "Invoices"
+      ],
+      "alerts": [],
+      "loadingText": [],
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nFind a page…\n⌘K\nReport incident\nCC\nHome\nExecutive\nWeekly Stand Up\nReports hub\nFacilities\nBilling & AR\nBilling & AR\n\nOrganization receivables and cash signals for the scope you pick below. Open Invoices for the full ledger, AR aging for buckets, Rate library for posted rates, Revenue for recognition views, and Per-facility AR for a facility-by-facility roll-up.\n\nScope\nAll facilities\ncol143-95d3102349 sitea\ncol143-95d3102349 siteb\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\n\nAs of Sep 12, 2026, 7:56 PM ET\nRefresh\nShortcuts: / search · R refresh · E export\n\nOverview\nInvoices\nOpening balance\nAR aging\nRate library\nConcessions\nRevenue\nPer-facility AR\nInvoices\n\nInvoices in scope\n\n0\n\n2026-09-01 → 2026-09-30\n\nTotal billed\n\n$0.00\n\nOutstanding\n\n$0.00\n\nOverdue\n\n0\n\nThis month\nAll statuses\nAll payer types\nFacilities · All\nGenerate invoices\nExport\nRange: 2026-09-01 → 2026-09-30\nSaved views\nCustom (current filters)\nSave current…\nAll (0)\nDraft (0)\nSent (0)\nPaid (0)\nPartial (0)\nOverdue (0)\nVoided (0)\n\nAll invoices\n\nFull invoice ledger for the selected scope. Click any row for line items, payment history, and status timeline.\n\nSelect invoice\n\tInvoice\tFacility\tResident\tPayer\tInvoice date\n↓\n\tBilled\tOutstanding\tStatus\tDue date\tActions\n\n\nNo invoices in this scope\n\nLive billing returned no invoices for the selected facility or organization filter for this invoice date range.\n\nGenerate invoices or widen filters.",
+      "screenshot": "_admin_billing_invoices-1440.png",
+      "axeViolations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".text-muted-foreground\\/80"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.5 (foreground color: #847d76, background color: #f0eeeb, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "axePassCount": 46,
+      "status": "FAIL"
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": 375,
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "finalPath": "/admin/billing/invoices",
+      "heading": [
+        "Billing & AR",
+        "Invoices"
+      ],
+      "alerts": [],
+      "loadingText": [],
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCC\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nBilling & AR\n\nOrganization receivables and cash signals for the scope you pick below. Open Invoices for the full ledger, AR aging for buckets, Rate library for posted rates, Revenue for recognition views, and Per-facility AR for a facility-by-facility roll-up.\n\nScope\nAll facilities\ncol143-95d3102349 sitea\ncol143-95d3102349 siteb\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\n\nAs of Sep 12, 2026, 7:56 PM ET\nRefresh\nShortcuts: / search · R refresh · E export\n\nOverview\nInvoices\nOpening balance\nAR aging\nRate library\nConcessions\nRevenue\nPer-facility AR\nInvoices\n\nInvoices in scope\n\n0\n\n2026-09-01 → 2026-09-30\n\nTotal billed\n\n$0.00\n\nOutstanding\n\n$0.00\n\nOverdue\n\n0\n\nThis month\nAll statuses\nAll payer types\nFacilities · All\nGenerate invoices\nExport\nRange: 2026-09-01 → 2026-09-30\nSaved views\nCustom (current filters)\nSave current…\nAll (0)\nDraft (0)\nSent (0)\nPaid (0)\nPartial (0)\nOverdue (0)\nVoided (0)\n\nAll invoices\n\nFull invoice ledger for the selected scope. Click any row for line items, payment history, and status timeline.\n\nSelect invoice\n\tInvoice\tFacility\tResident\tPayer\tInvoice date\n↓\n\tBilled\tOutstanding\tStatus\tDue date\tActions\n\n\nNo invoices in this scope\n\nLive billing returned no invoices for the selected facility or organization filter for this invoice date range.\n\nGenerate invoices or widen filters.",
+      "screenshot": "_admin_billing_invoices-375.png",
+      "axeViolations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".text-muted-foreground\\/80"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.5 (foreground color: #847d76, background color: #f0eeeb, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "axePassCount": 45,
+      "status": "FAIL"
+    }
+  ],
+  "status": "FAIL"
+}

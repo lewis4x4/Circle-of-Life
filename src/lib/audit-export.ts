@@ -1,6 +1,8 @@
 /**
  * Client-side invocation of the `export-audit-log` Edge Function (CSV).
- * Requires an existing `audit_log_export_jobs` row in `pending` or `failed`.
+ * Requires an existing authorized `audit_log_export_jobs` row. Completed jobs
+ * retrieve their original immutable snapshot; legacy jobs without a snapshot
+ * require a new export. Current session and facility authority are rechecked.
  */
 export async function invokeExportAuditLog(params: {
   supabaseUrl: string;

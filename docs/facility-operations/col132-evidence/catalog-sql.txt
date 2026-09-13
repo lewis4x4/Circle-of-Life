@@ -1,0 +1,196 @@
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+REVOKE
+GRANT
+CREATE POLICY
+CREATE POLICY
+CREATE FUNCTION
+REVOKE
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+REVOKE
+CREATE TRIGGER
+CREATE FUNCTION
+REVOKE
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+DO
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+REVOKE
+CREATE FUNCTION
+REVOKE
+CREATE TRIGGER
+CREATE FUNCTION
+REVOKE
+CREATE TRIGGER
+COMMENT
+COMMENT
+COMMENT
+DO
+COMMIT
+BEGIN
+CREATE FUNCTION
+SELECT 1
+SELECT 1
+DO
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+DO
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+DO
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+DO
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+DO
+CREATE FUNCTION
+GRANT
+GRANT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+GRANT
+                                                                                                                    set_config
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"sub": "16849ba7-2850-4a5f-9ec1-4046c273e56f", "role": "authenticated", "app_role": "facility_admin", "session_id": "c81043ce-b3b1-45b0-835f-609faa7586aa", "organization_id": "00000000-0000-0000-0000-000000000001", "auth_claim_version": 2}
+(1 row)
+
+SET
+DO
+ hfo_expect
+------------
+
+(1 row)
+
+ hfo_expect
+------------
+
+(1 row)
+
+RESET
+UPDATE 1
+SET
+DO
+RESET
+UPDATE 1
+SET
+DO
+RESET
+                                                       result
+--------------------------------------------------------------------------------------------------------------------
+ COL-132 catalog identity, 91-source mapping, subject validation, immutable history and current-actor checks passed
+(1 row)
+
+ROLLBACK

@@ -1,0 +1,26 @@
+{
+  "raw_logs": "Retained privately in the local decision folder; historical seed record values intentionally excluded from this committed summary.",
+  "failures": [
+    {
+      "file": "apply-previous-2.log",
+      "sha256": "bb287d577de2726ad1bff2f5c5e1997e462fd17e821353c2c015124e1fec919f",
+      "errors": [
+        "ERROR: insert or update on table \"staff\" violates foreign key constraint \"staff_created_by_fkey\" (SQLSTATE 23503)"
+      ]
+    },
+    {
+      "file": "apply-previous-1.log",
+      "sha256": "3e5a77699556a7f81b1fa59cb38733bda80f88de215538c980fd6cf787912379",
+      "errors": [
+        "ERROR: unsafe use of new value \"dietary_aide\" of enum type app_role (SQLSTATE 55P04)"
+      ]
+    },
+    {
+      "file": "rebuild.log",
+      "sha256": "59b0373431bfed0da4289727922e3d0d0d8cfda381f8d643ca5aee442ce6f88c",
+      "errors": [
+        "ERROR: out of shared memory (SQLSTATE 53200)"
+      ]
+    }
+  ]
+}

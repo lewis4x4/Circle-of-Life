@@ -1,0 +1,29 @@
+{
+  "cases": [
+    {
+      "case": "two generators for the same configuration and period",
+      "outcome": "PASS",
+      "observed_lock_wait": true,
+      "second_outcome": "existing with the same identities",
+      "rows_for_period": 2
+    },
+    {
+      "case": "binding retired while the generator waits on the subject lock",
+      "outcome": "PASS",
+      "observed_lock_wait": true,
+      "second_outcome": "no_binding after the wait",
+      "rows_for_period": 0,
+      "waited_on": "subject advisory lock"
+    },
+    {
+      "case": "binding retirement in flight before the generator, committed during its binding-row wait",
+      "outcome": "PASS",
+      "observed_lock_wait": true,
+      "second_outcome": "no_binding after the wait",
+      "rows_for_period": 0,
+      "waited_on": "binding row (transactionid)"
+    }
+  ],
+  "boundary": "local PostgreSQL 17 with Supabase auth stubs; run-owned socket-only cluster"
+}
+COL-139 occurrence concurrency PASS

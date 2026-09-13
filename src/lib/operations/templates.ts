@@ -21,6 +21,8 @@ export type OperationEscalationStep = {
 
 export type OperationTemplateRecord = {
   id: string;
+  /** Database-bound identity; never accepted from the legacy mutation payload. */
+  activity_id?: string;
   facility_id: string | null;
   name: string;
   description: string;

@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "evidence_layer": "Edge-unit",
+  "target_identity": "synthetic-local-no-network",
+  "command": [
+    "deno",
+    "test",
+    "--allow-env=CORS_ALLOWED_ORIGINS",
+    "--reporter=junit",
+    "supabase/functions/export-audit-log/handler.test.ts"
+  ],
+  "commit": "1e0a36eec5542d537b15c20f20b50b533d819a82",
+  "exit_code": 0,
+  "signal": null,
+  "spawn_error": null,
+  "fixture_sha256": "337883958a1a444ed68c63ff02034002aaf73aecf8efb9bd86e6ac33bc6483f9",
+  "started_at": "2026-09-09T01:44:18.932Z",
+  "completed_at": "2026-09-09T01:44:19.700Z",
+  "duration_ms": 768,
+  "cases": [
+    {
+      "name": "audit export rejects missing bearer and invalid job before constructing client",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export handles preflight and rejects non POST",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export rejects malformed JSON",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export returns byte-identical durable CSV with verified checksum and no-store",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export preserves complete large snapshot and retries return same evidence",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export unauthorized materialization never retrieves data",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export revocation between materialization and retrieval returns no bytes",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export missing legacy snapshot returns actionable conflict",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export rejects wrong job identity and malformed snapshot",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export checksum mismatch returns no source bytes",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export transport failures do not expose provider errors or source values",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export preserves the authoritative pre-request session denial",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export preserves PGRST301 authentication denial",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export preserves PGRST302 authentication denial",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    },
+    {
+      "name": "audit export preserves PGRST303 authentication denial",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS"
+    }
+  ],
+  "counts": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0
+  },
+  "raw_artifact": "test-results/finance-integration/2026-09-09T01-44-18.932Z-audit-edge.xml",
+  "limits": [
+    "Simulated user RPC responses exercise Edge boundary; not hosted Auth/PostgREST or all-domain audit evidence."
+  ]
+}

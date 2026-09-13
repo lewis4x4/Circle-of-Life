@@ -1,0 +1,62 @@
+{
+  "issue": "COL-133",
+  "recorded_at": "2026-09-10T11:50:00Z",
+  "purpose": "Close the current-authority source review: confirm that the recorded evidence satisfies each acceptance criterion at the branch head, without re-running a reviewer. Done means reviewed, gated, unmerged source, as COL-132 was closed. It is not merge, hosted application, deployment, schedule activation or operating acceptance.",
+  "reviewed_head": {
+    "branch": "codex/hfo-col133-authority",
+    "commit": "476f02d1",
+    "remote": "origin/codex/hfo-col133-authority at 476f02d1 (verified 2026-09-10)",
+    "draft_pr": "#466 (base codex/hfo-col132-catalog), open, draft"
+  },
+  "acceptance": {
+    "a_site_a_cannot_reach_site_b_or_restricted_subjects": {
+      "criterion": "Site A staff cannot retrieve or infer Site B or restricted subject data through identifiers, counts, search, files, export or replay.",
+      "evidence": [
+        "col133-evidence/independent-review.json: APPROVE_LOCAL_SOURCE_REVIEW, scope covers current site and explicit grants, native resident/employee/medical/asset/financial subject authority, RLS on linked cards, meetings, deliveries and historical audit payloads, session-scoped export and replay, service-only projection failing closed on population mismatch; outstanding_source_findings []",
+        "col133-evidence/verification.json required_acceptance[0] and [3]: identifier, search, count, list and export exclude Site B and unauthorized native subjects; protected evidence not exposed by task row, audit, meeting linkage, delivery, download or service bypass",
+        "supabase/tests/review_hfo_current_authority.sql in the native replay (21 probes PASS at afe24111; two revoked-grant cases added at 22e86bad; 22 probes PASS on the stacked COL-135 replay)",
+        "col133-evidence/integration-review.json feature_afe24111.sql_review clean categories (restrictive policies, organization before facility, no audit_log update/delete) and typescript_review clean categories (no service-role impersonation, every client-selected facility read gated, no fail-open)"
+      ],
+      "status": "satisfied"
+    },
+    "b_corporate_sees_only_permitted_sites_and_coverage_expires": {
+      "criterion": "A corporate actor sees only permitted sites and subject/evidence fields; coverage expires correctly.",
+      "evidence": [
+        "col133-evidence/verification.json required_acceptance[1]: corporate needs explicit active site access plus native domain permission; coverage expiry fails closed",
+        "col133-evidence/concurrency.json cases 'temporary coverage expired while task locked' and 'coverage expires during linked meeting AFTER-trigger wait': PASS, sqlstate 42501, observed lock wait, mutation rolled back",
+        "col133-evidence/independent-review.json scope 'Current site and explicit corporate/temporary grants'"
+      ],
+      "status": "satisfied"
+    },
+    "c_revocation_during_lock_and_server_attribution": {
+      "criterion": "Revocation during a blocking lock and before retry/attachment download denies under current authority; attribution uses authenticated server identity.",
+      "evidence": [
+        "col133-evidence/concurrency.json: 7 of 7 observed-lock cases PASS (session revoked, site grant revoked, grant revoked during grant-row wait, resident transfer during subject wait, recorder grant revoked, and the two expiry cases)",
+        "col133-evidence/verification.json required_acceptance[2] and [4]: task/subject/grant/profile/Auth/session authority revalidated after blocking lock and before replay; immutable historical identity and authenticated actor attribution retained",
+        "col133-evidence/integration-review.json typescript_review: export completion asserts current authority after bytes are built and before the locked completion command; escalate and meeting-action paths return explicit 409 before any lock or RPC; session-derived actor arguments only"
+      ],
+      "status": "satisfied"
+    }
+  },
+  "gates": {
+    "remediation_gate": "test-results/agent-gates/2026-09-10T01-22-58-857Z-COL-133-HFO-CURRENT-AUTHORITY.json PASS (12 passed, 0 failed, 1 skipped) at 22e86bad",
+    "final_branch_gate": "test-results/agent-gates/2026-09-10T01-58-01-820Z-COL-133-HFO-CURRENT-AUTHORITY.json PASS (12 passed, 0 failed, 1 skipped), run on the tree committed as 476f02d1 one minute later",
+    "stacked_confirmation": "test-results/agent-gates/2026-09-10T02-37-46-794Z-COL-135-HFO-APPLICABILITY.json PASS on codex/hfo-col135-applicability 62d19cf4, whose tree contains 476f02d1 unchanged",
+    "focused_tests": "128 tests / 17 files at 476f02d1 (131 at afe24111; six meeting-action success-path tests retired because COL-133 revokes that command, recoverable from afe24111; three stable-identity tests added by the catalog remediation)",
+    "typecheck": "PASS",
+    "deno_check": "export-audit-log, risk-nightly-scorer PASS (--no-lock)"
+  },
+  "reviews_relied_on": [
+    "col133-evidence/independent-review.json (independent authority reviewer, APPROVE_LOCAL_SOURCE_REVIEW)",
+    "col133-evidence/integration-review.json (commit-level review of 8e52a197 and afe24111 by two independent read-only reviewers; every finding dispositioned; remediation 22e86bad re-gated)"
+  ],
+  "no_new_review": "No reviewer was re-run for this closure; the recorded reviews already cover the head, and the two later commits (8ee6d8f2, 476f02d1) carry the COL-132 catalog remediation and its fixture adaptations, which were reviewed under col132-evidence/review-closure.json.",
+  "still_open_not_blocking_closure": [
+    "Integration order: Finance's export-job column change must apply before COL-133's export-job policies (col133-evidence/migration-reconciliation.json; OWNER-DECISIONS.md item 5)",
+    "Integrator decision on listing completed audit export jobs (OWNER-DECISIONS.md item 4)",
+    "Owner decision on whole-run fail-closed automation on population mismatch (OWNER-DECISIONS.md item 2); not changed here",
+    "Migration 337 is a provisional number; a fresh read of the Haven hosted ledger precedes final numbering",
+    "Hosted apply, deployment, browser and staff acceptance; route-level negative tests for the remaining facility surfaces (follow-up)"
+  ],
+  "record_location": "This closure record is committed on codex/hfo-col135-applicability, which carries the COL-133 tree unchanged; the COL-133 branch head 476f02d1 is not moved so that draft PR #467's base stays stable."
+}

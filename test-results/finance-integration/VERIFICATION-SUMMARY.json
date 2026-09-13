@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "IN_PROGRESS",
+  "scope": "initial F00/F01/F02 reviewed source slices",
+  "source_base_commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "results": {
+    "source_typecheck": {
+      "exit_code": 0
+    },
+    "full_unit": {
+      "exit_code": 0,
+      "total": 3461,
+      "passed": 3461,
+      "failed": 0,
+      "skipped": 0,
+      "artifact": "full-unit.json"
+    },
+    "native_sql": {
+      "exit_code": 0,
+      "migrations": 341,
+      "probes": 22,
+      "layer": "PostgreSQL17 with Supabase stubs"
+    },
+    "foundation_gate": {
+      "exit_code": 0,
+      "artifact": "../agent-gates/2026-09-08T23-39-48-337Z-HFA-F00-FOUNDATION.json"
+    },
+    "provider_identity_smoke": {
+      "exit_code": 2,
+      "status": "BLOCKED_EXTERNAL",
+      "reason": "Verified company identity and access token unavailable"
+    },
+    "real_auth_postgrest": {
+      "status": "IN_PROGRESS",
+      "target": "run-owned hfa-01a08335 local only"
+    }
+  },
+  "first_failures_preserved": [
+    "../agent-gates/2026-09-08T23-08-00-133Z-HFA-F00-FOUNDATION.json",
+    "full-unit-first-attempt.json",
+    "trust-netting-baseline-vitest.json",
+    "audit-export-baseline.json"
+  ],
+  "not_claimed": [
+    "whole-phase completion",
+    "selected-provider controlled proof",
+    "production deployment",
+    "live financial posting",
+    "named business acceptance"
+  ]
+}

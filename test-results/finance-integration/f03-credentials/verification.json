@@ -1,0 +1,73 @@
+{
+  "status": "AUTHOR_NATIVE_PASS_LIFECYCLE_APPROVE_SECURITY_REVIEW_INCOMPLETE",
+  "timestamp": "2026-09-09T06:18:24.603183+00:00",
+  "scope": "Bounded342 declared connection registry and sandbox protected credential lifecycle; no production starts or financial dispatch",
+  "native_assertions": 83,
+  "observed_metadata_lock_races": 7,
+  "provenance": {
+    "migration.sql": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+    "review.sql": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8",
+    "F03-CREDENTIAL-CONTRACT.md": "28abcc7625cc387069d622309ea2f5112d9f2d668206c0f46949abee9c869842",
+    "concurrency.py": "7d1417ccd7888efe10748505ef228506885a34ddf8ead01de127467b056c5e4e",
+    "concurrency.json": "cff691237e91cd93b13bb6aa4a20aced15c8027c55b0d384b53ea51aed139b3f",
+    "review.log": "f190244594500e6f906d68514c1d625a49c1c019fa94f15303fe61f95679528a",
+    "full-replay.json": "55baef5209bab4bf2a1b9c2c1dce5f09c7a3bdda6e0d614762371b9619448e94",
+    "full-replay.log": "f0db6303320cd7ed53efaae037b6f85c252c1664e738b63cf3a2cb569e64c90d",
+    "full-replay.py": "f593f9a0395750460e80efe0cc6d0728cb9a10c54f4928f6fa2ffd4bc747c734"
+  },
+  "evidence_files": [
+    "migration.sql",
+    "review.sql",
+    "F03-CREDENTIAL-CONTRACT.md",
+    "concurrency.py",
+    "concurrency.json",
+    "review.log"
+  ],
+  "retained_failures": [
+    "Initial PL/pgSQL alias ambiguity; corrected before native happy path",
+    "Unstarted reconnect stranded active claim; reproduced then explicit never-started fencing added",
+    "Independent identity-observer revoke during final receipt wait; both final delivery and activation reread current identity",
+    "Ready-state seed bypassed explicit reconnect; now initial/new reconnect only",
+    "Stopped identity access read bypassed fence; now candidate fence and full controls context checked",
+    "Global duplicate physical grant ownership; now unique owner with generic unavailable response",
+    "Vault outage was misclassified as invalid response; now sanitized protected-store55000 with no invalid-provider evidence",
+    "Fresh seed while stopped bypassed intended stop semantics; explicit resume and live binding/control checks required",
+    "Known hard deadline could be forgotten/extended by refresh; now conservative same-epoch minimum, reset only through explicit reconnect"
+  ],
+  "not_proven": [
+    "Real Vault encryption/API operation",
+    "JWT signature issuance and actual gateway role routing",
+    "OAuth provider HTTP or sandbox misconfiguration prevention",
+    "Provider response lost before durable capture recovery",
+    "Safe restored active backup or production activation",
+    "HFA025/F03 phase completion"
+  ],
+  "full_replay": {
+    "status": "PASS",
+    "migrations": 345,
+    "probes": 26,
+    "source": "full-replay.json",
+    "migration_sha256": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+    "test_sha256": "909f7bc177d23545176c1aea632475c41f00ed64f34edafe676027c461a46c77",
+    "test_only_followup": "Guard moved unchanged before fixture mutations;83 assertions rerunPASS; root integrated replay will use cf44 test hash"
+  },
+  "independent_review": {
+    "security": "INCOMPLETE: reviewer agent errored with possible cybersecurity-risk flag; no final approval emitted",
+    "lifecycle": {
+      "verdict": "APPROVE",
+      "schema_sha256": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+      "test_sha256": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8",
+      "independent_assertions": 83,
+      "additional_probes": 10,
+      "evidence": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/credentials-342-lifecycle-review/verdict.json"
+    }
+  },
+  "integrated_gate": {
+    "artifact": "test-results/agent-gates/2026-09-09T06-22-15-178Z-HFA-F03-CREDENTIALS.json",
+    "status": "PASS",
+    "migration_sha256": "dc62a329bf5b464d486bde0213633120f3d835d56000a71ff419309919e553f8",
+    "test_sha256": "cf44f4f9893eba28432bd23e2122f18b716a9d432d6de5dcd08d15945d8992b8",
+    "migrations": 345,
+    "probes": 26
+  }
+}

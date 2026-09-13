@@ -1,0 +1,61 @@
+{
+  "verdict": "APPROVE",
+  "scope": "Root CI native Gitleaks installation and two accessible-label additions only; source review, not a CI/browser rerun",
+  "reviewer": "qbo_read_contract",
+  "recorded_at": "2026-09-09T19:42:37.619728+00:00",
+  "files": [
+    {
+      "path": ".github/workflows/finance-integration.yml",
+      "sha256": "4c721810af7ce37b2039ecd9e8ce0fa17954c6c47431e8e02066a24a2a16170a"
+    },
+    {
+      "path": "src/app/(admin)/billing/invoices/generate/page.tsx",
+      "sha256": "bf3057b2210ea225d3169101dbe73238d96e2345113c9ab60e3f3b31178705d5"
+    },
+    {
+      "path": "scripts/run-gitleaks.mjs",
+      "sha256": "2f78c4f1a9613c9ca6b3b8df678b7e4301feb9377a6abeada4327c59899943a8"
+    }
+  ],
+  "checks": [
+    {
+      "name": "bash -n extracted install script",
+      "status": "PASS"
+    },
+    {
+      "name": "Official GitHub release asset SHA256 equals pinned archive hash",
+      "status": "PASS"
+    },
+    {
+      "name": "Archive verified before tar or binary execution",
+      "status": "PASS"
+    },
+    {
+      "name": "Explicit bash step fails closed and has no continue-on-error or skip",
+      "status": "PASS"
+    },
+    {
+      "name": "GITHUB_PATH makes native scanner available to later gate",
+      "status": "PASS"
+    },
+    {
+      "name": "Existing detector configuration generic-key regression and nonzero exit unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "Only two aria-label additions in invoice generator diff",
+      "status": "PASS"
+    },
+    {
+      "name": "Names identify Billing month and Refresh invoice preview controls without handler changes",
+      "status": "PASS"
+    }
+  ],
+  "source": "https://api.github.com/repos/gitleaks/gitleaks/releases/tags/v8.30.1",
+  "verified_asset_digest": "sha256:551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+  "limits": [
+    "No workflow execution or CI success claim",
+    "No independent browser/Axe rerun; root supplied that evidence",
+    "No broader invoice behavior or release approval"
+  ]
+}

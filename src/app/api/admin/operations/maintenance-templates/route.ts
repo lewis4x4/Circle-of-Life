@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { actorCanAccessFacility, requireOperationsActor } from "@/lib/operations/auth";
 import { parseJsonBody } from "@/lib/http/json-body";
 import type { AppRole } from "@/lib/rbac";
 
@@ -36,7 +36,7 @@ type TemplateRow = {
 };
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminApiActor({ allowedRoles: VIEW_ROLES });
+  const auth = await requireOperationsActor({ allowedRoles: VIEW_ROLES });
   if ("response" in auth) return auth.response;
   const { actor } = auth;
 
@@ -48,10 +48,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  let query = actor.admin
+  let query = actor.currentActor.client
     .from("operation_task_templates" as never)
     .select("id, name, description, category, cadence_type, shift_scope, day_of_week, day_of_month, month_of_year, assignee_role, priority, estimated_minutes, asset_ref, vendor_booking_ref")
-    .eq("organization_id", actor.organization_id)
+    .eq("organization_id", actor.organizationId)
     .eq("facility_id", facilityId)
     .in("category", ["maintenance", "vendor_management"])
     .is("deleted_at", null)
@@ -64,17 +64,17 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query;
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Operation request could not be completed" }, { status: 500 });
   }
 
   return NextResponse.json({ templates: (data ?? []) as unknown as TemplateRow[] });
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminApiActor({ allowedRoles: VIEW_ROLES });
+  const auth = await requireOperationsActor({ allowedRoles: VIEW_ROLES });
   if ("response" in auth) return auth.response;
   const { actor } = auth;
-  if (!MANAGE_ROLES.has(actor.app_role)) {
+  if (!MANAGE_ROLES.has(actor.appRole)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
@@ -88,10 +88,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data, error } = await actor.admin
+  const { data, error } = await actor.currentActor.client
     .from("operation_task_templates" as never)
     .insert({
-      organization_id: actor.organization_id,
+      organization_id: actor.organizationId,
       facility_id: body.facility_id,
       name: body.name,
       description: body.description,
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Operation request could not be completed" }, { status: 500 });
   }
 
   return NextResponse.json({ id: (data as { id: string }).id });

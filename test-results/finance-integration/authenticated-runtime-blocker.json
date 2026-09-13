@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "status": "BLOCKED_EXTERNAL",
+  "scope": "F01 full local Auth/PostgREST and standalone audit HTTP proof",
+  "observed_at": "2026-09-09T01:47:20.646956+00:00",
+  "project_id": "hfa-01a08335",
+  "source_runner_sha256": "0ef55a3c4a7aa75eccf7913efc0182fa474c3c654995ca2c04911b042c186f6a",
+  "bootstrap": {
+    "status": "PASS",
+    "layer": "full local Supabase schema-only bootstrap",
+    "source_schema_sha256": "7b53aee1374e34019f29556c97d3e31841770df4f034b238f388c18f6d510795",
+    "auth_helpers_overwritten": false,
+    "table_data_copied": false,
+    "auth_helper_sha256": "8652b2d15ac42605fb701bf0424b88d90f328b1c247db589465908368b495acc",
+    "applied_source": {
+      "336_finance_source_commands.sql": "57d5164db0f0195d6926617feb393336534dc39d836b454240582ebd16c35c1f",
+      "338_resident_money_snapshot.sql": "44abf0be26386d51d938e5736d472ed941b83af61a85de986385d5f9f582f069"
+    },
+    "pre_request_hook": "public.haven_assert_authorized_request",
+    "transport": "psql inside only run-owned DB container; host forwarding intermittent",
+    "completed_at": "2026-09-09T00:10:07.720929+00:00"
+  },
+  "observed_actual_behavior": [
+    "Three synthetic roles successfully signed in through real GoTrue, with actual session rows and hook claim versions verified in the 00-17-13.958Z run.",
+    "Real PostgREST enforced its1000-row cap against2505 authorized audit rows, returned206 and Content-Range0-999/2505; original oracle incorrectly expected200 and was corrected."
+  ],
+  "not_proven": [
+    "No complete clean audit API suite",
+    "No authenticated payment API suite executed",
+    "No standalone audit HTTP/browser export acceptance",
+    "No hosted production/provider/business acceptance"
+  ],
+  "runtime_failures": [
+    "Repeated host/Auth HTTP504 and30s timeouts",
+    "Docker embedded DNS127.0.0.11 timed out resolving the owned DB hostname",
+    "Docker Engine status/inspect/exec/stop/delete requests intermittently timed out"
+  ],
+  "attempted_repairs": [
+    "Minimal4-service stack passed startup health checks after excluding unused unhealthy storage",
+    "Schema-only public/haven bootstrap; real auth/storage preserved, auth.uid/jwt hashes unchanged",
+    "Owned native pooled gateway proxy; warm Auth health returned200 in5ms",
+    "Verified /etc/hosts pins only inside owned containers",
+    "Only owned Auth container replaced with same image/settings/signing keys and DB DSN pinned to verified owned DB IP; create201/start204 confirmed"
+  ],
+  "last_confirmed_runtime": {
+    "auth_container_id": "12ebbf185e5135a1985db35ce60a79ce7604cac66d93b64e3af69903193d8a15",
+    "proxy_pid": 26976,
+    "standalone_deno_pid": 37343
+  },
+  "private_runtime_directory": "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/full-supabase",
+  "attempts": [
+    {
+      "artifact": "test-results/finance-integration/2026-09-08T23-55-36.905Z-authenticated-audit.json",
+      "status": "BLOCKED_EXTERNAL",
+      "counts": {
+        "total": 1,
+        "passed": 0,
+        "failed": 0,
+        "blocked": 1,
+        "skipped": 0
+      },
+      "failure": "Private local runtime configuration is required"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T00-10-40.342Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 10,
+        "passed": 9,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "Assertion failed: owner: real password sign-in succeeds"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T00-13-57.560Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 7,
+        "passed": 6,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "The operation was aborted due to timeout"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T00-17-13.958Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 15,
+        "passed": 14,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "Assertion failed: real REST row cap is exercised"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T00-18-58.365Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 7,
+        "passed": 6,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "Assertion failed: restricted: real password sign-in succeeds"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T00-29-05.813Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 10,
+        "passed": 9,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "The operation was aborted due to timeout"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T00-35-53.807Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 7,
+        "passed": 6,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "The operation was aborted due to timeout"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T00-46-38.700Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 7,
+        "passed": 6,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "The operation was aborted due to timeout"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T01-11-27.221Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 14,
+        "passed": 13,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "Assertion failed: outsider: real password sign-in succeeds"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T01-23-14.584Z-authenticated-audit.json",
+      "status": "FAIL",
+      "counts": {
+        "total": 8,
+        "passed": 7,
+        "failed": 1,
+        "blocked": 0,
+        "skipped": 0
+      },
+      "failure": "The operation was aborted due to timeout"
+    },
+    {
+      "artifact": "test-results/finance-integration/2026-09-09T01-44-34.985Z-authenticated-audit.json",
+      "status": "BLOCKED_EXTERNAL",
+      "counts": {
+        "total": 1,
+        "passed": 0,
+        "failed": 0,
+        "blocked": 1,
+        "skipped": 0
+      },
+      "failure": "Private local runtime configuration is required"
+    }
+  ],
+  "limits": [
+    "No global Docker restart or unrelated container/database changes",
+    "Runtime remains available for run owner to diagnose; do not treat startup success or partial cases as clean gate success",
+    "Standalone Deno imports actual handler and uses user JWT against real RPCs; it is not deployed gateway-JWT proof"
+  ],
+  "auth_final_state": {
+    "observed_current": false,
+    "read_error": "Docker inspection timed out",
+    "last_confirmed_id": "12ebbf185e5135a1985db35ce60a79ce7604cac66d93b64e3af69903193d8a15",
+    "last_confirmed_mutation": "create201/start204; no subsequent stop/delete requested"
+  },
+  "standalone_handler_revision": {
+    "sha256": "54b928e26c0d72e6fe98b3ea092dff14346450473e47ea12456e7583c6458133",
+    "stale_authorization_protocol": 401,
+    "edge_unit_tests": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    "native_pid": 99410
+  }
+}

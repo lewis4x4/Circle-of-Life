@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:56:18.046928+00:00",
+  "sql": "SELECT coalesce(json_agg(q),'[]'::json) FROM (SELECT id,recorder_id,performed_at,recorded_at,revision,evidence_status,evidence_status_current FROM public.operation_execution_receipts WHERE task_instance_id='64a65fd4-e99c-4191-86db-6450ba64ac6f' AND receipt_kind='performance') q;",
+  "exit": 0,
+  "stdout": "[{\"id\":\"bbdb39be-9fc8-4690-9fb4-d73d4100718c\",\"recorder_id\":\"6c578969-864a-467b-88ee-a7ca3a782506\",\"performed_at\":\"2026-09-12T23:56:09.740615+00:00\",\"recorded_at\":\"2026-09-12T23:56:09.740615+00:00\",\"revision\":\"80aeee01a3ed00f84aa32b6b1e41dc35e821e90d36047a4d2972703cd3378e28\",\"evidence_status\":\"missing\",\"evidence_status_current\":\"complete\"}]\n",
+  "stderr": ""
+}

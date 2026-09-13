@@ -1,0 +1,169 @@
+{
+  "issue": "COL-133",
+  "recorded_at": "2026-09-10T01:55:00Z",
+  "reviewed_commits": {
+    "gate_fix": "8e52a197",
+    "feature": "afe24111"
+  },
+  "method": "Commit-level review of each commit separately. Gate fix reviewed directly. Feature reviewed by two independent read-only reviewers (SQL migration and probes; TypeScript routes, libraries and Edge functions), then every finding was verified against the source and dispositioned. Remediations were applied on the branch in a follow-up commit and re-gated.",
+  "gate_fix_8e52a197": {
+    "gitleaks_exclusions": {
+      "entries": [
+        "2973ca39e00d2848137ad547463fa3fd13702cac:docs/finance-integration/INDEPENDENT-REVIEWS.json:generic-api-key:225",
+        "2973ca39e00d2848137ad547463fa3fd13702cac:docs/finance-integration/INDEPENDENT-REVIEWS.json:generic-api-key:226",
+        "2973ca39e00d2848137ad547463fa3fd13702cac:supabase/tests/review_finance_credential_lifecycle.sql:generic-api-key:374"
+      ],
+      "form": "exact commit:path:rule:line fingerprints only; no rule disabled, no path allowlisted in .gitleaks.toml; the generic-api-key detector regression probe still runs first",
+      "content_verified": "lines 225-226 are SHA-256 hex digests of migration 342 and its SQL test recorded as review evidence; line 374 is the literal SYNTHETIC_CANARY_342 used to assert that metadata rejects a raw_token field. None is a credential.",
+      "ownership": "identical to the owning Finance branch's classification (cbd94135); the commit is not in this branch's ancestry and is reached only through the shared-ref scan of the whole repository",
+      "finding": "none"
+    },
+    "build_typecheck_configuration": {
+      "change": "next.config.ts typescript.tsconfigPath = tsconfig.typecheck.json",
+      "coverage_kept": "tsconfig.typecheck.json extends tsconfig.json (strict) and includes src/**/*.ts, src/**/*.tsx, .next/types/**/*.ts (generated route/params type validation), next-env.d.ts and the Homewood launch tests; it excludes only src/**/*.test.* and src/**/*.spec.*, node_modules and supabase/functions (Deno, checked separately)",
+      "coverage_dropped_relative_to_next_default": "non-shipped TypeScript outside src/ (scripts/, .agents/, facility-launch-center/, playwright configs) which tsconfig.json's **/*.ts glob had swept into next build's check. These are not part of the production bundle; scripts run under tsx/node at gate time.",
+      "why_needed": "next 16.3 began type-checking every file in tsconfig.json's include, surfacing 64 errors in 22 pre-existing *.test.* files that Vitest executes but tsc never type-checked; identical setting already on Finance (1e0a36ee) and Insurance (118356c6)",
+      "finding": "none; a future hardening could type-check test files under a separate project"
+    },
+    "navigation_replacements": {
+      "files": 6,
+      "semantics": "window.location.href / .assign() replaced by useRouter().push() for internal app routes; the typeof window guard in W2ListClient is now redundant but harmless; the billing ledger keydown effect gained router in its dependency array and the router hook is declared in the same component",
+      "diff_source": "identical to Finance commit 1e0a36ee except the Finance-only billingCurrency refactor was not ported",
+      "finding": "none"
+    },
+    "dependencies": {
+      "pins": "next / eslint-config-next / @next/bundle-analyzer 16.3.4, sharp override 0.35.4, vitest ^4.1.11, overrides hono ^4.13.7 and js-yaml ^4.3.2",
+      "lockfile": "resolved with npm 11.19.1 because npm 10.9.8's arborist crashed (edgesOut) on update/install; lockfileVersion 3 unchanged; npm 10 audit reads it and reports 0 vulnerabilities",
+      "finding": "none; Finance and Insurance carry the same Next/sharp pins so the merge is convergent"
+    }
+  },
+  "feature_afe24111": {
+    "sql_review": {
+      "clean_categories": [
+        "post-wait/post-DML revalidation present on complete, defer, task_command and publish paths",
+        "every SECURITY DEFINER function pins search_path=''; no PUBLIC/anon grants; public wrappers are INVOKER (probe asserts)",
+        "new policies RESTRICTIVE as intended; organization checked before facility; soft-deleted rows filtered",
+        "no legacy action reopened; only the authorised facility-typed backfill writes data",
+        "no audit_log UPDATE/DELETE policy or trigger",
+        "plain CREATE per repo convention; single transaction; replaced signatures match prior definitions"
+      ],
+      "findings": [
+        {
+          "severity": "blocker (integration order)",
+          "where": "337_hfo_current_authority.sql:588-593 vs Finance 337_audit_export_scope_and_snapshot.sql:26",
+          "claim": "COL-133 policies on audit_log_export_jobs reference row_count; Finance alters that column's type; PostgreSQL refuses ALTER TYPE on a column used in a policy",
+          "verified": "reproduced on the scratch cluster: ERROR cannot alter type of a column used in a policy definition",
+          "disposition": "Recorded as a hard ordering constraint in migration-reconciliation.json: Finance's export migration must apply before COL-133's authority migration (the rehearsed Finance-first order applies cleanly). If COL-133 ever lands first, the integrator must drop and recreate operation_export_job_current and operation_export_job_insert_current around Finance's ALTER. No branch file changed."
+        },
+        {
+          "severity": "should-fix",
+          "where": "Finance haven.materialize_audit_export (definer read of audit_log)",
+          "claim": "bypasses COL-133 restrictive audit_log policies",
+          "disposition": "Already resolved by the proposed reconcile migration and proven by its probe (finance-integration/resolution.json)."
+        },
+        {
+          "severity": "should-fix",
+          "where": "export job lifecycle and org-wide scope differ between branches",
+          "disposition": "Resolved in the reconcile: single snapshot lifecycle (COL-133 completion RPC revoked from authenticated); org-wide scope uses the intersection (Finance owner/org_admin rule AND COL-133 current grant). Open integration decision recorded: COL-133 hides completed jobs from the requester's list while Finance's UI expects to list them; retrieval remains authority-checked so relaxing the list policy for snapshot-bearing completed jobs would lose no protection, but that is the integrator's call, not made here."
+        },
+        {
+          "severity": "should-fix",
+          "where": "supabase/tests/review_hfo_current_authority.sql",
+          "claim": "no SQL probe for user_facility_access.revoked_at or operation_subject_access.revoked_at (only in the Python concurrency script outside the replay)",
+          "disposition": "Fixed: two cases added (revoked site grant hides task_a and denies completion even with no expiry; revoked subject grants hide the resident and personnel tasks). Replay PASS."
+        },
+        {
+          "severity": "note",
+          "where": "337:451 and :561",
+          "claim": "meeting/card audit rows hidden regardless of linkage; template, activity and aggregate audit rows hidden entirely",
+          "disposition": "Accepted as the conservative contract boundary for this segment; narrowing to linked rows is a follow-up once link metadata is reliable in old_data/new_data. Recorded, no change."
+        },
+        {
+          "severity": "note",
+          "where": "337:472-481, :136-139, :491",
+          "claim": "org-wide (facility NULL) templates become unwritable and invisible to humans; legacy templates with now-foreign links cannot be retired via publication",
+          "disposition": "Consistent with the spec (explicit facility typing). Added to the handoff's compatibility boundaries. Recorded, no change."
+        },
+        {
+          "severity": "note",
+          "where": "restrictive read policies calling VOLATILE definer helpers per row",
+          "claim": "list queries pay repeated actor lookups per row",
+          "disposition": "Performance follow-up; correctness unaffected. Recorded, no change."
+        }
+      ],
+      "finance_overlap": "Shared tables audit_log and audit_log_export_jobs; no object-name collision; Finance's guard trigger permits COL-133's definer update. Edge function on the merged tree calls materialize_audit_export/retrieve_audit_export; haven_complete_audit_export_job is superseded."
+    },
+    "typescript_review": {
+      "clean_categories": [
+        "no service-role impersonation; all operations routes use the session client and session-derived actor arguments",
+        "no client-selected facility read that is not gated by haven_operation_facility_access",
+        "no fail-open error handling",
+        "no as any; only pre-existing Deno.env non-null assertions",
+        "no resident/staff identifier logging"
+      ],
+      "findings": [
+        {
+          "severity": "should-fix",
+          "where": "src/app/api/admin/meetings/[id]/actions/route.ts",
+          "claim": "create_meeting_action is revoked by 337:509, so the route always failed at the RPC with a generic 'retry' 409 after reading the meeting",
+          "disposition": "Fixed: explicit 409 'Meeting task creation requires a classified command and is not available yet' returned after actor and body validation, before any meeting read or RPC; tests rewritten around the unavailable path (success-path tests retained in history at afe24111)."
+        },
+        {
+          "severity": "should-fix",
+          "where": "src/lib/operations/task-command.ts (escalate)",
+          "claim": "the database always rejects escalate, yet the route took the task and authority locks first and returned a 409 inviting retries",
+          "disposition": "Fixed: explicit 409 returned after authentication, before revalidation, locks or RPC; test asserts no revalidation or RPC call."
+        },
+        {
+          "severity": "should-fix",
+          "where": "supabase/functions/export-audit-log/index.ts vs 337:600",
+          "claim": "Edge accepted failed jobs the completion RPC rejected (generic 500 after reading every page); final scope check ran after the job was already completed, which could strand a completed job with no bytes",
+          "disposition": "Fixed: completion RPC now accepts pending, processing and failed; the single current-authority assertion runs after the bytes are built and before the completion command, whose locked recheck is the last gate. Tests updated; two negative tests added (missing current site grant, different requester)."
+        },
+        {
+          "severity": "should-fix",
+          "where": "supabase/functions/risk-nightly-scorer/index.ts:417, :601",
+          "claim": "raw PostgreSQL error messages returned in the HTTP body",
+          "disposition": "Fixed: fixed strings returned; detail kept in structured logs."
+        },
+        {
+          "severity": "should-fix",
+          "where": "risk-nightly-scorer :797-801, oce-staffing-adequacy-computer :121",
+          "claim": "one unclassified legacy task halts scoring for every organisation processed after it, with nondeterministic organisation order",
+          "disposition": "Not changed. COL-133 deliberately fails the whole service run closed when its restricted projection disagrees with the raw population; continuing per organisation would label partial coverage as complete. Recorded as an owner decision for the operating release (deterministic ordering is a cheap follow-up)."
+        },
+        {
+          "severity": "should-fix (tests)",
+          "where": "assets, vendors, maintenance-templates, start and reinstate routes",
+          "claim": "no route tests exercise actorCanAccessFacility denial there",
+          "disposition": "Partially addressed (export and escalate). Route-level negative tests for the remaining surfaces are a follow-up; the guard itself is covered by auth.test.ts."
+        },
+        {
+          "severity": "note",
+          "where": "complete/defer 404 vs task-command 403 for hidden tasks",
+          "disposition": "Both hide existence; unified status is a follow-up."
+        },
+        {
+          "severity": "note",
+          "where": "facilities routes ignore risk_score_snapshots read errors (null readiness)",
+          "disposition": "Accepted; null is the safe display value."
+        }
+      ]
+    },
+    "remediation_commit": "see git log after afe24111 on codex/hfo-col133-authority; remediated file hashes in implementation-manifest.json review_remediation",
+    "independent_review_note": "The independent local-source review (independent-review.json) approved 337 at sha256 b4550653...; the remediation changes one status set on line 600 (adds 'failed') and adds two probe cases. The change is narrower than the reviewed contract and is covered by the replay and the export tests.",
+    "remediation_gate": {
+      "artifact": "test-results/agent-gates/2026-09-10T01-22-58-857Z-COL-133-HFO-CURRENT-AUTHORITY.json",
+      "verdict": "PASS",
+      "summary": {
+        "passed": 12,
+        "failed": 0,
+        "skipped": 1,
+        "blocking_failures": []
+      },
+      "focused_tests": "17 files, 125 tests",
+      "deno_check": "export-audit-log, risk-nightly-scorer PASS",
+      "native_replay": "340 migration files, 21 SQL probes PASS (includes the two new revoked-grant cases)"
+    }
+  }
+}

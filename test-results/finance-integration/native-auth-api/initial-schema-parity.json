@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "source_sha256": "9e4c0f09b5e47ab6acdb3235d768c1745b5fcf92d2cde980856658a38c899da0",
+  "native_sha256": "9e4c0f09b5e47ab6acdb3235d768c1745b5fcf92d2cde980856658a38c899da0",
+  "normalization": "Remove random pg_dump psql restrict tokens and the documented CREATE SCHEMA public IF NOT EXISTS bootstrap-only change",
+  "diff_lines": 0,
+  "data_copied": false
+}

@@ -1,0 +1,43 @@
+{
+  "at": "2026-09-12T23:53:26.194638+00:00",
+  "request": {
+    "method": "PUT",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "image/png",
+      "x-upsert": "false"
+    },
+    "body": {
+      "length": 70,
+      "sha256": "6f0f9bf480fe0e10d1a3f0f714e08c94865214da47df033836bbf18520ef28d6"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:53:26 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "114",
+      "Connection": "close",
+      "CF-Ray": "a3a2d4e0fff0b4a3-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "Access-Control-Allow-Origin": "*",
+      "Server": "cloudflare",
+      "sb-gateway-mode": "direct",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a0980a-48a1-7da9-9af4-7a308e929e88",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "set-cookie": "<REDACTED>",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "Key": "operation-evidence/ba40a958-0747-4751-9b33-b3326bf7b802/5ba488bb-8144-4899-ac1b-46890127ff76/revoked.png"
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

@@ -1,0 +1,2077 @@
+{
+  "recorded_at": "2026-09-12T22:02:34.258513+00:00",
+  "project": "Haven Rollout",
+  "issues": [
+    {
+      "identifier": "COL-197",
+      "title": "Publish the Front Office capability catalog on Haven: named reads, one synthetic command, delegated officer identity",
+      "state": {
+        "name": "In Progress",
+        "type": "started"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-201",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-195",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-180",
+      "title": "Compare interventions for the verified COL admissions bottleneck",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-179",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-179",
+      "title": "Validate the Homewood referral-to-move-in baseline and bottlenecks",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-178",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-35",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-178",
+      "title": "Name the COL admissions-improvement owner and Homewood baseline reviewers",
+      "state": {
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-35",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-170",
+      "title": "Module \u2014 Real-time standup dashboard",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-165",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-169",
+      "title": "Module \u2014 Visitor / vendor / employee kiosk log",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-167",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-168",
+      "title": "Module \u2014 Intake \u2192 contract \u2192 MACD change forms",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-180",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-166",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-167",
+      "title": "Module \u2014 Payroll kiosk + ADP export + human gates",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-166",
+      "title": "Module \u2014 DocuSign-default contracts + electronic repo",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-180",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-165",
+      "title": "Module \u2014 Site admin portal (Admin Log cadence checkoffs)",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-164",
+      "title": "[HFO-33] Add permissioned natural-language history retrieval with citations",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-162",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-163",
+      "title": "[HFO-27] Verify the offline and printed emergency/survey packet",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-161",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-146",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-151",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-162",
+      "title": "[HFO-32] Report repeated problems and operating bottlenecks from complete history",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-21",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-151",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-161",
+      "title": "[HFO-25] Prove the core release on real authorization, storage and recovery surfaces",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-140",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-154",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-153",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-151",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-150",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-148",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-160",
+      "title": "[HFO-24] Track corporate deliverables and preserve the meeting's historical view",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-152",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-159",
+      "title": "[HFO-22] Connect dietary, facility services and general admin evidence",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-143",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-154",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-147",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-158",
+      "title": "[HFO-23] Track provider reports and distinct support plans through receipt and review",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-143",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-147",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-157",
+      "title": "[HFO-21] Connect census, deposits, collections and period handoffs",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-180",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-147",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-156",
+      "title": "[HFO-20] Connect released employee-file readiness and training to operations",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-147",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-155",
+      "title": "[HFO-19] Connect resident and admission review requirements to their source records",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-180",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-147",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-154",
+      "title": "[HFO-18] Connect drill and generator records to the checklist first",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-147",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-153",
+      "title": "[HFO-16] Add task help, local duty split and replacement-person handover",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-148",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-135",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-152",
+      "title": "[HFO-15] Connect approved reminders to the existing audit calendar",
+      "state": {
+        "name": "In Progress",
+        "type": "started"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-148",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-137",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-151",
+      "title": "[HFO-13] Export complete authorized activity history with a stable cutoff",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-150",
+      "title": "[HFO-12] Show corporate Needs Attention with trustworthy counts",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-149",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-149",
+      "title": "[HFO-11] Build corporate Facility \u2192 Activity \u2192 complete History",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-145",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-143",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-133",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-148",
+      "title": "[HFO-10] Build the staff Today, Upcoming and History workspace",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-147",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-144",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-146",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-145",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-143",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-142",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-147",
+      "title": "[HFO-09] Link final source records to requirements with replay and invalidation handling",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-145",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-142",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-139",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-146",
+      "title": "[HFO-17] Recover interrupted saves safely on shared devices",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-143",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-142",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-145",
+      "title": "[HFO-08] Preserve corrections, reviews and all legacy task-write paths",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-143",
+              "state": {
+                "name": "In Progress",
+                "type": "started"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-142",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-144",
+      "title": "[HFO-14] Track problems, next actions, backup ownership and resolution",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-142",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-133",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-143",
+      "title": "[HFO-07] Attach documents, screenshots and photos through scoped verified evidence",
+      "state": {
+        "name": "In Progress",
+        "type": "started"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-154",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-147",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-142",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-133",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-142",
+      "title": "[HFO-06] Record work with atomic, idempotent execution receipts",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-133",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-139",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-135",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-141",
+      "title": "[HFO-31] Roll out facility operations at Plantation on Summers with separate acceptance",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-138",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-140",
+      "title": "[HFO-26] Configure Homewood's approved task profile and preserve unresolved answers",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-137",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-135",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-139",
+      "title": "[HFO-04] Generate subject-scoped occurrences without duplicate or rewritten history",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-133",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-137",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-138",
+      "title": "[HFO-30] Roll out facility operations at Grande Cypress with separate acceptance",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-136",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-137",
+      "title": "[HFO-03] Implement one recurrence and due-date evaluator",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-135",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-136",
+      "title": "[HFO-29] Roll out facility operations at Rising Oaks with separate acceptance",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-134",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-135",
+      "title": "[HFO-02] Version facility applicability, evidence rules and local procedures",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-132",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-134",
+      "title": "[HFO-28] Roll out facility operations at Oakridge with separate acceptance",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-21",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-133",
+      "title": "[HFO-05] Enforce site, subject and current-person authority on every operations surface",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-132",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-18",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-132",
+      "title": "[HFO-01] Create the stable activity catalog and map all 91 Admin Log items",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-165",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-18",
+              "state": {
+                "name": "Done",
+                "type": "completed"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-131",
+      "title": "Section 8 \u2014 Operational insight and assisted retrieval",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-130",
+      "title": "Section 7 \u2014 Roll out the same application to each facility",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-129",
+      "title": "Section 6 \u2014 Homewood release and continuity",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-128",
+      "title": "Section 5 \u2014 Connect existing operating records",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-127",
+      "title": "Section 4 \u2014 Problems, coverage and dependable daily use",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-126",
+      "title": "Section 3 \u2014 Staff and corporate workspaces",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-125",
+      "title": "Section 2 \u2014 Secure completion, evidence and history",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-124",
+      "title": "Section 1 \u2014 Operating catalog and schedules",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-165",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-120",
+      "title": "Build onboarding checklist templates and the floor-access gate",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-123",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-119",
+      "title": "Build the attendance rules engine in Haven M4",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-123",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-118",
+      "title": "Seed policy_documents with the 21-signature new hire acknowledgment set",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-122",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-121",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-117",
+      "title": "Seed Haven training_programs with the 26-item AHCA training matrix",
+      "state": {
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-156",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-123",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-122",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-120",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-37",
+      "title": "Clear the Supabase Security Advisor findings before Homewood goes live",
+      "state": {
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-161",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-21",
+      "title": "Homewood Lodge: go live and first month of clean checks",
+      "state": {
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-180",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-20",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-140",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-161",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-37",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          },
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-30",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-20",
+      "title": "Homewood Lodge: staff training, on site, every shift",
+      "state": {
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "blocks",
+            "issue": {
+              "identifier": "COL-161",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-30",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-19",
+      "title": "Homewood Lodge: tablets purchased, MDM enrolled, locked to Haven",
+      "state": {
+        "name": "Todo",
+        "type": "unstarted"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-140",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          },
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-163",
+              "state": {
+                "name": "Backlog",
+                "type": "backlog"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "identifier": "COL-18",
+      "title": "Reconcile Haven repository state against production readiness for Homewood",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      },
+      "inverseRelations": {
+        "nodes": [
+          {
+            "type": "related",
+            "issue": {
+              "identifier": "COL-37",
+              "state": {
+                "name": "Todo",
+                "type": "unstarted"
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    }
+  ]
+}

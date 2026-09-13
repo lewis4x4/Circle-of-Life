@@ -1,0 +1,30 @@
+{
+  "issue": "COL-153",
+  "reviewer": "Codex native independent reviewer /root/review",
+  "recorded_at": "2026-09-12T01:41:57.720631+00:00",
+  "verdict": "APPROVE",
+  "scope": "bounded source diff against 205ac030; no merge/deploy/hosted/staff acceptance",
+  "unresolved_findings": [],
+  "resolved_findings": [
+    "Enforce activity facility isolation, including site-local activity mismatch",
+    "Revalidate protected documents and recipient roles after dependent DML",
+    "Read all history and responsibilities beyond provider caps",
+    "Refresh recipient currentness after reads and distinguish acceptance from coverage",
+    "Expose pinned configured ownership without inferring personal acceptance",
+    "Hide acceptance for superseded proposals and retain authorized historical guidance references",
+    "Render actual task names/assignees",
+    "Validate and narrow RPC response shape",
+    "Stabilize existing September 10 due_today fixture using Date-only fake clock and restore"
+  ],
+  "independent_checks": {
+    "targeted_vitest": "4 files /26 tests PASS",
+    "diff_check": "PASS",
+    "changed_typescript_diagnostics": "No errors attributable to changed files",
+    "diagnostic_limitation": "LSP fallback also surfaced 12 unchanged template/pilot test diagnostics; not a project-wide clean claim",
+    "parent_typecheck": "npm run typecheck PASS using repository tsconfig.typecheck.json"
+  },
+  "remaining_gates": [
+    "Parent strict segment gate must pass before closeout",
+    "Hosted Auth/PostgREST/Storage and staff/operating acceptance remain separate"
+  ]
+}

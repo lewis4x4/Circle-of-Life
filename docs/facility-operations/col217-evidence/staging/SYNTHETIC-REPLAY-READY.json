@@ -1,0 +1,10 @@
+{
+  "target": "iwcnajanvjvynolltflw",
+  "schema_equivalence": "PASS",
+  "review": "PASS",
+  "source_sha": "b3e1d819874c942afb737f46eaa632ba54de247c",
+  "manifest_sha256": "24dc7ab02b7077f5e9ede22843b2449fb6526f8155ab392ca9d159ef78d7809d",
+  "migration_files": 366,
+  "sql_probes": 46,
+  "recorded_at": "2026-09-12T23:37:34.571853+00:00"
+}

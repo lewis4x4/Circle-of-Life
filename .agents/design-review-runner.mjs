@@ -15,7 +15,7 @@ import process from "node:process";
 
 const root = process.cwd();
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
-const storageState = process.env.UI_REVIEW_STORAGE_STATE || undefined;
+const storageState = process.env.UI_REVIEW_STORAGE_STATE || process.env.HAVEN_UI_STORAGE_STATE || undefined;
 const routes = (process.env.DESIGN_REVIEW_ROUTES ?? "/")
   .split(",")
   .map((s) => s.trim())
@@ -38,6 +38,7 @@ async function main() {
   const report = {
     timestamp: new Date().toISOString(),
     baseUrl,
+    authenticatedContextProvided: Boolean(process.env.HAVEN_UI_STORAGE_STATE),
     routes,
     authentication: storageState ? "provided-storage-state" : "anonymous",
     readySelector: process.env.UI_REVIEW_READY_SELECTOR || null,

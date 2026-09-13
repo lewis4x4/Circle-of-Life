@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-12T23:52:13.519367+00:00",
+  "claim_names": [
+    "aal",
+    "amr",
+    "app_metadata",
+    "app_role",
+    "aud",
+    "auth_claim_version",
+    "email",
+    "exp",
+    "iat",
+    "is_anonymous",
+    "iss",
+    "organization_id",
+    "phone",
+    "role",
+    "session_id",
+    "sub",
+    "user_metadata"
+  ],
+  "auth_claim_version": 2,
+  "session_id_present": true
+}

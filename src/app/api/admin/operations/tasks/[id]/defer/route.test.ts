@@ -32,7 +32,7 @@ const query = {
   maybeSingle: vi.fn(),
 };
 const admin = { from: vi.fn(() => query), rpc };
-const actor = { id: "actor-1", organizationId: "org-1", appRole: "owner", admin };
+const actor = { id: "actor-1", organizationId: "org-1", appRole: "owner", currentActor: { client: admin }, admin: { from: vi.fn(() => { throw new Error("Service reads forbidden"); }), rpc: vi.fn(() => { throw new Error("Service command forbidden"); }) } };
 
 function request(reason = "Coverage gap") {
   return new Request("https://haven.test/api/admin/operations/tasks/task/defer", {
@@ -104,6 +104,15 @@ describe("operation task atomic defer route", () => {
       expect.objectContaining({ message: sentinel }),
       { action: "rpc", taskId: task.id, facilityId: task.facility_id },
     );
+  });
+
+  it("tells the operator that a managed occurrence cannot be deferred by the legacy command", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "P0001", message: "Managed occurrences cannot be deferred by the legacy command" } });
+
+    const response = await PATCH(request() as never, { params: Promise.resolve({ id: task.id }) });
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "Managed occurrences cannot be deferred by the legacy command" });
   });
 
   it("hides cross-organization task identifiers before RPC", async () => {

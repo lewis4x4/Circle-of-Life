@@ -1,0 +1,22 @@
+{
+  "recorded_at": "2026-09-12T22:16:57.213434+00:00",
+  "reviewer": "Codex native subagent reminder_sql_review",
+  "scope": "migration350 SQL authority, audit visibility, lifecycle, retries, concurrency lock order, final source_label",
+  "verdict": "APPROVE_SOURCE",
+  "remaining_actionable_findings": 0,
+  "fixed_findings": [
+    "Independent task and issue identities",
+    "Unknown reminder window blocks overdue activation",
+    "Changed source windows and identities reset suppression",
+    "Durable exact retry receipts, including expired snooze and older requests",
+    "Recipient eligibility mirrors current work authority",
+    "Final authority check after locks and writes",
+    "Private audit scope for response receipts",
+    "Per-task advisory serialization before issue/task locks",
+    "Managed delivery token guard"
+  ],
+  "limits": [
+    "Read-only source review; runtime proof recorded separately",
+    "No hosted or staff acceptance"
+  ]
+}

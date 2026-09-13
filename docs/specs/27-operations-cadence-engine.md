@@ -1,5 +1,7 @@
 # Module 27 — Operations Cadence Engine (OCE)
 
+September 9 delivery update: [Facility Operations stable catalog](27-facility-operations-catalog.md) governs COL-132 source identity and provenance. The older schedule, assignment and escalation examples below are not approval to activate unresolved Admin Log rules.
+
 **spec_id:** mod-27-operations-cadence-engine
 **status:** FULL
 **created:** 2026-04-21

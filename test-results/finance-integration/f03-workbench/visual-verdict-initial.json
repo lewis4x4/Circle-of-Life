@@ -1,0 +1,16 @@
+{
+  "score": 88,
+  "verdict": "revise",
+  "category_match": true,
+  "differences": [
+    "Raw ISO timestamps with microseconds make observations and rows harder to scan than the established Finance presentation.",
+    "Production posting and local staging terminology is ambiguous beside native posted source events.",
+    "The record table sits directly on the canvas instead of the white bordered record-card treatment in the Finance reference."
+  ],
+  "suggestions": [
+    "Use the existing Eastern-time display formatter with an ET label; preserve raw microseconds only in cursors.",
+    "Use external posting disabled and Preparation available or paused while keeping the business-release and unverified-accounting warning.",
+    "Group the queue heading, observation context, rows and pagination in a Finance Card with consistent spacing."
+  ],
+  "reasoning": "The actual client already matches Finance typography, colors, navigation and controls. These readability and grouping refinements remain; the synthetic banner and absent production chrome are intentional fixture limitations, not pixel-fidelity claims."
+}

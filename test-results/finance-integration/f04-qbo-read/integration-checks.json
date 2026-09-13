@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "evidence_layer": "local-source-and-synthetic",
+  "recorded_at": "2026-09-09T14:09:41.738016+00:00",
+  "source_base": "8443ce47d36ad646507e5bd06e52ea99af758d67",
+  "checks": [
+    {
+      "command": "npm run test:finance-read",
+      "result": "PASS",
+      "cases": 98,
+      "artifact": "test-results/finance-integration/2026-09-09T14-06-37.538Z-qbo-read.json"
+    },
+    {
+      "command": "npm run test:audit-edge",
+      "result": "PASS",
+      "cases": 15,
+      "artifact": "test-results/finance-integration/2026-09-09T14-06-38.749Z-audit-edge.json"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run lint",
+      "result": "PASS",
+      "environment": "Short run-owned TMPDIR for tsx IPC socket length"
+    },
+    {
+      "command": "deno check supabase/functions/_shared/qbo-read.ts supabase/functions/_shared/qbo-read.test.ts",
+      "result": "PASS"
+    },
+    {
+      "command": "deno lint supabase/functions/_shared/qbo-read.ts supabase/functions/_shared/qbo-read.test.ts",
+      "result": "PASS"
+    },
+    {
+      "command": "node --check scripts/finance-integration/run-edge-tests.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "gitleaks dir --redact --no-banner on each QBO source/test and f04-qbo-read evidence directory",
+      "result": "PASS"
+    },
+    {
+      "command": "SHA256 compare seven original untracked files against private initial baseline",
+      "result": "PASS",
+      "files": 7
+    }
+  ],
+  "integration_files": [
+    {
+      "path": "scripts/finance-integration/run-edge-tests.mjs",
+      "sha256": "3872821684887fad949eccece21020712ec4647af61471710d9b526a46438955"
+    },
+    {
+      "path": "package.json",
+      "sha256": "5d9291334a7266292fa578f3812cbd63b23cc2ec0cbdb6406beda12d6427ae9b"
+    },
+    {
+      "path": ".github/workflows/finance-integration.yml",
+      "sha256": "a271c346647c85bfede2c9d8b833876450e9d311fb18738fa2b364298acd69d7"
+    }
+  ],
+  "limits": [
+    "No provider/network calls or durable capture acceptance",
+    "Broader app full-unit/native gates run in unconditional CI; prior8443 head passed CI34360407625",
+    "No final342 dynamic security approval or full release acceptance"
+  ]
+}

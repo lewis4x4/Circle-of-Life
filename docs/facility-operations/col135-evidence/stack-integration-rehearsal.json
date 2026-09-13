@@ -1,0 +1,39 @@
+{
+  "recorded_at": "2026-09-10T02:47:52+00:00",
+  "purpose": "Rehearse the complete Finance-first integration of the HFO stack on a local scratch merge. Not pushed, not applied, not deployed.",
+  "scratch_branch": "scratch/hfo-stack-integration (3b45e4f1); worktree removed after verification",
+  "merge_order": [
+    "origin/main fad17dcc",
+    "codex/haven-finance-integration 0d0e7763 (clean)",
+    "codex/hfo-col132-catalog 92dea9b9 (conflict: .gitleaksignore, identical fingerprint sets, Finance side kept)",
+    "codex/hfo-col133-authority 476f02d1 (conflicts: .gitleaksignore Finance side; export-audit-log/index.ts Finance handler; templates route tests COL-133 side; review_clinical_integrity.sql = previous rehearsed union plus the COL-133 approved-bind fixture delta)",
+    "codex/hfo-col135-applicability 62d19cf4 (clean)"
+  ],
+  "renumbering": {
+    "343_hfo_activity_catalog.sql": "was 336",
+    "344_hfo_current_authority.sql": "was 337",
+    "345_hfo_requirement_versions.sql": "was 338",
+    "346_audit_export_current_authority_reconcile.sql": "proposed reconcile (col133-evidence/finance-integration)",
+    "seed_script": "scripts/facility-operations/sync-activity-catalog-seed.ts filename updated to 343; --check PASS from an unrelated directory"
+  },
+  "added_from_col133_rehearsal": [
+    "supabase/tests/review_audit_export_current_authority.sql",
+    "supabase/tests/review_audit_export_authorization.sql (Finance probe with the explicit owner site B grant and visible-job forge assertion)"
+  ],
+  "retired": "src/lib/operations/audit-export-authority.test.ts (compiled the replaced Edge source; guarantees moved to the database probe)",
+  "verification": {
+    "migrations_check": "PASS 349 files, sequence 001..346",
+    "native_replay": "PASS 349 migration files, 30 SQL probes",
+    "deno_check": "export-audit-log, oce-escalation-scanner, oce-staffing-adequacy-computer, risk-nightly-scorer PASS",
+    "finance_handler_deno_tests": "15 passed",
+    "typecheck": "PASS",
+    "vitest_focused": "20 files, 157 tests PASS (COL-135's 166 minus the nine retired harness tests)"
+  },
+  "still_required_before_integration": [
+    "owner ruling on named individuals in source header text (COL-132)",
+    "integrator decision on listing completed snapshot export jobs",
+    "fresh Haven hosted-ledger read immediately before assigning final numbers (numbered through 335 on 2026-09-10)",
+    "production dry-run of the 343 catalog backfill",
+    "COL-133 and COL-135 review closure (both In Review); nothing merges from draft PRs #465, #466, #467 without those steps"
+  ]
+}

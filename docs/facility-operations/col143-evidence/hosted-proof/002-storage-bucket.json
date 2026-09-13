@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:51:52.998639+00:00",
+  "sql": "SELECT coalesce(json_agg(q),'[]'::json) FROM (SELECT id,public,file_size_limit,allowed_mime_types FROM storage.buckets WHERE id='operation-evidence') q;",
+  "exit": 0,
+  "stdout": "[{\"id\":\"operation-evidence\",\"public\":false,\"file_size_limit\":20971520,\"allowed_mime_types\":[\"application/pdf\",\"image/jpeg\",\"image/png\",\"image/webp\"]}]\n",
+  "stderr": ""
+}

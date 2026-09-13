@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "phase": "F01",
+  "status": "PASS",
+  "commandExitCode": 0,
+  "target": "run-owned Unix socket:55447/hfa_audit_335",
+  "baselineCommit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "timestamp": "2026-09-08T23:09:33.019110+00:00",
+  "assertions": [
+    "Committed source insert during materialization excluded from established snapshot",
+    "Two concurrent same-job materializations return same identity",
+    "Exactly one immutable snapshot and materialization event",
+    "Complete2505-row snapshot; independent live source count2506"
+  ],
+  "counts": {
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0
+  },
+  "method": "PostgreSQL advisory barrier at snapshot INSERT after single source aggregate, two authenticated connections plus independent writer",
+  "limits": [
+    "Synthetic native SQL; no hosted Auth/PostgREST or external anchoring"
+  ]
+}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Landmark, Scale, Wallet } from "lucide-react";
 
 import { FinanceHubNav } from "../finance-hub-nav";
-import { billingCurrency } from "@/app/(admin)/billing/billing-invoice-ledger";
+import { billingCurrency } from "@/lib/billing/currency";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerSelectedFacilityId } from "@/lib/facilities/selected-facility-cookie.server";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
@@ -43,9 +43,9 @@ export default async function FinanceTrustPage() {
   }
 
   const summary = {
-    totalTrust: rows.reduce((sum, row) => sum + row.currentBalanceCents, 0),
-    totalOpenInvoices: rows.reduce((sum, row) => sum + row.openInvoiceCents, 0),
-    deficits: rows.filter((row) => row.deltaCents < 0).length,
+    totalTrust: rows.reduce((sum, row) => sum + (row.currentBalanceCents ?? 0), 0),
+    legacyReview: rows.filter(row => row.legacyReviewRequired).length,
+    ledgerDifferences: rows.filter(row => !row.ledgerMatchesBalance).length,
   };
 
   return (
@@ -55,7 +55,7 @@ export default async function FinanceTrustPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Resident trust reconciliation</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Compare current resident trust balances against open invoice exposure and surface deficit accounts before month-end close.
+          Resident money uses the same ledger as Cash. Bank funds and the accounting liability still require separate reconciliation. Legacy balances await review and are never added to current funds or applied to invoices.
         </p>
       </div>
 
@@ -68,26 +68,26 @@ export default async function FinanceTrustPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <TrustMetricCard
           icon={Wallet}
-          label="Trust balance"
-          value={billingCurrency.format(summary.totalTrust / 100)}
+          label="Recorded resident funds"
+          value={error ? "Unavailable" : summary.legacyReview > 0 ? "Incomplete — review legacy balances" : billingCurrency.format(summary.totalTrust / 100)}
         />
         <TrustMetricCard
           icon={Landmark}
-          label="Open invoices"
-          value={billingCurrency.format(summary.totalOpenInvoices / 100)}
+          label="Legacy balances to review"
+          value={error ? "Unavailable" : String(summary.legacyReview)}
         />
         <TrustMetricCard
           icon={Scale}
-          label="Deficit residents"
-          value={String(summary.deficits)}
-          tone={summary.deficits > 0 ? "red" : "emerald"}
+          label="Ledger differences"
+          value={error ? "Unavailable" : String(summary.ledgerDifferences)}
+          tone={summary.ledgerDifferences > 0 ? "red" : "slate"}
         />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Resident trust positions</CardTitle>
-          <CardDescription>{rows.length} resident trust account(s) in scope</CardDescription>
+          <CardDescription>{rows.length} resident-money record(s) in scope</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -95,8 +95,8 @@ export default async function FinanceTrustPage() {
               <tr className="border-b border-slate-200 dark:border-slate-800">
                 <th className="pb-2 pr-4 font-medium">Resident</th>
                 <th className="pb-2 pr-4 font-medium">Trust balance</th>
-                <th className="pb-2 pr-4 font-medium">Open invoices</th>
-                <th className="pb-2 pr-4 font-medium">Delta</th>
+                <th className="pb-2 pr-4 font-medium">Legacy balance</th>
+                <th className="pb-2 pr-4 font-medium">Review state</th>
                 <th className="pb-2 pr-4 font-medium">Last entry</th>
                 <th className="pb-2 font-medium">Actions</th>
               </tr>
@@ -105,12 +105,10 @@ export default async function FinanceTrustPage() {
               {rows.map((row) => (
                 <tr key={row.residentId} className="border-b border-slate-100 dark:border-slate-900">
                   <td className="py-3 pr-4">{row.residentName}</td>
-                  <td className="py-3 pr-4">{billingCurrency.format(row.currentBalanceCents / 100)}</td>
-                  <td className="py-3 pr-4">{billingCurrency.format(row.openInvoiceCents / 100)}</td>
+                  <td className="py-3 pr-4">{row.currentBalanceCents === null ? "Not established" : billingCurrency.format(row.currentBalanceCents / 100)}</td>
+                  <td className="py-3 pr-4">{row.legacyBalanceCents === null ? "None" : billingCurrency.format(row.legacyBalanceCents / 100)}</td>
                   <td className="py-3 pr-4">
-                    <span className={row.deltaCents < 0 ? "text-red-600" : "text-emerald-600"}>
-                      {billingCurrency.format(row.deltaCents / 100)}
-                    </span>
+                    <span>{row.legacyReviewRequired ? "Legacy review required" : !row.ledgerMatchesBalance ? "Ledger difference" : "Bank and books not verified"}</span>
                   </td>
                   <td className="py-3 pr-4">{formatTrustLastEntryDate(row.lastEntryDate)}</td>
                   <td className="py-3">
@@ -131,10 +129,10 @@ export default async function FinanceTrustPage() {
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 ? (
+              {rows.length === 0 && !error ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                    No trust-account entries in the current scope.
+                    No resident-money records in the current scope.
                   </td>
                 </tr>
               ) : null}

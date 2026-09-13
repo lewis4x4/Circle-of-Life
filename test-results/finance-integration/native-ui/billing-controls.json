@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "scope": "Existing invoice generation controls in native owner no-facility desktop state",
+  "source_file": "src/app/(admin)/billing/invoices/generate/page.tsx",
+  "source_sha256": "bf3057b2210ea225d3169101dbe73238d96e2345113c9ab60e3f3b31178705d5",
+  "before": [
+    {
+      "id": "button-name",
+      "nodes": 1
+    },
+    {
+      "id": "select-name",
+      "nodes": 1
+    }
+  ],
+  "after": {
+    "axe_violations": 0,
+    "failed_requests": 0,
+    "exact_accessible_queries": [
+      "combobox Billing month",
+      "button Refresh invoice preview"
+    ]
+  },
+  "native_route": "http://127.0.0.1:4327/admin/billing/invoices/generate",
+  "visual_score": 95,
+  "limits": [
+    "No populated billing preview or materialized-run workflow acceptance",
+    "Existing real native Auth with private synthetic owner state",
+    "No financial mutations, provider or hosted calls",
+    "Root verification only; broader independent release review remains open"
+  ]
+}
