@@ -4,12 +4,12 @@
   "reviewer": "Codex /root/release_preflight",
   "sourceSha": "fbafd6f829d760a8a7b1d9336f1773adf10eb64b",
   "target": "iwcnajanvjvynolltflw",
-  "at": "2026-09-13T05:23:15.044113+00:00",
+  "at": "2026-09-13T05:25:37.421054+00:00",
   "artifacts_sha256": {
     "staging-readiness.json": "09e9b9d37bad3fcf87bbec085367bdb7a08f750f2afc2b575b50caa2e37f0f72",
     "http-proof.json": "97ccd70272065dc277e6d7a24b2b7196e677bb023135bf6231a49221cdaa45f0",
     "browser-report.json": "2315fd8e62ae60e978ef6d437c422bf76b783140c12ce200bef219234cfd3af6",
-    "cleanup.json": "1a6132c24a0d08a3fb6fd783df46fd4e08e2bc72baf09d0c4fb15423b3004adb",
+    "cleanup.json": "87ac8aa254dde2371fb56d00e86c2eddf3f6076a70316407759d22b375bdaf1e",
     "source-manifest.json": "9b5b80029fe1858c775ecb886a406d45c7d258995b0f467f5623d7399024d901"
   },
   "criteria": {
@@ -30,5 +30,22 @@
     "live_grants": 0
   },
   "findings": [],
-  "scope": "Synthetic authenticated local application with hosted staging DB/Auth; exact366 application, persisted catalog coverage, existing draft preservation, safe repeat preparation and browser accessibility. No actual approved Homewood rules, production deployment, staff or operating acceptance claimed."
+  "scope": "Synthetic authenticated local application with hosted staging DB/Auth; exact366 application, persisted catalog coverage, existing draft preservation, safe repeat preparation and browser accessibility. No actual approved Homewood rules, production deployment, staff or operating acceptance claimed.",
+  "cleanup_final_readback": {
+    "result": "PASS",
+    "cross_site_denied": true,
+    "revoked_denied": true,
+    "banned": true,
+    "inactive": true,
+    "live_grants": 0,
+    "retired_sites": 2,
+    "entity_retired": true,
+    "preexisting_rows_preserved_after_browser": 17,
+    "owned_app_pids": [
+      95434,
+      95507,
+      95514
+    ],
+    "port_4340_closed": true
+  }
 }
