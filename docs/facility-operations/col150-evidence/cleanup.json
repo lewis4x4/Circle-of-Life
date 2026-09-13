@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "cluster_stopped": true,
+  "owned_files_removed": 982,
+  "owned_empty_directories_removed": 27,
+  "private_provenance": "/Users/brianlewis/.hermes/tmp/agent-runs/col150-20260913/cleanup-record.json",
+  "worktree_dependencies_retained": true
+}

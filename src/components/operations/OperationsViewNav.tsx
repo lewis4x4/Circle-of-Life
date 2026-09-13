@@ -21,6 +21,7 @@ const LINKS: readonly OperationsNavLink[] = [
   { href: "/admin/operations/year", label: "Year" },
   { href: "/admin/operations/calendar", label: "Calendar" },
   { href: "/admin/operations/history", label: "Activity history" },
+  { href: "/admin/operations/attention", label: "Needs attention" },
   { href: "/admin/operations/pager", label: "Pager" },
   { href: "/admin/operations/assets", label: "Assets" },
   { href: "/admin/operations/vendors", label: "Vendors" },
