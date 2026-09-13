@@ -1,0 +1,122 @@
+{
+  "phase": "after",
+  "at": "2026-09-13T02:51:35.717Z",
+  "target": "iwcnajanvjvynolltflw",
+  "base": "http://127.0.0.1:4323",
+  "sourceSha": "d039c767595de97531d4d9355d14c565b6ebb2f7",
+  "diffSha256": "1a67caa3531e95b3581d75077dcefa27509f04fcb1f574fac89435b329e77c01",
+  "sourceFiles": {
+    "src/app/(admin)/admin/operations/work/_components/receipt-history.test.tsx": "475ab5e2b11a9ec78ab515838645c1bef5b7f9d2c60722aab3e2417e61b9a189",
+    "src/app/(admin)/admin/operations/work/_components/receipt-history.tsx": "b2ae4d4ba62529630d462f648fc70a4675632819f8bfb22b82ce18ff7ce126a3",
+    "src/app/(admin)/admin/operations/work/page.test.tsx": "1bf3203677609e311755cf34cb1561285ded644a6c4abf6174ba845b9af7505c"
+  },
+  "fixture": {
+    "actor": "7b87e4b5-ee5a-4229-95fe-39bcce2a2e21",
+    "site": "ac77c584-6059-439e-93a6-2545f9f766f5",
+    "run": "col223-8e019c66fe5e"
+  },
+  "results": [
+    {
+      "width": 1440,
+      "view": "history",
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "workspace": {
+        "actor": {
+          "id": "7b87e4b5-ee5a-4229-95fe-39bcce2a2e21",
+          "name": "COL223 Synthetic Operator",
+          "role": "owner"
+        },
+        "facility_id": "ac77c584-6059-439e-93a6-2545f9f766f5",
+        "partial": [],
+        "groups": [
+          "history",
+          "next_cursor",
+          "total"
+        ]
+      },
+      "route": "/admin/operations/work",
+      "selectedFacility": "ac77c584-6059-439e-93a6-2545f9f766f5",
+      "receiptText": "performance\n\nRecorded by COL223 Synthetic Operator at Sep 12, 2026, 10:46 PM (America/New_York)\n\nOutcome: performed\n\nCurrent evidence: complete\n\nOriginal receipt state (historical): performed_missing_evidence\n\nPerformed at Sep 12, 2026, 10:46 PM (America/New_York)\n\nPerformer: self\n\nNote: Synthetic receipt wording verification\n\nPanel photo · AttachedDownload evidence\nIssues\n\nNo issues reported.",
+      "receipt": {
+        "id": "22412038-9060-4f32-8f31-df5ac0cd00af",
+        "completion_state": "performed_missing_evidence",
+        "evidence_status": "missing",
+        "evidence_status_current": "complete",
+        "recorded_at": "2026-09-13T02:46:36.157432+00:00",
+        "performed_at": "2026-09-13T02:46:36.157432+00:00",
+        "recorder_id": "7b87e4b5-ee5a-4229-95fe-39bcce2a2e21"
+      },
+      "axeViolations": [],
+      "landmarkViolations": [],
+      "landmarkPasses": [
+        "landmark-banner-is-top-level",
+        "landmark-main-is-top-level",
+        "landmark-no-duplicate-banner",
+        "landmark-no-duplicate-main"
+      ],
+      "semanticCounts": {
+        "main": 1,
+        "nestedMain": 0,
+        "nestedBanner": 0,
+        "nestedContentinfo": 0
+      },
+      "screenshot": "after-history-1440.png",
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nFind a page…\n⌘K\nReport incident\nCS\nHome\nExecutive\nWeekly Stand Up\nReports hub\nFacilities\nBilling & AR\nSite work\n\nCurrent person: COL223 Synthetic Operator\n\nSite\nChoose a site\ncol223-8e019c66fe5e Site\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\n\n1 total entries across this site\n\nHistory\nSynthetic facilities check\n\ncol223-8e019c66fe5e Site · Unknown schedule\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\nCorrect\nReverse\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: COL223 Synthetic Operator\n\nRefresh receipt\n\nRecorded by COL223 Synthetic Operator at Sep 12, 2026, 10:46 PM (America/New_York)\n\nOutcome: performed\n\nCurrent evidence: complete\n\nOriginal receipt state (historical): performed_missing_evidence\n\nPerformed at Sep 12, 2026, 10:46 PM (America/New_York)\n\nPerformer: self\n\nNote: Synthetic receipt wording verification\n\nTask help and handover\n\nSynthetic facilities check\n\nRefresh reminder\n\nReminder resolved from the work record\n\nAcknowledging or snoozing changes this reminder only. Record the work separately.\n\nperformance\n\nRecorded by COL223 Synthetic Operator at Sep 12, 2026, 10:46 PM (America/New_York)\n\nOutcome: performed\n\nCurrent evidence: complete\n\nOriginal receipt state (historical): performed_missing_evidence\n\nPerformed at Sep 12, 2026, 10:46 PM (America/New_York)\n\nPerformer: self\n\nNote: Synthetic receipt wording verification\n\nPanel photo · AttachedDownload evidence\nIssues\n\nNo issues reported.\n\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "view": "history",
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "workspace": {
+        "actor": {
+          "id": "7b87e4b5-ee5a-4229-95fe-39bcce2a2e21",
+          "name": "COL223 Synthetic Operator",
+          "role": "owner"
+        },
+        "facility_id": "ac77c584-6059-439e-93a6-2545f9f766f5",
+        "partial": [],
+        "groups": [
+          "history",
+          "next_cursor",
+          "total"
+        ]
+      },
+      "route": "/admin/operations/work",
+      "selectedFacility": "ac77c584-6059-439e-93a6-2545f9f766f5",
+      "receiptText": "performance\n\nRecorded by COL223 Synthetic Operator at Sep 12, 2026, 10:46 PM (America/New_York)\n\nOutcome: performed\n\nCurrent evidence: complete\n\nOriginal receipt state (historical): performed_missing_evidence\n\nPerformed at Sep 12, 2026, 10:46 PM (America/New_York)\n\nPerformer: self\n\nNote: Synthetic receipt wording verification\n\nPanel photo · AttachedDownload evidence\nIssues\n\nNo issues reported.",
+      "receipt": {
+        "id": "22412038-9060-4f32-8f31-df5ac0cd00af",
+        "completion_state": "performed_missing_evidence",
+        "evidence_status": "missing",
+        "evidence_status_current": "complete",
+        "recorded_at": "2026-09-13T02:46:36.157432+00:00",
+        "performed_at": "2026-09-13T02:46:36.157432+00:00",
+        "recorder_id": "7b87e4b5-ee5a-4229-95fe-39bcce2a2e21"
+      },
+      "axeViolations": [],
+      "landmarkViolations": [],
+      "landmarkPasses": [
+        "landmark-banner-is-top-level",
+        "landmark-main-is-top-level",
+        "landmark-no-duplicate-banner",
+        "landmark-no-duplicate-main"
+      ],
+      "semanticCounts": {
+        "main": 1,
+        "nestedMain": 0,
+        "nestedBanner": 0,
+        "nestedContentinfo": 0
+      },
+      "screenshot": "after-history-375.png",
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCS\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nSite work\n\nCurrent person: COL223 Synthetic Operator\n\nSite\nChoose a site\ncol223-8e019c66fe5e Site\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\n\n1 total entries across this site\n\nHistory\nSynthetic facilities check\n\ncol223-8e019c66fe5e Site · Unknown schedule\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\nCorrect\nReverse\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: COL223 Synthetic Operator\n\nRefresh receipt\n\nRecorded by COL223 Synthetic Operator at Sep 12, 2026, 10:46 PM (America/New_York)\n\nOutcome: performed\n\nCurrent evidence: complete\n\nOriginal receipt state (historical): performed_missing_evidence\n\nPerformed at Sep 12, 2026, 10:46 PM (America/New_York)\n\nPerformer: self\n\nNote: Synthetic receipt wording verification\n\nTask help and handover\n\nSynthetic facilities check\n\nRefresh reminder\n\nReminder resolved from the work record\n\nAcknowledging or snoozing changes this reminder only. Record the work separately.\n\nperformance\n\nRecorded by COL223 Synthetic Operator at Sep 12, 2026, 10:46 PM (America/New_York)\n\nOutcome: performed\n\nCurrent evidence: complete\n\nOriginal receipt state (historical): performed_missing_evidence\n\nPerformed at Sep 12, 2026, 10:46 PM (America/New_York)\n\nPerformer: self\n\nNote: Synthetic receipt wording verification\n\nPanel photo · AttachedDownload evidence\nIssues\n\nNo issues reported.\n\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "status": "PASS"
+    }
+  ],
+  "sourceUnchanged": true,
+  "status": "PASS"
+}

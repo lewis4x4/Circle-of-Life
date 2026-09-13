@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "width": 1440,
+      "view": "history",
+      "status": "PASS",
+      "landmarkViolations": [],
+      "otherViolations": []
+    },
+    {
+      "width": 375,
+      "view": "history",
+      "status": "PASS",
+      "landmarkViolations": [],
+      "otherViolations": []
+    }
+  ]
+}

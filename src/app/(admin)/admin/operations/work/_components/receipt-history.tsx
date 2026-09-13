@@ -56,12 +56,12 @@ export function ReceiptSummary({
         {receipt.outcome ?? String(receipt.receipt_kind ?? "unavailable")}
       </p>
       <p>
-        Evidence:{" "}
+        {receipt.evidence_status_current != null ? "Current evidence" : "Evidence at recording"}:{" "}
         {receipt.evidence_status_current ??
           receipt.evidence_status ??
           "unavailable"}
       </p>
-      <p>Receipt state: {String(receipt.completion_state ?? "unavailable")}</p>
+      <p>Original receipt state (historical): {String(receipt.completion_state ?? "unavailable")}</p>
       {receipt.performed_at ? (
         <p>
           Performed at {localTime(receipt.performed_at, timezone)} ({timezone})
