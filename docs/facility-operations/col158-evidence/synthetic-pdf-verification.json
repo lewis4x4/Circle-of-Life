@@ -1,0 +1,15 @@
+{
+  "pages": 2,
+  "bytes": 64034,
+  "sha256": "e04b079b7222dc67239cd0c7487fd8c1deeb734e3b4ca41855c9fb4b737c085d",
+  "text_extraction": "PASS",
+  "page2_visual_review": "PASS",
+  "synthetic_roles": [
+    "caseworker",
+    "resident",
+    "administrator"
+  ],
+  "signed_dates": "Not provided",
+  "clinical_or_crypto_finality": false,
+  "hosted_uploaded": false
+}

@@ -1,0 +1,54 @@
+{
+  "scope": "owned native synthetic database barriers",
+  "results": [
+    {
+      "case": "same-key-event",
+      "wait_observed": true,
+      "hfo_access_after": true,
+      "sqlstate": null,
+      "status": "PASS"
+    },
+    {
+      "case": "same-key-finalize",
+      "wait_observed": true,
+      "hfo_access_after": true,
+      "sqlstate": null,
+      "status": "PASS"
+    },
+    {
+      "case": "native-loss-after-wait",
+      "wait_observed": true,
+      "hfo_access_after": true,
+      "sqlstate": "42501",
+      "status": "PASS"
+    },
+    {
+      "case": "native-loss-after-capture",
+      "wait_observed": true,
+      "hfo_access_after": true,
+      "sqlstate": "42501",
+      "status": "PASS"
+    },
+    {
+      "case": "actor-loss-after-wait",
+      "wait_observed": true,
+      "hfo_access_after": false,
+      "sqlstate": "42501",
+      "status": "PASS"
+    },
+    {
+      "case": "history-native-loss",
+      "wait_observed": true,
+      "hfo_access_after": true,
+      "sqlstate": "42501",
+      "status": "PASS"
+    },
+    {
+      "case": "history-event-change",
+      "wait_observed": true,
+      "hfo_access_after": true,
+      "sqlstate": "42501",
+      "status": "PASS"
+    }
+  ]
+}

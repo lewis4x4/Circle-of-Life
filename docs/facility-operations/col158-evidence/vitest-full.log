@@ -1,0 +1,18 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Provider Report Workflows
+
+2:02:58 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Provider Report Workflows/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven Provider Report Workflows/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/vite/dist/node/chunks/node.js:19691:22)
+
+ Test Files  644 passed (644)
+      Tests  4669 passed | 2 skipped (4671)
+   Start at  13:59:38
+   Duration  236.79s (transform 85.79s, setup 63.70s, import 365.93s, tests 89.82s, environment 249.30s)

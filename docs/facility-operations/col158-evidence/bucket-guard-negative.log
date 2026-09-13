@@ -1,0 +1,2 @@
+psql:/Users/brianlewis/Circle of Life/Haven Provider Report Workflows/supabase/migrations/370_hfo_provider_report_workflows.sql:140: ERROR:  Existing native resident-document bucket configuration is incompatible
+CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE

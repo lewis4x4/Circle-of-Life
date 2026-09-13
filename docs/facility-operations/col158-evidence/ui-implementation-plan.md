@@ -1,0 +1,7 @@
+# COL158 approved UI implementation slice
+
+Implement task/resident/site/currentactor keyed ProviderReportPanel in WorkRow, onlyALH01. Strict backend schemas govern commands/replies. Native intake is a separate permission-gated child form: file/type/title/version supersession; SHA256 over actual localbytes, serverissuedfixednativepath, authenticatedupload upsertfalse, serververifiedfinalize and scopedstreamdownload. Retry preserves exactprepare/finalizekeys/filebytes; uncertainupload may encounterexistingobject and must finalize/verify ratherthanoverwrite.
+
+Expectation create uses currentcontact/type/expectedversion plus actualoperatorattestedservicetime/provenance. Individual follow-up actions attachreceipt/review/signatureobservation/documentedduerule/linkgenericchase each preserveexpectedrevision. No combinedcompleteaction. SignaturePDFpageverification remainsoperator-reportedunverified; requiredsignersunknown. Renewal always separate unknown unlesslaterexplicitcontract. Sensitiveeventdetails displayed onlyallowlistedclinicalprovenance fields, never arbitraryobjectpaths. Chase UI takes existinggenericissueID and doesnotcreateprovider-specifictitle/notes.
+
+All old values clearonscopechange/readfailure; uncertaincommandsfreezecompetinginputs; exactsamebodyretry. Latevisiblehistory isprovenance notcurrentversionfinality. Currentnativewrite can_intake separatefrommanage/read. No approveddue inferredfromtaskdue/chase, no newprovider/e-signature workflow.

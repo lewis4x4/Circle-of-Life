@@ -1,0 +1,27 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Provider Report Workflows
+
+ ❯ src/lib/operations/provider-report-documents.test.ts (5 tests | 1 failed) 32ms
+     × retains uncertainty and retries a lost successful finalization without duplicate native document 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/operations/provider-report-documents.test.ts > actual native document byte validation > retains uncertainty and retries a lost successful finalization without duplicate native document
+AssertionError: expected 409 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 409
+
+ ❯ src/lib/operations/provider-report-documents.test.ts:19:186
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 11 passed (12)
+   Start at  13:39:27
+   Duration  1.08s (transform 257ms, setup 249ms, import 361ms, tests 45ms, environment 960ms)
