@@ -1,0 +1,503 @@
+BEGIN
+LOCK TABLE
+ALTER ROLE
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+SELECT 1
+ALTER TABLE
+UPDATE 1
+CREATE TABLE
+CREATE TABLE
+GRANT
+GRANT
+INSERT 0 1
+INSERT 0 7
+INSERT 0 7
+INSERT 0 7
+INSERT 0 7
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 3
+INSERT 0 3
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 3
+INSERT 0 3
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ c_service
+-----------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 6
+INSERT 0 6
+INSERT 0 4
+INSERT 0 3
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 5
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+RESET
+ c_assert
+----------
+
+(1 row)
+
+SELECT 6
+GRANT
+RESET
+ c_clear
+---------
+
+(1 row)
+
+SELECT 1
+GRANT
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+                                                                                                                                                                                                                                                                                                                                                                                                                                    publish_operation_requirement_review
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id": "cec9b0bf-290e-40cd-91d4-2382663a5945", "title": "Review contact metadata", "status": "published", "version": 1, "wording": "Review available current source metadata", "procedure": null, "created_at": "2026-09-13T10:23:01.08724-04:00", "created_by": "819b91a2-c794-4b75-a002-484f0bb47ee0", "updated_at": "2026-09-13T10:23:01.38751-04:00", "activity_id": "711e594b-0ab1-4ce3-9081-e7c20837c589", "effective_to": null, "published_at": "2026-09-13T10:23:01.387428-04:00", "published_by": "819b91a2-c794-4b75-a002-484f0bb47ee0", "subject_kind": "resident", "effective_from": "2026-09-13T09:23:01.386587-04:00", "organization_id": "00000000-0000-0000-0000-000000000001", "required_inputs": [], "review_required": false, "source_authority": {}, "required_evidence": [], "previous_version_id": null, "allowed_recorder_roles": ["facility_admin"], "allowed_reviewer_roles": []}
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        publish_operation_facility_requirement_review
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id": "caf1b137-1d06-4bce-a66e-2577d831c455", "status": "published", "version": 1, "created_at": "2026-09-13T10:23:01.08724-04:00", "created_by": "f72b0f47-7e51-41ce-8bd1-555958739631", "owner_role": null, "updated_at": "2026-09-13T10:23:01.390273-04:00", "activity_id": "711e594b-0ab1-4ce3-9081-e7c20837c589", "approved_at": "2026-09-13T10:23:01.390248-04:00", "approved_by": "f72b0f47-7e51-41ce-8bd1-555958739631", "backup_role": null, "facility_id": "00000000-0000-0000-0002-000000000001", "effective_to": null, "applicability": "applicable", "owner_user_id": null, "schedule_rule": null, "backup_user_id": null, "effective_from": "2026-09-13T09:53:01.389863-04:00", "local_procedure": null, "organization_id": "00000000-0000-0000-0000-000000000001", "override_source": "central", "schedule_status": "needs_confirmation", "previous_version_id": null, "applicability_reason": null, "local_required_inputs": null, "requirement_version_id": "cec9b0bf-290e-40cd-91d4-2382663a5945", "local_required_evidence": null, "local_allowed_recorder_roles": null}
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+SELECT 1
+GRANT
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+SELECT 1
+GRANT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 2
+INSERT 0 2
+                                                                                                                                                                                                                                                                                                                                                                                                                                 publish_operation_requirement_review
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id": "fe694f4f-0258-462d-bd9c-d313b4595529", "title": "Synthetic source review", "status": "published", "version": 1, "wording": "Review selected recorded metadata", "procedure": null, "created_at": "2026-09-13T10:23:01.08724-04:00", "created_by": "819b91a2-c794-4b75-a002-484f0bb47ee0", "updated_at": "2026-09-13T10:23:01.413965-04:00", "activity_id": "65c70899-f5ef-452d-9c5b-2a95305b8d3b", "effective_to": null, "published_at": "2026-09-13T10:23:01.413952-04:00", "published_by": "819b91a2-c794-4b75-a002-484f0bb47ee0", "subject_kind": "resident", "effective_from": "2026-09-13T09:23:01.413643-04:00", "organization_id": "00000000-0000-0000-0000-000000000001", "required_inputs": [], "review_required": false, "source_authority": {}, "required_evidence": [], "previous_version_id": null, "allowed_recorder_roles": ["facility_admin"], "allowed_reviewer_roles": []}
+ {"id": "a0f4c1b4-c66f-432a-960f-6640b4b6326a", "title": "Synthetic source review", "status": "published", "version": 1, "wording": "Review selected recorded metadata", "procedure": null, "created_at": "2026-09-13T10:23:01.08724-04:00", "created_by": "819b91a2-c794-4b75-a002-484f0bb47ee0", "updated_at": "2026-09-13T10:23:01.414537-04:00", "activity_id": "831e44c4-1cbb-4331-8179-2f165d70b7b4", "effective_to": null, "published_at": "2026-09-13T10:23:01.414524-04:00", "published_by": "819b91a2-c794-4b75-a002-484f0bb47ee0", "subject_kind": "resident", "effective_from": "2026-09-13T09:23:01.414254-04:00", "organization_id": "00000000-0000-0000-0000-000000000001", "required_inputs": [], "review_required": false, "source_authority": {}, "required_evidence": [], "previous_version_id": null, "allowed_recorder_roles": ["facility_admin"], "allowed_reviewer_roles": []}
+(2 rows)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 2
+INSERT 0 2
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        publish_operation_facility_requirement_review
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id": "c06c950e-a874-455a-9b9a-c6fc71e96aa8", "status": "published", "version": 1, "created_at": "2026-09-13T10:23:01.08724-04:00", "created_by": "f72b0f47-7e51-41ce-8bd1-555958739631", "owner_role": null, "updated_at": "2026-09-13T10:23:01.421364-04:00", "activity_id": "65c70899-f5ef-452d-9c5b-2a95305b8d3b", "approved_at": "2026-09-13T10:23:01.421262-04:00", "approved_by": "f72b0f47-7e51-41ce-8bd1-555958739631", "backup_role": null, "facility_id": "00000000-0000-0000-0002-000000000001", "effective_to": null, "applicability": "applicable", "owner_user_id": null, "schedule_rule": null, "backup_user_id": null, "effective_from": "2026-09-13T09:53:01.4201-04:00", "local_procedure": null, "organization_id": "00000000-0000-0000-0000-000000000001", "override_source": "central", "schedule_status": "needs_confirmation", "previous_version_id": null, "applicability_reason": null, "local_required_inputs": null, "requirement_version_id": "fe694f4f-0258-462d-bd9c-d313b4595529", "local_required_evidence": null, "local_allowed_recorder_roles": null}
+ {"id": "59478c66-abb2-4ca9-894e-694be16a0829", "status": "published", "version": 1, "created_at": "2026-09-13T10:23:01.08724-04:00", "created_by": "f72b0f47-7e51-41ce-8bd1-555958739631", "owner_role": null, "updated_at": "2026-09-13T10:23:01.423391-04:00", "activity_id": "831e44c4-1cbb-4331-8179-2f165d70b7b4", "approved_at": "2026-09-13T10:23:01.42333-04:00", "approved_by": "f72b0f47-7e51-41ce-8bd1-555958739631", "backup_role": null, "facility_id": "00000000-0000-0000-0002-000000000001", "effective_to": null, "applicability": "applicable", "owner_user_id": null, "schedule_rule": null, "backup_user_id": null, "effective_from": "2026-09-13T09:53:01.422395-04:00", "local_procedure": null, "organization_id": "00000000-0000-0000-0000-000000000001", "override_source": "central", "schedule_status": "needs_confirmation", "previous_version_id": null, "applicability_reason": null, "local_required_inputs": null, "requirement_version_id": "a0f4c1b4-c66f-432a-960f-6640b4b6326a", "local_required_evidence": null, "local_allowed_recorder_roles": null}
+(2 rows)
+
+INSERT 0 2
+INSERT 0 2
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+SELECT 1
+GRANT
+SELECT 2
+GRANT
+RESET
+ c_clear
+---------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+UPDATE 1
+UPDATE 1
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_denied
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_expect
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+CREATE FUNCTION
+CREATE TRIGGER
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_expect
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+DROP TRIGGER
+ c_login
+---------
+
+(1 row)
+
+SET
+SELECT 1
+GRANT
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+UPDATE 1
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_assert
+----------
+
+(1 row)
+
+                                                                                                                                                                                                                                                                                                                                                                                     recheck_resident_source_review
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"reviews": [{"receipt_id": "efa32dcb-1a16-441f-afaf-26c32db50a23", "references": [{"checks": [{"state": "changed", "checked_at": "2026-09-13T10:23:01.786132-04:00", "checked_by": "f72b0f47-7e51-41ce-8bd1-555958739631"}], "family": "resident_contact", "period": {"end_date": "2026-09-12", "start_date": "2026-09-06"}, "linked_at": "2026-09-13T10:23:01.737497-04:00", "source_id": "3afb6794-7fcf-4474-839a-b7aac254f31b", "reference_id": "8395bd2f-9615-4d39-8038-1ec4899cc544", "current_state": "changed", "source_version": "a04793ef6a47b1a805fb279ff7663ec9a8f316161e2ffcacd297d5724d6f232d", "requires_review": true}], "recorded_at": "2026-09-13T10:23:01.730125-04:00", "recorder_id": "f72b0f47-7e51-41ce-8bd1-555958739631"}], "task_id": "72b4269b-ca62-4ff5-a69a-9a02dccd1fe0"}
+(1 row)
+
+                                                                                                                                                                                                                                                                                                                                                                                     recheck_resident_source_review
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"reviews": [{"receipt_id": "efa32dcb-1a16-441f-afaf-26c32db50a23", "references": [{"checks": [{"state": "changed", "checked_at": "2026-09-13T10:23:01.786132-04:00", "checked_by": "f72b0f47-7e51-41ce-8bd1-555958739631"}], "family": "resident_contact", "period": {"end_date": "2026-09-12", "start_date": "2026-09-06"}, "linked_at": "2026-09-13T10:23:01.737497-04:00", "source_id": "3afb6794-7fcf-4474-839a-b7aac254f31b", "reference_id": "8395bd2f-9615-4d39-8038-1ec4899cc544", "current_state": "changed", "source_version": "a04793ef6a47b1a805fb279ff7663ec9a8f316161e2ffcacd297d5724d6f232d", "requires_review": true}], "recorded_at": "2026-09-13T10:23:01.730125-04:00", "recorder_id": "f72b0f47-7e51-41ce-8bd1-555958739631"}], "task_id": "72b4269b-ca62-4ff5-a69a-9a02dccd1fe0"}
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+CREATE POLICY
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+                                                                                                                                                                                                                                                                                                                                                                        recheck_resident_source_review
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"reviews": [{"receipt_id": "efa32dcb-1a16-441f-afaf-26c32db50a23", "references": [{"checks": [{"state": "changed", "checked_at": "2026-09-13T10:23:01.786132-04:00", "checked_by": "f72b0f47-7e51-41ce-8bd1-555958739631"}, {"state": "unavailable", "checked_at": "2026-09-13T10:23:01.824201-04:00", "checked_by": "f72b0f47-7e51-41ce-8bd1-555958739631"}], "family": null, "period": null, "linked_at": "2026-09-13T10:23:01.737497-04:00", "source_id": null, "reference_id": "8395bd2f-9615-4d39-8038-1ec4899cc544", "current_state": "unavailable", "source_version": null, "requires_review": true}], "recorded_at": "2026-09-13T10:23:01.730125-04:00", "recorder_id": "f72b0f47-7e51-41ce-8bd1-555958739631"}], "task_id": "72b4269b-ca62-4ff5-a69a-9a02dccd1fe0"}
+(1 row)
+
+                                                                                                                                                                                                                                                                                                                                                                        recheck_resident_source_review
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"reviews": [{"receipt_id": "efa32dcb-1a16-441f-afaf-26c32db50a23", "references": [{"checks": [{"state": "changed", "checked_at": "2026-09-13T10:23:01.786132-04:00", "checked_by": "f72b0f47-7e51-41ce-8bd1-555958739631"}, {"state": "unavailable", "checked_at": "2026-09-13T10:23:01.824201-04:00", "checked_by": "f72b0f47-7e51-41ce-8bd1-555958739631"}], "family": null, "period": null, "linked_at": "2026-09-13T10:23:01.737497-04:00", "source_id": null, "reference_id": "8395bd2f-9615-4d39-8038-1ec4899cc544", "current_state": "unavailable", "source_version": null, "requires_review": true}], "recorded_at": "2026-09-13T10:23:01.730125-04:00", "recorder_id": "f72b0f47-7e51-41ce-8bd1-555958739631"}], "task_id": "72b4269b-ca62-4ff5-a69a-9a02dccd1fe0"}
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ROLLBACK

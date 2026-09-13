@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/docs/facility-operations/col155-evidence/hosted-proof/fixture-proof.py", line 112, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/docs/facility-operations/col155-evidence/hosted-proof/fixture-proof.py", line 101, in main
+    api('/resident-review-sources?'+query,method='GET',expected=(403,404))
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/docs/facility-operations/col155-evidence/hosted-proof/fixture-proof.py", line 38, in api
+    def api(path,body=None,method='POST',expected=(200,),session=None):return http(r.app+'/api/admin/operations'+path,body,method,expected,session=session)
+                                                                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/docs/facility-operations/col155-evidence/hosted-proof/fixture-proof.py", line 36, in http
+    require(status in expected,'Unexpected HTTP '+str(status)+' at '+parsed.path)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/docs/facility-operations/col155-evidence/hosted-proof/guarded.py", line 7, in require
+    if not ok: raise RuntimeError(message)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Unexpected HTTP 401 at /api/admin/operations/resident-review-sources

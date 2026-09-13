@@ -27,11 +27,12 @@ import {
 
 type Call = { method: string; args: unknown[] };
 type Tag = "facility" | "reversals" | "managed" | "count" | "versions" | "facility_rules" | "receipts" | "issues" | "legacy" | "profiles";
-type Tables = { facility?: unknown; reversals?: unknown[]; managed?: unknown[]; count?: number; versions?: unknown[]; facility_rules?: unknown[]; receipts?: unknown[]; issues?: unknown[]; legacy?: unknown[]; profiles?: unknown[] };
+type Tables = { facility?: unknown; reversals?: unknown[]; managed?: unknown[]; count?: number; versions?: unknown[]; facility_rules?: unknown[]; receipts?: unknown[]; issues?: unknown[]; legacy?: unknown[]; profiles?: unknown[]; activities?: unknown[] };
 
 function tagOf(table: string, calls: Call[]): Tag {
   const has = (method: string, first: unknown, second?: unknown) => calls.some((call) => call.method === method && call.args[0] === first && (second === undefined || call.args[1] === second));
   if (table === "facilities") return "facility";
+  if (table === "operation_activities") return "activities";
   if (table === "operation_execution_receipts") return has("eq", "receipt_kind", "reversal") ? "reversals" : "receipts";
   if (table === "operation_task_instances") {
     const select = calls.find((call) => call.method === "select");
@@ -423,6 +424,12 @@ describe("receipts, issues and evidence", () => {
 });
 
 describe("partial and failed reads", () => {
+  it("marks unavailable canonical activity identities as partial instead of hiding a source action silently", async () => {
+    const client = fakeClient({ managed: [occurrence({ id: uuid(1) })], versions: [version], facility_rules: [facilityRule] }, ["activities"]);
+    const body = await compose(client);
+    expect(body.partial).toContain("rules");
+    expect(todayGroups(body).due_today[0].occurrence.activity_key).toBeNull();
+  });
   it("reports each failed sub-read and keeps the rows that loaded", async () => {
     const tables: Tables = { managed: [occurrence({ id: uuid(1), effective_receipt_id: uuid(90) })], versions: [version], facility_rules: [facilityRule], receipts: [{ id: uuid(90), outcome: "performed", evidence_status_current: "not_required", evidence_satisfied_at: null, missing_evidence: [] }], legacy: [] };
     const rulesDown = todayGroups(await compose(fakeClient(tables, ["versions"])));
@@ -585,7 +592,7 @@ describe("what the reply never carries", () => {
     expect(client.reads.receipts?.find((call) => call.method === "select")?.args[0]).not.toContain("object_path");
     expect(client.from.mock.calls.map((call) => call[0])).not.toContain("operation_evidence");
     expect(Object.keys(todayGroups(body).due_today[0].occurrence).sort()).toEqual([
-      "activity_id", "activity_name", "authority_class", "deadline_at", "due_at", "effective_receipt_id", "execution_state", "facility_requirement_id", "grace_ends_at", "id",
+      "activity_id", "activity_key", "activity_name", "authority_class", "deadline_at", "due_at", "effective_receipt_id", "execution_state", "facility_requirement_id", "grace_ends_at", "id",
       "occurrence_kind", "occurrence_revision", "period_end_date", "period_start_date", "requirement_version_id", "schedule_status", "status", "subject_id", "subject_label",
     ]);
   });

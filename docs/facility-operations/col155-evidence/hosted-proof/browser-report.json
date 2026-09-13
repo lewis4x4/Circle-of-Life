@@ -1,0 +1,48 @@
+{
+  "mode": "existing-review-recheck",
+  "sourceSha": "d7138a0c140f94b88c7b8cf4885ac7922467105e",
+  "sourceManifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/docs/facility-operations/col155-evidence/hosted-proof/source-manifest.json",
+    "sha256": "436c71e5f38349deede251f967b58640af9fc45726afe87551c4522fd7ccc664"
+  },
+  "target": "iwcnajanvjvynolltflw",
+  "cases": [
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "sourceFamily": "resident_contact",
+      "candidateCount": 1,
+      "originalUiProofSource": "dbeb3dfc2d7e440bfa344d361e1aa07ebda49f8c",
+      "task": "ebae3105-9f12-41c1-a2f6-9e06426a7e2f",
+      "receipt": "304cd48b-cf0b-482b-9558-97197f92de91",
+      "historyStates": [
+        "current"
+      ],
+      "uiSaveAndRecheck": false,
+      "existingReviewRechecked": true,
+      "axeViolations": [],
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "sourceFamily": "resident_contact",
+      "candidateCount": 1,
+      "originalUiProofSource": "dbeb3dfc2d7e440bfa344d361e1aa07ebda49f8c",
+      "task": "b2010710-d512-42b0-b1e1-b718615992e2",
+      "receipt": "68b28f70-a2aa-4fca-96ca-037eccddd432",
+      "historyStates": [
+        "current"
+      ],
+      "uiSaveAndRecheck": false,
+      "existingReviewRechecked": true,
+      "axeViolations": [],
+      "result": "PASS"
+    }
+  ],
+  "result": "PASS"
+}

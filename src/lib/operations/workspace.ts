@@ -70,6 +70,8 @@ export type WorkspaceReceipt = Record<string, unknown> & {
 };
 
 export type WorkspaceOccurrence = {
+  /** Canonical key from the currently authorized activity row. */
+  activity_key?: string | null;
   id: string;
   activity_id: string | null;
   activity_name: string;
@@ -463,6 +465,15 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
   const rows = view === "history" ? allRows.slice(0, HISTORY_PAGE_SIZE) : allRows;
   const nextCursor = view === "history" && allRows.length > HISTORY_PAGE_SIZE ? encodeHistoryCursor({ due_at: rows[rows.length - 1].due_at ?? null, id: rows[rows.length - 1].id }) : null;
 
+  const activityIds = Array.from(new Set(rows.map(row => row.activity_id).filter((id): id is string => Boolean(id))));
+  const activityRead = await readByIds<{ id: string; activity_key: string }>(activityIds, ids => client.from("operation_activities" as never)
+    .select("id, activity_key").eq("organization_id", actor.organizationId).in("id", ids).order("id", { ascending: true }));
+  if (activityRead.error) {
+    partial.add("rules");
+    logError(scope, activityRead.error, { action: "activity-identities", facilityId });
+  }
+  const activityKeys = new Map((activityRead.error ? [] : activityRead.data ?? []).map(row => [row.id, row.activity_key]));
+
   // (2) Governing rules per distinct (requirement_version_id, facility_requirement_id).
   const versionIds = Array.from(new Set(rows.map((row) => row.requirement_version_id).filter((id): id is string => Boolean(id))));
   const facilityRuleIds = Array.from(new Set(rows.map((row) => row.facility_requirement_id).filter((id): id is string => Boolean(id))));
@@ -535,7 +546,7 @@ export async function composeWorkspace(args: ComposeWorkspaceArgs): Promise<Work
     const receipt = row.effective_receipt_id ? receipts.get(row.effective_receipt_id) ?? null : null;
     if (row.effective_receipt_id && !receipt) partial.add("receipts");
     return {
-      occurrence: shapeOccurrence(row, facility.name),
+      occurrence: { ...shapeOccurrence(row, facility.name), activity_key: row.activity_id ? activityKeys.get(row.activity_id) ?? null : null },
       rules: ruleSet ? withRecordingAuthority(ruleSet, actor.appRole) : null,
       receipt,
       open_issues: issueCounts ? issueCounts.get(row.id) ?? 0 : null,

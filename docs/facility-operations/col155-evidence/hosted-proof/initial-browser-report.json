@@ -1,0 +1,71 @@
+{
+  "sourceSha": "dbeb3dfc2d7e440bfa344d361e1aa07ebda49f8c",
+  "sourceManifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/docs/facility-operations/col155-evidence/hosted-proof/source-manifest.json",
+    "sha256": "2cc7a38afacbdb1f164a403897dc3b238aaebdff6ca0fc05d6bfc101a8404ed7"
+  },
+  "target": "iwcnajanvjvynolltflw",
+  "cases": [
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "sourceFamily": "resident_contact",
+      "candidateCount": 1,
+      "task": "ebae3105-9f12-41c1-a2f6-9e06426a7e2f",
+      "receipt": "304cd48b-cf0b-482b-9558-97197f92de91",
+      "selectedVersion": "5927d1f5dd185c91f15d59abcca8aee14b3f54df97cf584b4e0502aa5f714602",
+      "historyStates": [
+        "current"
+      ],
+      "uiSaveAndRecheck": true,
+      "axeViolations": [
+        {
+          "id": "landmark-unique",
+          "impact": "moderate",
+          "nodes": [
+            {
+              "target": [
+                ".p-4.bg-card.space-y-3:nth-child(1) > details[open=\"\"] > .space-y-4.pt-3[aria-label=\"Resident review source context\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  The landmark must have a unique aria-label, aria-labelledby, or title to make landmarks distinguishable"
+            }
+          ]
+        }
+      ],
+      "result": "FAIL"
+    },
+    {
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "sourceFamily": "resident_contact",
+      "candidateCount": 1,
+      "task": "b2010710-d512-42b0-b1e1-b718615992e2",
+      "receipt": "68b28f70-a2aa-4fca-96ca-037eccddd432",
+      "selectedVersion": "5927d1f5dd185c91f15d59abcca8aee14b3f54df97cf584b4e0502aa5f714602",
+      "historyStates": [
+        "current"
+      ],
+      "uiSaveAndRecheck": true,
+      "axeViolations": [
+        {
+          "id": "landmark-unique",
+          "impact": "moderate",
+          "nodes": [
+            {
+              "target": [
+                ".p-4.space-y-3.bg-card:nth-child(1) > details[open=\"\"] > .space-y-4.pt-3[aria-label=\"Resident review source context\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  The landmark must have a unique aria-label, aria-labelledby, or title to make landmarks distinguishable"
+            }
+          ]
+        }
+      ],
+      "result": "FAIL"
+    }
+  ],
+  "result": "FAIL"
+}

@@ -1,0 +1,43 @@
+{
+  "scope": "local synthetic source/native proof; no hosted deployment",
+  "source_hashes": {
+    "supabase/migrations/367_hfo_resident_source_reviews.sql": "ed33edb06ceb145f3dd2b1958130372ca49dd4ed373b704ac255a10b54325a90",
+    "supabase/tests/review_hfo_resident_source_reviews.sql": "1176ecdfd22ef3509863ab763ae910e26da47d5968f64cf424ad1798a7a2988c",
+    "scripts/facility-operations/test-resident-review-concurrency.py": "db4bacde444a002e6297d1171590423f419712cf769794fd6033d3ea139b47e0",
+    "src/lib/operations/resident-review-sources.ts": "3fd54310b0bc3306aa7ce438edc09e76e5184b242dba3c33d0feb87de2d2607c",
+    "src/lib/operations/resident-review-sources.test.ts": "cd7aec603ee63e0b1967bbd924f779ceff12a7e13d0dd00693625357ba029e99",
+    "src/lib/operations/workspace.ts": "65bb5c1887d328337208b69fdaf76fd6e4c38d28b76859c99f9ee251bb49a33b",
+    "src/lib/operations/workspace.test.ts": "60239aac59cc885a534ae15042424bede29311c9cd9617a6cdf009b7bdfb56f1",
+    "src/app/api/admin/operations/resident-review-sources/route.test.ts": "3399b68306c1522edd2f17e9611d3555304418e7aecaacc020dbe803477e9058",
+    "src/app/api/admin/operations/resident-review-sources/route.ts": "4acf7387c270cb29ebd09bb058709fcf794318406da310e8ab99abbcd13e2b73",
+    "src/app/api/admin/operations/occurrences/[id]/source-reviews/route.ts": "4d5b3492533ad2a274c09b326ccff9b09790911df6c2220a4d2b3374ad83273a",
+    "src/app/api/admin/operations/occurrences/[id]/source-review/route.ts": "b30dbb3417ce3eca0a9a697d324c5cc45ae74666eeae9ffa8bc0d732333da4f5",
+    "src/app/api/admin/operations/occurrences/[id]/source-reviews/recheck/route.ts": "433259ada3824a801f3c75baa5c41b097fa13f54f10a97045e8a3180d25f3fbf"
+  },
+  "focused_tests": 53,
+  "native_primary_probe": "PASS",
+  "actual_concurrency": [
+    "same-key replay after observed wait",
+    "native read revocation after HFO task wait",
+    "changed source hash after HFO task wait",
+    "old receipt mutable projection cannot issue new reference"
+  ],
+  "native_families": [
+    "rounding completed task/log",
+    "late-entered vital observation",
+    "current received1823 metadata",
+    "current contact metadata"
+  ],
+  "history": [
+    "visible expired/replaced reference retained",
+    "native denied reference masked",
+    "original receipt immutable",
+    "recheck replay deduplicated"
+  ],
+  "limits": [
+    "full required segment gate owned by parent",
+    "signing/DNR finality unsupported/manual",
+    "native source changes are checked on read/recheck; no clinical trigger",
+    "initial native grants simulated Supabase table SELECT; RLS unchanged"
+  ]
+}

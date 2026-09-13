@@ -1,0 +1,21 @@
+{
+  "result": "PASS",
+  "scope": "Composed authorization evidence; original runner attempt remains failed",
+  "sourceSha": "d7138a0c140f94b88c7b8cf4885ac7922467105e",
+  "target": "iwcnajanvjvynolltflw",
+  "originalRunnerResult": "FAIL",
+  "originalFailure": "Expected403/404 but actual401 after grant revocation incremented auth_claim_version",
+  "attemptLog": "deny-attempt-1.log",
+  "crossSiteWorkspaceStatus": 404,
+  "limitedActorWorkspaceStatus": 200,
+  "limitedActorExactTaskReadAsserted": true,
+  "limitedNativeCandidateStatus": 200,
+  "limitedNativeItemsEmptyAsserted": true,
+  "limitedNativeSourceIdAbsentAsserted": true,
+  "revokedStatus": 401,
+  "issuedClaimVersion": 2,
+  "currentClaimVersion": 3,
+  "revokedSiteGrantVerified": true,
+  "statusEvidence": "Owned app session62386 request log; runner reached final revoked request after all earlier assertions passed",
+  "readback": "revoked-session-readback.json"
+}

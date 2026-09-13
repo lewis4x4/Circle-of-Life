@@ -1,0 +1,22 @@
+{
+  "result": "PASS",
+  "target": "iwcnajanvjvynolltflw",
+  "facts": {
+    "org_retired": true,
+    "inactive": true,
+    "subject_grants_revoked": true,
+    "site_grants_retained": true,
+    "zero_grants": true,
+    "sites_retired": true,
+    "entity_retired": true
+  },
+  "bansVerified": true,
+  "historyRetained": true,
+  "ownedListenerClosed": true,
+  "stoppedOwnedPids": [
+    34231,
+    34273,
+    34276
+  ],
+  "listenerVerifiedAt": "2026-09-13T14:53:56.882080+00:00"
+}
