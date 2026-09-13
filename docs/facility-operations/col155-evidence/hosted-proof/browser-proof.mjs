@@ -8,6 +8,8 @@ import { createRequire } from 'node:module';
 const out = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(out, '../../../..');
 const ready = process.argv[2];
+const existingReview = process.argv[3] === '--recheck-existing';
+if (process.argv[3] && !existingReview) throw Error('Unknown browser mode');
 if (!ready) throw Error('Explicit parent readiness required');
 const verify = () => execFileSync('python3', ['-B', path.join(out, 'guarded.py'), 'verify', '--ready', ready], { cwd: root, stdio: 'pipe' });
 verify();
@@ -22,7 +24,8 @@ const AxeBuilder = require('@axe-core/playwright').default;
 const encoded = 'base64-' + Buffer.from(JSON.stringify(state.session)).toString('base64url');
 const cookies = [];
 for (let i = 0; i < encoded.length; i += 3180) cookies.push({ name: 'sb-' + state.target + '-auth-token' + (encoded.length > 3180 ? '.' + i / 3180 : ''), value: encoded.slice(i, i + 3180), domain: '127.0.0.1', path: '/', secure: false, httpOnly: false, sameSite: 'Lax' });
-const report = { sourceSha: readiness.sourceSha, sourceManifest: readiness.source_manifest, target: state.target, cases: [] };
+const prior = existingReview ? JSON.parse(fs.readFileSync(path.join(out, 'initial-browser-report.json'))) : null;
+const report = { mode: existingReview ? 'existing-review-recheck' : 'record-and-recheck', sourceSha: readiness.sourceSha, sourceManifest: readiness.source_manifest, target: state.target, cases: [] };
 const browser = await chromium.launch({ headless: true });
 try {
  for (const width of [1440, 375]) {
@@ -54,18 +57,27 @@ try {
     if (!candidates.eligible || candidates.period.start_date !== state.period.start_date || candidates.period.end_date !== state.period.end_date) throw Error('Source scope mismatch');
     const index = candidates.items.findIndex(source => source.source_id === state.contact);
     if (index < 0) throw Error('Exact synthetic source missing');
-    await candidateRow.getByRole('checkbox').nth(index).check();
+    if (!existingReview) await candidateRow.getByRole('checkbox').nth(index).check();
     row = candidateRow; result.sourceFamily = candidates.family; result.candidateCount = candidates.items.length;
     break;
    }
    if (!row) throw Error('Fresh task row not resolved through actual task-bound response');
+   let saved;
+   if (existingReview) {
+    const initial = prior.cases.find(entry => entry.width === width && entry.task === task);
+    if (!initial?.uiSaveAndRecheck || !initial.receipt) throw Error('Original successful UI save provenance missing');
+    saved = { receipt: { id: initial.receipt } };
+    result.originalUiProofSource = prior.sourceSha;
+    result.task = task; result.receipt = initial.receipt;
+   } else {
    await row.getByLabel('Review findings').fill('Synthetic browser review at ' + width + ' pixels');
    const saveRead = page.waitForResponse(response => new URL(response.url()).pathname === `/api/admin/operations/occurrences/${task}/source-review` && response.request().method() === 'POST');
    await row.getByRole('button', { name: 'Record review with selected sources', exact: true }).click();
-   const saveResponse = await saveRead; const saved = await saveResponse.json();
+   const saveResponse = await saveRead; saved = await saveResponse.json();
    if (saveResponse.status() !== 200 || saved.outcome !== 'receipt' || saved.occurrence.id !== task || saved.receipt.recorder_id !== state.user || saved.references.length !== 1) throw Error('Browser review save not verified');
    result.task = task; result.receipt = saved.receipt.id; result.selectedVersion = JSON.parse(saveResponse.request().postData()).references[0].source_version;
    await row.getByText('Review recorded. Required evidence and any separate verification still apply.', { exact: true }).waitFor();
+   }
    const historyRead = page.waitForResponse(response => new URL(response.url()).pathname === `/api/admin/operations/occurrences/${task}/source-reviews` && response.status() === 200);
    await row.getByText('Versioned source review history', { exact: true }).click();
    const history = await (await historyRead).json();
@@ -75,7 +87,7 @@ try {
    const recheckResponse = await recheckRead; const checked = await recheckResponse.json();
    if (recheckResponse.status() !== 200 || checked.task_id !== task || !checked.reviews.some(review => review.receipt_id === saved.receipt.id && review.references.some(reference => reference.checks.length > 0))) throw Error('Browser recheck not recorded');
    result.historyStates = checked.reviews.flatMap(review => review.references.map(reference => reference.current_state));
-   result.uiSaveAndRecheck = true;
+   result.uiSaveAndRecheck = !existingReview; result.existingReviewRechecked = existingReview;
    await row.scrollIntoViewIfNeeded();
    await page.screenshot({ path: path.join(out, `review-${width}.png`), fullPage: true });
    const axe = await new AxeBuilder({ page }).exclude('nextjs-portal').analyze();

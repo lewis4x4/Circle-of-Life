@@ -1,0 +1,35 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "at": "2026-09-13T14:48:45.093576+00:00",
+  "sourceSha": null,
+  "baseSha": "dbeb3dfc2d7e440bfa344d361e1aa07ebda49f8c",
+  "files": [
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/resident-source-review.tsx",
+      "sha256": "e0094001d18faaf4ac7721e46cfb776d516e89073393ca63c27c63b3c1400b1f"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/work/_components/resident-source-review.test.tsx",
+      "sha256": "d4f8f6bbe6245ef18db1be18f1e64044e3532aaba61e70d5bd8f7c556619b8d0"
+    },
+    {
+      "path": "docs/facility-operations/col155-evidence/hosted-proof/browser-proof.mjs",
+      "sha256": "bfff696920ec2545827620e4549a05645c02b3d744959efdc1bb16d6da552b95"
+    }
+  ],
+  "gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/test-results/agent-gates/2026-09-13T14-42-30-683Z-COL-155-RESIDENT-SOURCES-FINAL.json",
+    "sha256": "a2e3abcc094e63943f5d946b577f02800794d6090802ab079f4d0e81a79e9e66",
+    "required_checks": 11,
+    "all_passed": true,
+    "native_migrations": 370,
+    "native_probes": 50
+  },
+  "focused_tests": 16,
+  "prior_backend_source_hashes_unchanged": true,
+  "scope": "Local minimal landmark composition fix plus explicit existing-review recheck harness; API/native source and earlier proof unchanged. Final hosted accessibility/denial/cleanup pending.",
+  "findings": [],
+  "fixture_transition": "Approved only after postcommit verification of exact three-file lineage and private original-state preservation; change sourceSha only, retain identities and history."
+}

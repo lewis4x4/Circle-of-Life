@@ -1,0 +1,76 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Resident Review Sources
+
+ ❯ src/app/(admin)/admin/operations/work/_components/resident-source-review.test.tsx (11 tests | 1 failed | 10 skipped) 144ms
+     × keeps two simultaneously open source panels distinguishable without duplicate landmarks 142ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/(admin)/admin/operations/work/_components/resident-source-review.test.tsx > resident source review > keeps two simultaneously open source panels distinguishable without duplicate landmarks
+AssertionError: expected [ { id: 'landmark-unique', …(6) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "description": "Ensure landmarks are unique",
++     "help": "Landmarks should have a unique role or role/label/title (i.e. accessible name) combination",
++     "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/landmark-unique?application=axeAPI",
++     "id": "landmark-unique",
++     "impact": "moderate",
++     "nodes": [
++       {
++         "all": [],
++         "any": [
++           CheckResult {
++             "data": {
++               "accessibleText": "resident review source context",
++               "role": "region",
++             },
++             "id": "landmark-is-unique",
++             "impact": "moderate",
++             "message": "The landmark must have a unique aria-label, aria-labelledby, or title to make landmarks distinguishable",
++             "relatedNodes": [
++               {
++                 "html": "<section class=\"space-y-4 pt-3\" aria-label=\"Resident review source context\">",
++                 "target": [
++                   "details[open=\"\"]:nth-child(2) > section",
++                 ],
++               },
++             ],
++           },
++         ],
++         "failureSummary": "Fix any of the following:
++   The landmark must have a unique aria-label, aria-labelledby, or title to make landmarks distinguishable",
++         "html": "<section class=\"space-y-4 pt-3\" aria-label=\"Resident review source context\">",
++         "impact": "moderate",
++         "none": [],
++         "target": [
++           "details[open=\"\"]:nth-child(1) > section",
++         ],
++       },
++     ],
++     "tags": [
++       "cat.semantics",
++       "best-practice",
++     ],
++   },
++ ]
+
+ ❯ src/app/(admin)/admin/operations/work/_components/resident-source-review.test.tsx:77:104
+     75|     for (const summary of screen.getAllByText("Resident review source …
+     76|     await waitFor(() => expect(screen.getAllByText(/Recorded by Curren…
+     77|     expect((await axe.run(container, { rules: { "color-contrast": { en…
+       |                                                                                                        ^
+     78|   });
+     79|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 skipped (11)
+   Start at  10:39:49
+   Duration  1.82s (transform 185ms, setup 95ms, import 1.19s, tests 144ms, environment 303ms)

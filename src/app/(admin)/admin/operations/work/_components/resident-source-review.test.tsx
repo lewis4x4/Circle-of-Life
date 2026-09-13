@@ -69,4 +69,12 @@ describe("resident source review", () => {
     render(<ResidentSourceReview {...p} />); await open(); expect(screen.getByLabelText("Source family")).toHaveValue("rounding");
   });
 
+  it("keeps two simultaneously open source panels distinguishable without duplicate landmarks", async () => {
+    const first = props(); const second = props(); second.item.occurrence.id = source.source_id;
+    const { container } = render(<><ResidentSourceReview {...first} /><ResidentSourceReview {...second} /></>);
+    for (const summary of screen.getAllByText("Resident review source context")) await userEvent.click(summary);
+    await waitFor(() => expect(screen.getAllByText(/Recorded by Current reviewer/)).toHaveLength(2));
+    expect((await axe.run(container, { rules: { "color-contrast": { enabled: false } } })).violations).toEqual([]);
+  });
+
 });

@@ -66,7 +66,7 @@ function Review({ item, actorId, actorName, timezone, disabled, onSaved, onLockC
   }
   return <details onToggle={event => { if (event.currentTarget.open) setOpened(true); }}>
     <summary className={`${CONTROL} cursor-pointer`}>Resident review source context</summary>
-    {opened ? <section className="space-y-4 pt-3" aria-label="Resident review source context">
+    {opened ? <div role="group" className="space-y-4 pt-3" aria-label="Resident review source context">
       <p>{mapping.sourceId}: {mapping.label}. {mapping.fallback}</p>
       <p>Sources support your review; they do not prove complete clinical coverage, provider approval, a signature, or completion of native care.</p>
       <details><summary className={`${CONTROL} cursor-pointer`}>All 36 source items and 41 components</summary><ul>{residentReviewMap.map(row => <li key={row.key}>{row.sourceId} · {row.label} · {row.kind.replaceAll("_", " ")} · {row.subjectKind ?? "Subject unknown"}: {row.families.length ? row.families.map(value => labels[value]).join(", ") : "Native or manual workflow"}. {row.fallback}</li>)}</ul></details>
@@ -92,7 +92,7 @@ function Review({ item, actorId, actorName, timezone, disabled, onSaved, onLockC
           </fieldset>
         </form>
       </> : <p>This component uses its existing native or manual workflow. No source-review action is available.</p>}
-    </section> : null}
+    </div> : null}
   </details>;
 }
 function Candidates({ taskId, family, start, end, selected, onSelect }: { taskId: string; family: ResidentReviewFamily; start: string; end: string; selected: ResidentSourceCandidate[]; onSelect: (value: ResidentSourceCandidate[]) => void }) {
