@@ -1,0 +1,24 @@
+{
+  "database": "col151_concurrency_c60ae7990f01",
+  "environment": "native PostgreSQL with synthetic Supabase stubs",
+  "cases": [
+    {
+      "case": "source correction and new occurrence commit during snapshot materialization lock",
+      "result": "PASS",
+      "old_total": 12,
+      "fresh_total": 13,
+      "old_receipts": 2,
+      "fresh_receipts": 3,
+      "observed_lock": true
+    },
+    {
+      "case": "facility grant revoked during advisory lock wait",
+      "result": "PASS",
+      "sqlstate": "42501",
+      "no_snapshot_created": true,
+      "observed_lock": true
+    }
+  ],
+  "cleaned": true,
+  "result": "PASS"
+}

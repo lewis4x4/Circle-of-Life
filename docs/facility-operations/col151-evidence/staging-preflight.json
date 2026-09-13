@@ -1,0 +1,15 @@
+{
+  "target": "iwcnajanvjvynolltflw",
+  "read_only": true,
+  "observed": {
+    "ledger_count": 366,
+    "latest": [
+      {
+        "version": "363",
+        "name": "audit_export_hfo_history_scope"
+      }
+    ],
+    "export_present": null,
+    "db": "postgres"
+  }
+}

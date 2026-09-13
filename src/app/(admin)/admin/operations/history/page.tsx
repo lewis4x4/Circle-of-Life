@@ -10,6 +10,7 @@ import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { ReceiptHistory, localTime } from "../work/_components/receipt-history";
 import { HistoryReceiptSummary } from "./history-receipt-summary";
 import { CONTROL } from "../work/_components/work-inputs";
+import { ActivityHistoryExport } from "./activity-history-export";
 
 export default function CorporateActivityHistoryPage() {
   const auth = useHavenAuth();
@@ -283,6 +284,7 @@ function HistoryScope({
               )}
             </div>
           </section>
+          <ActivityHistoryExport facilityId={facilityId} activityId={activityId} />
           <h2 className="text-lg font-semibold">Dated history</h2>
           {body.history.length === 0 ? (
             <p>
