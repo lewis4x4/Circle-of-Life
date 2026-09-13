@@ -1,3 +1,4 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { z } from "zod";
 
 import { OPERATIONS_VIEW_ROLES } from "@/lib/operations/constants";
@@ -26,7 +27,7 @@ export const DRILL_OUTCOMES = ["performed", "failed"] as const;
 export const ASSET_OBSERVATION_ACTIONS = ["correct", "void"] as const;
 export const DRILL_LOG_ACTIONS = ["finalize", "correct", "void"] as const;
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 /** The database appends `:deliver` for the delivery key, so a record request key is 8 to 120 characters. */
 export const sourceRecordRequestKeySchema = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{7,119}$/, "request_key must be 8 to 120 key characters");
 const text = (max: number) => z.string().trim().min(1).max(max);

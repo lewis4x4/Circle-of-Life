@@ -1,3 +1,4 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { z } from "zod";
 
 import { OPERATIONS_VIEW_ROLES } from "@/lib/operations/constants";
@@ -20,7 +21,7 @@ export const ASSOCIATION_KINDS = ["early", "late", "unscheduled"] as const;
 export const BINDING_AUTHORITY_CLASSES = ["facility", "financial", "resident", "employee_personnel", "employee_medical", "asset"] as const;
 export const BINDING_PROVENANCE_SOURCES = ["admin_log", "interview", "facility_policy", "regulator", "other"] as const;
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 const shift = z.enum(["day", "evening", "night"]);
 const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "must be a calendar date");
 const instant = z.string().datetime({ offset: true });

@@ -1,3 +1,4 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { z } from "zod";
 
 import { OPERATIONS_VIEW_ROLES } from "@/lib/operations/constants";
@@ -49,7 +50,7 @@ export const SOURCE_EVENT_REASONS = [
 ] as const;
 export const SOURCE_RECONCILE_ACTIONS = ["retry", "select", "dismiss"] as const;
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 const slug = z.string().regex(/^[a-z][a-z0-9-]{0,63}$/, "source_key must be a slug");
 const recordId = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/, "source_record_id must be a stable identifier");
 const recordVersion = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/, "source_record_version must be a stable identifier");

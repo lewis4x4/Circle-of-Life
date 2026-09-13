@@ -1,3 +1,4 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -43,7 +44,7 @@ export type EvidenceResultOutcome = (typeof EVIDENCE_RESULT_OUTCOMES)[number];
 /** Signed download URLs are short-lived; the policy decides again on every request. */
 export const DOWNLOAD_URL_SECONDS = 60;
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 const text = (max: number) => z.string().trim().min(1).max(max);
 const sha256 = z.string().regex(/^[0-9a-f]{64}$/, "sha256 must be 64 hex characters");
 /** The MD5 of the bytes about to be uploaded (see md5.ts); the database verifies it against the Storage eTag. */
