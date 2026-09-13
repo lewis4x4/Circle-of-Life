@@ -1,0 +1,68 @@
+{
+  "at": "2026-09-13T06:15:30.983Z",
+  "target": "iwcnajanvjvynolltflw",
+  "source_manifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Billing Hydration/docs/facility-operations/col224-evidence/proof-source-manifest.json",
+    "sha256": "da8e6ef3294de06743886d18eb8f863c440b38b96fe1193b5bdb54d3cc67325e"
+  },
+  "clock_control": "Real browser wall clock; no freezing or hydration suppression",
+  "results": [
+    {
+      "width": 375,
+      "load": "initial",
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "serverClockText": "As of — ET",
+      "clockAfterHydration": "As of Sep 13, 2026, 2:15 AM ET",
+      "clockAfterRefresh": "As of Sep 13, 2026, 2:15 AM ET",
+      "refreshEventCount": 1,
+      "displayedMinuteChanged": false,
+      "axeViolations": [],
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "load": "reload",
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "serverClockText": "As of — ET",
+      "clockAfterHydration": "As of Sep 13, 2026, 2:15 AM ET",
+      "clockAfterRefresh": "As of Sep 13, 2026, 2:15 AM ET",
+      "refreshEventCount": 1,
+      "displayedMinuteChanged": false,
+      "axeViolations": [],
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "load": "initial",
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "serverClockText": "As of — ET",
+      "clockAfterHydration": "As of Sep 13, 2026, 2:15 AM ET",
+      "clockAfterRefresh": "As of Sep 13, 2026, 2:15 AM ET",
+      "refreshEventCount": 1,
+      "displayedMinuteChanged": false,
+      "axeViolations": [],
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "load": "reload",
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "serverClockText": "As of — ET",
+      "clockAfterHydration": "As of Sep 13, 2026, 2:15 AM ET",
+      "clockAfterRefresh": "As of Sep 13, 2026, 2:15 AM ET",
+      "refreshEventCount": 1,
+      "displayedMinuteChanged": false,
+      "axeViolations": [],
+      "status": "PASS"
+    }
+  ],
+  "result": "PASS"
+}

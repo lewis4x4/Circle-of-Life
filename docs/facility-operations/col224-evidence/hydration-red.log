@@ -1,0 +1,104 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Billing Hydration
+
+ ❯ src/app/(admin)/billing/billing-ar-overview-hero.test.tsx (5 tests | 2 failed) 128ms
+     × hydrates across minute boundary without replacing server content 56ms
+     × hydrates across Eastern midnight without replacing server content 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/(admin)/billing/billing-ar-overview-hero.test.tsx > Billing overview timestamp hydration > hydrates across minute boundary without replacing server content
+AssertionError: expected [ …(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   Error {
++     "message": "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
++
++ - A server/client branch `if (typeof window !== 'undefined')`.
++ - Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
++ - Date formatting in a user's locale which doesn't match the server.
++ - External changing data without sending a snapshot of it along with the HTML.
++ - Invalid HTML tag nesting.
++
++ It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
++
++ https://react.dev/link/hydration-mismatch
++
++   <BillingArOverviewHero>
++     <div className=\"space-y-4\">
++       <div>
++       <fieldset>
++       <p className=\"flex flex-...\">
++         <span>
++ +         Sep 12, 2026, 7:55 PM
++ -         Sep 12, 2026, 7:54 PM
++           ...
++         ...
++ ",
++   },
++ ]
+
+ ❯ src/app/(admin)/billing/billing-ar-overview-hero.test.tsx:43:25
+     41|         root = hydrateRoot(container, <BillingArOverviewHero />, { onR…
+     42|       });
+     43|       expect(recovered).toEqual([]);
+       |                         ^
+     44|       expect(container.querySelector("h1")).toBe(heading);
+     45|       expect(container.textContent).toContain(`As of ${expected} ET`);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/app/(admin)/billing/billing-ar-overview-hero.test.tsx > Billing overview timestamp hydration > hydrates across Eastern midnight without replacing server content
+AssertionError: expected [ …(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   Error {
++     "message": "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
++
++ - A server/client branch `if (typeof window !== 'undefined')`.
++ - Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
++ - Date formatting in a user's locale which doesn't match the server.
++ - External changing data without sending a snapshot of it along with the HTML.
++ - Invalid HTML tag nesting.
++
++ It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
++
++ https://react.dev/link/hydration-mismatch
++
++   <BillingArOverviewHero>
++     <div className=\"space-y-4\">
++       <div>
++       <fieldset>
++       <p className=\"flex flex-...\">
++         <span>
++ +         Sep 13, 2026, 12:00 AM
++ -         Sep 12, 2026, 11:59 PM
++           ...
++         ...
++ ",
++   },
++ ]
+
+ ❯ src/app/(admin)/billing/billing-ar-overview-hero.test.tsx:43:25
+     41|         root = hydrateRoot(container, <BillingArOverviewHero />, { onR…
+     42|       });
+     43|       expect(recovered).toEqual([]);
+       |                         ^
+     44|       expect(container.querySelector("h1")).toBe(heading);
+     45|       expect(container.textContent).toContain(`As of ${expected} ET`);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  02:07:26
+   Duration  788ms (transform 101ms, setup 45ms, import 225ms, tests 128ms, environment 152ms)
