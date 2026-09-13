@@ -1,0 +1,25 @@
+{
+  "normalization": "Trailing whitespace and terminal blank lines only; raw originals retained in creating-run scratch",
+  "logs": {
+    "local-fixture-corrected-stub-auth.log": {
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col157-fixture-raw-logs/local-fixture-corrected-stub-auth.log",
+      "raw_sha256": "6c37ee36f7fffc92c4d1d64dbce9d45a3b76f958a33047e5e4c5ccb0016e6a73",
+      "normalized_sha256": "a9e59db9ea4c255cdc46ab2d8c4b3f8182f75c9edf5545cc0476128b1fce3330"
+    },
+    "local-fixture-corrected.log": {
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col157-fixture-raw-logs/local-fixture-corrected.log",
+      "raw_sha256": "7af16039c4be87a8b913ce4b42d292de2e7445d9688010cc3f34f6bd7bcf15af",
+      "normalized_sha256": "f04e983463344e91df82b5c3ebb51ed76cbea7d3a0a53f7d36e7f934dbf21d4f"
+    },
+    "local-fixture-diagnosis.log": {
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col157-fixture-raw-logs/local-fixture-diagnosis.log",
+      "raw_sha256": "4863d55ecc25205f1be96c57382fcd996990ad4b568928335f2b15d936f8a719",
+      "normalized_sha256": "4863d55ecc25205f1be96c57382fcd996990ad4b568928335f2b15d936f8a719"
+    },
+    "local-fixture-corrected-native-grants.log": {
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col157-fixture-raw-logs/local-fixture-corrected-native-grants.log",
+      "raw_sha256": "2f7e64920ca94c7baf19cb5e9bc222d994c48817ad07119d62d8cb44160cd797",
+      "normalized_sha256": "6d6120644050c0d2a0473eb6517272a7feb419bb30d90169a3c442f2bd923662"
+    }
+  }
+}

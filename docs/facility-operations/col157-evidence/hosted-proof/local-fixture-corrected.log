@@ -1,0 +1,32 @@
+BEGIN
+CREATE FUNCTION
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+                                                                                                                         set_config
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"iat": 1789317441, "sub": "2a5ed4b6-081d-4173-a029-47048f07b3fc", "role": "authenticated", "app_role": "owner", "session_id": "0a47b551-b04f-4cd0-8577-a8c0e990defc", "organization_id": "7eab6240-a9bf-47b1-b2f8-440561983a29", "auth_claim_version": 2}
+(1 row)
+
+SET
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col157-fixture-corrected.sql:1: ERROR:  permission denied for table resident_trust_transactions
