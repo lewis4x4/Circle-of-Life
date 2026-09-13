@@ -1,0 +1,305 @@
+[
+  {
+    "path": "/Users/brianlewis/Circle of Life/Circle-of-Life",
+    "head": "50bc07c4c877b65e17f471895e4446ff11c4d69c",
+    "status": [
+      "?? docs/Brand Guide/",
+      "?? test-results/agent-gates/2026-09-06T15-57-09-155Z-REVIEW-20260906.json",
+      "?? test-results/agent-gates/2026-09-06T16-15-59-004Z-REVIEW-20260906.json",
+      "?? test-results/agent-gates/2026-09-06T22-00-29-600Z-REVIEW-20260906.json",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/.codex/worktrees/haven-linear-workflow",
+    "head": "d498dbaabec4e90a6ad671ccd1ecd86b599938e0",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/eager-ishizaka-4a54b8",
+    "head": "814ada6df64b759bf2614e76427d5d713cbad018",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/laughing-mendel-8c7c7b",
+    "head": "ca2400ad79fac648777d81a3d826d7026d5a91d7",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/modest-heisenberg-6818c9",
+    "head": "1205b48fb6ce06946e6e235b7e534d13c79a003d",
+    "status": [
+      " M src/components/layout/AppShell.tsx",
+      "?? src/components/layout/AllSectionsMenu.test.tsx",
+      "?? src/components/layout/AllSectionsMenu.tsx",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/sad-curie-3e04c5",
+    "head": "ffbe30df67721679293f880ca8620fc3103e34a5",
+    "status": [
+      "?? docs/specs/DRIVE-ARTIFACT-INDEX-2026-05-13.md",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Circle-of-Life/.claude/worktrees/sweet-moser-4ae591",
+    "head": "798c4c3f7a19376fdc0bffe386e1b6ed8bea0d61",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Corporate Activity History",
+    "head": "08fd3a43da2fbfaa42d2d37051774ab7d196eb07",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Employee Lifecycle",
+    "head": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Applicability",
+    "head": "520ccbde972830f26fb5d1011731c7b7595d2fbc",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Authority",
+    "head": "476f02d1ca6c215a1cc315485fe0e511a0a0a6f8",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Catalog",
+    "head": "92dea9b9897bc3826f452e3bfe4b752b944a8457",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Dietary Admin",
+    "head": "205ac0305473acdf8f0aba3e50ae17b3d7f4b345",
+    "status": [
+      "?? col159-evidence/AUTHORITATIVE_SESSION.txt",
+      "?? col159-evidence/fable-run.log",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Drill Generators",
+    "head": "47455a13d812ba638b9f75b2606cd5b957a6f653",
+    "status": [
+      "?? col154-evidence/AUTHORITATIVE_SESSION.txt",
+      "?? col154-evidence/fable-run.log",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Evaluator",
+    "head": "caca9592026dead75ef60e3dbf21b04f73e95850",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Evidence",
+    "head": "45ea4ea98c1f3eb7b99622387fcb6f6f73b7cd97",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Help Handover",
+    "head": "94b1f90a275c6dca7aa1550eeaa7093695a18edf",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Occurrences",
+    "head": "c7dc9efc1ba29f0774b4c94ca819a1ef28cf7358",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Operations",
+    "head": "39d41591e8c8110d1df2251ecfc10dd0edb08ae4",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Recovery",
+    "head": "d9f5ffb2bbb57effdff9d9a817e05263534ed28f",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Reminders",
+    "head": "b83bf7b5fe8830c9d2be29c0a16d8cf7b3b48580",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Source Adapters",
+    "head": "a625b75a0c5b549473abd283940c4c4a832465c6",
+    "status": [
+      "?? col147-evidence/fable-run.log",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Facility Workspace",
+    "head": "db451440b44ca67662dceb6018844943b42a456c",
+    "status": [
+      "?? docs/facility-operations/col143-evidence/hosted-proof/",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Finance Integration",
+    "head": "0d0e7763e9fcccbe957a48fba3da7564e9356fd5",
+    "status": [
+      " M docs/finance-integration/RESUMPTION.md",
+      "?? src/lib/billing/billing-run.test.ts",
+      "?? src/lib/billing/billing-run.ts",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Google Connection",
+    "head": "9a071cacf5cc54190703df103667c073fb06fab7",
+    "status": [
+      "?? test-results/agent-gates/2026-09-11T13-41-53-572Z-stand-up-google-connection.json",
+      "?? test-results/agent-gates/2026-09-11T13-44-36-615Z-stand-up-google-connection-final.json",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven HFO Staging Integration",
+    "head": "08fd3a43da2fbfaa42d2d37051774ab7d196eb07",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Insurance Workspace",
+    "head": "a94b21df423e67ddd82bfd2e84ecbe95f2460784",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven InsureFlow Receiver",
+    "head": "7bed5c903603d8ed1eb06f223080817f342bf0d5",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Officer Catalog",
+    "head": "4f423b4d8344fa50358b1ce6357d70e51dbe59c7",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Operating Evidence",
+    "head": "be3f25a2c7e68ea5e93499a345e325f63704b476",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Payroll Release",
+    "head": "2aa8d5720e55405926e54274878dab923bbbab5a",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Remaining Roadmap",
+    "head": "a49d765c9b1cd862e571c30e0f7eb6b9962af7ef",
+    "status": [
+      "?? docs/remediation/2026-09-review/NATIVE-INTEGRATION-RUNTIME.md",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Remediation 2026-09-06",
+    "head": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Section 2",
+    "head": "9db72d2d8a16e4206e2f62c68712c0775bf8c225",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Section 2 Independent Review 2026-09-07/source",
+    "head": "6d90e3197ac59e757addd2ac3e401dcbd12865f1",
+    "status": [
+      "?? test-results/agent-gates/2026-09-07T22-11-01-234Z-section-2-independent-review.json",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Section 2 Staging",
+    "head": "05c9a1792c909186eae6b0865ed87ddbbb03acee",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Stand Up Experience",
+    "head": "ce73d171c91bac38cf5c69c112e2988b6841988e",
+    "status": [
+      "?? .review-tmp/",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Stand Up Origin Fix",
+    "head": "142bfa53f88b5dd36e278a29ef194af91ca9031b",
+    "status": [
+      "?? test-results/agent-gates/2026-09-11T14-51-26-648Z-stand-up-origin-fix.json",
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Stand Up Pilot",
+    "head": "094946ebefb18755478afb3550ed228f450d1fc1",
+    "status": [
+      ""
+    ]
+  },
+  {
+    "path": "/Users/brianlewis/Circle of Life/Haven Stand Up Review Fixes",
+    "head": "afe641c48fe6eea2201038683af45f42eda4b4bd",
+    "status": [
+      ""
+    ]
+  }
+]

@@ -1,0 +1,1 @@
+[migrations:verify:pg] PASS (366 migration files, 46 SQL probes; native PostgreSQL with Supabase stubs)

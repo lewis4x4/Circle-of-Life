@@ -20,6 +20,7 @@ const LINKS: readonly OperationsNavLink[] = [
   { href: "/admin/operations/quarter", label: "Quarter" },
   { href: "/admin/operations/year", label: "Year" },
   { href: "/admin/operations/calendar", label: "Calendar" },
+  { href: "/admin/operations/history", label: "Activity history" },
   { href: "/admin/operations/pager", label: "Pager" },
   { href: "/admin/operations/assets", label: "Assets" },
   { href: "/admin/operations/vendors", label: "Vendors" },
