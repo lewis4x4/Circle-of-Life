@@ -1,7 +1,7 @@
 {
   "result": "PASS",
   "target": "iwcnajanvjvynolltflw",
-  "sourceSha": "1dacb3906c83de2502e18fb4e67d076c16c753db",
+  "sourceSha": "ddce23956b4a12facab5cf3cbd2143c16e8b4ee9",
   "migration_sha256": "f004e72edf5673b4a93d36955522622c1dd4fcd12ba9793f97b9d955d115c609",
   "project": {
     "id": "iwcnajanvjvynolltflw",
@@ -15,6 +15,6 @@
     "anon_denied": true,
     "service_denied": true
   },
-  "at": "2026-09-13T16:33:03.598335+00:00",
+  "at": "2026-09-13T16:43:14.740075+00:00",
   "scope": "Staging additive369 only; no rule publication or operating acceptance"
 }

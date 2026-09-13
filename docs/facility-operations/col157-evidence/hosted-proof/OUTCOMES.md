@@ -1,0 +1,13 @@
+# COL157 actual staged outcomes
+
+Exact staging iwcnajanvjvynolltflw, executed source ddce23956b4a12facab5cf3cbd2143c16e8b4ee9. Application/migration source is unchanged from1dacb390; only the independently reviewed fixture trust insertion moved after real owner login. Migration369 readback and fixture-source-transition preserve that lineage. The first hosted transaction failure, zero-row readback, local diagnosis/intermediate stub failures and final local rollback proof remain retained.
+
+The controlled retry used the same two Auth identities and fresh isolated organization/site/resident IDs. Synthetic trust insertion used authenticated native SQL with real owner claims, not the public HTTP cash command; historical occurred_at was preserved. No existing policy, financial row or external provider configuration was activated.
+
+Actual HFO HTTP proof passed: payment economicdate2026-08-04, serviceperiod2026-07-05 through2026-08-03, recorded2026-09-13 remain distinct. One missing censusday2026-08-05 stays explicit. Native census correction A→B→A and local batch prepared→invalidated produced history1→2→3→4; unchanged/retry did not duplicate transitions. Scoped native hashes matched across HFO reads/reconcile and after the census content restoration. Canonical trust$5 and legacy$9 remain separate, not summed. External acknowledgment remains unavailable; no dispatch ran and no HFO performance or finance command was issued by the panel.
+
+Both1440/375 browsers performed actual task/period refresh and displayed history4. All12 viewport captures are retained. Axe/page/console/HTTP errors zero; document and panel horizontal overflow false, including long native versions. Parent inspected six representative viewport images and accepted legible date axes, dollar amounts, trust separation, invalidated local handoff and unavailable acknowledgment. Exact task/site/period response binding provides scope evidence; global picker selection is not claimed.
+
+Denials passed: HFO task visible to limitedactor, nativefinance unavailable; wrongsite404; revokedsite401. Exact cleanup banned/inactivated bothactors, revokedsite/HFOgrants preserving history, retiredsites/org; financial/census/source/audit records remain retained. Owned4357server stopped and listenerabsence verified. No reactivation or financial reversal/deletion for cleanup.
+
+Artifacts: http-proof.json, browser-report.json, denial-proof.json, cleanup.json, finance-{1440,375}-{top,census,payment,trust,handoff,history}.png. These are synthetic staging engineering evidence, not bank clearing, full rent satisfaction, provider acceptance, operating-policy approval or production release. Final independent review and exact-head CI/main/release obligations remain with the parent delivery run.

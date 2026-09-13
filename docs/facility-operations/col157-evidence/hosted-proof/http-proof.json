@@ -1,0 +1,27 @@
+{
+  "result": "PASS",
+  "sourceSha": "ddce23956b4a12facab5cf3cbd2143c16e8b4ee9",
+  "target": "iwcnajanvjvynolltflw",
+  "sourceHistoryCounts": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "nativeHashComparison": "PASS",
+  "latePaymentEconomicDate": "2026-08-04",
+  "servicePeriod": [
+    "2026-07-05",
+    "2026-08-03"
+  ],
+  "recordedAt": "2026-09-13T16:44:48.165962+00:00",
+  "missingCensusDates": [
+    "2026-08-05"
+  ],
+  "canonicalTrustCents": "500",
+  "separateLegacyCents": "900",
+  "localBatchState": "prepared",
+  "laterLocalBatchState": "invalidated",
+  "externalAcknowledgment": "unavailable",
+  "nativePerformanceCreatedByHFO": false
+}

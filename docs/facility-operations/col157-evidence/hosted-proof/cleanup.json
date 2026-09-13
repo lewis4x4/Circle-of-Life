@@ -1,0 +1,19 @@
+{
+  "result": "PASS",
+  "facts": {
+    "inactive": true,
+    "site_grants": true,
+    "subject_grants": true,
+    "sites_retired": true,
+    "org_retired": true
+  },
+  "bansVerified": true,
+  "financialAndAuditHistoryRetained": true,
+  "ownedListenerClosed": true,
+  "ownedPidsStopped": [
+    43837,
+    43917,
+    43937
+  ],
+  "verifiedAt": "2026-09-13T16:49:25.354294+00:00"
+}
