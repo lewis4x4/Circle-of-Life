@@ -111,6 +111,28 @@ export const listAssetObservationsQuerySchema = z
   .strict();
 
 /**
+ * COL-241 drill log states, as a reader names them: a `draft` was written by
+ * the legacy form and satisfies nothing, a `final` log was finalized by a
+ * person, and a `voided` log is retained history. A state is read, never
+ * inferred from a row's existence.
+ */
+export const DRILL_LOG_STATES = ["draft", "final", "voided"] as const;
+
+export const listDrillLogsQuerySchema = z
+  .object({
+    facility_id: uuid,
+    drill_type: z.enum(DRILL_TYPES).optional(),
+    state: z.enum(DRILL_LOG_STATES).optional(),
+  })
+  .strict();
+
+export type ListDrillLogsQuery = z.infer<typeof listDrillLogsQuerySchema>;
+
+/** Drill log columns read through the session (site access governs the row); evidence files stay under the vault's own access. */
+export const DRILL_LOG_SELECT =
+  "id, organization_id, facility_id, drill_type, drill_date, drill_time, pull_station_activated, staff_present_count, residents_present_count, conducted_by, notes, readings, outcome, issue_summary, entry_reason, correction_reason, record_version, finalized_at, finalized_by, version_recorded_at, version_recorded_by, voided_at, voided_by, void_reason, created_at, updated_at";
+
+/**
  * COL-159 facility service records: one inspection, cleaning or maintenance
  * action on one occasion against the site (facility kinds) or a named asset
  * (asset kinds), by a staff member or a site-linked vendor. The database
