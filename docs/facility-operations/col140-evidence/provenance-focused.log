@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Homewood Profile
+
+
+ Test Files  4 passed (4)
+      Tests  45 passed (45)
+   Start at  00:04:03
+   Duration  12.15s (transform 1.53s, setup 485ms, import 3.81s, tests 9.41s, environment 1.44s)
