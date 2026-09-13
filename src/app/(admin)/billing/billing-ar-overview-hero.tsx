@@ -15,11 +15,15 @@ export function BillingArOverviewHero() {
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
-  const [asOf, setAsOf] = useState(() => new Date());
+  const [asOf, setAsOf] = useState<Date | null>(null);
 
   useEffect(() => {
+    const initial = window.setTimeout(() => setAsOf(new Date()), 0);
     const id = window.setInterval(() => setAsOf(new Date()), 60_000);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {
@@ -97,14 +101,14 @@ export function BillingArOverviewHero() {
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span>
           As of{" "}
-          {asOf.toLocaleString("en-US", {
+          {asOf?.toLocaleString("en-US", {
             timeZone: "America/New_York",
             month: "short",
             day: "numeric",
             year: "numeric",
             hour: "numeric",
             minute: "2-digit",
-          })}{" "}
+          }) ?? "—"}{" "}
           ET
         </span>
         <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={triggerRefresh}>

@@ -1,0 +1,8 @@
+{
+  "head": "9f23f382fe9ef5b6be2dbd7ad3ed649a1d2b34d3",
+  "source": "/Users/brianlewis/Circle of Life/Haven Billing Contrast/src/app/(admin)/billing/billing-ar-overview-hero.tsx",
+  "sha256": "10daac86d787a86c3eb0b65ff4dff47de253f6f4d62220e943d7eecedb10eaad",
+  "react": "19.2.4",
+  "vitest": "4.1.11",
+  "historical_limit": "The original initial-report.json collector retained only300characters of the pageerror. This new controlled reproduction cannot establish that historical event cause."
+}

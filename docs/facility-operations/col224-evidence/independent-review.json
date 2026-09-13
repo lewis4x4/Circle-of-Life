@@ -1,0 +1,39 @@
+{
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "at": "2026-09-13T06:25:53.486883+00:00",
+  "findings": [],
+  "scope": "Controlled current timestamp mismatch mechanism and narrow stable-initial-render fix. No attribution of truncated original COL217 incident to this mechanism.",
+  "browser_cases": 4,
+  "server_placeholder": "As of \u2014 ET",
+  "errors": 0,
+  "refresh_events_per_case": 1,
+  "cleanup": {
+    "active": false,
+    "banned": true,
+    "live_grants": 0,
+    "site_retired": true,
+    "entity_retired": true,
+    "port_4342_closed": true,
+    "owned_app_pids": [
+      51207,
+      51234,
+      51236
+    ]
+  },
+  "artifacts_sha256": {
+    "proof-source-manifest.json": "da8e6ef3294de06743886d18eb8f863c440b38b96fe1193b5bdb54d3cc67325e",
+    "browser-report.json": "5ee63458e09fe7b8198716fe1da03d8314ca87efb2749524871b7e5f1bf32f52",
+    "cleanup.json": "3bfca4b22a85ae60b104f59be2cd9733e70b0184f0ec749451c70410385191bd",
+    "original-error-reference.json": "b4affe4e8db8bfbb664359c58680c83c14cafd2821c621e83c4ba912b6d9dac3"
+  },
+  "required_gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Billing Hydration/test-results/agent-gates/2026-09-13T06-19-21-184Z-COL-224-BILLING-HYDRATION.json",
+    "sha256": "6fd8418a720c640a5cd1bb0054ebaf736ea42f00fb933f3c5a89bb1f48ce742c",
+    "required_checks": 11,
+    "all_passed": true
+  },
+  "sourceBinding": "All proof-manifest file hashes match current source; ancestry advanced by reported zero-file merge. Review binds tested source bytes, not an unexecuted test run at new metadata.",
+  "currentHead": "fb25bfc9c72cea2a9ba7d6bb00e3e5f3a214ebd4"
+}

@@ -1,0 +1,11 @@
+{
+  "run": "col224-f64d5f8acc5d",
+  "target": "iwcnajanvjvynolltflw",
+  "site": "0118fc57-5e2c-448b-82ab-fe19b89d46fd",
+  "actor": "ee2278c4-ff37-4b0c-8032-22b1f5232a23",
+  "preflight": {
+    "schema366": true,
+    "hook": true
+  },
+  "auth_hook_claims_verified": true
+}
