@@ -420,8 +420,30 @@ describe("Site work", () => {
     expect(screen.queryByDisplayValue("Private draft")).not.toBeInTheDocument();
     expect(screen.queryByText(/Dana Reyes/)).not.toBeInTheDocument();
   });
+  it.each(["today", "history"])("composes %s inside the application landmarks without duplicates", async (view) => {
+    env.query = `facility_id=22222222-2222-4222-8222-222222222222&view=${view}`;
+    const { container } = render(
+      <>
+        <header aria-label="Application">Application navigation</header>
+        <main><SiteWorkPage /></main>
+        <footer aria-label="Application footer">Application footer</footer>
+      </>,
+    );
+    await screen.findByRole("heading", { name: "Site work", level: 1 });
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    // Testing Library treats section-scoped Panel headers as banners; axe below
+    // resolves ancestor semantics and checks the complete composed document.
+    expect(screen.getByRole("banner", { name: "Application" })).toBeInTheDocument();
+    expect(screen.queryByRole("banner", { name: "Page top bar" })).toBeNull();
+    expect(screen.getByRole("contentinfo", { name: "Application footer" })).toBeInTheDocument();
+    expect(screen.queryByRole("contentinfo", { name: "Audit footer" })).toBeNull();
+    expect(container.querySelector("#page-shell-main")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Audit Trail" })).toHaveAttribute("href", expect.stringContaining("view=history"));
+    const result = await axe.run(container, { runOnly: { type: "rule", values: ["landmark-main-is-top-level", "landmark-no-duplicate-main", "landmark-banner-is-top-level", "landmark-contentinfo-is-top-level", "landmark-no-duplicate-banner", "landmark-no-duplicate-contentinfo"] } });
+    expect(result.violations).toEqual([]);
+  });
   it("passes axe with real page primitives and rendered recording controls", async () => {
-    const { container } = render(<SiteWorkPage />);
+    const { container } = render(<main><SiteWorkPage /></main>);
     await userEvent.click(
       await screen.findByRole("button", { name: "Report an issue" }),
     );

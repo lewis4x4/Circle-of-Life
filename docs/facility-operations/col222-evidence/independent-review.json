@@ -1,0 +1,32 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "reviewer": "/root/release_preflight",
+  "independent": true,
+  "at": "2026-09-13T02:40:34.854764+00:00",
+  "sourceFiles": {
+    "src/app/(admin)/admin/operations/work/page.test.tsx": "ff5913518e10bfca2b45080b1949b9fdd5c068b97e98f587815aebdd165711c4",
+    "src/app/(admin)/admin/operations/work/page.tsx": "510da98205a9b0ebfbab7614252078f73b18ca475a07d6e702521f572da1aa54",
+    "src/design-system/components/AuditFooter/AuditFooter.tsx": "c4f331cf00f406602e8dee4b6302b9bbfdbe43ec0e5b6cdb47e02a839e5f093f",
+    "src/design-system/components/PageShell/PageShell.test.tsx": "e6d914296baa2cac8e9ffd7d3b56775c184bf66529a303e9e8e95598686fbd8a",
+    "src/design-system/components/PageShell/PageShell.tsx": "90565ad68a820ed2097b2a389a3ac1bf71708b9925c2223bf2654bf0e74ea385",
+    "src/design-system/components/TopBar/TopBar.tsx": "8a24b4857a7a8cad01eab87e4adc66d264fff735d84e71347e5f84ff3325e80a"
+  },
+  "findings": [],
+  "criteria": {
+    "landmark_composition": "PASS: four authenticated Today/History cases at 1440 and 375; zero axe/console/HTTP failures, one main, no nested landmarks",
+    "standalone_and_skip_target": "PASS: standalone component semantics and existing real skip-link navigation retained"
+  },
+  "verification": {
+    "focused_tests": 45,
+    "full_tests": 4502,
+    "existing_skips": 2,
+    "typecheck": "PASS",
+    "strict_gate": "test-results/agent-gates/2026-09-13T02-32-47-620Z-COL-222-LANDMARKS.json",
+    "required_checks": 11,
+    "required_checks_all_passed": true,
+    "native_migrations": 368,
+    "native_sql_probes": 48,
+    "fixture_cleanup": "PASS"
+  },
+  "scope": "Source and synthetic authenticated staging-backed local UI; production release unclaimed"
+}

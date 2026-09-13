@@ -3,6 +3,8 @@ import { formatInTimeZone } from "date-fns-tz";
 import { cn } from "@/lib/utils";
 
 export type AuditFooterProps = {
+  /** Render page chrome without claiming an application-level landmark. */
+  embedded?: boolean;
   auditHref: string;
   updatedAt: Date | string;
   timezone?: string;
@@ -14,6 +16,7 @@ export type AuditFooterProps = {
 const DEFAULT_TIMEZONE = "America/New_York";
 
 export function AuditFooter({
+  embedded = false,
   auditHref,
   updatedAt,
   timezone = DEFAULT_TIMEZONE,
@@ -27,10 +30,11 @@ export function AuditFooter({
   const { tzLabel, absoluteLabel } = formatAuditTimestamp(updatedDate, timezone);
   const statusLabel = live ? "Live" : "Offline";
 
+  const Container = embedded ? "div" : "footer";
   return (
-    <footer
-      role="contentinfo"
-      aria-label="Audit footer"
+    <Container
+      role={embedded ? undefined : "contentinfo"}
+      aria-label={embedded ? undefined : "Audit footer"}
       className={cn(
         "flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-subtle px-4 py-3 text-xs text-text-secondary",
         className,
@@ -67,7 +71,7 @@ export function AuditFooter({
           {tzLabel}
         </span>
       </div>
-    </footer>
+    </Container>
   );
 }
 

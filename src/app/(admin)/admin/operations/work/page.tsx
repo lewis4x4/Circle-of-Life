@@ -280,6 +280,7 @@ function WorkspaceData({
     : [];
   return (
     <PageShell
+      embedded
       title="Site work"
       subtitle={`Current person: ${actorName ?? actorId}`}
       filters={filters}

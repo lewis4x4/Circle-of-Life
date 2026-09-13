@@ -19,6 +19,8 @@ describe("<PageShell />", () => {
 
     expect(screen.getByRole("heading", { name: "Triage Inbox", level: 1 })).toBeInTheDocument();
     expect(screen.getByText("content")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAttribute("id", "page-shell-main");
+    expect(screen.getByRole("banner", { name: "Page top bar" })).toBeInTheDocument();
     expect(screen.getByRole("contentinfo", { name: /audit/i })).toBeInTheDocument();
   });
 
