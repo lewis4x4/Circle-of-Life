@@ -1,0 +1,33 @@
+{
+  "result": "BASELINE_CAPTURED",
+  "results": [
+    {
+      "theme": "light",
+      "width": 1440,
+      "status": "BASELINE_CAPTURED",
+      "contrast": 3.4959792349064696,
+      "rRefreshEvents": 0
+    },
+    {
+      "theme": "light",
+      "width": 375,
+      "status": "BASELINE_CAPTURED",
+      "contrast": 3.4959792349064696,
+      "rRefreshEvents": 0
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "status": "BASELINE_CAPTURED",
+      "contrast": 4.239834501270548,
+      "rRefreshEvents": 0
+    },
+    {
+      "theme": "dark",
+      "width": 375,
+      "status": "BASELINE_CAPTURED",
+      "contrast": 4.239834501270548,
+      "rRefreshEvents": 0
+    }
+  ]
+}

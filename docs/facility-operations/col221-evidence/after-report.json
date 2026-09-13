@@ -1,0 +1,305 @@
+{
+  "phase": "after",
+  "at": "2026-09-13T05:46:17.525Z",
+  "source_manifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Billing Contrast/docs/facility-operations/col221-evidence/after-source-manifest.json",
+    "sha256": "e0ee2fc9b50b6f4bfc25c51a6863b2c82422aaed07abd3bccfa9e010924f474c"
+  },
+  "target": "iwcnajanvjvynolltflw",
+  "compatible_staging_extra_migration": "366_hfo_profile_draft_preparation",
+  "results": [
+    {
+      "theme": "light",
+      "width": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "themeChangedViaActualUI": true,
+      "scopedInvoiceRead": {
+        "status": 200,
+        "rows": 0,
+        "facility_id": "1d526eb5-2575-4754-b14d-b821881daf19"
+      },
+      "measurement": {
+        "contrast": 5.249099354223625,
+        "cssColor": "rgb(105, 97, 89)",
+        "opacity": "1",
+        "foreground": [
+          0.4117647058823529,
+          0.3803921568627451,
+          0.34901960784313724,
+          1
+        ],
+        "compositedForeground": [
+          0.4117647058823529,
+          0.3803921568627451,
+          0.34901960784313724
+        ],
+        "background": [
+          0.9411764705882353,
+          0.9333333333333333,
+          0.9215686274509803
+        ],
+        "layers": [
+          {
+            "tag": "BODY",
+            "color": "rgb(240, 238, 235)"
+          },
+          {
+            "tag": "DIV",
+            "color": "rgb(240, 238, 235)"
+          },
+          {
+            "tag": "MAIN",
+            "color": "rgb(240, 238, 235)"
+          }
+        ],
+        "fontSize": "11px",
+        "lineHeight": "14.6667px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 509.921875,
+          "y": 243.765625,
+          "width": 200.84375,
+          "height": 14.65625
+        },
+        "text": "Shortcuts: / search · R refresh · E export"
+      },
+      "axeViolations": [],
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…",
+        "type": null
+      },
+      "export": {
+        "filename": "invoices-col221-1e4de49e1339-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "rRefreshEvents": 0,
+      "buttonRefreshEvents": 1,
+      "layoutPreserved": true,
+      "keyboardPreserved": true,
+      "status": "PASS"
+    },
+    {
+      "theme": "light",
+      "width": 375,
+      "errors": [],
+      "httpFailures": [],
+      "themeChangedViaActualUI": true,
+      "scopedInvoiceRead": {
+        "status": 200,
+        "rows": 0,
+        "facility_id": "1d526eb5-2575-4754-b14d-b821881daf19"
+      },
+      "measurement": {
+        "contrast": 5.249099354223625,
+        "cssColor": "rgb(105, 97, 89)",
+        "opacity": "1",
+        "foreground": [
+          0.4117647058823529,
+          0.3803921568627451,
+          0.34901960784313724,
+          1
+        ],
+        "compositedForeground": [
+          0.4117647058823529,
+          0.3803921568627451,
+          0.34901960784313724
+        ],
+        "background": [
+          0.9411764705882353,
+          0.9333333333333333,
+          0.9215686274509803
+        ],
+        "layers": [
+          {
+            "tag": "BODY",
+            "color": "rgb(240, 238, 235)"
+          },
+          {
+            "tag": "DIV",
+            "color": "rgb(240, 238, 235)"
+          },
+          {
+            "tag": "MAIN",
+            "color": "rgb(240, 238, 235)"
+          }
+        ],
+        "fontSize": "11px",
+        "lineHeight": "14.6667px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 18.5,
+          "y": 445.875,
+          "width": 200.84375,
+          "height": 14.65625
+        },
+        "text": "Shortcuts: / search · R refresh · E export"
+      },
+      "axeViolations": [],
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…",
+        "type": null
+      },
+      "export": {
+        "filename": "invoices-col221-1e4de49e1339-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "rRefreshEvents": 0,
+      "buttonRefreshEvents": 1,
+      "layoutPreserved": true,
+      "keyboardPreserved": true,
+      "status": "PASS"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "themeChangedViaActualUI": true,
+      "scopedInvoiceRead": {
+        "status": 200,
+        "rows": 0,
+        "facility_id": "1d526eb5-2575-4754-b14d-b821881daf19"
+      },
+      "measurement": {
+        "contrast": 6.130691130546618,
+        "cssColor": "rgb(147, 143, 133)",
+        "opacity": "1",
+        "foreground": [
+          0.5764705882352941,
+          0.5607843137254902,
+          0.5215686274509804,
+          1
+        ],
+        "compositedForeground": [
+          0.5764705882352941,
+          0.5607843137254902,
+          0.5215686274509804
+        ],
+        "background": [
+          0.043137254901960784,
+          0.0392156862745098,
+          0.03529411764705882
+        ],
+        "layers": [
+          {
+            "tag": "BODY",
+            "color": "rgb(11, 10, 9)"
+          },
+          {
+            "tag": "DIV",
+            "color": "rgb(11, 10, 9)"
+          },
+          {
+            "tag": "MAIN",
+            "color": "rgb(11, 10, 9)"
+          }
+        ],
+        "fontSize": "11px",
+        "lineHeight": "14.6667px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 509.921875,
+          "y": 243.765625,
+          "width": 200.84375,
+          "height": 14.65625
+        },
+        "text": "Shortcuts: / search · R refresh · E export"
+      },
+      "axeViolations": [],
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…",
+        "type": null
+      },
+      "export": {
+        "filename": "invoices-col221-1e4de49e1339-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "rRefreshEvents": 0,
+      "buttonRefreshEvents": 1,
+      "layoutPreserved": true,
+      "keyboardPreserved": true,
+      "status": "PASS"
+    },
+    {
+      "theme": "dark",
+      "width": 375,
+      "errors": [],
+      "httpFailures": [],
+      "themeChangedViaActualUI": true,
+      "scopedInvoiceRead": {
+        "status": 200,
+        "rows": 0,
+        "facility_id": "1d526eb5-2575-4754-b14d-b821881daf19"
+      },
+      "measurement": {
+        "contrast": 6.130691130546618,
+        "cssColor": "rgb(147, 143, 133)",
+        "opacity": "1",
+        "foreground": [
+          0.5764705882352941,
+          0.5607843137254902,
+          0.5215686274509804,
+          1
+        ],
+        "compositedForeground": [
+          0.5764705882352941,
+          0.5607843137254902,
+          0.5215686274509804
+        ],
+        "background": [
+          0.043137254901960784,
+          0.0392156862745098,
+          0.03529411764705882
+        ],
+        "layers": [
+          {
+            "tag": "BODY",
+            "color": "rgb(11, 10, 9)"
+          },
+          {
+            "tag": "DIV",
+            "color": "rgb(11, 10, 9)"
+          },
+          {
+            "tag": "MAIN",
+            "color": "rgb(11, 10, 9)"
+          }
+        ],
+        "fontSize": "11px",
+        "lineHeight": "14.6667px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 18.5,
+          "y": 445.875,
+          "width": 200.84375,
+          "height": 14.65625
+        },
+        "text": "Shortcuts: / search · R refresh · E export"
+      },
+      "axeViolations": [],
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…",
+        "type": null
+      },
+      "export": {
+        "filename": "invoices-col221-1e4de49e1339-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "rRefreshEvents": 0,
+      "buttonRefreshEvents": 1,
+      "layoutPreserved": true,
+      "keyboardPreserved": true,
+      "status": "PASS"
+    }
+  ],
+  "result": "PASS"
+}

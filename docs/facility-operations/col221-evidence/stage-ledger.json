@@ -1,0 +1,1482 @@
+{
+  "local_max_numeric": "365",
+  "reviewed_additive_staging_version": "366",
+  "ledger": [
+    {
+      "version": "001",
+      "name": "enum_types"
+    },
+    {
+      "version": "002",
+      "name": "core_hierarchy"
+    },
+    {
+      "version": "003",
+      "name": "user_rbac"
+    },
+    {
+      "version": "004",
+      "name": "haven_rls_helpers"
+    },
+    {
+      "version": "005",
+      "name": "rls_policies"
+    },
+    {
+      "version": "006",
+      "name": "audit_triggers"
+    },
+    {
+      "version": "044",
+      "name": "insurance_risk_finance"
+    },
+    {
+      "version": "007",
+      "name": "census_daily_log"
+    },
+    {
+      "version": "008",
+      "name": "seed_col_organization"
+    },
+    {
+      "version": "009",
+      "name": "residents"
+    },
+    {
+      "version": "010",
+      "name": "care_plans"
+    },
+    {
+      "version": "011",
+      "name": "resident_clinical_assets"
+    },
+    {
+      "version": "012",
+      "name": "assessment_templates"
+    },
+    {
+      "version": "013",
+      "name": "resident_profile_rls"
+    },
+    {
+      "version": "014",
+      "name": "resident_profile_audit_triggers"
+    },
+    {
+      "version": "015",
+      "name": "daily_logs_and_adl"
+    },
+    {
+      "version": "016",
+      "name": "resident_medications_emar"
+    },
+    {
+      "version": "017",
+      "name": "behavioral_condition_handoff"
+    },
+    {
+      "version": "018",
+      "name": "activities"
+    },
+    {
+      "version": "019",
+      "name": "daily_operations_rls"
+    },
+    {
+      "version": "020",
+      "name": "daily_operations_audit_triggers"
+    },
+    {
+      "version": "021",
+      "name": "incident_reporting_schema"
+    },
+    {
+      "version": "022",
+      "name": "incident_reporting_rls"
+    },
+    {
+      "version": "023",
+      "name": "incident_reporting_audit_triggers"
+    },
+    {
+      "version": "024",
+      "name": "staff_management_schema"
+    },
+    {
+      "version": "025",
+      "name": "staff_management_rls"
+    },
+    {
+      "version": "026",
+      "name": "staff_management_audit_triggers"
+    },
+    {
+      "version": "074",
+      "name": "incident_rca_investigation_status"
+    },
+    {
+      "version": "027",
+      "name": "billing_and_collections_schema"
+    },
+    {
+      "version": "028",
+      "name": "billing_and_collections_rls"
+    },
+    {
+      "version": "029",
+      "name": "billing_and_collections_audit_triggers"
+    },
+    {
+      "version": "030",
+      "name": "allocate_incident_number"
+    },
+    {
+      "version": "042",
+      "name": "enhanced_finance_gl_settings"
+    },
+    {
+      "version": "031",
+      "name": "family_calendar_rls"
+    },
+    {
+      "version": "032",
+      "name": "family_portal_messages"
+    },
+    {
+      "version": "033",
+      "name": "seed_oakridge_demo_data"
+    },
+    {
+      "version": "034",
+      "name": "tighten_resident_profile_rls"
+    },
+    {
+      "version": "035",
+      "name": "care_planning_advanced"
+    },
+    {
+      "version": "036",
+      "name": "care_plan_review_alerts_insert_policy"
+    },
+    {
+      "version": "037",
+      "name": "medication_management_advanced"
+    },
+    {
+      "version": "038",
+      "name": "infection_control"
+    },
+    {
+      "version": "039",
+      "name": "compliance_engine"
+    },
+    {
+      "version": "040",
+      "name": "entity_facility_finance"
+    },
+    {
+      "version": "041",
+      "name": "journal_draft_soft_delete"
+    },
+    {
+      "version": "043",
+      "name": "gl_budget_lines"
+    },
+    {
+      "version": "045",
+      "name": "insurance_date_integrity"
+    },
+    {
+      "version": "046",
+      "name": "vendor_contract_management"
+    },
+    {
+      "version": "047",
+      "name": "executive_intelligence"
+    },
+    {
+      "version": "048",
+      "name": "finance_enhanced"
+    },
+    {
+      "version": "049",
+      "name": "insurance_enhanced"
+    },
+    {
+      "version": "050",
+      "name": "platform_audit_log_access"
+    },
+    {
+      "version": "051",
+      "name": "platform_auth_role_reconciliation"
+    },
+    {
+      "version": "052",
+      "name": "platform_regulatory_jurisdiction"
+    },
+    {
+      "version": "053",
+      "name": "platform_search_index"
+    },
+    {
+      "version": "054",
+      "name": "pwa_offline_emar"
+    },
+    {
+      "version": "055",
+      "name": "pwa_push_notifications"
+    },
+    {
+      "version": "056",
+      "name": "resident_advance_directives"
+    },
+    {
+      "version": "057",
+      "name": "emar_witness_device"
+    },
+    {
+      "version": "058",
+      "name": "incident_regulatory_timers"
+    },
+    {
+      "version": "059",
+      "name": "staff_credentials_background"
+    },
+    {
+      "version": "073",
+      "name": "time_records_admin_rls"
+    },
+    {
+      "version": "060",
+      "name": "billing_trust_ar_matview"
+    },
+    {
+      "version": "061",
+      "name": "care_plan_billing_version_lock"
+    },
+    {
+      "version": "062",
+      "name": "medication_rxnorm_witness"
+    },
+    {
+      "version": "063",
+      "name": "infection_jurisdiction_labs"
+    },
+    {
+      "version": "064",
+      "name": "compliance_citation_keys"
+    },
+    {
+      "version": "065",
+      "name": "finance_intercompany"
+    },
+    {
+      "version": "066",
+      "name": "insurance_osha_allocation"
+    },
+    {
+      "version": "067",
+      "name": "vendor_match_storage_scorecard"
+    },
+    {
+      "version": "068",
+      "name": "ai_invocation_framework"
+    },
+    {
+      "version": "069",
+      "name": "shift_swap_requests_rls_tighten"
+    },
+    {
+      "version": "070",
+      "name": "incident_rca"
+    },
+    {
+      "version": "071",
+      "name": "invoices_facility_resident_period_unique"
+    },
+    {
+      "version": "072",
+      "name": "staffing_ratio_snapshots_insert_policy"
+    },
+    {
+      "version": "075",
+      "name": "referral_inquiry_schema"
+    },
+    {
+      "version": "076",
+      "name": "referral_inquiry_rls_audit"
+    },
+    {
+      "version": "077",
+      "name": "admissions_move_in_schema"
+    },
+    {
+      "version": "078",
+      "name": "admissions_move_in_rls_audit"
+    },
+    {
+      "version": "079",
+      "name": "discharge_transition_schema"
+    },
+    {
+      "version": "080",
+      "name": "discharge_transition_rls_audit"
+    },
+    {
+      "version": "081",
+      "name": "quality_metrics_schema"
+    },
+    {
+      "version": "082",
+      "name": "quality_metrics_rls_audit"
+    },
+    {
+      "version": "083",
+      "name": "family_portal_module_schema"
+    },
+    {
+      "version": "084",
+      "name": "family_portal_module_rls_audit"
+    },
+    {
+      "version": "085",
+      "name": "executive_intelligence_v2"
+    },
+    {
+      "version": "086",
+      "name": "competency_demonstrations_schema"
+    },
+    {
+      "version": "087",
+      "name": "competency_demonstrations_rls_audit"
+    },
+    {
+      "version": "088",
+      "name": "payroll_integration"
+    },
+    {
+      "version": "089",
+      "name": "dietary_nutrition"
+    },
+    {
+      "version": "090",
+      "name": "transportation"
+    },
+    {
+      "version": "091",
+      "name": "referral_hl7_inbound"
+    },
+    {
+      "version": "092",
+      "name": "reputation"
+    },
+    {
+      "version": "093",
+      "name": "backfill_oakridge_demo_auth_users"
+    },
+    {
+      "version": "094",
+      "name": "normalize_oakridge_demo_emails"
+    },
+    {
+      "version": "095",
+      "name": "restore_default_auth_instance"
+    },
+    {
+      "version": "096",
+      "name": "executive_intelligence_v3"
+    },
+    {
+      "version": "097",
+      "name": "fix_exec_intelligence_audit"
+    },
+    {
+      "version": "098",
+      "name": "resident_assurance_schema"
+    },
+    {
+      "version": "099",
+      "name": "resident_assurance_rls"
+    },
+    {
+      "version": "100",
+      "name": "resident_assurance_audit"
+    },
+    {
+      "version": "101",
+      "name": "resident_assurance_seed"
+    },
+    {
+      "version": "102",
+      "name": "reporting_module_schema"
+    },
+    {
+      "version": "103",
+      "name": "reporting_module_rls"
+    },
+    {
+      "version": "104",
+      "name": "reporting_module_audit"
+    },
+    {
+      "version": "105",
+      "name": "reporting_module_seed"
+    },
+    {
+      "version": "106",
+      "name": "reporting_saved_views_backfill"
+    },
+    {
+      "version": "107",
+      "name": "resident_assurance_indexes_rls_patch"
+    },
+    {
+      "version": "108",
+      "name": "onboarding_responses"
+    },
+    {
+      "version": "109",
+      "name": "onboarding_question_tiers"
+    },
+    {
+      "version": "110",
+      "name": "oakridge_demo_auth_app_role_metadata"
+    },
+    {
+      "version": "111",
+      "name": "user_profiles_updated_by_and_email_sync"
+    },
+    {
+      "version": "112",
+      "name": "resident_transport_requests"
+    },
+    {
+      "version": "113",
+      "name": "mileage_logs_and_fleet_wheelchair"
+    },
+    {
+      "version": "114",
+      "name": "organization_transport_settings"
+    },
+    {
+      "version": "115",
+      "name": "competency_certificate_storage"
+    },
+    {
+      "version": "116",
+      "name": "training_programs_staff_completions"
+    },
+    {
+      "version": "117",
+      "name": "training_completion_certificate_storage_rls"
+    },
+    {
+      "version": "118",
+      "name": "inservice_log_sessions"
+    },
+    {
+      "version": "119",
+      "name": "reputation_google_oauth_credentials"
+    },
+    {
+      "version": "120",
+      "name": "col_multi_facility_demo_seed"
+    },
+    {
+      "version": "121",
+      "name": "user_management_enum_columns"
+    },
+    {
+      "version": "122",
+      "name": "role_permissions_audit_log"
+    },
+    {
+      "version": "143",
+      "name": "track_e_staff_discipline_records"
+    },
+    {
+      "version": "144",
+      "name": "track_e_enum_parity_batch"
+    },
+    {
+      "version": "123",
+      "name": "user_management_rls_updates"
+    },
+    {
+      "version": "124",
+      "name": "compliance_rules"
+    },
+    {
+      "version": "125",
+      "name": "emergency_preparedness"
+    },
+    {
+      "version": "126",
+      "name": "knowledge_base"
+    },
+    {
+      "version": "127",
+      "name": "compliance_rule_executor"
+    },
+    {
+      "version": "128",
+      "name": "compliance_rules_expanded"
+    },
+    {
+      "version": "129",
+      "name": "resident_assurance_seed"
+    },
+    {
+      "version": "130",
+      "name": "kb_security_and_schema_reconciliation"
+    },
+    {
+      "version": "131",
+      "name": "facility_admin_portal"
+    },
+    {
+      "version": "132",
+      "name": "kb_markdown_column"
+    },
+    {
+      "version": "133",
+      "name": "reporting_module_schema"
+    },
+    {
+      "version": "134",
+      "name": "reporting_module_rls"
+    },
+    {
+      "version": "135",
+      "name": "reporting_module_audit"
+    },
+    {
+      "version": "136",
+      "name": "kb_compliance_integration"
+    },
+    {
+      "version": "137",
+      "name": "track_e_col_seed_corrections"
+    },
+    {
+      "version": "138",
+      "name": "track_e_facility_alf_license_type"
+    },
+    {
+      "version": "139",
+      "name": "track_e_adl_assessments"
+    },
+    {
+      "version": "140",
+      "name": "track_e_rate_confirmed"
+    },
+    {
+      "version": "141",
+      "name": "track_e_form_1823_and_admission_docs"
+    },
+    {
+      "version": "142",
+      "name": "track_e_discharge_reason_expansion"
+    },
+    {
+      "version": "145",
+      "name": "track_e_fl_statutes_module_links"
+    },
+    {
+      "version": "146",
+      "name": "kb_seed_getting_started"
+    },
+    {
+      "version": "147",
+      "name": "grace_foundation"
+    },
+    {
+      "version": "148",
+      "name": "grace_flow_engine"
+    },
+    {
+      "version": "149",
+      "name": "search_tool_dashboard"
+    },
+    {
+      "version": "150",
+      "name": "seed_search_tool_policy_defaults"
+    },
+    {
+      "version": "151",
+      "name": "seed_col_executive_metrics"
+    },
+    {
+      "version": "152",
+      "name": "seed_col_payroll_and_assurance_facilities"
+    },
+    {
+      "version": "153",
+      "name": "care_plan_signature"
+    },
+    {
+      "version": "154",
+      "name": "exec_alert_threshold_rules"
+    },
+    {
+      "version": "155",
+      "name": "resident_assurance_intelligence"
+    },
+    {
+      "version": "156",
+      "name": "watch_protocol_auto_trigger"
+    },
+    {
+      "version": "157",
+      "name": "resident_assurance_alert_rules"
+    },
+    {
+      "version": "158",
+      "name": "fix_watch_trigger_race_condition"
+    },
+    {
+      "version": "159",
+      "name": "col_licensure_survey_data"
+    },
+    {
+      "version": "160",
+      "name": "reset_demo_user_passwords"
+    },
+    {
+      "version": "161",
+      "name": "seed_missing_role_demo_users"
+    },
+    {
+      "version": "162",
+      "name": "reload_postgrest_schema_cache"
+    },
+    {
+      "version": "204",
+      "name": "operations_escalation_deliveries"
+    },
+    {
+      "version": "163",
+      "name": "force_postgrest_schema_reload"
+    },
+    {
+      "version": "164",
+      "name": "fix_demo_auth_identities"
+    },
+    {
+      "version": "165",
+      "name": "nuke_and_rebuild_broken_demo_auth"
+    },
+    {
+      "version": "166",
+      "name": "rebuild_demo_auth_with_triggers"
+    },
+    {
+      "version": "167",
+      "name": "diagnose_auth_schema"
+    },
+    {
+      "version": "168",
+      "name": "fix_null_token_columns"
+    },
+    {
+      "version": "169",
+      "name": "add_med_tech_role"
+    },
+    {
+      "version": "170",
+      "name": "seed_med_tech_demo_user"
+    },
+    {
+      "version": "171",
+      "name": "med_tech_cockpit_tables"
+    },
+    {
+      "version": "172",
+      "name": "extend_emar_for_med_passes"
+    },
+    {
+      "version": "173",
+      "name": "seed_med_tech_cockpit_demo"
+    },
+    {
+      "version": "174",
+      "name": "dietary_command_deck_tables"
+    },
+    {
+      "version": "175",
+      "name": "seed_dietary_demo"
+    },
+    {
+      "version": "176",
+      "name": "grace_memory_compiler"
+    },
+    {
+      "version": "205",
+      "name": "risk_score_snapshots"
+    },
+    {
+      "version": "177",
+      "name": "pilot_feedback_submissions"
+    },
+    {
+      "version": "178",
+      "name": "promote_demo_admin_to_owner"
+    },
+    {
+      "version": "179",
+      "name": "update_col_admin_contacts"
+    },
+    {
+      "version": "180",
+      "name": "allow_med_tech_incident_capture"
+    },
+    {
+      "version": "181",
+      "name": "fix_watch_auto_trigger_for_current_incident_schema"
+    },
+    {
+      "version": "182",
+      "name": "seed_specialist_role_demo_users"
+    },
+    {
+      "version": "183",
+      "name": "fix_incident_sequence_audit_trigger"
+    },
+    {
+      "version": "253",
+      "name": "referral_leads_preferred_contact_inquiry"
+    },
+    {
+      "version": "184",
+      "name": "harden_incident_number_allocator_against_seeded_data"
+    },
+    {
+      "version": "185",
+      "name": "executive_standup_metric_registry"
+    },
+    {
+      "version": "186",
+      "name": "executive_standup_snapshots"
+    },
+    {
+      "version": "187",
+      "name": "executive_standup_rls_audit"
+    },
+    {
+      "version": "188",
+      "name": "executive_standup_import_jobs"
+    },
+    {
+      "version": "189",
+      "name": "staff_attendance_callouts"
+    },
+    {
+      "version": "190",
+      "name": "staff_requisitions"
+    },
+    {
+      "version": "254",
+      "name": "admission_intake_program_and_resident_dob_nullable"
+    },
+    {
+      "version": "191",
+      "name": "referral_outreach_activities"
+    },
+    {
+      "version": "192",
+      "name": "bed_inventory_classification"
+    },
+    {
+      "version": "193",
+      "name": "report_export_storage_bucket"
+    },
+    {
+      "version": "194",
+      "name": "resident_assurance_integrity_assignment"
+    },
+    {
+      "version": "195",
+      "name": "operation_task_templates"
+    },
+    {
+      "version": "196",
+      "name": "operation_task_instances"
+    },
+    {
+      "version": "197",
+      "name": "facility_assets"
+    },
+    {
+      "version": "198",
+      "name": "staffing_adequacy_snapshots"
+    },
+    {
+      "version": "199",
+      "name": "operation_audit_log"
+    },
+    {
+      "version": "200",
+      "name": "oce_seed_data"
+    },
+    {
+      "version": "201",
+      "name": "oce_reconciliation_and_generation_guard"
+    },
+    {
+      "version": "20260514180000",
+      "name": "staff_role_enum_values"
+    },
+    {
+      "version": "20260514180707",
+      "name": "homewood_round2_employee_seed"
+    },
+    {
+      "version": "20260514203302",
+      "name": "homewood_round2_ar_intake_may_2026"
+    },
+    {
+      "version": "202",
+      "name": "workflow_events"
+    },
+    {
+      "version": "203",
+      "name": "admission_case_form_1823_seed"
+    },
+    {
+      "version": "255",
+      "name": "discharge_med_reconciliation_plan_fields"
+    },
+    {
+      "version": "206",
+      "name": "cross_operator_benchmark_settings"
+    },
+    {
+      "version": "207",
+      "name": "user_dashboard_preferences"
+    },
+    {
+      "version": "208",
+      "name": "facility_metric_targets"
+    },
+    {
+      "version": "209",
+      "name": "alert_audit_log"
+    },
+    {
+      "version": "210",
+      "name": "rollback_ui_v2"
+    },
+    {
+      "version": "224",
+      "name": "col_v2_admissions_medicaid_pipeline"
+    },
+    {
+      "version": "211",
+      "name": "v2_facility_rollup_view"
+    },
+    {
+      "version": "212",
+      "name": "v2_residents_list_view"
+    },
+    {
+      "version": "213",
+      "name": "v2_incidents_list_view"
+    },
+    {
+      "version": "214",
+      "name": "v2_alerts_list_view"
+    },
+    {
+      "version": "215",
+      "name": "v2_admissions_list_view"
+    },
+    {
+      "version": "216",
+      "name": "facility_launch_document_parser"
+    },
+    {
+      "version": "217",
+      "name": "col_v2_status_and_medicaid_provider_foundation"
+    },
+    {
+      "version": "218",
+      "name": "col_v2_physical_plant_and_posted_rates"
+    },
+    {
+      "version": "219",
+      "name": "col_v2_observation_vocab_and_templates"
+    },
+    {
+      "version": "220",
+      "name": "col_v2_operational_logs"
+    },
+    {
+      "version": "221",
+      "name": "col_v2_staff_compliance_and_notifications"
+    },
+    {
+      "version": "222",
+      "name": "col_v2_resident_contracts_boldsign_schema"
+    },
+    {
+      "version": "223",
+      "name": "col_v2_boldsign_events"
+    },
+    {
+      "version": "225",
+      "name": "col_v2_activity_and_family_message_metadata"
+    },
+    {
+      "version": "226",
+      "name": "facility_launch_promotion_runs"
+    },
+    {
+      "version": "227",
+      "name": "facility_launch_promotion_run_items"
+    },
+    {
+      "version": "228",
+      "name": "facility_launch_promotion_run_links"
+    },
+    {
+      "version": "229",
+      "name": "facility_launch_tier1_promoters"
+    },
+    {
+      "version": "230",
+      "name": "facility_launch_promotion_runs_updated_by"
+    },
+    {
+      "version": "245",
+      "name": "exec_nlq_feedback"
+    },
+    {
+      "version": "246",
+      "name": "kb_gaps_loop_coverage"
+    },
+    {
+      "version": "231",
+      "name": "retire_legacy_executive_demo_data"
+    },
+    {
+      "version": "232",
+      "name": "facility_launch_round2_config_promoters"
+    },
+    {
+      "version": "233",
+      "name": "audit_p1_db_remediation"
+    },
+    {
+      "version": "234",
+      "name": "ai_tool_layer_v1"
+    },
+    {
+      "version": "235",
+      "name": "restore_legal_entities_and_background_screenings"
+    },
+    {
+      "version": "236",
+      "name": "restore_transport_vendor_seed"
+    },
+    {
+      "version": "237",
+      "name": "restore_dietary_command_deck"
+    },
+    {
+      "version": "238",
+      "name": "restore_089_columns_on_diet_orders"
+    },
+    {
+      "version": "239",
+      "name": "ai_governance_closeout"
+    },
+    {
+      "version": "240",
+      "name": "kb_rrf_hybrid_retrieval"
+    },
+    {
+      "version": "241",
+      "name": "kb_metadata_filters"
+    },
+    {
+      "version": "242",
+      "name": "kb_citation_anchors"
+    },
+    {
+      "version": "243",
+      "name": "kb_seed_targets"
+    },
+    {
+      "version": "244",
+      "name": "kb_ingestion_upgrades"
+    },
+    {
+      "version": "247",
+      "name": "facility_license_scope_coll_enhanced_alf_homewood"
+    },
+    {
+      "version": "248",
+      "name": "facility_document_vault_taxonomy"
+    },
+    {
+      "version": "249",
+      "name": "vendor_facility_compliance_and_categories"
+    },
+    {
+      "version": "250",
+      "name": "operational_threshold_org_defaults"
+    },
+    {
+      "version": "251",
+      "name": "staffing_ratio_threshold_org_facility_seed"
+    },
+    {
+      "version": "252",
+      "name": "facility_audit_log_trigger_null_actor"
+    },
+    {
+      "version": "256",
+      "name": "admission_case_draft_and_anticipated_payer"
+    },
+    {
+      "version": "257",
+      "name": "residents_override_audit_columns"
+    },
+    {
+      "version": "258",
+      "name": "admissions_direct_intake_fields"
+    },
+    {
+      "version": "259",
+      "name": "residents_clinical_verification_audit"
+    },
+    {
+      "version": "260",
+      "name": "observation_plan_form_hardening"
+    },
+    {
+      "version": "261",
+      "name": "escalation_resolution_rationale"
+    },
+    {
+      "version": "284",
+      "name": "user_management_audit_password_reset_action"
+    },
+    {
+      "version": "285",
+      "name": "round3_hardening"
+    },
+    {
+      "version": "262",
+      "name": "exec_intelligence_updated_by_alignment"
+    },
+    {
+      "version": "263",
+      "name": "exec_metric_snapshots_atomic_replace"
+    },
+    {
+      "version": "264",
+      "name": "operation_bulk_complete_atomic_rpc"
+    },
+    {
+      "version": "265",
+      "name": "upsert_facility_operational_thresholds_rpc"
+    },
+    {
+      "version": "266",
+      "name": "persist_monthly_invoices_from_preview_rpc"
+    },
+    {
+      "version": "267",
+      "name": "survey_deficiencies_facility_tag_survey_date_active_idx"
+    },
+    {
+      "version": "268",
+      "name": "facility_launch_m3_transaction_rpc"
+    },
+    {
+      "version": "269",
+      "name": "facility_launch_scalar_config_rpc"
+    },
+    {
+      "version": "270",
+      "name": "facility_launch_simple_collection_rpc"
+    },
+    {
+      "version": "271",
+      "name": "facility_launch_vendor_contacts_rpc"
+    },
+    {
+      "version": "272",
+      "name": "facility_launch_m6_rates_rpc"
+    },
+    {
+      "version": "273",
+      "name": "slice1_p1_security_hardening"
+    },
+    {
+      "version": "274",
+      "name": "exec_nlq_threads"
+    },
+    {
+      "version": "275",
+      "name": "exec_nlq_threads_rpc"
+    },
+    {
+      "version": "276",
+      "name": "exec_nlq_threads_hardening"
+    },
+    {
+      "version": "277",
+      "name": "p2_cleanup"
+    },
+    {
+      "version": "278",
+      "name": "round2_hotfixes"
+    },
+    {
+      "version": "279",
+      "name": "p2_sweep"
+    },
+    {
+      "version": "280",
+      "name": "phase1_facilities_enhancement"
+    },
+    {
+      "version": "281",
+      "name": "phase1_staff_seed"
+    },
+    {
+      "version": "282",
+      "name": "phase1_vendor_seed"
+    },
+    {
+      "version": "283",
+      "name": "phase1_compliance_skeleton"
+    },
+    {
+      "version": "320",
+      "name": "september_business_integrity"
+    },
+    {
+      "version": "321",
+      "name": "clinical_review_integrity"
+    },
+    {
+      "version": "322",
+      "name": "dietary_verified_actions"
+    },
+    {
+      "version": "286",
+      "name": "hard_delete_audit"
+    },
+    {
+      "version": "287",
+      "name": "align_facilities_ahca_expiration_to_date"
+    },
+    {
+      "version": "288",
+      "name": "apply_invoice_payment"
+    },
+    {
+      "version": "289",
+      "name": "office_meetings"
+    },
+    {
+      "version": "290",
+      "name": "office_letters"
+    },
+    {
+      "version": "291",
+      "name": "office_internal_forms"
+    },
+    {
+      "version": "292",
+      "name": "office_document_acknowledgments"
+    },
+    {
+      "version": "293",
+      "name": "office_contact_directory"
+    },
+    {
+      "version": "294",
+      "name": "office_front_desk_kit"
+    },
+    {
+      "version": "295",
+      "name": "office_cash_trust_ledgers"
+    },
+    {
+      "version": "296",
+      "name": "workspace_pages"
+    },
+    {
+      "version": "297",
+      "name": "workspace_files"
+    },
+    {
+      "version": "298",
+      "name": "workspace_publish_requests"
+    },
+    {
+      "version": "299",
+      "name": "workspace_team_spaces"
+    },
+    {
+      "version": "300",
+      "name": "workspace_cards"
+    },
+    {
+      "version": "301",
+      "name": "shift_handoff_notes"
+    },
+    {
+      "version": "302",
+      "name": "workspace_comments"
+    },
+    {
+      "version": "303",
+      "name": "survey_binder_items"
+    },
+    {
+      "version": "304",
+      "name": "drive_import"
+    },
+    {
+      "version": "305",
+      "name": "drive_cutover"
+    },
+    {
+      "version": "306",
+      "name": "resident_rate_agreements_concessions"
+    },
+    {
+      "version": "307",
+      "name": "michelle_bed_hold_medicaid_catalog"
+    },
+    {
+      "version": "308",
+      "name": "revoke_anon_security_definer_rpc_execute"
+    },
+    {
+      "version": "309",
+      "name": "family_portal_messages_one_way"
+    },
+    {
+      "version": "310",
+      "name": "col_discovery_round_cadence_jessica_2026_08_14"
+    },
+    {
+      "version": "311",
+      "name": "snack_logs_time_and_passer_only"
+    },
+    {
+      "version": "312",
+      "name": "revoke_anon_col_discovery_round_rpcs"
+    },
+    {
+      "version": "313",
+      "name": "admin_command_center_projection"
+    },
+    {
+      "version": "314",
+      "name": "fix_team_space_members_rls_recursion"
+    },
+    {
+      "version": "315",
+      "name": "admin_command_center_projection_workspace_cast"
+    },
+    {
+      "version": "316",
+      "name": "admin_command_center_manager_access"
+    },
+    {
+      "version": "317",
+      "name": "referral_lead_closure_reasons"
+    },
+    {
+      "version": "318",
+      "name": "col_facility_entity_names"
+    },
+    {
+      "version": "319",
+      "name": "review_access_boundaries"
+    },
+    {
+      "version": "323",
+      "name": "review_report_outputs"
+    },
+    {
+      "version": "324",
+      "name": "september_office_integrity"
+    },
+    {
+      "version": "325",
+      "name": "review_med_tech_controlled_count_access"
+    },
+    {
+      "version": "326",
+      "name": "sys_001_authoritative_actor_state"
+    },
+    {
+      "version": "327",
+      "name": "sys_001e_lifecycle_authorization"
+    },
+    {
+      "version": "328",
+      "name": "ingest_generation_integrity"
+    },
+    {
+      "version": "329",
+      "name": "authorization_error_http_contract"
+    },
+    {
+      "version": "330",
+      "name": "quality_caller_scope_and_corrections"
+    },
+    {
+      "version": "331",
+      "name": "rounding_completion_receipts"
+    },
+    {
+      "version": "332",
+      "name": "resident_search_current_scope"
+    },
+    {
+      "version": "333",
+      "name": "rounding_javascript_whitespace"
+    },
+    {
+      "version": "334",
+      "name": "payroll_source_freshness"
+    },
+    {
+      "version": "335",
+      "name": "employee_file_lifecycle"
+    },
+    {
+      "version": "336",
+      "name": "stand_up_pilot"
+    },
+    {
+      "version": "337",
+      "name": "stand_up_experience"
+    },
+    {
+      "version": "338",
+      "name": "stand_up_field_state"
+    },
+    {
+      "version": "339",
+      "name": "officer_capability_catalog"
+    },
+    {
+      "version": "340",
+      "name": "finance_source_commands"
+    },
+    {
+      "version": "341",
+      "name": "audit_export_scope_and_snapshot"
+    },
+    {
+      "version": "342",
+      "name": "resident_money_snapshot"
+    },
+    {
+      "version": "343",
+      "name": "finance_event_outbox"
+    },
+    {
+      "version": "344",
+      "name": "finance_batch_approval"
+    },
+    {
+      "version": "345",
+      "name": "finance_review_queue"
+    },
+    {
+      "version": "346",
+      "name": "finance_credential_lifecycle"
+    },
+    {
+      "version": "347",
+      "name": "hfo_activity_catalog"
+    },
+    {
+      "version": "348",
+      "name": "hfo_current_authority"
+    },
+    {
+      "version": "349",
+      "name": "hfo_requirement_versions"
+    },
+    {
+      "version": "350",
+      "name": "hfo_schedule_evaluator"
+    },
+    {
+      "version": "351",
+      "name": "hfo_occurrences"
+    },
+    {
+      "version": "352",
+      "name": "audit_export_current_authority_reconcile"
+    },
+    {
+      "version": "353",
+      "name": "hfo_execution_receipts"
+    },
+    {
+      "version": "354",
+      "name": "hfo_issue_lifecycle"
+    },
+    {
+      "version": "355",
+      "name": "hfo_verified_evidence"
+    },
+    {
+      "version": "356",
+      "name": "hfo_corrections"
+    },
+    {
+      "version": "357",
+      "name": "hfo_command_drafts"
+    },
+    {
+      "version": "358",
+      "name": "hfo_source_links"
+    },
+    {
+      "version": "359",
+      "name": "hfo_drill_generator_sources"
+    },
+    {
+      "version": "360",
+      "name": "hfo_dietary_admin_sources"
+    },
+    {
+      "version": "361",
+      "name": "hfo_task_help_handover"
+    },
+    {
+      "version": "362",
+      "name": "hfo_in_app_reminders"
+    },
+    {
+      "version": "363",
+      "name": "audit_export_hfo_history_scope"
+    },
+    {
+      "version": "364",
+      "name": "hfo_attention_ownership"
+    },
+    {
+      "version": "365",
+      "name": "hfo_activity_history_exports"
+    },
+    {
+      "version": "366",
+      "name": "hfo_profile_draft_preparation"
+    }
+  ]
+}

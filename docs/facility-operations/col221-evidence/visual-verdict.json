@@ -1,0 +1,10 @@
+{
+  "score": 98,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "Shortcut text is now opaque and more legible; the live As of time advanced between captures."
+  ],
+  "suggestions": [],
+  "reasoning": "All four before/after comparisons preserve the measured shortcut geometry, typography and observed keyboard behavior. Contrast improves to5.249:1 light and6.131:1 dark, with zero axe violations."
+}
