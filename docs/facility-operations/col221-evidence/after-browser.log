@@ -1,0 +1,41 @@
+{
+  "result": "PASS",
+  "results": [
+    {
+      "theme": "light",
+      "width": 1440,
+      "status": "PASS",
+      "contrast": 5.249099354223625,
+      "rRefreshEvents": 0,
+      "layoutPreserved": true,
+      "keyboardPreserved": true
+    },
+    {
+      "theme": "light",
+      "width": 375,
+      "status": "PASS",
+      "contrast": 5.249099354223625,
+      "rRefreshEvents": 0,
+      "layoutPreserved": true,
+      "keyboardPreserved": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "status": "PASS",
+      "contrast": 6.130691130546618,
+      "rRefreshEvents": 0,
+      "layoutPreserved": true,
+      "keyboardPreserved": true
+    },
+    {
+      "theme": "dark",
+      "width": 375,
+      "status": "PASS",
+      "contrast": 6.130691130546618,
+      "rRefreshEvents": 0,
+      "layoutPreserved": true,
+      "keyboardPreserved": true
+    }
+  ]
+}

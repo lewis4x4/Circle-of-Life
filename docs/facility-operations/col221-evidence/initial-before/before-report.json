@@ -1,0 +1,333 @@
+{
+  "phase": "before",
+  "at": "2026-09-13T05:37:28.996Z",
+  "source_manifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Billing Contrast/docs/facility-operations/col221-evidence/before-source-manifest.json",
+    "sha256": "7d79cc99d1b63010b530e6563b628c03e5a62696f41589ca0bdd5e3199dc021c"
+  },
+  "target": "iwcnajanvjvynolltflw",
+  "compatible_staging_extra_migration": "366_hfo_profile_draft_preparation",
+  "results": [
+    {
+      "theme": "light",
+      "width": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "themeChangedViaActualUI": true,
+      "measurement": {
+        "contrast": 3.4959792349064696,
+        "cssColor": "oklab(0.497094 0.00602288 0.0144635 / 0.8)",
+        "opacity": "1",
+        "foreground": [
+          0.4117647058823529,
+          0.3803921568627451,
+          0.34901960784313724,
+          0.8
+        ],
+        "compositedForeground": [
+          0.5176470588235293,
+          0.49098039215686273,
+          0.46352941176470586
+        ],
+        "background": [
+          0.9411764705882353,
+          0.9333333333333333,
+          0.9215686274509803
+        ],
+        "layers": [
+          {
+            "tag": "BODY",
+            "color": "rgb(240, 238, 235)"
+          },
+          {
+            "tag": "DIV",
+            "color": "rgb(240, 238, 235)"
+          },
+          {
+            "tag": "MAIN",
+            "color": "rgb(240, 238, 235)"
+          }
+        ],
+        "fontSize": "11px",
+        "lineHeight": "14.6667px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 509.921875,
+          "y": 243.765625,
+          "width": 200.84375,
+          "height": 14.65625
+        },
+        "text": "Shortcuts: / search · R refresh · E export"
+      },
+      "axeViolations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            {
+              "target": [
+                ".text-muted-foreground\\/80"
+              ],
+              "html": "<span class=\"text-[11px] text-muted-foreground/80\">Shortcuts: / search · R refresh · E export</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.5 (foreground color: #847d76, background color: #f0eeeb, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…",
+        "type": null
+      },
+      "export": {
+        "filename": "invoices-col221-1e4de49e1339-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "rRefreshEvents": 0,
+      "buttonRefreshEvents": 1,
+      "status": "BASELINE_CAPTURED"
+    },
+    {
+      "theme": "light",
+      "width": 375,
+      "errors": [],
+      "httpFailures": [],
+      "themeChangedViaActualUI": true,
+      "measurement": {
+        "contrast": 3.4959792349064696,
+        "cssColor": "oklab(0.497094 0.00602288 0.0144635 / 0.8)",
+        "opacity": "1",
+        "foreground": [
+          0.4117647058823529,
+          0.3803921568627451,
+          0.34901960784313724,
+          0.8
+        ],
+        "compositedForeground": [
+          0.5176470588235293,
+          0.49098039215686273,
+          0.46352941176470586
+        ],
+        "background": [
+          0.9411764705882353,
+          0.9333333333333333,
+          0.9215686274509803
+        ],
+        "layers": [
+          {
+            "tag": "BODY",
+            "color": "rgb(240, 238, 235)"
+          },
+          {
+            "tag": "DIV",
+            "color": "rgb(240, 238, 235)"
+          },
+          {
+            "tag": "MAIN",
+            "color": "rgb(240, 238, 235)"
+          }
+        ],
+        "fontSize": "11px",
+        "lineHeight": "14.6667px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 18.5,
+          "y": 445.875,
+          "width": 200.84375,
+          "height": 14.65625
+        },
+        "text": "Shortcuts: / search · R refresh · E export"
+      },
+      "axeViolations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            {
+              "target": [
+                ".text-muted-foreground\\/80"
+              ],
+              "html": "<span class=\"text-[11px] text-muted-foreground/80\">Shortcuts: / search · R refresh · E export</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.5 (foreground color: #847d76, background color: #f0eeeb, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…",
+        "type": null
+      },
+      "export": {
+        "filename": "invoices-col221-1e4de49e1339-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "rRefreshEvents": 0,
+      "buttonRefreshEvents": 1,
+      "status": "BASELINE_CAPTURED"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "themeChangedViaActualUI": true,
+      "measurement": {
+        "contrast": 4.239834501270548,
+        "cssColor": "oklab(0.649748 0.00139156 0.0143956 / 0.8)",
+        "opacity": "1",
+        "foreground": [
+          0.5803921568627451,
+          0.5568627450980392,
+          0.5176470588235295,
+          0.8
+        ],
+        "compositedForeground": [
+          0.47294117647058825,
+          0.45333333333333337,
+          0.4211764705882354
+        ],
+        "background": [
+          0.043137254901960784,
+          0.0392156862745098,
+          0.03529411764705882
+        ],
+        "layers": [
+          {
+            "tag": "BODY",
+            "color": "rgb(11, 10, 9)"
+          },
+          {
+            "tag": "DIV",
+            "color": "rgb(11, 10, 9)"
+          },
+          {
+            "tag": "MAIN",
+            "color": "rgb(11, 10, 9)"
+          }
+        ],
+        "fontSize": "11px",
+        "lineHeight": "14.6667px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 509.921875,
+          "y": 243.765625,
+          "width": 200.84375,
+          "height": 14.65625
+        },
+        "text": "Shortcuts: / search · R refresh · E export"
+      },
+      "axeViolations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            {
+              "target": [
+                ".text-muted-foreground\\/80"
+              ],
+              "html": "<span class=\"text-[11px] text-muted-foreground/80\">Shortcuts: / search · R refresh · E export</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.25 (foreground color: #78746c, background color: #0b0a09, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…",
+        "type": null
+      },
+      "export": {
+        "filename": "invoices-col221-1e4de49e1339-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "rRefreshEvents": 0,
+      "buttonRefreshEvents": 1,
+      "status": "BASELINE_CAPTURED"
+    },
+    {
+      "theme": "dark",
+      "width": 375,
+      "errors": [],
+      "httpFailures": [],
+      "themeChangedViaActualUI": true,
+      "measurement": {
+        "contrast": 4.239834501270548,
+        "cssColor": "oklab(0.649748 0.00139156 0.0143956 / 0.8)",
+        "opacity": "1",
+        "foreground": [
+          0.5803921568627451,
+          0.5568627450980392,
+          0.5176470588235295,
+          0.8
+        ],
+        "compositedForeground": [
+          0.47294117647058825,
+          0.45333333333333337,
+          0.4211764705882354
+        ],
+        "background": [
+          0.043137254901960784,
+          0.0392156862745098,
+          0.03529411764705882
+        ],
+        "layers": [
+          {
+            "tag": "BODY",
+            "color": "rgb(11, 10, 9)"
+          },
+          {
+            "tag": "DIV",
+            "color": "rgb(11, 10, 9)"
+          },
+          {
+            "tag": "MAIN",
+            "color": "rgb(11, 10, 9)"
+          }
+        ],
+        "fontSize": "11px",
+        "lineHeight": "14.6667px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 18.5,
+          "y": 445.875,
+          "width": 200.84375,
+          "height": 14.65625
+        },
+        "text": "Shortcuts: / search · R refresh · E export"
+      },
+      "axeViolations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            {
+              "target": [
+                ".text-muted-foreground\\/80"
+              ],
+              "html": "<span class=\"text-[11px] text-muted-foreground/80\">Shortcuts: / search · R refresh · E export</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.25 (foreground color: #78746c, background color: #0b0a09, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "searchFocus": {
+        "tag": "INPUT",
+        "placeholder": "Search invoice # or resident…",
+        "type": null
+      },
+      "export": {
+        "filename": "invoices-col221-1e4de49e1339-site-september-2026_2026-09-01_to_2026-09-30.csv",
+        "bytes": 99,
+        "sha256": "feac3bf5a1d57184cf6ef57ff0905c33f1ad695bd14c8a1410c0083d1106251c"
+      },
+      "rRefreshEvents": 0,
+      "buttonRefreshEvents": 1,
+      "status": "BASELINE_CAPTURED"
+    }
+  ],
+  "result": "BASELINE_CAPTURED"
+}

@@ -111,7 +111,7 @@ export function BillingArOverviewHero() {
           <RotateCw className="size-3.5" aria-hidden />
           Refresh
         </Button>
-        <span className="text-[11px] text-muted-foreground/80">Shortcuts: / search · R refresh · E export</span>
+        <span className="text-[11px] text-muted-foreground">Shortcuts: / search · R refresh · E export</span>
       </p>
     </div>
   );

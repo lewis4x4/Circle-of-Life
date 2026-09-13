@@ -1,0 +1,44 @@
+{
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "at": "2026-09-13T06:01:24.416635+00:00",
+  "scope": "COL-221 sole opacity-class correction; staged authenticated contrast and unchanged layout/keyboard proof. No COL-224 hydration or COL-227 keyboard repair claim.",
+  "findings": [],
+  "contrast_after": {
+    "light": 5.249099354223625,
+    "dark": 6.130691130546618
+  },
+  "viewports": [
+    1440,
+    375
+  ],
+  "artifacts_sha256": {
+    "before-source-manifest.json": "b9e3f885c4c6504d9962f68406c73d0c7132d7e90df2cf6ff748000c11708c91",
+    "after-source-manifest.json": "e0ee2fc9b50b6f4bfc25c51a6863b2c82422aaed07abd3bccfa9e010924f474c",
+    "before-report.json": "3ce39aeb6c861968e04bef38a238f848b6cb47eaedef0400d5c81891a5b4cc9c",
+    "after-report.json": "2dbeda3795116b0ecddabe385443f2309eb72f2a9ba7adbcb348e657825b3913",
+    "cleanup.json": "07338279387f36d882656b1b6ab2278faf7dcae6c0e467330c4d67aca4adba26"
+  },
+  "cleanup": {
+    "active": false,
+    "banned": true,
+    "live_grants": 0,
+    "site_retired": true,
+    "entity_retired": true,
+    "port_4341_closed": true,
+    "owned_app_pids": [
+      7256,
+      7281,
+      7290
+    ]
+  },
+  "required_gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Billing Contrast/test-results/agent-gates/2026-09-13T05-56-47-314Z-COL-221-BILLING-CONTRAST-FINAL.json",
+    "sha256": "1091d5bedb6d24dd8bae910a01007182709cb8f79e74d7125d755d2509665f8b",
+    "required_checks": 11,
+    "all_passed": true
+  },
+  "sourceSha": "9f23f382fe9ef5b6be2dbd7ad3ed649a1d2b34d3",
+  "sourceBinding": "Reviewed source HEAD plus sole recorded opacity-class diff; all current after-manifest file hashes match."
+}

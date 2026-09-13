@@ -1,0 +1,29 @@
+
+> circle-of-life@0.1.0 segment:gates
+> node scripts/agent-gates/run-segment-gates.mjs --segment COL-221-BILLING-CONTRAST-FINAL --ui
+
+[segment:gates][hygiene.env-example] start node scripts/check-env-example.mjs
+[segment:gates][hygiene.env-example][stdout] [check:env-example] PASS
+[segment:gates][hygiene.env-example] finish status=passed required=true duration_ms=34
+[segment:gates][hygiene.tracked-secrets-scan] start node scripts/check-tracked-secrets.mjs
+[segment:gates][hygiene.tracked-secrets-scan][stdout] [check:secrets] PASS
+[segment:gates][hygiene.tracked-secrets-scan] finish status=passed required=true duration_ms=335
+[segment:gates][hygiene.npm-audit] start npm run audit:ci
+[segment:gates][hygiene.npm-audit][stdout] found 0 vulnerabilities
+[segment:gates][hygiene.npm-audit] finish status=passed required=true duration_ms=969
+[segment:gates][security.gitleaks] start npm run secrets:gitleaks
+[segment:gates][security.gitleaks][stdout] [gitleaks] detector regression PASS: generic-api-key remains active
+[segment:gates][security.gitleaks][stderr]
+[segment:gates][security.gitleaks][stderr]     ○
+[segment:gates][security.gitleaks][stderr]     │╲
+[segment:gates][security.gitleaks][stderr]     │ ○
+[segment:gates][security.gitleaks][stderr]     ○ ░
+[segment:gates][security.gitleaks][stderr]     ░    gitleaks
+[segment:gates][security.gitleaks][stderr]
+[segment:gates][security.gitleaks][stderr] 1:55AM INF 2052 commits scanned.
+[segment:gates][security.gitleaks][stderr] 1:55AM INF scanned ~87741047 bytes (87.74 MB) in 9.59s
+[segment:gates][security.gitleaks][stderr] 1:55AM INF no leaks found
+[segment:gates][security.gitleaks][stdout] [gitleaks] PASS
+[segment:gates][security.gitleaks] finish status=passed required=true duration_ms=9831
+[segment:gates][qa.eslint] start npm run lint
+[segment:gates][qa.eslint] still running elapsed_ms=30117 command="npm run lint"

@@ -1,0 +1,46 @@
+import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import {fileURLToPath} from 'node:url';import {execFileSync} from 'node:child_process';import {createRequire} from 'node:module';import {createHash} from 'node:crypto';
+const out=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(out,'../../..'),ready=process.argv[2];if(!ready)throw Error('Parent readiness path required');
+const verify=()=>execFileSync('python3',['-B',path.join(out,'guard.py'),'verify','--ready',ready],{cwd:root,stdio:'pipe'});verify();const readiness=JSON.parse(fs.readFileSync(ready)),phase=readiness.phase;
+const state=JSON.parse(fs.readFileSync(path.join(os.homedir(),'.config/haven-staging/col221-fixture.json')));if(state.cleaned||state.target!==readiness.target)throw Error('Fresh active fixture required');
+const require=createRequire(path.join(root,'package.json'));const {chromium}=require('playwright');const AxeBuilder=require('@axe-core/playwright').default;
+const token='base64-'+Buffer.from(JSON.stringify(state.session)).toString('base64url'),name='sb-'+state.target+'-auth-token',cookies=[];for(let i=0;i<token.length;i+=3180)cookies.push({name:name+(token.length>3180?'.'+i/3180:''),value:token.slice(i,i+3180),domain:'127.0.0.1',path:'/',secure:false,httpOnly:false,sameSite:'Lax'});cookies.push({name:'haven_selected_facility',value:state.site,domain:'127.0.0.1',path:'/',sameSite:'Lax'});
+const report={phase,at:new Date().toISOString(),source_manifest:readiness.source_manifest,target:state.target,compatible_staging_extra_migration:'366_hfo_profile_draft_preparation',results:[]};const before=phase==='after'?JSON.parse(fs.readFileSync(path.join(out,'before-report.json'))):null;
+const browser=await chromium.launch({headless:true});
+try{for(const theme of ['light','dark'])for(const width of [1440,375]){
+ verify();const context=await browser.newContext({viewport:{width,height:width===375?812:1000},colorScheme:theme,acceptDownloads:true});await context.addCookies(cookies);await context.addInitScript(theme=>localStorage.setItem('theme',theme),theme==='light'?'dark':'light');const page=await context.newPage(),item={theme,width,errors:[],httpFailures:[]};report.results.push(item);page.on('pageerror',e=>item.errors.push(e.message.slice(0,500)));page.on('response',r=>{if(r.status()>=400)item.httpFailures.push({path:new URL(r.url()).pathname,status:r.status()});});
+ try{
+  const invoiceRead=page.waitForResponse(r=>{const u=new URL(r.url());return u.pathname==='/rest/v1/invoices'&&u.searchParams.get('facility_id')==='eq.'+state.site},{timeout:60000});
+  const response=await page.goto(readiness.appUrl+'/admin/billing/invoices',{waitUntil:'domcontentloaded',timeout:90000});if(response.status()!==200)throw Error('Billing route did not return200');await page.getByRole('heading',{name:'Billing & AR',exact:true}).waitFor({timeout:60000});
+  const scope=page.getByRole('radio',{name:state.run+' Site',exact:true});await scope.waitFor({timeout:60000});if(await scope.getAttribute('aria-checked')!=='true')await scope.click();await page.waitForFunction(id=>document.cookie.includes('haven_selected_facility='+id),state.site);
+  const previous=theme==='light'?'dark':'light';
+  if(width<768){await page.getByRole('button',{name:'More actions',exact:true}).click();await page.getByRole('button',{name:`Switch to ${theme} theme`,exact:true}).click();}
+  else await page.getByRole('button',{name:`Toggle theme (currently ${previous})`,exact:true}).click();
+  await page.waitForFunction(theme=>document.documentElement.classList.contains(theme),theme);item.themeChangedViaActualUI=true;
+  const shortcut=page.getByText('Shortcuts: / search · R refresh · E export',{exact:true});await shortcut.waitFor({timeout:60000});await page.getByText('All invoices',{exact:true}).first().waitFor({timeout:60000});
+  if(width<768){await page.keyboard.press('Escape');await page.getByText('More actions',{exact:true}).waitFor({state:'hidden',timeout:10000});}
+  const invoiceResponse=await invoiceRead;const invoiceData=await invoiceResponse.json();
+  if(invoiceResponse.status()!==200||!Array.isArray(invoiceData)||invoiceData.length!==0)throw Error('Fresh scoped invoice read did not return an authorized empty result');
+  await page.waitForFunction(()=>![...document.querySelectorAll('td')].some(td=>td.textContent.trim()==='Loading invoices…'),undefined,{timeout:60000});
+  item.scopedInvoiceRead={status:invoiceResponse.status(),rows:invoiceData.length,facility_id:state.site};
+  item.measurement=await shortcut.evaluate(el=>{
+   const rgba=color=>{const c=document.createElement('canvas');c.width=c.height=1;const x=c.getContext('2d');x.clearRect(0,0,1,1);x.fillStyle=color;x.fillRect(0,0,1,1);return [...x.getImageData(0,0,1,1).data].map(v=>v/255)};
+   const ancestors=[];for(let n=el;n;n=n.parentElement)ancestors.unshift(n);let bg=[1,1,1];const layers=[];
+   for(const n of ancestors){const style=getComputedStyle(n),v=rgba(style.backgroundColor);if(style.backgroundImage!=='none')throw Error('Background image requires pixel-based contrast verification');if(v[3]){bg=bg.map((b,i)=>v[i]*v[3]+b*(1-v[3]));layers.push({tag:n.tagName,color:style.backgroundColor})}}
+   const style=getComputedStyle(el),fg=rgba(style.color),paint=bg.map((b,i)=>fg[i]*fg[3]+b*(1-fg[3]));const luminance=c=>c.map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0),a=luminance(paint),b=luminance(bg);const rect=el.getBoundingClientRect();
+   return {contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),cssColor:style.color,opacity:style.opacity,foreground:fg,compositedForeground:paint,background:bg,layers,fontSize:style.fontSize,lineHeight:style.lineHeight,fontFamily:style.fontFamily,bounds:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},text:el.textContent};
+  });
+  await page.screenshot({path:path.join(out,`${phase}-${theme}-${width}.png`)});await shortcut.screenshot({path:path.join(out,`${phase}-shortcut-${theme}-${width}.png`)});
+  const axe=await new AxeBuilder({page}).exclude('nextjs-portal').analyze();item.axeViolations=axe.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,html:n.html,failureSummary:n.failureSummary}))}));
+  await page.evaluate(()=>{document.activeElement?.blur();window.__col221RefreshCount=0;window.addEventListener('billing-ar-overview-refresh',()=>window.__col221RefreshCount++)});await page.keyboard.press('/');item.searchFocus=await page.evaluate(()=>({tag:document.activeElement.tagName,placeholder:document.activeElement.getAttribute('placeholder'),type:document.activeElement.getAttribute('type')}));if(item.searchFocus.tag!=='INPUT')throw Error('Slash did not focus search');
+  await page.evaluate(()=>document.activeElement?.blur());const dl=page.waitForEvent('download',{timeout:10000});await page.keyboard.press('e');const download=await dl,stream=await download.createReadStream(),parts=[];for await(const part of stream)parts.push(part);const csv=Buffer.concat(parts);item.export={filename:download.suggestedFilename(),bytes:csv.length,sha256:createHash('sha256').update(csv).digest('hex')};if(!csv.length)throw Error('Empty export download');
+  await page.keyboard.press('r');item.rRefreshEvents=await page.evaluate(()=>window.__col221RefreshCount);await page.getByRole('button',{name:'Refresh',exact:true}).first().click();item.buttonRefreshEvents=await page.evaluate(()=>window.__col221RefreshCount);if(item.buttonRefreshEvents!==item.rRefreshEvents+1)throw Error('Refresh button behavior failed');
+  if(phase==='after'){
+   const original=before.results.find(r=>r.width===width&&r.theme===theme);item.layoutPreserved=JSON.stringify(item.measurement.bounds)===JSON.stringify(original.measurement.bounds)&&item.measurement.fontSize===original.measurement.fontSize&&item.measurement.lineHeight===original.measurement.lineHeight;
+   item.keyboardPreserved=JSON.stringify(item.searchFocus)===JSON.stringify(original.searchFocus)&&item.rRefreshEvents===original.rRefreshEvents&&item.buttonRefreshEvents===original.buttonRefreshEvents;
+   if(item.measurement.contrast<4.5||!item.layoutPreserved||!item.keyboardPreserved)throw Error('Contrast/layout/keyboard criterion failed');
+   if(item.axeViolations.length)throw Error('Axe violations remain');
+  }
+  if(item.errors.length||item.httpFailures.length)throw Error('Page errors or read failures');item.status=phase==='before'?'BASELINE_CAPTURED':'PASS';
+ }catch(e){item.status='FAIL';item.failure=e.message;await page.screenshot({path:path.join(out,`${phase}-${theme}-${width}-failed.png`)}).catch(()=>{});}
+ await context.close();fs.writeFileSync(path.join(out,`${phase}-report.json`),JSON.stringify(report,null,2));
+}}finally{await browser.close();verify();report.result=report.results.length===4&&report.results.every(r=>r.status===(phase==='before'?'BASELINE_CAPTURED':'PASS'))?(phase==='before'?'BASELINE_CAPTURED':'PASS'):'FAIL';fs.writeFileSync(path.join(out,`${phase}-report.json`),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({result:report.result,results:report.results.map(({theme,width,status,failure,measurement,rRefreshEvents,layoutPreserved,keyboardPreserved})=>({theme,width,status,failure,contrast:measurement?.contrast,rRefreshEvents,layoutPreserved,keyboardPreserved}))},null,2));}
