@@ -1,0 +1,7 @@
+2026-09-13 11:29:04.620 EDT [78500] ERROR:  deadlock detected
+2026-09-13 11:29:04.620 EDT [78500] DETAIL:  Process 78500 waits for ShareRowExclusiveLock on relation 805806 of database 804890; blocked by process 78486.
+	Process 78486 waits for ShareLock on transaction 232652; blocked by process 78500.
+	Process 78500: CREATE TRIGGER col159_probe_audit_bomb BEFORE INSERT ON public.audit_log FOR EACH ROW EXECUTE FUNCTION haven.col159_probe_audit_bomb();
+	Process 78486: autovacuum: VACUUM public.audit_log
+2026-09-13 11:29:04.620 EDT [78500] HINT:  See server log for query details.
+2026-09-13 11:29:04.620 EDT [78500] STATEMENT:  CREATE TRIGGER col159_probe_audit_bomb BEFORE INSERT ON public.audit_log FOR EACH ROW EXECUTE FUNCTION haven.col159_probe_audit_bomb();

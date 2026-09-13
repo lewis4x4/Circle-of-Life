@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-09-13T15:26:59.304310+00:00",
+  "capture_phase": "during strict gate; runtime source unchanged since gate start",
+  "base_sha": "e4576de5213824bc6cd02371fd7d767aaad0c86d",
+  "scope": "all changed runtime source, SQL probes and native concurrency script",
+  "private_manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/gate-source-manifest-first.json",
+  "private_manifest_sha256": "fdcccb51bb233cd79f9cda35dc9e0def2aa33e824f9c843b2b03596eb5a4170b",
+  "file_count": 12,
+  "source_paths": [
+    "src/lib/operations/employee-sources.test.ts",
+    "src/lib/operations/employee-sources.ts",
+    "src/lib/operations/employee-source-map.ts",
+    "src/app/(admin)/admin/operations/work/_components/work-row.tsx",
+    "src/app/(admin)/admin/operations/work/_components/employee-source-panel.tsx",
+    "src/app/(admin)/admin/operations/work/_components/employee-source-panel.test.tsx",
+    "src/app/api/admin/operations/employee-sources/route.test.ts",
+    "src/app/api/admin/operations/employee-sources/route.ts",
+    "src/app/api/admin/operations/employee-sources/reconcile/route.ts",
+    "supabase/migrations/368_hfo_employee_source_snapshots.sql",
+    "supabase/tests/review_hfo_employee_source_snapshots.sql",
+    "scripts/facility-operations/test-employee-source-concurrency.py"
+  ]
+}

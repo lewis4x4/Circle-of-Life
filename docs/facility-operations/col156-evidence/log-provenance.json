@@ -1,0 +1,95 @@
+{
+  "preserved_raw_logs": [
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/strict-gate.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/strict-gate.log",
+      "raw_sha256": "1f0a241ece34be689f32f9f9b762add584f807d38d347672ccd1ec4b7017484a",
+      "committed_sha256": "c49b5eacb2076fc5b04bab31e78465908e0b5c40b09a8dbfae3f87f025b30a0a",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/strict-gate-first-failed.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/strict-gate-first-failed.log",
+      "raw_sha256": "756e4e9df1806778d69ed201c82cf237612338263345694112f3dc50512ffc21",
+      "committed_sha256": "2fd0bfe1d69b48e3ddbca6037c36a8d770752e6340ec284a35d2636081265f29",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/ui-typecheck.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/ui-typecheck.log",
+      "raw_sha256": "53a43b3c08f06afaa4e052b9ab1f1dca0aef718cb6c25bb86cd3461f5192651a",
+      "committed_sha256": "53a43b3c08f06afaa4e052b9ab1f1dca0aef718cb6c25bb86cd3461f5192651a",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/concurrency-final.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/concurrency-final.log",
+      "raw_sha256": "5a4778abb013fe27157f9d75a209e58ad71e921c926d24fa81de23b1b1238a2d",
+      "committed_sha256": "5a4778abb013fe27157f9d75a209e58ad71e921c926d24fa81de23b1b1238a2d",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/ui-focused.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/ui-focused.log",
+      "raw_sha256": "59d5ae80fca1401b3071a6d7ccd440cb3c91ce21bbca08a5c254f18e5b8d7920",
+      "committed_sha256": "41190494b02dc8c4a0b0f0431f5f8b5e2c08be40b1860f620d4c5e2f39d3cd52",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/backend-tests-final.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/backend-tests-final.log",
+      "raw_sha256": "e2e8bb591261f296e302594e71cfb2ff4a33b44e73e6545fa43aff5a0cc0f1f0",
+      "committed_sha256": "ead5be2cbcd3e53070214ce84f8274ff2dac599619c958c49ee3d384f6cdb515",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/typecheck-supported.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/typecheck-supported.log",
+      "raw_sha256": "750f28fd0361fc7a652fdfe3f36b5671f74bfa7de2cd16ff3c13389895d594de",
+      "committed_sha256": "50aae920c481bf23ffdb0db4982722580a7d020b497334c157c0cf0618c7b7de",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/inherited-probe-deadlock.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/inherited-probe-deadlock.log",
+      "raw_sha256": "e33cb433f9cd758cd652d8c62031e4fd559bc1e9ad6961574884d16f60f356da",
+      "committed_sha256": "e33cb433f9cd758cd652d8c62031e4fd559bc1e9ad6961574884d16f60f356da",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/lint-final.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/lint-final.log",
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/dietary-probe-lock-fix.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/dietary-probe-lock-fix.log",
+      "raw_sha256": "2e9a82a857355752f65c9ea761e6add05f0288ec6760f47f050b616c6b927727",
+      "committed_sha256": "118138185748d148cfb8435a9548b5b0bc8fa6dcc67f45a7d90923c9e69e43c8",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/probe-final-stable-postgres.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/probe-final-stable-postgres.log",
+      "raw_sha256": "63ee6fd44443e043b75f00081bbbfff54540760bb887e73a9571c104b9b7b3fc",
+      "committed_sha256": "3e9316054f92f4b45b9ac2f9bfa6a87503df955e1739f77c1f4ea7e054455b29",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/ui-integration.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/ui-integration.log",
+      "raw_sha256": "4676f849f58b504a02a6a1f33e0c304f0472079917701f7b7bab8792c92b9d50",
+      "committed_sha256": "1518434ff9760633dc5f59c8bc087e051b453c0932f022ebee2726856cce1d6b",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    },
+    {
+      "committed_path": "docs/facility-operations/col156-evidence/vitest-full.log",
+      "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/raw-committed-logs/vitest-full.log",
+      "raw_sha256": "855f23b8f5706c94c3b1ca5f413f0c7b13929f1ccd13a2691784f1a0f7115d19",
+      "committed_sha256": "222ea6e87ad5a43c3caf82756f69940d19a90af7bfc3fe0b45b062ad7edc1e73",
+      "transform": "rstrip each line; one final newline for nonempty logs"
+    }
+  ]
+}

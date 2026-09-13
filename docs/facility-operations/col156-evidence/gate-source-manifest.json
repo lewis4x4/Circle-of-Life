@@ -1,0 +1,24 @@
+{
+  "captured_at": "2026-09-13T15:31:34.916057+00:00",
+  "capture_phase": "before mandatory strict gate retry after inherited probe lock repair",
+  "base_sha": "e4576de5213824bc6cd02371fd7d767aaad0c86d",
+  "scope": "all changed runtime source, SQL probes and native concurrency script",
+  "private_manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/gate-source-manifest.json",
+  "private_manifest_sha256": "2becfc09482d19f3e9a4f6825c0d74479d990839465c4c71a46ee95917a46ca6",
+  "file_count": 13,
+  "source_paths": [
+    "scripts/facility-operations/test-employee-source-concurrency.py",
+    "src/app/(admin)/admin/operations/work/_components/employee-source-panel.test.tsx",
+    "src/app/(admin)/admin/operations/work/_components/employee-source-panel.tsx",
+    "src/app/(admin)/admin/operations/work/_components/work-row.tsx",
+    "src/app/api/admin/operations/employee-sources/reconcile/route.ts",
+    "src/app/api/admin/operations/employee-sources/route.test.ts",
+    "src/app/api/admin/operations/employee-sources/route.ts",
+    "src/lib/operations/employee-source-map.ts",
+    "src/lib/operations/employee-sources.test.ts",
+    "src/lib/operations/employee-sources.ts",
+    "supabase/migrations/368_hfo_employee_source_snapshots.sql",
+    "supabase/tests/review_hfo_dietary_admin_sources.sql",
+    "supabase/tests/review_hfo_employee_source_snapshots.sql"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "scope": "native synthetic concurrency",
+  "results": [
+    {
+      "case": "same-key",
+      "wait_observed": true,
+      "status": "PASS"
+    },
+    {
+      "case": "medical-revocation",
+      "wait_observed": true,
+      "status": "PASS"
+    }
+  ]
+}
