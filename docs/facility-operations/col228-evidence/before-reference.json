@@ -1,0 +1,17 @@
+{
+  "origin_task": "COL-227",
+  "sourceSha": "823e4c17404cd3ab2d374346d7b349bd138f0771",
+  "copied_artifacts": {
+    "docs/facility-operations/col227-evidence/before-report.json": "5b18ae684c12d6ccf0f42325048f8b8fc97025e1c7d39729dd0761c55635f947",
+    "docs/facility-operations/col227-evidence/before-overview-375.png": "dc9d28cd14b65b8270e3e5577761faa5e8de2d32b43d641b5a7b0d6aebb37476",
+    "docs/facility-operations/col227-evidence/before-overview-1440.png": "5a22de70ee5eb640c795797b1e6e14e9c354cbc6cc06a2910760999d7634b6a9",
+    "docs/facility-operations/col227-evidence/before-overview-1440-failed.png": "137c930426b7e00bbd81be591edd6204be4e2d4983f02f9ec5d993ddadf3758b",
+    "docs/facility-operations/col227-evidence/before-overview-375-failed.png": "a8e7989694249cc33c8b65d8dd5736e59f387cffdf5c79a86179b4637fe0beff"
+  },
+  "source_declaration": {
+    "tag": "h3",
+    "className": "text-[14px] font-semibold text-foreground",
+    "text": "Action queue"
+  },
+  "limitation": "Baseline captured screenshots and axe heading-order failure; isolated heading geometry/font measurements were not captured. Compare unchanged source classes/text and current computed style without inventing prior measurements."
+}

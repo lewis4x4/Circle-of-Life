@@ -1,0 +1,19 @@
+{
+  "owned_app_pids": [
+    12964,
+    12993,
+    12995
+  ],
+  "port_4343_closed": true,
+  "shared_fixture_owner": "COL-227",
+  "fixture_run": "col227-5d2e661fd1a1",
+  "fixture_retained_active": true,
+  "reason": "Explicit parent instruction: preserve active fixture for COL227 before/after completion; no ban/site/entity retirement in COL228",
+  "private_state_path": "/Users/brianlewis/.config/haven-staging/col227-fixture.json",
+  "prior_owned_app_pids": [
+    74995,
+    75022,
+    75028
+  ],
+  "final_recapture_complete": true
+}

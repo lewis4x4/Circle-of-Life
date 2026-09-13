@@ -1,0 +1,35 @@
+{
+  "source_manifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col228-evidence/after-source-manifest.json",
+    "sha256": "b9a0c2f66c7d7fe590cb066cdf9bec0262179a8c1897d9367815c07177780a35"
+  },
+  "target": "iwcnajanvjvynolltflw",
+  "shared_fixture": {
+    "owner_task": "COL-227",
+    "run": "col227-5d2e661fd1a1",
+    "actor": "663ca551-c2f1-46cc-a963-4d1417180b7c",
+    "site": "51c99878-3d9d-4693-b099-07a63f209b50",
+    "cleanup_deferred_until": "COL-227 proof completion"
+  },
+  "results": [
+    {
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "keyboardRecheck": [],
+      "status": "FAIL",
+      "failure": "page.waitForResponse: Timeout 60000ms exceeded while waiting for event \"response\"\n    at waitScoped (/Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col228-evidence/browser-proof.mjs:10:30)\n    at /Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col228-evidence/browser-proof.mjs:11:22"
+    },
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "keyboardRecheck": [],
+      "status": "FAIL",
+      "failure": "page.waitForResponse: Timeout 60000ms exceeded while waiting for event \"response\"\n    at waitScoped (/Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col228-evidence/browser-proof.mjs:10:30)\n    at /Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col228-evidence/browser-proof.mjs:11:22"
+    }
+  ],
+  "result": "FAIL"
+}

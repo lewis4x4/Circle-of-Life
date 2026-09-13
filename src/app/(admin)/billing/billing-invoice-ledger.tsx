@@ -1020,7 +1020,7 @@ function BillingInvoiceLedgerInner({
 
       {isOverviewChrome ? (
         <div className="rounded-xl border border-border bg-card p-[14px] shadow-[var(--shadow-card)] ring-1 ring-border/60">
-          <h3 className="text-[14px] font-semibold text-foreground">Action queue</h3>
+          <h2 className="text-[14px] font-semibold text-foreground">Action queue</h2>
           <ul className="mt-3 list-none space-y-2 text-[13px] leading-snug">
             <li className={overdueCount > 0 ? "" : "text-muted-foreground"}>
               <Link href="/admin/billing/invoices?status=overdue" className="text-primary underline-offset-4 hover:underline">

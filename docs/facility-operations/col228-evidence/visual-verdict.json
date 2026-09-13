@@ -1,0 +1,10 @@
+{
+  "score": 97,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "The live clock advanced and the after capture retains the Refresh button focus ring."
+  ],
+  "suggestions": [],
+  "reasoning": "Final captures use the same verified facility and top-of-page viewport. The heading text and explicit styling remain intact, and authenticated axe confirms the corrected H2 hierarchy; no isolated before-metric or pixel-perfect claim is made."
+}
