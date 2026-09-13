@@ -13,6 +13,7 @@ import type {
   WorkspaceReceipt,
 } from "@/lib/operations/workspace";
 import { SaveStateNotice } from "../../_components/save-state-notice";
+import { FinanceSourcePanel } from "./finance-source-panel";
 import { EmployeeSourcePanel } from "./employee-source-panel";
 import { ResidentSourceHistory } from "./resident-source-history";
 import { ResidentSourceReview } from "./resident-source-review";
@@ -790,6 +791,7 @@ export function WorkRow({
         </form>
       )}
       {error ? <p role="alert">{error}</p> : null}
+      <FinanceSourcePanel taskId={id} activityKey={item.occurrence.activity_key} actorId={actorId} facilityId={facilityId} subjectId={item.occurrence.subject_id} />
       <EmployeeSourcePanel taskId={id} activityKey={item.occurrence.activity_key} actorId={actorId} facilityId={facilityId} subjectId={item.occurrence.subject_id} />
       <ResidentSourceHistory taskId={id} actorId={actorId} facilityId={facilityId} timezone={timezone} />
       <ResidentSourceReview item={item} actorId={actorId} actorName={actorName} facilityId={facilityId} timezone={timezone} disabled={recordingUnavailable || isBusy(pending.state) || detailBusy || unresolved || ownDrafts.length > 0} onLockChange={setSourceLocked} onSaved={(body) => { merge(body); void refreshReceipt(); }} />

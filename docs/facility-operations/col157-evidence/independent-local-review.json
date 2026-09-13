@@ -1,0 +1,43 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "at": "2026-09-13T16:27:37.043414+00:00",
+  "sourceSha": null,
+  "sourceBinding": "True pre-start gate source file hashes match; full private runtime/config/public-assets/runner hashes captured for postcommit binding.",
+  "source_hashes": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col157-independent-source-hashes.json",
+    "sha256": "5af67accdfbf80e66f6e2d370ad7ae02b7169a888922f55bff5b2a11f726d40b",
+    "file_count": 3244
+  },
+  "gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Finance Operations Sources/test-results/agent-gates/2026-09-13T16-20-50-833Z-col157-finance-sources.json",
+    "sha256": "b568e8502f5e21cfbb7ed9c35633eb67ba795d586b4f1c3a61ec1212f5b86420",
+    "required_checks": 11,
+    "all_passed": true,
+    "native_migrations": 372,
+    "native_probes": 52
+  },
+  "tests": {
+    "full_passed": 4636,
+    "existing_skipped": 2,
+    "backend_focused": 14,
+    "observed_concurrency_cases": 5
+  },
+  "artifacts_sha256": {
+    "gate-source-manifest.json": "347217db42a1fe4d9e17043cf1c6304e46dc0c47d4b9a5b7d59553b5c5df7609",
+    "probe-bounded-final.log": "a654fed4511a248072705262392c69dbf7f6f9911bd6307bc173548c4f6a93ea",
+    "native-schema-proof.json": "f8e5730c2d36dd7f607cf77ffa1f52c795760843db0ff1de155c42db58fc919f",
+    "concurrency-five.log": "30651e05821aee3470d1e561087592f6d87cd4df65d95818cceaeb1652e031f5",
+    "backend-log-provenance.json": "0452561f681255e46653f56cd6fe6d7340f82aa3254dbc70a7f432d2077f0927",
+    "log-provenance.json": "28e5cfd67d5bc6de2a2928d55989a7a75001aa35913888835455e5e8ee5d074c"
+  },
+  "findings": [],
+  "scope": "Local COL157 native-authorized census/payment/trust/finance-handoff context; distinct economic/service/recording dates, missing census dates, no billing/deposit/ACK claims; latest A-B-A/history limits; guarded direct writes and visibility bound through capture/history; actual native queue pagination. Prepared hosted runners reviewed, not executed.",
+  "limits": [
+    "History-limit fixture uses test-only census toggle before101 real guarded direct transition inserts; not101 full-workflow performance proof.",
+    "Earlier repeated-full-read timeout retained; no latency guarantee or performance waiver.",
+    "Hosted API/browser/cleanup and production release remain pending."
+  ],
+  "normalized_logs_verified": 18
+}

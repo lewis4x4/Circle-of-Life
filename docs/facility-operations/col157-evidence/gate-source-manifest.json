@@ -1,0 +1,8 @@
+{
+  "private_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/gate-source-start.json",
+  "sha256": "c06bb783fa058affe674de6fe66cbee2305a9383c3432453dc5a4a3fb671fb43",
+  "file_count": 3244,
+  "base_sha": "d4b5f0688a5fee3f105d59c88a0f6dada9200361",
+  "captured_at": "2026-09-13T16:20:50.651621+00:00",
+  "capture_phase": "before mandatory strict gate"
+}

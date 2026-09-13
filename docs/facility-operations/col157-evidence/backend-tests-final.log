@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Finance Operations Sources
+
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  12:19:48
+   Duration  358ms (transform 101ms, setup 79ms, import 164ms, tests 16ms, environment 280ms)

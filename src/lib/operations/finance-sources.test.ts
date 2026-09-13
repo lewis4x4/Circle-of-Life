@@ -1,0 +1,11 @@
+import { describe, expect, it } from "vitest";
+import { composeFinanceSources, financeSourceInputSchema, financeSourcePeriodSchema, financeSourceReconcileSchema } from "./finance-sources";
+import { financeSourceMap } from "./finance-source-map";
+const id="00000000-0000-0000-0002-000000000003";
+export const sourceInput={task_id:id,activity_key:"hfo-al-d17-01",subject_kind:"facility",resident_id:null,facility_id:id,start_date:"2026-08-01",end_date:"2026-08-31",timezone:"America/New_York",source_version:"a".repeat(64),complete:true as const,families:(["census","payments","trust","finance_handoff"] as const).map(family=>({family,availability:"available" as const,reason:"Native context",records:[],missing_dates:[]})),history:[],history_complete:true};
+describe("finance source contract",()=>{
+ it("keeps all22items27components and unknown rules separate from native context",()=>{const reply=composeFinanceSources(sourceInput,financeSourceMap);expect(reply.fields).toHaveLength(27);expect(new Set(reply.fields.map(x=>x.source_id)).size).toBe(22);expect(reply.fields.every(x=>x.state==="unknown")).toBe(true);expect(reply).not.toHaveProperty("satisfied");});
+ it("accepts actual calendar dates and rejects reversed/oversized/impossible periods",()=>{for(const p of [{start_date:"2026-02-30",end_date:"2026-03-01"},{start_date:"2026-08-02",end_date:"2026-08-01"},{start_date:"2025-01-01",end_date:"2026-01-02"}])expect(financeSourcePeriodSchema.safeParse({task_id:id,...p}).success).toBe(false);expect(financeSourcePeriodSchema.safeParse({task_id:id,start_date:"2024-01-01",end_date:"2024-12-31"}).success).toBe(true);});
+ it("rejects caller-provided hashes or approval fields",()=>{expect(financeSourceReconcileSchema.safeParse({task_id:id,start_date:"2026-08-01",end_date:"2026-08-31",request_key:"refresh-001",source_version:"forged"}).success).toBe(false);});
+ it("rejects truncated families, hidden payload and duplicate families",()=>{expect(financeSourceInputSchema.safeParse({...sourceInput,complete:false}).success).toBe(false);expect(financeSourceInputSchema.safeParse({...sourceInput,families:[...sourceInput.families.slice(0,3),sourceInput.families[0]]}).success).toBe(false);expect(financeSourceInputSchema.safeParse({...sourceInput,secret:"raw"}).success).toBe(false);});
+});
