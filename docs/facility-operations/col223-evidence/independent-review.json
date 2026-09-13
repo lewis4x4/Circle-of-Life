@@ -1,0 +1,30 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "reviewer": "/root/release_preflight",
+  "independent": true,
+  "at": "2026-09-13T03:03:26.150192+00:00",
+  "sourceFiles": {
+    "src/app/(admin)/admin/operations/work/_components/receipt-history.test.tsx": "475ab5e2b11a9ec78ab515838645c1bef5b7f9d2c60722aab3e2417e61b9a189",
+    "src/app/(admin)/admin/operations/work/_components/receipt-history.tsx": "b2ae4d4ba62529630d462f648fc70a4675632819f8bfb22b82ce18ff7ce126a3",
+    "src/app/(admin)/admin/operations/work/page.test.tsx": "1bf3203677609e311755cf34cb1561285ded644a6c4abf6174ba845b9af7505c"
+  },
+  "findings": [],
+  "criteria": {
+    "current_vs_original": "PASS: current evidence is separate from explicitly historical original state; unavailable projection is labeled at recording",
+    "immutable_history": "PASS: actual upload/finalization preserves every immutable receipt field and hash",
+    "component_and_authenticated_history": "PASS: missing-to-complete component tests and four before/after desktop/mobile cases with zero axe/console/read failures"
+  },
+  "verification": {
+    "focused_tests": 33,
+    "full_tests": 4504,
+    "existing_skips": 2,
+    "typecheck": "PASS",
+    "strict_gate": "test-results/agent-gates/2026-09-13T02-52-13-465Z-COL-223-RECEIPT-WORDING.json",
+    "required_checks_all_passed": true,
+    "native_migrations": 368,
+    "native_sql_probes": 48,
+    "upload_bytes": 70,
+    "fixture_cleanup": "PASS"
+  },
+  "scope": "Source and synthetic staging-backed local UI/Storage; production unclaimed"
+}

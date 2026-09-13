@@ -1,0 +1,17 @@
+{
+  "status": "FAIL",
+  "results": [
+    {
+      "width": 1440,
+      "view": "history",
+      "status": "FAIL",
+      "failure": "locator.waitFor: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: 'Receipt chain' }).getByText('No finalized attachments.', { exact: true }) to be visible\u001b[22m\n"
+    },
+    {
+      "width": 375,
+      "view": "history",
+      "status": "FAIL",
+      "failure": "locator.waitFor: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: 'Receipt chain' }).getByText('No finalized attachments.', { exact: true }) to be visible\u001b[22m\n"
+    }
+  ]
+}

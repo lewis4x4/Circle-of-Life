@@ -552,6 +552,8 @@ SELECT pg_temp.c_assert((SELECT status='missed' AND missed_at IS NOT NULL FROM p
 RESET ROLE;
 
 -- 6b. A record satisfies at most one occurrence: a corrected version whose performed date falls in another period invalidates the earlier receipt on the first occurrence and satisfies the second; a void then finds exactly the one effective receipt.
+-- The older coverage window is governed on d0, when the fixture rule is in force.
+-- Yesterday can precede its 23-hour-old publication during late-evening runs.
 RESET ROLE;
 SELECT pg_temp.c_clear();
 DO $$ DECLARE f cf; src public.operation_task_instances; BEGIN
@@ -559,13 +561,18 @@ DO $$ DECLARE f cf; src public.operation_task_instances; BEGIN
  PERFORM set_config('haven.operation_occurrence_command',haven.operation_occurrence_token(),true);
  SELECT t.* INTO src FROM public.operation_task_instances t WHERE t.activity_id=f.act_fac AND t.assigned_shift_date=f.d0;
  INSERT INTO public.operation_task_instances SELECT (jsonb_populate_record(src,jsonb_build_object('id',gen_random_uuid(),'occurrence_kind','event','source_event_key','probe-event','source_event_id','F-old',
-  'source_event_at',((f.d0-1)::timestamp+'10:00'::time) AT TIME ZONE 'America/New_York','governing_at',((f.d0-1)::timestamp+'10:00'::time) AT TIME ZONE 'America/New_York',
-  'due_at',((f.d0-1)::timestamp+'10:00'::time) AT TIME ZONE 'America/New_York','grace_ends_at',NULL,'status','pending','execution_state','none','effective_receipt_id',NULL,'verification_receipt_id',NULL,
+  'source_event_at',f.past_due,'governing_at',f.past_due,
+  'due_at',f.past_due,'grace_ends_at',NULL,'status','pending','execution_state','none','effective_receipt_id',NULL,'verification_receipt_id',NULL,
   'performed_at',NULL,'completed_at',NULL,'signed_by',NULL,'signed_at',NULL,'second_sign_by',NULL,'second_signed_at',NULL,'verified_by',NULL,'verified_at',NULL,'sla_met',NULL,'completion_notes',NULL,'created_by',NULL,'updated_by',NULL,'started_at',NULL,
-  'assigned_shift_date',f.d0-1,'period_key','probe-event:F-old','period_start_date',f.d0-7,'period_end_date',f.d0-1,'created_at',clock_timestamp(),'updated_at',clock_timestamp()))).*;
+  'assigned_shift_date',f.d0,'period_key','probe-event:F-old','period_start_date',f.d0-7,'period_end_date',f.d0,'created_at',clock_timestamp(),'updated_at',clock_timestamp()))).*;
  PERFORM set_config('haven.operation_occurrence_command','',true);
 END $$;
 INSERT INTO cf_ids SELECT 'occ_fac_old',t.id FROM cf JOIN public.operation_task_instances t ON t.activity_id=cf.act_fac AND t.period_key='probe-event:F-old';
+SELECT pg_temp.c_assert((SELECT ((f.past_due-interval '2 days') AT TIME ZONE 'America/New_York')::date BETWEEN older.period_start_date AND older.period_end_date
+ AND ((f.past_due-interval '2 days') AT TIME ZONE 'America/New_York')::date<original.period_start_date
+ AND older.governing_at>=v.effective_from FROM cf f JOIN public.operation_task_instances older ON older.id=pg_temp.rid('occ_fac_old')
+ JOIN public.operation_task_instances original ON original.id=pg_temp.rid('occ_fac_d0')
+ JOIN public.operation_requirement_versions v ON v.id=older.requirement_version_id),'moved source must uniquely fit the older coverage under an in-force rule');
 SELECT pg_temp.src('gen-1','2','final',site_a,act_fac,'facility',NULL,aide,past_due-interval '2 days'+interval '5 minutes',jsonb_build_object('performed_at',past_due-interval '2 days','outcome','performed','note','Date corrected to two days earlier')) FROM cf;
 SELECT pg_temp.c_login('admin_a');
 SET LOCAL ROLE authenticated;
@@ -590,6 +597,9 @@ SELECT pg_temp.src('gen-former','1','final',site_a,act_fac,'facility',NULL,pg_te
 SELECT pg_temp.c_login('admin_a');
 SET LOCAL ROLE authenticated;
 INSERT INTO cf_results SELECT 'del_former',pg_temp.deliver('former-000001','probe-site','gen-former','1','final',site_a) FROM cf;
+-- Both windows cover d0; explicitly select the current occurrence before testing recorder authority.
+SELECT pg_temp.c_assert((SELECT result->'event'->>'state'='ambiguous' FROM cf_results WHERE label='del_former'),'current-day setup must expose both candidate windows');
+UPDATE cf_results SET result=public.reconcile_operation_source_event_review((result->'event'->>'id')::uuid,pg_temp.k('del_former-select'),result->'event'->>'revision',jsonb_build_object('action','select','occurrence_id',pg_temp.rid('occ_fac_d0'))) WHERE label='del_former';
 SELECT pg_temp.c_assert((SELECT result->'event'->>'state'='refused' AND result->'event'->>'reason'='recorder_not_current' AND (result->'event'->>'attention')::boolean AND jsonb_typeof(result->'receipt')='null' FROM cf_results WHERE label='del_former'),'a deactivated author recorded work');
 INSERT INTO cf_ids SELECT 'ev_broken',(result->'event'->>'id')::uuid FROM cf_results WHERE label='del_broken';
 CREATE TEMP TABLE cf_broken_before AS SELECT to_jsonb(e) j FROM public.operation_source_events e WHERE e.id=pg_temp.rid('ev_broken');
@@ -603,6 +613,9 @@ SELECT pg_temp.src('gen-2','1','final',site_a,act_fac,'facility',NULL,aide,past_
 SELECT pg_temp.c_login('admin_a');
 SET LOCAL ROLE authenticated;
 INSERT INTO cf_results SELECT 'del_gen2',pg_temp.deliver('gen2-000001','probe-site','gen-2','1','final',site_a) FROM cf;
+-- Both windows cover d0; explicitly select the current occurrence before testing recorder authority.
+SELECT pg_temp.c_assert((SELECT result->'event'->>'state'='ambiguous' FROM cf_results WHERE label='del_gen2'),'current-day setup must expose both candidate windows');
+UPDATE cf_results SET result=public.reconcile_operation_source_event_review((result->'event'->>'id')::uuid,pg_temp.k('del_gen2-select'),result->'event'->>'revision',jsonb_build_object('action','select','occurrence_id',pg_temp.rid('occ_fac_d0'))) WHERE label='del_gen2';
 SELECT pg_temp.c_assert((SELECT result->'event'->>'state'='satisfied' AND (result->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_fac_d0') FROM cf_results WHERE label='del_gen2'),'gen-2 fixture did not satisfy');
 RESET ROLE;
 SELECT pg_temp.src('gen-2','2','final',site_a,act_fac,'facility',NULL,nurse,past_due-interval '2 days'+interval '5 minutes',jsonb_build_object('performed_at',past_due-interval '2 days','outcome','performed')) FROM cf;

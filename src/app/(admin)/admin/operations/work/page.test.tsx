@@ -209,7 +209,7 @@ describe("Site work", () => {
     });
     await waitFor(() => expect(button).toBeEnabled());
     await userEvent.click(button);
-    expect(await screen.findByText("Receipt state: completed")).toBeVisible();
+    expect(await screen.findByText("Original receipt state (historical): completed")).toBeVisible();
     const commands = network.mock.calls.filter(([url]) =>
       url.endsWith("/record"),
     );
@@ -282,7 +282,7 @@ describe("Site work", () => {
     expect(screen.queryByText("Entrance photo")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Save work" }));
     expect(
-      await screen.findByText("Receipt state: performed_missing_evidence"),
+      await screen.findByText("Original receipt state (historical): performed_missing_evidence"),
     ).toBeVisible();
     expect(screen.getByLabelText("File for Entrance photo")).toBeVisible();
   });
@@ -463,7 +463,7 @@ describe("Site work", () => {
     await userEvent.selectOptions(screen.getByLabelText("Outcome"), "failed");
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
     await userEvent.click(screen.getByRole("button", { name: "Complete" }));
-    await screen.findByText("Receipt state: completed");
+    await screen.findByText("Original receipt state (historical): completed");
     expect(
       JSON.parse(
         String(
@@ -581,7 +581,7 @@ describe("Site work", () => {
       await userEvent.click(
         screen.getByRole("button", { name: "Attach record" }),
       );
-      expect(await screen.findByText("Evidence: complete")).toBeVisible();
+      expect(await screen.findByText("Current evidence: complete")).toBeVisible();
       expect(screen.getByText("Status: completed · completed")).toBeVisible();
       await waitFor(() => expect(primary).toHaveFocus());
       expect(
@@ -894,7 +894,7 @@ describe("Site work", () => {
     await userEvent.type(screen.getByLabelText("Reason"), "Hidden reason");
     await userEvent.click(screen.getByRole("button", { name: "More options" }));
     await userEvent.click(screen.getByRole("button", { name: "Complete" }));
-    await screen.findByText("Receipt state: completed");
+    await screen.findByText("Original receipt state (historical): completed");
     expect(
       JSON.parse(
         String(

@@ -1,0 +1,72 @@
+{
+  "phase": "before",
+  "at": "2026-09-13T02:47:56.754Z",
+  "target": "iwcnajanvjvynolltflw",
+  "base": "http://127.0.0.1:4323",
+  "sourceSha": "d039c767595de97531d4d9355d14c565b6ebb2f7",
+  "diffSha256": "1a67caa3531e95b3581d75077dcefa27509f04fcb1f574fac89435b329e77c01",
+  "sourceFiles": {
+    "src/app/(admin)/admin/operations/work/_components/receipt-history.test.tsx": "475ab5e2b11a9ec78ab515838645c1bef5b7f9d2c60722aab3e2417e61b9a189",
+    "src/app/(admin)/admin/operations/work/_components/receipt-history.tsx": "b2ae4d4ba62529630d462f648fc70a4675632819f8bfb22b82ce18ff7ce126a3",
+    "src/app/(admin)/admin/operations/work/page.test.tsx": "1bf3203677609e311755cf34cb1561285ded644a6c4abf6174ba845b9af7505c"
+  },
+  "fixture": {
+    "actor": "7b87e4b5-ee5a-4229-95fe-39bcce2a2e21",
+    "site": "ac77c584-6059-439e-93a6-2545f9f766f5",
+    "run": "col223-8e019c66fe5e"
+  },
+  "results": [
+    {
+      "width": 1440,
+      "view": "history",
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "workspace": {
+        "actor": {
+          "id": "7b87e4b5-ee5a-4229-95fe-39bcce2a2e21",
+          "name": "COL223 Synthetic Operator",
+          "role": "owner"
+        },
+        "facility_id": "ac77c584-6059-439e-93a6-2545f9f766f5",
+        "partial": [],
+        "groups": [
+          "history",
+          "next_cursor",
+          "total"
+        ]
+      },
+      "route": "/admin/operations/work",
+      "selectedFacility": "ac77c584-6059-439e-93a6-2545f9f766f5",
+      "status": "FAIL",
+      "failure": "locator.waitFor: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: 'Receipt chain' }).getByText('No finalized attachments.', { exact: true }) to be visible\u001b[22m\n"
+    },
+    {
+      "width": 375,
+      "view": "history",
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "workspace": {
+        "actor": {
+          "id": "7b87e4b5-ee5a-4229-95fe-39bcce2a2e21",
+          "name": "COL223 Synthetic Operator",
+          "role": "owner"
+        },
+        "facility_id": "ac77c584-6059-439e-93a6-2545f9f766f5",
+        "partial": [],
+        "groups": [
+          "history",
+          "next_cursor",
+          "total"
+        ]
+      },
+      "route": "/admin/operations/work",
+      "selectedFacility": "ac77c584-6059-439e-93a6-2545f9f766f5",
+      "status": "FAIL",
+      "failure": "locator.waitFor: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: 'Receipt chain' }).getByText('No finalized attachments.', { exact: true }) to be visible\u001b[22m\n"
+    }
+  ],
+  "sourceUnchanged": true,
+  "status": "FAIL"
+}
