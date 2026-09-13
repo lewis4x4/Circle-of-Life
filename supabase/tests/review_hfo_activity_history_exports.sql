@@ -12,6 +12,9 @@
 -- and TRUNCATE are refused. Authenticated SQL behaviour with synthetic
 -- fixtures; not hosted, browser or staff acceptance. Everything rolls back.
 BEGIN;
+-- Take the later fault-trigger DDL lock before fixture writes: concurrent
+-- ANALYZE otherwise holds the table while waiting for this transaction.
+LOCK TABLE public.audit_log IN SHARE ROW EXCLUSIVE MODE;
 ALTER ROLE service_role BYPASSRLS;
 GRANT USAGE ON SCHEMA auth TO authenticated,service_role;
 GRANT SELECT ON public.audit_log TO authenticated;
