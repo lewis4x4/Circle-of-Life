@@ -1,3 +1,9 @@
+# Current checkpoint — COL-149 source delivery
+
+September 12, 2026: corporate Facility → Activity → complete History is implemented and technically reviewed on `codex/hfo-col149-corporate-history`, based on reconciled integration `08fd3a43`. See [COL-149-HANDOFF.md](COL-149-HANDOFF.md) and [verification](col149-evidence/verification.json). Final result: 4,438 tests passed, two existing skips, strict UI gate PASS, 366 migrations/46 SQL probes, independent review approved. Source delivery only; hosted new-page and staff acceptance remain unproven. Next bounded dependency-ready item: COL-150, subject to live Linear recheck.
+
+## Previous checkpoint retained as history
+
 # Facility Operations checkpoint
 
 Updated September 10, 2026 after COL-148 source completion. This stack remains unmerged and unapplied to hosted systems; nothing is deployed, scheduled or activated.

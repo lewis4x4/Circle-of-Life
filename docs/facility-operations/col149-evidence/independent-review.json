@@ -1,0 +1,30 @@
+{
+  "reviewer": "Separate Codex review agent",
+  "verdict": "APPROVE technical change",
+  "blocking_findings": 0,
+  "focused_tests": 28,
+  "files_tested": [
+    "src/lib/operations/corporate-history.test.ts",
+    "src/app/api/admin/operations/activity-history/route.test.ts",
+    "src/app/(admin)/admin/operations/history/history-receipt-summary.test.tsx",
+    "src/app/(admin)/admin/operations/history/page.test.tsx"
+  ],
+  "review_scope": [
+    "Schema fields and session RLS",
+    "Raw cursor precision, UUID ties and independent counts",
+    "Latest effective performance, corrections and reversal semantics",
+    "Current actor/site and projection-change guards",
+    "UI scope changes, names, partial and failure states"
+  ],
+  "resolved_findings": [
+    "Held-read subject and lifecycle changes invalidate output",
+    "Latest-receipt read failures remain unavailable",
+    "Current names resolved without inventing historical identity"
+  ],
+  "nonblocking_observations": [
+    "Double composition detects changes but is not a serializable database snapshot",
+    "Whitespace-only names display unavailable but do not add partial.people",
+    "React act warning in lazy-details component test"
+  ],
+  "human_acceptance": false
+}

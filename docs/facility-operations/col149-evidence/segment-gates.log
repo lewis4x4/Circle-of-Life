@@ -1,0 +1,115 @@
+
+> circle-of-life@0.1.0 segment:gates
+> node scripts/agent-gates/run-segment-gates.mjs --segment COL-149-HFO-CORPORATE-HISTORY --ui
+
+[segment:gates][hygiene.env-example] start node scripts/check-env-example.mjs
+[segment:gates][hygiene.env-example][stdout] [check:env-example] PASS
+[segment:gates][hygiene.env-example] finish status=passed required=true duration_ms=33
+[segment:gates][hygiene.tracked-secrets-scan] start node scripts/check-tracked-secrets.mjs
+[segment:gates][hygiene.tracked-secrets-scan][stdout] [check:secrets] PASS
+[segment:gates][hygiene.tracked-secrets-scan] finish status=passed required=true duration_ms=656
+[segment:gates][hygiene.npm-audit] start npm run audit:ci
+[segment:gates][hygiene.npm-audit][stdout] found 0 vulnerabilities
+[segment:gates][hygiene.npm-audit] finish status=passed required=true duration_ms=1755
+[segment:gates][security.gitleaks] start npm run secrets:gitleaks
+[segment:gates][security.gitleaks][stdout] [gitleaks] detector regression PASS: generic-api-key remains active
+[segment:gates][security.gitleaks][stderr]
+[segment:gates][security.gitleaks][stderr]     ○
+[segment:gates][security.gitleaks][stderr]     │╲
+[segment:gates][security.gitleaks][stderr]     │ ○
+[segment:gates][security.gitleaks][stderr]     ○ ░
+[segment:gates][security.gitleaks][stderr]     ░    gitleaks
+[segment:gates][security.gitleaks][stderr]
+[segment:gates][security.gitleaks][stderr] 8:34PM INF 2035 commits scanned.
+[segment:gates][security.gitleaks][stderr] 8:34PM INF scanned ~83070964 bytes (83.07 MB) in 19.8s
+[segment:gates][security.gitleaks][stderr] 8:34PM INF no leaks found
+[segment:gates][security.gitleaks][stdout] [gitleaks] PASS
+[segment:gates][security.gitleaks] finish status=passed required=true duration_ms=20937
+[segment:gates][qa.eslint] start npm run lint
+[segment:gates][qa.eslint] still running elapsed_ms=30082 command="npm run lint"
+[segment:gates][qa.eslint] still running elapsed_ms=60132 command="npm run lint"
+[segment:gates][qa.eslint] still running elapsed_ms=90237 command="npm run lint"
+[segment:gates][qa.eslint][stderr] [BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/types/database.ts as it exceeds the max of 500KB.
+[segment:gates][qa.eslint][stdout] Constitution lint passed for smart-rounding scope (30 files).
+[segment:gates][qa.eslint] finish status=passed required=true duration_ms=100193
+[segment:gates][qa.migration-sequence] start npm run migrations:check
+[segment:gates][qa.migration-sequence][stdout] [migrations:check] PASS: 366 migration(s) in /Users/brianlewis/Circle of Life/Haven Corporate Activity History/supabase/migrations — sequence 001..363
+[segment:gates][qa.migration-sequence] finish status=passed required=true duration_ms=146
+[segment:gates][qa.migrations-apply-postgres] start npm run migrations:verify:pg
+[segment:gates][qa.migrations-apply-postgres] still running elapsed_ms=30033 command="npm run migrations:verify:pg"
+[segment:gates][qa.migrations-apply-postgres] still running elapsed_ms=60060 command="npm run migrations:verify:pg"
+[segment:gates][qa.migrations-apply-postgres][stdout] [migrations:verify:pg] PASS (366 migration files, 46 SQL probes; native PostgreSQL with Supabase stubs)
+[segment:gates][qa.migrations-apply-postgres] finish status=passed required=true duration_ms=63823
+[segment:gates][qa.root-build] start npm run build
+[segment:gates][qa.root-build][stdout] [migrations:check] PASS: 366 migration(s) in /Users/brianlewis/Circle of Life/Haven Corporate Activity History/supabase/migrations — sequence 001..363
+[segment:gates][qa.root-build][stdout] [check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated
+[segment:gates][qa.root-build][stdout] [check-memory-care] PASS
+[segment:gates][qa.root-build][stdout] ▲ Next.js 16.3.4 (Turbopack)
+[segment:gates][qa.root-build][stdout] ✓ Running next.config.ts took 252ms
+[segment:gates][qa.root-build][stdout] ⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+[segment:gates][qa.root-build][stdout] Attention: Next.js now collects completely anonymous telemetry regarding usage.
+[segment:gates][qa.root-build][stdout] This information is used to shape Next.js' roadmap and prioritize features.
+[segment:gates][qa.root-build][stdout] You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+[segment:gates][qa.root-build][stdout] https://nextjs.org/telemetry
+[segment:gates][qa.root-build][stdout]
+[segment:gates][qa.root-build][stdout] - Experiments (use with caution):
+[segment:gates][qa.root-build][stdout]   · clientTraceMetadata
+[segment:gates][qa.root-build][stdout]   · optimizePackageImports
+[segment:gates][qa.root-build][stdout]
+[segment:gates][qa.root-build][stdout]   Creating an optimized production build ...
+[segment:gates][qa.root-build][stderr] [1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred:
+[segment:gates][qa.root-build][stderr] Symlink [project]/node_modules is invalid, it points out of the filesystem root
+[segment:gates][qa.root-build][stderr]
+[segment:gates][qa.root-build][stderr] Debug info:
+[segment:gates][qa.root-build][stderr] - Execution of get_all_written_entrypoints_with_issues_operation failed
+[segment:gates][qa.root-build][stderr] - Execution of EntrypointsOperation::new failed
+[segment:gates][qa.root-build][stderr] - Execution of all_entrypoints_write_to_disk_operation failed
+[segment:gates][qa.root-build][stderr] - Execution of output_assets_operation failed
+[segment:gates][qa.root-build][stderr] - Execution of Project::get_all_endpoint_groups_with_app_route_filter failed
+[segment:gates][qa.root-build][stderr] - Execution of Project::entrypoints_with_app_route_filter failed
+[segment:gates][qa.root-build][stderr] - Execution of AppProject::routes_with_filter failed
+[segment:gates][qa.root-build][stderr] - Execution of directory_tree_to_entrypoints_internal failed
+[segment:gates][qa.root-build][stderr] - Execution of directory_tree_to_loader_tree failed
+[segment:gates][qa.root-build][stderr] - Execution of try_get_next_package failed
+[segment:gates][qa.root-build][stderr] - Execution of resolve failed
+[segment:gates][qa.root-build][stderr] - Execution of resolve_internal failed
+[segment:gates][qa.root-build][stderr] - Execution of find_package failed
+[segment:gates][qa.root-build][stderr] - Symlink [project]/node_modules is invalid, it points out of the filesystem root
+[segment:gates][qa.root-build][stderr]
+[segment:gates][qa.root-build][stderr] > Build error occurred
+[segment:gates][qa.root-build][stderr] Error [TurbopackInternalError]: Symlink [project]/node_modules is invalid, it points out of the filesystem root
+[segment:gates][qa.root-build][stderr]
+[segment:gates][qa.root-build][stderr] Debug info:
+[segment:gates][qa.root-build][stderr] - Execution of get_all_written_entrypoints_with_issues_operation failed
+[segment:gates][qa.root-build][stderr] - Execution of EntrypointsOperation::new failed
+[segment:gates][qa.root-build][stderr] - Execution of all_entrypoints_write_to_disk_operation failed
+[segment:gates][qa.root-build][stderr] - Execution of output_assets_operation failed
+[segment:gates][qa.root-build][stderr] - Execution of Project::get_all_endpoint_groups_with_app_route_filter failed
+[segment:gates][qa.root-build][stderr] - Execution of Project::entrypoints_with_app_route_filter failed
+[segment:gates][qa.root-build][stderr] - Execution of AppProject::routes_with_filter failed
+[segment:gates][qa.root-build][stderr] - Execution of directory_tree_to_entrypoints_internal failed
+[segment:gates][qa.root-build][stderr] - Execution of directory_tree_to_loader_tree failed
+[segment:gates][qa.root-build][stderr] - Execution of try_get_next_package failed
+[segment:gates][qa.root-build][stderr] - Execution of resolve failed
+[segment:gates][qa.root-build][stderr] - Execution of resolve_internal failed
+[segment:gates][qa.root-build][stderr] - Execution of find_package failed
+[segment:gates][qa.root-build][stderr] - Symlink [project]/node_modules is invalid, it points out of the filesystem root
+[segment:gates][qa.root-build][stderr]     at ignore-listed frames {
+[segment:gates][qa.root-build][stderr]   type: 'TurbopackInternalError',
+[segment:gates][qa.root-build][stderr]   location: undefined
+[segment:gates][qa.root-build][stderr] }
+[segment:gates][qa.root-build] finish status=failed required=true duration_ms=2752
+[segment:gates][hygiene.nextjs-deprecation-signal] start (derived from npm run build output)
+[segment:gates][hygiene.nextjs-deprecation-signal] finish status=passed required=false
+[segment:gates][qa.web-build] start npm run build (apps/web)
+[segment:gates][qa.web-build] finish status=skipped required=false
+[segment:gates][chaos.stress-suite] start npm run stress:test
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: suite loaded
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: Number.parseInt rejects garbage
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: parallel microtasks both ran
+[segment:gates][chaos.stress-suite][stdout] ADVISORY	stress: add ALF/home-care workflow simulations when resident and census models exist
+[segment:gates][chaos.stress-suite] finish status=passed required=true duration_ms=641
+[segment:gates][cdo.preview-prerequisite] start start verified UI preview
+[segment:gates][cdo.preview-prerequisite] finish status=failed required=true
+
+[segment:gates] verdict=FAIL artifact=/Users/brianlewis/Circle of Life/Haven Corporate Activity History/test-results/agent-gates/2026-09-13T00-34-21-105Z-COL-149-HFO-CORPORATE-HISTORY.json

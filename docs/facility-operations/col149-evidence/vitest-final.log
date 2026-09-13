@@ -1,0 +1,1095 @@
+
+> circle-of-life@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Corporate Activity History
+
+8:37:49 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven HFO Staging Integration/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven HFO Staging Integration/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19691:22)
+ ❯ src/lib/admin/access-boundaries.test.ts (0 test)
+ ❯ src/app/api/admin/operations/issues/route.test.ts (0 test)
+ ❯ src/lib/admin/user-facility-route.test.ts (0 test)
+ ❯ src/components/ui/metric-card.test.tsx (0 test)
+ ❯ src/app/api/admin/operations/issues/[id]/route.test.ts (0 test)
+ ❯ src/app/(admin)/insurance/coi/page.test.tsx (0 test)
+ ❯ src/app/api/admin/operations/occurrences/[id]/correct/route.test.ts (0 test)
+ ❯ src/app/api/admin/operations/occurrences/route.test.ts (0 test)
+ ❯ src/components/controlled-substance/controlled-medication-identity.test.tsx (0 test)
+ ❯ src/app/api/admin/operations/workspace/route.test.ts (0 test)
+ ❯ src/app/api/admin/operations/dietary-records/route.test.ts (0 test)
+ ❯ src/lib/operations/issues.test.ts (0 test)
+ ❯ src/components/layout/AppRuntimeProviders.test.tsx (0 test)
+ ❯ src/app/api/admin/operations/tasks/[id]/complete/route.test.ts (0 test)
+ ❯ src/app/api/reputation/oauth/google/callback/route-current-actor.test.ts (0 test)
+ ❯ src/app/api/controlled-substance/verify-co-sign/route-roles.test.ts (0 test)
+ ❯ src/lib/finance/resident-money.test.ts (0 test)
+ ❯ src/app/api/dietary/tray-pass/route.test.ts (0 test)
+ ❯ src/app/api/med-tech/passes/[id]/witness/route-roles.test.ts (0 test)
+ ❯ src/lib/compliance/policies-display-copy.test.ts (0 test)
+ ❯ src/app/api/rounding/plans/route-current-authority.test.ts (0 test)
+ ❯ src/proxy.test.ts (0 test)
+ ❯ src/app/api/admin/operations/templates/[id]/route.test.ts (0 test)
+ ❯ src/app/api/admin/operations/tasks/[id]/defer/route.test.ts (0 test)
+ ❯ src/app/api/admin/rounding/insights/run/route.test.ts (0 test)
+ ❯ src/app/api/admin/facilities/[facilityId]/thresholds/route.test.ts (0 test)
+ ❯ src/app/api/admin/operations/tasks/bulk-complete/route.test.ts (0 test)
+ ❯ src/app/api/stand-up/route.test.ts (0 test)
+ ❯ src/lib/discharge/discharge-new-display-copy.test.ts (0 test)
+ ❯ src/app/api/admin/workflows/admission-cases/route.test.ts (0 test)
+ ❯ src/app/api/rounding/assignee-current-status.test.ts (0 test)
+ ❯ src/lib/residents/override-admission-validate.test.ts (0 test)
+ ❯ src/app/api/admin/operations/activity-history/route.test.ts (0 test)
+ ❯ src/lib/rounding/auth.test.ts (0 test)
+ ❯ src/lib/operations/task-command.test.ts (0 test)
+ ❯ src/app/api/controlled-substance/verify-co-sign/route-current-actor.test.ts (0 test)
+ ❯ src/lib/supabase/middleware.test.ts (0 test)
+ ❯ src/app/api/dietary/temperature/route.test.ts (0 test)
+ ❯ src/app/api/admin/meetings/[id]/actions/route.test.ts (0 test)
+ ❯ src/app/api/pilot-feedback/route.test.ts (0 test)
+ ❯ src/lib/office/review-regressions.test.ts (0 test)
+ ❯ src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.test.ts (0 test)
+stderr | src/lib/observability/logger.test.ts > logError > forwards to Sentry with scope tag and safe error fields only
+[error] care-plans.approve {"error_name":"Error","error_message":"user not found","error_code":"PGRST116","residentId":"abc-123"}
+
+stderr | src/lib/observability/logger.test.ts > logError > never serialises the full error object — extras shape is fixed
+[error] rounding.complete {"error_name":"Object","error_message":"RLS denied","error_code":"42501"}
+
+stderr | src/lib/observability/logger.test.ts > logError > redacts known PHI patterns in the context payload
+[error] rounding.complete {"error_name":"Error","error_message":"oops","note":"resident SSN [REDACTED_SSN] on chart","counts":{"logs":4}}
+
+stderr | src/lib/observability/logger.test.ts > logError > accepts a string err and wraps it as a synthetic Error for Sentry
+[error] executive.refresh.edge {"error_name":"Unknown","error_message":"edge invocation failed","status":500}
+
+stderr | src/lib/observability/logger.test.ts > logWarn > forwards a warning message + redacted context to Sentry
+[warn] admin.users.audit {"message":"audit insert failed","userId":"u-1","note":"[REDACTED_DOB]"}
+
+ ❯ src/lib/observability/logger.test.ts (6 tests | 5 failed) 33ms
+     × forwards to Sentry with scope tag and safe error fields only 31ms
+     × never serialises the full error object — extras shape is fixed 1ms
+     × redacts known PHI patterns in the context payload 0ms
+     × accepts a string err and wraps it as a synthetic Error for Sentry 0ms
+     × forwards a warning message + redacted context to Sentry 0ms
+ ❯ src/lib/admin/facilities/first-billing-cycle-label.test.ts (0 test)
+ ❯ src/app/api/rounding/escalations/[id]/route-current-authority.test.ts (0 test)
+ ❯ src/lib/dietary/snack-log-scope.test.ts (0 test)
+ ❯ src/lib/insurance/coi-display-copy.test.ts (0 test)
+ ❯ src/lib/facilities/audit-tab-display-copy.test.ts (0 test)
+ ❯ src/lib/dietary/temperature-idempotency.test.ts (0 test)
+ ❯ src/app/api/infection-control/evaluate-vitals/route-current-actor.test.ts (0 test)
+ ❯ src/app/(caregiver)/caregiver/schedules/page.test.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 50 ⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/proxy.test.ts [ src/proxy.test.ts ]
+Error: Failed to resolve import "next/server" from "src/proxy.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/proxy.test.ts:2:0
+  1  |  const state = vi.hoisted(() => ({ updateSession: vi.fn() }));
+  2  |  vi.mock("@/lib/supabase/middleware", () => ({ updateSession: state.updateSession }));
+  3  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  4  |  const __vi_import_1__ = await import("./proxy");
+  5  |  import { beforeEach, expect, it, vi } from "vitest";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/55]⎯
+
+ FAIL  src/components/controlled-substance/controlled-medication-identity.test.tsx [ src/components/controlled-substance/controlled-medication-identity.test.tsx ]
+Error: Failed to resolve import "@testing-library/react" from "src/components/controlled-substance/controlled-medication-identity.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/components/controlled-substance/controlled-medication-identity.test.tsx:1:31
+  1  |  import { render, screen } from "@testing-library/react";
+     |                                  ^
+  2  |  import { describe, expect, it } from "vitest";
+  3  |  import { formatControlledMedicationIdentity, formatMedicationDose, formatResidentIdentity, requireControlledMedicatio...
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/55]⎯
+
+ FAIL  src/components/layout/AppRuntimeProviders.test.tsx [ src/components/layout/AppRuntimeProviders.test.tsx ]
+Error: Failed to resolve import "@testing-library/react" from "src/components/layout/AppRuntimeProviders.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/components/layout/AppRuntimeProviders.test.tsx:1:0
+  2  |  vi.mock("@/components/pwa/service-worker-register", () => ({ ServiceWorkerRegister: () => serviceWorkerRegisterMock()...
+  3  |  vi.mock("@/components/ui/sonner", () => ({ Toaster: (props) => toasterMock(props) }));
+  4  |  const __vi_import_0__ = await import("@testing-library/react");
+     |                                       ^
+  5  |  const __vi_import_1__ = await import("./AppRuntimeProviders");
+  6  |  const __vi_import_2__ = await import("react/jsx-dev-runtime");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/55]⎯
+
+ FAIL  src/components/ui/metric-card.test.tsx [ src/components/ui/metric-card.test.tsx ]
+Error: Failed to resolve import "@testing-library/react" from "src/components/ui/metric-card.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/components/ui/metric-card.test.tsx:1:31
+  1  |  import { render, screen } from "@testing-library/react";
+     |                                  ^
+  2  |  import { describe, expect, it } from "vitest";
+  3  |  import { MetricCard, resolveMetricTone } from "./metric-card";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/55]⎯
+
+ FAIL  src/lib/admin/access-boundaries.test.ts [ src/lib/admin/access-boundaries.test.ts ]
+Error: Failed to resolve import "next/server" from "src/lib/admin/access-boundaries.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/admin/access-boundaries.test.ts:7:0
+  16 |  const __vi_import_0__ = await import("@/app/api/admin/workflows/admission-cases/[id]/route");
+  17 |  const __vi_import_1__ = await import("./api-auth");
+  18 |  const __vi_import_2__ = await import("next/server");
+     |                                       ^
+  19 |  import { beforeEach, describe, expect, it, vi } from "vitest";
+  20 |
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/55]⎯
+
+ FAIL  src/lib/admin/user-facility-route.test.ts [ src/lib/admin/user-facility-route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/lib/admin/user-facility-route.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/admin/user-facility-route.test.ts:2:0
+  9  |  	commitExpansiveUserAccess: mocks.expand
+  10 |  }));
+  11 |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  12 |  const __vi_import_1__ = await import("@/app/api/admin/users/[id]/facility-access/[facilityId]/route");
+  13 |  const __vi_import_2__ = await import("@/app/api/admin/users/[id]/facility-access/route");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/55]⎯
+
+ FAIL  src/lib/compliance/policies-display-copy.test.ts [ src/lib/compliance/policies-display-copy.test.ts ]
+Error: Failed to resolve import "date-fns" from "src/lib/compliance/policies-display-copy.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/compliance/policies-display-copy.ts:6:42
+  3  |  * Missing publish dates name real gaps — never fabricate policy dates.
+  4  |  */
+  5  |  import { format, isValid, parseISO } from "date-fns";
+     |                                             ^
+  6  |  export const COMPLIANCE_POLICY_NO_PUBLISHED_DATE_COPY = "No date posted";
+  7  |  /** Published-at column — posted date as MMM d, yyyy or explicit missing copy. */
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/55]⎯
+
+ FAIL  src/lib/discharge/discharge-new-display-copy.test.ts [ src/lib/discharge/discharge-new-display-copy.test.ts ]
+Error: Failed to resolve import "date-fns" from "src/lib/discharge/discharge-new-display-copy.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/discharge/discharge-new-display-copy.ts:7:59
+  4  |  * never fabricate person labels or timestamps.
+  5  |  */
+  6  |  import { differenceInCalendarDays, format, parseISO } from "date-fns";
+     |                                                              ^
+  7  |  export const DISCHARGE_NEW_NO_RESIDENT_POSTED_COPY = "No resident posted";
+  8  |  export const DISCHARGE_NEW_NO_NAME_POSTED_COPY = "No name posted";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/55]⎯
+
+ FAIL  src/lib/dietary/snack-log-scope.test.ts [ src/lib/dietary/snack-log-scope.test.ts ]
+Error: Failed to resolve import "next/link" from "src/components/dietary/AdminDietaryPageClient.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/components/dietary/AdminDietaryPageClient.tsx:3:17
+  1  |  "use client";
+  2  |  import Link from "next/link";
+     |                    ^
+  3  |  import { useHavenAuth } from "@/contexts/haven-auth-context";
+  4  |  import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/55]⎯
+
+ FAIL  src/lib/dietary/temperature-idempotency.test.ts [ src/lib/dietary/temperature-idempotency.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/dietary/temperature/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/dietary/temperature/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { z } from "zod";
+  3  |  import { requireAdminApiActor, actorCanAccessFacility } from "@/lib/admin/api-auth";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+ ❯ fetchModule ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:33098:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/55]⎯
+
+ FAIL  src/lib/facilities/audit-tab-display-copy.test.ts [ src/lib/facilities/audit-tab-display-copy.test.ts ]
+Error: Failed to resolve import "date-fns" from "src/lib/facilities/audit-tab-display-copy.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/facilities/audit-tab-display-copy.ts:1:36
+  1  |  import { formatDistanceToNow } from "date-fns";
+     |                                       ^
+  2  |  /**
+  3  |  * Quiet Operator copy for the facility detail audit tab diff preview.
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/55]⎯
+
+ FAIL  src/lib/finance/resident-money.test.ts [ src/lib/finance/resident-money.test.ts ]
+Error: Failed to resolve import "zod" from "src/lib/finance/resident-money.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/finance/resident-money.ts:2:18
+  1  |  import { z } from "zod";
+     |                     ^
+  2  |  import { UUID_STRING_RE } from "@/lib/supabase/env";
+  3  |  import { cents } from "@/lib/finance-integration/payload";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/55]⎯
+
+ FAIL  src/lib/insurance/coi-display-copy.test.ts [ src/lib/insurance/coi-display-copy.test.ts ]
+Error: Failed to resolve import "date-fns" from "src/lib/insurance/coi-display-copy.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/insurance/coi-display-copy.ts:6:33
+  3  |  * Missing expiry dates name real gaps — never fabricate calendar days.
+  4  |  */
+  5  |  import { format, parseISO } from "date-fns";
+     |                                    ^
+  6  |  export const INSURANCE_COI_NO_EXPIRATION_DATE_COPY = "No expiration date posted";
+  7  |  /** One-line cue: org-scoped list; expiry dates are Eastern calendar days. */
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/55]⎯
+
+ FAIL  src/lib/office/review-regressions.test.ts [ src/lib/office/review-regressions.test.ts ]
+Error: Failed to resolve import "date-fns" from "src/lib/office/master-calendar.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/office/master-calendar.ts:1:52
+  1  |  import { addDays, addHours, format, parseISO } from "date-fns";
+     |                                                       ^
+  2  |  import { addFacilityCalendarDays, facilityDatetimeLocalToUtcIso } from "@/lib/facility-wall-clock";
+  3  |  const CRLF = "\r\n";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/55]⎯
+
+ FAIL  src/lib/operations/issues.test.ts [ src/lib/operations/issues.test.ts ]
+Error: Failed to resolve import "next/server" from "src/lib/operations/issues.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/operations/issues.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { z } from "zod";
+  3  |  import { actorCanAccessFacility, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/55]⎯
+
+ FAIL  src/lib/operations/task-command.test.ts [ src/lib/operations/task-command.test.ts ]
+Error: Failed to resolve import "next/server" from "src/lib/operations/task-command.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/operations/task-command.test.ts:2:0
+  4  |  }));
+  5  |  vi.mock("@/lib/observability/logger", () => ({ logError: vi.fn() }));
+  6  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  7  |  const __vi_import_1__ = await import("./auth");
+  8  |  const __vi_import_2__ = await import("./task-command");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/55]⎯
+
+ FAIL  src/lib/residents/override-admission-validate.test.ts [ src/lib/residents/override-admission-validate.test.ts ]
+Error: Failed to resolve import "date-fns" from "src/lib/residents/override-admission-validate.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/residents/override-admission-validate.ts:1:56
+  1  |  import { isAfter, parseISO, startOfDay, subYears } from "date-fns";
+     |                                                           ^
+  2  |  /** Placeholder value for Radix Select until the user chooses explicitly. */
+  3  |  export const OVERRIDE_FORM_PICK = "__pick__";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/55]⎯
+
+ FAIL  src/lib/rounding/auth.test.ts [ src/lib/rounding/auth.test.ts ]
+Error: Failed to resolve import "next/server" from "src/lib/rounding/auth.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/rounding/auth.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
+  3  |  import { logError } from "@/lib/observability/logger";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/55]⎯
+
+ FAIL  src/lib/supabase/middleware.test.ts [ src/lib/supabase/middleware.test.ts ]
+Error: Failed to resolve import "next/server" from "src/lib/supabase/middleware.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/supabase/middleware.test.ts:2:0
+  1  |  const state = vi.hoisted(() => ({ createServerClient: vi.fn() }));
+  2  |  vi.mock("@supabase/ssr", () => ({ createServerClient: state.createServerClient }));
+  3  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  4  |  const __vi_import_1__ = await import("./middleware");
+  5  |  import { beforeEach, describe, expect, it, vi } from "vitest";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/55]⎯
+
+ FAIL  src/app/api/pilot-feedback/route.test.ts [ src/app/api/pilot-feedback/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/pilot-feedback/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/pilot-feedback/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
+  3  |  import { logError } from "@/lib/observability/logger";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/55]⎯
+
+ FAIL  src/app/api/rounding/assignee-current-status.test.ts [ src/app/api/rounding/assignee-current-status.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/rounding/integrity-flags/[id]/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/rounding/integrity-flags/[id]/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { logError } from "@/lib/observability/logger";
+  3  |  import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManager...
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/55]⎯
+
+ FAIL  src/app/api/stand-up/route.test.ts [ src/app/api/stand-up/route.test.ts ]
+Error: Cannot find package 'next/server' imported from /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/stand-up/route.ts
+ ❯ src/app/api/stand-up/route.ts:1:1
+      1| import { NextResponse } from 'next/server';
+       | ^
+      2| import { standUpCommand } from '@/lib/stand-up/server';
+      3|
+ ❯ src/app/api/stand-up/route.test.ts:3:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/55]⎯
+
+ FAIL  src/lib/admin/facilities/first-billing-cycle-label.test.ts [ src/lib/admin/facilities/first-billing-cycle-label.test.ts ]
+Error: Failed to resolve import "date-fns" from "src/lib/admin/facilities/first-billing-cycle-label.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/lib/admin/facilities/first-billing-cycle-label.ts:1:23
+  1  |  import { format } from "date-fns";
+     |                          ^
+  2  |  import { FIRST_BILLING_CYCLE_NO_DATE_COPY } from "./first-billing-cycle-display-copy";
+  3  |  /** Posted monthly rent: first full cycle aligns to the first of the month on/after effective (pro‑rata out of scope)...
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/55]⎯
+
+ FAIL  src/app/(caregiver)/caregiver/schedules/page.test.tsx [ src/app/(caregiver)/caregiver/schedules/page.test.tsx ]
+Error: Failed to resolve import "next/link" from "src/app/(caregiver)/caregiver/schedules/page.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/(caregiver)/caregiver/schedules/page.tsx:4:17
+  1  |  "use client";
+  2  |  import React, { useCallback, useEffect, useMemo, useState } from "react";
+  3  |  import Link from "next/link";
+     |                    ^
+  4  |  import { CalendarDays, Loader2 } from "lucide-react";
+  5  |  import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/55]⎯
+
+ FAIL  src/app/(admin)/insurance/coi/page.test.tsx [ src/app/(admin)/insurance/coi/page.test.tsx ]
+Error: Failed to resolve import "@testing-library/react" from "src/app/(admin)/insurance/coi/page.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/(admin)/insurance/coi/page.test.tsx:2:0
+  24 |  }, this) }));
+  25 |  const __vi_import_0__ = await import("react");
+  26 |  const __vi_import_1__ = await import("@testing-library/react");
+     |                                       ^
+  27 |  const __vi_import_2__ = await import("./page");
+  28 |  const __vi_import_3__ = await import("react/jsx-dev-runtime");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/55]⎯
+
+ FAIL  src/app/api/dietary/temperature/route.test.ts [ src/app/api/dietary/temperature/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/dietary/temperature/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/dietary/temperature/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { z } from "zod";
+  3  |  import { requireAdminApiActor, actorCanAccessFacility } from "@/lib/admin/api-auth";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/55]⎯
+
+ FAIL  src/app/api/controlled-substance/verify-co-sign/route-current-actor.test.ts [ src/app/api/controlled-substance/verify-co-sign/route-current-actor.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/controlled-substance/verify-co-sign/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/controlled-substance/verify-co-sign/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
+  3  |  import { logError } from "@/lib/observability/logger";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+ ❯ fetchModule ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:33098:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/55]⎯
+
+ FAIL  src/app/api/controlled-substance/verify-co-sign/route-roles.test.ts [ src/app/api/controlled-substance/verify-co-sign/route-roles.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/controlled-substance/verify-co-sign/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/controlled-substance/verify-co-sign/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
+  3  |  import { logError } from "@/lib/observability/logger";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/55]⎯
+
+ FAIL  src/app/api/dietary/tray-pass/route.test.ts [ src/app/api/dietary/tray-pass/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/dietary/tray-pass/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/dietary/tray-pass/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { z } from "zod";
+  3  |  import { requireAdminApiActor } from "@/lib/admin/api-auth";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/55]⎯
+
+ FAIL  src/app/api/infection-control/evaluate-vitals/route-current-actor.test.ts [ src/app/api/infection-control/evaluate-vitals/route-current-actor.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/infection-control/evaluate-vitals/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/infection-control/evaluate-vitals/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
+  3  |  import { evaluateVitalSignAlertsForDailyLog } from "@/lib/infection-control/evaluate-vitals";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/55]⎯
+
+ FAIL  src/app/api/rounding/plans/route-current-authority.test.ts [ src/app/api/rounding/plans/route-current-authority.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/rounding/plans/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/rounding/plans/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { logError } from "@/lib/observability/logger";
+  3  |  import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManager...
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/55]⎯
+
+ FAIL  src/app/api/admin/operations/activity-history/route.test.ts [ src/app/api/admin/operations/activity-history/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/activity-history/route.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/activity-history/route.test.ts:2:0
+  6  |  }));
+  7  |  vi.mock("@/lib/operations/corporate-history", () => ({ composeCorporateHistory: vi.fn() }));
+  8  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  9  |  const __vi_import_1__ = await import("./route");
+  10 |  const __vi_import_2__ = await import("@/lib/operations/auth");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/55]⎯
+
+ FAIL  src/app/api/admin/operations/dietary-records/route.test.ts [ src/app/api/admin/operations/dietary-records/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/dietary-records/route.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/dietary-records/route.test.ts:2:0
+  6  |  const logError = vi.hoisted(() => vi.fn());
+  7  |  vi.mock("@/lib/observability/logger", () => ({ logError }));
+  8  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  9  |  const __vi_import_1__ = await import("./route");
+  10 |  const __vi_import_2__ = await import("./[id]/route");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/55]⎯
+
+ FAIL  src/app/api/admin/operations/issues/route.test.ts [ src/app/api/admin/operations/issues/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/issues/route.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/issues/route.test.ts:2:0
+  5  |  }));
+  6  |  vi.mock("@/lib/observability/logger", () => ({ logError: vi.fn() }));
+  7  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  8  |  const __vi_import_1__ = await import("./route");
+  9  |  const __vi_import_2__ = await import("@/lib/operations/auth");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/55]⎯
+
+ FAIL  src/app/api/admin/operations/occurrences/route.test.ts [ src/app/api/admin/operations/occurrences/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/occurrences/route.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/occurrences/route.test.ts:2:0
+  5  |  }));
+  6  |  vi.mock("@/lib/observability/logger", () => ({ logError: vi.fn() }));
+  7  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  8  |  const __vi_import_1__ = await import("./route");
+  9  |  const __vi_import_2__ = await import("./bindings/route");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/55]⎯
+
+ FAIL  src/app/api/admin/operations/workspace/route.test.ts [ src/app/api/admin/operations/workspace/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/workspace/route.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/workspace/route.test.ts:2:0
+  4  |  }));
+  5  |  vi.mock("@/lib/observability/logger", () => ({ logError: vi.fn() }));
+  6  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  7  |  const __vi_import_1__ = await import("./route");
+  8  |  const __vi_import_2__ = await import("@/lib/operations/auth");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/55]⎯
+
+ FAIL  src/app/api/admin/workflows/admission-cases/route.test.ts [ src/app/api/admin/workflows/admission-cases/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/workflows/admission-cases/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/workflows/admission-cases/route.ts:1:42
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { formatInTimeZone } from "date-fns-tz";
+  3  |  import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/55]⎯
+
+ FAIL  src/app/api/rounding/escalations/[id]/route-current-authority.test.ts [ src/app/api/rounding/escalations/[id]/route-current-authority.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/rounding/escalations/[id]/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/rounding/escalations/[id]/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { logError } from "@/lib/observability/logger";
+  3  |  import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManager...
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/55]⎯
+
+ FAIL  src/app/api/admin/facilities/[facilityId]/thresholds/route.test.ts [ src/app/api/admin/facilities/[facilityId]/thresholds/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/facilities/[facilityId]/thresholds/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/facilities/[facilityId]/thresholds/route.ts:6:42
+  3  |  * PUT    /api/admin/facilities/[facilityId]/thresholds  — Bulk upsert thresholds (array)
+  4  |  */
+  5  |  import { NextResponse } from "next/server";
+     |                                ^
+  6  |  import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+  7  |  import { thresholdSchema } from "@/lib/validation/facility-admin";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39/55]⎯
+
+ FAIL  src/app/api/admin/meetings/[id]/actions/route.test.ts [ src/app/api/admin/meetings/[id]/actions/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/meetings/[id]/actions/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/meetings/[id]/actions/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { z } from "zod";
+  3  |  import { actorCanAccessFacility, requireOperationsActor } from "@/lib/operations/auth";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[40/55]⎯
+
+ FAIL  src/app/api/admin/operations/issues/[id]/route.test.ts [ src/app/api/admin/operations/issues/[id]/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/issues/[id]/route.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/issues/[id]/route.test.ts:2:0
+  6  |  const logError = vi.hoisted(() => vi.fn());
+  7  |  vi.mock("@/lib/observability/logger", () => ({ logError }));
+  8  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  9  |  const __vi_import_1__ = await import("./route");
+  10 |  const __vi_import_2__ = await import("../backlog/route");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[41/55]⎯
+
+ FAIL  src/app/api/admin/operations/tasks/bulk-complete/route.test.ts [ src/app/api/admin/operations/tasks/bulk-complete/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/tasks/bulk-complete/route.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/tasks/bulk-complete/route.test.ts:2:0
+  1  |  vi.mock("@/lib/operations/auth", () => ({ requireOperationsActor: vi.fn() }));
+  2  |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  3  |  const __vi_import_1__ = await import("@/lib/operations/auth");
+  4  |  const __vi_import_2__ = await import("./route");
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[42/55]⎯
+
+ FAIL  src/app/api/admin/rounding/insights/run/route.test.ts [ src/app/api/admin/rounding/insights/run/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/rounding/insights/run/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/rounding/insights/run/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { actorCanAccessFacility, listActorAccessibleFacilityIds, requireAdminApiActor } from "@/lib/admin/api-auth";
+  3  |  const MAX_RESIDENTS = 25;
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[43/55]⎯
+
+ FAIL  src/app/api/admin/operations/templates/[id]/route.test.ts [ src/app/api/admin/operations/templates/[id]/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/templates/[id]/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/templates/[id]/route.ts:1:42
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { actorCanAccessFacility, requireOperationsActor } from "@/lib/operations/auth";
+  3  |  import { parseJsonBody } from "@/lib/http/json-body";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[44/55]⎯
+
+ FAIL  src/app/api/med-tech/passes/[id]/witness/route-roles.test.ts [ src/app/api/med-tech/passes/[id]/witness/route-roles.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/med-tech/passes/[id]/witness/route-roles.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/med-tech/passes/[id]/witness/route-roles.test.ts:2:0
+  10 |  }));
+  11 |  vi.mock("@/lib/supabase/witness-auth", () => ({ verifyWitnessCredentials: mocks.verify }));
+  12 |  const __vi_import_0__ = await import("next/server");
+     |                                       ^
+  13 |  const __vi_import_1__ = await import("./route");
+  14 |  import { beforeEach, expect, it, vi } from "vitest";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[45/55]⎯
+
+ FAIL  src/app/api/reputation/oauth/google/callback/route-current-actor.test.ts [ src/app/api/reputation/oauth/google/callback/route-current-actor.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/reputation/oauth/google/callback/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/reputation/oauth/google/callback/route.ts:1:29
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
+  3  |  import { exchangeAuthorizationCode } from "@/lib/reputation/google-oauth";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[46/55]⎯
+
+ FAIL  src/app/api/admin/operations/occurrences/[id]/correct/route.test.ts [ src/app/api/admin/operations/occurrences/[id]/correct/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/occurrences/[id]/correct/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/occurrences/[id]/correct/route.ts:1:42
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { actorCanAccessFacility, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
+  3  |  import { RECEIPT_COMMAND_ROLES, correctWorkBodySchema, currentReceiptFields, isCorrectionOutcome, mapReceiptRpcError,...
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[47/55]⎯
+
+ FAIL  src/app/api/admin/operations/tasks/[id]/complete/route.test.ts [ src/app/api/admin/operations/tasks/[id]/complete/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/tasks/[id]/complete/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/tasks/[id]/complete/route.ts:1:42
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { logError } from "@/lib/observability/logger";
+  3  |  import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[48/55]⎯
+
+ FAIL  src/app/api/admin/operations/tasks/[id]/defer/route.test.ts [ src/app/api/admin/operations/tasks/[id]/defer/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/operations/tasks/[id]/defer/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/operations/tasks/[id]/defer/route.ts:2:42
+  1  |  import { createHash } from "node:crypto";
+  2  |  import { NextResponse } from "next/server";
+     |                                ^
+  3  |  import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
+  4  |  import { logError } from "@/lib/observability/logger";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[49/55]⎯
+
+ FAIL  src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.test.ts [ src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.test.ts ]
+Error: Failed to resolve import "next/server" from "src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.ts:1:42
+  1  |  import { NextResponse } from "next/server";
+     |                                ^
+  2  |  import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+  3  |  import { logError } from "@/lib/observability/logger";
+ ❯ TransformPluginContext._formatLog ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29914:39
+ ❯ TransformPluginContext.error ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29911:14
+ ❯ normalizeUrl ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:26975:18
+ ❯ ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27038:30
+ ❯ TransformPluginContext.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:27006:4
+ ❯ EnvironmentPluginContainer.transform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:29699:14
+ ❯ loadAndTransform ../../Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19725:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[50/55]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/observability/logger.test.ts > logError > forwards to Sentry with scope tag and safe error fields only
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/lib/observability/logger.test.ts:27:30
+     25|     logError("care-plans.approve", err, { residentId: "abc-123" });
+     26|
+     27|     expect(captureException).toHaveBeenCalledTimes(1);
+       |                              ^
+     28|     const [forwardedErr, opts] = captureException.mock.calls[0] as [
+     29|       unknown,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[51/55]⎯
+
+ FAIL  src/lib/observability/logger.test.ts > logError > never serialises the full error object — extras shape is fixed
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/lib/observability/logger.test.ts:52:30
+     50|     logError("rounding.complete", supabaseStyleErr);
+     51|
+     52|     expect(captureException).toHaveBeenCalledTimes(1);
+       |                              ^
+     53|     const [, opts] = captureException.mock.calls[0] as [unknown, { ext…
+     54|     expect(opts.extra).toEqual({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[52/55]⎯
+
+ FAIL  src/lib/observability/logger.test.ts > logError > redacts known PHI patterns in the context payload
+TypeError: undefined is not iterable (cannot read property Symbol(Symbol.iterator))
+ ❯ src/lib/observability/logger.test.ts:71:22
+     69|     });
+     70|
+     71|     const [, opts] = captureException.mock.calls[0] as [unknown, { ext…
+       |                      ^
+     72|     expect(opts.extra.note).toBe("resident SSN [REDACTED_SSN] on chart…
+     73|     expect(opts.extra.counts).toEqual({ logs: 4 });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[53/55]⎯
+
+ FAIL  src/lib/observability/logger.test.ts > logError > accepts a string err and wraps it as a synthetic Error for Sentry
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/lib/observability/logger.test.ts:79:30
+     77|     logError("executive.refresh.edge", "edge invocation failed", { sta…
+     78|
+     79|     expect(captureException).toHaveBeenCalledTimes(1);
+       |                              ^
+     80|     const [forwardedErr, opts] = captureException.mock.calls[0] as [
+     81|       unknown,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[54/55]⎯
+
+ FAIL  src/lib/observability/logger.test.ts > logWarn > forwards a warning message + redacted context to Sentry
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/lib/observability/logger.test.ts:113:28
+    111|     });
+    112|
+    113|     expect(captureMessage).toHaveBeenCalledTimes(1);
+       |                            ^
+    114|     const [msg, opts] = captureMessage.mock.calls[0] as [
+    115|       string,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[55/55]⎯
+
+
+ Test Files  51 failed | 566 passed (617)
+      Tests  5 failed | 4153 passed | 2 skipped (4160)
+   Start at  20:37:40
+   Duration  79.61s (transform 67.23s, setup 86.05s, import 459.37s, tests 108.70s, environment 366.44s)

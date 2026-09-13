@@ -1,0 +1,121 @@
+{
+  "segment": "COL-149-HFO-CORPORATE-HISTORY",
+  "timestamp": "2026-09-13T00:34:21.105Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 33,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 656,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 1755,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 20937,
+      "stdout": "[gitleaks] detector regression PASS: generic-api-key remains active\n[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n8:34PM INF 2035 commits scanned.\n8:34PM INF scanned ~83070964 bytes (83.07 MB) in 19.8s\n8:34PM INF no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 100193,
+      "stdout": "Constitution lint passed for smart-rounding scope (30 files).\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Haven Corporate Activity History/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 146,
+      "stdout": "[migrations:check] PASS: 366 migration(s) in /Users/brianlewis/Circle of Life/Haven Corporate Activity History/supabase/migrations — sequence 001..363\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": true,
+      "command": "npm run migrations:verify:pg",
+      "status": "passed",
+      "duration_ms": 63823,
+      "stdout": "[migrations:verify:pg] PASS (366 migration files, 46 SQL probes; native PostgreSQL with Supabase stubs)\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 2752,
+      "stdout": "[migrations:check] PASS: 366 migration(s) in /Users/brianlewis/Circle of Life/Haven Corporate Activity History/supabase/migrations — sequence 001..363\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n▲ Next.js 16.3.4 (Turbopack)\n✓ Running next.config.ts took 252ms\n⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache\nAttention: Next.js now collects completely anonymous telemetry regarding usage.\nThis information is used to shape Next.js' roadmap and prioritize features.\nYou can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:\nhttps://nextjs.org/telemetry\n\n- Experiments (use with caution):\n  · clientTraceMetadata\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n",
+      "stderr": "\u001b[1m\u001b[31mFATAL\u001b[39m\u001b[0m: An unexpected Turbopack error occurred:\nSymlink [project]/node_modules is invalid, it points out of the filesystem root\n\nDebug info:\n- Execution of get_all_written_entrypoints_with_issues_operation failed\n- Execution of EntrypointsOperation::new failed\n- Execution of all_entrypoints_write_to_disk_operation failed\n- Execution of output_assets_operation failed\n- Execution of Project::get_all_endpoint_groups_with_app_route_filter failed\n- Execution of Project::entrypoints_with_app_route_filter failed\n- Execution of AppProject::routes_with_filter failed\n- Execution of directory_tree_to_entrypoints_internal failed\n- Execution of directory_tree_to_loader_tree failed\n- Execution of try_get_next_package failed\n- Execution of resolve failed\n- Execution of resolve_internal failed\n- Execution of find_package failed\n- Symlink [project]/node_modules is invalid, it points out of the filesystem root\n\n> Build error occurred\nError [TurbopackInternalError]: Symlink [project]/node_modules is invalid, it points out of the filesystem root\n\nDebug info:\n- Execution of get_all_written_entrypoints_with_issues_operation failed\n- Execution of EntrypointsOperation::new failed\n- Execution of all_entrypoints_write_to_disk_operation failed\n- Execution of output_assets_operation failed\n- Execution of Project::get_all_endpoint_groups_with_app_route_filter failed\n- Execution of Project::entrypoints_with_app_route_filter failed\n- Execution of AppProject::routes_with_filter failed\n- Execution of directory_tree_to_entrypoints_internal failed\n- Execution of directory_tree_to_loader_tree failed\n- Execution of try_get_next_package failed\n- Execution of resolve failed\n- Execution of resolve_internal failed\n- Execution of find_package failed\n- Symlink [project]/node_modules is invalid, it points out of the filesystem root\n    at ignore-listed frames {\n  type: 'TurbopackInternalError',\n  location: undefined\n}\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 641,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.preview-prerequisite",
+      "required": true,
+      "status": "failed",
+      "command": "start verified UI preview",
+      "stderr": "UI verification cannot start because the production build failed."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 2,
+    "skipped": 1,
+    "blocking_failures": [
+      "qa.root-build",
+      "cdo.preview-prerequisite"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Haven Corporate Activity History/test-results/agent-gates/2026-09-13T00-34-21-105Z-COL-149-HFO-CORPORATE-HISTORY.json"
+  ]
+}

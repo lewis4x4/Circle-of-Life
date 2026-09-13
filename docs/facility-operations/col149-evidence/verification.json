@@ -1,0 +1,29 @@
+{
+  "mission_alignment": "pass",
+  "base": "08fd3a43da2fbfaa42d2d37051774ab7d196eb07",
+  "branch": "codex/hfo-col149-corporate-history",
+  "tests": {
+    "passed": 4438,
+    "skipped": 2,
+    "files": 617,
+    "log": "vitest-verified.log"
+  },
+  "focused_independent_tests": 28,
+  "typecheck": "PASS",
+  "lint": "PASS",
+  "migration_files": 366,
+  "sql_probes": 46,
+  "strict_ui_gate": {
+    "verdict": "PASS",
+    "artifact": "test-results/agent-gates/2026-09-13T00-39-38-497Z-COL-149-HFO-CORPORATE-HISTORY.json",
+    "required_failed": 0
+  },
+  "technical_review": "APPROVE",
+  "unchanged_preexisting_worktrees": 39,
+  "environment": "Local source and native PostgreSQL with Supabase stubs; public UI preview and component axe",
+  "not_tested": [
+    "Authenticated hosted corporate-history browser",
+    "Real Homewood staff workflow and operating-cycle acceptance"
+  ],
+  "no_migration_or_dependency_added": true
+}

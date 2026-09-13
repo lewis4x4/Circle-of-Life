@@ -1,0 +1,22 @@
+
+> circle-of-life@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Corporate Activity History
+
+8:39:57 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Corporate Activity History/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven Corporate Activity History/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Corporate%20Activity%20History/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Corporate%20Activity%20History/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Corporate%20Activity%20History/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Corporate%20Activity%20History/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Corporate%20Activity%20History/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Corporate%20Activity%20History/node_modules/vite/dist/node/chunks/node.js:19691:22)
+
+ Test Files  617 passed (617)
+      Tests  4438 passed | 2 skipped (4440)
+   Start at  20:39:40
+   Duration  77.63s (transform 50.85s, setup 89.43s, import 473.71s, tests 84.63s, environment 354.60s)

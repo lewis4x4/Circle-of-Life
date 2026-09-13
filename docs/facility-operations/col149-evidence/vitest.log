@@ -1,0 +1,22 @@
+
+> circle-of-life@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Corporate Activity History
+
+8:34:21 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven HFO Staging Integration/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven HFO Staging Integration/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20HFO%20Staging%20Integration/node_modules/vite/dist/node/chunks/node.js:19691:22)
+
+ Test Files  615 passed (615)
+      Tests  4421 passed | 2 skipped (4423)
+   Start at  20:33:57
+   Duration  87.00s (transform 63.02s, setup 93.07s, import 530.53s, tests 117.18s, environment 392.66s)
