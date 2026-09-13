@@ -1,0 +1,71 @@
+{
+  "result": "BASELINE_CAPTURED",
+  "results": [
+    {
+      "route": "/admin/billing/invoices",
+      "width": 375,
+      "status": "BASELINE_CAPTURED",
+      "rEvents": 0,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": false,
+        "reason": "No R event expected in invoices baseline"
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "width": 1440,
+      "status": "BASELINE_CAPTURED",
+      "rEvents": 0,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": false,
+        "reason": "No R event expected in invoices baseline"
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing",
+      "width": 375,
+      "status": "BASELINE_CAPTURED",
+      "rEvents": 1,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    },
+    {
+      "route": "/admin/billing",
+      "width": 1440,
+      "status": "BASELINE_CAPTURED",
+      "rEvents": 1,
+      "buttonEvents": 1,
+      "rScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      },
+      "buttonScopedRefetch": {
+        "observed": true,
+        "status": 200,
+        "rowCount": 0
+      }
+    }
+  ]
+}

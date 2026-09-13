@@ -661,7 +661,6 @@ function BillingInvoiceLedgerInner({
         searchInputRef.current?.focus();
       }
       if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey) {
-        if (!isOverviewChrome) return;
         e.preventDefault();
         triggerBillingArRefresh();
       }

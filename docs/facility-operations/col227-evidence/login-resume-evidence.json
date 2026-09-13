@@ -1,0 +1,7 @@
+{
+  "login_succeeded": true,
+  "existing_actor_site_run_match_committed_COL228_proof": true,
+  "hook_claims_verified": true,
+  "session_seconds_remaining": 3535,
+  "creation_paths_skipped": "Existing user and rows_created checkpoint were present before setup; no actor/rows/grants restoration was run"
+}

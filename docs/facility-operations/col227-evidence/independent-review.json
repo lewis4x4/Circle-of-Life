@@ -1,0 +1,33 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "at": "2026-09-13T07:58:31.358816+00:00",
+  "findings": [],
+  "scope": "COL227 sole invoice-page R exclusion removal. Both billing routes at375/1440 produce one actual scoped200 refetch for R and button; typing/modifier guards, focus, scope, slash and export preserved. Synthetic modifier events distinguished from trusted native typing keys. No production release claim.",
+  "gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/test-results/agent-gates/2026-09-13T07-53-51-349Z-COL-227-INVOICE-REFRESH.json",
+    "sha256": "052fd7c0d13ca99c287e7390cd7c631ae8f96a9f0f15ec0cf4ef978c38f7e42f",
+    "required_checks": 11,
+    "all_passed": true
+  },
+  "artifacts_sha256": {
+    "after-source-manifest.json": "532b2be9c728833009e9678612ceae61581dc4f776cf30b2ab1dd038b55fd6ed",
+    "after-report.json": "dacae16c02560ea46307e3251a79c840ac667ace845a15366a6708bc289a218c",
+    "cleanup.json": "2e61187e85177583e3f9a0a96e6c5b684f2cd50570b2fe38b492e32761b31fb5"
+  },
+  "cleanup": {
+    "active": false,
+    "banned": true,
+    "live_grants": 0,
+    "site_retired": true,
+    "entity_retired": true,
+    "port_4343_closed": true,
+    "owned_app_pids": [
+      24031,
+      24058,
+      24060
+    ],
+    "shared_COL228_retention_obligation": "Completed: COL227 final proof finished; shared fixture now retired"
+  }
+}
