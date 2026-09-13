@@ -3,6 +3,8 @@ import { TopBar } from "../TopBar";
 import { cn } from "@/lib/utils";
 
 export type PageShellProps = {
+  /** The containing application shell owns document landmarks. */
+  embedded?: boolean;
   title: string;
   subtitle?: string;
   scope?: React.ReactNode;
@@ -18,6 +20,7 @@ export type PageShellProps = {
 };
 
 export function PageShell({
+  embedded = false,
   title,
   subtitle,
   scope,
@@ -30,6 +33,7 @@ export function PageShell({
   audit,
   className,
 }: PageShellProps) {
+  const Content = embedded ? "div" : "main";
   const hasRightRail = rightRail != null;
 
   return (
@@ -40,6 +44,7 @@ export function PageShell({
       )}
     >
       <TopBar
+        embedded={embedded}
         title={title}
         subtitle={subtitle}
         scope={scope}
@@ -66,9 +71,9 @@ export function PageShell({
             : "grid-cols-1",
         )}
       >
-        <main id="page-shell-main" className="min-w-0">
+        <Content id="page-shell-main" className="min-w-0">
           {children}
-        </main>
+        </Content>
 
         {hasRightRail && (
           <aside
@@ -80,7 +85,7 @@ export function PageShell({
         )}
       </div>
 
-      <AuditFooter {...audit} />
+      <AuditFooter {...audit} embedded={embedded} />
     </div>
   );
 }

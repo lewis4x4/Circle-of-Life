@@ -1,0 +1,77 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "width": 1440,
+      "view": "today",
+      "status": "PASS",
+      "landmarkViolations": [],
+      "skipAfterEnter": {
+        "hash": "#main-content",
+        "activeTag": "BODY",
+        "activeId": "",
+        "targetExists": true
+      },
+      "nextFocus": {
+        "tag": "A",
+        "text": "Haven",
+        "withinTarget": true
+      },
+      "otherViolations": []
+    },
+    {
+      "width": 1440,
+      "view": "history",
+      "status": "PASS",
+      "landmarkViolations": [],
+      "skipAfterEnter": {
+        "hash": "#main-content",
+        "activeTag": "BODY",
+        "activeId": "",
+        "targetExists": true
+      },
+      "nextFocus": {
+        "tag": "A",
+        "text": "Haven",
+        "withinTarget": true
+      },
+      "otherViolations": []
+    },
+    {
+      "width": 375,
+      "view": "today",
+      "status": "PASS",
+      "landmarkViolations": [],
+      "skipAfterEnter": {
+        "hash": "#main-content",
+        "activeTag": "BODY",
+        "activeId": "",
+        "targetExists": true
+      },
+      "nextFocus": {
+        "tag": "A",
+        "text": "Haven",
+        "withinTarget": true
+      },
+      "otherViolations": []
+    },
+    {
+      "width": 375,
+      "view": "history",
+      "status": "PASS",
+      "landmarkViolations": [],
+      "skipAfterEnter": {
+        "hash": "#main-content",
+        "activeTag": "BODY",
+        "activeId": "",
+        "targetExists": true
+      },
+      "nextFocus": {
+        "tag": "A",
+        "text": "Haven",
+        "withinTarget": true
+      },
+      "otherViolations": []
+    }
+  ]
+}

@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils";
 import { CopilotButtonStub } from "./CopilotButtonStub";
 
 export type TopBarProps = {
+  /** Render page chrome without claiming an application-level landmark. */
+  embedded?: boolean;
   title: string;
   subtitle?: string;
   scope?: React.ReactNode;
@@ -14,6 +16,7 @@ export type TopBarProps = {
 };
 
 export function TopBar({
+  embedded = false,
   title,
   subtitle,
   scope,
@@ -24,10 +27,11 @@ export function TopBar({
   userMenu,
   className,
 }: TopBarProps) {
+  const Container = embedded ? "div" : "header";
   return (
-    <header
-      role="banner"
-      aria-label="Page top bar"
+    <Container
+      role={embedded ? undefined : "banner"}
+      aria-label={embedded ? undefined : "Page top bar"}
       className={cn(
         "flex flex-col gap-3 border-b border-border bg-surface px-4 py-3 md:flex-row md:items-start md:justify-between",
         className,
@@ -62,7 +66,7 @@ export function TopBar({
         )}
         {userMenu}
       </div>
-    </header>
+    </Container>
   );
 }
 

@@ -1,0 +1,246 @@
+{
+  "at": "2026-09-13T02:30:48.524Z",
+  "target": "iwcnajanvjvynolltflw",
+  "base": "http://127.0.0.1:4322",
+  "sourceSha": "cf8b97b8da8924c48ec7ac7c624feec392bf9404",
+  "diffSha256": "50505c622d5ba62c0def16469f61a34d37158f382e55db13b4a1a65f0c8454e7",
+  "sourceFiles": {
+    "src/app/(admin)/admin/operations/work/page.test.tsx": "ff5913518e10bfca2b45080b1949b9fdd5c068b97e98f587815aebdd165711c4",
+    "src/app/(admin)/admin/operations/work/page.tsx": "510da98205a9b0ebfbab7614252078f73b18ca475a07d6e702521f572da1aa54",
+    "src/design-system/components/AuditFooter/AuditFooter.tsx": "c4f331cf00f406602e8dee4b6302b9bbfdbe43ec0e5b6cdb47e02a839e5f093f",
+    "src/design-system/components/PageShell/PageShell.test.tsx": "e6d914296baa2cac8e9ffd7d3b56775c184bf66529a303e9e8e95598686fbd8a",
+    "src/design-system/components/PageShell/PageShell.tsx": "90565ad68a820ed2097b2a389a3ac1bf71708b9925c2223bf2654bf0e74ea385",
+    "src/design-system/components/TopBar/TopBar.tsx": "8a24b4857a7a8cad01eab87e4adc66d264fff735d84e71347e5f84ff3325e80a"
+  },
+  "fixture": {
+    "actor": "53728e88-74d8-48a1-9684-1f7cac5d2e7b",
+    "site": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+    "run": "col222-832fe31996fb"
+  },
+  "results": [
+    {
+      "width": 1440,
+      "view": "today",
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "workspace": {
+        "actor": {
+          "id": "53728e88-74d8-48a1-9684-1f7cac5d2e7b",
+          "name": "COL222 Synthetic Operator",
+          "role": "owner"
+        },
+        "facility_id": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+        "partial": [],
+        "groups": [
+          "due_today",
+          "outstanding",
+          "unknown_schedule",
+          "legacy"
+        ]
+      },
+      "route": "/admin/operations/work",
+      "selectedFacility": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+      "firstFocus": {
+        "text": "Skip to main content",
+        "href": "#main-content"
+      },
+      "skipAfterEnter": {
+        "hash": "#main-content",
+        "activeTag": "BODY",
+        "activeId": "",
+        "targetExists": true
+      },
+      "nextFocus": {
+        "tag": "A",
+        "text": "Haven",
+        "withinTarget": true
+      },
+      "axeViolations": [],
+      "landmarkViolations": [],
+      "landmarkPasses": [
+        "landmark-banner-is-top-level",
+        "landmark-main-is-top-level",
+        "landmark-no-duplicate-banner",
+        "landmark-no-duplicate-main"
+      ],
+      "semanticCounts": {
+        "main": 1,
+        "nestedMain": 0,
+        "nestedBanner": 0,
+        "nestedContentinfo": 0
+      },
+      "screenshot": "today-1440.png",
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nFind a page…\n⌘K\nReport incident\nCS\nHome\nExecutive\nWeekly Stand Up\nReports hub\nFacilities\nBilling & AR\nSite work\n\nCurrent person: COL222 Synthetic Operator\n\nSite\nChoose a site\ncol222-832fe31996fb Site\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\nDue today\n\nNo work in this view.\n\nOutstanding from earlier\n\nNo work in this view.\n\nUnknown schedule\nSynthetic facilities check\n\ncol222-832fe31996fb Site · Unknown schedule\n\nStatus: pending · none\n\nOpen issues: 0\n\nRecord unscheduled work\nMore options\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: COL222 Synthetic Operator\n\nTask help and handover\nLegacy tasks\n\nNo unfinished legacy tasks.\n\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "view": "history",
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "workspace": {
+        "actor": {
+          "id": "53728e88-74d8-48a1-9684-1f7cac5d2e7b",
+          "name": "COL222 Synthetic Operator",
+          "role": "owner"
+        },
+        "facility_id": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+        "partial": [],
+        "groups": [
+          "history",
+          "next_cursor",
+          "total"
+        ]
+      },
+      "route": "/admin/operations/work",
+      "selectedFacility": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+      "firstFocus": {
+        "text": "Skip to main content",
+        "href": "#main-content"
+      },
+      "skipAfterEnter": {
+        "hash": "#main-content",
+        "activeTag": "BODY",
+        "activeId": "",
+        "targetExists": true
+      },
+      "nextFocus": {
+        "tag": "A",
+        "text": "Haven",
+        "withinTarget": true
+      },
+      "axeViolations": [],
+      "landmarkViolations": [],
+      "landmarkPasses": [
+        "landmark-banner-is-top-level",
+        "landmark-main-is-top-level",
+        "landmark-no-duplicate-banner",
+        "landmark-no-duplicate-main"
+      ],
+      "semanticCounts": {
+        "main": 1,
+        "nestedMain": 0,
+        "nestedBanner": 0,
+        "nestedContentinfo": 0
+      },
+      "screenshot": "history-1440.png",
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nFind a page…\n⌘K\nReport incident\nCS\nHome\nExecutive\nWeekly Stand Up\nReports hub\nFacilities\nBilling & AR\nSite work\n\nCurrent person: COL222 Synthetic Operator\n\nSite\nChoose a site\ncol222-832fe31996fb Site\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\n\n1 total entries across this site\n\nHistory\nSynthetic facilities check\n\ncol222-832fe31996fb Site · Unknown schedule\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\nCorrect\nReverse\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: COL222 Synthetic Operator\n\nRefresh receipt\n\nRecorded by COL222 Synthetic Operator at Sep 12, 2026, 10:29 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: not_required\n\nReceipt state: completed\n\nPerformed at Sep 12, 2026, 10:29 PM (America/New_York)\n\nPerformer: self\n\nNote: Synthetic landmark verification\n\nTask help and handover\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "view": "today",
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "workspace": {
+        "actor": {
+          "id": "53728e88-74d8-48a1-9684-1f7cac5d2e7b",
+          "name": "COL222 Synthetic Operator",
+          "role": "owner"
+        },
+        "facility_id": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+        "partial": [],
+        "groups": [
+          "due_today",
+          "outstanding",
+          "unknown_schedule",
+          "legacy"
+        ]
+      },
+      "route": "/admin/operations/work",
+      "selectedFacility": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+      "firstFocus": {
+        "text": "Skip to main content",
+        "href": "#main-content"
+      },
+      "skipAfterEnter": {
+        "hash": "#main-content",
+        "activeTag": "BODY",
+        "activeId": "",
+        "targetExists": true
+      },
+      "nextFocus": {
+        "tag": "A",
+        "text": "Haven",
+        "withinTarget": true
+      },
+      "axeViolations": [],
+      "landmarkViolations": [],
+      "landmarkPasses": [
+        "landmark-banner-is-top-level",
+        "landmark-main-is-top-level",
+        "landmark-no-duplicate-banner",
+        "landmark-no-duplicate-main"
+      ],
+      "semanticCounts": {
+        "main": 1,
+        "nestedMain": 0,
+        "nestedBanner": 0,
+        "nestedContentinfo": 0
+      },
+      "screenshot": "today-375.png",
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCS\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nSite work\n\nCurrent person: COL222 Synthetic Operator\n\nSite\nChoose a site\ncol222-832fe31996fb Site\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\nDue today\n\nNo work in this view.\n\nOutstanding from earlier\n\nNo work in this view.\n\nUnknown schedule\nSynthetic facilities check\n\ncol222-832fe31996fb Site · Unknown schedule\n\nStatus: pending · none\n\nOpen issues: 0\n\nRecord unscheduled work\nMore options\nReport an issue\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: COL222 Synthetic Operator\n\nTask help and handover\nLegacy tasks\n\nNo unfinished legacy tasks.\n\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "view": "history",
+      "errors": [],
+      "httpFailures": [],
+      "httpStatus": 200,
+      "workspace": {
+        "actor": {
+          "id": "53728e88-74d8-48a1-9684-1f7cac5d2e7b",
+          "name": "COL222 Synthetic Operator",
+          "role": "owner"
+        },
+        "facility_id": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+        "partial": [],
+        "groups": [
+          "history",
+          "next_cursor",
+          "total"
+        ]
+      },
+      "route": "/admin/operations/work",
+      "selectedFacility": "d061aaaa-c10d-4ca2-a632-290bb0a21e33",
+      "firstFocus": {
+        "text": "Skip to main content",
+        "href": "#main-content"
+      },
+      "skipAfterEnter": {
+        "hash": "#main-content",
+        "activeTag": "BODY",
+        "activeId": "",
+        "targetExists": true
+      },
+      "nextFocus": {
+        "tag": "A",
+        "text": "Haven",
+        "withinTarget": true
+      },
+      "axeViolations": [],
+      "landmarkViolations": [],
+      "landmarkPasses": [
+        "landmark-banner-is-top-level",
+        "landmark-main-is-top-level",
+        "landmark-no-duplicate-banner",
+        "landmark-no-duplicate-main"
+      ],
+      "semanticCounts": {
+        "main": 1,
+        "nestedMain": 0,
+        "nestedBanner": 0,
+        "nestedContentinfo": 0
+      },
+      "screenshot": "history-375.png",
+      "bodyText": "Skip to main content\nH\naven\nAll facilities\nCS\nCommand\nPipeline\nClinical\nQuality\nWorkforce\nBusiness\nKnowledge\nSite work\n\nCurrent person: COL222 Synthetic Operator\n\nSite\nChoose a site\ncol222-832fe31996fb Site\nSynthetic facility 0001\nSynthetic facility 0002\nSynthetic facility 0003\nSynthetic facility 0004\nSynthetic facility 0005\nToday\nUpcoming\nHistory\nMine\nUse Sign out in the account menu before another person uses this device. Site shows all work by default, including unassigned duties.\n\n1 total entries across this site\n\nHistory\nSynthetic facilities check\n\ncol222-832fe31996fb Site · Unknown schedule\n\nStatus: completed · completed\n\nOpen issues: 0\n\nView receipt history\nReport an issue\nCorrect\nReverse\n\nReady to record\n\nNothing is waiting to be saved.\n\nCurrent person: COL222 Synthetic Operator\n\nRefresh receipt\n\nRecorded by COL222 Synthetic Operator at Sep 12, 2026, 10:29 PM (America/New_York)\n\nOutcome: performed\n\nEvidence: not_required\n\nReceipt state: completed\n\nPerformed at Sep 12, 2026, 10:29 PM (America/New_York)\n\nPerformer: self\n\nNote: Synthetic landmark verification\n\nTask help and handover\nAudit Trail\nLive\nUpdated just now\nEDT",
+      "status": "PASS"
+    }
+  ],
+  "sourceUnchanged": true,
+  "status": "PASS"
+}

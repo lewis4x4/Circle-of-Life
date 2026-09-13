@@ -1,0 +1,12 @@
+{
+  "active": false,
+  "live_grants": 0,
+  "site_retired": true,
+  "banned": true,
+  "owned_app_pids": [
+    72255,
+    72298,
+    72317
+  ],
+  "app_port_4322_closed": true
+}
