@@ -1,0 +1,37 @@
+BEGIN
+CREATE FUNCTION
+SELECT 1
+DO
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+                                                                                                                                                                          set_config
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"iat": 1789315246, "sub": "bbbe0d5e-5f2b-429f-a8b2-14b7ee1199d0", "role": "authenticated", "app_role": "owner", "session_id": "ed83e3cb-9c77-4801-a653-921a6b98315a", "app_metadata": {"app_role": "owner", "organization_id": "00000000-0000-0000-0000-000000000001"}, "organization_id": "00000000-0000-0000-0000-000000000001", "auth_claim_version": 2}
+(1 row)
+
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ALTER TABLE
+INSERT 0 1
+INSERT 0 1
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+SELECT 1
+GRANT
+CREATE TABLE
+GRANT
+CREATE FUNCTION
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+psql:supabase/tests/review_hfo_finance_source_snapshots.sql:62: ERROR:  Account balances change only through ledger transactions
+CONTEXT:  PL/pgSQL function public.haven_guard_cash_balance() line 5 at RAISE

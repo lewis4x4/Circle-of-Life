@@ -1,0 +1,207 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Finance Operations Sources
+
+ ❯ src/app/(admin)/admin/operations/work/_components/finance-source-panel.test.tsx (6 tests | 1 failed) 327ms
+   × keeps latepayment economic/service/recording dates distinct with truthful coverage 98ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/(admin)/admin/operations/work/_components/finance-source-panel.test.tsx > keeps latepayment economic/service/recording dates distinct with truthful coverage
+TestingLibraryElementError: Found multiple elements with the text: Economic / source date: 2026-08-15
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<p>[39m
+  [0mEconomic / source date: [0m
+  [0m2026-08-15[0m
+[36m</p>[39m
+
+Ignored nodes: comments, script, style
+[36m<p>[39m
+  [0mEconomic / source date: [0m
+  [0m2026-08-15[0m
+[36m</p>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<details[39m
+      [33mopen[39m=[32m""[39m
+    [36m>[39m
+      [36m<summary[39m
+        [33mclass[39m=[32m"min-h-11 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 cursor-pointer"[39m
+      [36m>[39m
+        [0mFinance and census source context[0m
+      [36m</summary>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Finance and census source context"[39m
+        [33mclass[39m=[32m"space-y-3 pt-3"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<p>[39m
+          [0mSource context only. Refresh does not record payments, deposits, census changes, billable days, human review or external acknowledgment.[0m
+        [36m</p>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"block"[39m
+        [36m>[39m
+          [0mSource period start[0m
+          [36m<input[39m
+            [33mclass[39m=[32m"min-h-11 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"[39m
+            [33mtype[39m=[32m"date"[39m
+            [33mvalue[39m=[32m"2026-08-01"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"block"[39m
+        [36m>[39m
+          [0mSource period end[0m
+          [36m<input[39m
+            [33mclass[39m=[32m"min-h-11 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"[39m
+            [33mtype[39m=[32m"date"[39m
+            [33mvalue[39m=[32m"2026-08-31"[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<p>[39m
+          [0mChoose 1–366 inclusive facility-calendar days. Economic dates, service periods and recording times remain separate.[0m
+        [36m</p>[39m
+        [36m<details>[39m
+          [36m<summary[39m
+            [33mclass[39m=[32m"min-h-11 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 cursor-pointer"[39m
+          [36m>[39m
+            [0mAll 22 source items and 27 components[0m
+          [36m</summary>[39m
+          [36m<ul>[39m
+            [36m<li>[39m
+              [0mAL-D04[0m
+              [0m · [0m
+              [0mRecord deposit[0m
+              [0m · [0m
+              [0mlinked domain action[0m
+              [0m. [0m
+              [0mPayment context is not a bank deposit or scanned deposit proof.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-D04[0m
+              [0m · [0m
+              [0mScan deposit copies[0m
+              [0m · [0m
+              [0mlinked domain action[0m
+              [0m. [0m
+              [0mPayment context is not a bank deposit or scanned deposit proof.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-D17[0m
+              [0m · [0m
+              [0mUpdate census[0m
+              [0m · [0m
+              [0mlinked domain action[0m
+              [0m. [0m
+              [0mRecorded census is not confirmed physical presence, balanced census or billable days.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-D19[0m
+              [0m · [0m
+              [0mUpdate admission and discharge log[0m
+              [0m · [0m
+              [0mlinked domain action[0m
+              [0m. [0m
+              [0mCensus counts do not establish a reconciled admission/discharge event log.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-W08[0m
+              [0m · [0m
+              [0mRecord DCF admission or discharge notice[0m
+              [0m · [0m
+              [0mlinked domain action[0m
+              [0m. [0m
+              [0mDCF sent/delivered acknowledgment is unavailable; retain manual evidence.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-M07[0m
+              [0m · [0m
+              [0mBalance census[0m
+              [0m · [0m
+              [0mlinked domain action[0m
+              [0m. [0m
+              [0mDaily census coverage does not prove balancing approval or saving an approved version.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-M07[0m
+              [0m · [0m
+              [0mSave census version[0m
+              [0m · [0m
+              [0mlinked domain action[0m
+              [0m. [0m
+              [0mDaily census coverage does not prove balancing approval or saving an approved version.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-M09[0m
+              [0m · [0m
+              [0mReview end-of-month Census component[0m
+              [0m · [0m
+              [0mrecord review[0m
+              [0m. [0m
+              [0mEnd-of-month review and approval remain explicit human work; FPC meaning is unconfirmed.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-M09[0m
+              [0m · [0m
+              [0mReview end-of-month FPC component[0m
+              [0m · [0m
+              [0mrecord review[0m
+              [0m. [0m
+              [0mEnd-of-month review and approval remain explicit human work; FPC meaning is unconfirmed.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-M09[0m
+              [0m · [0m
+              [0mReview end-of-month Trust component[0m
+              [0m · [0m
+              [0mrecord review[0m
+              [0m. [0m
+              [0mEnd-of-month review and approval remain explicit human work; FPC meaning is unconfirmed.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-M12[0m
+              [0m · [0m
+              [0mMonthly MCD Verification[0m
+              [0m · [0m
+              [0mrecord review[0m
+              [0m. [0m
+              [0mMCD meaning and subject are unconfirmed; do not substitute Medicaid.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-A09[0m
+              [0m · [0m
+              [0mAudit admission and discharge log[0m
+              [0m · [0m
+              [0mrecord review[0m
+              [0m. [0m
+              [0mHistorical admission/discharge log audit is not established by current census counts.[0m
+            [36m</li>[39m
+            [36m<li>[39m
+              [0mAL-Q01[0m
+              [0m · [0m
+              [0mMail trust statement[0m
+              [0m · [0m
+              [0mlinked domain action[0m
+              [0m. [0m
+              [0mTrust period context does...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/(admin)/admin/operations/work/_components/finance-source-panel.test.tsx:15:352
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  11:57:44
+   Duration  2.48s (transform 328ms, setup 47ms, import 1.66s, tests 327ms, environment 263ms)

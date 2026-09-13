@@ -1,0 +1,21 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextResponse } from "next/server";
+vi.mock("@/lib/operations/auth",()=>({requireOperationsActor:vi.fn(),revalidateOperationsActor:vi.fn()}));
+import { requireOperationsActor,revalidateOperationsActor } from "@/lib/operations/auth";
+import { GET } from "./route";
+import { POST } from "./reconcile/route";
+const id="00000000-0000-0000-0002-000000000003",rpc=vi.fn(),actor={id,organizationId:id,appRole:"owner",currentActor:{client:{rpc}}};
+const input={task_id:id,activity_key:"hfo-al-d17-01",subject_kind:"facility",resident_id:null,facility_id:id,start_date:"2026-08-01",end_date:"2026-08-31",timezone:"America/New_York",source_version:"a".repeat(64),complete:true,families:["census","payments","trust","finance_handoff"].map(family=>({family,availability:"available",reason:"Native context",records:[],missing_dates:[]})),history:[],history_complete:true};
+const get=()=>GET(new Request(`https://local.test?task_id=${id}&start_date=2026-08-01&end_date=2026-08-31`));
+const post=()=>POST(new Request("https://local.test",{method:"POST",body:JSON.stringify({task_id:id,start_date:input.start_date,end_date:input.end_date,request_key:"refresh-001"})}));
+beforeEach(()=>{vi.resetAllMocks();vi.mocked(requireOperationsActor).mockResolvedValue({actor} as never);vi.mocked(revalidateOperationsActor).mockResolvedValue({actor} as never);rpc.mockResolvedValue({data:input,error:null});});
+describe("task/period bound finance source API",()=>{
+ it("revalidates before one current-caller read and returns no-store",async()=>{const r=await get();expect(r.status).toBe(200);expect(r.headers.get("cache-control")).toBe("no-store");expect(rpc).toHaveBeenCalledTimes(1);expect((await r.json()).fields).toHaveLength(27);});
+ it("uses fresh permission-filtered data after reconcile",async()=>{rpc.mockResolvedValueOnce({data:{...input,source_version:"stale"},error:null}).mockResolvedValueOnce({data:{...input,families:input.families.map(row=>({...row,availability:"unavailable"}))},error:null});const r=await post();expect(r.status).toBe(200);const body=await r.json();expect(JSON.stringify(body)).not.toContain("stale");expect(body.families.every((x:{availability:string})=>x.availability==="unavailable")).toBe(true);});
+ it("does not issue command when actor changes during initial revalidation",async()=>{vi.mocked(revalidateOperationsActor).mockResolvedValue({actor:{...actor,id:"other"}} as never);expect((await post()).status).toBe(404);expect(rpc).not.toHaveBeenCalled();});
+ it("does not call native data until revalidation completes",async()=>{vi.mocked(revalidateOperationsActor).mockImplementation(async()=>{rpc.mockResolvedValue({data:null,error:{code:"42501"}});return {actor} as never;});expect((await get()).status).toBe(404);});
+ it.each([{...input,complete:false},{...input,end_date:"2026-07-31"},{...input,task_id:"00000000-0000-0000-0002-000000000004"}])("refuses partial/wrong-period/wrong-task success",async bad=>{rpc.mockResolvedValue({data:bad,error:null});expect((await get()).status).toBe(503);});
+ it("returns incomplete-read failure instead of empty results",async()=>{rpc.mockResolvedValue({data:null,error:{code:"54000"}});const r=await get();expect(r.status).toBe(503);expect(await r.json()).not.toHaveProperty("families");});
+ it("preserves request scope conflict",async()=>{rpc.mockResolvedValue({data:null,error:{code:"23505"}});expect((await post()).status).toBe(409);});
+ it("rejects anonymous before native work",async()=>{vi.mocked(requireOperationsActor).mockResolvedValue({response:NextResponse.json({}, {status:401})});expect((await get()).status).toBe(401);expect(rpc).not.toHaveBeenCalled();});
+});

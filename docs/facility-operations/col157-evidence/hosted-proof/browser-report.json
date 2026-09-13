@@ -1,0 +1,59 @@
+{
+  "sourceSha": "ddce23956b4a12facab5cf3cbd2143c16e8b4ee9",
+  "target": "iwcnajanvjvynolltflw",
+  "cases": [
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "historyCount": 4,
+      "viewportCaptures": [
+        "top",
+        "census",
+        "payment",
+        "trust",
+        "handoff",
+        "history"
+      ],
+      "horizontalOverflow": {
+        "document": false,
+        "panels": [
+          {
+            "scrollWidth": 1089,
+            "clientWidth": 1089
+          }
+        ]
+      },
+      "axeViolations": [],
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "historyCount": 4,
+      "viewportCaptures": [
+        "top",
+        "census",
+        "payment",
+        "trust",
+        "handoff",
+        "history"
+      ],
+      "horizontalOverflow": {
+        "document": false,
+        "panels": [
+          {
+            "scrollWidth": 279,
+            "clientWidth": 279
+          }
+        ]
+      },
+      "axeViolations": [],
+      "result": "PASS"
+    }
+  ],
+  "result": "PASS"
+}

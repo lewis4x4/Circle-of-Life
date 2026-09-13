@@ -1,0 +1,24 @@
+BEGIN
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+
+psql:/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col157-fixture-diagnostic.sql:1: ERROR:  Sign in required
+CONTEXT:  PL/pgSQL function public.haven_apply_cash_transaction() line 4 at RAISE

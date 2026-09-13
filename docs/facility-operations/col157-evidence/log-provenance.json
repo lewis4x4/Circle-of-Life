@@ -1,0 +1,128 @@
+[
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/ui-currency-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/ui-currency-final.log",
+    "raw_sha256": "4c18bb86141d34d16658f871cda78edc53fc0b0e33f9669e97c165c73aadfd62",
+    "committed_sha256": "515a88c2631025485b431a5e7fd0fd63eb686269bfff4b301ea10c49f4ce6fc8",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/ui-currency.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/ui-currency.log",
+    "raw_sha256": "17af8f6bd8c567f12e37000c9402c950fa090290e67f60b58a4deecf02457cd8",
+    "committed_sha256": "75f9525ce8cd0ce66d2337b3f55a1b89007eceb02dd319b61390843579c27aff",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/ui-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/ui-final.log",
+    "raw_sha256": "df9c9f3543b985918d9e06c5b2694cb926ebe3f7bc4732ee15baa4ced704137b",
+    "committed_sha256": "a3779966e0460658c950698abbf22a014dded89ce6e0b7fb39918ea6c6fc46ee",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/strict-gate.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/strict-gate.log",
+    "raw_sha256": "fb499ec53f5216b3ee326a706feea14a88e90e015740f28edd20505b5c439643",
+    "committed_sha256": "25e9c0c830d36db90c4f76cbe97a9dd1c001fe2de5b50f18e8a313e1ae22c403",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/typecheck-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/typecheck-final.log",
+    "raw_sha256": "750f28fd0361fc7a652fdfe3f36b5671f74bfa7de2cd16ff3c13389895d594de",
+    "committed_sha256": "50aae920c481bf23ffdb0db4982722580a7d020b497334c157c0cf0618c7b7de",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/probe-bounded-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/probe-bounded-final.log",
+    "raw_sha256": "19156196d5b9d4d975202374810952329cf862a77c2ea6885c6ec7bd3015b8fb",
+    "committed_sha256": "a654fed4511a248072705262392c69dbf7f6f9911bd6307bc173548c4f6a93ea",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/ui-typecheck.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/ui-typecheck.log",
+    "raw_sha256": "750f28fd0361fc7a652fdfe3f36b5671f74bfa7de2cd16ff3c13389895d594de",
+    "committed_sha256": "50aae920c481bf23ffdb0db4982722580a7d020b497334c157c0cf0618c7b7de",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/ui-lint.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/ui-lint.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/probe-first.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/probe-first.log",
+    "raw_sha256": "fa918aa2cd7e78853c0c9eea53bbe131594333e0cf70641fe181d320d450c82e",
+    "committed_sha256": "66e4df87dc3661ff319e20bbd63d4beea150c97cd5934c2629483101e7ade954",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/ui-focused.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/ui-focused.log",
+    "raw_sha256": "ae68ddedc7cacae3181dd13ea59139e94a78a8c0aee0294ef086fc2b0fb680e2",
+    "committed_sha256": "505a9ee0011234f892ccc616e5fbef5549ce599f1806908c848d14714dcb87e3",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/backend-tests-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/backend-tests-final.log",
+    "raw_sha256": "0ec1690314cedc3338e5b3f69f4c41ac64e21fe1e360045f2892237f9f04ec25",
+    "committed_sha256": "7cd81a93043cecd6a1fea9a75b690268f41889ddd97b1c9a40990636e2548c1b",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/ui-currency-lint.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/ui-currency-lint.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/compile.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/compile.log",
+    "raw_sha256": "9901f3e9495e5d48f2c4857f37c0cbb041a00e6d7b31ecc856bc22343e54bbbe",
+    "committed_sha256": "9901f3e9495e5d48f2c4857f37c0cbb041a00e6d7b31ecc856bc22343e54bbbe",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/probe-matrix-first.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/probe-matrix-first.log",
+    "raw_sha256": "133036b31d368267eb2c360aa78e4dd2b378f9e8409f0d0e217824c781b159b3",
+    "committed_sha256": "6d0d35744c1c32f63cda7a87d00d57b5a7be23096ff25697bb7767947bad8564",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/lint-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/lint-final.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/ui-integration.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/ui-integration.log",
+    "raw_sha256": "fd5d97ef0c2cd16d2f08db79d9e0e346a8d9f251f0987f066e39c429f0867a1c",
+    "committed_sha256": "1620b6831c78333a0e2af97413d979d52d35d50988146932085c2dad256723fd",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/vitest-full.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/raw-committed-logs/vitest-full.log",
+    "raw_sha256": "491e947861d4bf7cef665862b7de2e4e4d0a3e18aa380f1412589e606a68ef25",
+    "committed_sha256": "5eece7da36ebca24943b7888f4540e4e8ee111dc27d18be21940fcdf8ba0475e",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col157-evidence/concurrency-five.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col157-native-c191893c/concurrency-five.log",
+    "raw_sha256": "30651e05821aee3470d1e561087592f6d87cd4df65d95818cceaeb1652e031f5",
+    "committed_sha256": "30651e05821aee3470d1e561087592f6d87cd4df65d95818cceaeb1652e031f5",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  }
+]

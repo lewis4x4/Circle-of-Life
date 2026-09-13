@@ -1,0 +1,27 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "sourceSha": "ddce23956b4a12facab5cf3cbd2143c16e8b4ee9",
+  "coreSource": "1dacb3906c83de2502e18fb4e67d076c16c753db",
+  "target": "iwcnajanvjvynolltflw",
+  "at": "2026-09-13T16:50:18.593380+00:00",
+  "artifacts_sha256": {
+    "staging-readiness.json": "8e6bb7e77779b9177a4ea80137d89d09d9d6e08a983e11830b959ea569499c2e",
+    "http-proof.json": "e92c89742467ce607d48e9a5b6654e5426bb0f2d147bececb13a74de5d1141b5",
+    "browser-report.json": "525571b6dfb67021e3f3ae0fd0919547f4a3a2a37cfd74ff8c6b7ca1d95e3676",
+    "denial-proof.json": "e1a2e1a8169d4bbc3b359ae8e3943ae972b6fc594e02bae3cf617f633387e797",
+    "cleanup.json": "668346f6e738c51456ca8acb85bbfd0e44b7aadcf54dc59183d7bdc5b5316bfe",
+    "fixture-source-transition.json": "51fc8841479e93e59f02bd91b9450094ce26c30f888aebc67deb885b1f57161a",
+    "setup-failure-readback.json": "0e327a04f8acebbcbbd856a00a9f6e92751c8625aa7843a3e8ecbb26dd1499c2",
+    "local-log-provenance.json": "6d913dd0dfbe6198d9ba76be417e6c3324d1f4f947e261c34499bb5359620cd4"
+  },
+  "findings": [],
+  "scope": "Actual synthetic staged native late-payment source dates, distinct service/recording periods, missing census date, A-B-A correction history and native hash preservation; canonical500/legacy900 trust separated; prepared batch invalidation without external acknowledgment; HFO-positive/native-finance-denied actor, wrong-site404 and revoked401; actual UI reconcile/history at1440/375 with no overflow/axe/errors; exact fixture retirement and4357closed.",
+  "source_hashes_verified": 3244,
+  "limits": [
+    "Initial atomic fixture setup failed at native trust Sign in required; zero-row readback and retained Auth identities support controlled recovery. Corrected runner-only trust insertion executes after real owner sign-in; local diagnosis used explicitly documented Auth/SELECT stubs.",
+    "Scope verified by exact task/site/period API responses; global All facilities picker is not represented as selected fixture scope.",
+    "No bank clearance/deposit/rent-in-full/billable-day/provider acknowledgment or production acceptance claimed."
+  ]
+}

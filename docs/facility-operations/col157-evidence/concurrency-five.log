@@ -1,0 +1,39 @@
+{
+  "scope": "local synthetic native concurrency",
+  "results": [
+    {
+      "case": "same-key",
+      "wait_observed": true,
+      "current_hfo_task_readable": true,
+      "status": "PASS"
+    },
+    {
+      "case": "native-permission-revocation",
+      "wait_observed": true,
+      "current_hfo_task_readable": true,
+      "status": "PASS"
+    },
+    {
+      "case": "source-change",
+      "wait_observed": true,
+      "current_hfo_task_readable": true,
+      "status": "PASS"
+    },
+    {
+      "case": "direct-insert-revocation",
+      "wait_observed": true,
+      "current_hfo_task_readable": true,
+      "rejected_sqlstate": "42501",
+      "stored_transitions": 0,
+      "status": "PASS"
+    },
+    {
+      "case": "history-read-revocation",
+      "wait_observed": true,
+      "current_hfo_task_readable": true,
+      "rejected_sqlstate": "42501",
+      "stored_transitions": 0,
+      "status": "PASS"
+    }
+  ]
+}

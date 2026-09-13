@@ -1,0 +1,26 @@
+{
+  "result": "PASS",
+  "actualNativeReplyValidated": true,
+  "families": [
+    {
+      "family": "census",
+      "records": 1,
+      "availability": "available"
+    },
+    {
+      "family": "payments",
+      "records": 1,
+      "availability": "available"
+    },
+    {
+      "family": "trust",
+      "records": 3,
+      "availability": "available"
+    },
+    {
+      "family": "finance_handoff",
+      "records": 1,
+      "availability": "available"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/Users/brianlewis/Circle of Life/Haven Finance Operations Sources/docs/facility-operations/col157-evidence/hosted-proof/fixture.py", line 61, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/Users/brianlewis/Circle of Life/Haven Finance Operations Sources/docs/facility-operations/col157-evidence/hosted-proof/fixture.py", line 40, in main
+    checkpoint('rows',rows)
+    ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/brianlewis/Circle of Life/Haven Finance Operations Sources/docs/facility-operations/col157-evidence/hosted-proof/fixture.py", line 18, in checkpoint
+    require(s.get('pending')!=key,'Uncertain previous fixture mutation: '+key);s['pending']=key;save();value=fn();s[key]=value;s.pop('pending');save();return value
+                                                                                                             ~~^^
+  File "/Users/brianlewis/Circle of Life/Haven Finance Operations Sources/docs/facility-operations/col157-evidence/hosted-proof/fixture.py", line 39, in rows
+    return r.sql(q)
+           ~~~~~^^^
+  File "/Users/brianlewis/Circle of Life/Haven Finance Operations Sources/docs/facility-operations/col157-evidence/hosted-proof/guarded.py", line 49, in sql
+    require(result.returncode==0,'Staging SQL failed; inspect exact target state privately before retry')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brianlewis/Circle of Life/Haven Finance Operations Sources/docs/facility-operations/col157-evidence/hosted-proof/guarded.py", line 7, in require
+    if not ok: raise RuntimeError(message)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Staging SQL failed; inspect exact target state privately before retry

@@ -1,0 +1,155 @@
+BEGIN
+CREATE FUNCTION
+SELECT 1
+DO
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+                                                                                                                                                                          set_config
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"iat": 1789315518, "sub": "e525a595-3f2f-430b-8455-6ea2b2c21e8b", "role": "authenticated", "app_role": "owner", "session_id": "1dbce545-2c3c-491c-9131-65b6d9e0639e", "app_metadata": {"app_role": "owner", "organization_id": "00000000-0000-0000-0000-000000000001"}, "organization_id": "00000000-0000-0000-0000-000000000001", "auth_claim_version": 2}
+(1 row)
+
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ALTER TABLE
+INSERT 0 1
+INSERT 0 1
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+SELECT 1
+ALTER TABLE
+GRANT
+CREATE TABLE
+GRANT
+CREATE FUNCTION
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET
+INSERT 0 1
+                                                                                                                                                                                                                                                                                                                                                                                                                          publish_operation_requirement_review
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id": "aea2d033-2689-4b07-aca2-dc58eaa015b5", "title": "Census source context", "status": "published", "version": 1, "wording": "Review existing native source", "procedure": null, "created_at": "2026-09-13T12:05:17.754278-04:00", "created_by": "e525a595-3f2f-430b-8455-6ea2b2c21e8b", "updated_at": "2026-09-13T12:05:17.802437-04:00", "activity_id": "6dbd5b5b-48a9-4414-bf48-7b4d6f8b7de1", "effective_to": null, "published_at": "2026-09-13T12:05:17.802349-04:00", "published_by": "e525a595-3f2f-430b-8455-6ea2b2c21e8b", "subject_kind": "facility", "effective_from": "2026-09-13T11:05:17.801706-04:00", "organization_id": "00000000-0000-0000-0000-000000000001", "required_inputs": [], "review_required": false, "source_authority": {}, "required_evidence": [], "previous_version_id": null, "allowed_recorder_roles": ["owner"], "allowed_reviewer_roles": []}
+(1 row)
+
+INSERT 0 1
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         publish_operation_facility_requirement_review
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id": "99912ef7-5ab5-4c9a-8931-ca180e6270b8", "status": "published", "version": 1, "created_at": "2026-09-13T12:05:17.754278-04:00", "created_by": "e525a595-3f2f-430b-8455-6ea2b2c21e8b", "owner_role": null, "updated_at": "2026-09-13T12:05:17.808333-04:00", "activity_id": "6dbd5b5b-48a9-4414-bf48-7b4d6f8b7de1", "approved_at": "2026-09-13T12:05:17.808242-04:00", "approved_by": "e525a595-3f2f-430b-8455-6ea2b2c21e8b", "backup_role": null, "facility_id": "00000000-0000-0000-0002-000000000001", "effective_to": null, "applicability": "applicable", "owner_user_id": null, "schedule_rule": null, "backup_user_id": null, "effective_from": "2026-09-13T11:35:17.806961-04:00", "local_procedure": null, "organization_id": "00000000-0000-0000-0000-000000000001", "override_source": "central", "schedule_status": "needs_confirmation", "previous_version_id": null, "applicability_reason": null, "local_required_inputs": null, "requirement_version_id": "aea2d033-2689-4b07-aca2-dc58eaa015b5", "local_required_evidence": null, "local_allowed_recorder_roles": null}
+(1 row)
+
+INSERT 0 1
+UPDATE 1
+                                        record_finance_payment
+-------------------------------------------------------------------------------------------------------
+ {"payment_id": "b7e8db9d-3908-4570-8e9b-c0dd82ded540", "allocated_cents": 2500, "unapplied_cents": 0}
+(1 row)
+
+                                                 set_finance_staging_control
+-----------------------------------------------------------------------------------------------------------------------------
+ {"stopped": false, "entity_id": "00000000-0000-0000-0001-000000000001", "dispatch_enabled": false, "staging_generation": 1}
+(1 row)
+
+                                                                                     register_finance_batch_rules
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "declared_draft", "content_sha256": "f89d282e13f2e033bf6ced96f0b00e089ac283bee33bb8c288b08ff4091238ef", "rules_generation": 1, "rules_version_id": "041015c6-ef84-4f7a-b62a-1e6bc6f426e9"}
+(1 row)
+
+                                                                                                                                                                                                                                                                      prepare_finance_batch
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"status": "prepared", "batch_id": "41e77a2e-d943-441c-a427-e4c98b8e22e1", "binding_sha256": "b283621eac01381df2de38810a80fbcff6c68738f5323e96fbb392209080b3c7", "payload_sha256": "e22180638d72e0d207a13d3691ce0460d0c29bdb9514b6f6330c27007a70f387", "source_controls": [{"operation": "payment_received", "eventCount": "1", "grossCents": "2500", "amountBasis": "payment_gross"}], "member_set_sha256": "094736ca36e22c688f785d71b52406fe655e54acf59172b41216772206321d52", "accounting_classification": "unverified", "business_release_eligible": false}
+(1 row)
+
+SELECT 1
+GRANT
+ fs_assert
+-----------
+
+(1 row)
+
+ fs_assert
+-----------
+
+(1 row)
+
+ fs_assert
+-----------
+
+(1 row)
+
+ fs_assert
+-----------
+
+(1 row)
+
+ fs_assert
+-----------
+
+(1 row)
+
+ fs_assert
+-----------
+
+(1 row)
+
+                                        record_finance_payment
+-------------------------------------------------------------------------------------------------------
+ {"payment_id": "b7e8db9d-3908-4570-8e9b-c0dd82ded540", "allocated_cents": 2500, "unapplied_cents": 0}
+(1 row)
+
+ fs_assert
+-----------
+
+(1 row)
+
+ finance_expect_error
+----------------------
+
+(1 row)
+
+RESET
+UPDATE 1
+SET
+INSERT 0 1
+ fs_assert
+-----------
+
+(1 row)
+
+ fs_assert
+-----------
+
+(1 row)
+
+RESET
+UPDATE 1
+SET
+ fs_assert
+-----------
+
+(1 row)
+
+ finance_expect_error
+----------------------
+
+(1 row)
+
+ finance_expect_error
+----------------------
+
+(1 row)
+
+psql:supabase/tests/review_hfo_finance_source_snapshots.sql:101: ERROR:  COL157 prepared batch became external acknowledgment
+CONTEXT:  PL/pgSQL function pg_temp_63.fs_assert(boolean,text) line 1 at RAISE
