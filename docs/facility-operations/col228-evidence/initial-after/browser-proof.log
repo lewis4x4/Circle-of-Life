@@ -1,0 +1,119 @@
+{
+  "source_manifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Invoice Refresh Shortcut/docs/facility-operations/col228-evidence/after-source-manifest.json",
+    "sha256": "41fa3c39054e3a2747c3870956eef453a6bab59d88ecbc10e1daad94adfe7b0f"
+  },
+  "target": "iwcnajanvjvynolltflw",
+  "shared_fixture": {
+    "owner_task": "COL-227",
+    "run": "col227-5d2e661fd1a1",
+    "actor": "663ca551-c2f1-46cc-a963-4d1417180b7c",
+    "site": "51c99878-3d9d-4693-b099-07a63f209b50",
+    "cleanup_deferred_until": "COL-227 proof completion"
+  },
+  "results": [
+    {
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "keyboardRecheck": [
+        {
+          "route": "/admin/billing",
+          "rEvents": 1,
+          "buttonEvents": 1,
+          "scopePreserved": true
+        },
+        {
+          "route": "/admin/billing/invoices",
+          "rEvents": 0,
+          "buttonEvents": 1,
+          "scopePreserved": true
+        }
+      ],
+      "heading": {
+        "tag": "H2",
+        "className": "text-[14px] font-semibold text-foreground",
+        "text": "Action queue",
+        "fontSize": "14px",
+        "fontWeight": "600",
+        "lineHeight": "16.8px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 33.5,
+          "y": 867,
+          "width": 309,
+          "height": 16.796875
+        }
+      },
+      "logicalHeadings": [
+        {
+          "level": 1,
+          "text": "Billing & AR"
+        },
+        {
+          "level": 2,
+          "text": "Action queue"
+        },
+        {
+          "level": 2,
+          "text": "Activity this week"
+        }
+      ],
+      "axeViolations": [],
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "keyboardRecheck": [
+        {
+          "route": "/admin/billing",
+          "rEvents": 1,
+          "buttonEvents": 1,
+          "scopePreserved": true
+        },
+        {
+          "route": "/admin/billing/invoices",
+          "rEvents": 0,
+          "buttonEvents": 1,
+          "scopePreserved": true
+        }
+      ],
+      "heading": {
+        "tag": "H2",
+        "className": "text-[14px] font-semibold text-foreground",
+        "text": "Action queue",
+        "fontSize": "14px",
+        "fontWeight": "600",
+        "lineHeight": "16.8px",
+        "fontFamily": "\"Plus Jakarta Sans\", \"Plus Jakarta Sans Fallback\", \"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "bounds": {
+          "x": 285,
+          "y": 491.5,
+          "width": 1119,
+          "height": 16.796875
+        }
+      },
+      "logicalHeadings": [
+        {
+          "level": 1,
+          "text": "Billing & AR"
+        },
+        {
+          "level": 2,
+          "text": "Action queue"
+        },
+        {
+          "level": 2,
+          "text": "Activity this week"
+        }
+      ],
+      "axeViolations": [],
+      "status": "PASS"
+    }
+  ],
+  "result": "PASS"
+}
