@@ -4,7 +4,7 @@ vi.mock("@/lib/operations/auth", () => ({ requireOperationsActor: vi.fn(), reval
 import { requireOperationsActor, revalidateOperationsActor, actorCanViewOperations } from "@/lib/operations/auth";
 import { POST } from "./route";
 import { GET } from "./[id]/download/route";
-const id = "11111111-1111-4111-8111-111111111111", site = "22222222-2222-4222-8222-222222222222";
+const id = "11111111-1111-4111-8111-111111111111", site = "00000000-0000-0000-0002-000000000003";
 const rpc = vi.fn();
 const actor = { id: "actor", organizationId: "org", appRole: "owner", currentActor: { client: { rpc } } };
 const manifest = { schema_version: 1, generated_at: "2026-09-12T12:00:00Z", snapshot_id: "1:2:", filters: { facility_id: site, activity_id: id }, total: 1, receipt_total: 1, evidence_total: 0, complete: true, source: "Haven", coverage: "Authorized history" };
@@ -46,6 +46,10 @@ describe("history export create and downloadable artifact", () => {
   it("denies unauthenticated create/download before querying", async () => {
     vi.mocked(requireOperationsActor).mockResolvedValue({ response: NextResponse.json({}, { status: 401 }) });
     expect((await post()).status).toBe(401); expect((await get()).status).toBe(401); expect(rpc).not.toHaveBeenCalled();
+  });
+  it("retains the distinct client-generated request token contract", async () => {
+    expect((await post({ facility_id: site, activity_id: id, request_id: site })).status).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
   });
   it("validates exact filters and refuses arbitrary query/extra fields", async () => {
     expect((await post({ facility_id: site, activity_id: id, request_id: id, sql: "x" })).status).toBe(400);

@@ -1,7 +1,8 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { z } from "zod";
 import { requestKeySchema } from "@/lib/operations/occurrences";
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 export const helpHandoverTargetSchema = z.object({ activity_id: uuid, facility_id: uuid, occurrence_id: uuid.optional() }).strict();
 const base = { activity_id: uuid, facility_id: uuid, request_key: requestKeySchema, expected_id: uuid.nullable() };
 export const helpHandoverCommandSchema = z.discriminatedUnion("command", [

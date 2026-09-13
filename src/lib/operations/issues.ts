@@ -1,3 +1,4 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -25,7 +26,7 @@ export const ISSUE_EVENT_KINDS = ["assigned", "reassigned", "accepted", "covered
 export const ISSUE_COMMANDS = ["assign", "accept", "wait", "resume", "resolve", "reopen", "link"] as const;
 export type IssueCommand = (typeof ISSUE_COMMANDS)[number];
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 const instant = z.string().datetime({ offset: true });
 const text = (max: number) => z.string().trim().min(1).max(max);
 const appRole = z.enum(ALL_APP_ROLES as unknown as [string, ...string[]]);

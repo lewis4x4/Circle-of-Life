@@ -1,0 +1,68 @@
+{
+  "sourceSha": "2e84c2b6a99646bc88ab340188920795e864a0f0",
+  "diffSha256": "cbe42f3a0a4c9c08e020a88e775cec828a5f9a554528681f7eab74e81557be45",
+  "target": "iwcnajanvjvynolltflw",
+  "base": "http://127.0.0.1:4325",
+  "fixture": {
+    "run": "col225-816c979c7a53",
+    "user": "70d53e1a-cdf0-417c-b610-63466459ca69",
+    "entity": "b56a9e94-aa9c-098d-0c7c-4c7b14667aac",
+    "site": "85bd9a81-fbff-0714-0132-76b1d09e7ba5",
+    "siteb": "26a7ef33-7478-08de-033c-c0e4766e4d6c",
+    "activity": "cb36ba9d-3568-03f3-022b-842ace7f42c0",
+    "subject": "2d1862b1-5b56-06fa-0bf3-22701bacd74f"
+  },
+  "requests": [
+    {
+      "label": "/requirements",
+      "method": "POST",
+      "path": "/requirements",
+      "status": 200
+    },
+    {
+      "label": "/requirements/20348955-6062-4ee3-991f-7f18b0f91aa6/publish",
+      "method": "POST",
+      "path": "/requirements/20348955-6062-4ee3-991f-7f18b0f91aa6/publish",
+      "status": 200
+    },
+    {
+      "label": "/facility-requirements",
+      "method": "POST",
+      "path": "/facility-requirements",
+      "status": 200
+    },
+    {
+      "label": "/facility-requirements/db9619b1-b681-4199-a769-bd6fc8f7879d/publish",
+      "method": "POST",
+      "path": "/facility-requirements/db9619b1-b681-4199-a769-bd6fc8f7879d/publish",
+      "status": 200
+    },
+    {
+      "label": "/occurrences/manual",
+      "method": "POST",
+      "path": "/occurrences/manual",
+      "status": 200
+    },
+    {
+      "label": "/occurrences/772aeab2-5b78-405f-b4d6-0e76b33407e8/record",
+      "method": "POST",
+      "path": "/occurrences/772aeab2-5b78-405f-b4d6-0e76b33407e8/record",
+      "status": 200
+    },
+    {
+      "label": "/activity-history/exports",
+      "method": "POST",
+      "path": "/activity-history/exports",
+      "status": 200
+    },
+    {
+      "label": "/activity-history/exports/ba9923ce-9f0d-491b-b9da-d71e27a0613f/download",
+      "method": "GET",
+      "path": "/activity-history/exports/ba9923ce-9f0d-491b-b9da-d71e27a0613f/download",
+      "status": 200
+    }
+  ],
+  "status": "FAIL",
+  "failure": "Expecting value: line 1 column 1 (char 0)",
+  "sourceUnchanged": true
+}

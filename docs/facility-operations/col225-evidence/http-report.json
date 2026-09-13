@@ -1,0 +1,75 @@
+{
+  "creation_evidence": "http-initial-report.json",
+  "sourceSha": "2e84c2b6a99646bc88ab340188920795e864a0f0",
+  "diffSha256": "cbe42f3a0a4c9c08e020a88e775cec828a5f9a554528681f7eab74e81557be45",
+  "target": "iwcnajanvjvynolltflw",
+  "base": "http://127.0.0.1:4325",
+  "fixture": {
+    "run": "col225-816c979c7a53",
+    "user": "70d53e1a-cdf0-417c-b610-63466459ca69",
+    "entity": "b56a9e94-aa9c-098d-0c7c-4c7b14667aac",
+    "site": "85bd9a81-fbff-0714-0132-76b1d09e7ba5",
+    "siteb": "26a7ef33-7478-08de-033c-c0e4766e4d6c",
+    "activity": "cb36ba9d-3568-03f3-022b-842ace7f42c0",
+    "subject": "2d1862b1-5b56-06fa-0bf3-22701bacd74f"
+  },
+  "requests": [
+    {
+      "label": "/activity-history/exports/ba9923ce-9f0d-491b-b9da-d71e27a0613f/download",
+      "method": "GET",
+      "path": "/activity-history/exports/ba9923ce-9f0d-491b-b9da-d71e27a0613f/download",
+      "status": 200
+    },
+    {
+      "label": "cross-site requirement",
+      "method": "POST",
+      "path": "/facility-requirements",
+      "status": 404
+    },
+    {
+      "label": "cross-site manual",
+      "method": "POST",
+      "path": "/occurrences/manual",
+      "status": 404
+    },
+    {
+      "label": "cross-site export",
+      "method": "POST",
+      "path": "/activity-history/exports",
+      "status": 403
+    },
+    {
+      "label": "revoked requirement",
+      "method": "POST",
+      "path": "/facility-requirements",
+      "status": 401
+    },
+    {
+      "label": "revoked manual",
+      "method": "POST",
+      "path": "/occurrences/manual",
+      "status": 401
+    },
+    {
+      "label": "revoked export",
+      "method": "POST",
+      "path": "/activity-history/exports",
+      "status": 401
+    },
+    {
+      "label": "revoked existing export download",
+      "method": "GET",
+      "path": "/activity-history/exports/ba9923ce-9f0d-491b-b9da-d71e27a0613f/download",
+      "status": 401
+    }
+  ],
+  "download": {
+    "rows": 1,
+    "bytes": 2527,
+    "sha256": "6c43d09f0935f15d42f0c3e14eaa2ca926c0819b23d871fbbcac84b456b79e61",
+    "filters_unchanged": true,
+    "entity_ids_unchanged": true
+  },
+  "status": "PASS",
+  "sourceUnchanged": true
+}

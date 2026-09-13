@@ -1,3 +1,4 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { z } from "zod";
 
 import { OPERATIONS_VIEW_ROLES } from "@/lib/operations/constants";
@@ -29,7 +30,7 @@ export type OutcomeClass = (typeof OUTCOME_CLASSES)[number];
 /** A stale client clock gets a plain refusal here; the database enforces the same bound. */
 export const PERFORMED_AT_SKEW_MS = 2 * 60 * 1000;
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 const instant = z.string().datetime({ offset: true });
 const text = (max: number) => z.string().trim().min(1).max(max);
 const primitive = z.union([z.string().max(4000), z.number().finite(), z.boolean(), z.null()]);

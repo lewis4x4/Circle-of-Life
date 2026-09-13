@@ -1,3 +1,4 @@
+import { databaseUuidSchema } from "./database-uuid";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -53,7 +54,7 @@ export const DRAFT_RPC = {
 } as const;
 export type DraftRouteCommand = keyof typeof DRAFT_RPC;
 
-const uuid = z.string().uuid();
+const uuid = databaseUuidSchema;
 
 const receiptArguments = <T extends z.ZodTypeAny>(payload: T) => z.object({ payload }).strict();
 
