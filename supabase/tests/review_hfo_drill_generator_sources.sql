@@ -51,7 +51,7 @@ SELECT pg_temp.c_assert(NOT EXISTS(SELECT 1 FROM public.operation_source_events)
  AND NOT EXISTS(SELECT 1 FROM public.drill_log WHERE finalized_at IS NOT NULL OR voided_at IS NOT NULL OR record_version<>1),'the migration delivered, recorded or finalized something');
 
 -- FIXTURES-BEGIN
-CREATE TEMP TABLE cf AS SELECT gen_random_uuid() owner_actor,gen_random_uuid() owner_session,gen_random_uuid() admin_a,gen_random_uuid() admin_a_session,
+CREATE TEMP TABLE cf AS WITH anchor AS MATERIALIZED (SELECT clock_timestamp() instant) SELECT gen_random_uuid() owner_actor,gen_random_uuid() owner_session,gen_random_uuid() admin_a,gen_random_uuid() admin_a_session,
  gen_random_uuid() admin_b,gen_random_uuid() admin_b_session,gen_random_uuid() maint,gen_random_uuid() maint_session,gen_random_uuid() aide,gen_random_uuid() aide_session,
  gen_random_uuid() site_b,gen_random_uuid() gen1,gen_random_uuid() gen2,gen_random_uuid() gen_ret,gen_random_uuid() co1,gen_random_uuid() ext1,gen_random_uuid() gen_b,
  gen_random_uuid() subj_gen1,gen_random_uuid() subj_gen2,gen_random_uuid() subj_co1,gen_random_uuid() subj_ext1,
@@ -61,15 +61,15 @@ CREATE TEMP TABLE cf AS SELECT gen_random_uuid() owner_actor,gen_random_uuid() o
  (SELECT id FROM public.operation_activities WHERE organization_id=f.organization_id AND activity_key='hfo-al-m05-01') act_fire,
  (SELECT id FROM public.operation_activities WHERE organization_id=f.organization_id AND activity_key='hfo-al-m06-01') act_elope,
  (SELECT id FROM public.operation_activities WHERE organization_id=f.organization_id AND activity_key='hfo-al-a07-02') act_review_fire,
- -- Dates are anchored on the facility-local day: versions, configurations and bindings take effect at 23:59 yesterday (within the one-day
- -- backdate a publication allows, so they are in force on yesterday's and today's occurrences); d0 is today; the routine instant is five
- -- minutes ago and the late instant twenty minutes ago (a run in the first twenty minutes after local midnight is outside this fixture).
- ((current_timestamp AT TIME ZONE 'America/New_York')::date::timestamp-interval '1 minute') AT TIME ZONE 'America/New_York' since,
- date_trunc('minute',clock_timestamp()-interval '5 minutes') recent,date_trunc('minute',clock_timestamp()-interval '20 minutes') past_due,
- f.id site_a,f.organization_id org,f.entity_id entity FROM public.facilities f WHERE f.id='00000000-0000-0000-0002-000000000003' AND deleted_at IS NULL;
-ALTER TABLE cf ADD COLUMN d0 date,ADD COLUMN d1 date,ADD COLUMN dold date,ADD COLUMN hh0 text;
-UPDATE cf SET d0=(clock_timestamp() AT TIME ZONE 'America/New_York')::date,hh0=to_char(past_due AT TIME ZONE 'America/New_York','HH24:MI');
-UPDATE cf SET d1=d0+7,dold=d0-3;
+ -- Capture one instant; derive paired local dates/times from absolute past/future instants.
+ -- Publication remains within one day and precedes every governing fixture instant.
+ anchor.instant-interval '23 hours' since,
+ date_trunc('minute',anchor.instant-interval '5 minutes') recent,date_trunc('minute',anchor.instant-interval '20 minutes') past_due,
+ date_trunc('minute',anchor.instant+interval '1 day') future,
+ f.id site_a,f.organization_id org,f.entity_id entity FROM public.facilities f CROSS JOIN anchor WHERE f.id='00000000-0000-0000-0002-000000000003' AND deleted_at IS NULL;
+ALTER TABLE cf ADD COLUMN d0 date,ADD COLUMN d1 date,ADD COLUMN hh0 text;
+UPDATE cf SET d0=(past_due AT TIME ZONE 'America/New_York')::date,hh0=to_char(past_due AT TIME ZONE 'America/New_York','HH24:MI');
+UPDATE cf SET d1=d0+7;
 SELECT pg_temp.c_assert((SELECT count(*)=1 FROM cf) AND (SELECT act_gen IS NOT NULL AND act_co IS NOT NULL AND act_ext IS NOT NULL AND act_fire IS NOT NULL AND act_elope IS NOT NULL AND act_review_fire IS NOT NULL FROM cf),'Homewood or the catalog activities are missing');
 CREATE TEMP TABLE cf_ids(label text PRIMARY KEY,id uuid);
 CREATE TEMP TABLE cf_results(label text PRIMARY KEY,result jsonb);
@@ -139,8 +139,11 @@ CREATE FUNCTION pg_temp.drill(p_type text,p_date date,p_time text,p_extra jsonb 
  SELECT org,site_a,p_type,p_date,p_time::time,coalesce((p_extra->>'pull')::boolean,true),coalesce((p_extra->>'staff')::int,4),coalesce((p_extra->>'residents')::int,20),nullif(p_extra->>'conducted_by','')::uuid,
   coalesce(p_extra->>'notes','Fixture drill'),auth.uid(),coalesce(p_extra->>'outcome','performed'),p_extra->>'issue_summary' FROM cf RETURNING id INTO new_id;
  RETURN new_id; END $$;
+CREATE FUNCTION pg_temp.drill_at(p_type text,p_at timestamptz,p_extra jsonb DEFAULT '{}'::jsonb) RETURNS uuid LANGUAGE sql AS $$
+ SELECT pg_temp.drill(p_type,(p_at AT TIME ZONE 'America/New_York')::date,to_char(p_at AT TIME ZONE 'America/New_York','HH24:MI'),p_extra)
+$$;
 GRANT ALL ON FUNCTION pg_temp.occ(date,text,text,int),pg_temp.occ2(date,date,date,text,text,int),pg_temp.run(text,date,date,uuid),pg_temp.c_login(text),pg_temp.c_service(),pg_temp.c_clear(),pg_temp.k(text),pg_temp.rid(text),pg_temp.res(text),pg_temp.rev(text),
- pg_temp.obs(text,uuid,text,timestamptz,text,jsonb,jsonb),pg_temp.deliver(text,text,text,text,text,uuid),pg_temp.drill(text,date,text,jsonb) TO authenticated,service_role;
+ pg_temp.obs(text,uuid,text,timestamptz,text,jsonb,jsonb),pg_temp.deliver(text,text,text,text,text,uuid),pg_temp.drill(text,date,text,jsonb),pg_temp.drill_at(text,timestamptz,jsonb) TO authenticated,service_role;
 
 -- Central versions (owner): recorder lists and typed inputs are fixtures.
 SELECT pg_temp.c_login('owner');
@@ -191,20 +194,6 @@ INSERT INTO cf_ids SELECT 'occ_elope_d0',t.id FROM cf JOIN public.operation_task
 INSERT INTO cf_ids SELECT 'occ_review_d0',t.id FROM cf JOIN public.operation_task_instances t ON t.activity_id=cf.act_review_fire AND t.assigned_shift_date=cf.d0;
 SELECT pg_temp.c_assert((SELECT count(*)=9 FROM cf_ids WHERE label LIKE 'occ\_%'),'occurrence identities not captured');
 RESET ROLE;
--- The previous period's fire drill occurrence (period d0-7 .. d0-1, assigned yesterday, when the versions are already in force) is minted as an event occurrence, as the 346 probe does for an older period.
-SELECT pg_temp.c_clear();
-DO $$ DECLARE f cf; src public.operation_task_instances; BEGIN
- SELECT * INTO f FROM cf;
- PERFORM set_config('haven.operation_occurrence_command',haven.operation_occurrence_token(),true);
- SELECT t.* INTO src FROM public.operation_task_instances t WHERE t.id=(SELECT id FROM cf_ids WHERE label='occ_fire_d0');
- INSERT INTO public.operation_task_instances SELECT (jsonb_populate_record(src,jsonb_build_object('id',gen_random_uuid(),'occurrence_kind','event','source_event_key','probe-event','source_event_id','F-old',
-  'source_event_at',((f.d0-1)::timestamp+'10:00'::time) AT TIME ZONE 'America/New_York','governing_at',((f.d0-1)::timestamp+'10:00'::time) AT TIME ZONE 'America/New_York',
-  'due_at',((f.d0-1)::timestamp+'10:00'::time) AT TIME ZONE 'America/New_York','grace_ends_at',NULL,'status','pending','execution_state','none','effective_receipt_id',NULL,'verification_receipt_id',NULL,
-  'performed_at',NULL,'completed_at',NULL,'signed_by',NULL,'signed_at',NULL,'second_sign_by',NULL,'second_signed_at',NULL,'verified_by',NULL,'verified_at',NULL,'sla_met',NULL,'completion_notes',NULL,'created_by',NULL,'updated_by',NULL,'started_at',NULL,
-  'assigned_shift_date',f.d0-1,'period_key','probe-event:F-old','period_start_date',f.d0-7,'period_end_date',f.d0-1,'created_at',clock_timestamp(),'updated_at',clock_timestamp()))).*;
- PERFORM set_config('haven.operation_occurrence_command','',true);
-END $$;
-INSERT INTO cf_ids SELECT 'occ_fire_old',t.id FROM cf JOIN public.operation_task_instances t ON t.activity_id=cf.act_fire AND t.period_key='probe-event:F-old';
 -- FIXTURES-END
 
 -- 1. A staff-observed generator test satisfies exactly its generator's occurrence once: recorder is the source author, observer is the performer, typed readings are the values, occurrence completed.
@@ -396,7 +385,7 @@ SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND result->'delive
  AND result->'record'->>'correction_reason'='Resident count corrected' FROM cf_results WHERE label='cor_fire'),'a drill correction did not supersede and reopen review');
 SELECT pg_temp.c_assert((SELECT verification_receipt_id IS NULL AND effective_receipt_id=pg_temp.rid('r_fire_v3') FROM public.operation_task_instances WHERE id=pg_temp.rid('occ_fire_d0')),'review was not reopened by the correction');
 SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_fire'),pg_temp.k('dl-cor-000002'),2,'{"reason":"Stale","notes":"x"}')$q$,'Record changed since it was read','current_record_version=3','P0001');
-SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_fire'),pg_temp.k('dl-cor-000003'),3,'{"reason":"Future","drill_time":"23:59"}')$q$,'Corrected performed time cannot be after the original recording');
+SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_fire'),pg_temp.k('dl-cor-000003'),3,jsonb_build_object('reason','Future','drill_date',(SELECT to_char(future AT TIME ZONE 'America/New_York','YYYY-MM-DD') FROM cf),'drill_time',(SELECT to_char(future AT TIME ZONE 'America/New_York','HH24:MI') FROM cf)))$q$,'Corrected performed time cannot be after the original recording');
 SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_fire'),pg_temp.k('dl-cor-000004'),3,'{"reason":"Bad","drill_date":"not-a-date"}')$q$,'invalid drill value');
 INSERT INTO cf_results SELECT 'void_fire',public.void_drill_log_review(pg_temp.rid('dl_fire'),pg_temp.k('dl-void-00001'),'{"reason":"Drill was a false alarm response, not a drill"}');
 SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state'='invalidated' AND (result->'delivery'->'event'->>'attention')::boolean AND result->'delivery'->'receipt'->>'receipt_kind'='reversal' AND result->'delivery'->'occurrence'->>'status' IN('pending','missed')
@@ -411,7 +400,7 @@ RESET ROLE;
 -- 5a. A failed elopement drill needs its issue summary, then opens an issue that its void leaves open; an elopement drill by maintenance then satisfies only its activity; a tornado drill is finalized without a delivery and a direct delivery of it is a recorded reader failure; a previous-period fire drill moves when its date is corrected; a drill type never changes to or from tornado on a final log; a type change onto an occurrence another record satisfied is a visible conflict.
 SELECT pg_temp.c_login('maint');
 SET LOCAL ROLE authenticated;
-INSERT INTO cf_ids SELECT 'dl_failed',pg_temp.drill('elopement',d0,'00:10','{"notes":"Elopement drill, slow response","outcome":"failed"}') FROM cf;
+INSERT INTO cf_ids SELECT 'dl_failed',pg_temp.drill_at('elopement',past_due+interval '1 minute','{"notes":"Elopement drill, slow response","outcome":"failed"}') FROM cf;
 SELECT pg_temp.c_expect($q$SELECT public.finalize_drill_log_review(pg_temp.rid('dl_failed'),pg_temp.k('dl-fin-fail-01'),'{"entry_reason":"Logged after"}')$q$,'A failed outcome requires an issue summary');
 UPDATE public.drill_log SET issue_summary='Exit B alarm did not sound' WHERE id=pg_temp.rid('dl_failed');
 INSERT INTO cf_results SELECT 'fin_failed',public.finalize_drill_log_review(pg_temp.rid('dl_failed'),pg_temp.k('dl-fin-fail-01'),'{"entry_reason":"Logged after"}');
@@ -431,13 +420,33 @@ SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean=false AND jsonb_typ
 SELECT pg_temp.c_assert((SELECT array_agg(k ORDER BY k COLLATE "C")=ARRAY['delivery','link_reason','linked','record','replayed'] FROM jsonb_object_keys(pg_temp.res('fin_tornado')) k),'tornado reply keys drifted');
 INSERT INTO cf_results SELECT 'del_tornado',pg_temp.deliver('dl-torn-0001','drill-log',pg_temp.rid('dl_tornado')::text,'1','final',site_a) FROM cf;
 SELECT pg_temp.c_assert((SELECT result->'event'->>'state'='refused' AND result->'event'->>'reason'='reader_failed' AND (result->'event'->>'attention')::boolean AND result->'event'->>'detail' LIKE '%no checklist activity%' FROM cf_results WHERE label='del_tornado'),'a tornado delivery was not a recorded reader failure');
-INSERT INTO cf_ids SELECT 'dl_fire_old',pg_temp.drill('fire',dold,'14:00','{"notes":"Fire drill, previous period"}') FROM cf;
+RESET ROLE;
+-- Older coverage is governed on d0 under the published fixture rule. Create it only for the historical-record cases; its d0 overlap must not affect the earlier single-candidate cases.
+SELECT pg_temp.c_clear();
+DO $$ DECLARE f cf; src public.operation_task_instances; BEGIN
+ SELECT * INTO f FROM cf;
+ PERFORM set_config('haven.operation_occurrence_command',haven.operation_occurrence_token(),true);
+ SELECT t.* INTO src FROM public.operation_task_instances t WHERE t.id=(SELECT id FROM cf_ids WHERE label='occ_fire_d0');
+ INSERT INTO public.operation_task_instances SELECT (jsonb_populate_record(src,jsonb_build_object('id',gen_random_uuid(),'occurrence_kind','event','source_event_key','probe-event','source_event_id','F-old',
+  'source_event_at',f.past_due,'governing_at',f.past_due,
+  'due_at',f.past_due,'grace_ends_at',NULL,'status','pending','execution_state','none','effective_receipt_id',NULL,'verification_receipt_id',NULL,
+  'performed_at',NULL,'completed_at',NULL,'signed_by',NULL,'signed_at',NULL,'second_sign_by',NULL,'second_signed_at',NULL,'verified_by',NULL,'verified_at',NULL,'sla_met',NULL,'completion_notes',NULL,'created_by',NULL,'updated_by',NULL,'started_at',NULL,
+  'assigned_shift_date',f.d0,'period_key','probe-event:F-old','period_start_date',f.d0-7,'period_end_date',f.d0,'created_at',clock_timestamp(),'updated_at',clock_timestamp()))).*;
+ PERFORM set_config('haven.operation_occurrence_command','',true);
+END $$;
+INSERT INTO cf_ids SELECT 'occ_fire_old',t.id FROM cf JOIN public.operation_task_instances t ON t.activity_id=cf.act_fire AND t.period_key='probe-event:F-old';
+SELECT pg_temp.c_login('admin_a'); SET LOCAL ROLE authenticated;
+INSERT INTO cf_ids SELECT 'dl_fire_old',pg_temp.drill_at('fire',past_due-interval '3 days','{"notes":"Fire drill, previous period"}') FROM cf;
 INSERT INTO cf_results SELECT 'fin_fire_old',public.finalize_drill_log_review(pg_temp.rid('dl_fire_old'),pg_temp.k('dl-fin-old-001'),'{"entry_reason":"Paper log transcribed a week later"}');
 INSERT INTO cf_ids SELECT 'r_fire_old',(result->'delivery'->'receipt'->>'id')::uuid FROM cf_results WHERE label='fin_fire_old';
 SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_fire_old') FROM cf_results WHERE label='fin_fire_old'),'the previous-period drill did not match the older occurrence');
-INSERT INTO cf_results SELECT 'cor_fire_old',public.correct_drill_log_review(pg_temp.rid('dl_fire_old'),pg_temp.k('dl-cor-old-001'),1,jsonb_build_object('reason','Date was wrong on the paper log','drill_date',(SELECT to_char(d0,'YYYY-MM-DD') FROM cf),'drill_time','00:15'));
-SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND result->'delivery'->'event'->>'state'='satisfied' AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_fire_d0') AND (result->'delivery'->'receipt'->>'chain_id')::uuid=(result->'delivery'->'receipt'->>'id')::uuid
- FROM cf_results WHERE label='cor_fire_old'),'a corrected drill date did not move the receipt as a fresh chain');
+INSERT INTO cf_results SELECT 'cor_fire_old',public.correct_drill_log_review(pg_temp.rid('dl_fire_old'),pg_temp.k('dl-cor-old-001'),1,jsonb_build_object('reason','Date was wrong on the paper log','drill_date',(SELECT to_char((past_due+interval '2 minutes') AT TIME ZONE 'America/New_York','YYYY-MM-DD') FROM cf),'drill_time',(SELECT to_char((past_due+interval '2 minutes') AT TIME ZONE 'America/New_York','HH24:MI') FROM cf)));
+-- Correction may require choosing between overlapping windows on d0. Resolve that explicit ambiguity, never forge a successful reply.
+SELECT pg_temp.c_assert((SELECT result->'delivery'->'event'->>'state' IN('ambiguous','satisfied') FROM cf_results WHERE label='cor_fire_old'),'corrected date lost its candidates');
+INSERT INTO cf_results SELECT 'moved_fire_old',CASE WHEN result->'delivery'->'event'->>'state'='ambiguous' THEN
+ public.reconcile_operation_source_event_review((result->'delivery'->'event'->>'id')::uuid,pg_temp.k('dl-cor-old-select'),result->'delivery'->'event'->>'revision',jsonb_build_object('action','select','occurrence_id',pg_temp.rid('occ_fire_d0')))
+ ELSE result->'delivery' END FROM cf_results WHERE label='cor_fire_old';
+SELECT pg_temp.c_assert((SELECT result->'event'->>'state'='satisfied' AND (result->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_fire_d0') AND (result->'receipt'->>'chain_id')::uuid=(result->'receipt'->>'id')::uuid FROM cf_results WHERE label='moved_fire_old'),'a corrected drill date did not move the receipt as a fresh chain');
 SELECT pg_temp.c_assert((SELECT superseded_by_receipt_id IS NOT NULL FROM public.operation_execution_receipts WHERE id=pg_temp.rid('r_fire_old')) AND (SELECT execution_state='none' AND effective_receipt_id IS NULL FROM public.operation_task_instances WHERE id=pg_temp.rid('occ_fire_old')),'the older occurrence kept the moved drill');
 SELECT pg_temp.c_assert((SELECT count(*)=1 FROM public.operation_execution_receipts WHERE source_record_id=pg_temp.rid('dl_fire_old')::text AND receipt_kind='performance' AND superseded_by_receipt_id IS NULL),'a drill log holds two effective receipts');
 -- A final log never changes between a linked type and tornado (the receipt would be stranded or a never-delivered record delivered mid-chain); a change onto an occurrence another record satisfied is a visible conflict that overwrites nothing.
@@ -449,7 +458,7 @@ SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean=false AND result->'
  AND (result->'delivery'->'event'->>'task_instance_id')::uuid=pg_temp.rid('occ_elope_d0') AND (result->'record'->>'record_version')::int=3 FROM cf_results WHERE label='cor_fire_old_type'),'a type change onto a satisfied occurrence was not a visible conflict');
 SELECT pg_temp.c_assert((SELECT count(*)=1 AND bool_and(task_instance_id=pg_temp.rid('occ_fire_d0') AND source_record_version='2') FROM public.operation_execution_receipts WHERE source_record_id=pg_temp.rid('dl_fire_old')::text AND receipt_kind='performance' AND superseded_by_receipt_id IS NULL),'a conflicting type change moved or duplicated the receipt');
 -- A draft cannot be corrected or voided.
-INSERT INTO cf_ids SELECT 'dl_draft2',pg_temp.drill('fire',d0,'00:05','{"notes":"Draft only"}') FROM cf;
+INSERT INTO cf_ids SELECT 'dl_draft2',pg_temp.drill_at('fire',past_due+interval '3 minutes','{"notes":"Draft only"}') FROM cf;
 SELECT pg_temp.c_expect($q$SELECT public.correct_drill_log_review(pg_temp.rid('dl_draft2'),pg_temp.k('dl-cor-draft-1'),1,'{"reason":"x","notes":"y"}')$q$,'is a draft',NULL,'P0001');
 SELECT pg_temp.c_expect($q$SELECT public.void_drill_log_review(pg_temp.rid('dl_draft2'),pg_temp.k('dl-void-draft1'),'{"reason":"x"}')$q$,'is a draft',NULL,'P0001');
 RESET ROLE;
