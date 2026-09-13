@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Employee Operations Sources
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  11:10:00
+   Duration  2.85s (transform 413ms, setup 50ms, import 1.97s, tests 340ms, environment 268ms)

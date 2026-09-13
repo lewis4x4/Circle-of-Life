@@ -1,0 +1,5 @@
+
+> circle-of-life@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+src/app/api/admin/operations/employee-sources/reconcile/route.ts(21,23): error TS2339: Property 'data' does not exist on type 'never'.

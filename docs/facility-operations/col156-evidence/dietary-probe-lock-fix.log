@@ -1,0 +1,1238 @@
+BEGIN
+LOCK TABLE
+ALTER ROLE
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+SELECT 1
+ALTER TABLE
+UPDATE 1
+UPDATE 1
+ c_assert
+----------
+
+(1 row)
+
+CREATE TABLE
+CREATE TABLE
+GRANT
+GRANT
+INSERT 0 1
+INSERT 0 6
+INSERT 0 6
+INSERT 0 6
+INSERT 0 6
+INSERT 0 7
+INSERT 0 5
+INSERT 0 2
+INSERT 0 1
+INSERT 0 3
+UPDATE 1
+INSERT 0 1
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 12
+INSERT 0 12
+INSERT 0 12
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 12
+INSERT 0 12
+INSERT 0 12
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 7
+RESET
+ c_service
+-----------
+
+(1 row)
+
+SET
+INSERT 0 12
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+SELECT 1
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+SELECT 1
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+SELECT 1
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_expect
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+RESET
+UPDATE 1
+UPDATE 1
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_expect
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+RESET
+UPDATE 1
+UPDATE 1
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+RESET
+SELECT 1
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_assert
+----------
+
+(1 row)
+
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+RESET
+UPDATE 1
+SELECT 1
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_assert
+----------
+
+(1 row)
+
+UPDATE 1
+ c_login
+---------
+
+(1 row)
+
+SET
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+INSERT 0 1
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+RESET
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ set_config
+------------
+ approved
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ set_config
+------------
+
+(1 row)
+
+RESET
+ c_service
+-----------
+
+(1 row)
+
+SET
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+ c_denied
+----------
+
+(1 row)
+
+RESET
+ c_clear
+---------
+
+(1 row)
+
+DO
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ set_config
+------------
+
+(1 row)
+
+ c_service
+-----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+ c_clear
+---------
+
+(1 row)
+
+CREATE FUNCTION
+CREATE TRIGGER
+SELECT 1
+ c_login
+---------
+
+(1 row)
+
+SET
+ c_expect
+----------
+
+(1 row)
+
+ c_expect
+----------
+
+(1 row)
+
+RESET
+ c_assert
+----------
+
+(1 row)
+
+DROP TRIGGER
+DROP FUNCTION
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+ c_assert
+----------
+
+(1 row)
+
+                           result
+------------------------------------------------------------
+ COL-159 dietary and facility services source behavior PASS
+(1 row)
+
+ROLLBACK

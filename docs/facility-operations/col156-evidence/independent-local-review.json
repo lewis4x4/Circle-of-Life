@@ -1,0 +1,54 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "at": "2026-09-13T15:36:19.061328+00:00",
+  "sourceSha": null,
+  "sourceBinding": "All pre-start gate source hashes match; full private runtime/config/assets/runner manifest captured for postcommit binding.",
+  "source_hashes": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col156-independent-source-hashes.json",
+    "sha256": "f5fedf3b3b19f851ef4e0dd3340204f5ac62d3b922180fc65eb0ecb8e4f3e821",
+    "file_count": 3233
+  },
+  "gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Employee Operations Sources/test-results/agent-gates/2026-09-13T15-31-35-076Z-col156-employee-sources-final.json",
+    "sha256": "a6e5194b03b23c3da200f78f5931f5c35cfeb1036c43684840e75fa1c8da4b05",
+    "required_checks": 11,
+    "all_passed": true,
+    "native_migrations": 371,
+    "native_probes": 51
+  },
+  "tests": {
+    "full_passed": 4613,
+    "existing_skipped": 2,
+    "backend_focused": 12,
+    "ui_focused": 7,
+    "observed_concurrency_cases": 2
+  },
+  "artifacts_sha256": {
+    "gate-source-manifest.json": "e4932ce6d58bef4a6033919254ef9111dd5aeb19263b2631f530ed6f53adbe23",
+    "probe-final-stable-postgres.log": "3e9316054f92f4b45b9ac2f9bfa6a87503df955e1739f77c1f4ea7e054455b29",
+    "concurrency-final.log": "5a4778abb013fe27157f9d75a209e58ad71e921c926d24fa81de23b1b1238a2d",
+    "backend-tests-final.log": "ead5be2cbcd3e53070214ce84f8274ff2dac599619c958c49ee3d384f6cdb515",
+    "dietary-probe-lock-fix.log": "118138185748d148cfb8435a9548b5b0bc8fa6dcc67f45a7d90923c9e69e43c8",
+    "inherited-probe-deadlock.log": "e33cb433f9cd758cd652d8c62031e4fd559bc1e9ad6961574884d16f60f356da"
+  },
+  "findings": [],
+  "scope": "Local COL156 source/native engineering: approved native Employee File inputs; sensitive codes filtered before hashes; current medical/HFO authority; A-B-A/expiry transitions and idempotency; trigger-owned order resists sequence override; no HFO performance/duty/employment claims. UI and guarded native Storage transport runners reviewed.",
+  "remaining_gates": [
+    "Actual hosted personnel and medical Storage upload/attach/sign/review/download and denials",
+    "Authenticated staged browser and cleanup",
+    "Production release and actual policy/operating acceptance"
+  ],
+  "retained_failure": "First mandatory gate failed on inherited dietary audit-trigger/autovacuum lock cycle. Probe-only early lock reviewed and targeted/full mandatory replay passed; failed evidence retained.",
+  "gate_source_manifest": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/col156-native-d0bf8a90/gate-source-manifest.json",
+    "sha256": "2becfc09482d19f3e9a4f6825c0d74479d990839465c4c71a46ee95917a46ca6"
+  },
+  "log_normalization": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Employee Operations Sources/docs/facility-operations/col156-evidence/log-provenance.json",
+    "sha256": "a4c0d4fdc9804e37faeb1bb81358c7af5076c4805f7d90cbdb4c8967610f1b9a",
+    "independently_verified_logs": 13,
+    "equivalence": "Trailing whitespace normalization only; exact originals retained privately."
+  }
+}

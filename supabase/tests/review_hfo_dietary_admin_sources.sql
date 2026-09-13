@@ -19,6 +19,9 @@
 -- invalidates and satisfies as a fresh chain; the other site and every
 -- direct-DML path behave as the contract says. Rolls back.
 BEGIN;
+-- The fault-trigger test below needs this lock. Take it before fixture writes
+-- so autovacuum cannot form a transaction/DDL lock-upgrade cycle later.
+LOCK TABLE public.audit_log IN SHARE ROW EXCLUSIVE MODE;
 ALTER ROLE service_role BYPASSRLS;
 GRANT USAGE ON SCHEMA auth TO authenticated,service_role;
 GRANT SELECT ON public.audit_log TO authenticated;
