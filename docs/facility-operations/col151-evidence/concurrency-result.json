@@ -1,0 +1,31 @@
+{
+  "migration_sha256": "46da090090b4a207ee29d6a92e4772e418102b3d7851fe05cdcc2cb98a95b277",
+  "database": "col151_concurrency_7501a6d81436",
+  "environment": "native PostgreSQL with synthetic Supabase stubs",
+  "cases": [
+    {
+      "case": "source correction and new occurrence commit during snapshot materialization lock",
+      "result": "PASS",
+      "old_total": 12,
+      "fresh_total": 13,
+      "old_receipts": 2,
+      "fresh_receipts": 3,
+      "observed_lock": true
+    },
+    {
+      "case": "facility grant revoked during advisory lock wait",
+      "result": "PASS",
+      "sqlstate": "42501",
+      "no_snapshot_created": true,
+      "observed_lock": true
+    },
+    {
+      "case": "authorized empty export denied after facility grant revocation",
+      "result": "PASS",
+      "initial_total": 0,
+      "sqlstate": "42501"
+    }
+  ],
+  "cleaned": true,
+  "result": "PASS"
+}

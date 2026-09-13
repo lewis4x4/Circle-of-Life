@@ -1,0 +1,74 @@
+{
+  "at": "2026-09-13T02:10:54.003951+00:00",
+  "method": "POST",
+  "path": "/api/admin/operations/occurrences/f790a56c-6d4c-4852-b5e3-4b59ded00035/record",
+  "status": 200,
+  "result": {
+    "outcome": "receipt",
+    "receipt": {
+      "id": "8c87f5d2-0a87-4b7a-8046-75ca92f118b1",
+      "note": "col151-fa3f27672f1c admin",
+      "values": {},
+      "outcome": "performed",
+      "chain_id": "8c87f5d2-0a87-4b7a-8046-75ca92f118b1",
+      "issue_id": null,
+      "revision": "570804bf5baf219c2c205ba0a043ddee9891df110346aa89ee20f68fa8e627a7",
+      "created_at": "2026-09-13T02:10:53.931651+00:00",
+      "entry_kind": "routine",
+      "source_key": null,
+      "subject_id": "56f3cf25-84ad-4746-934d-a50e371bf561",
+      "activity_id": "6dd15479-1656-4385-866a-72ea70cc9b24",
+      "facility_id": "f2b19452-966e-4909-bfca-3a658419e3d7",
+      "recorded_at": "2026-09-13T02:10:53.945465+00:00",
+      "recorder_id": "c55df657-3956-4686-b62a-f90749e0df46",
+      "request_key": "col151-fa3f27672f1c:record-admin:88f013ed",
+      "entry_reason": null,
+      "performed_at": "2026-09-13T02:10:53.945465+00:00",
+      "receipt_kind": "performance",
+      "recorder_role": "facility_admin",
+      "superseded_at": null,
+      "correction_seq": 0,
+      "performer_kind": "self",
+      "authority_class": "facility",
+      "evidence_status": "missing",
+      "organization_id": "00000000-0000-0000-0000-000000000001",
+      "performer_label": null,
+      "source_event_id": null,
+      "completion_state": "performed_missing_evidence",
+      "missing_evidence": [
+        {
+          "kind": "photo",
+          "when": "always",
+          "label": "Panel photo",
+          "min_count": 1
+        }
+      ],
+      "source_record_id": null,
+      "task_instance_id": "f790a56c-6d4c-4852-b5e3-4b59ded00035",
+      "correction_reason": null,
+      "performer_user_id": null,
+      "corrects_receipt_id": null,
+      "performer_vendor_id": null,
+      "verifies_receipt_id": null,
+      "evidence_satisfied_at": null,
+      "source_record_version": null,
+      "requirement_version_id": "7954828e-2856-44ae-8a51-5b4d32ed3c93",
+      "evidence_status_current": "missing",
+      "facility_requirement_id": "a7da2d96-da69-43b4-bc16-950864034a4f",
+      "superseded_by_receipt_id": null,
+      "verified_receipt_revision": null
+    },
+    "occurrence": {
+      "id": "f790a56c-6d4c-4852-b5e3-4b59ded00035",
+      "status": "in_progress",
+      "performed_at": "2026-09-13T02:10:53.945465+00:00",
+      "execution_state": "performed_missing_evidence",
+      "occurrence_revision": "113faaa83ce41d4e843c106606762586e245a3b1ac5b7074731f7ac85c2b8e64"
+    },
+    "issue": null,
+    "replayed": false
+  },
+  "expected": [
+    200
+  ]
+}

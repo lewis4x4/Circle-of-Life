@@ -1,0 +1,50 @@
+{
+  "at": "2026-09-13T02:11:03.879358+00:00",
+  "method": "GET",
+  "path": "/api/admin/operations/evidence",
+  "status": 200,
+  "result": {
+    "evidence": [
+      {
+        "id": "65bb8c8e-3b1e-463a-9f28-78dcb6915060",
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "facility_id": "f2b19452-966e-4909-bfca-3a658419e3d7",
+        "activity_id": "6dd15479-1656-4385-866a-72ea70cc9b24",
+        "subject_id": "56f3cf25-84ad-4746-934d-a50e371bf561",
+        "authority_class": "facility",
+        "receipt_id": "8c87f5d2-0a87-4b7a-8046-75ca92f118b1",
+        "task_instance_id": "f790a56c-6d4c-4852-b5e3-4b59ded00035",
+        "evidence_kind": "photo",
+        "rule_label": "Panel photo",
+        "state": "finalized",
+        "bucket_id": "operation-evidence",
+        "declared_mime": "image/png",
+        "declared_size_bytes": 70,
+        "declared_sha256": "497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581",
+        "declared_md5": "b357a19c87624c7c4d131aeeb4ae677f",
+        "checksum_verified": true,
+        "checksum_method": "storage_etag_md5",
+        "checksum_verified_at": "2026-09-13T02:10:58.225793+00:00",
+        "object_id": "321fc94e-4b81-4f6d-a3cf-b29a58c19faf",
+        "object_etag": "\"b357a19c87624c7c4d131aeeb4ae677f\"",
+        "object_version": "98898c25-bf8d-46f3-a413-7d26c87b8356",
+        "object_size_bytes": 70,
+        "object_mime": "image/png",
+        "linked_table": null,
+        "linked_record_id": null,
+        "uploaded_by": "c55df657-3956-4686-b62a-f90749e0df46",
+        "prepared_at": "2026-09-13T02:10:55.154108+00:00",
+        "uploaded_at": "2026-09-13T02:10:58.225793+00:00",
+        "finalized_at": "2026-09-13T02:11:00.203562+00:00",
+        "finalized_by": "c55df657-3956-4686-b62a-f90749e0df46",
+        "failed_at": null,
+        "failure_reason": null,
+        "revision": "9301db62d2a5f1fd1074cecd7784be35d6d71063101b817d7894085a74e7c09c",
+        "created_at": "2026-09-13T02:10:55.143116+00:00"
+      }
+    ]
+  },
+  "expected": [
+    200
+  ]
+}

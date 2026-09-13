@@ -1,0 +1,28 @@
+{
+  "at": "2026-09-13T02:11:22.559004+00:00",
+  "method": "POST",
+  "path": "/api/admin/operations/activity-history/exports",
+  "status": 200,
+  "result": {
+    "manifest": {
+      "total": 1001,
+      "source": "Haven operation occurrence/receipt/evidence ledger",
+      "filters": {
+        "activity_id": "6dd15479-1656-4385-866a-72ea70cc9b24",
+        "facility_id": "f2b19452-966e-4909-bfca-3a658419e3d7"
+      },
+      "complete": true,
+      "coverage": "Authorized non-deleted occurrences across all requirement versions; all correction and verification receipts; readable evidence metadata only; native files require their own authorization",
+      "snapshot_id": "2970:2970:",
+      "generated_at": "2026-09-13T02:11:16.428559+00:00",
+      "receipt_total": 2,
+      "evidence_total": 1,
+      "schema_version": 1
+    },
+    "export_id": "143b9d15-3fd6-4d67-919a-5d4dd8df91ab",
+    "download_url": "/api/admin/operations/activity-history/exports/143b9d15-3fd6-4d67-919a-5d4dd8df91ab/download"
+  },
+  "expected": [
+    200
+  ]
+}

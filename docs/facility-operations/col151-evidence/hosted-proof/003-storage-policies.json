@@ -1,0 +1,5 @@
+{
+  "at": "2026-09-13T02:09:29.361016+00:00",
+  "exit": 0,
+  "result": "[{\"policyname\":\"operation_evidence_storage_insert\",\"permissive\":\"PERMISSIVE\",\"cmd\":\"INSERT\"}, \n {\"policyname\":\"operation_evidence_storage_insert_boundary\",\"permissive\":\"RESTRICTIVE\",\"cmd\":\"INSERT\"}, \n {\"policyname\":\"operation_evidence_storage_no_delete\",\"permissive\":\"RESTRICTIVE\",\"cmd\":\"DELETE\"}, \n {\"policyname\":\"operation_evidence_storage_no_update\",\"permissive\":\"RESTRICTIVE\",\"cmd\":\"UPDATE\"}, \n {\"policyname\":\"operation_evidence_storage_read\",\"permissive\":\"PERMISSIVE\",\"cmd\":\"SELECT\"}, \n {\"policyname\":\"operation_evidence_storage_read_boundary\",\"permissive\":\"RESTRICTIVE\",\"cmd\":\"SELECT\"}]"
+}

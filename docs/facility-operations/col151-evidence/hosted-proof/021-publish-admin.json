@@ -1,0 +1,46 @@
+{
+  "at": "2026-09-13T02:10:47.824351+00:00",
+  "method": "POST",
+  "path": "/api/admin/operations/requirements/7954828e-2856-44ae-8a51-5b4d32ed3c93/publish",
+  "status": 200,
+  "result": {
+    "version": {
+      "id": "7954828e-2856-44ae-8a51-5b4d32ed3c93",
+      "title": "col151-fa3f27672f1c admin",
+      "status": "published",
+      "version": 1,
+      "wording": "Synthetic panel photo test",
+      "procedure": null,
+      "created_at": "2026-09-13T02:10:45.992604+00:00",
+      "created_by": "2bdb3dac-8a49-4401-9225-3746c23988c1",
+      "updated_at": "2026-09-13T02:10:47.779552+00:00",
+      "activity_id": "6dd15479-1656-4385-866a-72ea70cc9b24",
+      "effective_to": null,
+      "published_at": "2026-09-13T02:10:47.779355+00:00",
+      "published_by": "2bdb3dac-8a49-4401-9225-3746c23988c1",
+      "subject_kind": "facility",
+      "effective_from": "2026-09-13T02:08:41.985453+00:00",
+      "organization_id": "00000000-0000-0000-0000-000000000001",
+      "required_inputs": [],
+      "review_required": false,
+      "source_authority": {},
+      "required_evidence": [
+        {
+          "kind": "photo",
+          "when": "always",
+          "label": "Panel photo",
+          "min_count": 1
+        }
+      ],
+      "previous_version_id": null,
+      "allowed_recorder_roles": [
+        "facility_admin",
+        "admin_assistant"
+      ],
+      "allowed_reviewer_roles": []
+    }
+  },
+  "expected": [
+    200
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "at": "2026-09-13T02:10:07.280479+00:00",
+  "method": "POST",
+  "path": "/auth/v1/admin/users",
+  "status": 200,
+  "result": {
+    "id": "2bdb3dac-8a49-4401-9225-3746c23988c1",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "col151-fa3f27672f1c+corp@example.invalid",
+    "email_confirmed_at": "2026-09-13T02:10:07.248138732Z",
+    "phone": "",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "email_verified": true,
+      "full_name": "col151-fa3f27672f1c corp"
+    },
+    "identities": [
+      {
+        "identity_id": "420bae85-fca3-4a57-89ac-5ee5ab191b39",
+        "id": "2bdb3dac-8a49-4401-9225-3746c23988c1",
+        "user_id": "2bdb3dac-8a49-4401-9225-3746c23988c1",
+        "identity_data": {
+          "email": "col151-fa3f27672f1c+corp@example.invalid",
+          "email_verified": false,
+          "phone_verified": false,
+          "sub": "2bdb3dac-8a49-4401-9225-3746c23988c1"
+        },
+        "provider": "email",
+        "last_sign_in_at": "2026-09-13T02:10:07.246390807Z",
+        "created_at": "2026-09-13T02:10:07.246446Z",
+        "updated_at": "2026-09-13T02:10:07.246446Z",
+        "email": "col151-fa3f27672f1c+corp@example.invalid"
+      }
+    ],
+    "created_at": "2026-09-13T02:10:07.245337Z",
+    "updated_at": "2026-09-13T02:10:07.248887Z",
+    "is_anonymous": false
+  },
+  "expected": [
+    200,
+    201
+  ]
+}

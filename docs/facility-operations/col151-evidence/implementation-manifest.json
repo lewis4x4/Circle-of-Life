@@ -1,0 +1,46 @@
+{
+  "base": "e9c2ee370ffde8d114b86522a6c5be36fac8823a",
+  "at": "2026-09-13T02:02:15.618356+00:00",
+  "files": [
+    {
+      "path": "src/app/(admin)/admin/operations/history/activity-history-export.test.tsx",
+      "sha256": "f3032908485985527878e1bf3cded97e4c9c340a3ad6e1523283c5441bff81aa"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/history/activity-history-export.tsx",
+      "sha256": "f5fdde82e2ef76a29ce87bd666bfbc83e11fa85ba20dfcd75924b7ab7e7b2200"
+    },
+    {
+      "path": "src/app/(admin)/admin/operations/history/page.tsx",
+      "sha256": "b389e2fc432ba2c8354563920398501fbfad1b89a662769fd6d648618fc179cf"
+    },
+    {
+      "path": "src/app/api/admin/operations/activity-history/exports/[id]/download/route.ts",
+      "sha256": "c698dfa1392a3d8a05b57ec08e8a234732825f78887fb4ed9619fae3d666b920"
+    },
+    {
+      "path": "src/app/api/admin/operations/activity-history/exports/route.test.ts",
+      "sha256": "4da0934dd657236ad48a9a51ba13e9ebf25f63feab9f1878aed05382cf1eed0e"
+    },
+    {
+      "path": "src/app/api/admin/operations/activity-history/exports/route.ts",
+      "sha256": "d9d184c3d1362e390f615bf6abed29a4887fc631f6b3db36fb05d7c246c7f43e"
+    },
+    {
+      "path": "src/lib/operations/history-export.test.ts",
+      "sha256": "f09fe4c1fef973fc8e88e2534efb36c9d6e6c2a193cc11c0e47f9d7e1c71d3a3"
+    },
+    {
+      "path": "src/lib/operations/history-export.ts",
+      "sha256": "6240db0a99a651f1df19760b9448c9494ecb2aafd453dda3e383e640ff5b7ecc"
+    },
+    {
+      "path": "supabase/migrations/365_hfo_activity_history_exports.sql",
+      "sha256": "46da090090b4a207ee29d6a92e4772e418102b3d7851fe05cdcc2cb98a95b277"
+    },
+    {
+      "path": "supabase/tests/review_hfo_activity_history_exports.sql",
+      "sha256": "a337bef1c920fbabbec7b2bceac917ee6875244d308b06834f9e8142516349ac"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "target": "iwcnajanvjvynolltflw",
+  "at": "2026-09-13T02:08:52.602906+00:00",
+  "auth": {
+    "hook_custom_access_token_enabled": true,
+    "hook_custom_access_token_uri": "pg-functions://postgres/public/haven_custom_access_token_hook",
+    "disable_signup": true,
+    "external_email_enabled": true
+  },
+  "app_origin": "http://127.0.0.1:4319",
+  "app_process_session": 19324,
+  "app_source": "ceb9811324bce3a19804ba962bca7521342d2bd4",
+  "launch_target_verified": "Exact dedicated staging environment passed to npm dev from committed export worktree",
+  "login_http_status": 200,
+  "login_bytes": 24314,
+  "previous_attempt": "/api/health returned404; not a route in this app. No fixture mutation."
+}

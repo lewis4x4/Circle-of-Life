@@ -1,0 +1,5 @@
+{
+  "preexisting_worktrees": 43,
+  "changed_since_preflight": [],
+  "note": "External concurrent changes, if any, were retained; this run edits only its two new worktrees and overnight package."
+}

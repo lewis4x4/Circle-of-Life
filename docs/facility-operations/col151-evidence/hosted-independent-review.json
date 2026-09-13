@@ -1,0 +1,24 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "reviewer": "/root/release_preflight",
+  "independent": true,
+  "sourceSha": "ceb9811324bce3a19804ba962bca7521342d2bd4",
+  "at": "2026-09-13T02:16:04.691033+00:00",
+  "target": "iwcnajanvjvynolltflw",
+  "scope": "Synthetic authenticated API: local app plus hosted Auth/DB/Storage",
+  "evidence": "hosted-proof/001 through065 plus actual CSV artifacts",
+  "assertions": [
+    "1001 unique occurrences reconcile",
+    "original snapshot bytes unchanged after correction",
+    "fresh snapshot has third receipt",
+    "anonymous/other-requester/other-site/revoked-cookie denied",
+    "no transport paths or bearer tokens in CSV",
+    "RLS private snapshot table and RPC readback",
+    "four fixture users banned; zero active profiles/grants"
+  ],
+  "not_claimed": [
+    "Production deployment",
+    "Browser UI acceptance",
+    "Staff or operating acceptance"
+  ]
+}

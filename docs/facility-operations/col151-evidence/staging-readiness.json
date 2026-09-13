@@ -1,0 +1,34 @@
+{
+  "target": "iwcnajanvjvynolltflw",
+  "sourceSha": "ceb9811324bce3a19804ba962bca7521342d2bd4",
+  "migration365Verified": true,
+  "at": "2026-09-13T02:07:06.563812+00:00",
+  "migration_hashes": {
+    "364_hfo_attention_ownership.sql": "7a68bc7525c40f555dadc35b349bf5514b40012e67d0ceffc6ea556208fd1aad",
+    "365_hfo_activity_history_exports.sql": "46da090090b4a207ee29d6a92e4772e418102b3d7851fe05cdcc2cb98a95b277"
+  },
+  "ledger": [
+    {
+      "version": "363",
+      "name": "audit_export_hfo_history_scope"
+    },
+    {
+      "version": "364",
+      "name": "hfo_attention_ownership"
+    },
+    {
+      "version": "365",
+      "name": "hfo_activity_history_exports"
+    }
+  ],
+  "posture": [
+    {
+      "relrowsecurity": true,
+      "private_table": true,
+      "create_rpc": true,
+      "read_rpc": true
+    }
+  ],
+  "result": "PASS",
+  "scope": "Additive staging schema only; no fixture or operating acceptance"
+}
