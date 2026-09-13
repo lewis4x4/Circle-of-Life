@@ -1,0 +1,34 @@
+{
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "at": "2026-09-13T05:08:52.426758+00:00",
+  "reviewedBaseSha": "1d25e3b8405ded8af70abcd2e47456e4818368f6",
+  "sourceSha": null,
+  "sourceBinding": "Reviewed working source hashes; bind committed source after unchanged-hash verification.",
+  "source_manifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Homewood Profile/docs/facility-operations/col140-evidence/hosted-profile/source-manifest.json",
+    "sha256": "a5d9b46a1b0aec8fa83a416ea3b9327972306d3ac70550aac4b0b1d5d22a0623"
+  },
+  "gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Homewood Profile/test-results/agent-gates/2026-09-13T04-43-34-353Z-COL-140-FACILITY-PROFILE.json",
+    "sha256": "4c28f176b9712e0a185a07bfe806ae592fc57595389d4ed77453b72d14ed8e40",
+    "verdict": "PASS",
+    "required_checks": 11,
+    "required_passed": 11
+  },
+  "tests": {
+    "passed": 4559,
+    "existing_skipped": 2
+  },
+  "findings": [],
+  "scope": "Local engineering: generic facility profile, scoped persisted 91-source/110-component coverage, recorded provenance without approval inference, safe draft preparation, existing/concurrent draft preservation and native synthetic unknown-schedule recording. Hosted runners reviewed and syntax checked; not executed by reviewer.",
+  "unproven": [
+    "Hosted COL-140 application/browser execution",
+    "Actual approved Homewood applicability and rule configuration",
+    "Staff and operating acceptance",
+    "Production release"
+  ],
+  "reviewed_file_count": 3170,
+  "full_review_private_path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col140-independent-local-review-full.json"
+}

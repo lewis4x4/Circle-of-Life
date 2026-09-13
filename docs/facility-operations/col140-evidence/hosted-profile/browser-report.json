@@ -1,0 +1,46 @@
+{
+  "sourceSha": "fbafd6f829d760a8a7b1d9336f1773adf10eb64b",
+  "sourceManifest": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Homewood Profile/docs/facility-operations/col140-evidence/hosted-profile/source-manifest.json",
+    "sha256": "9b5b80029fe1858c775ecb886a406d45c7d258995b0f467f5623d7399024d901"
+  },
+  "target": "iwcnajanvjvynolltflw",
+  "base": "http://127.0.0.1:4340",
+  "results": [
+    {
+      "width": 1440,
+      "errors": [],
+      "httpFailures": [],
+      "coverage": {
+        "source_count": 91,
+        "component_count": 110,
+        "mapping_unknown_count": 11
+      },
+      "retry": {
+        "prepared": 0,
+        "preserved": 97,
+        "unresolved": 13
+      },
+      "axeViolations": [],
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "errors": [],
+      "httpFailures": [],
+      "coverage": {
+        "source_count": 91,
+        "component_count": 110,
+        "mapping_unknown_count": 11
+      },
+      "retry": {
+        "prepared": 0,
+        "preserved": 97,
+        "unresolved": 13
+      },
+      "axeViolations": [],
+      "status": "PASS"
+    }
+  ],
+  "result": "PASS"
+}

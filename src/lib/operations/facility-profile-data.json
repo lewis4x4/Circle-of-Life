@@ -1,0 +1,19 @@
+{
+  "profiles": [
+    {
+      "facility_id": "00000000-0000-0000-0002-000000000003",
+      "organization_id": "00000000-0000-0000-0000-000000000001",
+      "entity_id": "00000000-0000-0000-0001-000000000003",
+      "timezone": "America/New_York",
+      "identity_source": "COL-140 live facility/entity identity review; Homewood Lodge; Sorensen, Smith & Bay LLC",
+      "directions": [
+        {
+          "activity_id": "e27fce0c-bace-4a06-8a1c-090a56fc8f8e",
+          "statement": "Weekly generator observation",
+          "source": "FIRST-BUILD-SCOPE.md: Brian Lewis direction, September 9, 2026",
+          "unresolved": "Exact day/time, procedure and equipment are unknown. Weekly direction is not an approved executable rule; the combined heading does not define the carbon monoxide procedure."
+        }
+      ]
+    }
+  ]
+}
