@@ -1,0 +1,28 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "sourceSha": "f83cd649d26ed31d0db4d6e86386814354bd5d10",
+  "target": "iwcnajanvjvynolltflw",
+  "at": "2026-09-13T15:49:03.529463+00:00",
+  "artifacts_sha256": {
+    "staging-readiness.json": "d61ac5ea987bbe72ce19171e0cbc40f4eca42c73fce3c18faf4d53fd71951538",
+    "transport-proof.json": "058695b2a028c7359f27a7fd640498bf5914d8fb867c93d12e6d8a3397443161",
+    "reconcile-proof.json": "06fe6c9ef7e3a963bdf2de9750a3d4725d801b67be53a3bc4e2ab3cbec29bf56",
+    "browser-report.json": "afb6a2a30dfd183e137b6c097e7b79217432c3750d27695d7ced3b134ab6a289",
+    "transport-denial-proof.json": "4ea96e600102e37b9c4a1f9a646d3f83c38474aa1e6c12a7e4a830e2c7499da7",
+    "cleanup.json": "473b7a739b150bff4d27c5226c383d0ea9e20aabd465fc6169d0e915b2ca59bc"
+  },
+  "findings": [],
+  "scope": "Synthetic staged native Employee File personnel/medical upload-attach-sign-review-download with byte hashes; wrong-bucket/no-grant uploads denied with zero objects; separate HFO/native medical revocation positive controls and site denial; expiry transition/retry dedup; actual UI reconcile/history at1440/375; exact fixture retirement and4356closed. No HFO performance, duty clearance, employment action or production acceptance.",
+  "transport_bytes": {
+    "personnel": 86,
+    "medical": 84
+  },
+  "source_hashes_verified": 3233,
+  "limitations": [
+    "Locator row screenshots are clipped/mostly blank; full-page images and DOM/axe support UI proof, not pixel-perfect comparison.",
+    "Previously issued signed URL validity within TTL was not claimed revoked.",
+    "Clinical/business policy, AHCA external acceptance and production release remain separate."
+  ]
+}

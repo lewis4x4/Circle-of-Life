@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "initialHistoryCount": 1,
+  "expiredHistoryCount": 2,
+  "expiryState": "expired",
+  "retryUnchanged": true,
+  "noHfoPerformanceCommand": true
+}

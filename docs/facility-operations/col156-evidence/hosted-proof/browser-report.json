@@ -1,0 +1,27 @@
+{
+  "sourceSha": "f83cd649d26ed31d0db4d6e86386814354bd5d10",
+  "target": "iwcnajanvjvynolltflw",
+  "cases": [
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "historyCount": 2,
+      "scope": "visible_records_only",
+      "axeViolations": [],
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "historyCount": 2,
+      "scope": "visible_records_only",
+      "axeViolations": [],
+      "result": "PASS"
+    }
+  ],
+  "result": "PASS"
+}

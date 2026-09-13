@@ -1,0 +1,20 @@
+{
+  "result": "PASS",
+  "facts": {
+    "inactive": true,
+    "site_grants": true,
+    "medical_grants": true,
+    "subject_grants": true,
+    "sites_retired": true,
+    "org_retired": true
+  },
+  "bansVerified": true,
+  "storageEvidenceAndAuditRetained": true,
+  "ownedListenerClosed": true,
+  "ownedPidsStopped": [
+    97725,
+    97766,
+    97772
+  ],
+  "verifiedAt": "2026-09-13T15:48:09.283027+00:00"
+}

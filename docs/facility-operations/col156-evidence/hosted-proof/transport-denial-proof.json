@@ -1,0 +1,12 @@
+{
+  "result": "PASS",
+  "managerPersonnelPositive": true,
+  "hfoMedicalScopeOnlyMasked": true,
+  "nativePositiveAfterHfoRevoke": true,
+  "personnelPositiveAfterMedicalRevoke": true,
+  "siteRevokedDownloadDenied": 401,
+  "managerMedicalDenied": 404,
+  "wrongStaffScopeDenied": 404,
+  "newDownloadAfterMedicalRevocationDenied": 404,
+  "priorSignedUrlTTLNotClaimedRevoked": true
+}
