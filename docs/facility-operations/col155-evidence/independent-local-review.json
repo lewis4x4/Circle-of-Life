@@ -1,0 +1,41 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "at": "2026-09-13T14:31:16.034732+00:00",
+  "sourceSha": null,
+  "sourceBinding": "Reviewed working source bytes; postcommit hash verification required before readiness.",
+  "source_hashes": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col155-independent-source-hashes.json",
+    "sha256": "b71665deff661ed3f4f9897a87aba9b3c23068b7649be8bdb7efa1fdbc460792",
+    "file_count": 3187
+  },
+  "gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Resident Review Sources/test-results/agent-gates/2026-09-13T14-24-47-334Z-COL-155-RESIDENT-SOURCES.json",
+    "sha256": "f5a8beadfb074c79fc8a98ce4d21ec0445b6d350b5d635096f091593fee18036",
+    "required_checks": 11,
+    "all_passed": true,
+    "native_migrations": 370,
+    "native_probes": 50
+  },
+  "verification": {
+    "backend_focused": 53,
+    "ui_focused": 22,
+    "full_suite_prior": 4586,
+    "existing_skipped": 2,
+    "native_families": 4,
+    "concurrency_cases": 4
+  },
+  "artifacts_sha256": {
+    "backend-verification.json": "139f15652e4553968ab9f23a965cde5442a9916e73c8883bf7e1b7b70f33eb36",
+    "native-source-review.log": "06fcdb3626c30893f8b5fd83831c0a67d4132f2defb06f638056f00c8bb48803",
+    "native-source-review-concurrency.json": "a6275f3a7f11bac8e086a40599384f56749464f9356d1b0df76fb84a1cb78e10"
+  },
+  "findings": [],
+  "scope": "Local integrated COL155 engineering: explicit human review; native invoker RLS; source visibility distinct from eligibility; current version/period semantics; private current-transaction receipt issuance; immutable reference/recheck history; actual same-key/revocation/source-change races and old-receipt attack denial. Guarded hosted runners independently reviewed, not executed.",
+  "remaining_gates": [
+    "Hosted API/browser and cleanup evidence",
+    "Unsupported signing/DNR/provider/arrival finality and approved clinical rules remain native/manual activation gates",
+    "Production release and operating acceptance"
+  ]
+}

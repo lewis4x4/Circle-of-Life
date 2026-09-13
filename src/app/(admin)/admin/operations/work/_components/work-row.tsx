@@ -13,6 +13,8 @@ import type {
   WorkspaceReceipt,
 } from "@/lib/operations/workspace";
 import { SaveStateNotice } from "../../_components/save-state-notice";
+import { ResidentSourceHistory } from "./resident-source-history";
+import { ResidentSourceReview } from "./resident-source-review";
 import { EvidencePanel } from "./evidence-panel";
 import { TaskReminder } from "./task-reminder";
 import { TaskHelpHandover } from "./task-help-handover";
@@ -78,6 +80,7 @@ export function WorkRow({
   const [replayed, setReplayed] = useState(false);
   const [consumed, setConsumed] = useState<string[]>([]);
   const [detailBusy, setDetailBusy] = useState(false);
+  const [sourceLocked, setSourceLocked] = useState(false);
   const active = useRef(true);
   const primary = useRef<HTMLButtonElement>(null);
   const issueIds = useRef(new Set<string>());
@@ -89,7 +92,7 @@ export function WorkRow({
     };
   }, []);
   const id = item.occurrence.id;
-  const busy = isBusy(pending.state) || detailBusy;
+  const busy = isBusy(pending.state) || detailBusy || sourceLocked;
   const unresolved = ["uncertain", "unsaved"].includes(pending.state.kind);
   const ownDrafts = pendingDrafts.filter(
     (draft) => draft.target_id === id && !consumed.includes(draft.id),
@@ -786,6 +789,8 @@ export function WorkRow({
         </form>
       )}
       {error ? <p role="alert">{error}</p> : null}
+      <ResidentSourceHistory taskId={id} actorId={actorId} facilityId={facilityId} timezone={timezone} />
+      <ResidentSourceReview item={item} actorId={actorId} actorName={actorName} facilityId={facilityId} timezone={timezone} disabled={recordingUnavailable || isBusy(pending.state) || detailBusy || unresolved || ownDrafts.length > 0} onLockChange={setSourceLocked} onSaved={(body) => { merge(body); void refreshReceipt(); }} />
       <SaveStateNotice
         state={pending.state}
         actorName={actorName ?? actorId}

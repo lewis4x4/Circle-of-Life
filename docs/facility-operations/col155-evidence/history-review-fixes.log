@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Resident Review Sources
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  10:04:41
+   Duration  3.51s (transform 1.12s, setup 153ms, import 2.59s, tests 197ms, environment 317ms)
