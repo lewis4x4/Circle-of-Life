@@ -1,0 +1,62 @@
+{
+  "result": "PASS",
+  "scope": "Preparation and disposable local SQL only; NO hosted or browser execution",
+  "syntax": "All4Python files plus browser ES module valid",
+  "imports": "Network-refused Python imports pass; browser module import inert",
+  "ledger": "Exact version-set positive and unknown-version rejection passed",
+  "localFixture": {
+    "actors": 3,
+    "tasks": 8,
+    "setupPassed": true,
+    "fullCorporateSqlAssertionsPassed": true,
+    "finalDatabase": "col160_runner_092ded988e",
+    "transport": "Auth and app HTTP stubbed, actual guarded SQL functions run against disposable PostgreSQL17 clone",
+    "localOnlyCompatibility": "auth.uid shim, auth schema usage and authenticated SELECT on public tables mirror native review harness; no hosted grant mutation",
+    "priorAttempts": [
+      {
+        "database": "col160_runner_15adca3174",
+        "outcome": "Fixture setup8tasks/3actors PASS; no command flow requested"
+      },
+      {
+        "database": "col160_runner_befd8581bf",
+        "outcome": "Fixture setup PASS; command flow refused Complete current native source required due baseline native SELECT metadata"
+      },
+      {
+        "database": "col160_runner_99b2be987a",
+        "outcome": "Same local SELECT metadata refusal with exact SQLSTATE42501 captured; no fixture change"
+      }
+    ],
+    "allExactDatabasesDropped": [
+      {
+        "database": "col160_runner_092ded988e",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_092ded988e-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_15adca3174",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_15adca3174-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_99b2be987a",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_99b2be987a-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_befd8581bf",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_befd8581bf-state.json",
+        "dropped": true
+      }
+    ]
+  },
+  "runtimeFilesUntouchedByRunnerAgent": true,
+  "remoteActions": 0,
+  "runnerHashes": {
+    "apply-staging.py": "4f80ae44ae536da60bc930b3ff6137f887cb40fd00caab38f33a3a957c486e08",
+    "browser-proof.mjs": "90262021888e7b57485d8f176ae05d484cd383f557ce022cff635938c515d70c",
+    "fixture.py": "cb65cca806ce132b4a6a4c41068a727a1c565b75dec35755d9555b11071eff09",
+    "guarded.py": "07485eed9b8f88046f4a9857e9d604dab4d9533108dd7b3cabf86eac0eb9ba0a",
+    "http-proof.py": "b479cab478f712d871397e11dfb397542eca127168855e3bd3b994f6eaf6f8b0"
+  },
+  "browserSelectorBinding": "Exact state task_id verified for both resident component panels; no first-row inference"
+}

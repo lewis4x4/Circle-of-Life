@@ -51,6 +51,28 @@ SELECT public.corporate_deliverable_command(task,'col160-coverage-b','register',
 SELECT public.corporate_deliverable_command(task,'col160-coverage-a-return','register',jsonb_build_object('period_start',start_date,'period_end',end_date,'period_provenance','Restored reviewed two-site roster','expected_facility_ids',(SELECT jsonb_agg(facility ORDER BY facility) FROM cd_sites))) FROM cd_sites WHERE n=1;
 SELECT pg_temp.cd_assert((pg_temp.cd_private_stats((SELECT facility FROM cd_sites WHERE n=1))->>'coverage_sets')::integer=4,'coverage A to B to A history collapsed');
 
+-- Direct authenticated RPC must enforce due evidence independently of the HTTP schema.
+-- Roll back this focused check so existing lifecycle and pagination fixture counts stay exact.
+SAVEPOINT cd_due_provenance;
+DO $$ DECLARE s cd_sites;before_detail jsonb;after_detail jsonb;bad text;payload jsonb;refused boolean;
+BEGIN
+ SELECT * INTO s FROM cd_sites WHERE n=1;before_detail:=pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date);
+ payload:=jsonb_build_object('expectation_id',before_detail->>'id','expected_revision',before_detail->>'revision','recipient_label',NULL,'backup_label',NULL,'due_on',current_date-1,'configuration_provenance','Synthetic due evidence validation');
+ FOREACH bad IN ARRAY ARRAY['   ',E'\t\n\r',repeat('x',1001)] LOOP
+  refused:=false;
+  BEGIN PERFORM public.corporate_deliverable_command(s.task,'col160-invalid-due-evidence','configure',payload||jsonb_build_object('due_provenance',bad));
+  EXCEPTION WHEN SQLSTATE '22023' THEN refused:=true;END;
+  PERFORM pg_temp.cd_assert(refused,'blank or oversized due provenance accepted by direct RPC');
+  after_detail:=pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date);
+  PERFORM pg_temp.cd_assert(after_detail=before_detail,'refused due evidence mutated configuration or history');
+ END LOOP;
+ PERFORM public.corporate_deliverable_command(s.task,'col160-valid-due-evidence','configure',payload||jsonb_build_object('due_provenance','  Approved synthetic close calendar  '));
+ after_detail:=pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date);
+ PERFORM pg_temp.cd_assert(after_detail->>'due_state'='documented' AND (after_detail->>'due_on')::date=current_date-1 AND after_detail#>>'{events,0,details,due_provenance}'='Approved synthetic close calendar','valid attributable due evidence lost');
+END $$;
+ROLLBACK TO SAVEPOINT cd_due_provenance;
+RELEASE SAVEPOINT cd_due_provenance;
+
 -- Unknown recipient/backup/due remain unknown. Preparation is one immutable state.
 SELECT public.corporate_deliverable_command(s.task,'col160-configure-001','configure',jsonb_build_object('expectation_id',d->>'id','expected_revision',d->>'revision','recipient_label',NULL,'backup_label',NULL,'due_on',NULL,'configuration_provenance','No approved recipient, backup or schedule in source','due_provenance',NULL)) FROM cd_sites s,LATERAL pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date)d WHERE s.n=1;
 SELECT pg_temp.cd_assert((SELECT pg_temp.cd_detail(task,facility,start_date,end_date)#>>'{due_state}'='unknown' FROM cd_sites WHERE n=1),'unknown due became active');
