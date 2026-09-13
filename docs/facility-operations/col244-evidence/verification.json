@@ -1,0 +1,44 @@
+{
+  "segment": "col244-dietary-service-entry",
+  "issues": ["COL-244"],
+  "checked_at": "2026-09-13T23:14:00Z",
+  "branch": "codex/hfo-col244-dietary-entry",
+  "base": { "ref": "codex/hfo-col241-drill-entry", "commit": "4f1e10d5", "root": "origin/main @ 1b2c509e", "migration_head": 370 },
+  "scope": "Staff entry surface for the eleven typed COL-159 source components: dietary records, facility and asset service records, and the two AED observations. Shared command machinery extracted and reused by the COL-241 surface. No migration, no schema change, no new command.",
+  "focused_tests": [
+    { "file": "src/app/(admin)/admin/operations/work/_components/dietary-service-entry.test.tsx", "tests": 13, "result": "passed", "note": "includes axe-core on the opened dietary panel" },
+    { "file": "src/app/(admin)/admin/operations/work/_components/drill-source-entry.test.tsx", "tests": 12, "result": "passed", "note": "unchanged from COL-241; proves the shared-machinery refactor is behaviour-preserving" }
+  ],
+  "suites": [{ "scope": "full vitest suite", "files": 648, "passed": 4714, "skipped": 2, "failed": 0 }],
+  "static_checks": [
+    { "command": "npm run typecheck", "result": "passed" },
+    { "command": "npm run lint", "result": "passed" }
+  ],
+  "segment_gates": {
+    "command": "SKIP_PG_VERIFY=1 npm run segment:gates -- --segment \"col244-dietary-service-entry\"",
+    "verdict": "PASS",
+    "summary": { "passed": 9, "failed": 0, "skipped": 4, "blocking_failures": [] },
+    "artifact": "test-results/agent-gates/2026-09-13T23-10-10-961Z-col244-dietary-service-entry.json",
+    "earlier_failed_run": {
+      "artifact_deleted": "2026-09-13T23-03-11-881Z-col244-dietary-service-entry.json",
+      "cause": "security.gitleaks flagged one generic-api-key false positive in prose on line 32 of the COL-241 handoff, committed in 876dd137",
+      "fix": "the sentence was reworded, COL-241 was amended to 4f1e10d5 and force-pushed, this branch was rebased onto it, and gitleaks reports no leaks"
+    }
+  },
+  "not_run": [
+    "qa.migrations-apply-postgres — SKIP_PG_VERIFY=1: no migration changed, and local Docker stacks are not used on this machine per the owner's standing rule; CI runs the same bundle",
+    "cdo.design-review and cdo.a11y-axe — route-level Playwright and axe need a running app at BASE_URL",
+    "hosted apply, deployment, authenticated hosted or browser proof, production probe",
+    "staff use and operating acceptance (COL-20 / COL-21)"
+  ],
+  "boundaries": [
+    "No migration, RPC, table or second writer",
+    "No rule, threshold, reading definition, equipment list, applicability or deadline (Q09, Q11, Q14, Q28 open; COL-226 owns approvals)",
+    "No service record writes an asset's next_service_due_at, a building profile date, the licence expiry, a vault document or a maintenance ticket",
+    "Nothing is sent or published; no vendor is created from a label",
+    "No resident is named or referenced in the dietary surface",
+    "AED operation and equipment checks stay separate records",
+    "The ten human COL-159 components get no typed screen; AL-W01 and AL-A07 records stay on the COL-241 surface"
+  ],
+  "mission_alignment": "pass"
+}
