@@ -1,5 +1,14 @@
 # COL-159 — connect dietary, facility services and general admin evidence
 
+> **Integration status corrected 2026-09-13 (COL-245).** The statements below were true when written and are kept as history. What is true now:
+> - the source work **is merged to `main`**, so "Nothing is merged to `main`" no longer holds;
+> - the migration is **`360_hfo_dietary_admin_sources.sql`**, not `348_…`. Slot 348 in `main` is a different migration, `348_hfo_current_authority.sql`;
+> - the COL-154 migration it stacks on is **`359_hfo_drill_generator_sources.sql`**, not `347_…`;
+> - PR479 was closed as superseded on 2026-09-13 because its head is an ancestor of `main`;
+> - the staff entry surface the original text excluded ("no … UI") is **COL-244**, in review.
+>
+> Everything the original text says about hosted apply, deployment, provider behaviour, policy activation and operating acceptance still stands: none of those are established. Merged is not applied, applied is not deployed, deployed is not accepted.
+
 **Implemented, independently reviewed and verified locally on the feature branch as source only.** The AL coverage pass for the twenty-one COL-159 items is complete: every item is a registered source path on the COL-147 mechanism, a human recording path with its question named, or a review activity that is never allowlisted; no Homewood rule, day, time, threshold, reading definition, equipment list or deadline is set (Q09, Q11, Q14, Q28 stay open); nothing is sent or published; no occurrence, schedule, binding, applicability, reminder, UI, hosted migration, deployment, provider behaviour, policy activation or operating acceptance has occurred. Nothing is merged to `main`.
 
 Worktree: `/Users/brianlewis/Circle of Life/Haven Facility Dietary Admin`; branch `codex/hfo-col159-dietary-admin`, stacked on COL-154 (`codex/hfo-col154-drill-generators`, `47455a13`). Blockers COL-147 and COL-154 were verified Done as reviewed, gated, unmerged source; COL-159 was moved In Progress by the orchestrator before this work started. Model: Fable 5.1. Segment id: `COL-159-HFO-DIETARY-ADMIN`.

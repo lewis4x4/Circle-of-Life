@@ -1,0 +1,55 @@
+{
+  "segment": "col245-stale-source-prose",
+  "issues": [
+    "COL-245"
+  ],
+  "checked_at": "2026-09-13T23:36:00Z",
+  "branch": "codex/hfo-col245-stale-prose",
+  "base": {
+    "ref": "origin/main",
+    "commit": "837281a9"
+  },
+  "scope": "Documentation and Linear description corrections only. No code, no migration, no test claim.",
+  "corrected": [
+    "docs/facility-operations/COL-154-HANDOFF.md",
+    "docs/facility-operations/COL-159-HANDOFF.md",
+    "docs/facility-operations/col154-evidence/engineering-contracts.md",
+    "docs/facility-operations/col159-evidence/engineering-contracts.md",
+    "Linear COL-154 description (Release line)",
+    "Linear COL-159 description (Release line)"
+  ],
+  "left_unchanged": "Dated evidence artifacts under col15x-evidence, col217-evidence, docs/facility-operations/evidence, docs/finance-integration and docs/remediation. See col245-evidence/document-inspection.md for the full list and reasons.",
+  "out_of_scope_findings": "Ten facility-operations specs, thirteen earlier lane handoffs and STAGING-INTEGRATION-PACKAGE.md still cite pre-renumber migration numbers. Reported in document-inspection.md with a recommendation, not silently changed.",
+  "segment_gates": {
+    "command": "SKIP_PG_VERIFY=1 npm run segment:gates -- --segment \"col245-stale-source-prose\"",
+    "verdict": "PASS",
+    "summary": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 4,
+      "blocking_failures": []
+    },
+    "artifact": "test-results/agent-gates/2026-09-13T23-32-54-120Z-col245-stale-source-prose.json",
+    "checks": {
+      "hygiene.env-example": "passed",
+      "hygiene.tracked-secrets-scan": "passed",
+      "hygiene.npm-audit": "passed",
+      "security.gitleaks": "passed",
+      "qa.eslint": "passed",
+      "qa.migration-sequence": "passed",
+      "qa.migrations-apply-postgres": "skipped",
+      "qa.root-build": "passed",
+      "hygiene.nextjs-deprecation-signal": "passed",
+      "qa.web-build": "skipped",
+      "chaos.stress-suite": "passed",
+      "cdo.design-review": "skipped",
+      "cdo.a11y-axe": "skipped"
+    }
+  },
+  "not_run": [
+    "qa.migrations-apply-postgres \u2014 SKIP_PG_VERIFY=1: no migration changed; local Docker stacks are not used on this machine",
+    "cdo.design-review and cdo.a11y-axe \u2014 need a running app at BASE_URL; no UI changed in this segment",
+    "hosted apply, deployment, acceptance"
+  ],
+  "mission_alignment": "pass"
+}

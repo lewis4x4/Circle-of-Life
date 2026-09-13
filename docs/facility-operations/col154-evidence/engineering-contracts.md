@@ -1,5 +1,13 @@
 # COL-154 settled engineering contracts (source-only)
 
+> **Integration status corrected 2026-09-13 (COL-245).** The statements below were true when written and are kept as history. What is true now:
+> - the migration landed as **`359_hfo_drill_generator_sources.sql`**; the `347_…` "provisional stack-local slot" named below was renumbered on integration, and slot 347 now holds `347_hfo_activity_catalog.sql`;
+> - the COL-147 mechanism it builds on landed as **`358_hfo_source_links.sql`**, not `346_…`;
+> - the contract's "nothing is merged" no longer holds: this source work is in `main`;
+> - the contract's "no UI" exclusion was closed by **COL-241 / COL-242**, merged in `837281a9`.
+>
+> Everything the original text says about hosted apply, deployment, provider behaviour, policy activation and operating acceptance still stands: none of those are established. Merged is not applied, applied is not deployed, deployed is not accepted.
+
 Settled 2026-09-10 from the live COL-154 acceptance (verified In Progress; blockers COL-147 and COL-144 Done as reviewed, gated, unmerged source), BUILD-SCOPE §4/§5/§8 ("Reuse drill/asset/maintenance source logs; separate inspection outcome from repair/service lifecycle"; "Every adapter has a tested matching predicate and failure behavior"), ROADMAP R03/R05/R06 ("Scheduled generator self-test alone cannot satisfy staff observation"; "Distinguish 'perform a drill' from 'review the drill log'"; "A failed inspection keeps a corrective action open") and the delivered COL-147 mechanism (346). Migration: `supabase/migrations/347_hfo_drill_generator_sources.sql` (provisional stack-local slot; §0). Probe: `supabase/tests/review_hfo_drill_generator_sources.sql`. Race script: `scripts/facility-operations/test-drill-generator-concurrency.py`.
 
 **What this segment is.** The first two allowlisted domain adapters on the 346 mechanism: the existing `drill_log` table (fire and elopement drills, facility subject) and a new `asset_observations` table (generator test, carbon-monoxide check and extinguisher-currency check, asset subject), each with an explicit finality lifecycle, a reader that returns the record's live state, and session commands that make a record final, correct it as a new version or void it, delivering the result through 346 in the same transaction. **What it is not.** No Homewood rule, day, time, count or deadline (Q06, Q09, Q14 stay open); no schedule, occurrence, reminder or notification; no UI; no automatic self-test, controller log, photo or vendor certificate counts as a staff observation; no review activity is satisfied by any log; no legacy drill consumer is altered or activated; nothing is merged, applied hosted or deployed.
