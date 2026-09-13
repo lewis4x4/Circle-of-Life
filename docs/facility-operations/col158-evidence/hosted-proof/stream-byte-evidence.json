@@ -1,0 +1,18 @@
+{
+  "sourceSha": "1b53a7096eb2cee6117accd263a1ebb913179998",
+  "nativeOne": "787830ac-2abb-454c-b721-ececfb7709c2",
+  "nativeTwo": "1ac83fd4-bb35-4f86-90d3-7dec57fbf22a",
+  "expectedPdfHashes": {
+    "One": "aa3a0344e116283106021d9446a19e530dcd497c0f722bb3a08486a36b0e67e0",
+    "Two": "b24e0f937df6257abf4a2c2fab8242381490f2b1314549d19dcf6db4d87bda56"
+  },
+  "finalizedTwoChecksumVerified": true,
+  "finalizedTwoDeclaredHash": "b24e0f937df6257abf4a2c2fab8242381490f2b1314549d19dcf6db4d87bda56",
+  "actualStreamComparison": "PASS in completed HTTP exercise and denial unchanged-byte assertion",
+  "signatureDates": "unknown as printed",
+  "generatedApprovalFacts": {
+    "today": "2026-09-13",
+    "due_on": "2026-09-23",
+    "effective_date": "2026-09-15"
+  }
+}

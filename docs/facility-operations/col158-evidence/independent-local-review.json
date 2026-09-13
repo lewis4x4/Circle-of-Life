@@ -1,0 +1,49 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "at": "2026-09-13T18:27:51.521158+00:00",
+  "sourceSha": null,
+  "sourceBinding": "All3264 true pre-start source hashes match current runtime/config/assets/runner bytes; postcommit binding required.",
+  "source_hashes": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-overnight-20260912-01a09869/col158-independent-source-hashes.json",
+    "sha256": "499a62f21d9b0fcd729050abd8c5121676e3a9d7adc8a2685f3a3cb7af0bc576",
+    "file_count": 3264
+  },
+  "gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Provider Report Workflows/test-results/agent-gates/2026-09-13T18-19-59-495Z-col158-provider-reports.json",
+    "sha256": "fb715fc052a2e4ed36a345f63ec97f45d1dbe7cebff09717ad64fc2977be34e1",
+    "required_checks": 11,
+    "all_passed": true,
+    "native_migrations": 373,
+    "native_probes": 53
+  },
+  "tests": {
+    "full_passed": 4669,
+    "existing_skipped": 2,
+    "backend_api": 19,
+    "later_intake_resource_guard": 7,
+    "actual_barriers": 7
+  },
+  "artifacts_sha256": {
+    "gate-source-manifest.json": "f848de1c82e2dcd2adea3670357b39b577a32602fd4538af5fa3c6d6244e67a5",
+    "probe-final-current.log": "f66801e49b643521288eae113de77b2fa3c5a01eb06a23d2f4373564b3e9cd77",
+    "concurrency-final.log": "d4abe3c49d4d9924c6c64ed7194b5b44c82258810acad795106acb956573f09d",
+    "native-schema-proof.json": "79d67b20e4827ff8401863f40a6a0af4f187e17a064416ba78d5a8700bf6be9d",
+    "backend-log-provenance.json": "ba50f74eecaa5ac41cbcfd1778b9690ce72c2afc6da7cee46a9599a13fc605df",
+    "log-provenance.json": "698e7d024aec1c3009cb4deec745b6d026a95d5f62a59726ea67b960b4a58ab5"
+  },
+  "findings": [],
+  "scope": "Local COL158 native bridge and separate service/receipt/review/signature/due/chase workflow. Actual byte-attestation trust boundaries, stored native header/object pin, same-resident two-task reuse without duplicate service/file, per-task review, date-only precision, supersession/history, seven observed barriers, incompatible public bucket atomic refusal; UI lost-finalization and resource validation fixes.",
+  "normalized_backend_logs_verified": 9,
+  "remaining": [
+    "Hosted actual byte intake/stream/browser and distinct authority denial proof",
+    "Exact fixture cleanup",
+    "Verified main integration; no production cutover authorized in current stop boundary"
+  ],
+  "limits": [
+    "Native tests use synthetic Storage/byte attestation fixtures; they do not prove hosted transport.",
+    "Signature observations remain operator-reported, not provider cryptographic signatures; PDF page count unverified in product."
+  ],
+  "normalized_logs_verified": 32
+}

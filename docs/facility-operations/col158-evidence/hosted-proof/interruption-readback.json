@@ -1,0 +1,13 @@
+{
+  "sourceSha": "1b53a7096eb2cee6117accd263a1ebb913179998",
+  "facts": {
+    "contacts": 1,
+    "versions": 1,
+    "state": "finalized",
+    "documents": 1
+  },
+  "pending": null,
+  "initialCaseResult": "PASS",
+  "initialOverallReportWrite": "interrupted",
+  "resume": "HTTP workflow only; no duplicatecontact/upload"
+}

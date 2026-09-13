@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "fixture_database": "col158_bucket_9d9d56a4",
+  "actual_migration_refused_incompatible_public_bucket": true,
+  "new_schema_rolled_back": true,
+  "existing_bucket_unchanged": true
+}

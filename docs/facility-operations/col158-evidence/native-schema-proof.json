@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "scope": "actual native reply/shared API schema",
+  "expectations": 1,
+  "versions": 2,
+  "currentTaskReview": "not_reviewed",
+  "dateOnlyService": true
+}

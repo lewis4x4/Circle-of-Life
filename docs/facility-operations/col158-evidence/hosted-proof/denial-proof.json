@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "hfoOnlyTaskPositive": true,
+  "nativeDeniedStatus": 404,
+  "crossPatientDownloadDenied": 404,
+  "readonlyManagerIntakeDenied": 404,
+  "revokedHfoDownloadDenied": 404,
+  "finalizedOverwriteDeniedStatus": 400,
+  "bytesUnchangedAfterDeniedOverwrite": true,
+  "nativeOnlyPositiveThenHfoDenied": 404,
+  "hfoPositiveAfterNativeRevocation": true,
+  "nativeRevokedDownloadDenied": 404
+}

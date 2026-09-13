@@ -1,0 +1,17 @@
+{
+  "syntheticOnly": true,
+  "facts": {
+    "today": "2026-09-13",
+    "due_on": "2026-09-23",
+    "effective_date": "2026-09-15"
+  },
+  "signatureDates": "notprovided",
+  "pdfHashes": {
+    "One": "aa3a0344e116283106021d9446a19e530dcd497c0f722bb3a08486a36b0e67e0",
+    "Two": "b24e0f937df6257abf4a2c2fab8242381490f2b1314549d19dcf6db4d87bda56"
+  },
+  "factsHashes": {
+    "One": "431fc576546dc0e158ccf9dd8449d7688168665624d6f291c34141980dedc283",
+    "Two": "d0b1c289ac98a1620d233b4cdc1e6e140279722f21fa5955d9b0980791fb0c05"
+  }
+}

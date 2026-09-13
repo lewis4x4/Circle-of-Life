@@ -1,0 +1,226 @@
+[
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/strict-gate.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/strict-gate.log",
+    "raw_sha256": "209797862710f8cca4ac509090cb4418b84b72a1a51aa7a45e10f1290dd7260f",
+    "committed_sha256": "2e4a98244bc2c5832f9b53c38d1e4a6f43809fc23938121bc536c33671f8ea40",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/typecheck-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/typecheck-final.log",
+    "raw_sha256": "750f28fd0361fc7a652fdfe3f36b5671f74bfa7de2cd16ff3c13389895d594de",
+    "committed_sha256": "50aae920c481bf23ffdb0db4982722580a7d020b497334c157c0cf0618c7b7de",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-initial.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-initial.log",
+    "raw_sha256": "1983615a7f919bede06c3416d8b45e7466aa285758d173df6ff8fb3903d67624",
+    "committed_sha256": "03a91190f4d79925b2c007e4a53225b882095fb9f9b965149de74954845aea8b",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-lint-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-lint-final.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-monthly-recovery.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-monthly-recovery.log",
+    "raw_sha256": "cc7ac7a28b4e8d321009c02ead5509c74c67229a819e01bb918956dadec34e8d",
+    "committed_sha256": "3fd5b6c7277ea8a590c3be4180144f1230d5897d65b67fa7372d23fe1209e4d1",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-typecheck.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-typecheck.log",
+    "raw_sha256": "750f28fd0361fc7a652fdfe3f36b5671f74bfa7de2cd16ff3c13389895d594de",
+    "committed_sha256": "50aae920c481bf23ffdb0db4982722580a7d020b497334c157c0cf0618c7b7de",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-file-metadata-lint.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-file-metadata-lint.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-repair-integration.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-repair-integration.log",
+    "raw_sha256": "851e9dc142bfa9e35a4f6dfb91a0a044d49e112a4260099ea940e25a611cecec",
+    "committed_sha256": "5d644cd56258b8287a1ce626cdfe0898707b0a29d0dc99e0e74f8b588f82f732",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/concurrency-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/concurrency-final.log",
+    "raw_sha256": "d4abe3c49d4d9924c6c64ed7194b5b44c82258810acad795106acb956573f09d",
+    "committed_sha256": "d4abe3c49d4d9924c6c64ed7194b5b44c82258810acad795106acb956573f09d",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-repair-lint-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-repair-lint-final.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-lint.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-lint.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-panel-final-repair.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-panel-final-repair.log",
+    "raw_sha256": "ca50c97a8c8857e1eccf6aa4c18abe397e0852fdb1b30d18d74747623abda60f",
+    "committed_sha256": "158dcce0475bd4c8bb44aac8bff026f97d3e741145b121ce3318c4a888521ae8",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-final-lint.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-final-lint.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-final-integration.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-final-integration.log",
+    "raw_sha256": "f031d6813b9f218abd1d1b8fe89c8939a0c66b6481eb9415530c0545a6c7e073",
+    "committed_sha256": "951bd76cf316628c3f248a1e8906419d2407062786e8e0eaada34f1ef8cfcf1e",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/lint-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/lint-final.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-signatures.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-signatures.log",
+    "raw_sha256": "149b52e6b6296ea0f9c731bbfdbce484d1047cdfacf6ac1414277ba1ad3dc24b",
+    "committed_sha256": "840f517f51b7891268e3dbaccbc9857549f22fcb00e4d8876e6f5833a8b62e62",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-final-repair-lint.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-final-repair-lint.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-panel.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-panel.log",
+    "raw_sha256": "e334f8be3ed13c401d2c9ee6f2a287e4bdeeb62ce6ef7776b324655b700cc726",
+    "committed_sha256": "dc64d0a0cc21c6ae68fc3c7902d1232c3b98bce28ed53e7bdc8c5f7505887cbb",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-final-typecheck.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-final-typecheck.log",
+    "raw_sha256": "750f28fd0361fc7a652fdfe3f36b5671f74bfa7de2cd16ff3c13389895d594de",
+    "committed_sha256": "50aae920c481bf23ffdb0db4982722580a7d020b497334c157c0cf0618c7b7de",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-integration.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-integration.log",
+    "raw_sha256": "0394bddf2c80d523c1be2cc1b150f579d9406d90a1f14a155c39c159cb057e26",
+    "committed_sha256": "ae6d6c8ab1572d0a3c1d83adc59d6a88577802d1933ee2077e4530015a9aa128",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/backend-tests-red.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/backend-tests-red.log",
+    "raw_sha256": "ac744e24680b99ca8d341f5f34b4d4bdff1dc053b7753c4b92c73a0f6263935e",
+    "committed_sha256": "a67a40daedfa54abf6c71ce74dfef3a061c6cbdd5dc17635af039f14160fa408",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-repair-typecheck.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-repair-typecheck.log",
+    "raw_sha256": "750f28fd0361fc7a652fdfe3f36b5671f74bfa7de2cd16ff3c13389895d594de",
+    "committed_sha256": "50aae920c481bf23ffdb0db4982722580a7d020b497334c157c0cf0618c7b7de",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-intake.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-intake.log",
+    "raw_sha256": "feb293a0a57117b70292987dd93b523975fd3b45ee6ed91f1b5f9c04752887b2",
+    "committed_sha256": "1845c6f5fcb02f4f3f08869a62cc6928a5ff92cc96a77329d92ce3672a1326b3",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/compile-final.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/compile-final.log",
+    "raw_sha256": "8748c9bee3329d1d175e0ebe95c8a9db34bc0b01740027ce17dd3bf1b72e482d",
+    "committed_sha256": "8748c9bee3329d1d175e0ebe95c8a9db34bc0b01740027ce17dd3bf1b72e482d",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/vitest-full.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/vitest-full.log",
+    "raw_sha256": "c302c37608ea2f89cc27c3eb64660dc899016158cb0088480e47ec8df7766263",
+    "committed_sha256": "ff4231c20f91ca7d2e07f172dac75e18613fccc774bb69d8ff2ff87588cb89c5",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-file-metadata-bound.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-file-metadata-bound.log",
+    "raw_sha256": "6212624f925723aaba7d1811266104654bf24c3dabb09660a3a81c358575b0e1",
+    "committed_sha256": "a1a0ac6f7e37d8b4633435f119cea38a8848adfc80251dc9ac35f1746f4a990b",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/backend-tests-green.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/backend-tests-green.log",
+    "raw_sha256": "9a6f1399f1d086df0eb733e2ca945dd693dfdfcdbc58f1b412c4392563fcee53",
+    "committed_sha256": "51203cd828b5db9a9c5dff50fc9fabeb87b41e37c34f6a02e1dfb10aaf9d9137",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-lost-finalize.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-lost-finalize.log",
+    "raw_sha256": "bce15a0cd2dcf728cc58f6b5d3a6b82ebf8ddab8c77a996a1ab89881d54c97a0",
+    "committed_sha256": "a4d82bf45508ec27945d7ff2131ce49c597dbe12ca6e0e6039cd457810e06e7a",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/ui-repair-lint.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/raw-committed-logs/ui-repair-lint.log",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "committed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/bucket-guard-negative.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/bucket-guard-negative.log",
+    "raw_sha256": "4678a8df59d7c97b3f437a051df21b42ed345d27101c0e97ce8dcf130d282041",
+    "committed_sha256": "4678a8df59d7c97b3f437a051df21b42ed345d27101c0e97ce8dcf130d282041",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/probe-final-current.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/probe-final-current.log",
+    "raw_sha256": "52192c3fd106cebcccd833add456c4c8008358b69dfb232988ae920f6fe9fa50",
+    "committed_sha256": "f66801e49b643521288eae113de77b2fa3c5a01eb06a23d2f4373564b3e9cd77",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  },
+  {
+    "committed_path": "docs/facility-operations/col158-evidence/backend-api-tests.log",
+    "raw_path": "/Users/brianlewis/.hermes/tmp/agent-runs/col158-native-ff910631/backend-api-tests.log",
+    "raw_sha256": "d0b9e62300630dacf3f3505cc1bf26cb746baef251e95d3088bff3294905292d",
+    "committed_sha256": "a99254a2eae21d061204f16e7d71456739b277afb069b3ff8b47e1cd5b28ad4c",
+    "transform": "rstrip each line; one final newline for nonempty logs"
+  }
+]

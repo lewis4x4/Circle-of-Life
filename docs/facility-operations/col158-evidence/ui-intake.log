@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Provider Report Workflows
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  13:10:48
+   Duration  2.73s (transform 295ms, setup 128ms, import 1.73s, tests 366ms, environment 226ms)

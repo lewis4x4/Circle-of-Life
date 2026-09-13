@@ -1,0 +1,28 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven Provider Report Workflows
+
+ ❯ src/app/(admin)/admin/operations/work/_components/provider-report-panel.test.tsx (6 tests | 1 failed) 579ms
+   × passes structural accessibility with two open task panels 164ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/(admin)/admin/operations/work/_components/provider-report-panel.test.tsx > passes structural accessibility with two open task panels
+SyntaxError: Failed to execute 'querySelectorAll' on 'Element': '#\30 0000000-0000-0000-0000-000000000001-new-service_at' is not a valid selector.
+ ❯ SelectorParser.getSelectorGroups ../../Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/happy-dom/lib/query-selector/SelectorParser.js:127:23
+ ❯ Function.querySelectorAll ../../Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/happy-dom/lib/query-selector/QuerySelector.js:52:62
+ ❯ HTMLDocument.querySelectorAll ../../Circle%20of%20Life/Haven%20Provider%20Report%20Workflows/node_modules/happy-dom/lib/nodes/document/Document.js:1135:30
+ ❯ getElmId node_modules/axe-core/axe.js:10853:43
+ ❯ generateSelector node_modules/axe-core/axe.js:10922:24
+ ❯ _getShadowSelector node_modules/axe-core/axe.js:10712:16
+ ❯ getSelector node_modules/axe-core/axe.js:10949:14
+ ❯ node_modules/axe-core/axe.js:5393:30
+ ❯ Object.get selector [as selector] node_modules/axe-core/axe.js:17125:40
+ ❯ cloneLimitedDqElement node_modules/axe-core/axe.js:18061:40
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  13:09:24
+   Duration  2.49s (transform 212ms, setup 59ms, import 1.33s, tests 579ms, environment 228ms)

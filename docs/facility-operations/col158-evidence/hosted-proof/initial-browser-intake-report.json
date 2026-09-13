@@ -1,0 +1,19 @@
+{
+  "mode": "intake",
+  "sourceSha": "30b2a45d183526e04d99a536af277344acc09036",
+  "target": "iwcnajanvjvynolltflw",
+  "cases": [
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "result": "FAIL",
+      "failure": {
+        "message": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('listitem', { name: 'COL158 Synthetic provider report', exact: true }).nth(2).getByLabel('Document type', { exact: true })\u001b[22m\n",
+        "stack": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('listitem', { name: 'COL158 Synthetic provider report', exact: true }).nth(2).getByLabel('Document type', { exact: true })\u001b[22m\n\n    at /Users/brianlewis/Circle of Life/Haven Provider Report Workflows/docs/facility-operations/col158-evidence/hosted-proof/browser-proof.mjs:33:210"
+      }
+    }
+  ],
+  "result": "FAIL"
+}
