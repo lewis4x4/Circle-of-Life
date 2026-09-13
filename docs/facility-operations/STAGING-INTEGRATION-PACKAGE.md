@@ -1,5 +1,7 @@
 # Staging integration and hosted Storage proof package (HFO, Finance-first)
 
+> Execution update: the historical numbering and unexecuted-status text below belong to the September10 draft. Use [COL-217 closeout](COL-217-HANDOFF.md) and [COL-143 hosted result](col143-evidence/hosted-proof/RESULT.md) for the verified September12–13 execution, explicit synthetic seed variants, current project and actual provider responses. Do not replay the old numbering table unchanged.
+
 Written 2026-09-10 on branch `codex/hfo-col145-corrections`. **This runbook has not been executed.** Nothing in it has been run against any hosted project. It is a concrete, human-executable procedure for (a) applying the Finance and Haven Facility Operations (HFO) migration stacks to a **staging** Supabase project in the recorded Finance-first order and (b) producing the hosted Storage proof that COL-143 acceptance item 3 requires. Every SQL statement and HTTP request is written out; placeholders are in angle brackets and never carry real values.
 
 Source of truth for each fact is named inline (migration file and line, route file, or contract document). Where a fact could not be determined from the repository it is marked **NOT DETERMINED FROM SOURCE** and collected again in Appendix A. Do not fill those gaps by guessing; record what the staging project actually returns.

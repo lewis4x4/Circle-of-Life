@@ -1,0 +1,16 @@
+{
+  "recorded_at": "2026-09-12T23:10:53.426829+00:00",
+  "ref": "iwcnajanvjvynolltflw",
+  "auth": {
+    "external_email_enabled": false,
+    "disable_signup": true,
+    "site_url": "http://127.0.0.1:4317",
+    "hook_custom_access_token_enabled": false,
+    "hook_custom_access_token_uri": null
+  },
+  "postgrest": {
+    "db_schema": "public,graphql_public",
+    "max_rows": 1000,
+    "db_extra_search_path": "public, extensions"
+  }
+}

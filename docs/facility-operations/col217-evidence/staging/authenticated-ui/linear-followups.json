@@ -1,0 +1,70 @@
+[
+  {
+    "issueCreate": {
+      "success": true,
+      "issue": {
+        "id": "7d2c4c9e-bd7e-444f-b243-e554112e2476",
+        "identifier": "COL-221",
+        "title": "Make billing shortcut text readable at accessible contrast",
+        "url": "https://linear.app/jarvislewis/issue/COL-221/make-billing-shortcut-text-readable-at-accessible-contrast",
+        "assignee": null
+      }
+    },
+    "relation": {
+      "issueRelationCreate": {
+        "success": true
+      }
+    }
+  },
+  {
+    "issueCreate": {
+      "success": true,
+      "issue": {
+        "id": "9ccc8411-dea0-48cf-953c-578af9be3c73",
+        "identifier": "COL-222",
+        "title": "Fix nested and duplicate landmarks in the Site work layout",
+        "url": "https://linear.app/jarvislewis/issue/COL-222/fix-nested-and-duplicate-landmarks-in-the-site-work-layout",
+        "assignee": null
+      }
+    },
+    "relation": {
+      "issueRelationCreate": {
+        "success": true
+      }
+    }
+  },
+  {
+    "issueCreate": {
+      "success": true,
+      "issue": {
+        "id": "b9964f14-57c1-4c52-a076-4468e95d298c",
+        "identifier": "COL-223",
+        "title": "Distinguish original receipt state from current evidence completion",
+        "url": "https://linear.app/jarvislewis/issue/COL-223/distinguish-original-receipt-state-from-current-evidence-completion",
+        "assignee": null
+      }
+    },
+    "relation": {
+      "issueRelationCreate": {
+        "success": true
+      }
+    }
+  },
+  {
+    "issueCreate": {
+      "success": true,
+      "issue": {
+        "id": "58c641f9-3370-43cd-8e9a-2decb4f30f65",
+        "identifier": "COL-224",
+        "title": "Diagnose the initial mobile billing hydration mismatch",
+        "url": "https://linear.app/jarvislewis/issue/COL-224/diagnose-the-initial-mobile-billing-hydration-mismatch",
+        "assignee": null
+      }
+    },
+    "relation": {
+      "issueRelationCreate": {
+        "success": true
+      }
+    }
+  }
+]

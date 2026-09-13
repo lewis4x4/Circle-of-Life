@@ -1,0 +1,11 @@
+{
+  "stageReady": true,
+  "evidenceVerified": true,
+  "authHookEnabled": true,
+  "projectRef": "iwcnajanvjvynolltflw",
+  "integrationSha": "b3e1d819874c942afb737f46eaa632ba54de247c",
+  "checkout": "/Users/brianlewis/Circle of Life/Haven HFO Staging Integration",
+  "appUrl": "http://127.0.0.1:4317",
+  "applied_manifest": "../applied-source-manifest.json",
+  "synthetic_copy_manifest": "../synthetic-replay/manifest.json"
+}

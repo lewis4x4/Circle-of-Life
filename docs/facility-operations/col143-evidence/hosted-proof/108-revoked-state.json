@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:53:29.672986+00:00",
+  "sql": "SELECT coalesce(json_agg(q),'[]'::json) FROM (SELECT state FROM public.operation_evidence WHERE id='5ba488bb-8144-4899-ac1b-46890127ff76') q;",
+  "exit": 0,
+  "stdout": "[{\"state\":\"uploaded\"}]\n",
+  "stderr": ""
+}

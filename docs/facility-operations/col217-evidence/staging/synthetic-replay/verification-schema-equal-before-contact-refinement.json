@@ -1,0 +1,17 @@
+{
+  "databases": [
+    "col217_schema_canonical",
+    "col217_schema_synthetic"
+  ],
+  "source": "b3e1d819874c942afb737f46eaa632ba54de247c",
+  "failures": [
+    {
+      "database": "col217_schema_synthetic",
+      "file": "review_finance_credential_lifecycle.sql",
+      "stderr": "psql:/Users/brianlewis/Circle of Life/Haven HFO Staging Integration/supabase/tests/review_finance_credential_lifecycle.sql:5: ERROR:  Refuse Vault stub outside owned native database or over real Vault\nCONTEXT:  PL/pgSQL function inline_code_block line 2 at RAISE\n"
+    }
+  ],
+  "col217_schema_canonical_schema_sha256": "4662524fcdb036667bce5d86b63103862b57b9881a24ee056cba0d9e5dce7d71",
+  "col217_schema_synthetic_schema_sha256": "4662524fcdb036667bce5d86b63103862b57b9881a24ee056cba0d9e5dce7d71",
+  "schema_equal": true
+}

@@ -1,0 +1,58 @@
+{
+  "run_id": "haven-col217-20260912",
+  "local_postgres": "stopped",
+  "local_app_4317": "stopped; no listener",
+  "file_batches": [
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/cleanup-files-0.json",
+      "validated": 700,
+      "removed": 700,
+      "validation": {
+        "planned_count": 700,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/cleanup-files-1.json",
+      "validated": 667,
+      "removed": 667,
+      "validation": {
+        "planned_count": 667,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    }
+  ],
+  "removed_empty_directories": [
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_multixact/members",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_multixact/offsets",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_wal/archive_status",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_wal/summaries",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_logical/snapshots",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_logical/mappings",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/base/1",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/base/4",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/base/5",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/synthetic-replay/migrations",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_multixact",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_wal",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_snapshots",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_commit_ts",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_stat",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_stat_tmp",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_logical",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_notify",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_subtrans",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_serial",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_replslot",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_tblspc",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_twophase",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_xact",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/pg_dynshmem",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/global",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg/base",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/pg"
+  ],
+  "retained": "Private manifests as provenance; source worktree/dependencies; private staging credentials/control environment; redacted source/hosted/UI evidence and Supabase staging with retired fixture history. No sibling artifact removed."
+}

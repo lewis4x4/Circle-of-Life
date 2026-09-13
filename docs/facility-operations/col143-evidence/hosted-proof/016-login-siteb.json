@@ -1,0 +1,92 @@
+{
+  "at": "2026-09-12T23:52:13.761885+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "email": "col143-95d3102349+siteb@example.invalid",
+      "password": "<REDACTED>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:52:13 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "CF-Ray": "a3a2d31cf860c14b-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "set-cookie": "<REDACTED>",
+      "Server": "cloudflare",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "Vary": "Origin, Accept-Encoding",
+      "X-Content-Type-Options": "nosniff",
+      "sb-auth-refresh-token-prefix": "<REDACTED>",
+      "sb-auth-session-id": "<REDACTED>",
+      "sb-auth-user-id": "<REDACTED>",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a09809-2e23-79d1-8879-89e130d50d2f",
+      "x-envoy-attempt-count": "1",
+      "x-envoy-upstream-service-time": "81",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "access_token": "<REDACTED>",
+      "token_type": "<REDACTED>",
+      "expires_in": 3600,
+      "expires_at": 1789260733,
+      "refresh_token": "<REDACTED>",
+      "user": {
+        "id": "fd98972e-3db9-4ddf-a421-74ab9d75a8fd",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "col143-95d3102349+siteb@example.invalid",
+        "email_confirmed_at": "2026-09-12T23:51:59.266715Z",
+        "phone": "",
+        "confirmed_at": "2026-09-12T23:51:59.266715Z",
+        "last_sign_in_at": "2026-09-12T23:52:13.724411146Z",
+        "app_metadata": {
+          "provider": "email",
+          "providers": [
+            "email"
+          ]
+        },
+        "user_metadata": {
+          "email_verified": true,
+          "full_name": "col143-95d3102349 siteb"
+        },
+        "identities": [
+          {
+            "identity_id": "96b48524-ae8c-4147-9ae3-8b1bbceb85c2",
+            "id": "fd98972e-3db9-4ddf-a421-74ab9d75a8fd",
+            "user_id": "fd98972e-3db9-4ddf-a421-74ab9d75a8fd",
+            "identity_data": {
+              "email": "col143-95d3102349+siteb@example.invalid",
+              "email_verified": false,
+              "phone_verified": false,
+              "sub": "fd98972e-3db9-4ddf-a421-74ab9d75a8fd"
+            },
+            "provider": "email",
+            "last_sign_in_at": "2026-09-12T23:51:59.264617Z",
+            "created_at": "2026-09-12T23:51:59.264664Z",
+            "updated_at": "2026-09-12T23:51:59.264664Z",
+            "email": "col143-95d3102349+siteb@example.invalid"
+          }
+        ],
+        "created_at": "2026-09-12T23:51:59.263593Z",
+        "updated_at": "2026-09-12T23:52:13.726307Z",
+        "is_anonymous": false
+      },
+      "weak_password": "<REDACTED>"
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

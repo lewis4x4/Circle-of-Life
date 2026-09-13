@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-13T00:00:13.480988+00:00",
+  "status": "PASS",
+  "exact_owned_objects_deleted": 7,
+  "active_profiles": 0,
+  "active_grants": 0,
+  "live_sites": 0,
+  "live_entities": 0,
+  "auth_users_verified_banned": 4,
+  "immutable_history": {
+    "live_sites": 0,
+    "live_entities": 0,
+    "retained_receipts": 4,
+    "retained_evidence": 7,
+    "retained_evidence_events": 22
+  }
+}

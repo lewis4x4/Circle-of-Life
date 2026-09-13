@@ -1,0 +1,105 @@
+{
+  "at": "2026-09-12T23:53:12.304869+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "Cookie": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "request_key": "col143-95d3102349:record-late:45a7934c",
+      "payload": {
+        "outcome": "performed",
+        "note": "col143-95d3102349 late",
+        "performed_at": "2026-09-12T21:53:11.419801+00:00",
+        "entry_kind": "late",
+        "entry_reason": "Synthetic earlier performance; evidence supplied later"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "X-DNS-Prefetch-Control": "on",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://iwcnajanvjvynolltflw.supabase.co; media-src 'self' https://cdn.pixabay.com; font-src 'self'; connect-src 'self' https://iwcnajanvjvynolltflw.supabase.co wss://iwcnajanvjvynolltflw.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+      "content-type": "application/json",
+      "Date": "Sat, 12 Sep 2026 23:53:12 GMT",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    },
+    "body": {
+      "outcome": "receipt",
+      "receipt": {
+        "id": "28aaf45e-0cf7-4ff1-8659-2a292e0c06e5",
+        "note": "col143-95d3102349 late",
+        "values": {},
+        "outcome": "performed",
+        "chain_id": "28aaf45e-0cf7-4ff1-8659-2a292e0c06e5",
+        "issue_id": null,
+        "revision": "fa1bbc5b6f14a4f7901bb11605994210c84245c203a8d392b5eb2735b7c57213",
+        "created_at": "2026-09-12T23:53:12.255115+00:00",
+        "entry_kind": "late",
+        "source_key": null,
+        "subject_id": "a4c58494-a502-4f20-af68-57321414086e",
+        "activity_id": "85d5a48f-2b9e-43ab-90b9-edbe11b8a56e",
+        "facility_id": "ba40a958-0747-4751-9b33-b3326bf7b802",
+        "recorded_at": "2026-09-12T23:53:12.263441+00:00",
+        "recorder_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "request_key": "col143-95d3102349:record-late:45a7934c",
+        "entry_reason": "Synthetic earlier performance; evidence supplied later",
+        "performed_at": "2026-09-12T21:53:11.419801+00:00",
+        "receipt_kind": "performance",
+        "recorder_role": "facility_admin",
+        "superseded_at": null,
+        "correction_seq": 0,
+        "performer_kind": "self",
+        "authority_class": "facility",
+        "evidence_status": "missing",
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "performer_label": null,
+        "source_event_id": null,
+        "completion_state": "performed_missing_evidence",
+        "missing_evidence": [
+          {
+            "kind": "photo",
+            "when": "always",
+            "label": "Panel photo",
+            "min_count": 1
+          }
+        ],
+        "source_record_id": null,
+        "task_instance_id": "2a9db371-5706-483a-9ab0-4111741f94ba",
+        "correction_reason": null,
+        "performer_user_id": null,
+        "corrects_receipt_id": null,
+        "performer_vendor_id": null,
+        "verifies_receipt_id": null,
+        "evidence_satisfied_at": null,
+        "source_record_version": null,
+        "requirement_version_id": "c8d80e5d-ba4d-4e8f-870e-289945e35ba0",
+        "evidence_status_current": "missing",
+        "facility_requirement_id": "8510b881-4def-4a6b-bfcc-fea1f9a53a8d",
+        "superseded_by_receipt_id": null,
+        "verified_receipt_revision": null
+      },
+      "occurrence": {
+        "id": "2a9db371-5706-483a-9ab0-4111741f94ba",
+        "status": "in_progress",
+        "performed_at": "2026-09-12T21:53:11.419801+00:00",
+        "execution_state": "performed_missing_evidence",
+        "occurrence_revision": "1a2cd6503207b6a506d9b69c08688e76b8bbd800b93e46e95f598a0aee5e483c"
+      },
+      "issue": null,
+      "replayed": false
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

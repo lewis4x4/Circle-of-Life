@@ -1,0 +1,1669 @@
+{
+  "ref": "iwcnajanvjvynolltflw",
+  "commands": [
+    {
+      "sql": "DROP SCHEMA IF EXISTS haven CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP VIEW IF EXISTS public.quality_latest_facility_measures CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP MATERIALIZED VIEW IF EXISTS public.ar_aging_facility_daily CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.fl_statutes CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.fl_statute_module_links CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.grace_conversations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.grace_messages CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.grace_usage_counters CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.grace_memory CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.flow_workflow_definitions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.flow_workflow_runs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.flow_workflow_run_steps CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.organizations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.units CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.rooms CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.search_audit_log CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.search_tool_policies CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facilities CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.audit_log CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.user_facility_access CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.family_resident_links CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.census_daily_log CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_alert_rules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.residents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.care_plans CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.care_plan_items CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.assessments CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_photos CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.assessment_templates CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_contacts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_documents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.daily_logs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.adl_logs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.behavioral_logs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.condition_changes CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.shift_handoffs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.emar_records CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.activities CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.activity_sessions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.activity_attendance CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_safety_scores CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.incident_followups CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.incident_photos CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.time_records CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.incidents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_safety_insights CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.incident_sequences CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staff CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staff_certifications CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.schedules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.shift_assignments CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.shift_swap_requests CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staffing_ratio_snapshots CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.rate_schedules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_payers CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.med_tech_shifts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.invoices CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.invoice_line_items CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.payments CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.med_tech_shift_residents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.collection_activities CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.invoice_sequences CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.family_portal_messages CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.care_plan_tasks CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.care_plan_review_alerts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.med_passes CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.verbal_orders CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.controlled_substance_counts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.witness_signatures CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.medication_errors CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staff_illness_records CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.infection_surveillance CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.infection_outbreaks CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.outbreak_actions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vital_sign_alert_thresholds CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vital_sign_alerts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.prn_events CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.survey_deficiencies CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.shift_tape_events CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.plans_of_correction CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.pre_pass_holds CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.policy_acknowledgments CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.survey_visit_sessions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.survey_visit_log_entries CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.journal_entries CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.gl_accounts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_medications CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.journal_entry_lines CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.entity_gl_settings CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.gl_budget_lines CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.insurance_policies CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.diet_orders CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.insurance_renewals CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.insurance_claims CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.claim_activities CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.meal_services CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.certificates_of_insurance CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.premium_allocations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.loss_runs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_po_sequences CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.renewal_data_packages CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.tray_tickets CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.workers_comp_claims CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.haccp_logs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.meal_refusals CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.fortification_recommendations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.documents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_facilities CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.contracts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.contract_terms CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.contract_alerts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.purchase_orders CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.po_line_items CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_invoices CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_invoice_lines CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_payments CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_payment_applications CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_insurance CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_scorecards CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.document_aliases CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendors CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_dashboard_configs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_kpi_snapshots CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_alert_user_state CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.benchmark_cohorts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_saved_reports CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.document_relationships CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.gl_period_closes CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.gl_posting_rules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.audit_log_export_jobs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.ratio_rule_sets CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.notification_subscriptions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.search_documents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.advance_directive_documents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.controlled_substance_count_variance_events CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.emar_administration_witnesses CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.document_planning_hints CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.incident_root_cause_taxonomy CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.regulatory_reporting_obligations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.notification_routes CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.knowledge_contradictions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.on_call_schedules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.incident_root_causes CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staff_background_checks CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.trust_account_entries CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.invoice_generation_profiles CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.care_plan_change_tasks CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.medication_reference CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.policy_documents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.memory_compiler_runs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.infection_threshold_profiles CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.lab_observations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.integration_inbound_queue CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.regulatory_rules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.compliance_survey_visits CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.compliance_survey_visit_notes CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.entity_insurance_allocation_settings CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.invoice_match_rules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vendor_scorecard_signals CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.ai_invocations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.ai_invocation_policies CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.incident_rca CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.admission_cases CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.admission_case_rate_terms CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.discharge_med_reconciliation CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.quality_measures CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.referral_sources CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.family_consent_records CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.quality_measure_results CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.pbj_export_batches CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.family_message_triage_items CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.family_care_conference_sessions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.pilot_feedback_submissions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_nlq_sessions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_scenarios CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.competency_demonstrations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.payroll_export_batches CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.payroll_export_lines CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_standup_metric_definitions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.vehicle_inspection_logs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.driver_credentials CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.referral_hl7_inbound CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.fleet_vehicles CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.reputation_accounts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.reputation_replies CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_standup_snapshots CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_alerts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_plans CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_plan_rules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_actions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_metric_definitions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_metric_snapshots CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_watch_protocols CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_standup_snapshot_metrics CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_watch_instances CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_tasks CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_logs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_exceptions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_standup_manual_entries CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_standup_forecast_entries CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_templates CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_watch_events CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_assignments CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_escalations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_templates CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_observation_integrity_flags CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.exec_standup_import_jobs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_runs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_template_versions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_saved_views CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_schedules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_schedule_recipients CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staff_attendance_events CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staff_requisitions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.referral_leads CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_exports CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_packs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.onboarding_responses CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.onboarding_questions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.resident_transport_requests CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.mileage_logs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.training_programs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staff_training_completions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.inservice_log_sessions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.inservice_log_attendees CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.reputation_google_oauth_credentials CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.user_profiles CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_building_profiles CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.role_permissions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.user_management_audit_log CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.referral_outreach_activities CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.beds CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.compliance_rules CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.compliance_scans CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.compliance_scan_results CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.compliance_reminders CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.emergency_checklist_items CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.emergency_checklist_completions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.operation_task_templates CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staff_discipline_records CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.organization_transport_settings CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.chunks CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_assets CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.operation_task_instances CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.chat_conversations CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.chat_messages CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.document_audit_events CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.usage_counters CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.kb_job_runs CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.kb_analytics_events CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.knowledge_gaps CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.entities CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.staffing_adequacy_snapshots CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_emergency_contacts CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_documents CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.rate_schedule_versions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.operation_audit_log CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_operational_thresholds CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_audit_log CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_survey_history CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_timeline_events CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_pack_items CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_permissions CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_benchmarks CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.report_nlq_mappings CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.compliance_knowledge_repository CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.adl_assessments CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.form_1823_records CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.admission_document_checklist_items CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.facility_communication_settings CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TABLE IF EXISTS public.family_portal_resident_rights_entries CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_vendor_guard_vendor_invoice() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_set_updated_at() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_capture_audit_log() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_validate_journal_entry_balanced() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_journal_lines_parent_must_be_draft() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_csc_discrepancy_defaults() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_cascade_journal_entry_lines_soft_delete() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_vendor_guard_purchase_order() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_set_updated_at_onboarding_questions() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_validate_vendor_payment_application_total() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_shift_assignment_staff_eligible() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS allocate_vendor_po_number(uuid) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS haven_search_refresh_resident() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS log_knowledge_gap(uuid,uuid,text,uuid) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS execute_compliance_rule(uuid,uuid) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS get_compliance_rule_status(uuid,uuid) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS retrieve_evidence(text,text,text,integer,double precision,uuid) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS increment_usage(uuid,uuid,bigint,bigint) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS document_role_can_view_audience(text,text) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS grace_increment_usage(uuid,uuid,integer,integer,integer,integer,integer) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS grace_top_flows(uuid) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS normalize_alias_term(text) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS auto_trigger_watch_protocol() CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP FUNCTION IF EXISTS allocate_incident_number(uuid) CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.org_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.entity_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.facility_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.bed_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.room_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.bed_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.gender CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.payer_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.acuity_level CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.discharge_reason CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.staff_role CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.employment_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.shift_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.app_role CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.incident_severity CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.incident_category CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.incident_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.care_plan_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.care_plan_item_category CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.assistance_level CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.medication_frequency CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.medication_route CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.medication_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.emar_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.controlled_schedule CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.invoice_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.payment_method CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.certification_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.schedule_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.shift_assignment_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.family_message_author CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.gl_account_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.journal_entry_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.insurance_policy_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.insurance_policy_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.insurance_renewal_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.insurance_claim_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.coi_holder_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.vendor_category CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.vendor_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.contract_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.contract_alert_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.contract_alert_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.po_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.vendor_invoice_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.exec_alert_severity CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.exec_alert_source_module CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.exec_snapshot_scope CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.exec_report_template CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.audit_log_export_format CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.audit_log_export_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.shift_classification CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.polst_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.background_check_result CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.premium_allocation_method CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.ai_phi_class CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.referral_lead_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.pii_access_tier CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.admission_case_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.admission_accommodation_quote CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.hospice_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.discharge_med_reconciliation_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.pbj_export_batch_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.family_care_conference_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.family_message_triage_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.exec_nlq_session_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.competency_demonstration_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.payroll_export_batch_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.diet_order_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.iddsi_food_level CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.iddsi_fluid_level CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.fleet_vehicle_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.vehicle_inspection_result CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.driver_credential_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.referral_hl7_inbound_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.reputation_platform CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.reputation_reply_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_plan_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_source_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_interval_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_task_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_entry_mode CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_quick_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_exception_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_severity CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_watch_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_follow_up_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_observation_assignment_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.report_owner_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.report_template_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.report_sharing_scope CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.report_source_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.report_run_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.report_schedule_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.report_export_format CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.transport_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.transport_request_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.training_delivery_method CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.training_frequency CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.loc_tier CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.form_1823_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.admission_document_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.discipline_action CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.medication_order_method CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.referral_source_channel CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.search_tool_tier CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.alert_condition_operator CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_risk_tier CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_insight_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.resident_insight_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.exec_standup_value_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.exec_standup_source_mode CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.exec_standup_confidence_band CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.staff_attendance_event_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.staff_requisition_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.referral_outreach_activity_type CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.referral_outreach_activity_status CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "DROP TYPE IF EXISTS public.standup_bed_availability_class CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "TRUNCATE auth.users CASCADE;",
+      "exit": 0
+    },
+    {
+      "sql": "TRUNCATE supabase_migrations.schema_migrations;",
+      "exit": 0
+    }
+  ]
+}

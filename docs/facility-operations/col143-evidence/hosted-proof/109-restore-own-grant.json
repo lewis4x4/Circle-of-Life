@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:53:30.353478+00:00",
+  "sql": "UPDATE public.user_facility_access SET revoked_at=NULL,revoked_by=NULL WHERE user_id='6c578969-864a-467b-88ee-a7ca3a782506' AND facility_id='ba40a958-0747-4751-9b33-b3326bf7b802';",
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

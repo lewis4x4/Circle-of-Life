@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "scope": "Offline harness validation only; no hosted I/O",
+  "checks": [
+    "Python syntax",
+    "fixture PNG 70-byte known MD5",
+    "recursive password/token/cookie/header/URL redaction",
+    "checkpoint replays reuse result without duplicate call",
+    "uncertain pending checkpoint refuses mutation",
+    "chunked SSR cookie roundtrip with 8000-character synthetic token"
+  ],
+  "hosted_tests_run": false
+}

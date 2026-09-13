@@ -1,0 +1,6 @@
+
+> circle-of-life@0.1.0 design:review
+> npx tsx scripts/design-review/no-schema-leak.ts && node .agents/design-review-runner.mjs
+
+[no-schema-leak] PASS: no schema leaks flagged in TSX/JSX under src/
+[design:review] FAIL: 8 viewport/route error(s). See /Users/brianlewis/Circle of Life/Haven HFO Staging Integration/test-results/design-review/report.json

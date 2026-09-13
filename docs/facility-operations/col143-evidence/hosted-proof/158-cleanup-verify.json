@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:59:53.415618+00:00",
+  "sql": "SELECT coalesce(json_agg(q),'[]'::json) FROM (SELECT (SELECT count(*) FROM storage.objects WHERE bucket_id='operation-evidence' AND name IN ('ba40a958-0747-4751-9b33-b3326bf7b802/012c29e1-870b-4b9e-98c8-17ee98c158f7/prepare.png','ba40a958-0747-4751-9b33-b3326bf7b802/2432811a-3e78-4bbe-b1e3-ba89c1438173/prepare.png','ba40a958-0747-4751-9b33-b3326bf7b802/f2080f3e-063d-408a-89a6-8fcbc90ea210/prepare.png','ba40a958-0747-4751-9b33-b3326bf7b802/be304bc6-9883-4282-a187-c21780c8f49f/mismatch.png','ba40a958-0747-4751-9b33-b3326bf7b802/5ba488bb-8144-4899-ac1b-46890127ff76/revoked.png','ba40a958-0747-4751-9b33-b3326bf7b802/56287049-790d-4288-a26a-3d304c7d240e/required-mismatch.png','ba40a958-0747-4751-9b33-b3326bf7b802/0eb0e848-741b-4db1-a5e5-d95e1fb25f99/required-replacement.png')) AS objects,(SELECT count(*) FROM public.user_profiles WHERE id IN ('6c578969-864a-467b-88ee-a7ca3a782506','e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a','5c7b9219-73a5-41ae-9e34-528a404f9e12','fd98972e-3db9-4ddf-a421-74ab9d75a8fd') AND is_active) AS active_profiles,(SELECT count(*) FROM public.user_facility_access WHERE user_id IN ('6c578969-864a-467b-88ee-a7ca3a782506','e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a','5c7b9219-73a5-41ae-9e34-528a404f9e12','fd98972e-3db9-4ddf-a421-74ab9d75a8fd') AND revoked_at IS NULL) AS active_grants) q;",
+  "exit": 0,
+  "stdout": "[{\"objects\":0,\"active_profiles\":0,\"active_grants\":0}]\n",
+  "stderr": ""
+}

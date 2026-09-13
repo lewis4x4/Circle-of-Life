@@ -1,0 +1,15 @@
+{
+  "databases": [
+    "col217_schema_canonical",
+    "col217_schema_synthetic"
+  ],
+  "source": "b3e1d819874c942afb737f46eaa632ba54de247c",
+  "failures": [
+    {
+      "database": "col217_schema_synthetic",
+      "file": "249_vendor_facility_compliance_and_categories.sql",
+      "stderr": "psql:/Users/brianlewis/.hermes/tmp/agent-runs/haven-col217-20260912/synthetic-replay/migrations/249_vendor_facility_compliance_and_categories.sql:32: ERROR:  unsafe use of new value \"community_partner\" of enum type vendor_category\nLINE 3:   category = 'community_partner'::vendor_category,\n                     ^\nHINT:  New enum values must be committed before they can be used.\n"
+    }
+  ],
+  "col217_schema_canonical_schema_sha256": "4662524fcdb036667bce5d86b63103862b57b9881a24ee056cba0d9e5dce7d71"
+}

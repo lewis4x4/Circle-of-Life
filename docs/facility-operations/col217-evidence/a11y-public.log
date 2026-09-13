@@ -1,0 +1,5 @@
+
+> circle-of-life@0.1.0 a11y:routes
+> node scripts/a11y-axe-routes.mjs
+
+[a11y:routes] PASS (2 route(s))

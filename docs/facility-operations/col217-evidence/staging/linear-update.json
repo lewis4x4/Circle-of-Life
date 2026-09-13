@@ -1,0 +1,14 @@
+{
+  "issueUpdate": {
+    "success": true,
+    "issue": {
+      "identifier": "COL-217",
+      "state": {
+        "name": "Todo"
+      },
+      "assignee": {
+        "name": "Brian Lewis"
+      }
+    }
+  }
+}

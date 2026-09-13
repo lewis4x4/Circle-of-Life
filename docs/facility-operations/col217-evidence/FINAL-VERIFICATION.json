@@ -1,0 +1,57 @@
+{
+  "recorded_at": "2026-09-13T00:17:13.731377+00:00",
+  "tested_application_sha": "b3e1d819874c942afb737f46eaa632ba54de247c",
+  "target": "iwcnajanvjvynolltflw",
+  "mission_alignment": "pass",
+  "source_verification": {
+    "vitest_passed": 4410,
+    "vitest_skipped": 2,
+    "migration_files": 366,
+    "sql_probes": 46,
+    "strict_core_gate": "PASS",
+    "independent_integration_review": "PASS",
+    "synthetic_copy_schema_acl_equality": "PASS",
+    "staging_copy_changed_files": 27
+  },
+  "hosted_proof": {
+    "result": "PASS",
+    "performance_flows": 4,
+    "redacted_records": 164,
+    "independent_codex_technical_review": "PASS",
+    "owned_objects_deleted": 7,
+    "fixture_actors_banned_inactive": 4,
+    "immutable_receipts_retained": 4,
+    "immutable_evidence_retained": 7,
+    "immutable_evidence_events_retained": 22
+  },
+  "ui": {
+    "authenticated_page_reads": "PASS on Site work Today/History and invoices at desktop/mobile",
+    "accessibility": "FAIL with separate actionable issues",
+    "issues": [
+      "COL-221",
+      "COL-222",
+      "COL-223",
+      "COL-224"
+    ],
+    "hydration": "One observation; two later loads did not reproduce, cause unverified"
+  },
+  "security_archive": {
+    "staged_gitleaks": "PASS; no detector disabled",
+    "actual_private_secret_comparison": "PASS",
+    "staged_files_scanned": 262,
+    "format_corrections": "Unneeded auth identity headers redacted; filename/hash dictionary reformatted as structured file+sha256 rows. Findings were identifiers/checksums, not credential values."
+  },
+  "sibling_worktrees_unchanged": 38,
+  "runtime": {
+    "supabase_staging": "retained",
+    "local_test_app": "stopped",
+    "local_verification_postgres": "stopped and owned tempfiles cleaned"
+  },
+  "not_claimed": [
+    "Production merge or deployment",
+    "Public hosted app deployment",
+    "Human staff, clinical, facility or operating-cycle acceptance",
+    "Previously issued signed-URL expiry/revocation",
+    "All MIME and size combinations"
+  ]
+}

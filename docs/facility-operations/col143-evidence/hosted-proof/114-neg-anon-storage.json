@@ -1,0 +1,46 @@
+{
+  "at": "2026-09-12T23:53:30.937744+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "expiresIn": 60
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:53:30 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "124",
+      "Connection": "close",
+      "CF-Ray": "a3a2d4ffdc02454c-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "Access-Control-Allow-Origin": "*",
+      "Server": "cloudflare",
+      "sb-gateway-mode": "direct",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a0980a-5bf7-79cd-a9ac-10e9c976b282",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "set-cookie": "<REDACTED>",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "statusCode": "400",
+      "error": "Error",
+      "message": "headers must have required property 'authorization'",
+      "code": "InvalidRequest"
+    }
+  },
+  "expected_status": [
+    400,
+    401,
+    403,
+    404
+  ]
+}

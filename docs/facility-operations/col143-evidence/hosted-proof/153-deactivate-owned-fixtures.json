@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:59:52.100395+00:00",
+  "sql": "BEGIN; UPDATE public.user_facility_access SET revoked_at=now() WHERE user_id IN ('6c578969-864a-467b-88ee-a7ca3a782506','e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a','5c7b9219-73a5-41ae-9e34-528a404f9e12','fd98972e-3db9-4ddf-a421-74ab9d75a8fd') AND revoked_at IS NULL; UPDATE public.user_profiles SET is_active=false WHERE id IN ('6c578969-864a-467b-88ee-a7ca3a782506','e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a','5c7b9219-73a5-41ae-9e34-528a404f9e12','fd98972e-3db9-4ddf-a421-74ab9d75a8fd'); UPDATE public.facilities SET deleted_at=now() WHERE id IN ('ba40a958-0747-4751-9b33-b3326bf7b802','a0a26431-e232-48d5-bcc6-4ef62f0cc512'); UPDATE public.entities SET deleted_at=now() WHERE id='f655c191-aaf5-4abb-b5b9-d17fb6743d71'; COMMIT;",
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

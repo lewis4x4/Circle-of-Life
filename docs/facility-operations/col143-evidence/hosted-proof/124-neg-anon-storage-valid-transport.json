@@ -1,0 +1,47 @@
+{
+  "at": "2026-09-12T23:54:10.554794+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "expiresIn": 60
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:54:10 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "132",
+      "Connection": "close",
+      "CF-Ray": "a3a2d5f64e1512ed-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "Access-Control-Allow-Origin": "*",
+      "Server": "cloudflare",
+      "sb-gateway-mode": "direct",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a0980a-f5fd-76a8-8f8e-4a9fb65f4282",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "set-cookie": "<REDACTED>",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "statusCode": "403",
+      "error": "Unauthorized",
+      "message": "permission denied for function accessible_facility_ids",
+      "code": "AccessDenied"
+    }
+  },
+  "expected_status": [
+    400,
+    401,
+    403,
+    404
+  ]
+}

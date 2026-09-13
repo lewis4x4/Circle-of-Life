@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:53:01.245909+00:00",
+  "sql": "SELECT coalesce(json_agg(q),'[]'::json) FROM (SELECT id,owner,owner_id,version,metadata->>'size' AS size,metadata->>'mimetype' AS mime,metadata->>'eTag' AS etag FROM storage.objects WHERE bucket_id='operation-evidence' AND name='ba40a958-0747-4751-9b33-b3326bf7b802/2432811a-3e78-4bbe-b1e3-ba89c1438173/prepare.png') q;",
+  "exit": 0,
+  "stdout": "[{\"id\":\"d731272b-0d37-47fe-8e0b-6eb9da2d8747\",\"owner\":\"e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a\",\"owner_id\":\"e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a\",\"version\":\"6320a750-92c1-42c2-b0c1-0785ae947fd7\",\"size\":\"70\",\"mime\":\"image/png\",\"etag\":\"\\\"b357a19c87624c7c4d131aeeb4ae677f\\\"\"}]\n",
+  "stderr": ""
+}

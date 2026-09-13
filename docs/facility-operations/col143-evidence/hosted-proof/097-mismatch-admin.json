@@ -1,0 +1,114 @@
+{
+  "at": "2026-09-12T23:53:22.834286+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "Cookie": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "receipt_id": "169955e5-6edb-43dc-9a7d-241ac3833047",
+      "request_key": "col143-95d3102349:mismatch:3d5266d7",
+      "payload": {
+        "kind": "photo",
+        "filename": "mismatch.png",
+        "mime": "image/png",
+        "size_bytes": 70,
+        "md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "sha256": "fe8d472061bd49e22eeebeb5ea0fd5951739669482db5014107621487b26aab9"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "X-DNS-Prefetch-Control": "on",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://iwcnajanvjvynolltflw.supabase.co; media-src 'self' https://cdn.pixabay.com; font-src 'self'; connect-src 'self' https://iwcnajanvjvynolltflw.supabase.co wss://iwcnajanvjvynolltflw.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+      "content-type": "application/json",
+      "Date": "Sat, 12 Sep 2026 23:53:22 GMT",
+      "Connection": "close",
+      "Transfer-Encoding": "chunked"
+    },
+    "body": {
+      "outcome": "receipt",
+      "evidence_outcome": "prepared",
+      "evidence": {
+        "id": "be304bc6-9883-4282-a187-c21780c8f49f",
+        "state": "prepared",
+        "revision": "2e51eb273eb940a3de7c7eb2eb88e631754383640cd1ef186728fc752c9f2d64",
+        "bucket_id": "operation-evidence",
+        "failed_at": null,
+        "object_id": null,
+        "created_at": "2026-09-12T23:53:22.651186+00:00",
+        "receipt_id": "169955e5-6edb-43dc-9a7d-241ac3833047",
+        "rule_label": null,
+        "subject_id": "a4c58494-a502-4f20-af68-57321414086e",
+        "activity_id": "ba7de087-bfe6-488c-a4a8-d67e19d0d394",
+        "facility_id": "ba40a958-0747-4751-9b33-b3326bf7b802",
+        "object_etag": null,
+        "object_mime": null,
+        "prepared_at": "2026-09-12T23:53:22.656767+00:00",
+        "request_key": "col143-95d3102349:mismatch:3d5266d7",
+        "uploaded_at": null,
+        "uploaded_by": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "declared_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "finalized_at": null,
+        "finalized_by": null,
+        "linked_table": null,
+        "declared_mime": "image/png",
+        "evidence_kind": "photo",
+        "failure_reason": null,
+        "object_version": null,
+        "authority_class": "facility",
+        "checksum_method": null,
+        "declared_sha256": "fe8d472061bd49e22eeebeb5ea0fd5951739669482db5014107621487b26aab9",
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "linked_record_id": null,
+        "task_instance_id": "2e6fe631-6d8f-4f92-beb0-a36d665e2ffe",
+        "checksum_verified": false,
+        "object_size_bytes": null,
+        "declared_size_bytes": 70,
+        "checksum_verified_at": null,
+        "object_path": "ba40a958-0747-4751-9b33-b3326bf7b802/be304bc6-9883-4282-a187-c21780c8f49f/mismatch.png"
+      },
+      "event": {
+        "id": "005e4d43-c711-4ed3-9dcc-795238c25db2",
+        "details": {
+          "kind": "photo",
+          "rule_label": null,
+          "declared_md5": "d41d8cd98f00b204e9800998ecf8427e",
+          "linked_table": null,
+          "declared_mime": "image/png",
+          "declared_size_bytes": 70
+        },
+        "actor_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "event_seq": 13,
+        "actor_role": "facility_admin",
+        "created_at": "2026-09-12T23:53:22.658595+00:00",
+        "event_kind": "prepared",
+        "receipt_id": "169955e5-6edb-43dc-9a7d-241ac3833047",
+        "evidence_id": "be304bc6-9883-4282-a187-c21780c8f49f",
+        "facility_id": "ba40a958-0747-4751-9b33-b3326bf7b802",
+        "request_key": "col143-95d3102349:mismatch:3d5266d7",
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "expected_receipt_revision": null
+      },
+      "replayed": false,
+      "satisfaction": null,
+      "upload": {
+        "path": "ba40a958-0747-4751-9b33-b3326bf7b802/be304bc6-9883-4282-a187-c21780c8f49f/mismatch.png",
+        "token": "<REDACTED>",
+        "signedUrl": "<REDACTED>"
+      }
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

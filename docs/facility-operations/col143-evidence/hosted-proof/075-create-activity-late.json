@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:53:07.793617+00:00",
+  "sql": "INSERT INTO public.operation_activities(id,organization_id,facility_id,activity_key,name,activity_kind,subject_kind,origin) VALUES ('85d5a48f-2b9e-43ab-90b9-edbe11b8a56e','00000000-0000-0000-0000-000000000001',NULL,'col143-95d3102349:late','col143-95d3102349 late','structured_observation','facility','admin_log') ON CONFLICT(id) DO NOTHING;",
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

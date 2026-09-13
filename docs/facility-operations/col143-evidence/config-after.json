@@ -1,0 +1,15 @@
+{
+  "ref": "iwcnajanvjvynolltflw",
+  "recorded_at": "2026-09-12T23:49:30.900302+00:00",
+  "auth": {
+    "external_email_enabled": true,
+    "disable_signup": true,
+    "site_url": "http://127.0.0.1:4317",
+    "hook_custom_access_token_enabled": true,
+    "hook_custom_access_token_uri": "pg-functions://postgres/public/haven_custom_access_token_hook"
+  },
+  "postgrest": {
+    "db_schema": "public,graphql_public",
+    "max_rows": 1000
+  }
+}

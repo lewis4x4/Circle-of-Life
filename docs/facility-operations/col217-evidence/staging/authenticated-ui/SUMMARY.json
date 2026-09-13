@@ -1,0 +1,107 @@
+{
+  "source": "b3e1d819874c942afb737f46eaa632ba54de247c",
+  "target": "iwcnajanvjvynolltflw",
+  "status": "AUTHENTICATED_RENDER_PASS_WITH_UI_FINDINGS",
+  "read_only": true,
+  "fixtures_released": true,
+  "coverage": [
+    {
+      "route": "/admin/operations/work",
+      "viewport": 1440,
+      "http_status": 200,
+      "final_path": "/admin/operations/work",
+      "render": "PASS",
+      "selected_site": "col143-95d3102349 sitea",
+      "view": "history",
+      "screenshot": "_admin_operations_work-1440.png",
+      "axe_critical_serious": 0,
+      "axe_moderate": 6
+    },
+    {
+      "route": "/admin/operations/work",
+      "viewport": 375,
+      "http_status": 200,
+      "final_path": "/admin/operations/work",
+      "render": "PASS",
+      "selected_site": "col143-95d3102349 sitea",
+      "view": "history",
+      "screenshot": "_admin_operations_work-375.png",
+      "axe_critical_serious": 0,
+      "axe_moderate": 6
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": 1440,
+      "http_status": 200,
+      "final_path": "/admin/billing/invoices",
+      "render": "PASS",
+      "selected_site": null,
+      "view": null,
+      "screenshot": "_admin_billing_invoices-1440.png",
+      "axe_critical_serious": 1,
+      "axe_moderate": 0
+    },
+    {
+      "route": "/admin/billing/invoices",
+      "viewport": 375,
+      "http_status": 200,
+      "final_path": "/admin/billing/invoices",
+      "render": "PASS",
+      "selected_site": null,
+      "view": null,
+      "screenshot": "_admin_billing_invoices-375.png",
+      "axe_critical_serious": 1,
+      "axe_moderate": 0
+    }
+  ],
+  "findings": [
+    {
+      "id": "UI-1",
+      "priority": "P2",
+      "title": "Billing shortcuts text fails contrast at desktop and mobile widths",
+      "file": "src/app/(admin)/billing/billing-ar-overview-hero.tsx",
+      "line": 114,
+      "evidence": "3.5:1 versus required4.5:1;11px text; axe color-contrast serious on1440 and375 in three runs",
+      "acceptance": "Use an accessible text color; verify both widths with real authenticated page and zero serious contrast violations."
+    },
+    {
+      "id": "UI-2",
+      "priority": "P2",
+      "title": "Site work nests page landmarks inside application main",
+      "file": "src/design-system/components/PageShell/PageShell.tsx",
+      "line": 69,
+      "related": [
+        "src/components/layout/AppShell.tsx:919",
+        "src/design-system/components/TopBar/TopBar.tsx:28",
+        "src/design-system/components/AuditFooter/AuditFooter.tsx:31",
+        "src/app/(admin)/admin/operations/work/page.tsx:282"
+      ],
+      "evidence": "Six moderate axe landmark violations at1440 and375: nested banner/main/contentinfo, duplicate banner/main and nonunique landmarks. One shared composition finding.",
+      "acceptance": "Compose Site work under one top-level main/banner/contentinfo pattern; verify both widths with zero listed landmark violations."
+    },
+    {
+      "id": "UI-3",
+      "priority": "P2",
+      "title": "Completed evidence displays a stale missing-evidence receipt state without explanation",
+      "file": "src/app/(admin)/admin/operations/work/_components/receipt-history.tsx",
+      "line": 64,
+      "evidence": "Site A History shows Status completed, Evidence complete, and Receipt state performed_missing_evidence together after successful evidence finalization; observed both widths on synthetic admin/assistant/late entries. This is a presentation ambiguity, not evidence of failed backend finalization.",
+      "acceptance": "Distinguish immutable initial receipt state from current evidence satisfaction with plain language; completed evidence must not appear currently missing."
+    },
+    {
+      "id": "UI-4",
+      "priority": "investigate",
+      "title": "Investigate one transient mobile billing hydration mismatch",
+      "file": "src/app/(admin)/billing/billing-ar-overview-hero.tsx",
+      "line": 18,
+      "evidence": "One hydration pageerror on initial375 billing load; absent on the two subsequent375 loads. Exact cause unverified. This file uses a new Date initial state and renders time at100; source pointer is a candidate only.",
+      "acceptance": "Reproduce and isolate before prescribing a fix; test initial render timing, including minute boundaries. Do not claim reproduced regression from this record alone."
+    }
+  ],
+  "harness_notes": [
+    "Initial generic role=alert collection included empty live-region content and route-title announcement Site work; these are retained raw and are not classified as application errors.",
+    "Second run Site selection failed because getByLabel exact Site did not resolve native select options; final run used the observed single native select, verified unique synthetic sitea option, and successfully read Today and History.",
+    "No generated invoices, exports, receipt commands, issue commands, evidence uploads or other business writes were invoked.",
+    "Parent devserver on4317 left running; no further browser reads needed."
+  ]
+}

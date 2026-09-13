@@ -1,0 +1,9 @@
+{
+  "site_url": "http://localhost:3000",
+  "uri_allow_list": "",
+  "hook_custom_access_token_enabled": false,
+  "hook_custom_access_token_uri": null,
+  "disable_signup": false,
+  "external_email_enabled": true,
+  "smtp_admin_email": null
+}

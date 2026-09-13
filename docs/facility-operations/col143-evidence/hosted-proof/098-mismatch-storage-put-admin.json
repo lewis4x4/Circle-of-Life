@@ -1,0 +1,43 @@
+{
+  "at": "2026-09-12T23:53:23.279960+00:00",
+  "request": {
+    "method": "PUT",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "image/png",
+      "x-upsert": "false"
+    },
+    "body": {
+      "length": 70,
+      "sha256": "fe8d472061bd49e22eeebeb5ea0fd5951739669482db5014107621487b26aab9"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:53:23 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "115",
+      "Connection": "close",
+      "CF-Ray": "a3a2d4ce3f444552-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "Access-Control-Allow-Origin": "*",
+      "Server": "cloudflare",
+      "sb-gateway-mode": "direct",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a0980a-3cf3-7967-8711-e8de5ba80e81",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "set-cookie": "<REDACTED>",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "Key": "operation-evidence/ba40a958-0747-4751-9b33-b3326bf7b802/be304bc6-9883-4282-a187-c21780c8f49f/mismatch.png"
+    }
+  },
+  "expected_status": [
+    200
+  ]
+}

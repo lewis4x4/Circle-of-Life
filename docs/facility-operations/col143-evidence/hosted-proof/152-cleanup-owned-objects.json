@@ -1,0 +1,217 @@
+{
+  "at": "2026-09-12T23:59:51.419060+00:00",
+  "request": {
+    "method": "DELETE",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "prefixes": [
+        "ba40a958-0747-4751-9b33-b3326bf7b802/012c29e1-870b-4b9e-98c8-17ee98c158f7/prepare.png",
+        "ba40a958-0747-4751-9b33-b3326bf7b802/2432811a-3e78-4bbe-b1e3-ba89c1438173/prepare.png",
+        "ba40a958-0747-4751-9b33-b3326bf7b802/f2080f3e-063d-408a-89a6-8fcbc90ea210/prepare.png",
+        "ba40a958-0747-4751-9b33-b3326bf7b802/be304bc6-9883-4282-a187-c21780c8f49f/mismatch.png",
+        "ba40a958-0747-4751-9b33-b3326bf7b802/5ba488bb-8144-4899-ac1b-46890127ff76/revoked.png",
+        "ba40a958-0747-4751-9b33-b3326bf7b802/56287049-790d-4288-a26a-3d304c7d240e/required-mismatch.png",
+        "ba40a958-0747-4751-9b33-b3326bf7b802/0eb0e848-741b-4db1-a5e5-d95e1fb25f99/required-replacement.png"
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:59:51 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "5135",
+      "Connection": "close",
+      "CF-Ray": "a3a2de46aad2dd20-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "Access-Control-Allow-Origin": "*",
+      "Server": "cloudflare",
+      "X-Content-Type-Options": "nosniff",
+      "sb-gateway-mode": "direct",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a09810-2832-7965-b2f7-77e20d56f06e",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "set-cookie": "<REDACTED>",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": [
+      {
+        "name": "ba40a958-0747-4751-9b33-b3326bf7b802/012c29e1-870b-4b9e-98c8-17ee98c158f7/prepare.png",
+        "bucket_id": "operation-evidence",
+        "owner": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "owner_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "version": "97317c38-1b33-42a2-8808-8482c949ce18",
+        "id": "356564de-8fae-40d3-bc6c-419a8dde4dae",
+        "updated_at": "2026-09-12T23:52:36.460Z",
+        "created_at": "2026-09-12T23:52:36.460Z",
+        "last_accessed_at": "2026-09-12T23:52:36.460Z",
+        "metadata": {
+          "eTag": "\"b357a19c87624c7c4d131aeeb4ae677f\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "no-cache",
+          "lastModified": "2026-09-12T23:52:37.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": {},
+        "archived_at": null,
+        "is_delete_marker": false,
+        "is_versioned": false
+      },
+      {
+        "name": "ba40a958-0747-4751-9b33-b3326bf7b802/0eb0e848-741b-4db1-a5e5-d95e1fb25f99/required-replacement.png",
+        "bucket_id": "operation-evidence",
+        "owner": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "owner_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "version": "a822fe80-69d0-4b10-b6a6-3d9cd5ce0c0d",
+        "id": "a0dbfc75-f72a-468f-92f4-0dd0d8a83123",
+        "updated_at": "2026-09-12T23:56:14.892Z",
+        "created_at": "2026-09-12T23:56:14.892Z",
+        "last_accessed_at": "2026-09-12T23:56:14.892Z",
+        "metadata": {
+          "eTag": "\"b357a19c87624c7c4d131aeeb4ae677f\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "no-cache",
+          "lastModified": "2026-09-12T23:56:15.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": {},
+        "archived_at": null,
+        "is_delete_marker": false,
+        "is_versioned": false
+      },
+      {
+        "name": "ba40a958-0747-4751-9b33-b3326bf7b802/2432811a-3e78-4bbe-b1e3-ba89c1438173/prepare.png",
+        "bucket_id": "operation-evidence",
+        "owner": "e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a",
+        "owner_id": "e79418d9-ec9c-4317-9bf5-a1be0d5e2d9a",
+        "version": "6320a750-92c1-42c2-b0c1-0785ae947fd7",
+        "id": "d731272b-0d37-47fe-8e0b-6eb9da2d8747",
+        "updated_at": "2026-09-12T23:53:00.512Z",
+        "created_at": "2026-09-12T23:53:00.512Z",
+        "last_accessed_at": "2026-09-12T23:53:00.512Z",
+        "metadata": {
+          "eTag": "\"b357a19c87624c7c4d131aeeb4ae677f\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "no-cache",
+          "lastModified": "2026-09-12T23:53:01.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": {},
+        "archived_at": null,
+        "is_delete_marker": false,
+        "is_versioned": false
+      },
+      {
+        "name": "ba40a958-0747-4751-9b33-b3326bf7b802/56287049-790d-4288-a26a-3d304c7d240e/required-mismatch.png",
+        "bucket_id": "operation-evidence",
+        "owner": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "owner_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "version": "10282ae2-9845-4374-bdf3-9f30c41d9faf",
+        "id": "00603191-18ef-447d-beda-79fbd1409b5b",
+        "updated_at": "2026-09-12T23:56:11.214Z",
+        "created_at": "2026-09-12T23:56:11.214Z",
+        "last_accessed_at": "2026-09-12T23:56:11.214Z",
+        "metadata": {
+          "eTag": "\"b357a19c87624c7c4d131aeeb4ae677f\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "no-cache",
+          "lastModified": "2026-09-12T23:56:12.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": {},
+        "archived_at": null,
+        "is_delete_marker": false,
+        "is_versioned": false
+      },
+      {
+        "name": "ba40a958-0747-4751-9b33-b3326bf7b802/5ba488bb-8144-4899-ac1b-46890127ff76/revoked.png",
+        "bucket_id": "operation-evidence",
+        "owner": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "owner_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "version": "20dbc79a-2b39-4615-b55e-f2fe8b4337b5",
+        "id": "a8929d3c-ec66-4d45-aadd-d9da240fac90",
+        "updated_at": "2026-09-12T23:53:26.152Z",
+        "created_at": "2026-09-12T23:53:26.152Z",
+        "last_accessed_at": "2026-09-12T23:53:26.152Z",
+        "metadata": {
+          "eTag": "\"291421c3098424bf9a0a8ac8a56477ce\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "no-cache",
+          "lastModified": "2026-09-12T23:53:27.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": {},
+        "archived_at": null,
+        "is_delete_marker": false,
+        "is_versioned": false
+      },
+      {
+        "name": "ba40a958-0747-4751-9b33-b3326bf7b802/be304bc6-9883-4282-a187-c21780c8f49f/mismatch.png",
+        "bucket_id": "operation-evidence",
+        "owner": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "owner_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "version": "bdaaeeb2-c168-4c3e-a990-f90829e12180",
+        "id": "f988c0aa-68dc-4090-8628-3a8b91869a48",
+        "updated_at": "2026-09-12T23:53:23.233Z",
+        "created_at": "2026-09-12T23:53:23.233Z",
+        "last_accessed_at": "2026-09-12T23:53:23.233Z",
+        "metadata": {
+          "eTag": "\"49e7b45b201e20f7a5be8658ac2019cd\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "no-cache",
+          "lastModified": "2026-09-12T23:53:24.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": {},
+        "archived_at": null,
+        "is_delete_marker": false,
+        "is_versioned": false
+      },
+      {
+        "name": "ba40a958-0747-4751-9b33-b3326bf7b802/f2080f3e-063d-408a-89a6-8fcbc90ea210/prepare.png",
+        "bucket_id": "operation-evidence",
+        "owner": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "owner_id": "6c578969-864a-467b-88ee-a7ca3a782506",
+        "version": "812d88a4-5f60-4221-8f0d-0d5dc28f7157",
+        "id": "35af3ed6-57ec-4643-999d-caea02f59c1a",
+        "updated_at": "2026-09-12T23:53:13.701Z",
+        "created_at": "2026-09-12T23:53:13.701Z",
+        "last_accessed_at": "2026-09-12T23:53:13.701Z",
+        "metadata": {
+          "eTag": "\"b357a19c87624c7c4d131aeeb4ae677f\"",
+          "size": 70,
+          "mimetype": "image/png",
+          "cacheControl": "no-cache",
+          "lastModified": "2026-09-12T23:53:14.000Z",
+          "contentLength": 70,
+          "httpStatusCode": 200
+        },
+        "user_metadata": {},
+        "archived_at": null,
+        "is_delete_marker": false,
+        "is_versioned": false
+      }
+    ]
+  },
+  "expected_status": [
+    200
+  ]
+}

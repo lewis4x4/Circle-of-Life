@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T23:51:54.288027+00:00",
+  "sql": "SELECT coalesce(json_agg(q),'[]'::json) FROM (SELECT current_database() as db, current_user as actor, exists(SELECT 1 FROM information_schema.columns WHERE table_name='operation_evidence' AND column_name='declared_md5') as amended, to_regprocedure('public.haven_custom_access_token_hook(jsonb)') IS NOT NULL as hook_exists) q;",
+  "exit": 0,
+  "stdout": "[{\"db\":\"postgres\",\"actor\":\"postgres\",\"amended\":true,\"hook_exists\":true}]\n",
+  "stderr": ""
+}

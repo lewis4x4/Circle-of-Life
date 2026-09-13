@@ -1,0 +1,40 @@
+{
+  "recorded_at": "2026-09-12T22:43:48.712216+00:00",
+  "issue": "COL-217",
+  "operations": "read-only Supabase CLI account/project/branch inventory; GitHub environment list; local source ref inspection",
+  "organization": {
+    "name": "Circle of Life",
+    "id": "macizkpxodsegtptaytu"
+  },
+  "projects_in_organization": [
+    {
+      "name": "Circle of Life / Haven",
+      "ref": "manfqmasfqppukpobpld",
+      "use": "existing production; excluded"
+    },
+    {
+      "name": "Front Office",
+      "ref": "wecsjfiituxlityaacba",
+      "use": "separate application; excluded"
+    },
+    {
+      "name": "GSMS Developers",
+      "ref": "rfndpdfuobliqxyrlita",
+      "use": "separate application; excluded"
+    }
+  ],
+  "haven_branch_list_result": null,
+  "github_environment_names": [],
+  "existing_haven_staging": "not found in accessible live inventory",
+  "management_access": "CLI successfully listed projects and organizations; create permission has not been exercised",
+  "proposed": {
+    "name": "Haven HFO Staging",
+    "organization_id": "macizkpxodsegtptaytu",
+    "region": "us-west-2",
+    "compute": "micro",
+    "data": "synthetic fixtures only",
+    "integrator": "Codex, pending approval of setup scope",
+    "new_project_ref": null
+  },
+  "mutation_performed": false
+}

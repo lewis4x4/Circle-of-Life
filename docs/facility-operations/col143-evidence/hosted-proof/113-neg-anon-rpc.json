@@ -1,0 +1,56 @@
+{
+  "at": "2026-09-12T23:53:30.774843+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "p_receipt": "169955e5-6edb-43dc-9a7d-241ac3833047",
+      "p_request_key": "col143-95d3102349:anon-rpc:5bd9bfbf",
+      "p_payload": {
+        "kind": "photo",
+        "filename": "anon.png",
+        "mime": "image/png",
+        "size_bytes": 70,
+        "md5": "b357a19c87624c7c4d131aeeb4ae677f"
+      }
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:53:30 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "CF-Ray": "a3a2d4fec9bf45aa-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "set-cookie": "<REDACTED>",
+      "Server": "cloudflare",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "Vary": "Accept-Encoding",
+      "WWW-Authenticate": "Bearer",
+      "Proxy-Status": "PostgREST; error=42501",
+      "X-Content-Type-Options": "nosniff",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a0980a-5b46-79bb-9e2d-f4b125e90c8a",
+      "x-envoy-attempt-count": "1",
+      "x-envoy-upstream-service-time": "3",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "code": "42501",
+      "details": null,
+      "hint": null,
+      "message": "permission denied for function prepare_operation_evidence_review"
+    }
+  },
+  "expected_status": [
+    401
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "at": "2026-09-12T23:52:44.024643+00:00",
+  "request": {
+    "method": "POST",
+    "url": "<REDACTED>",
+    "headers": {
+      "apikey": "<REDACTED>",
+      "Authorization": "<REDACTED>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "p_evidence": "012c29e1-870b-4b9e-98c8-17ee98c158f7",
+      "p_request_key": "col143-95d3102349:neg-assistant-rpc-fail:dde22c32",
+      "p_payload": {
+        "reason": "Synthetic negative"
+      }
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Date": "Sat, 12 Sep 2026 23:52:44 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "92",
+      "Connection": "close",
+      "CF-Ray": "a3a2d3da9eb7d7ec-ATL",
+      "CF-Cache-Status": "DYNAMIC",
+      "Server": "cloudflare",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "Proxy-Status": "PostgREST; error=P0001",
+      "X-Content-Type-Options": "nosniff",
+      "sb-gateway-version": "1",
+      "sb-project-ref": "iwcnajanvjvynolltflw",
+      "sb-request-id": "01a09809-a4a7-7247-8be3-811695695901",
+      "x-envoy-attempt-count": "1",
+      "x-envoy-upstream-service-time": "7",
+      "set-cookie": "<REDACTED>",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": {
+      "code": "P0001",
+      "details": null,
+      "hint": null,
+      "message": "Evidence belongs to another uploader"
+    }
+  },
+  "expected_status": [
+    400,
+    403
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "iwcnajanvjvynolltflw",
+  "name": "Haven HFO Staging",
+  "organization_id": "macizkpxodsegtptaytu",
+  "region": "us-west-2",
+  "status": "ACTIVE_HEALTHY",
+  "credentials_available": [
+    "database_password",
+    "anon",
+    "service_role"
+  ],
+  "secrets_in_evidence": false
+}
