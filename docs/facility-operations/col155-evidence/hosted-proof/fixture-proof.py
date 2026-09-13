@@ -98,7 +98,7 @@ def main():
   limited=api('/resident-review-sources?'+query,method='GET',expected=(200,403,404),session=state['limited_session'])
   require(state['contact'] not in json.dumps(limited) and not limited.get('items'),'Native source exposed to HFO-only actor')
   checkpoint('scope_revoked',lambda:r.sql('UPDATE public.user_facility_access SET revoked_at=clock_timestamp() WHERE user_id='+lit(state['user'])+' AND facility_id='+lit(state['site'])))
-  api('/resident-review-sources?'+query,method='GET',expected=(403,404))
+  api('/resident-review-sources?'+query,method='GET',expected=(401,403,404))
   (OUT/'denial-proof.json').write_text(json.dumps({'result':'PASS','target':REF,'crossSiteWorkspaceDenied':True,'limitedHfoTaskRead200':True,'limitedNativeDetailsDenied':True,'revokedSiteDenied':True})+'\n')
  elif args.action=='cleanup':
   for key in ['user','limited_user']:

@@ -1,0 +1,8 @@
+{
+  "claim_version": 3,
+  "active": true,
+  "site_grant_revoked": true,
+  "issued_claim_version": 2,
+  "observed_revoked_http_status": 401,
+  "sourceSha": "d7138a0c140f94b88c7b8cf4885ac7922467105e"
+}

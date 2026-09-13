@@ -1,0 +1,29 @@
+{
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "independent": true,
+  "reviewer": "Codex /root/release_preflight",
+  "at": "2026-09-13T14:55:14.296349+00:00",
+  "sourceSha": "d7138a0c140f94b88c7b8cf4885ac7922467105e",
+  "target": "iwcnajanvjvynolltflw",
+  "artifacts_sha256": {
+    "staging-readiness.json": "a6ba9a77b71639277d44a45e5761906d1573189420a4afc204d84874a4828107",
+    "http-proof.json": "3cec4423c5bd857ddf70871b7ee51c80ace66b0664ccc4b037f626a277915a65",
+    "initial-browser-report.json": "6d4409a990fac7cea5eee8c8134fa03125f465792abc8f25084970fa960a7ffd",
+    "browser-report.json": "f46d5226d964c01ebff35aef52fa5c0fe34f2029d642689987e7be7576d453a1",
+    "denial-proof.json": "65d9b5889841f9c72d18e3638a5750bc2f71bde0e364c33414dad1afe5b3a06a",
+    "revoked-session-readback.json": "1c7a6a129c0ed4bbc538b1889c8ab6d777bf9526ebad2f49d2db7845d7d859cf",
+    "deny-attempt-1.log": "4b42c5566ea613cebe6097a08270fcb87ad09f63619934ec1fc9188e52063991",
+    "cleanup.json": "811bd063e52144e3dab4ec0cc00120bb95acb14357377e992d28263c1f0fa529",
+    "source-manifest.json": "436c71e5f38349deede251f967b58640af9fc45726afe87551c4522fd7ccc664"
+  },
+  "findings": [],
+  "scope": "Composed synthetic staged API/browser proof: explicit review and idempotent retry; native row hash preservation; source-change history/recheck; initial successful browser saves at dbeb3dfc plus unchanged API/SQL and final landmark-fixed browser rechecks at d7138a0c. Native-only denial distinguished from HFO denial; cross-site and revoked-session denial; exact fixture retirement and listener shutdown.",
+  "denial_limit": "Original denial runner remains FAIL because expected403/404 excluded actual401. Composed evidence accepts401 with issued/current auth_claim_version2\u21923 and revoked grant; no original-script PASS claim.",
+  "not_claimed": [
+    "Clinical correctness/provider signature/admission acceptance",
+    "Production release",
+    "Unsupported source-family activation",
+    "Staff operating acceptance"
+  ],
+  "initialSaveSource": "dbeb3dfc2d7e440bfa344d361e1aa07ebda49f8c"
+}
