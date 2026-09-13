@@ -16,7 +16,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
-import { formatDrillLogAttendanceLine } from "@/lib/compliance/emergency-preparedness-display-copy";
+import { DRILL_LOG_DRAFT_SAVED_COPY, formatDrillLogAttendanceLine, formatDrillRecordState, formatDrillSaveProblem } from "@/lib/compliance/emergency-preparedness-display-copy";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,6 +98,11 @@ type DrillLogRow = {
   staff_present_count: number | null;
   residents_present_count: number | null;
   notes: string | null;
+  // COL-154 lifecycle (migration 359). A row written here is a draft; only the
+  // finalize command makes it final, so this page must read the state rather
+  // than let a saved row imply a completed requirement (COL-242).
+  finalized_at: string | null;
+  voided_at: string | null;
 };
 
 type DrillLogInsert = {
@@ -194,6 +199,7 @@ export default function EmergencyPreparednessPage() {
     notes: "",
   });
   const [savingDrill, setSavingDrill] = useState(false);
+  const [drillNotice, setDrillNotice] = useState<string | null>(null);
   const [newTicket, setNewTicket] = useState({
     asset_description: "",
     issue_description: "",
@@ -324,6 +330,7 @@ export default function EmergencyPreparednessPage() {
     if (!facilityReady) return;
     setSavingDrill(true);
     setError(null);
+    setDrillNotice(null);
     try {
       const organizationId = await loadOrganizationIdForFacility(supabase, selectedFacilityId!);
       if (!organizationId) throw new Error("Could not determine organization ID");
@@ -350,9 +357,10 @@ export default function EmergencyPreparednessPage() {
         notes: newDrill.notes.trim() || null,
       });
       setNewDrill({ ...newDrill, notes: "", staff_present_count: "", residents_present_count: "" });
+      setDrillNotice(DRILL_LOG_DRAFT_SAVED_COPY);
       await loadItems();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save drill log");
+      setError(formatDrillSaveProblem(e instanceof Error ? e.message : "Failed to save drill log"));
     } finally {
       setSavingDrill(false);
     }
@@ -741,7 +749,9 @@ export default function EmergencyPreparednessPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Flame className="h-4 w-4" /> Drill Log (Slice 9F)</CardTitle>
-          <CardDescription>Record fire/elopement/tornado drills in the new `drill_log` table.</CardDescription>
+          <CardDescription>
+            Records a fire, elopement or tornado drill as a <strong>draft</strong>. A draft satisfies no requirement. An authorized person finalizes it on the site work surface, which records who finalized it and delivers it once.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-3">
@@ -759,10 +769,16 @@ export default function EmergencyPreparednessPage() {
             <Field label="Pull station"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={newDrill.pull_station_activated ? "yes" : "no"} onChange={(e) => setNewDrill((current) => ({ ...current, pull_station_activated: e.target.value === "yes" }))}><option value="no">No</option><option value="yes">Yes</option></select></Field>
           </div>
           <Field label="Notes"><Textarea rows={2} value={newDrill.notes} onChange={(e) => setNewDrill((current) => ({ ...current, notes: e.target.value }))} /></Field>
-          <Button onClick={() => void submitDrillLog()} disabled={savingDrill}>{savingDrill ? "Saving…" : "Log drill"}</Button>
+          <Button onClick={() => void submitDrillLog()} disabled={savingDrill}>{savingDrill ? "Saving…" : "Log drill as a draft"}</Button>
+          {drillNotice ? (
+            <p role="status" className="text-sm">
+              {drillNotice}{" "}
+              <a className="underline" href="/admin/operations/work">Open site work to finalize it</a>.
+            </p>
+          ) : null}
           <ul className="space-y-2 text-sm">
             {drillLog.slice(0, 5).map((entry) => (
-              <li key={entry.id} className="rounded border p-2">{entry.drill_date} {entry.drill_time.slice(0,5)} · {entry.drill_type} · {formatDrillLogAttendanceLine(entry.staff_present_count, entry.residents_present_count)}</li>
+              <li key={entry.id} className="rounded border p-2">{entry.drill_date} {entry.drill_time.slice(0,5)} · {entry.drill_type} · {formatDrillLogAttendanceLine(entry.staff_present_count, entry.residents_present_count)} · {formatDrillRecordState(entry)}</li>
             ))}
           </ul>
         </CardContent>
@@ -889,7 +905,7 @@ async function insertEmergencyChecklistItem(
 async function fetchDrillLog(supabase: ReturnType<typeof createClient>, facilityId: string): Promise<DrillLogRow[]> {
   const result = await supabase
     .from("drill_log" as never)
-    .select("id, drill_type, drill_date, drill_time, pull_station_activated, staff_present_count, residents_present_count, notes")
+    .select("id, drill_type, drill_date, drill_time, pull_station_activated, staff_present_count, residents_present_count, notes, finalized_at, voided_at")
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .order("drill_date", { ascending: false })

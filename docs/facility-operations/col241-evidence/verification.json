@@ -1,0 +1,58 @@
+{
+  "segment": "col241-drill-entry-surface",
+  "issues": ["COL-241", "COL-242"],
+  "checked_at": "2026-09-13T22:50:00Z",
+  "branch": "codex/hfo-col241-drill-entry",
+  "base": { "ref": "origin/main", "commit": "1b2c509e", "migration_head": 370 },
+  "scope": "Staff entry surface for the delivered COL-154 drill and asset-observation commands, plus honest draft state on the legacy emergency-preparedness form. No migration, no schema change, no new command.",
+  "focused_tests": [
+    { "file": "src/app/api/admin/operations/drill-logs/route.test.ts", "tests": 4, "result": "passed" },
+    { "file": "src/app/(admin)/admin/operations/work/_components/drill-source-entry.test.tsx", "tests": 12, "result": "passed", "note": "includes axe-core on the opened drill and observation panels" },
+    { "file": "src/lib/compliance/emergency-preparedness-display-copy.test.ts", "tests": 13, "result": "passed" },
+    { "file": "src/app/(admin)/admin/compliance/emergency-preparedness/page.test.tsx", "tests": 4, "result": "passed" }
+  ],
+  "suites": [
+    { "scope": "operations route handlers, operations library and admin operations surfaces", "files": 88, "tests": 917, "result": "passed" },
+    { "scope": "full vitest suite", "files": 647, "passed": 4701, "skipped": 2, "failed": 0 }
+  ],
+  "static_checks": [
+    { "command": "npm run typecheck", "result": "passed" },
+    { "command": "npm run lint", "result": "passed" }
+  ],
+  "segment_gates": {
+    "command": "SKIP_PG_VERIFY=1 npm run segment:gates -- --segment \"col241-drill-entry-surface\"",
+    "verdict": "PASS",
+    "summary": { "passed": 9, "failed": 0, "skipped": 4, "blocking_failures": [] },
+    "artifact": "test-results/agent-gates/2026-09-13T22-47-23-020Z-col241-drill-entry-surface.json",
+    "checks": {
+      "hygiene.env-example": "passed",
+      "hygiene.tracked-secrets-scan": "passed",
+      "hygiene.npm-audit": "passed",
+      "security.gitleaks": "passed",
+      "qa.eslint": "passed",
+      "qa.migration-sequence": "passed",
+      "qa.migrations-apply-postgres": "skipped",
+      "qa.root-build": "passed",
+      "hygiene.nextjs-deprecation-signal": "passed",
+      "qa.web-build": "skipped",
+      "chaos.stress-suite": "passed",
+      "cdo.design-review": "skipped",
+      "cdo.a11y-axe": "skipped"
+    }
+  },
+  "not_run": [
+    "qa.migrations-apply-postgres — SKIP_PG_VERIFY=1: no migration changed, and local Docker stacks are not used on this machine per the owner's standing rule; CI runs the same bundle",
+    "cdo.design-review and cdo.a11y-axe — route-level Playwright and axe need a running app at BASE_URL",
+    "hosted apply, deployment, authenticated hosted or browser proof, production probe",
+    "staff use and operating acceptance (COL-20 / COL-21)"
+  ],
+  "boundaries": [
+    "No migration, RPC, table or domain command added",
+    "No Homewood rule, day, time, count, threshold, applicability or deadline (Q06, Q09, Q14 open; COL-226 owns approvals)",
+    "No asset, vendor, building profile date, licence expiry, vault document or maintenance ticket written",
+    "No outbound transmission or publication",
+    "Existing draft drill rows untouched; no backfill into finality",
+    "Review components hfo-al-a07-01, hfo-al-a07-02, hfo-al-a08-01, hfo-al-a08-02 keep the human path and get no typed screen"
+  ],
+  "mission_alignment": "pass"
+}
