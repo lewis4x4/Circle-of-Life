@@ -427,7 +427,8 @@ SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean AND (result->'deliv
 INSERT INTO cf_ids SELECT 'dl_tornado',pg_temp.drill('tornado',d0,hh0,'{"notes":"Tornado drill"}') FROM cf;
 INSERT INTO cf_results SELECT 'fin_tornado',public.finalize_drill_log_review(pg_temp.rid('dl_tornado'),pg_temp.k('dl-fin-torn-01'),'{"entry_reason":"Logged after the drill"}');
 SELECT pg_temp.c_assert((SELECT (result->>'linked')::boolean=false AND jsonb_typeof(result->'delivery')='null' AND result->>'link_reason'='no_checklist_activity' AND result->'record'->>'finalized_at' IS NOT NULL FROM cf_results WHERE label='fin_tornado'),'a tornado drill was delivered or not finalized');
-SELECT pg_temp.c_assert((SELECT array_agg(k ORDER BY k)=ARRAY['delivery','link_reason','linked','record','replayed'] FROM jsonb_object_keys(pg_temp.res('fin_tornado')) k),'tornado reply keys drifted');
+-- Pin bytewise order: libc locales can sort linked before link_reason.
+SELECT pg_temp.c_assert((SELECT array_agg(k ORDER BY k COLLATE "C")=ARRAY['delivery','link_reason','linked','record','replayed'] FROM jsonb_object_keys(pg_temp.res('fin_tornado')) k),'tornado reply keys drifted');
 INSERT INTO cf_results SELECT 'del_tornado',pg_temp.deliver('dl-torn-0001','drill-log',pg_temp.rid('dl_tornado')::text,'1','final',site_a) FROM cf;
 SELECT pg_temp.c_assert((SELECT result->'event'->>'state'='refused' AND result->'event'->>'reason'='reader_failed' AND (result->'event'->>'attention')::boolean AND result->'event'->>'detail' LIKE '%no checklist activity%' FROM cf_results WHERE label='del_tornado'),'a tornado delivery was not a recorded reader failure');
 INSERT INTO cf_ids SELECT 'dl_fire_old',pg_temp.drill('fire',dold,'14:00','{"notes":"Fire drill, previous period"}') FROM cf;
