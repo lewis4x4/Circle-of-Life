@@ -2,6 +2,9 @@
 
 | Function | `verify_jwt` (gateway) | Purpose |
 |----------|------------------------|---------|
+| `stand-up-google` | no | Hosted current-week Google XLSX intake for Weekly Stand Up. Auth: **`x-cron-secret`** = `STAND_UP_GOOGLE_CRON_SECRET`. Reads a stable Drive snapshot and applies only conflict-free current-week changes through the fixed-organization service bridge. |
+| `stand-up-publisher` | no | Hosted Haven → Front Office current-week publisher. Auth: **`x-cron-secret`** = `STAND_UP_PUBLISHER_CRON_SECRET`. Uses a fenced database lease and durable exact-body replay. |
+| `stand-up-history-publisher` | no | Hosted Haven → Front Office 52-week correction publisher. Auth: **`x-cron-secret`** = `STAND_UP_HISTORY_PUBLISHER_CRON_SECRET`. Uses a distinct ingest key and durable ordered queue. |
 | `export-audit-log` | yes | `POST { "job_id" }` + user JWT — builds CSV from `audit_log`, updates `audit_log_export_jobs`, returns file + `X-Checksum-SHA256`. |
 | `dispatch-push` | no | `POST { "user_id", "title", "body", "url"? }` — Web Push via `notification_subscriptions`. Auth: `Authorization: Bearer` (owner/org_admin, same org) **or** `x-dispatch-secret` matching `DISPATCH_PUSH_SECRET`. |
 | `generate-monthly-invoices` | no | Draft monthly invoices (same logic as admin **Billing → Generate**). Auth: **`x-cron-secret`** = `GENERATE_MONTHLY_INVOICES_SECRET`. Idempotent per facility + resident + `period_start` (migration `071`). |
@@ -71,6 +74,9 @@ Do **not** send `facility_id` and `organization_id` together.
 
 ## Secrets (dashboard: **Edge Functions → Secrets** or `supabase secrets set`)
 
+- `STAND_UP_GOOGLE_CRON_SECRET`, `STAND_UP_GOOGLE_WORKBOOK_ID`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` — hosted Google workbook intake. Keep OAuth values only in Edge secrets.
+- `STAND_UP_PUBLISHER_CRON_SECRET`, `FRONT_OFFICE_INGEST_URL`, `FRONT_OFFICE_INGEST_KEY_ID`, `FRONT_OFFICE_INGEST_SECRET`, `STAND_UP_ORGANIZATION_ID` — hosted current-week Front Office publisher.
+- `STAND_UP_HISTORY_PUBLISHER_CRON_SECRET`, `FRONT_OFFICE_HISTORY_INGEST_KEY_ID`, `FRONT_OFFICE_HISTORY_INGEST_SECRET` — hosted correction/history publisher; reuses the fixed Front Office URL and organization identity.
 - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:ops@yourdomain`) — required for `dispatch-push`.
 - `DISPATCH_PUSH_SECRET` — optional but recommended for server/cron callers (header `x-dispatch-secret`).
 - `GENERATE_MONTHLY_INVOICES_SECRET` — required for `generate-monthly-invoices` (header `x-cron-secret`). Rotate if leaked.

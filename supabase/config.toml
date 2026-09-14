@@ -493,6 +493,18 @@ verify_jwt = false
 [functions."officer-catalog"]
 verify_jwt = false
 
+# Hosted Weekly Stand Up transport. Gateway JWT is intentionally disabled for
+# database cron; each function rejects requests unless its dedicated
+# x-cron-secret matches before constructing a service-role client.
+[functions."stand-up-google"]
+verify_jwt = false
+
+[functions."stand-up-publisher"]
+verify_jwt = false
+
+[functions."stand-up-history-publisher"]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
