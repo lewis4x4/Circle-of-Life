@@ -201,6 +201,7 @@ export const AUXILIARY_ROUTES: PillarItem[] = [
   { key: "drive-cutover", href: "/admin/drive-cutover", label: "Drive transition readiness", icon: ClipboardCheck },
   { key: "briefing", href: "/admin/briefing", label: "Daily briefing", icon: FileText },
   { key: "users", href: "/admin/settings/users", label: "User management", icon: Users },
+  { key: "settings-system-alerts", href: "/admin/settings/system-alerts", label: "System alerts", icon: Settings },
   { key: "settings-notifications", href: "/admin/settings/notifications", label: "Notification settings", icon: Settings },
   { key: "pilot-feedback", href: "/admin/feedback", label: "Pilot feedback", icon: MessageSquare },
 ];
