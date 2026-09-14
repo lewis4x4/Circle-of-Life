@@ -2,6 +2,9 @@
 
 | Function | `verify_jwt` (gateway) | Purpose |
 |----------|------------------------|---------|
+| `stand-up-google` | no | Hosted current-week Google XLSX intake for Weekly Stand Up. Auth: **`x-cron-secret`** = `STAND_UP_GOOGLE_CRON_SECRET`. Reads a stable Drive snapshot and applies only conflict-free current-week changes through the fixed-organization service bridge. |
+| `stand-up-publisher` | no | Hosted Haven → Front Office current-week publisher. Auth: **`x-cron-secret`** = `STAND_UP_PUBLISHER_CRON_SECRET`. Uses a fenced database lease and durable exact-body replay. |
+| `stand-up-history-publisher` | no | Hosted Haven → Front Office 52-week correction publisher. Auth: **`x-cron-secret`** = `STAND_UP_HISTORY_PUBLISHER_CRON_SECRET`. Uses a distinct ingest key and durable ordered queue. |
 | `export-audit-log` | yes | `POST { "job_id" }` + user JWT — builds CSV from `audit_log`, updates `audit_log_export_jobs`, returns file + `X-Checksum-SHA256`. |
 | `dispatch-push` | no | `POST { "user_id", "title", "body", "url"? }` — Web Push via `notification_subscriptions`. Auth: `Authorization: Bearer` (owner/org_admin, same org) **or** `x-dispatch-secret` matching `DISPATCH_PUSH_SECRET`. |
 | `generate-monthly-invoices` | no | Draft monthly invoices (same logic as admin **Billing → Generate**). Auth: **`x-cron-secret`** = `GENERATE_MONTHLY_INVOICES_SECRET`. Idempotent per facility + resident + `period_start` (migration `071`). |
@@ -26,6 +29,20 @@
 | `grace-tts` | yes | `POST { "text" }` — text-to-speech for Grace narration. Auth: user JWT. Secrets: **`OPENAI_API_KEY`**. |
 | `grace-redteam-nightly` | no | `POST` — nightly red-team safety evaluation of Grace flows. Auth: **`x-cron-secret`** = **`GRACE_REDTEAM_SECRET`**. |
 | `officer-catalog` | no | `POST` `{ "op": "catalog" }` or `{ "op": "execute", ... }` — Front Office capability federation target (`front-office-capability-v1`, target `haven`). Auth: **`x-fo-key-id` / `x-fo-sent-at` / `x-fo-nonce` / `x-fo-signature`** HMAC-SHA256 over the raw body, verified before parsing; then `public.officer_catalog` / `public.officer_execute` (service_role-only doors into schema `officer`, migration **`339`**). Aggregate-only organization-wide reads (`occupied_beds`, `licensed_capacity`, `open_ar_balance`, `billed_revenue_mtd`, `incidents_last_30_days`, `staff_certifications_expiring_30_days`, each with `data.by_facility`) plus the synthetic `command_ping`. Secret named by `officer.gateway_keys.secret_env` (**`OFFICER_GATEWAY_HMAC_FRONT_OFFICE_V1`**). Ships with the key disabled. See `docs/specs/OFFICER-CAPABILITY-CATALOG.md`. |
+
+## Hosted Weekly Stand Up
+
+Production scheduling belongs to the Haven Supabase project, never an operator workstation. The active job contract is:
+
+| Cron job | Schedule | Function | Vault credential |
+|----------|----------|----------|------------------|
+| `stand-up-google-inbound` | every minute | `stand-up-google` | `stand_up_google_cron_secret` |
+| `stand-up-front-office-current` | every minute | `stand-up-publisher` | `stand_up_publisher_cron_secret` |
+| `stand-up-front-office-history` | every five minutes | `stand-up-history-publisher` | `stand_up_history_cron_secret` |
+
+Function credentials live in Edge Function secrets. Scheduler credentials live in Vault and are referenced by name from `cron.job`; never place either value directly in a cron command or repository file. Before enabling a replacement schedule, transfer the current publisher sequence, historical fingerprints, Google baselines, and any durable pending body while the old worker is stopped. Prove at least two scheduled Google/current cycles and one historical cycle from `cron.job_run_details`, the hidden worker state, and Front Office receipts before retiring the old schedule.
+
+The Google worker is intentionally current-week inbound only. A direct Haven edit is preserved and reported as `haven_change_not_exported`; it is not written back to the XLSX workbook. Full Haven-to-Google workbook editing requires a separately reviewed conditional-write implementation and provider readback proof.
 
 ## `generate-monthly-invoices` — request body
 
@@ -71,6 +88,9 @@ Do **not** send `facility_id` and `organization_id` together.
 
 ## Secrets (dashboard: **Edge Functions → Secrets** or `supabase secrets set`)
 
+- `STAND_UP_GOOGLE_CRON_SECRET`, `STAND_UP_GOOGLE_WORKBOOK_ID`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` — hosted Google workbook intake. Keep OAuth values only in Edge secrets.
+- `STAND_UP_PUBLISHER_CRON_SECRET`, `FRONT_OFFICE_INGEST_URL`, `FRONT_OFFICE_INGEST_KEY_ID`, `FRONT_OFFICE_INGEST_SECRET`, `STAND_UP_ORGANIZATION_ID` — hosted current-week Front Office publisher.
+- `STAND_UP_HISTORY_PUBLISHER_CRON_SECRET`, `FRONT_OFFICE_HISTORY_INGEST_KEY_ID`, `FRONT_OFFICE_HISTORY_INGEST_SECRET` — hosted correction/history publisher; reuses the fixed Front Office URL and organization identity.
 - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:ops@yourdomain`) — required for `dispatch-push`.
 - `DISPATCH_PUSH_SECRET` — optional but recommended for server/cron callers (header `x-dispatch-secret`).
 - `GENERATE_MONTHLY_INVOICES_SECRET` — required for `generate-monthly-invoices` (header `x-cron-secret`). Rotate if leaked.
