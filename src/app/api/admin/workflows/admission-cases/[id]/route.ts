@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { logError } from "@/lib/observability/logger";
 import {
-  convertLeadOnMoveIn,
   emitWorkflowEvent,
   loadAdmissionCaseWorkflowContext,
   loadAdmissionRateTermCount,
@@ -167,28 +166,6 @@ export async function PATCH(
       },
     });
 
-    if (patch.status === "move_in" && current.referral_lead_id) {
-      await convertLeadOnMoveIn(actor.admin, {
-        leadId: current.referral_lead_id,
-        residentId: current.resident_id,
-        actorId: actor.id,
-      });
-
-      await emitWorkflowEvent(actor.admin, {
-        organization_id: current.organization_id,
-        facility_id: current.facility_id,
-        admission_case_id: current.id,
-        referral_lead_id: current.referral_lead_id,
-        resident_id: current.resident_id,
-        event_type: "referral_converted",
-        source_module: "admissions",
-        event_key: `referral-converted:${current.id}:${current.referral_lead_id}`,
-        created_by: actor.id,
-        payload_json: {
-          converted_resident_id: current.resident_id,
-        },
-      });
-    }
   } else {
     await emitWorkflowEvent(actor.admin, {
       organization_id: current.organization_id,

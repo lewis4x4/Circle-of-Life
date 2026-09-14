@@ -4,6 +4,7 @@ import { ADMIN_ELIGIBLE_ROLES, type AppRole } from "@/lib/rbac";
 import { requireCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
+import { createClient } from "@/lib/supabase/server";
 
 type AdminClient = ReturnType<typeof createServiceRoleClient>;
 
@@ -11,6 +12,7 @@ export type AdminApiActor = {
   id: string;
   organization_id: string;
   app_role: AppRole;
+  client: Awaited<ReturnType<typeof createClient>>;
   admin: AdminClient;
 };
 
@@ -37,6 +39,7 @@ export async function requireAdminApiActor(options?: {
       id: result.actor.id,
       organization_id: result.actor.organizationId,
       app_role: result.actor.appRole,
+      client: result.actor.client,
       admin: result.actor.admin,
     },
   };

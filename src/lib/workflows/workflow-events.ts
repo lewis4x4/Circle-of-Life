@@ -1,4 +1,8 @@
 import { isForm1823Current } from "@/lib/admissions/form-1823-readiness";
+import {
+  loadReferralEpisodeModel,
+  runReferralEpisodeCommand,
+} from "@/lib/referrals/referral-authority";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
@@ -278,51 +282,21 @@ export async function upsertAdmissionForm1823(admin: AdminClient, args: {
   });
 }
 
-export async function syncLeadToApplicationPending(admin: AdminClient, args: {
+export async function syncLeadToApplicationPending(client: AdminClient, args: {
   leadId: string;
-  actorId: string | null;
+  admissionCaseId: string;
 }) {
-  const { data: leadData, error } = await admin
-    .from("referral_leads")
-    .select("id, status")
-    .eq("id", args.leadId)
-    .is("deleted_at", null)
-    .maybeSingle();
+  const model = await loadReferralEpisodeModel(client, args.leadId);
+  if (["application_pending", "waitlisted", "converted", "lost", "merged"].includes(model.episode.status)) return;
 
-  const lead = leadData as { id: string; status: string } | null;
-
-  if (error) throw error;
-  if (!lead) return;
-  if (["application_pending", "waitlisted", "converted", "lost", "merged"].includes(lead.status)) return;
-
-  const { error: updateError } = await admin
-    .from("referral_leads")
-    .update({
-      status: "application_pending",
-      updated_at: new Date().toISOString(),
-      updated_by: args.actorId,
-    })
-    .eq("id", args.leadId);
-
-  if (updateError) throw updateError;
-}
-
-export async function convertLeadOnMoveIn(admin: AdminClient, args: {
-  leadId: string;
-  residentId: string;
-  actorId: string | null;
-}) {
-  const { error } = await admin
-    .from("referral_leads")
-    .update({
-      status: "converted",
-      converted_resident_id: args.residentId,
-      converted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      updated_by: args.actorId,
-    })
-    .eq("id", args.leadId)
-    .is("deleted_at", null);
-
-  if (error) throw error;
+  await runReferralEpisodeCommand(client, {
+    episodeId: args.leadId,
+    requestKey: `admission:${args.admissionCaseId}:application-pending`,
+    expectedRevision: model.episode.episode_revision,
+    command: {
+      kind: "admission_transition",
+      admission_case_id: args.admissionCaseId,
+      target_status: "application_pending",
+    },
+  });
 }
