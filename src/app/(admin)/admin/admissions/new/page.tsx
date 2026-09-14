@@ -43,6 +43,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { loadAuthorizedReferralLeads } from "@/lib/referrals/referral-authority";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -628,15 +629,14 @@ function AdmissionsNewInner() {
         .is("deleted_at", null)
         .in("status", ["inquiry", "pending_admission"])
         .order("last_name"),
-      supabase
-        .from("referral_leads")
-        .select(
-          "id, first_name, last_name, preferred_name, date_of_birth, inquiry_date, updated_at, phone, email, notes, status, referral_source_id",
-        )
-        .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .not("status", "in", "(converted,lost,merged)")
-        .order("last_name"),
+      loadAuthorizedReferralLeads(supabase, {
+        facilityId: selectedFacilityId,
+        limit: 500,
+      }).then((rows) =>
+        rows
+          .filter((row) => !["converted", "lost", "merged"].includes(row.status))
+          .sort((left, right) => left.last_name.localeCompare(right.last_name)),
+      ),
       supabase
         .from("beds")
         .select("id, bed_label, bed_type, rooms(room_number, room_type)")
@@ -687,7 +687,7 @@ function AdmissionsNewInner() {
     if (!isCurrent()) return;
 
     setResidents((res.data ?? []) as ResidentOption[]);
-    setLeads((ld.data ?? []) as LeadOption[]);
+    setLeads(ld as LeadOption[]);
     setBeds(mappedBeds);
     setReferralSources(sources);
     } catch (err) {
@@ -1109,12 +1109,6 @@ function AdmissionsNewInner() {
         finalResidentId = newRes.id;
         sessionStorage.setItem(resumeKey, finalResidentId);
         payloadLeadId = referralLeadId;
-        if (intent === "submit") {
-          await supabase
-            .from("referral_leads")
-            .update({ converted_resident_id: finalResidentId, updated_by: user.id })
-            .eq("id", referralLeadId);
-        }
       } else {
         const parsed = (intent === "draft" ? parseDirectAdmitDraft : parseDirectAdmitForSubmit)({
           firstName: directFirstName,

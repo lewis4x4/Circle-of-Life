@@ -518,6 +518,19 @@ const ALL_APP_ROLES = [
 ] as const;
 
 const FINANCIAL_ROLES = new Set<string>(["owner", "org_admin", "facility_admin"]);
+const REFERRAL_READ_ROLES = new Set<string>([
+  "owner",
+  "org_admin",
+  "facility_admin",
+  "manager",
+  "admin_assistant",
+  "coordinator",
+  "nurse",
+]);
+
+export function canReadReferralPipeline(userRole: string): boolean {
+  return REFERRAL_READ_ROLES.has(userRole);
+}
 
 const TIER_ALLOWED_ROLES: Record<ToolTier, Set<string>> = {
   kb_documents: new Set<string>(ALL_APP_ROLES),
@@ -1529,11 +1542,21 @@ async function answerCensusSummary(
   );
 }
 
-async function answerReferralPipelineQuestion(
+export async function answerReferralPipelineQuestion(
   ctx: ToolContext,
   question: string,
   facilityScope: GraceQueryScope,
 ): Promise<ReturnType<typeof buildDeterministicResult>> {
+  if (!canReadReferralPipeline(ctx.userRole)) {
+    return buildDeterministicResult(
+      "I do not have access to referral pipeline data for this role.",
+      "referral_pipeline",
+      facilityScope,
+      [],
+      0,
+      "access_restricted",
+    );
+  }
   if (facilityScope.facilityIds.length === 0) {
     return buildDeterministicResult(
       "I don't see any referral pipeline data for the requested scope.",
@@ -1548,17 +1571,26 @@ async function answerReferralPipelineQuestion(
   const windowStart = getRecentWindowStart(question);
   const windowStartIso = windowStart.toISOString();
 
-  const { data } = await ctx.admin
+  await ctx.revalidate();
+  const { data, error, count } = await ctx.admin
     .from("referral_leads")
-    .select("id, facility_id, first_name, last_name, preferred_name, status, created_at, updated_at, referral_sources(name)")
+    .select(
+      "id, facility_id, first_name, last_name, preferred_name, status, created_at, updated_at, referral_sources(name)",
+      { count: "exact" },
+    )
     .eq("organization_id", ctx.workspaceId)
     .in("facility_id", facilityScope.facilityIds)
     .is("deleted_at", null)
     .gte("created_at", windowStartIso)
     .order("created_at", { ascending: false })
     .limit(25);
+  await ctx.revalidate();
+  if (error || count === null) {
+    throw new Error("Referral pipeline query failed");
+  }
 
-  const leads = (data ?? []) as ReferralLeadSummaryRow[];
+  const leads = (data ?? []) as unknown as ReferralLeadSummaryRow[];
+  const totalLeads = count;
   const facilityNameById = new Map<string, string>();
   facilityScope.facilityNames.forEach((name, index) => {
     const id = facilityScope.facilityIds[index];
@@ -1592,7 +1624,7 @@ async function answerReferralPipelineQuestion(
             ? "the past 2 weeks"
             : "the past week";
 
-  if (leads.length === 0) {
+  if (totalLeads === 0) {
     return buildDeterministicResult(
       `I don't see any new referral leads for ${facilityLabel} in ${windowLabel}.`,
       "referral_pipeline",
@@ -1604,8 +1636,10 @@ async function answerReferralPipelineQuestion(
   }
 
   const lines = [
-    `${leads.length} lead${leads.length === 1 ? "" : "s"} created in ${windowLabel} for ${facilityLabel}.`,
-    `${newLeads.length} new, ${activeLeads.length} active pipeline, ${convertedLeads.length} converted.`,
+    `${totalLeads} lead${totalLeads === 1 ? "" : "s"} created in ${windowLabel} for ${facilityLabel}.`,
+    totalLeads > leads.length
+      ? `Status sample for the ${leads.length} most recent leads: ${newLeads.length} new, ${activeLeads.length} active pipeline, ${convertedLeads.length} converted.`
+      : `${newLeads.length} new, ${activeLeads.length} active pipeline, ${convertedLeads.length} converted.`,
   ];
 
   const detailLines = leads.slice(0, 6).map((lead, index) => {
@@ -1642,6 +1676,7 @@ function buildDeterministicResult(
     excerpt: string;
     confidence: number;
     section_title: string | null;
+    anchor: CitationAnchor;
   }[];
   toolsUsed: string[];
   tokensIn: number;
@@ -2029,7 +2064,7 @@ async function answerReputationReplyQueueSummary(
     .is("deleted_at", null)
     .order("updated_at", { ascending: false })
     .limit(25);
-  const rows = (data ?? []) as ReputationReplySummaryRow[];
+  const rows = (data ?? []) as unknown as ReputationReplySummaryRow[];
   const pending = rows.filter((row) => row.status === "draft");
   const failed = rows.filter((row) => row.status === "failed");
   if (rows.length === 0) {

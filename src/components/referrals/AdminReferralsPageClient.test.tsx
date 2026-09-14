@@ -8,6 +8,7 @@ import { emptyReferralsHubBootstrap } from "@/lib/referrals/referrals-hub-bootst
 const mocks = vi.hoisted(() => ({
   useFacilityStoreMock: vi.fn(),
   createClientMock: vi.fn(),
+  loadBootstrapMock: vi.fn(),
   usePathnameMock: vi.fn(),
   useRouterMock: vi.fn(),
 }));
@@ -23,6 +24,11 @@ vi.mock("@/hooks/useFacilityStore", () => ({
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: mocks.createClientMock,
+}));
+
+vi.mock("@/lib/referrals/referrals-hub-bootstrap", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/referrals/referrals-hub-bootstrap")>()),
+  loadReferralsHubBootstrap: mocks.loadBootstrapMock,
 }));
 
 const baseFacilityId = "11111111-1111-1111-1111-111111111111";
@@ -46,6 +52,7 @@ describe("<AdminReferralsPageClient />", () => {
       from: vi.fn(),
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } }) },
     });
+    mocks.loadBootstrapMock.mockReset().mockResolvedValue(emptyReferralsHubBootstrap());
   });
 
   afterEach(() => {
@@ -104,5 +111,20 @@ describe("<AdminReferralsPageClient />", () => {
         scheduled_for: "2026-08-20T20:06:00.000Z",
       }),
     );
+  });
+
+  it("withholds KPI claims when the authorized roster is truncated", () => {
+    render(
+      <AdminReferralsPageClient
+        {...loadedProps}
+        initialBootstrap={{
+          ...emptyReferralsHubBootstrap(),
+          leadListTruncated: true,
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/pipeline roster is limited to the 200 most recently updated leads/i)).toBeInTheDocument();
+    expect(screen.getAllByText("Requires complete reporting")).toHaveLength(5);
   });
 });

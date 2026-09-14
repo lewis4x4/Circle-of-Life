@@ -15,6 +15,8 @@ export type ReferralsHubKpiContext = {
   loading: boolean;
   /** Bootstrap query failed for the current facility scope. */
   loadFailed: boolean;
+  /** Detailed roster is capped, so local counts are not complete. */
+  partial?: boolean;
 };
 
 const NOT_LOADED_COPY: Record<ReferralsHubKpiKey, string> = {
@@ -32,6 +34,9 @@ export function referralsHubKpiEmptyCopy(
 ): string {
   if (ctx.loadFailed) {
     return "Referral counts did not load";
+  }
+  if (ctx.partial) {
+    return "Requires complete reporting";
   }
   return NOT_LOADED_COPY[key];
 }

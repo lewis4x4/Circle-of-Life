@@ -12,7 +12,6 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
-import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { formatAdmissionsHubReferralSource } from "@/lib/admissions/admissions-hub-display-copy";
 import {
@@ -26,19 +25,14 @@ import {
   facilityDatetimeLocalToUtcIso,
   utcIsoToFacilityDatetimeLocal,
 } from "@/lib/facility-wall-clock";
+import {
+  loadAuthorizedReferralLeads,
+  updateAuthorizedReferralLead,
+  type AuthorizedReferralLeadRow,
+  type ReferralLeadUpdatePatch,
+} from "@/lib/referrals/referral-authority";
 
-type LeadDetail = Database["public"]["Tables"]["referral_leads"]["Row"] & {
-  referral_sources: { name: string } | null;
-  tour_scheduled_for: string | null;
-  tour_completed_at: string | null;
-  tour_owner_user_id: string | null;
-};
-
-type LeadUpdatePatch = Partial<Database["public"]["Tables"]["referral_leads"]["Update"]> & {
-  tour_scheduled_for?: string | null;
-  tour_completed_at?: string | null;
-  tour_owner_user_id?: string | null;
-};
+type LeadDetail = AuthorizedReferralLeadRow;
 
 type EditableLeadStatus = Exclude<Database["public"]["Enums"]["referral_lead_status"], "merged">;
 
@@ -75,17 +69,15 @@ export default function AdminReferralLeadDetailPage() {
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
-  const { user } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<LeadDetail | null>(null);
   const [linkedAdmissionCaseId, setLinkedAdmissionCaseId] = useState<string | null>(null);
   const [statusDraft, setStatusDraft] = useState<EditableLeadStatus>("new");
-  const [notesDraft, setNotesDraft] = useState("");
   const [tourScheduledDraft, setTourScheduledDraft] = useState("");
   const [tourCompletedDraft, setTourCompletedDraft] = useState("");
-  const [actionLoading, setActionLoading] = useState<"status" | "notes" | null>(null);
+  const [actionLoading, setActionLoading] = useState<"status" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -97,24 +89,13 @@ export default function AdminReferralLeadDetailPage() {
     }
     setLoading(true);
     setError(null);
-    const { data, error: qErr } = await supabase
-      .from("referral_leads")
-      .select(
-        "*, referral_sources(name)",
-      )
-      .eq("id", id)
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (qErr) {
-      setError(qErr.message);
-      setLead(null);
-      setLinkedAdmissionCaseId(null);
-    } else {
-      const leadRow = data as LeadDetail | null;
+    try {
+      const [leadRow = null] = await loadAuthorizedReferralLeads(supabase, {
+        leadId: id,
+        limit: 1,
+      });
       setLead(leadRow);
       setStatusDraft((leadRow?.status as EditableLeadStatus | undefined) ?? "new");
-      setNotesDraft(leadRow?.notes ?? "");
       setTourScheduledDraft(
         leadRow?.tour_scheduled_for ? utcIsoToFacilityDatetimeLocal(leadRow.tour_scheduled_for) : "",
       );
@@ -133,6 +114,10 @@ export default function AdminReferralLeadDetailPage() {
       } else {
         setLinkedAdmissionCaseId(null);
       }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Could not load lead.");
+      setLead(null);
+      setLinkedAdmissionCaseId(null);
     }
     setLoading(false);
   }, [supabase, id]);
@@ -147,11 +132,11 @@ export default function AdminReferralLeadDetailPage() {
     isValidFacilityIdForQuery(selectedFacilityId) &&
     lead.facility_id !== selectedFacilityId;
 
-  const cannotSetConverted = Boolean(lead && !lead.converted_resident_id);
+  const canEditLead = Boolean(lead?.can_write);
 
   async function updateLead(
-    patch: LeadUpdatePatch,
-    kind: "status" | "notes",
+    patch: ReferralLeadUpdatePatch,
+    kind: "status",
     successMessage: string,
   ) {
     if (!lead) return;
@@ -159,15 +144,11 @@ export default function AdminReferralLeadDetailPage() {
     setActionError(null);
     setActionMessage(null);
     try {
-      const { error: updateError } = await supabase
-        .from("referral_leads")
-        .update({
-          ...patch,
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id ?? null,
-        })
-        .eq("id", lead.id);
-      if (updateError) throw updateError;
+      await updateAuthorizedReferralLead(supabase, {
+        leadId: lead.id,
+        expectedUpdatedAt: lead.updated_at,
+        patch,
+      });
       setActionMessage(successMessage);
       await load();
     } catch (err) {
@@ -270,6 +251,7 @@ export default function AdminReferralLeadDetailPage() {
                     <select
                       id="lead-status"
                       value={statusDraft}
+                      disabled={!canEditLead}
                       onChange={(event) => setStatusDraft(event.target.value as EditableLeadStatus)}
                       className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     >
@@ -277,23 +259,21 @@ export default function AdminReferralLeadDetailPage() {
                         <option
                           key={option.value}
                           value={option.value}
-                          disabled={option.value === "converted" && cannotSetConverted}
+                          disabled={option.value === "converted" || option.value === "lost"}
                         >
                           {option.label}
                         </option>
                       ))}
                     </select>
-                    {cannotSetConverted ? (
-                      <p className="text-xs text-warning">
-                        `Converted` requires a linked resident conversion record. Use the admissions workflow first.
-                      </p>
-                    ) : null}
+                    <p className="text-xs text-muted-foreground">
+                      Converted and lost require their completed move-in or disposition workflows.
+                    </p>
                   </div>
                   <div className="flex items-end">
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={actionLoading === "status" || statusDraft === lead.status}
+                      disabled={!canEditLead || actionLoading === "status" || statusDraft === lead.status}
                       onClick={() => void updateLead({ status: statusDraft }, "status", "Lead status saved.")}
                     >
                       {actionLoading === "status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save status"}
@@ -320,7 +300,9 @@ export default function AdminReferralLeadDetailPage() {
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Date of birth</dt>
                   <dd className="mt-0.5 text-foreground">
-                    {formatReferralDetailDateOfBirth(lead.date_of_birth)}
+                    {lead.can_read_clinical
+                      ? formatReferralDetailDateOfBirth(lead.date_of_birth)
+                      : "Restricted"}
                   </dd>
                 </div>
                 <div>
@@ -345,6 +327,7 @@ export default function AdminReferralLeadDetailPage() {
                   <input
                     type="datetime-local"
                     value={tourScheduledDraft}
+                    disabled={!canEditLead}
                     onChange={(event) => setTourScheduledDraft(event.target.value)}
                     aria-label="Tour scheduled for (Eastern Time)"
                     className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -355,6 +338,7 @@ export default function AdminReferralLeadDetailPage() {
                   <input
                     type="datetime-local"
                     value={tourCompletedDraft}
+                    disabled={!canEditLead}
                     onChange={(event) => setTourCompletedDraft(event.target.value)}
                     aria-label="Tour completed at (Eastern Time)"
                     className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -365,7 +349,7 @@ export default function AdminReferralLeadDetailPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={actionLoading === "status"}
+                  disabled={!canEditLead || actionLoading === "status"}
                   onClick={() =>
                     void (() => {
                       const scheduledIso = tourScheduledDraft
@@ -380,7 +364,6 @@ export default function AdminReferralLeadDetailPage() {
                           status: nextStatus,
                           tour_scheduled_for: scheduledIso,
                           tour_completed_at: completedIso,
-                          tour_owner_user_id: user?.id ?? null,
                         },
                         "status",
                         nextStatus === statusDraft ? "Tour workflow saved." : `Tour workflow saved and status moved to ${formatStatus(nextStatus)}.`,
@@ -395,24 +378,15 @@ export default function AdminReferralLeadDetailPage() {
           </RecordDetailSection>
 
           <RecordDetailSection title="Notes">
-            <div className="space-y-3">
-              <textarea
-                value={notesDraft}
-                onChange={(event) => setNotesDraft(event.target.value)}
-                rows={5}
-                className="w-full rounded-[8px] border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={actionLoading === "notes" || notesDraft === (lead.notes ?? "")}
-                  onClick={() => void updateLead({ notes: notesDraft.trim() || null }, "notes", "Lead notes saved.")}
-                >
-                  {actionLoading === "notes" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save notes"}
-                </Button>
-              </div>
-            </div>
+            {lead.can_read_clinical ? (
+              <p className="whitespace-pre-wrap text-sm text-foreground">
+                {lead.notes?.trim() || "No clinical notes recorded."}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Clinical referral notes are restricted for your current role.
+              </p>
+            )}
           </RecordDetailSection>
 
           <RecordDetailSection title="Conversion">

@@ -44,7 +44,7 @@ import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
-import { tryParsePid5Name } from "@/lib/referrals/hl7-pid-name";
+import { createAuthorizedReferralLeadFromHl7 } from "@/lib/referrals/referral-authority";
 import {
   formatHl7InboundMessageControlId,
   formatHl7InboundTriggerEvent,
@@ -381,48 +381,7 @@ export default function AdminReferralsHl7InboundPage() {
     setCreatingLeadId(row.id);
     setError(null);
     try {
-      if (!user?.id) throw new Error("Sign in required.");
-
-      const parsed = tryParsePid5Name(row.raw_message);
-      const firstName = parsed?.first_name ?? "HL7";
-      const lastName = parsed?.last_name ?? "Referral";
-      const notes = [
-        "Created from HL7 inbound queue (manual).",
-        row.message_control_id
-          ? `Message control ID: ${row.message_control_id}`
-          : null,
-        row.trigger_event ? `Trigger: ${row.trigger_event}` : null,
-        `Inbound row: ${row.id}`,
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      const { data: lead, error: insErr } = await supabase
-        .from("referral_leads")
-        .insert({
-          organization_id: row.organization_id,
-          facility_id: row.facility_id,
-          first_name: firstName,
-          last_name: lastName,
-          notes,
-          external_reference: `hl7:${row.id}`,
-          status: "new",
-          created_by: user.id,
-          updated_by: user.id,
-        })
-        .select("id")
-        .single();
-      if (insErr) throw insErr;
-      if (!lead) throw new Error("No lead returned.");
-
-      const { error: linkErr } = await supabase
-        .from("referral_hl7_inbound")
-        .update({
-          linked_referral_lead_id: lead.id,
-          updated_by: user.id,
-        })
-        .eq("id", row.id);
-      if (linkErr) throw linkErr;
+      await createAuthorizedReferralLeadFromHl7(supabase, row.id);
 
       await load();
     } catch (e) {

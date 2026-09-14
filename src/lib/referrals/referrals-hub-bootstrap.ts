@@ -2,9 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { loadAuthorizedReferralLeads } from "@/lib/referrals/referral-authority";
 import type { Database } from "@/types/database";
 
 export const REFERRAL_UPCOMING_TOUR_LIMIT = 6;
+export const REFERRAL_PIPELINE_LOAD_LIMIT = 200;
 
 export type ReferralLeadStatus = Database["public"]["Enums"]["referral_lead_status"];
 
@@ -75,6 +77,7 @@ export type ReferralsHubBootstrap = {
   activeAdmissionCaseByLeadId: Record<string, ReferralsActiveAdmissionCase>;
   handoffRollup: ReferralsHandoffRollup;
   hl7Counts: { pending: number; failed: number };
+  leadListTruncated: boolean;
 };
 
 export function emptyReferralsHubBootstrap(): ReferralsHubBootstrap {
@@ -85,6 +88,7 @@ export function emptyReferralsHubBootstrap(): ReferralsHubBootstrap {
     activeAdmissionCaseByLeadId: {},
     handoffRollup: { blocked: 0, ready: 0, onboarding: 0 },
     hl7Counts: { pending: 0, failed: 0 },
+    leadListTruncated: false,
   };
 }
 
@@ -100,21 +104,22 @@ export async function loadReferralsHubBootstrap(
 
   const nowIso = new Date().toISOString();
 
-  const [
-    { data: list, error: listErr },
-    { data: outreachList, error: outreachErr },
-    { data: upcomingTourList, error: upcomingToursErr },
-  ] = await Promise.all([
+  const [list, { data: upcomingList, error: upcomingErr }, { data: outreachList, error: outreachErr }] = await Promise.all([
+    loadAuthorizedReferralLeads(supabase, {
+      facilityId: selectedFacilityId,
+      limit: REFERRAL_PIPELINE_LOAD_LIMIT + 1,
+    }),
     supabase
-      .from("referral_leads" as never)
-      .select(
-        "id, first_name, last_name, status, updated_at, created_at, converted_at, email, phone, external_reference, notes, tour_scheduled_for, referral_sources(name)",
-      )
+      .from("referral_leads")
+      .select("id, first_name, last_name, status, tour_scheduled_for")
       .eq("facility_id", selectedFacilityId)
       .is("deleted_at", null)
-      .order("updated_at", { ascending: false }) as unknown as Promise<
-      ReferralsQueryResult<ReferralsHubLeadRow[]>
-    >,
+      .not("status", "in", "(lost,merged)")
+      .gte("tour_scheduled_for", nowIso)
+      .order("tour_scheduled_for", { ascending: true })
+      .limit(REFERRAL_UPCOMING_TOUR_LIMIT) as unknown as Promise<
+        ReferralsQueryResult<ReferralsHubUpcomingTourRow[]>
+      >,
     supabase
       .from("referral_outreach_activities" as never)
       .select("id, activity_type, status, scheduled_for, performed_for_week, external_partner_name, notes")
@@ -122,27 +127,15 @@ export async function loadReferralsHubBootstrap(
       .is("deleted_at", null)
       .order("scheduled_for", { ascending: false })
       .limit(48) as unknown as Promise<ReferralsQueryResult<ReferralsOutreachRow[]>>,
-    supabase
-      .from("referral_leads" as never)
-      .select("id, first_name, last_name, status, tour_scheduled_for")
-      .eq("facility_id", selectedFacilityId)
-      .is("deleted_at", null)
-      .not("status", "in", "(lost,merged)")
-      .not("tour_scheduled_for", "is", null)
-      .gte("tour_scheduled_for", nowIso)
-      .order("tour_scheduled_for", { ascending: true })
-      .limit(REFERRAL_UPCOMING_TOUR_LIMIT) as unknown as Promise<
-      ReferralsQueryResult<ReferralsHubUpcomingTourRow[]>
-    >,
   ]);
 
-  if (listErr) throw listErr;
+  if (upcomingErr) throw upcomingErr;
   if (outreachErr) throw outreachErr;
-  if (upcomingToursErr) throw upcomingToursErr;
 
-  const leadRows = list ?? [];
+  const leadListTruncated = list.length > REFERRAL_PIPELINE_LOAD_LIMIT;
+  const leadRows = list.slice(0, REFERRAL_PIPELINE_LOAD_LIMIT) as ReferralsHubLeadRow[];
   const outreachRows = outreachList ?? [];
-  const upcomingTours = upcomingTourList ?? [];
+  const upcomingTours = upcomingList ?? [];
 
   let handoffBlocked = 0;
   let handoffReady = 0;
@@ -250,5 +243,6 @@ export async function loadReferralsHubBootstrap(
       pending: hl7Pending.count ?? 0,
       failed: hl7Failed.count ?? 0,
     },
+    leadListTruncated,
   };
 }
