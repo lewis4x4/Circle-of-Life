@@ -1,6 +1,6 @@
 -- COL-252 forward repair for verified recorded-but-absent schema effects.
--- Generated with supabase migration new; normalized to next source slot380.
--- Source379 is already merged; production application of379 remains separate.
+-- Generated with supabase migration new; normalized to next source slot381.
+-- Existing referral migrations remain separate from this additive repair.
 -- Preserve clinical/business rows, existing permissions and historical ledgers.
 -- Transaction owns only additive schema repairs; no old seed UPDATEs replayed.
 SET LOCAL lock_timeout = '5s';
