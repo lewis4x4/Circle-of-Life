@@ -39,10 +39,17 @@ export function formatDrillLogAttendanceLine(
  * COL-242: the stored state of one drill record, never inferred from the row
  * existing. Migration 359 leaves every row this page writes as a draft, so a
  * saved drill must not read as a satisfied requirement.
+ *
+ * Finality is not delivery. A final record is unlinked whenever no rule is
+ * approved for the activity (COL-226) or the person who finalized it is not on
+ * the published recorder list — migration 358 refuses that delivery as
+ * `recorder_not_authorized` while the record still stands. These two columns
+ * cannot tell the two apart, so this line states finality and claims nothing
+ * about the requirement.
  */
 export function formatDrillRecordState(record: { finalized_at: string | null; voided_at: string | null }): string {
   if (record.voided_at) return "voided — retained history";
-  if (record.finalized_at) return "final — delivered to its requirement";
+  if (record.finalized_at) return "final — whether it satisfied a requirement is recorded separately";
   return "draft — does not satisfy the requirement yet";
 }
 

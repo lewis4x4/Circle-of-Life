@@ -6,7 +6,7 @@ import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { dietaryServiceComponent, dietaryServiceSourceMap, type DietaryServiceComponent } from "@/lib/operations/dietary-service-source-map";
 import { MEAL_PERIODS } from "@/lib/operations/source-records";
 import { CONTROL, DateTimeInput } from "./work-inputs";
-import { LATE_ENTRY_LABEL, ObservationForm, assetLabel, describeAssetTypes, instantFrom, useSiteAssets, useSourceCommand, type CommandReply } from "./source-command";
+import { IMPOSSIBLE_LOCAL_TIME_COPY, LATE_ENTRY_LABEL, ObservationForm, assetLabel, describeAssetTypes, instantFrom, useSiteAssets, useSourceCommand, type CommandReply } from "./source-command";
 
 /**
  * COL-244: the staff entry surface for the COL-159 source commands — dietary
@@ -124,7 +124,7 @@ function ServiceForm({ serviceKind, assetTypes, facilityId, timezone, disabled, 
   const [note, setNote] = useState("");
   const [entryReason, setEntryReason] = useState("");
   const { vendors, error: vendorError } = useSiteVendors(facilityId, performerKind === "vendor");
-  const { pending, busy, error, notice, send, retry } = useSourceCommand(disabled, onLockChange, onSaved);
+  const { pending, busy, error, notice, send, retry, refuse } = useSourceCommand(disabled, onLockChange, onSaved);
   function verify(reply: CommandReply) {
     if (!reply.record.id) throw new Error("Reply has no record");
   }
@@ -132,7 +132,7 @@ function ServiceForm({ serviceKind, assetTypes, facilityId, timezone, disabled, 
   function submit() {
     if (busy || pending || disabled || !ready) return;
     const performedInstant = instantFrom(performedAt, timezone);
-    if (!performedInstant) return;
+    if (!performedInstant) { refuse(IMPOSSIBLE_LOCAL_TIME_COPY); return; }
     const body = {
       request_key: crypto.randomUUID(),
       payload: {
@@ -258,7 +258,7 @@ function DietaryForm({ recordKind, facilityId, timezone, disabled, onLockChange,
   const [issue, setIssue] = useState("");
   const [note, setNote] = useState("");
   const [entryReason, setEntryReason] = useState("");
-  const { pending, busy, error, notice, send, retry } = useSourceCommand(disabled, onLockChange, onSaved);
+  const { pending, busy, error, notice, send, retry, refuse } = useSourceCommand(disabled, onLockChange, onSaved);
   function verify(reply: CommandReply) {
     if (!reply.record.id) throw new Error("Reply has no record");
   }
@@ -269,7 +269,7 @@ function DietaryForm({ recordKind, facilityId, timezone, disabled, onLockChange,
   function submit() {
     if (busy || pending || disabled || !ready) return;
     const performedInstant = instantFrom(performedAt, timezone);
-    if (!performedInstant) return;
+    if (!performedInstant) { refuse(IMPOSSIBLE_LOCAL_TIME_COPY); return; }
     const payload: Record<string, unknown> = { facility_id: facilityId, record_kind: recordKind, performed_at: performedInstant };
     if (recordKind === "meal_substitution") {
       // Meal level: the served date and period, both items and the reason. A problem is stated as an issue, never as a failed substitution.

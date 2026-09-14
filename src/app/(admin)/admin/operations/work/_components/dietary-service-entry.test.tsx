@@ -120,6 +120,25 @@ describe("dietary records", () => {
     expect((await axe.run(container, { rules: { "color-contrast": { enabled: false } } })).violations).toEqual([]);
   });
 
+  it("refuses a nonexistent daylight-saving local time out loud and records nothing", async () => {
+    // 02:30 on the spring-forward Sunday never happens in America/New_York.
+    // Sending it would store 01:30 — an hour nobody chose — so it is refused,
+    // and the refusal is stated rather than swallowed by a dead button.
+    routes();
+    render(<DietaryServiceEntry {...base} activityKey="hfo-al-m08-01" />);
+    await open("Dietary source record");
+    await userEvent.type(await screen.findByLabelText(/When it was done/), "2026-03-08T02:30");
+    await userEvent.type(screen.getByLabelText(/Service date/), "2026-03-08");
+    await userEvent.selectOptions(screen.getByLabelText(/^Meal$/), "lunch");
+    await userEvent.type(screen.getByLabelText(/Planned item/), "Baked cod");
+    await userEvent.type(screen.getByLabelText(/Substitute served/), "Roast chicken");
+    await userEvent.type(screen.getByLabelText(/Reason for the substitution/), "Delivery short");
+    await userEvent.click(screen.getByRole("button", { name: "Record this dietary record" }));
+    await screen.findByText(/does not exist in this site's time zone/);
+    expect(posts()).toHaveLength(0);
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
   it("will not send an incomplete substitution", async () => {
     routes();
     render(<DietaryServiceEntry {...base} activityKey="hfo-al-m08-01" />);
