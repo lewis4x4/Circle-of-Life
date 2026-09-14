@@ -2,7 +2,7 @@
 """COL160 source/readiness guard. 'manifest' is local-only; no network on import."""
 import argparse,base64,hashlib,json,os,pathlib,subprocess,urllib.request
 ROOT=pathlib.Path(__file__).resolve().parents[4]; OUT=pathlib.Path(__file__).resolve().parent
-REF='iwcnajanvjvynolltflw'; MIGRATION='372_hfo_corporate_missing_meeting_expectation.sql'
+REF='iwcnajanvjvynolltflw'; MIGRATION='375_hfo_corporate_missing_meeting_expectation.sql'
 def require(ok,message):
  if not ok: raise RuntimeError(message)
 def digest(raw):return hashlib.sha256(raw).hexdigest()
@@ -27,7 +27,7 @@ class Runtime:
   require((pathlib.Path.home()/'.config/haven-staging/control/supabase/.temp/project-ref').read_text().strip()==REF,'Wrong dedicated CLI target')
   self.base=self.env['NEXT_PUBLIC_SUPABASE_URL'];self.app='http://127.0.0.1:4360'
   if stage:
-   stamp=json.loads((OUT/'staging-readiness.json').read_text());require(stamp['result']=='PASS' and stamp['target']==REF and stamp['sourceSha']==self.ready['sourceSha'] and stamp['migration_sha256']==digest((ROOT/'supabase/migrations'/MIGRATION).read_bytes()),'Reviewed staging372 readback required')
+   stamp=json.loads((OUT/'staging-readiness.json').read_text());require(stamp['result']=='PASS' and stamp['target']==REF and stamp['sourceSha']==self.ready['sourceSha'] and stamp['migration_sha256']==digest((ROOT/'supabase/migrations'/MIGRATION).read_bytes()),'Reviewed staging375 readback required')
  def verify(self):
   r=json.loads(self.ready_path.read_text());self.ready=r
   require(r['target']==REF and r['appUrl']=='http://127.0.0.1:4360','Wrong readiness target/origin')
