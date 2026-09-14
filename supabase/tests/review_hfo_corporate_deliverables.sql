@@ -102,6 +102,20 @@ RELEASE SAVEPOINT cd_due_provenance;
 -- Unknown recipient/backup/due remain unknown. Preparation is one immutable state.
 SELECT public.corporate_deliverable_command(s.task,'col160-configure-001','configure',jsonb_build_object('expectation_id',d->>'id','expected_revision',d->>'revision','recipient_label',NULL,'backup_label',NULL,'due_on',NULL,'configuration_provenance','No approved recipient, backup or schedule in source','due_provenance',NULL)) FROM cd_sites s,LATERAL pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date)d WHERE s.n=1;
 SELECT pg_temp.cd_assert((SELECT pg_temp.cd_detail(task,facility,start_date,end_date)#>>'{due_state}'='unknown' FROM cd_sites WHERE n=1),'unknown due became active');
+-- COL-326 regression: a gated action's byte-identical retry must replay, never
+-- raise a revision conflict. configure appends a 'configured' event and
+-- corporate_expectation_revision() returns the newest event id, so the retry's
+-- expected_revision is always stale by the time it is sent; retry identity is
+-- enforced by request_hash, so it cannot carry a fresher one. Migration 376
+-- refused this 40001 because its fast pre-read ran before the request-key
+-- replay return, reporting a committed change as rejected. Only capture_meeting
+-- and register had replay coverage, which is why that shipped green.
+SAVEPOINT cd_gated_replay;
+CREATE TEMP TABLE cd_gated_replay_payload AS SELECT s.task task,jsonb_build_object('expectation_id',d->>'id','expected_revision',d->>'revision','recipient_label',NULL,'backup_label',NULL,'due_on',NULL,'configuration_provenance','Replay regression probe','due_provenance',NULL) payload FROM cd_sites s,LATERAL pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date) d WHERE s.n=1;
+SELECT pg_temp.cd_assert(NOT coalesce((public.corporate_deliverable_command(task,'col160-gated-replay-001','configure',payload)->>'replayed')::boolean,true),'first gated configure must not report a replay') FROM cd_gated_replay_payload;
+SELECT pg_temp.cd_assert(coalesce((public.corporate_deliverable_command(task,'col160-gated-replay-001','configure',payload)->>'replayed')::boolean,false),'byte-identical gated retry must replay instead of raising a revision conflict') FROM cd_gated_replay_payload;
+DROP TABLE cd_gated_replay_payload;
+ROLLBACK TO SAVEPOINT cd_gated_replay;
 SELECT pg_temp.cd_error($q$SELECT public.corporate_deliverable_command(s.task,'col160-missing-standup','prepare',jsonb_build_object('expectation_id',d->>'id','expected_revision',d->>'revision','source_family','stand_up','stand_up_week_start',s.start_date)) FROM cd_sites s,LATERAL pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date)d WHERE s.n=1$q$,'missing report remains missing');
 SELECT public.stand_up_command('save',jsonb_build_object('facility_id',s.facility,'week_start',s.start_date,'expected_version',0,'request_id',gen_random_uuid(),'values',(SELECT jsonb_object_agg(k,1) FROM jsonb_object_keys(public.stand_up_command('export',jsonb_build_object('facility_id',s.facility,'week_start',s.start_date))->'values')k),'status','ready','as_of',s.end_date::text||'T12:00:00-04:00','reason','Synthetic immutable COL160 Stand Up source')) FROM cd_sites s WHERE n=1;
 SELECT public.corporate_deliverable_command(s.task,'col160-standup-actual','prepare',jsonb_build_object('expectation_id',d->>'id','expected_revision',d->>'revision','source_family','stand_up','stand_up_week_start',s.start_date)) FROM cd_sites s,LATERAL pg_temp.cd_detail(s.task,s.facility,s.start_date,s.end_date)d WHERE s.n=1;
