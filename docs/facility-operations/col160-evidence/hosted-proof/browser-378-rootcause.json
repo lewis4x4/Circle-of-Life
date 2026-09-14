@@ -1,4 +1,5 @@
 {
+  "supersededBy": "browser-378-rootcause-correction.json \u2014 the AccessExclusiveLock finding below is WITHDRAWN; it was a tuple lock, not a table lock. Measurements are retained, the interpretation is not.",
   "at": "2026-09-14T17:03:20.418438+00:00",
   "sourceSha": "3026632a5d9cf9d442d2ab69ea6a1d9003aeae34",
   "target": "iwcnajanvjvynolltflw",
@@ -8,7 +9,7 @@
   "finding": "public.corporate_deliverable_command acquires an AccessExclusiveLock on public.operation_task_instances. Two overlapping invocations convoy on it and do not drain, so the request hangs indefinitely. An AccessExclusiveLock on that table blocks every read and write of operation tasks, not only corporate ones.",
   "evidence": {
     "reproducedAfterWithdrawal": "Identical failure at browser-proof.mjs:49 with 378 applied, i.e. with 374's original function restored. 376/377 were irrelevant to it, which independently confirms withdrawing them was correct.",
-    "serverDoesNotTakeThatLong": "The logged duration equals the CLIENT timeout every time: browser 30s wait -> 'POST 200 in 29.6s'; a 75s client -> 'POST 200 in 75s'; a 40s client -> timeout at 40s. The handler hangs until the client disconnects; Next then logs the request as 200 because no response was ever sent.",
+    "serverDoesNotTakeThatLong": "The logged duration equals the CLIENT timeout every time: browser 30s wait -> 'POST 200 in 29.6s'; a 75s client -> 'POST 200 in 75s'; a 40s client -> timeout at 40s. The handler hangs until the client disconnects; No response was ever received by the client. That Next records these as 200 is an inference about framework logging, not a measurement.",
     "notAPlaywrightArtifact": "A plain urllib POST with a correct Content-Length reproduces the hang with no browser involved.",
     "notAboutTheRevision": "A VALID expected_revision hangs identically to a bogus one. The original diagnosis was wrong.",
     "errorPathIsHealthy": "A malformed payload returns a prompt 400 in 0.23s, and a 409 appears in the same run's log, so error mapping itself works.",
