@@ -1,0 +1,54 @@
+name: Scheduled job HTTP outcomes
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/scheduled-job-monitor.yml'
+      - 'scripts/scheduled-jobs/**'
+      - 'supabase/migrations/381_scheduled_job_monitoring.sql'
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: scheduled-job-monitor-${{ github.event.pull_request.number || 'runtime' }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.event_name != 'schedule' || vars.JOB_MONITOR_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify monitoring logic without provider access
+        run: node --test scripts/scheduled-jobs/*.test.mjs
+  monitor:
+    # Enable only after staging injection and a named recipient's receipt.
+    if: github.event_name != 'pull_request' && vars.JOB_MONITOR_ENABLED == 'true'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Collect actual HTTP outcomes and secret parity
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.JOB_MONITOR_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.JOB_MONITOR_SUPABASE_ACCESS_TOKEN }}
+          SENTRY_DSN_JOB_MONITOR: ${{ secrets.SENTRY_DSN_JOB_MONITOR }}
+        shell: bash
+        run: |
+          report=$(mktemp "${RUNNER_TEMP}/haven-job-monitor-report.XXXXXX")
+          trap 'rm -f -- "$report"; if [[ -n "${errors:-}" ]]; then rm -f -- "$errors"; fi' EXIT
+          errors=$(mktemp "${RUNNER_TEMP}/haven-job-monitor-errors.XXXXXX")
+          if node scripts/scheduled-jobs/check.mjs --send-sentry >"$report" 2>"$errors"; then
+            echo "Scheduled job monitor completed."
+          else
+            echo "Scheduled job monitor requires attention. Review the approved private monitoring destination."
+            exit 1
+          fi
