@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deliveryNotice, deliveryReason, instantFrom, type CommandReply } from "./source-command";
+import { deliveryNotice, deliveryReason, instantFrom, localTimeRefusal, resolveLocalInstant, type CommandReply } from "./source-command";
 
 const record = { id: "00000000-0000-4000-8000-000000000001" };
 
@@ -26,6 +26,45 @@ describe("instantFrom", () => {
 
   it("refuses an unparseable value rather than throwing", () => {
     expect(instantFrom("not a time", "America/New_York")).toBeNull();
+  });
+
+  it("accepts a time carrying seconds, which the time input can produce", () => {
+    // DateTimeInput composes its value from <input type="time" step="any">, so
+    // a real entry may arrive as HH:mm:ss or with a fraction. Comparing the
+    // whole string against an HH:mm render would refuse a perfectly good time.
+    expect(instantFrom("2026-09-10T09:30:00", "America/New_York")).toBe("2026-09-10T13:30:00.000Z");
+    expect(instantFrom("2026-09-10T09:30:00.000", "America/New_York")).toBe("2026-09-10T13:30:00.000Z");
+  });
+
+  it("still refuses the daylight-saving hole when the value carries seconds", () => {
+    expect(instantFrom("2026-03-08T02:30:00", "America/New_York")).toBeNull();
+  });
+});
+
+describe("resolveLocalInstant", () => {
+  it("tells a nonexistent clock time apart from an unfinished one", () => {
+    // Both used to be one null, and both were blamed on daylight saving. A
+    // half-filled field is a different mistake and gets a different sentence.
+    expect(resolveLocalInstant("2026-03-08T02:30", "America/New_York")).toEqual({ problem: "impossible" });
+    expect(resolveLocalInstant("T09:30", "America/New_York")).toEqual({ problem: "incomplete" });
+    expect(resolveLocalInstant("2026-09-10T", "America/New_York")).toEqual({ problem: "incomplete" });
+    expect(resolveLocalInstant("", "America/New_York")).toEqual({ problem: "incomplete" });
+    expect(resolveLocalInstant("not a time", "America/New_York")).toEqual({ problem: "incomplete" });
+  });
+
+  it("does not blame daylight saving for a missing date", () => {
+    const refusal = localTimeRefusal((resolveLocalInstant("T09:30", "America/New_York") as { problem: "incomplete" | "impossible" }).problem);
+    expect(refusal).toMatch(/Enter both a date and a time/);
+    expect(refusal).not.toMatch(/clocks move forward/);
+  });
+
+  it("names daylight saving only for the hour that does not exist", () => {
+    const refusal = localTimeRefusal((resolveLocalInstant("2026-03-08T02:30", "America/New_York") as { problem: "incomplete" | "impossible" }).problem);
+    expect(refusal).toMatch(/clocks move forward/);
+  });
+
+  it("returns the instant for a real local time", () => {
+    expect(resolveLocalInstant("2026-09-10T09:30", "America/New_York")).toEqual({ instant: "2026-09-10T13:30:00.000Z" });
   });
 });
 

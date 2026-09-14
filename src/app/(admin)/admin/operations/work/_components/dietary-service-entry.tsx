@@ -6,7 +6,7 @@ import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { dietaryServiceComponent, dietaryServiceSourceMap, type DietaryServiceComponent } from "@/lib/operations/dietary-service-source-map";
 import { MEAL_PERIODS } from "@/lib/operations/source-records";
 import { CONTROL, DateTimeInput } from "./work-inputs";
-import { IMPOSSIBLE_LOCAL_TIME_COPY, LATE_ENTRY_LABEL, ObservationForm, assetLabel, describeAssetTypes, instantFrom, useSiteAssets, useSourceCommand, type CommandReply } from "./source-command";
+import { LATE_ENTRY_LABEL, ObservationForm, assetLabel, describeAssetTypes, localTimeRefusal, resolveLocalInstant, useSiteAssets, useSourceCommand, type CommandReply } from "./source-command";
 
 /**
  * COL-244: the staff entry surface for the COL-159 source commands — dietary
@@ -131,8 +131,9 @@ function ServiceForm({ serviceKind, assetTypes, facilityId, timezone, disabled, 
   const ready = Boolean(performedAt) && (!needsAsset || Boolean(assetId)) && (performerKind === "staff" || Boolean(vendorId)) && (outcome === "pass" || Boolean(issue.trim()));
   function submit() {
     if (busy || pending || disabled || !ready) return;
-    const performedInstant = instantFrom(performedAt, timezone);
-    if (!performedInstant) { refuse(IMPOSSIBLE_LOCAL_TIME_COPY); return; }
+    const resolved = resolveLocalInstant(performedAt, timezone);
+    if (!("instant" in resolved)) { refuse(localTimeRefusal(resolved.problem)); return; }
+    const performedInstant = resolved.instant;
     const body = {
       request_key: crypto.randomUUID(),
       payload: {
@@ -268,8 +269,9 @@ function DietaryForm({ recordKind, facilityId, timezone, disabled, onLockChange,
   const ready = Boolean(performedAt) && (recordKind === "meal_substitution" ? substitutionReady : recordKind === "menu_approval" ? approvalReady : checkReady);
   function submit() {
     if (busy || pending || disabled || !ready) return;
-    const performedInstant = instantFrom(performedAt, timezone);
-    if (!performedInstant) { refuse(IMPOSSIBLE_LOCAL_TIME_COPY); return; }
+    const resolved = resolveLocalInstant(performedAt, timezone);
+    if (!("instant" in resolved)) { refuse(localTimeRefusal(resolved.problem)); return; }
+    const performedInstant = resolved.instant;
     const payload: Record<string, unknown> = { facility_id: facilityId, record_kind: recordKind, performed_at: performedInstant };
     if (recordKind === "meal_substitution") {
       // Meal level: the served date and period, both items and the reason. A problem is stated as an issue, never as a failed substitution.

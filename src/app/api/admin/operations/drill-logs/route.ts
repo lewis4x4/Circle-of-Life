@@ -7,8 +7,17 @@ import { DRILL_LOG_SELECT, SOURCE_RECORD_ROLES, listDrillLogsQuerySchema } from 
 import { logError } from "@/lib/observability/logger";
 
 /**
- * Drill logs at one site, read through the session so current site authority
- * governs every row (COL-241). This reader exists because the finalize,
+ * Drill logs at one site (COL-241). Two authorities apply and they are not the
+ * same authority: `actorCanAccessFacility` below is the operations gate, which
+ * honours `user_facility_access.operation_expires_at` (348), and the row-level
+ * policy on `drill_log` is 220's, which reads `haven.accessible_facility_ids()`
+ * and checks only `revoked_at` (326). The gate is the narrower of the two, so
+ * it is called before the query is built and an expired operations grant never
+ * reaches a row. Reading "through the session" alone would be wider than this
+ * route; `supabase/tests/review_hfo_drill_log_reader.sql` holds both halves to
+ * that, and COL-291 tracks the divergence itself.
+ *
+ * This reader exists because the finalize,
  * correct and void commands address one drill log by id: a person cannot act
  * on a draft the legacy form wrote without first seeing it. It reads and
  * nothing else — no state here makes a log final, and a draft row is never

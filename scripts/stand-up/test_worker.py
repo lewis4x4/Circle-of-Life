@@ -882,6 +882,42 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(client.resume(), {'status': 'applied'})
         self.assertNotIn('last_command_rejection', state.data)
 
+    def test_unrelated_success_keeps_definitive_rejection_metadata(self):
+        # A refusal is cleared by the action that resolves it, not by the next
+        # thing that happens to succeed. health.json is the credential
+        # custodian's record of what was refused; an unrelated save elsewhere
+        # must not erase it.
+        state = FakeState({'haven_pending': {'action': 'commit_recovery', 'payload': {'preview_id': 'stale'}}})
+        client = object.__new__(Haven)
+        client.state = state
+        client.command = lambda *_: (_ for _ in ()).throw(HttpFailure(409))
+        with self.assertRaises(HttpFailure):
+            client.resume()
+        self.assertEqual(state.data['last_command_rejection'], {'action': 'commit_recovery', 'status': 409})
+        state.data['haven_pending'] = {'action': 'save', 'payload': {'week': '2026-09-07'}}
+        client.command = lambda *_: {'status': 'saved'}
+        self.assertEqual(client.resume(), {'status': 'saved'})
+        self.assertEqual(state.data['last_command_rejection'], {'action': 'commit_recovery', 'status': 409})
+
+    def test_missing_facility_map_does_not_use_the_reconnect_exit_code(self):
+        # Exit 2 is reserved for "credential reconnect required". argparse's
+        # parser.error() also exits 2, which would page the custodian for a
+        # plain operator typo.
+        with patch('sys.argv', ['worker.py', '--state-dir', '/unused', '--publish']), patch('worker.http') as request:
+            with self.assertRaises(BridgeError):
+                worker.main()
+        request.assert_not_called()
+
+    def test_health_reply_is_discriminable_before_and_after_a_record_exists(self):
+        with tempfile.TemporaryDirectory() as directory:
+            absent = read_health(directory)
+            self.assertIs(absent['available'], False)
+            self.assertEqual(absent['schema_version'], 1)
+            Path(directory, 'health.json').write_text(json.dumps({'schema_version': 1, 'haven': {'state': 'healthy'}}))
+            present = read_health(directory)
+            self.assertIs(present['available'], True)
+            self.assertEqual(present['haven'], {'state': 'healthy'})
+
 
 if __name__ == '__main__':
     unittest.main()
