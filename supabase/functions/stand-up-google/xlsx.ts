@@ -1,10 +1,7 @@
 import { child, descendants, nodeText, parseXml, type XmlNode } from "./xml.ts";
 
 export const MAX_WORKBOOK_BYTES = 20 * 1024 * 1024;
-// No accepted OOXML writer is present in this repository. The hosted handler is
-// deliberately inbound-only until a byte-preserving patcher has independent
-// provider rehearsal evidence; GoogleDriveClient.uploadConditional is not called.
-export const OUTBOUND_XLSX_PATCH_SUPPORTED = false as const;
+export const OUTBOUND_XLSX_PATCH_SUPPORTED = true as const;
 const MAX_EXPANDED_BYTES = 80 * 1024 * 1024;
 const MAX_ZIP_ENTRIES = 10_000;
 const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -84,6 +81,8 @@ type ZipEntry = {
   compressed: number;
   expanded: number;
   offset: number;
+  centralOffset: number;
+  centralLength: number;
 };
 
 function u16(view: DataView, offset: number): number {
@@ -136,6 +135,8 @@ async function inflateRaw(
 class SafeZip {
   readonly #raw: Uint8Array;
   readonly #entries = new Map<string, ZipEntry>();
+  readonly #directoryOffset: number;
+  readonly #eocdOffset: number;
   constructor(raw: Uint8Array) {
     if (raw.byteLength > MAX_WORKBOOK_BYTES) {
       throw new WorkbookError("Workbook exceeds 20 MiB limit");
@@ -165,6 +166,7 @@ class SafeZip {
     const directoryOffset = u32(view, eocd + 16);
     if (
       count === 0xffff || count > MAX_ZIP_ENTRIES ||
+      directorySize === 0xffffffff || directoryOffset === 0xffffffff ||
       directoryOffset + directorySize > eocd
     ) {
       throw new WorkbookError("Unsupported or oversized ZIP directory");
@@ -183,6 +185,7 @@ class SafeZip {
       const extraLength = u16(view, at + 30);
       const commentLength = u16(view, at + 32);
       const offset = u32(view, at + 42);
+      const centralLength = 46 + nameLength + extraLength + commentLength;
       if (at + 46 + nameLength + extraLength + commentLength > raw.length) {
         throw new WorkbookError("Invalid ZIP directory bounds");
       }
@@ -196,6 +199,10 @@ class SafeZip {
       if (![0, 8].includes(method)) {
         throw new WorkbookError("Unsupported ZIP compression");
       }
+      if (
+        compressed === 0xffffffff || expanded === 0xffffffff ||
+        offset === 0xffffffff
+      ) throw new WorkbookError("ZIP64 workbooks are not supported");
       expandedTotal += expanded;
       if (expandedTotal > MAX_EXPANDED_BYTES) {
         throw new WorkbookError("Workbook expanded size exceeds limit");
@@ -208,12 +215,16 @@ class SafeZip {
         compressed,
         expanded,
         offset,
+        centralOffset: at,
+        centralLength,
       });
-      at += 46 + nameLength + extraLength + commentLength;
+      at += centralLength;
     }
     if (at !== directoryOffset + directorySize) {
       throw new WorkbookError("Invalid ZIP directory size");
     }
+    this.#directoryOffset = directoryOffset;
+    this.#eocdOffset = eocd;
   }
   has(name: string): boolean {
     return this.#entries.has(name);
@@ -273,6 +284,99 @@ class SafeZip {
         error instanceof Error ? error.message : "Invalid XML",
       );
     }
+  }
+  replace(replacements: Map<string, Uint8Array>): Uint8Array {
+    for (const [name, bytes] of replacements) {
+      if (!this.#entries.has(name) || !bytes.length) {
+        throw new WorkbookError("Replacement ZIP member is invalid");
+      }
+    }
+    const view = new DataView(
+      this.#raw.buffer,
+      this.#raw.byteOffset,
+      this.#raw.byteLength,
+    );
+    const localOrder = [...this.#entries.values()].sort((left, right) =>
+      left.offset - right.offset
+    );
+    const chunks: Uint8Array[] = [];
+    const offsets = new Map<string, number>();
+    let outputOffset = 0;
+    for (let index = 0; index < localOrder.length; index++) {
+      const entry = localOrder[index];
+      const next = localOrder[index + 1]?.offset ?? this.#directoryOffset;
+      if (entry.offset >= next || next > this.#directoryOffset) {
+        throw new WorkbookError("Invalid ZIP local entry ordering");
+      }
+      offsets.set(entry.name, outputOffset);
+      const replacement = replacements.get(entry.name);
+      let chunk: Uint8Array;
+      if (!replacement) {
+        chunk = this.#raw.slice(entry.offset, next);
+      } else {
+        const nameLength = u16(view, entry.offset + 26);
+        const extraLength = u16(view, entry.offset + 28);
+        const headerLength = 30 + nameLength + extraLength;
+        if (
+          entry.offset + headerLength > next ||
+          u32(view, entry.offset) !== 0x04034b50
+        ) throw new WorkbookError("Invalid ZIP local header");
+        chunk = new Uint8Array(headerLength + replacement.length);
+        chunk.set(
+          this.#raw.subarray(entry.offset, entry.offset + headerLength),
+        );
+        const changed = new DataView(chunk.buffer);
+        changed.setUint16(6, entry.flags & ~8, true);
+        changed.setUint16(8, 0, true);
+        changed.setUint32(14, crc32(replacement), true);
+        changed.setUint32(18, replacement.length, true);
+        changed.setUint32(22, replacement.length, true);
+        chunk.set(replacement, headerLength);
+      }
+      chunks.push(chunk);
+      outputOffset += chunk.length;
+    }
+    const directoryOffset = outputOffset;
+    for (
+      const entry of [...this.#entries.values()].sort((left, right) =>
+        left.centralOffset - right.centralOffset
+      )
+    ) {
+      const central = this.#raw.slice(
+        entry.centralOffset,
+        entry.centralOffset + entry.centralLength,
+      );
+      const changed = new DataView(central.buffer);
+      const replacement = replacements.get(entry.name);
+      if (replacement) {
+        changed.setUint16(8, entry.flags & ~8, true);
+        changed.setUint16(10, 0, true);
+        changed.setUint32(16, crc32(replacement), true);
+        changed.setUint32(20, replacement.length, true);
+        changed.setUint32(24, replacement.length, true);
+      }
+      changed.setUint32(42, offsets.get(entry.name)!, true);
+      chunks.push(central);
+      outputOffset += central.length;
+    }
+    const directorySize = outputOffset - directoryOffset;
+    const trailer = this.#raw.slice(this.#eocdOffset);
+    const trailerView = new DataView(trailer.buffer);
+    trailerView.setUint32(12, directorySize, true);
+    trailerView.setUint32(16, directoryOffset, true);
+    chunks.push(trailer);
+    const output = new Uint8Array(
+      chunks.reduce((total, chunk) => total + chunk.length, 0),
+    );
+    let at = 0;
+    for (const chunk of chunks) {
+      output.set(chunk, at);
+      at += chunk.length;
+    }
+    if (output.length > MAX_WORKBOOK_BYTES) {
+      throw new WorkbookError("Patched workbook exceeds 20 MiB limit");
+    }
+    return output;
   }
 }
 
@@ -494,6 +598,26 @@ export function overtimeMinutes(value: number | null): number | null {
   return total;
 }
 
+const COUNT_WITH_UNIT = new Map<StandUpKey, RegExp>([
+  ["current_total_census", /^(\d+)\s*(?:residents?|people|persons?)$/i],
+  ["sp_female_beds_open", /^(\d+)\s*beds?$/i],
+  ["sp_male_beds_open", /^(\d+)\s*beds?$/i],
+  ["sp_flexible_beds_open", /^(\d+)\s*beds?$/i],
+  ["private_beds_open", /^(\d+)\s*beds?$/i],
+  ["admissions_expected", /^(\d+)\s*admissions?$/i],
+  [
+    "hospital_and_rehab_total",
+    /^(\d+)\s*(?:residents?|patients?|people|persons?)$/i,
+  ],
+  ["expected_discharges", /^(\d+)\s*discharges?$/i],
+  ["callouts_last_week", /^(\d+)\s*(?:call\s*outs?|shifts?)$/i],
+  ["terminations_last_week", /^(\d+)\s*terminations?$/i],
+  ["current_open_positions", /^(\d+)\s*positions?$/i],
+  ["tours_expected", /^(\d+)\s*tours?$/i],
+  ["provider_activities_expected", /^(\d+)\s*activities?$/i],
+  ["outreach_engagements", /^(\d+)\s*engagements?$/i],
+]);
+
 function cellNumber(
   cellValue: Cell | undefined,
   key: StandUpKey,
@@ -510,7 +634,11 @@ function cellNumber(
   if (typeof cellValue.value === "boolean" || cellValue.value instanceof Date) {
     throw new WorkbookError("Expected numeric value");
   }
-  const text = String(cellValue.value).trim();
+  let text = String(cellValue.value).trim();
+  if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) {
+    const countWithUnit = COUNT_WITH_UNIT.get(key)?.exec(text);
+    if (countWithUnit) text = countWithUnit[1];
+  }
   if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) {
     throw new WorkbookError("Expected numeric value");
   }
@@ -793,4 +921,194 @@ export function retainUnchangedHeldOvertime(
   }
   parsed.issues = [];
   return true;
+}
+
+function cellPatchNumber(key: StandUpKey, value: number | null): string | null {
+  if (value === null) return null;
+  if (
+    typeof value !== "number" || !Number.isFinite(value) || value < 0 ||
+    value > 2_147_483_647
+  ) throw new WorkbookError("Invalid patch numeric bounds");
+  if (key === "overtime_reported") {
+    overtimeMinutes(value);
+    return String(value);
+  }
+  if (!Number.isSafeInteger(value)) {
+    throw new WorkbookError("Invalid patch numeric bounds");
+  }
+  if (key === "monthly_rent_roll_cents") {
+    const dollars = Math.trunc(value / 100);
+    const cents = value % 100;
+    return cents
+      ? `${dollars}.${String(cents).padStart(2, "0")}`
+      : String(dollars);
+  }
+  return String(value);
+}
+
+function removeTypeAttribute(tag: string): string {
+  return tag.replace(/\s+t\s*=\s*(?:"[^"]*"|'[^']*')/i, "");
+}
+
+function patchCell(
+  source: string,
+  cellAddress: string,
+  value: string | null,
+): string {
+  const cells = /<((?:[A-Za-z_][\w.-]*:)?c)\b[^>]*>/g;
+  for (const match of source.matchAll(cells)) {
+    const opening = match[0];
+    const addressMatch = /\br\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(opening);
+    if ((addressMatch?.[1] ?? addressMatch?.[2]) !== cellAddress) continue;
+    const start = match.index!;
+    const prefix = match[1].includes(":")
+      ? match[1].slice(0, match[1].indexOf(":") + 1)
+      : "";
+    let end = start + opening.length;
+    let body = "";
+    if (!opening.endsWith("/>")) {
+      const closing = `</${match[1]}>`;
+      const closeAt = source.indexOf(closing, end);
+      if (closeAt < 0) throw new WorkbookError("Malformed worksheet cell");
+      body = source.slice(end, closeAt);
+      end = closeAt + closing.length;
+    }
+    if (new RegExp(`<${prefix}f(?:\\s|>)`, "i").test(body)) {
+      throw new WorkbookError("Refusing to overwrite an input formula");
+    }
+    body = body
+      .replace(
+        new RegExp(
+          `<${prefix}v(?:\\s[^>]*)?>[\\s\\S]*?</${prefix}v\\s*>`,
+          "gi",
+        ),
+        "",
+      )
+      .replace(
+        new RegExp(
+          `<${prefix}is(?:\\s[^>]*)?>[\\s\\S]*?</${prefix}is\\s*>`,
+          "gi",
+        ),
+        "",
+      );
+    const normalizedOpening = removeTypeAttribute(opening).replace(
+      /\s*\/>$/,
+      ">",
+    );
+    const replacement = `${normalizedOpening}${body}${
+      value === null ? "" : `<${prefix}v>${value}</${prefix}v>`
+    }</${match[1]}>`;
+    return source.slice(0, start) + replacement + source.slice(end);
+  }
+
+  const [, rowNumber] = colIndex(cellAddress);
+  const rows = /<((?:[A-Za-z_][\w.-]*:)?row)\b[^>]*>/g;
+  for (const match of source.matchAll(rows)) {
+    const rowMatch = /\br\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(match[0]);
+    if (Number(rowMatch?.[1] ?? rowMatch?.[2]) !== rowNumber) continue;
+    if (value === null) return source;
+    const closeAt = source.indexOf(
+      `</${match[1]}>`,
+      match.index! + match[0].length,
+    );
+    if (closeAt < 0) throw new WorkbookError("Mapped input row disappeared");
+    const prefix = match[1].includes(":")
+      ? match[1].slice(0, match[1].indexOf(":") + 1)
+      : "";
+    const inserted =
+      `<${prefix}c r="${cellAddress}"><${prefix}v>${value}</${prefix}v></${prefix}c>`;
+    const targetColumn = colIndex(cellAddress)[0];
+    const rowBodyStart = match.index! + match[0].length;
+    const rowBody = source.slice(rowBodyStart, closeAt);
+    let insertAt = closeAt;
+    const rowCells = /<((?:[A-Za-z_][\w.-]*:)?c)\b[^>]*>/g;
+    for (const candidate of rowBody.matchAll(rowCells)) {
+      const candidateAddress = /\br\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(
+        candidate[0],
+      );
+      const observed = candidateAddress?.[1] ?? candidateAddress?.[2];
+      if (observed && colIndex(observed)[0] > targetColumn) {
+        insertAt = rowBodyStart + candidate.index!;
+        break;
+      }
+    }
+    return source.slice(0, insertAt) + inserted + source.slice(insertAt);
+  }
+  throw new WorkbookError("Mapped input row disappeared");
+}
+
+function setXmlAttribute(tag: string, name: string, value: string): string {
+  const pattern = new RegExp(`\\s+${name}\\s*=\\s*(?:"[^"]*"|'[^']*')`, "i");
+  if (pattern.test(tag)) return tag.replace(pattern, ` ${name}="${value}"`);
+  const closing = tag.endsWith("/>") ? "/>" : ">";
+  return tag.slice(0, -closing.length) + ` ${name}="${value}"${closing}`;
+}
+
+function requestFormulaRecalculation(source: string): string {
+  const match = /<((?:[A-Za-z_][\w.-]*:)?calcPr)\b[^>]*>/i.exec(source);
+  if (match) {
+    let replacement = match[0];
+    for (
+      const [name, value] of [
+        ["calcMode", "auto"],
+        ["fullCalcOnLoad", "1"],
+        ["forceFullCalc", "1"],
+      ]
+    ) replacement = setXmlAttribute(replacement, name, value);
+    return source.slice(0, match.index) + replacement +
+      source.slice(match.index + match[0].length);
+  }
+  const closing = /<\/((?:[A-Za-z_][\w.-]*:)?workbook)\s*>/i.exec(source);
+  if (!closing) throw new WorkbookError("Malformed workbook XML");
+  const prefix = closing[1].includes(":")
+    ? closing[1].slice(0, closing[1].indexOf(":") + 1)
+    : "";
+  const calculation =
+    `<${prefix}calcPr calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/>`;
+  return source.slice(0, closing.index) + calculation +
+    source.slice(closing.index);
+}
+
+export async function patchWorkbook(
+  raw: Uint8Array,
+  parsed: ParsedWorkbook,
+  updates: Record<string, StandUpValues>,
+): Promise<Uint8Array> {
+  if (await sha256Hex(raw) !== parsed.source_sha256 || parsed.issues.length) {
+    throw new WorkbookError("Source changed or mapping has unresolved issues");
+  }
+  const zip = new SafeZip(raw);
+  const changed = new Map<string, string>();
+  for (const [identity, values] of Object.entries(updates)) {
+    const location = parsed.locations[identity];
+    if (
+      !location || Object.keys(values).length !== KEYS.length ||
+      !KEYS.every((key) => key in values)
+    ) {
+      throw new WorkbookError("Unknown report identity or incomplete values");
+    }
+    let worksheet = changed.get(location.path) ??
+      decoder.decode(await zip.read(location.path));
+    for (const key of KEYS) {
+      worksheet = patchCell(
+        worksheet,
+        location.cells[key],
+        cellPatchNumber(key, values[key]),
+      );
+    }
+    changed.set(location.path, worksheet);
+  }
+  if (!changed.size) return raw.slice();
+  changed.set(
+    "xl/workbook.xml",
+    requestFormulaRecalculation(
+      decoder.decode(await zip.read("xl/workbook.xml")),
+    ),
+  );
+  const encoder = new TextEncoder();
+  return zip.replace(
+    new Map(
+      [...changed].map(([name, source]) => [name, encoder.encode(source)]),
+    ),
+  );
 }

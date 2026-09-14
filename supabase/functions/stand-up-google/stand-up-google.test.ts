@@ -12,6 +12,8 @@ import type {
   ApplySnapshotResult,
   BridgeContext,
   BridgeRpc,
+  CompleteExportInput,
+  ExportPlanResult,
 } from "./rpc.ts";
 import { SupabaseBridgeRpc } from "./rpc.ts";
 import {
@@ -21,6 +23,7 @@ import {
   KEYS,
   overtimeMinutes,
   parseWorkbook,
+  patchWorkbook,
   retainUnchangedHeldOvertime,
   type StandUpValues,
   WorkbookError,
@@ -143,8 +146,10 @@ function fixture(
   options: {
     blank?: boolean;
     overtime?: string;
+    callouts?: string;
     formula?: boolean;
     week?: string;
+    missingCell?: string;
   } = {},
 ): Uint8Array {
   const week = options.week ?? "2026-09-14";
@@ -165,13 +170,27 @@ function fixture(
       ? "100.25"
       : key === "overtime_reported"
       ? options.overtime ?? "0"
+      : key === "callouts_last_week"
+      ? options.callouts ?? "0"
       : "0";
     rows.push(
       `<row r="${row}"><c r="A${row}" t="inlineStr"><is><t>${safeLabel}</t></is></c>${
-        "BCDEF".split("").map((column) =>
-          `<c r="${column}${row}">${
-            options.formula && row === 3 ? "<f>1+1</f>" : ""
-          }${options.blank ? "" : `<v>${value}</v>`}</c>`
+        "BCDEF".split("").filter((column) =>
+          `${column}${row}` !== options.missingCell
+        ).map((column) =>
+          `<c r="${column}${row}"${
+            key === "callouts_last_week" && options.callouts &&
+              !/^\d+$/.test(options.callouts)
+              ? ' t="inlineStr"'
+              : ""
+          }>${options.formula && row === 3 ? "<f>1+1</f>" : ""}${
+            options.blank
+              ? ""
+              : key === "callouts_last_week" && options.callouts &&
+                  !/^\d+$/.test(options.callouts)
+              ? `<is><t>${value}</t></is>`
+              : `<v>${value}</v>`
+          }</c>`
         ).join("")
       }</row>`,
     );
@@ -187,6 +206,7 @@ function fixture(
     }</sheetData></worksheet>`,
     "xl/styles.xml":
       `<styleSheet xmlns="${ns}"><cellXfs count="1"><xf numFmtId="0"/></cellXfs></styleSheet>`,
+    "xl/media/unchanged.bin": "opaque-original-drawing",
   });
 }
 
@@ -224,6 +244,32 @@ Deno.test("blank current week retains five validated locations without importing
   );
 });
 
+Deno.test("count cells accept an exact integer followed by a known unit", async () => {
+  const parsed = await parseWorkbook(
+    fixture({ callouts: "3shifts" }),
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  equals(parsed.issues, [], "known count-unit notation must be accepted");
+  assert(
+    parsed.records[0].values.callouts_last_week === 3,
+    "the count must be preserved without its unit label",
+  );
+  const unknown = await parseWorkbook(
+    fixture({ callouts: "3days" }),
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  assert(
+    unknown.issues.every((issue) => issue.code === "invalid_input"),
+    "unknown text must still fail closed",
+  );
+});
+
 Deno.test("formula inputs and invalid overtime fail closed", async () => {
   const formula = await parseWorkbook(
     fixture({ formula: true }),
@@ -256,6 +302,99 @@ Deno.test("valid two-decimal HH.MM survives binary floating point representation
   equals(overtimeMinutes(1.42), 102, "one hour forty-two minutes");
 });
 
+Deno.test("XLSX patcher writes Haven values and preserves unrelated workbook parts", async () => {
+  const raw = fixture();
+  const parsed = await parseWorkbook(
+    raw,
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  const identity = `${map.Homewood}:2026-09-14`;
+  const values = Object.fromEntries(
+    KEYS.map((key) => [key, null]),
+  ) as StandUpValues;
+  values.monthly_rent_roll_cents = 123_456;
+  values.current_total_census = 12;
+  values.overtime_reported = 17.05;
+  const output = await patchWorkbook(raw, parsed, { [identity]: values });
+  const readback = await parseWorkbook(
+    output,
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  equals(
+    readback.records.find((record) => record.facility_id === map.Homewood)
+      ?.values,
+    values,
+    "patched values must round-trip",
+  );
+  assert(
+    new TextDecoder().decode(output).includes("opaque-original-drawing"),
+    "unrelated ZIP member must remain byte-present",
+  );
+});
+
+Deno.test("XLSX patcher refuses formulas and stale source bytes", async () => {
+  const raw = fixture({ formula: true });
+  const parsed = await parseWorkbook(
+    raw,
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+  );
+  parsed.issues = [];
+  const identity = `${map.Homewood}:2026-09-14`;
+  const values = Object.fromEntries(
+    KEYS.map((key) => [key, 0]),
+  ) as StandUpValues;
+  let formulaRefused = false;
+  try {
+    await patchWorkbook(raw, parsed, { [identity]: values });
+  } catch (error) {
+    formulaRefused = error instanceof WorkbookError &&
+      error.message.includes("formula");
+  }
+  assert(formulaRefused, "formula input must never be overwritten");
+  let staleRefused = false;
+  try {
+    await patchWorkbook(fixture(), parsed, { [identity]: values });
+  } catch (error) {
+    staleRefused = error instanceof WorkbookError &&
+      error.message.includes("Source changed");
+  }
+  assert(staleRefused, "stale source bytes must never be patched");
+});
+
+Deno.test("XLSX patcher inserts a missing blank input cell in coordinate order", async () => {
+  const raw = fixture({ blank: true, missingCell: "B4" });
+  const parsed = await parseWorkbook(
+    raw,
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+  );
+  const identity = `${map.Homewood}:2026-09-14`;
+  const values = Object.fromEntries(
+    KEYS.map((key) => [key, 0]),
+  ) as StandUpValues;
+  const output = await patchWorkbook(raw, parsed, { [identity]: values });
+  const readback = await parseWorkbook(
+    output,
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+  );
+  equals(
+    readback.records[0]?.values,
+    values,
+    "inserted blank cell must round-trip",
+  );
+});
+
 Deno.test("disabled database generation short-circuits before Google credentials or provider fetch", async () => {
   let fetches = 0;
   const response = await handleStandUpGoogle(
@@ -277,6 +416,9 @@ Deno.test("disabled database generation short-circuits before Google credentials
         loadContext: () =>
           Promise.resolve({ state: "disabled" } as BridgeContext),
         applySnapshot: () => Promise.reject(new Error("must not apply")),
+        prepareExport: () => Promise.reject(new Error("must not prepare")),
+        completeExport: () => Promise.reject(new Error("must not complete")),
+        abandonExport: () => Promise.reject(new Error("must not abandon")),
         recordFailure: () => Promise.reject(new Error("must not record")),
       },
       now: () => new Date("2026-09-14T12:00:00Z"),
@@ -438,6 +580,8 @@ Deno.test("conditional writer uses Drive v2 PUT and exact strong If-Match", asyn
 
 class RpcDouble implements BridgeRpc {
   applied?: ApplySnapshotInput;
+  completed?: CompleteExportInput;
+  abandoned?: { export_id: string; reason: string };
   failures: string[] = [];
   constructor(
     readonly context: BridgeContext,
@@ -445,6 +589,7 @@ class RpcDouble implements BridgeRpc {
       state: "synchronized",
       run_id: "run-1",
     },
+    readonly plan: ExportPlanResult = { state: "no_export" },
   ) {}
   loadContext(): Promise<BridgeContext> {
     return Promise.resolve(this.context);
@@ -452,6 +597,17 @@ class RpcDouble implements BridgeRpc {
   applySnapshot(input: ApplySnapshotInput): Promise<ApplySnapshotResult> {
     this.applied = input;
     return Promise.resolve(this.result);
+  }
+  prepareExport() {
+    return Promise.resolve(this.plan);
+  }
+  completeExport(input: CompleteExportInput) {
+    this.completed = input;
+    return Promise.resolve({ state: "synchronized" } as const);
+  }
+  abandonExport(input: { export_id: string; reason: string }): Promise<void> {
+    this.abandoned = input;
+    return Promise.resolve();
   }
   recordFailure(input: { error_code: string }): Promise<void> {
     this.failures.push(input.error_code);
@@ -481,6 +637,15 @@ Deno.test("handler requires dedicated cron secret before RPC or provider access"
           throw new Error();
         },
         applySnapshot() {
+          throw new Error();
+        },
+        prepareExport() {
+          throw new Error();
+        },
+        completeExport() {
+          throw new Error();
+        },
+        abandonExport() {
           throw new Error();
         },
         recordFailure() {
@@ -603,6 +768,138 @@ Deno.test("handler imports one stable validated snapshot through the narrow RPC"
   assert(
     rpc.applied?.week_start === "2026-09-14",
     "Sunday must target the upcoming Monday",
+  );
+});
+
+Deno.test("handler conditionally exports Haven changes and completes only exact Drive readback", async () => {
+  let current = fixture();
+  let version = 7;
+  let etag = '"strong-7"';
+  const initial = await parseWorkbook(current, map, "file", "Stand Up.xlsx");
+  const values = {
+    ...initial.records.find((record) => record.facility_id === map.Homewood)!
+      .values,
+    current_total_census: 12,
+  };
+  const rpc = new RpcDouble(
+    { facility_map: map, baselines: {} },
+    { state: "synchronized", run_id: "unused" },
+    {
+      state: "export_required",
+      export_id: "export-1",
+      updates: { [`${map.Homewood}:2026-09-14`]: values },
+    },
+  );
+  const response = await handleStandUpGoogle(
+    new Request("https://example.test", {
+      method: "POST",
+      headers: { "x-cron-secret": "cron" },
+    }),
+    {
+      env: environment,
+      rpc,
+      now: () => new Date("2026-09-14T12:00:00Z"),
+      fetcher: (input, init) => {
+        const url = String(input);
+        const requestInit = init as globalThis.RequestInit | undefined;
+        if (url.includes("oauth2")) {
+          return Promise.resolve(new Response('{"access_token":"access"}'));
+        }
+        if (url.includes("/upload/")) {
+          assert(
+            new Headers(requestInit?.headers).get("if-match") === '"strong-7"',
+            "upload must use the observed strong ETag",
+          );
+          current = new Uint8Array(requestInit?.body as ArrayBuffer);
+          version = 8;
+          etag = '"strong-8"';
+          return Promise.resolve(new Response("{}"));
+        }
+        if (url.includes("alt=media")) {
+          return Promise.resolve(binaryResponse(current));
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({
+            id: "file",
+            mimeType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            etag,
+            version: String(version),
+            headRevisionId: `head-${version}`,
+            md5Checksum: md5Hex(current),
+            fileSize: String(current.length),
+            labels: { trashed: false },
+          })),
+        );
+      },
+    },
+  );
+  assert(
+    response.status === 200 && !rpc.applied &&
+      rpc.completed?.export_id === "export-1",
+    "outbound run must complete without importing its own write",
+  );
+  const readback = await parseWorkbook(current, map, "file", "Stand Up.xlsx");
+  assert(
+    readback.records.find((record) => record.facility_id === map.Homewood)
+      ?.values.current_total_census === 12,
+    "Google readback must contain the Haven edit",
+  );
+});
+
+Deno.test("handler abandons a definitively rejected conditional export", async () => {
+  const bytes = fixture();
+  const parsed = await parseWorkbook(bytes, map, "file", "Stand Up.xlsx");
+  const values = {
+    ...parsed.records.find((record) => record.facility_id === map.Homewood)!
+      .values,
+    current_total_census: 13,
+  };
+  const rpc = new RpcDouble(
+    { facility_map: map, baselines: {} },
+    { state: "synchronized", run_id: "unused" },
+    {
+      state: "export_required",
+      export_id: "export-stale",
+      updates: { [`${map.Homewood}:2026-09-14`]: values },
+    },
+  );
+  const metadata = {
+    id: "file",
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    etag: '"strong"',
+    version: "7",
+    headRevisionId: "head",
+    md5Checksum: md5Hex(bytes),
+    fileSize: String(bytes.length),
+    labels: { trashed: false },
+  };
+  const response = await handleStandUpGoogle(
+    new Request("https://example.test", {
+      method: "POST",
+      headers: { "x-cron-secret": "cron" },
+    }),
+    {
+      env: environment,
+      rpc,
+      now: () => new Date("2026-09-14T12:00:00Z"),
+      fetcher: (input) =>
+        Promise.resolve(
+          String(input).includes("oauth2")
+            ? new Response('{"access_token":"access"}')
+            : String(input).includes("/upload/")
+            ? new Response("", { status: 412 })
+            : String(input).includes("alt=media")
+            ? binaryResponse(bytes)
+            : new Response(JSON.stringify(metadata)),
+        ),
+    },
+  );
+  assert(
+    response.status === 409 && rpc.abandoned?.export_id === "export-stale" &&
+      rpc.failures.includes("bridge_error"),
+    "definite provider conflict must abandon without baseline advancement",
   );
 });
 

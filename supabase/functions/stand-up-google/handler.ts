@@ -4,11 +4,13 @@ import {
   GoogleDriveClient,
   GoogleReconnectRequired,
   GoogleSnapshotUnstable,
+  ProviderHttpError,
   refreshGoogleAccessToken,
 } from "./google.ts";
 import { type BridgeRpc, driveReceipt, SupabaseBridgeRpc } from "./rpc.ts";
 import {
   parseWorkbook,
+  patchWorkbook,
   retainUnchangedHeldOvertime,
   WorkbookError,
 } from "./xlsx.ts";
@@ -174,10 +176,11 @@ export async function handleStandUpGoogle(
           "Google replaced the connector credential; rotate the hosted secret before retrying",
       }, 503);
     }
-    const snapshot = await new GoogleDriveClient(
+    const driveClient = new GoogleDriveClient(
       tokenResult.accessToken,
       fetcher,
-    ).downloadStable(workbookId);
+    );
+    const snapshot = await driveClient.downloadStable(workbookId);
     const parsed = await parseWorkbook(
       snapshot.bytes,
       context.facility_map,
@@ -215,6 +218,103 @@ export async function handleStandUpGoogle(
         detail: { issue_codes: ["current_week_incomplete"] },
       });
       return json({ state: "mapping_required", issue_count: 1 }, 409);
+    }
+    const exportInput = {
+      workbook_id: workbookId,
+      week_start: weekStart,
+      source_sha256: parsed.source_sha256,
+      drive: driveReceipt(snapshot.metadata),
+      observed_at: observedAt,
+      records: parsed.records,
+    };
+    const exportPlan = await rpc.prepareExport(exportInput);
+    if (exportPlan.state === "disabled") {
+      return json({ state: "disabled" }, 200);
+    }
+    if (exportPlan.state === "review_required") {
+      return json({ state: "review_required", code: exportPlan.code }, 409);
+    }
+    if (exportPlan.state === "export_applied") {
+      await rpc.completeExport({
+        ...exportInput,
+        export_id: exportPlan.export_id,
+      });
+      return json({
+        state: "synchronized",
+        direction: "haven_to_google",
+        recovered: true,
+      }, 200);
+    }
+    if (exportPlan.state === "export_required") {
+      const patched = await patchWorkbook(
+        snapshot.bytes,
+        parsed,
+        exportPlan.updates,
+      );
+      try {
+        await driveClient.uploadConditional(
+          workbookId,
+          patched,
+          snapshot.metadata.etag,
+        );
+      } catch (error) {
+        if (error instanceof ProviderHttpError && error.status === 412) {
+          await rpc.abandonExport({
+            workbook_id: workbookId,
+            week_start: weekStart,
+            export_id: exportPlan.export_id,
+            reason: "provider_rejected",
+          });
+          await rpc.recordFailure({
+            workbook_id: workbookId,
+            week_start: weekStart,
+            error_code: "bridge_error",
+            observed_at: observedAt,
+            detail: { reason: "google_conditional_write_rejected" },
+          });
+          return json({
+            state: "review_required",
+            code: "google_write_conflict",
+          }, 409);
+        }
+        throw error;
+      }
+      const readback = await driveClient.downloadStable(workbookId);
+      const readbackParsed = await parseWorkbook(
+        readback.bytes,
+        context.facility_map,
+        workbookId,
+        "Stand Up.xlsx",
+        [weekStart],
+      );
+      if (
+        readbackParsed.issues.length ||
+        Object.keys(readbackParsed.locations).filter((identity) =>
+            identity.endsWith(`:${weekStart}`)
+          ).length !== 5
+      ) {
+        await rpc.abandonExport({
+          workbook_id: workbookId,
+          week_start: weekStart,
+          export_id: exportPlan.export_id,
+          reason: "readback_mismatch",
+        });
+        throw new WorkbookError("Uploaded workbook readback differs");
+      }
+      await rpc.completeExport({
+        workbook_id: workbookId,
+        week_start: weekStart,
+        export_id: exportPlan.export_id,
+        source_sha256: readbackParsed.source_sha256,
+        drive: driveReceipt(readback.metadata),
+        observed_at: new Date().toISOString(),
+        records: readbackParsed.records,
+      });
+      return json({
+        state: "synchronized",
+        direction: "haven_to_google",
+        recovered: false,
+      }, 200);
     }
     const receipt = await rpc.applySnapshot({
       workbook_id: workbookId,
