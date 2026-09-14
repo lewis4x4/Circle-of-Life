@@ -1,0 +1,143 @@
+{
+  "reviewed_at": "2026-09-13T20:59:17.166120+00:00",
+  "verdict": "FAIL \u2014 P2 due provenance validation; final mandatory UI gate pending",
+  "identity": {
+    "at": "2026-09-13T20:56:15.737909+00:00",
+    "head": "e55bc3df65e9da5ed21c726d62b8b9d06a2b9b3a",
+    "parent": "1b2c509e430f8cd7a3ee9c4865fe5b777bb606ed",
+    "source_manifest_sha256": "bd9e341251db89ac27bccefb47e6637b4c9991002308219d09a219be2f8cb88a",
+    "full_21_file_diff_sha256": "5f718312af1712905bfe8093cabaaaf6b8ccbd699ae1db41ce96b108a9d62853",
+    "tracked_integration_diff_sha256": "c5c0cca63644be5a873e8486bdeb122ac967301bfc877db0f5b8a2dde74ce238",
+    "original_diff_byte_identical": true,
+    "files": [
+      {
+        "path": "src/app/(admin)/admin/operations/work/_components/work-row.tsx",
+        "sha256": "02055289dc7cbeeb65e558466d8f235b21de6375516904aed00ee5149bd41d56"
+      },
+      {
+        "path": "docs/facility-operations/COL-160-HANDOFF.md",
+        "sha256": "3f4a13746849c46b04b7cb5a66b244666c302b30ad8a8135c16f1e51e3be8e8e"
+      },
+      {
+        "path": "src/app/api/admin/operations/corporate-deliverables/route.test.ts",
+        "sha256": "42520945cef485281315d0e9093c18d058b2ee023a69729de482c424f58a6f14"
+      },
+      {
+        "path": "src/lib/operations/corporate-deliverables.ts",
+        "sha256": "498d4622affbb6d0e876abe96ec674b89e4c76a168cee628d102228b5df67dfa"
+      },
+      {
+        "path": "supabase/tests/review_hfo_corporate_deliverables.sql",
+        "sha256": "4fe072a593481685d21b45c344edc273c2d077d74ae4a9ff91ae8f4c1dd63035"
+      },
+      {
+        "path": "src/app/api/admin/operations/corporate-deliverables/history/route.test.ts",
+        "sha256": "511206e4b5af502f889e42fbd0e6c56fa7430f195cd544d2a062e0520c03145b"
+      },
+      {
+        "path": "src/app/api/admin/operations/corporate-deliverables/history/route.ts",
+        "sha256": "70522cb950864b7421f9a0fba411ff4b425ffb26d15efe19562aa9f199545dda"
+      },
+      {
+        "path": "src/app/api/admin/operations/corporate-deliverables/unresolved/route.ts",
+        "sha256": "772f9e782358a624f000e1826f61b67b1f7477e6aeafc48661867cebedea8e7a"
+      },
+      {
+        "path": "scripts/facility-operations/verify-corporate-front-office-boundary.ts",
+        "sha256": "85f2018193dec14ac2bd285aa746fac0979c894e277fb5aa8aa335915d5bdf56"
+      },
+      {
+        "path": "supabase/migrations/371_hfo_corporate_deliverables.sql",
+        "sha256": "8610da649bd6d7a605e6d6f5c16f1bf61fa2a70d468904fb93b162e03072df6b"
+      },
+      {
+        "path": "scripts/stand-up/test_corporate_boundary.py",
+        "sha256": "9130272403e6230e48559ab1e60624c7f9ee164bea11158cb877b0889d5beabc"
+      },
+      {
+        "path": "scripts/facility-operations/test-corporate-deliverable-concurrency.py",
+        "sha256": "9a0abf0054bb704554fca082581bd406cda0ea8a78f8e4f5540ee21cb54ba5c8"
+      },
+      {
+        "path": "src/app/(admin)/admin/operations/work/_components/corporate-deliverable-panel.test.tsx",
+        "sha256": "9fd29e748788f68d2c4bb21699ad38f97cad14e472d0aaeaf325ba5f86544290"
+      },
+      {
+        "path": "src/app/api/admin/operations/corporate-deliverables/route.ts",
+        "sha256": "ac6e547f6eb511212de59c2650f77b545ecba7efc08853f283973e9863e19159"
+      },
+      {
+        "path": "src/app/(admin)/admin/operations/work/_components/corporate-unresolved-components.test.tsx",
+        "sha256": "c1d72327c55a1a5f3a15d6e87435164f4c491834825d95b94654d05eb1e736a3"
+      },
+      {
+        "path": "src/app/(admin)/admin/operations/work/_components/corporate-unresolved-components.tsx",
+        "sha256": "c5d881cf7947e215d71b4ce7adf856b42525c8d364ee9ae3511807e8d037b2cb"
+      },
+      {
+        "path": "src/app/(admin)/admin/operations/work/page.tsx",
+        "sha256": "cb687ba848abd93fb0b4d03710a4b114bff595dcb4b11200bf2b7b53f5e36d8c"
+      },
+      {
+        "path": "docs/specs/28-facility-operations-corporate-deliverables.md",
+        "sha256": "d6ecc115bac93859b8eef52c20ed2ee3c45f6cde20eba55c7c90585295d9052e"
+      },
+      {
+        "path": "src/app/(admin)/admin/operations/work/_components/corporate-deliverable-panel.tsx",
+        "sha256": "e09ceea4d6a8cb0254264c52cbaca6fa9f7fb88ac7859d85dc30999b22b4f0b1"
+      },
+      {
+        "path": "src/app/api/admin/operations/corporate-deliverables/unresolved/route.test.ts",
+        "sha256": "e45f6a69f64645b731b07627bfd9773bf482853d09ed92a4c6f63c229d0fa365"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "priority": "P2",
+      "path": "supabase/migrations/371_hfo_corporate_deliverables.sql",
+      "line": 323,
+      "description": "Authenticated direct configure RPC accepts whitespace due_provenance alongside due_on, strips it to NULL, and returns due_state documented. Enforce nonempty bounded trimmed due provenance server-side before mutation.",
+      "reproduction": "due-provenance-repro.json"
+    }
+  ],
+  "local_checks": {
+    "focused_vitest": "5 files / 36 PASS",
+    "native371": "PASS fresh isolated clone, clone dropped",
+    "concurrency": "7 PASS; no owned DB remains",
+    "actual_front_office": "PASS empty/populated, zero network",
+    "standup_python": "120 PASS",
+    "diff_check": "PASS"
+  },
+  "artifacts": [
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/focused-tests.log",
+      "sha256": "cb3e7fa58a6257daf962e7a9e05bf0970217bfc886b4bfea35e8ede282b1725c"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/native-probe.log",
+      "sha256": "f3efef20dd3f0de4d1f3976cdb67317bc4a1398849127d89fb483231e1024a28"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/native-probe.json",
+      "sha256": "51614e17273c852905e071e3c2981579f86e36fcad3a8adce8c424d533784b44"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/concurrency.log",
+      "sha256": "d2ad1c97059b7082855386ebe7d9bfe17d20c7dd62b4545b2b8b0e5f88814693"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/front-office.log",
+      "sha256": "27036da3c08d38d33e41b521d1d66a13b2aea3ac4ed76fbb23731ca63bee78e1"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/python-tests.log",
+      "sha256": "e3a3a694c082be8739e12f9c7b0e43efb7e9df73e6ac338dc50b74f998591c8a"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/due-provenance-repro.json",
+      "sha256": "56e072b2470aa0bdff1b96cc70257d4c3a99736d6f92b03ba820a3a01382e307"
+    }
+  ],
+  "boundaries": "No hosted proof approval, production, provider, email, Front Office live-receiver, staff or operating acceptance."
+}

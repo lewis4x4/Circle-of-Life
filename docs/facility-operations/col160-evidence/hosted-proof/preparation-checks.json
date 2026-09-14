@@ -1,0 +1,228 @@
+{
+  "result": "PASS",
+  "scope": "Preparation and disposable local SQL only; NO hosted or browser execution",
+  "syntax": "All4Python files plus browser ES module valid",
+  "imports": "Network-refused Python imports pass; browser module import inert",
+  "ledger": "Exact version-set positive and unknown-version rejection passed",
+  "localFixture": {
+    "actors": 3,
+    "tasks": 8,
+    "setupPassed": true,
+    "fullCorporateSqlAssertionsPassed": true,
+    "finalDatabase": "col160_runner_c913b2a828",
+    "transport": "Auth and app HTTP stubbed, actual guarded SQL functions run against disposable PostgreSQL17 clone",
+    "localOnlyCompatibility": "auth.uid shim, auth schema usage and authenticated SELECT on public tables mirror native review harness; no hosted grant mutation",
+    "priorAttempts": [
+      {
+        "database": "col160_runner_15adca3174",
+        "outcome": "Fixture setup8tasks/3actors PASS; no command flow requested"
+      },
+      {
+        "database": "col160_runner_befd8581bf",
+        "outcome": "Fixture setup PASS; command flow refused Complete current native source required due baseline native SELECT metadata"
+      },
+      {
+        "database": "col160_runner_99b2be987a",
+        "outcome": "Same local SELECT metadata refusal with exact SQLSTATE42501 captured; no fixture change"
+      }
+    ],
+    "allExactDatabasesDropped": [
+      {
+        "database": "col160_runner_092ded988e",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_092ded988e-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_15adca3174",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_15adca3174-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_70c61c5278",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_70c61c5278-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_99b2be987a",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_99b2be987a-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_befd8581bf",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_befd8581bf-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_c913b2a828",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_c913b2a828-state.json",
+        "dropped": true
+      }
+    ],
+    "finalMigrationSha256": "fe88a2a0e79247b4664d4712d682f866d9fcdb6ca2465056ed9e7e186f89d5d5",
+    "finalValidationLog": {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/local-runner-unicode-validation-final.log",
+      "sha256": "7775fba9b5619599e1d2b9e44b3fa2f8850e0df411ae6cf75b0295fcee3fcfa1",
+      "scope": "Local SQL with stubbed Auth/app transport, including NBSP/BOM denials"
+    },
+    "inFlightPreparationObservation": {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/local-runner-unicode-validation.log",
+      "scope": "Read of unfinished backend edit before stable notification; syntax typo subsequently fixed; not finalcandidate failure"
+    }
+  },
+  "runtimeFilesUntouchedByRunnerAgent": true,
+  "remoteActions": 0,
+  "runnerHashes": {
+    "apply-staging.py": "44ebe14d123d578c336e264143705b9d023b16af554d18967090d925209196bb",
+    "browser-proof.mjs": "390747256c7e0cfb3f4b6a662daee8659830f49dc3333b733a10ecaafe4e1265",
+    "fixture.py": "8963aed6fd380be67c88522f7568f07c66f8c6d414f266cbfdf58cd7f42b6795",
+    "guarded.py": "98e20f6b0cc35fd728155b7a0f5fdb3c0c2939adbea215bc120d9a7770d1ef22",
+    "http-proof.py": "8f76c1faea3c1328a49344b6233fb1de4c4a3e6b41cbf30d4edad51cd573585d"
+  },
+  "browserSelectorBinding": "Exact state task_id verified for both resident component panels; no first-row inference",
+  "directRpcWhitespaceRegression": "Hosted exercise includes ASCII blank, NBSP, BOM, and1001character due provenance denials after corrected371",
+  "disposableFixtureState": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/fixture-state.json",
+  "catalogPosture": {
+    "result": "PASS",
+    "scope": "Actual local PostgreSQL17 catalog; exact apply runner read_posture function",
+    "database": "col160_runner_catalog_99a47d66",
+    "posture": {
+      "public.corporate_deliverable_snapshot(uuid,date,date)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      },
+      "public.corporate_deliverable_command(uuid,text,text,jsonb)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      },
+      "public.corporate_deliverable_history(uuid,uuid,integer,bigint)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      }
+    },
+    "receipt": {
+      "database": "col160_runner_catalog_99a47d66",
+      "dropped": true
+    },
+    "correctedAssumption": "Initial inherited invoker assertion was wrong; reviewed371 uses SECURITY DEFINER with explicit current-authority checks. Runtime posture unchanged."
+  },
+  "forward372": {
+    "result": "PASS",
+    "localScope": "Actual localSQL; Auth/app transport stubbed. Actual hosted workflow still gated.",
+    "migrationSha256": "5bab09edc15611ec19382ac702a652740e18388ac31ce6d9bfe8a0d2b77ae42f",
+    "preserved371Sha256": "fe88a2a0e79247b4664d4712d682f866d9fcdb6ca2465056ed9e7e186f89d5d5",
+    "fixtureDatabase": "col160_runner_c410bfdf08",
+    "fullSqlAssertionsPassed": true,
+    "newAssertions": [
+      "rawRPC missingexpectation literalJSONnull",
+      "samekeymeeting replay identicalcapture",
+      "onerequestledger"
+    ],
+    "catalog": {
+      "result": "PASS",
+      "scope": "Actual local PostgreSQL17 catalog; exact372applyquery with lockedledger371SHA tampernegative and positive; exact read_posture function",
+      "database": "col160_runner_catalog_333b34a4",
+      "posture": {
+        "public.corporate_deliverable_snapshot(uuid,date,date)": {
+          "security_definer": true,
+          "fixed_empty_search_path": true,
+          "authenticated": true,
+          "anon_denied": true,
+          "service_denied": true,
+          "public_denied": true
+        },
+        "public.corporate_deliverable_command(uuid,text,text,jsonb)": {
+          "security_definer": true,
+          "fixed_empty_search_path": true,
+          "authenticated": true,
+          "anon_denied": true,
+          "service_denied": true,
+          "public_denied": true
+        },
+        "public.corporate_deliverable_history(uuid,uuid,integer,bigint)": {
+          "security_definer": true,
+          "fixed_empty_search_path": true,
+          "authenticated": true,
+          "anon_denied": true,
+          "service_denied": true,
+          "public_denied": true
+        },
+        "haven.corporate_meeting_projection(jsonb)": {
+          "security_definer": true,
+          "fixed_empty_search_path": true,
+          "authenticated_denied": true,
+          "anon_denied": true,
+          "service_denied": true,
+          "public_denied": true
+        }
+      }
+    },
+    "allOwnedDatabaseReceipts": [
+      {
+        "database": "col160_runner_092ded988e",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_092ded988e-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_15adca3174",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_15adca3174-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_70c61c5278",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_70c61c5278-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_99b2be987a",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_99b2be987a-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_befd8581bf",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_befd8581bf-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_c410bfdf08",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_c410bfdf08-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_c913b2a828",
+        "state": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/col160_runner_c913b2a828-state.json",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_catalog_333b34a4",
+        "dropped": true
+      },
+      {
+        "database": "col160_runner_catalog_99a47d66",
+        "dropped": true
+      }
+    ],
+    "logs": [
+      {
+        "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/local-runner-372-validation.log",
+        "sha256": "f3779b11e51fea71c60b44ac0943668bd9bdfb68628c4125e010d27d2d1dd2b5"
+      },
+      {
+        "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/local-catalog-372-validation.log",
+        "sha256": "2f7bc81ff416ffabbd4696b640dbed8a027cb471efb3bc81df6afbb6a615a5b4"
+      }
+    ],
+    "initialHostedFailure": "Original371 committed missing-site capture then app503; failedfixture retired intact; no oldactor reactivation/historyrewrite"
+  }
+}

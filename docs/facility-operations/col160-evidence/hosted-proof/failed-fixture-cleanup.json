@@ -1,0 +1,23 @@
+{
+  "result": "PASS",
+  "sourceSha": "0d2cfa8004cf50f76ea3e21892fc30afdd64bf48",
+  "facts": {
+    "inactive": true,
+    "site_grants": true,
+    "subject_grants": true,
+    "sites_retired": true,
+    "entity_retired": true,
+    "org_retired": true
+  },
+  "bansVerified": true,
+  "syntheticSourceAndAuditRetained": true,
+  "ownedListenerClosed": true,
+  "listenerAbsent": true,
+  "ownedPidsAbsent": [
+    37333,
+    37368,
+    37370
+  ],
+  "scope": "Failed first fixture retirement after committed missing-site capture exposed schema mismatch; synthetic source/audit/capture retained; not hosted workflow pass",
+  "privateStateRetainedForParentArchive": true
+}

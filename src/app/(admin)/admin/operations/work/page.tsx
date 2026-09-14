@@ -18,6 +18,7 @@ import { WorkRow } from "./_components/work-row";
 import { LegacyRow } from "./_components/legacy-row";
 import { CONTROL } from "./_components/work-inputs";
 import { readJson } from "./_components/receipt-history";
+import { CorporateUnresolvedComponents } from "./_components/corporate-unresolved-components";
 
 export default function SiteWorkPage() {
   const auth = useHavenAuth();
@@ -34,6 +35,7 @@ export default function SiteWorkPage() {
       key={`${auth.user.id}:${auth.appRole}`}
       actorId={auth.user.id}
       actorName={auth.fullName}
+      appRole={auth.appRole}
     />
   );
 }
@@ -41,9 +43,11 @@ export default function SiteWorkPage() {
 function PersonWorkspace({
   actorId,
   actorName,
+  appRole,
 }: {
   actorId: string;
   actorName: string | null;
+  appRole: string | null;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -172,6 +176,7 @@ function PersonWorkspace({
   );
   return (
     <div className="space-y-4">
+      <CorporateUnresolvedComponents authorized={appRole === "owner" || appRole === "org_admin"} />
       {facilityError ? <p role="alert">{facilityError}</p> : null}
       {draftError ? (
         <div>

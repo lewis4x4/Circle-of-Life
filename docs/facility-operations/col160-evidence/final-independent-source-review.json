@@ -1,0 +1,360 @@
+{
+  "reviewedAt": "2026-09-13T21:52:01.200065+00:00",
+  "sourceSha": "296fe43ed9cc06a38a00dd84cfbd29d403eb4aa9",
+  "independent": true,
+  "result": "[PROOF PASS \u2014 CLEAN]",
+  "guardRunnerReview": "Provisional clean including updated exact subject selector; five executable hashes match preparation-checks.",
+  "boundaries": "Source/local/guarded372 runner approval only. Actual post372 hosted HTTP/browser/denial/retirement evidence remains pending. No provider/email/Front Office live receiver, human/staff/operating or production acceptance is approved. Original failedfixture evidence remains FAIL with independently verified retirement.",
+  "ownedLocalDatabase": {
+    "name": "col160_independent_unicode_01a09c89",
+    "template": "col158_native_ff910631_final",
+    "purpose": "Independent direct authenticated NBSP/BOM RPC RED against frozen48d7493d",
+    "recordedBeforeCreate": "2026-09-13T21:12:13.713845+00:00",
+    "dropped": true
+  },
+  "independentUnicodeRpcRed": [
+    {
+      "case": "NBSP",
+      "codepoint": "U+00A0",
+      "command": "public.corporate_deliverable_command configure under SET LOCAL ROLE authenticated",
+      "exitCode": 3,
+      "expectedRegressionMessage": "COL160 blank or oversized due provenance accepted by direct RPC",
+      "result": "RED reproduced"
+    },
+    {
+      "case": "BOM",
+      "codepoint": "U+FEFF",
+      "command": "public.corporate_deliverable_command configure under SET LOCAL ROLE authenticated",
+      "exitCode": 3,
+      "expectedRegressionMessage": "COL160 blank or oversized due provenance accepted by direct RPC",
+      "result": "RED reproduced"
+    }
+  ],
+  "ownedLocalDatabases": [
+    {
+      "name": "col160_independent_unicode_green_01a09c89",
+      "template": "col158_native_ff910631_final",
+      "purpose": "Independent actual full native probe after Unicode due evidence repair",
+      "recordedBeforeCreate": "2026-09-13T21:15:19.973025+00:00",
+      "dropped": true
+    }
+  ],
+  "independentUnicodeNativeGreen": {
+    "readAt": "2026-09-13T21:15:25.218862+00:00",
+    "result": "PASS",
+    "database": "col160_independent_unicode_green_01a09c89",
+    "sourceHashes": {
+      "supabase/migrations/371_hfo_corporate_deliverables.sql": "fe88a2a0e79247b4664d4712d682f866d9fcdb6ca2465056ed9e7e186f89d5d5",
+      "supabase/tests/review_hfo_corporate_deliverables.sql": "f1135d96e4c800ed5c52f6b118abd20a86ae55811d2341e64ee963ae5d554f63"
+    },
+    "actualMarker": "COL160 corporate deliverables primary PASS",
+    "stdoutSha256": "01c3e036cd250131402e66e6879dc00fd22fba92d3b0fa523f1b4b7ce87368f8",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scope": "Actual independent PostgreSQL17 execution; direct authenticated due-provenance matrix all25 whitespace plus combinations/types/pairing/bounds and valid normalized evidence; entire corporate native probe"
+  },
+  "historicalFindings": [
+    {
+      "priority": "P2",
+      "path": "supabase/migrations/371_hfo_corporate_deliverables.sql",
+      "line": 324,
+      "finding": "Space/control fix still accepts NBSP-only or BOM-only due_provenance through direct authenticated RPC because btrim retains both and PostgreSQL POSIX space does not classify them; HTTP Zod trim rejects both.",
+      "independentEvidence": {
+        "method": "Native local SELECT plus exact predicate inspection; not yet a full command replay",
+        "query": "SELECT U&'\\00A0' ~ '[^[:space:]]', U&'\\FEFF' ~ '[^[:space:]]';",
+        "actual": "t|t",
+        "remoteMutations": 0
+      },
+      "requiredClosure": "Reject/normalize ECMAScript-trim whitespace for due evidence and extend native direct-RPC negative cases before final gate.",
+      "resolution": "Closed by independent full native GREEN on repaired migrationfe88a2a0 and probef1135d96; actual Node trim parity verified."
+    },
+    {
+      "priority": "P2",
+      "path": "docs/facility-operations/col160-evidence/hosted-proof/apply-staging.py",
+      "finding": "Copied runner asserted INVOKER for three intentionally SECURITY DEFINER current-actor wrappers and would fail after atomic staging DDL. Parent identified during pre-hosted review.",
+      "resolution": "Closed in apply-staging.py SHA4686d70b34319f8fc7517e04b0a63bbe60cc2b47c9d212aa1088bc8d0fdbbaee: all three exact procedures require SD, exact empty search_path, authenticated execute and PUBLIC/anon/service denied. Actual local catalog 18/18 PASS; runtime source unchanged.",
+      "architecture": "Private haven tables revoke direct access from all client roles, while wrapper functions enforce native actor/site/subject/role authority and revalidate after locks."
+    },
+    {
+      "priority": "P2",
+      "path": "supabase/migrations/371_hfo_corporate_deliverables.sql",
+      "finding": "Original projector treated JSON null as a non-NULL expectation and committed malformed missing-site capture; actual app reply schema returned503.",
+      "independentProof": "One exact committed request/capture and matching actual actor RPCsnapshot200 with malformed member; failedfixture independent retirement PASS, oldworkflowFAIL preserved.",
+      "resolution": "Forward372 only replaces private projector to nullif JSONnull before projection. Applied371source/ledger and historicalcapture are unchanged. Native+actualTypeScript capture/replay regression passes; new guarded hosted proof remains required."
+    }
+  ],
+  "findings": [],
+  "independentTrimParity": {
+    "method": "Enumerated every BMP codepoint through actual Node String.trim and independently matched migration literal",
+    "matches": true,
+    "count": 25
+  },
+  "reviewScope": "Corrected committed source plus guarded forward372 runner; actual post372 hosted proof remains pending.",
+  "checkout": "/Users/brianlewis/Circle of Life/Haven Corporate Deliverables",
+  "sourceManifest": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-372-final-manifest.json",
+    "sha256": "adc0e86158762bd1f291fa5025058d396c2c6bb173761b22680cb643ad202002",
+    "fileCount": 3280,
+    "exactCurrentEquality": true,
+    "committedRuntimeAndRunnerFilesUnchanged": true
+  },
+  "gate": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Corporate Deliverables/test-results/agent-gates/2026-09-13T21-44-49-971Z-COL-160-296fe43e-final.json",
+    "sha256": "eff8c5a02e156fec93fb75fe91c30bdc3f0f86df40a714a3fab2c660b2d79a54",
+    "sourceSha": "296fe43ed9cc06a38a00dd84cfbd29d403eb4aa9",
+    "verdict": "PASS",
+    "requiredChecks": 11,
+    "requiredChecksPassed": 11,
+    "nativePostgres": "375 migration files / 54 SQL probes, native PostgreSQL with Supabase stubs",
+    "checks": [
+      {
+        "id": "hygiene.env-example",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "hygiene.tracked-secrets-scan",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "hygiene.npm-audit",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "security.gitleaks",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "qa.eslint",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "qa.migration-sequence",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "qa.migrations-apply-postgres",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "qa.root-build",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "hygiene.nextjs-deprecation-signal",
+        "required": false,
+        "status": "passed"
+      },
+      {
+        "id": "qa.web-build",
+        "required": false,
+        "status": "skipped"
+      },
+      {
+        "id": "chaos.stress-suite",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "cdo.design-review",
+        "required": true,
+        "status": "passed"
+      },
+      {
+        "id": "cdo.a11y-axe",
+        "required": true,
+        "status": "passed"
+      }
+    ]
+  },
+  "rebaseContinuity": {
+    "originalCommit": "eae5c627f23a186589ce58f033715f26562da60d",
+    "rebasedCommit": "e55bc3df65e9da5ed21c726d62b8b9d06a2b9b3a",
+    "mainBase": "1b2c509e430f8cd7a3ee9c4865fe5b777bb606ed",
+    "original20FileManifestSha256": "bd9e341251db89ac27bccefb47e6637b4c9991002308219d09a219be2f8cb88a",
+    "originalRebaseByteIdentical": true,
+    "postRebaseChangedOriginalFiles": [
+      "supabase/tests/review_hfo_corporate_deliverables.sql",
+      "supabase/migrations/371_hfo_corporate_deliverables.sql",
+      "scripts/facility-operations/test-corporate-deliverable-concurrency.py"
+    ],
+    "other17OriginalFilesByteIdentical": true,
+    "additiveForwardCorrection": "372_hfo_corporate_missing_meeting_expectation.sql"
+  },
+  "runnerHashes": {
+    "apply-staging.py": "44ebe14d123d578c336e264143705b9d023b16af554d18967090d925209196bb",
+    "browser-proof.mjs": "390747256c7e0cfb3f4b6a662daee8659830f49dc3333b733a10ecaafe4e1265",
+    "fixture.py": "8963aed6fd380be67c88522f7568f07c66f8c6d414f266cbfdf58cd7f42b6795",
+    "guarded.py": "98e20f6b0cc35fd728155b7a0f5fdb3c0c2939adbea215bc120d9a7770d1ef22",
+    "http-proof.py": "8f76c1faea3c1328a49344b6233fb1de4c4a3e6b41cbf30d4edad51cd573585d"
+  },
+  "reviewedRpcPosture": {
+    "result": "PASS",
+    "scope": "Actual local PostgreSQL17 catalog; exact apply runner read_posture function",
+    "database": "col160_runner_catalog_99a47d66",
+    "posture": {
+      "public.corporate_deliverable_snapshot(uuid,date,date)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      },
+      "public.corporate_deliverable_command(uuid,text,text,jsonb)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      },
+      "public.corporate_deliverable_history(uuid,uuid,integer,bigint)": {
+        "security_definer": true,
+        "fixed_empty_search_path": true,
+        "authenticated": true,
+        "anon_denied": true,
+        "service_denied": true,
+        "public_denied": true
+      }
+    },
+    "receipt": {
+      "database": "col160_runner_catalog_99a47d66",
+      "dropped": true
+    },
+    "correctedAssumption": "Initial inherited invoker assertion was wrong; reviewed371 uses SECURITY DEFINER with explicit current-authority checks. Runtime posture unchanged."
+  },
+  "runnerPreparation": "Independent inert-import, ledger positive/negative and transaction-order checks passed. Final local fixture/full SQL flow used stubbed Auth/app HTTP and is not hosted acceptance. Five executable runner file hashes equal preparation receipt.",
+  "localChecks": {
+    "focusedVitest": "5 files / 36 PASS on byte-identical TypeScript source",
+    "standUpPython": "120 PASS on byte-identical Python source",
+    "unicodeNativeProbe": "Independently executed repaired371 and full corporate native probe PASS; all25 due whitespace/nonstring/pairing/bounds regressions and valid normalized evidence",
+    "concurrency": "7 actualtwo-connection cases with372 applied PASS",
+    "frontOfficeBoundary": "Actual existing allowlist/parser/protocol PASS populated and empty; 0 network calls",
+    "freshMandatoryUiGate": "11required exact296 checksPASS including clean Gitleaks with no waiver",
+    "nativePostgres": "Fresh exact296 gate PASS375migrations/54probes",
+    "missingMeetingSchema": "Independent actual native372 capture and identical-retry responses pass actual TypeScript schema; raw bytes/one receipt preserved",
+    "fullFlowSchema": "180 captured actualSQL replies revalidated independently against actual currentTypeScript schemas, allPASS; Auth/HTTP transport stubs explicit"
+  },
+  "evidenceArtifacts": [
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/focused-tests.log",
+      "sha256": "cb3e7fa58a6257daf962e7a9e05bf0970217bfc886b4bfea35e8ede282b1725c"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/python-tests.log",
+      "sha256": "e3a3a694c082be8739e12f9c7b0e43efb7e9df73e6ac338dc50b74f998591c8a"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/front-office.log",
+      "sha256": "27036da3c08d38d33e41b521d1d66a13b2aea3ac4ed76fbb23731ca63bee78e1"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/unicode-concurrency-green.log",
+      "sha256": "d2ad1c97059b7082855386ebe7d9bfe17d20c7dd62b4545b2b8b0e5f88814693"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/unicode-native-green.json",
+      "sha256": "f92d21cd7cc75809ad491a3b674c9ff90be94d2683c9818c52332c16c2f0fcac"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/unicode-parity.json",
+      "sha256": "7fbd281bfc7b8b3da37a1bda6a8d82b3acc6ff365115d5b10265db0a54ec06ff"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/local-runner-unicode-validation-final.log",
+      "sha256": "7775fba9b5619599e1d2b9e44b3fa2f8850e0df411ae6cf75b0295fcee3fcfa1"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Corporate Deliverables/docs/facility-operations/col160-evidence/hosted-proof/preparation-checks.json",
+      "sha256": "ca20c7a967ba1eccd7ce30605c653503fe75bd9dcbfa560e5c0380079aefdbf4"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Corporate Deliverables/docs/facility-operations/col160-evidence/rebased-source-review.json",
+      "sha256": "e87fb77da1d854def0be2d02e71eb8b7b25fde6afea1e1925f0b1bf777493567"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Corporate Deliverables/test-results/agent-gates/2026-09-13T21-44-49-971Z-COL-160-296fe43e-final.json",
+      "sha256": "eff8c5a02e156fec93fb75fe91c30bdc3f0f86df40a714a3fab2c660b2d79a54"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-372-final-manifest.json",
+      "sha256": "adc0e86158762bd1f291fa5025058d396c2c6bb173761b22680cb643ad202002"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/full-flow-schema/summary.json",
+      "sha256": "3ccbccfa9db1dd9444d1b2bda05f0a3e9645f64f840a9108089d3d9f211ca5bd"
+    },
+    {
+      "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/meeting-concurrency-green.log",
+      "sha256": "d2ad1c97059b7082855386ebe7d9bfe17d20c7dd62b4545b2b8b0e5f88814693"
+    },
+    {
+      "path": "/Users/brianlewis/Circle of Life/Haven Corporate Deliverables/docs/facility-operations/col160-evidence/hosted-proof/preparation-checks.json",
+      "sha256": "cc151ce1abc3bc004c07ff2a744b9def55285850b3ae2b1d3730a64ec0fd8e1e"
+    }
+  ],
+  "historicalSourceReview": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Corporate Deliverables/docs/facility-operations/col160-evidence/source-371-independent-review.json",
+    "sha256": "89575a6a1525e20e08179325648e4077de94df69f68014f6d6514abf0c8d2b67",
+    "sourceSha": "0d2cfa8004cf50f76ea3e21892fc30afdd64bf48"
+  },
+  "historicalHostedFailure": {
+    "path": "/Users/brianlewis/Circle of Life/Haven Corporate Deliverables/docs/facility-operations/col160-evidence/hosted-371-failure-review.json",
+    "sha256": "e42cd3174883b3e01d42553f7758abdc71fbcce3dec745c0c3ac6baf36ad86bc",
+    "scope": "First fixture missing-site capture committed then HTTP503; exactlyretired and immutablefailedcapture/request retained; never workflowPASS."
+  },
+  "forward372IndependentLocalProof": {
+    "readAt": "2026-09-13T21:37:32.381221+00:00",
+    "result": "PASS \u2014 local372native and actual TypeScript reply schema",
+    "hashes": {
+      "supabase/migrations/371_hfo_corporate_deliverables.sql": "fe88a2a0e79247b4664d4712d682f866d9fcdb6ca2465056ed9e7e186f89d5d5",
+      "supabase/migrations/372_hfo_corporate_missing_meeting_expectation.sql": "5bab09edc15611ec19382ac702a652740e18388ac31ce6d9bfe8a0d2b77ae42f",
+      "supabase/tests/review_hfo_corporate_deliverables.sql": "08f297b325a1f316b142105f49861495502a6c8326d5bc0590d46fc61d74f1ae"
+    },
+    "nativeMarker": "COL160 corporate deliverables primary PASS",
+    "nativeStdoutSha256": "33433f04625e853231cfd1015b63a4ed00b32836001a89c9e6edd41b9b7d966b",
+    "schemaResults": [
+      {
+        "stage": "capture_missing",
+        "passed": true
+      },
+      {
+        "stage": "read_after_identical_retry",
+        "passed": true
+      }
+    ],
+    "assertedSemantics": [
+      "missing member expectation is JSON null",
+      "registered member keeps native identity",
+      "one request and one meeting",
+      "same-key replay retains exact raw canonical captured bytes",
+      "whole reply unchanged after replay"
+    ],
+    "remoteActions": 0
+  },
+  "fullFlowSchemaBridge": {
+    "path": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-col160-closeout-01a09c89/source-review/full-flow-schema/summary.json",
+    "sha256": "3ccbccfa9db1dd9444d1b2bda05f0a3e9645f64f840a9108089d3d9f211ca5bd",
+    "candidate": "296fe43ed9cc06a38a00dd84cfbd29d403eb4aa9",
+    "snapshots": 177,
+    "historyPages": 3,
+    "total": 180,
+    "failed": 0,
+    "independentlyRevalidatedCurrentActualSchemas": true,
+    "scope": "Actual full runner SQLflow on isolated native PostgreSQL plus actual TypeScript reply schemas. Auth and HTTPtransport are stubbed; not hosted/browser acceptance."
+  },
+  "fixtureKeyTransition": {
+    "oldCandidate": "4ccb42ea23f27582e326f8d6544af6131df99369",
+    "currentCandidate": "296fe43ed9cc06a38a00dd84cfbd29d403eb4aa9",
+    "exactThreeShortFixtureKeyReplacements": true,
+    "allOther3280FileMapEntriesUnchanged": true,
+    "reason": "Remove confirmed synthetic request-key Gitleaks false positive without waiver; failed gate and commit object retained."
+  }
+}

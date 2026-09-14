@@ -1,0 +1,23 @@
+{
+  "sourceSha": "1367d6c58c71bf4dfb5627d7c820deb764cb3f0e",
+  "target": "iwcnajanvjvynolltflw",
+  "cases": [
+    {
+      "width": 1440,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "httpFailures": [],
+      "refusedOutbound": [],
+      "screenshots": [],
+      "tasklessFpcVisible": true,
+      "historyPagesLoaded": 3,
+      "result": "FAIL",
+      "failure": {
+        "message": "page.waitForResponse: Timeout 30000ms exceeded while waiting for event \"response\"",
+        "stack": "page.waitForResponse: Timeout 30000ms exceeded while waiting for event \"response\"\n    at main (/Users/brianlewis/Circle of Life/Haven Corporate Deliverables/docs/facility-operations/col160-evidence/hosted-proof/browser-proof.mjs:49:102)"
+      }
+    }
+  ],
+  "outboundProviderEmailFrontOfficeCalls": 0,
+  "result": "FAIL"
+}

@@ -1,0 +1,48 @@
+{
+  "result": "PASS",
+  "target": "iwcnajanvjvynolltflw",
+  "sourceSha": "1367d6c58c71bf4dfb5627d7c820deb764cb3f0e",
+  "migration_sha256": "5bab09edc15611ec19382ac702a652740e18388ac31ce6d9bfe8a0d2b77ae42f",
+  "project": {
+    "id": "iwcnajanvjvynolltflw",
+    "name": "Haven HFO Staging",
+    "organization_id": "macizkpxodsegtptaytu",
+    "status": "ACTIVE_HEALTHY"
+  },
+  "posture": {
+    "public.corporate_deliverable_snapshot(uuid,date,date)": {
+      "security_definer": true,
+      "fixed_empty_search_path": true,
+      "authenticated": true,
+      "anon_denied": true,
+      "service_denied": true,
+      "public_denied": true
+    },
+    "public.corporate_deliverable_command(uuid,text,text,jsonb)": {
+      "security_definer": true,
+      "fixed_empty_search_path": true,
+      "authenticated": true,
+      "anon_denied": true,
+      "service_denied": true,
+      "public_denied": true
+    },
+    "public.corporate_deliverable_history(uuid,uuid,integer,bigint)": {
+      "security_definer": true,
+      "fixed_empty_search_path": true,
+      "authenticated": true,
+      "anon_denied": true,
+      "service_denied": true,
+      "public_denied": true
+    },
+    "haven.corporate_meeting_projection(jsonb)": {
+      "security_definer": true,
+      "fixed_empty_search_path": true,
+      "authenticated_denied": true,
+      "anon_denied": true,
+      "service_denied": true,
+      "public_denied": true
+    }
+  },
+  "at": "2026-09-14T02:35:32.913846+00:00",
+  "scope": "Staging private projector correction372 only; original371 ledger/source and failed fixture immutable history retained; no rule publication or operating acceptance"
+}

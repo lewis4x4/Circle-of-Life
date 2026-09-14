@@ -14,6 +14,7 @@ import type {
 } from "@/lib/operations/workspace";
 import { SaveStateNotice } from "../../_components/save-state-notice";
 import { ProviderReportPanel } from "./provider-report-panel";
+import { CorporateDeliverablePanel } from "./corporate-deliverable-panel";
 import { FinanceSourcePanel } from "./finance-source-panel";
 import { EmployeeSourcePanel } from "./employee-source-panel";
 import { ResidentSourceHistory } from "./resident-source-history";
@@ -795,6 +796,7 @@ export function WorkRow({
       )}
       {error ? <p role="alert">{error}</p> : null}
       <ProviderReportPanel taskId={id} activityKey={item.occurrence.activity_key} actorId={actorId} facilityId={facilityId} subjectId={item.occurrence.subject_id} timezone={timezone} />
+      <CorporateDeliverablePanel taskId={id} activityKey={item.occurrence.activity_key} actorId={actorId} facilityId={facilityId} subjectId={item.occurrence.subject_id} timezone={timezone} />
       <FinanceSourcePanel taskId={id} activityKey={item.occurrence.activity_key} actorId={actorId} facilityId={facilityId} subjectId={item.occurrence.subject_id} />
       <EmployeeSourcePanel taskId={id} activityKey={item.occurrence.activity_key} actorId={actorId} facilityId={facilityId} subjectId={item.occurrence.subject_id} />
       <ResidentSourceHistory taskId={id} actorId={actorId} facilityId={facilityId} timezone={timezone} />
