@@ -9127,6 +9127,7 @@ export type Database = {
       }
       referral_leads: {
         Row: {
+          backup_user_id: string | null
           closed_at: string | null
           closed_by_party: string | null
           closure_note: string | null
@@ -9139,27 +9140,48 @@ export type Database = {
           date_of_birth: string | null
           deleted_at: string | null
           email: string | null
+          episode_revision: string
+          episode_sequence: number
           external_reference: string | null
+          facility_consideration_id: string
           facility_id: string
           first_name: string
+          follow_up_at: string | null
           id: string
-          inquiry_date: string
+          inquiry_date: string | null
           last_name: string
           merged_at: string | null
           merged_by: string | null
           merged_into_lead_id: string | null
           notes: string | null
+          next_action: string | null
+          next_action_at: string | null
           organization_id: string
+          owner_user_id: string | null
+          ownership_accepted_at: string | null
+          ownership_accepted_by: string | null
+          ownership_handoff_requested_at: string | null
+          ownership_handoff_requested_by: string | null
+          pending_backup_user_id: string | null
+          pending_owner_user_id: string | null
           phone: string | null
           pii_access_tier: Database["public"]["Enums"]["pii_access_tier"]
           preferred_contact: Database["public"]["Enums"]["referral_lead_preferred_contact"]
           preferred_name: string | null
+          receipt_effective_at: string | null
+          receipt_precision: Database["public"]["Enums"]["referral_effective_precision"]
           referral_source_id: string | null
+          reopen_count: number
+          review_reason: string | null
           status: Database["public"]["Enums"]["referral_lead_status"]
+          status_before_close: Database["public"]["Enums"]["referral_lead_status"] | null
           updated_at: string
           updated_by: string | null
+          waiting_reason: string | null
+          work_state: Database["public"]["Enums"]["referral_episode_work_state"]
         }
         Insert: {
+          backup_user_id?: string | null
           closed_at?: string | null
           closed_by_party?: string | null
           closure_note?: string | null
@@ -9172,27 +9194,48 @@ export type Database = {
           date_of_birth?: string | null
           deleted_at?: string | null
           email?: string | null
+          episode_revision?: string
+          episode_sequence?: number
           external_reference?: string | null
+          facility_consideration_id?: string
           facility_id: string
           first_name: string
+          follow_up_at?: string | null
           id?: string
-          inquiry_date?: string
+          inquiry_date?: string | null
           last_name: string
           merged_at?: string | null
           merged_by?: string | null
           merged_into_lead_id?: string | null
           notes?: string | null
+          next_action?: string | null
+          next_action_at?: string | null
           organization_id: string
+          owner_user_id?: string | null
+          ownership_accepted_at?: string | null
+          ownership_accepted_by?: string | null
+          ownership_handoff_requested_at?: string | null
+          ownership_handoff_requested_by?: string | null
+          pending_backup_user_id?: string | null
+          pending_owner_user_id?: string | null
           phone?: string | null
           pii_access_tier?: Database["public"]["Enums"]["pii_access_tier"]
           preferred_contact?: Database["public"]["Enums"]["referral_lead_preferred_contact"]
           preferred_name?: string | null
+          receipt_effective_at?: string | null
+          receipt_precision?: Database["public"]["Enums"]["referral_effective_precision"]
           referral_source_id?: string | null
+          reopen_count?: number
+          review_reason?: string | null
           status?: Database["public"]["Enums"]["referral_lead_status"]
+          status_before_close?: Database["public"]["Enums"]["referral_lead_status"] | null
           updated_at?: string
           updated_by?: string | null
+          waiting_reason?: string | null
+          work_state?: Database["public"]["Enums"]["referral_episode_work_state"]
         }
         Update: {
+          backup_user_id?: string | null
           closed_at?: string | null
           closed_by_party?: string | null
           closure_note?: string | null
@@ -9205,27 +9248,54 @@ export type Database = {
           date_of_birth?: string | null
           deleted_at?: string | null
           email?: string | null
+          episode_revision?: string
+          episode_sequence?: number
           external_reference?: string | null
+          facility_consideration_id?: string
           facility_id?: string
           first_name?: string
+          follow_up_at?: string | null
           id?: string
-          inquiry_date?: string
+          inquiry_date?: string | null
           last_name?: string
           merged_at?: string | null
           merged_by?: string | null
           merged_into_lead_id?: string | null
           notes?: string | null
+          next_action?: string | null
+          next_action_at?: string | null
           organization_id?: string
+          owner_user_id?: string | null
+          ownership_accepted_at?: string | null
+          ownership_accepted_by?: string | null
+          ownership_handoff_requested_at?: string | null
+          ownership_handoff_requested_by?: string | null
+          pending_backup_user_id?: string | null
+          pending_owner_user_id?: string | null
           phone?: string | null
           pii_access_tier?: Database["public"]["Enums"]["pii_access_tier"]
           preferred_contact?: Database["public"]["Enums"]["referral_lead_preferred_contact"]
           preferred_name?: string | null
+          receipt_effective_at?: string | null
+          receipt_precision?: Database["public"]["Enums"]["referral_effective_precision"]
           referral_source_id?: string | null
+          reopen_count?: number
+          review_reason?: string | null
           status?: Database["public"]["Enums"]["referral_lead_status"]
+          status_before_close?: Database["public"]["Enums"]["referral_lead_status"] | null
           updated_at?: string
           updated_by?: string | null
+          waiting_reason?: string | null
+          work_state?: Database["public"]["Enums"]["referral_episode_work_state"]
         }
         Relationships: [
+          {
+            foreignKeyName: "referral_leads_backup_user_id_fkey"
+            columns: ["backup_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "referral_leads_closure_reason_scope_fkey"
             columns: ["organization_id", "closure_reason_id", "closed_by_party"]
@@ -9245,6 +9315,41 @@ export type Database = {
             columns: ["facility_id"]
             isOneToOne: false
             referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_ownership_accepted_by_fkey"
+            columns: ["ownership_accepted_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_ownership_handoff_requested_by_fkey"
+            columns: ["ownership_handoff_requested_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_pending_backup_user_id_fkey"
+            columns: ["pending_backup_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_leads_pending_owner_user_id_fkey"
+            columns: ["pending_owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -16208,12 +16313,22 @@ export type Database = {
         | "per_census_day"
         | "pct_of_premium"
         | "custom"
+      referral_contact_channel: "phone" | "sms" | "email"
+      referral_contact_permission_state: "unknown" | "permitted" | "denied"
+      referral_effective_precision: "unknown" | "date" | "instant"
+      referral_episode_work_state:
+        | "unassigned"
+        | "assigned"
+        | "waiting"
+        | "review"
+        | "closed"
       referral_hl7_inbound_status:
         | "pending"
         | "processed"
         | "failed"
         | "ignored"
       referral_lead_preferred_contact: "phone" | "email" | "either"
+      referral_interest_state: "unknown" | "interested" | "not_interested"
       referral_lead_status:
         | "new"
         | "contacted"
@@ -16866,6 +16981,16 @@ export const Constants = {
         "pct_of_premium",
         "custom",
       ],
+      referral_contact_channel: ["phone", "sms", "email"],
+      referral_contact_permission_state: ["unknown", "permitted", "denied"],
+      referral_effective_precision: ["unknown", "date", "instant"],
+      referral_episode_work_state: [
+        "unassigned",
+        "assigned",
+        "waiting",
+        "review",
+        "closed",
+      ],
       referral_hl7_inbound_status: [
         "pending",
         "processed",
@@ -16873,6 +16998,7 @@ export const Constants = {
         "ignored",
       ],
       referral_lead_preferred_contact: ["phone", "email", "either"],
+      referral_interest_state: ["unknown", "interested", "not_interested"],
       referral_lead_status: [
         "new",
         "contacted",
