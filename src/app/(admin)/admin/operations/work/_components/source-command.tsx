@@ -32,6 +32,10 @@ export const LATE_ENTRY_LABEL = "Reason for a late entry or an entry on someone 
 export const IMPOSSIBLE_LOCAL_TIME_COPY =
   "That date and time does not exist in this site's time zone — the clocks move forward across it. Enter the time as the clock actually read. Nothing was recorded.";
 
+/** A date and time that is missing a half or is not a date and time at all. */
+export const INCOMPLETE_LOCAL_TIME_COPY =
+  "Enter both a date and a time before recording this. Nothing was recorded.";
+
 /**
  * The database's own refusal reason for a delivery, read off the reply rather
  * than guessed. `link_reason` is only ever set when there is no delivery at
@@ -169,23 +173,47 @@ export function describeAssetTypes(assetTypes: readonly string[] | null): string
 }
 
 /**
- * A local date and time the person chose, sent as one instant.
- *
- * A nonexistent local time — the spring-forward hole — is refused, never
- * quietly moved: `fromZonedTime` maps 02:30 to an instant that reads back as
- * 01:30, so an unrefused entry would store an hour nobody chose. The
- * round-trip check is the same one `task-reminder.tsx` and `work-inputs.tsx`
- * already apply.
+ * `DateTimeInput` composes its value from a date and an `<input type="time"
+ * step="any">`, so a real entry may carry seconds or fractional seconds. The
+ * shape test and the 16-character comparison below are `work-inputs.tsx`'s,
+ * kept identical on purpose — a valid 09:30:00 must not be refused.
  */
-export function instantFrom(localValue: string, timezone: string): string | null {
+const LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
+
+/**
+ * A local date and time the person chose, resolved to one instant, or the
+ * reason it could not be.
+ *
+ * The two failures are told apart because they are different mistakes. A
+ * nonexistent local time — the spring-forward hole — is refused rather than
+ * quietly moved: `fromZonedTime` maps 02:30 to an instant that reads back as
+ * 01:30, so an unrefused entry would store an hour nobody chose. A half-filled
+ * or malformed value is simply not a date and time yet, and blaming daylight
+ * saving for it would be its own small lie.
+ */
+export type LocalInstant = { instant: string } | { problem: "incomplete" | "impossible" };
+
+export function resolveLocalInstant(localValue: string, timezone: string): LocalInstant {
+  if (!LOCAL_DATE_TIME.test(localValue) || Number.isNaN(Date.parse(`${localValue}Z`))) return { problem: "incomplete" };
   try {
     const instant = fromZonedTime(localValue, timezone);
-    if (Number.isNaN(instant.getTime())) return null;
-    if (formatInTimeZone(instant, timezone, "yyyy-MM-dd'T'HH:mm") !== localValue) return null;
-    return instant.toISOString();
+    if (Number.isNaN(instant.getTime())) return { problem: "incomplete" };
+    if (formatInTimeZone(instant, timezone, "yyyy-MM-dd'T'HH:mm") !== localValue.slice(0, 16)) return { problem: "impossible" };
+    return { instant: instant.toISOString() };
   } catch {
-    return null;
+    return { problem: "incomplete" };
   }
+}
+
+/** The instant alone, for callers that have already stated their own refusal. */
+export function instantFrom(localValue: string, timezone: string): string | null {
+  const resolved = resolveLocalInstant(localValue, timezone);
+  return "instant" in resolved ? resolved.instant : null;
+}
+
+/** The refusal that matches why a local date and time could not be resolved. */
+export function localTimeRefusal(problem: "incomplete" | "impossible"): string {
+  return problem === "impossible" ? IMPOSSIBLE_LOCAL_TIME_COPY : INCOMPLETE_LOCAL_TIME_COPY;
 }
 
 /**
@@ -207,8 +235,9 @@ export function ObservationForm({ observationKind, assetTypes, facilityId, timez
   }
   function submit() {
     if (busy || pending || disabled || !assetId || !observedAt) return;
-    const observedInstant = instantFrom(observedAt, timezone);
-    if (!observedInstant) { refuse(IMPOSSIBLE_LOCAL_TIME_COPY); return; }
+    const resolved = resolveLocalInstant(observedAt, timezone);
+    if (!("instant" in resolved)) { refuse(localTimeRefusal(resolved.problem)); return; }
+    const observedInstant = resolved.instant;
     const body = {
       request_key: crypto.randomUUID(),
       payload: {

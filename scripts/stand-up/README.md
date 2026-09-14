@@ -111,10 +111,18 @@ python3 scripts/stand-up/worker.py \
   --state-dir /private/stand-up-production --status
 ```
 
+`--status` always reports `schema_version` and `available`. Branch on
+`available`: it is `false` before any record exists (with `state` set to
+`unavailable`) and `true` once `health.json` is written, when the connector
+fields are present instead. Do not assume a top-level `state` on a real record.
+
 Haven or Google refresh HTTP 400/401 marks that credential
 `reconnect_required`. Later supervisor ticks with the same credential do not
 repeat the rejected refresh request. They retain pending recovery state and exit
 with status 2 until the credential custodian reconnects the dedicated account.
+Status 2 means only that. Operator mistakes — a missing `--facility-map`, an
+invalid combination of flags — exit with status 1 and must not page the
+credential custodian.
 A genuinely replaced credential has a different private fingerprint and is
 tried immediately; successful rotation returns the connection to `connected`.
 Do not clear `state.json`, pending operations, baselines, or source sequences to

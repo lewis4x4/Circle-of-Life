@@ -204,16 +204,20 @@ def redacted_health(data):
 
 
 def read_health(directory):
+    # Both replies carry "available" so a supervisor can branch on one key.
+    # Without it the no-record reply and a real record share schema_version 1
+    # while having entirely different shapes, and a reader written against the
+    # first breaks the moment health.json appears.
     path = Path(directory).expanduser().resolve() / "health.json"
     if not path.exists():
-        return {"schema_version": 1, "state": "unavailable", "message": "No connector health record exists yet."}
+        return {"schema_version": 1, "available": False, "state": "unavailable", "message": "No connector health record exists yet."}
     try:
         result = json.loads(path.read_text())
     except (OSError, ValueError):
         raise BridgeError("Connector health record is invalid") from None
     if not isinstance(result, dict) or result.get("schema_version") != 1:
         raise BridgeError("Connector health record is invalid")
-    return result
+    return {**result, "available": True}
 
 
 def _read_limited(descriptor, limit):
@@ -351,7 +355,16 @@ def install_haven_credentials(state_directory, credential_file, mapping):
         data["haven_connection"] = {"state": "credentials_installed", "checked_at": installed_at,
                                     "last_connected_at": previous_connection.get("last_connected_at") if isinstance(previous_connection, dict) else None}
         _atomic_private_write_at(directory_descriptor, "state.json", data)
-        _atomic_private_write_at(directory_descriptor, "health.json", redacted_health(data))
+        # Each write is atomic on its own, but the pair is not. Once the token
+        # is committed, a failed health refresh must not be reported as a
+        # failed install — the custodian would reinstall a token already saved.
+        try:
+            _atomic_private_write_at(directory_descriptor, "health.json", redacted_health(data))
+        except (BridgeError, OSError):
+            raise BridgeError(
+                "Haven refresh token was installed, but the connector health record could not be rewritten. "
+                "Do not reinstall the token; re-run with --status to regenerate the record."
+            ) from None
         return {"status": "installed", "state_preserved": True, "provider": "haven"}
     finally:
         if lock_descriptor is not None:
@@ -421,7 +434,12 @@ class Haven:
                 self.state.save()
             raise
         self.state.data.pop("haven_pending")
-        self.state.data.pop("last_command_rejection", None)
+        # Clear the recorded rejection only when the action that was rejected
+        # is the one that just succeeded. An unrelated success elsewhere must
+        # not erase definitive rejection metadata the custodian still needs.
+        rejection = self.state.data.get("last_command_rejection")
+        if isinstance(rejection, dict) and rejection.get("action") == pending["action"]:
+            self.state.data.pop("last_command_rejection", None)
         self.state.save()
         return result
 
@@ -1064,7 +1082,10 @@ def main():
         print(json.dumps(read_health(args.state_dir), sort_keys=True))
         return
     if not args.facility_map:
-        parser.error("--facility-map is required for connector operations")
+        # Not parser.error(): argparse exits 2, which this command reserves for
+        # "credential reconnect required". A missing argument is an operator
+        # mistake, not a reason to page the credential custodian.
+        raise BridgeError("--facility-map is required for connector operations")
     if args.install_haven_credentials:
         if any((args.publish, args.publish_history, args.publisher_service, args.google, args.probe_google, args.adopt, args.from_week, args.to_week, args.week)):
             raise BridgeError("Credential installation cannot be combined with connector operations")
@@ -1094,8 +1115,10 @@ def main():
     state = State(args.state_dir, history=args.publish_history)
     if not args.publish_history:
         reject_history_state(state.data)
-    state.data["current_reporting_week"] = week.isoformat()
-    state.save()
+        # History mode publishes --from-week..--to-week and never touches this
+        # week, so recording it there would report a week nothing processed.
+        state.data["current_reporting_week"] = week.isoformat()
+        state.save()
     if args.publish_history:
         archive = HistoryReader(date.fromisoformat(args.from_week), date.fromisoformat(args.to_week)).archive()
         result = publish_front_office_history(state, archive, mapping)
