@@ -1,0 +1,30 @@
+{
+  "at": "2026-09-14T17:55:36.942511+00:00",
+  "corrects": "browser-378-rootcause.json",
+  "sourceSha": "3026632a5d9cf9d442d2ab69ea6a1d9003aeae34",
+  "target": "iwcnajanvjvynolltflw",
+  "withdrawnClaim": "That public.corporate_deliverable_command acquires an AccessExclusiveLock on the TABLE public.operation_task_instances, and that this blocks every read and write of operation tasks rather than only corporate ones.",
+  "whyItWasWrong": "pg_locks.relation is populated for tuple locks as well as relation locks, and the query used to read it did not select locktype. A tuple-level AccessExclusiveLock covers ONE ROW, not the table.",
+  "disproof": {
+    "method": "Two ordinary SELECT ... FOR UPDATE transactions against one row of public.operation_task_instances on staging, both rolled back.",
+    "observed": [
+      "relation | mode=RowShareLock | granted=true | pid=198880",
+      "relation | mode=RowShareLock | granted=true | pid=198881",
+      "tuple | mode=AccessExclusiveLock | granted=true | pid=198881"
+    ],
+    "waiterError": "ERROR: canceling statement due to lock timeout / CONTEXT: while locking tuple (0,1) in relation \"operation_task_instances\"",
+    "conclusion": "The signature reported as evidence of a table lock is the ordinary signature of row-lock contention. It is produced by lock_operation_authority's SELECT ... FOR UPDATE on the task row, which is by design and serialises only commands on the SAME task."
+  },
+  "staticCheckSupportingTheWithdrawal": "All 20 LOCK TABLE statements across every migration use SHARE mode; there is no bare LOCK TABLE (which would default to ACCESS EXCLUSIVE) anywhere, and every ALTER TABLE / CREATE TRIGGER touching operation_task_instances is migration-time DDL, not runtime.",
+  "whatStillHolds": {
+    "hangIsReal": "The request hangs until the client disconnects. The logged duration equals the client timeout every time: 30s browser -> 'POST 200 in 29.6s'; 75s client -> 'POST 200 in 75s'; 40s client -> timeout at 40s. Next logs 200 because no response is ever sent.",
+    "notPlaywright": "A plain urllib POST with a correct Content-Length reproduces it.",
+    "notTheRevision": "A valid expected_revision hangs the same as a bogus one.",
+    "errorPathHealthy": "A malformed payload returns 400 in 0.23s and a 409 appears in the same run.",
+    "unbounded": "Staging has lock_timeout=0 and idle_in_transaction_session_timeout=0, so nothing breaks a wait.",
+    "browserProofFailsOnRestored374": "Re-run with 378 applied fails identically, so 376/377 were irrelevant and withdrawing them was correct."
+  },
+  "rootCause": "STILL NOT IDENTIFIED. Row-lock contention on the task row explains why concurrent commands on one task serialise, but not why a holder never completes. Sequential commands finish in about 1.15s; 88 succeeded in the same run.",
+  "nextHypothesisNotEvidence": "prepare with source_family=census executes LOCK TABLE public.census_daily_log IN SHARE MODE. SHARE conflicts with ROW EXCLUSIVE, so any concurrent writer to census_daily_log would block it indefinitely given lock_timeout=0. This is an untested hypothesis, recorded to direct the next step, not a finding.",
+  "boundaries": "No production, provider, email, Front Office receiver, live schedule, staff or operating acceptance was performed or claimed. COL-160 remains incomplete and COL-326 remains open with its cause unestablished."
+}
