@@ -1,6 +1,6 @@
 {
   "result": "PASS",
-  "sourceSha": "1367d6c58c71bf4dfb5627d7c820deb764cb3f0e",
+  "sourceSha": "3026632a5d9cf9d442d2ab69ea6a1d9003aeae34",
   "target": "iwcnajanvjvynolltflw",
   "cases": [
     "stable requirement/replay/conflict",
@@ -36,7 +36,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -54,7 +54,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -78,7 +78,7 @@
       "status": 409
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -90,7 +90,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -102,7 +102,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -114,7 +114,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -144,25 +144,13 @@
       "status": 400
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
-      "actor": "owner",
-      "method": "GET",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables",
-      "actor": "owner",
-      "method": "POST",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -174,7 +162,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -186,7 +174,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -198,7 +186,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -210,7 +198,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -222,7 +210,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -234,7 +222,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -246,7 +234,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -258,13 +246,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
-      "actor": "owner",
-      "method": "GET",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -276,13 +258,13 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -294,13 +276,31 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
+      "actor": "owner",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables",
+      "actor": "owner",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
+      "actor": "owner",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -324,7 +324,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -336,7 +336,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -348,49 +348,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
-      "actor": "owner",
-      "method": "GET",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables",
-      "actor": "owner",
-      "method": "POST",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables",
-      "actor": "owner",
-      "method": "POST",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=5afb952b-851c-4126-a385-9975d76b8266&period_start=2026-08-03&period_end=2026-08-05",
-      "actor": "owner",
-      "method": "GET",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables",
-      "actor": "owner",
-      "method": "POST",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=5afb952b-851c-4126-a385-9975d76b8266&period_start=2026-08-03&period_end=2026-08-05",
-      "actor": "owner",
-      "method": "GET",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables",
-      "actor": "owner",
-      "method": "POST",
-      "status": 200
-    },
-    {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=5afb952b-851c-4126-a385-9975d76b8266&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -408,7 +366,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=82ac9c42-329f-4f4f-976d-a4daeb6fbc27&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=99c9f45b-7eaf-4f03-8441-47b76d71c1aa&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -420,7 +378,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=82ac9c42-329f-4f4f-976d-a4daeb6fbc27&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=99c9f45b-7eaf-4f03-8441-47b76d71c1aa&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -432,7 +390,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=82ac9c42-329f-4f4f-976d-a4daeb6fbc27&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=99c9f45b-7eaf-4f03-8441-47b76d71c1aa&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -450,7 +408,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=5ef999fd-c916-4072-acbf-cafaae60fd39&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=3791b3a9-7868-4119-968f-20b5d71b3ffb&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -462,7 +420,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=5ef999fd-c916-4072-acbf-cafaae60fd39&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=3791b3a9-7868-4119-968f-20b5d71b3ffb&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -474,7 +432,49 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=5ef999fd-c916-4072-acbf-cafaae60fd39&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=3791b3a9-7868-4119-968f-20b5d71b3ffb&period_start=2026-08-03&period_end=2026-08-05",
+      "actor": "owner",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables",
+      "actor": "owner",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables",
+      "actor": "owner",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables?task_id=38e529e9-8018-4e9c-9996-5b1f0320b139&period_start=2026-08-03&period_end=2026-08-05",
+      "actor": "owner",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables",
+      "actor": "owner",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables?task_id=38e529e9-8018-4e9c-9996-5b1f0320b139&period_start=2026-08-03&period_end=2026-08-05",
+      "actor": "owner",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables",
+      "actor": "owner",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/operations/corporate-deliverables?task_id=38e529e9-8018-4e9c-9996-5b1f0320b139&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -498,13 +498,13 @@
       "status": 400
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=82ac9c42-329f-4f4f-976d-a4daeb6fbc27&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=3791b3a9-7868-4119-968f-20b5d71b3ffb&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=5ef999fd-c916-4072-acbf-cafaae60fd39&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=38e529e9-8018-4e9c-9996-5b1f0320b139&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -516,7 +516,7 @@
       "status": 404
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -528,7 +528,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -540,7 +540,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -552,7 +552,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -564,7 +564,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -576,7 +576,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -588,7 +588,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -600,7 +600,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -612,7 +612,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -624,7 +624,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -636,7 +636,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -648,7 +648,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -660,7 +660,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -672,7 +672,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -684,7 +684,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -696,7 +696,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -708,7 +708,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -720,7 +720,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -732,7 +732,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -744,7 +744,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -756,7 +756,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -768,7 +768,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -780,7 +780,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -792,7 +792,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -804,7 +804,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -816,7 +816,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -828,7 +828,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -840,7 +840,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -852,7 +852,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -864,7 +864,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -876,7 +876,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -888,7 +888,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -900,7 +900,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -912,7 +912,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -924,7 +924,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -936,7 +936,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -948,7 +948,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -960,7 +960,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -972,7 +972,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -984,7 +984,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -996,7 +996,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1008,7 +1008,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1020,7 +1020,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1032,7 +1032,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1044,7 +1044,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1056,7 +1056,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1068,7 +1068,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1080,7 +1080,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1092,7 +1092,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1104,7 +1104,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1116,7 +1116,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1128,7 +1128,7 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
@@ -1140,25 +1140,25 @@
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&period_start=2026-08-03&period_end=2026-08-05",
+      "path": "/api/admin/operations/corporate-deliverables?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&period_start=2026-08-03&period_end=2026-08-05",
       "actor": "owner",
       "method": "GET",
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables/history?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&expectation_id=92095e78-9de8-4c88-a403-5b1beaee5a8e&before_version=4&before_sequence=17",
+      "path": "/api/admin/operations/corporate-deliverables/history?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&expectation_id=6a9c5e97-a1a4-4db6-bed2-658af8f4a7d9&before_version=4&before_sequence=17",
       "actor": "owner",
       "method": "GET",
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables/history?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&expectation_id=92095e78-9de8-4c88-a403-5b1beaee5a8e&before_version=3&before_sequence=0",
+      "path": "/api/admin/operations/corporate-deliverables/history?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&expectation_id=6a9c5e97-a1a4-4db6-bed2-658af8f4a7d9&before_version=3&before_sequence=0",
       "actor": "owner",
       "method": "GET",
       "status": 200
     },
     {
-      "path": "/api/admin/operations/corporate-deliverables/history?task_id=dbf150bb-7999-47dc-bc6e-532eec721c67&expectation_id=92095e78-9de8-4c88-a403-5b1beaee5a8e&before_version=2&before_sequence=0",
+      "path": "/api/admin/operations/corporate-deliverables/history?task_id=70a1cc15-688c-43e6-b405-cddd9e71bec4&expectation_id=6a9c5e97-a1a4-4db6-bed2-658af8f4a7d9&before_version=2&before_sequence=0",
       "actor": "owner",
       "method": "GET",
       "status": 200
