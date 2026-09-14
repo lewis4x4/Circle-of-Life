@@ -50,7 +50,7 @@ CREATE TABLE public.fl_statutes(id uuid PRIMARY KEY, organization_id uuid,
 INSERT INTO facilities VALUES (gen_random_uuid(),'standard_alf');
 INSERT INTO vendor_facilities VALUES (gen_random_uuid());
 """ + foundation)
-        repair = (ROOT / "supabase/migrations/380_col252_restore_missing_schema_effects.sql").read_text()
+        repair = (ROOT / "supabase/migrations/381_col252_restore_missing_schema_effects.sql").read_text()
         sql("BEGIN;\n" + repair + "\nCOMMIT;")
         sql("BEGIN;\n" + repair + "\nCOMMIT;")  # idempotent replay
         sql("""

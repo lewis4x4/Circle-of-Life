@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  captureReferralEpisode,
   createAuthorizedReferralLead,
   createAuthorizedReferralLeadFromHl7,
   createAuthorizedReferralSource,
   exportAuthorizedReferralLeads,
   loadAuthorizedReferralLeads,
+  loadReferralEpisodeDownstreamReview,
+  loadReferralEpisodeHistory,
+  loadReferralEpisodeModel,
   loadReferralDuplicateCandidates,
+  REFERRAL_INITIAL_REVISION,
+  runReferralEpisodeCommand,
   submitReferralTriage,
   updateAuthorizedReferralLead,
 } from "./referral-authority";
@@ -147,5 +153,159 @@ describe("referral current-authority adapter", () => {
         patch: { status: "contacted" },
       }),
     ).rejects.toEqual({ message: "Referral lead changed" });
+  });
+
+  it("captures unknown receipt time without inventing an inquiry date", async () => {
+    rpc.mockResolvedValue({
+      data: {
+        episode_id: "episode-a",
+        episode_revision: "a".repeat(64),
+        status: "new",
+        work_state: "unassigned",
+        event_id: "event-a",
+        event_kind: "captured",
+        replayed: false,
+      },
+      error: null,
+    });
+
+    await captureReferralEpisode(client, {
+      requestKey: "capture:unknown:001",
+      facilityId: "facility-a",
+      firstName: "Same",
+      lastName: "Name",
+      receipt: { precision: "unknown" },
+    });
+
+    expect(rpc).toHaveBeenLastCalledWith("referral_episode_capture", {
+      p_request_key: "capture:unknown:001",
+      p_expected_revision: REFERRAL_INITIAL_REVISION,
+      p_payload: expect.objectContaining({
+        facility_id: "facility-a",
+        first_name: "Same",
+        last_name: "Name",
+        receipt_precision: "unknown",
+        source_kind: "native",
+        source_reference: {},
+      }),
+    });
+    expect(rpc.mock.calls.at(-1)?.[1]?.p_payload).not.toHaveProperty("inquiry_date");
+    expect(rpc.mock.calls.at(-1)?.[1]?.p_payload).not.toHaveProperty("receipt_effective_at");
+  });
+
+  it("uses an existing opportunity revision for explicit multi-site capture", async () => {
+    rpc.mockResolvedValue({ data: { episode_id: "episode-b" }, error: null });
+
+    await captureReferralEpisode(client, {
+      requestKey: "capture:site-b:001",
+      expectedRevision: "b".repeat(64),
+      facilityId: "facility-b",
+      existingPersonId: "person-a",
+      existingOpportunityId: "opportunity-a",
+      receipt: { precision: "date", date: "2026-09-13" },
+      sourceKind: "import",
+      sourceReference: { workbook_row: "Referrals!18" },
+    });
+
+    expect(rpc).toHaveBeenLastCalledWith("referral_episode_capture", {
+      p_request_key: "capture:site-b:001",
+      p_expected_revision: "b".repeat(64),
+      p_payload: expect.objectContaining({
+        facility_id: "facility-b",
+        existing_person_id: "person-a",
+        existing_opportunity_id: "opportunity-a",
+        receipt_precision: "date",
+        inquiry_date: "2026-09-13",
+        source_kind: "import",
+        source_reference: { workbook_row: "Referrals!18" },
+      }),
+    });
+  });
+
+  it("serializes effective event precision and reviewed identity commands", async () => {
+    rpc.mockResolvedValue({ data: { episode_id: "episode-a" }, error: null });
+
+    await runReferralEpisodeCommand(client, {
+      episodeId: "episode-a",
+      requestKey: "interaction:episode-a:001",
+      expectedRevision: "c".repeat(64),
+      command: {
+        kind: "record_interaction",
+        summary: "Family called the facility.",
+        effective: { precision: "instant", at: "2026-09-14T18:00:00Z" },
+        next_action: "Return requested pricing details",
+        next_action_at: "2026-09-15T14:00:00Z",
+      },
+    });
+    expect(rpc).toHaveBeenLastCalledWith("referral_episode_command", {
+      p_episode_id: "episode-a",
+      p_request_key: "interaction:episode-a:001",
+      p_expected_revision: "c".repeat(64),
+      p_command: "record_interaction",
+      p_payload: {
+        summary: "Family called the facility.",
+        next_action: "Return requested pricing details",
+        next_action_at: "2026-09-15T14:00:00Z",
+        effective_precision: "instant",
+        effective_at: "2026-09-14T18:00:00Z",
+      },
+    });
+
+    const review = {
+      reviewed: true as const,
+      referral_lead_id: "episode-a",
+      admission_cases: [],
+      workflow_events: [],
+      hl7_inbound: [],
+      outreach_activities: [],
+      person_contacts: [],
+      contact_permissions: [],
+    };
+    await runReferralEpisodeCommand(client, {
+      episodeId: "episode-a",
+      requestKey: "identity:episode-a:001",
+      expectedRevision: "d".repeat(64),
+      command: {
+        kind: "identity_merge",
+        target_opportunity_id: "opportunity-b",
+        target_opportunity_revision: "f".repeat(64),
+        reason: "Two staff-created episodes were reviewed together.",
+        downstream_review: review,
+      },
+    });
+    expect(rpc.mock.calls.at(-1)?.[1]).toMatchObject({
+      p_command: "identity_merge",
+      p_payload: { downstream_review: review },
+    });
+
+    rpc.mockResolvedValue({ data: review, error: null });
+    await expect(loadReferralEpisodeDownstreamReview(client, "episode-a")).resolves.toEqual(review);
+    expect(rpc).toHaveBeenLastCalledWith("referral_episode_downstream_review", {
+      p_episode_id: "episode-a",
+    });
+
+    rpc.mockResolvedValue({ data: { events: [], next_before_sequence: null }, error: null });
+    await loadReferralEpisodeHistory(client, {
+      episodeId: "episode-a",
+      beforeSequence: 20,
+      limit: 10,
+    });
+    expect(rpc).toHaveBeenLastCalledWith("referral_episode_history_read", {
+      p_episode_id: "episode-a",
+      p_before_sequence: 20,
+      p_limit: 10,
+    });
+
+    rpc.mockResolvedValue({
+      data: {
+        episode: { id: "episode-a", episode_revision: "e".repeat(64) },
+        contacts: [],
+      },
+      error: null,
+    });
+    await loadReferralEpisodeModel(client, "episode-a");
+    expect(rpc).toHaveBeenLastCalledWith("referral_episode_model_read", {
+      p_episode_id: "episode-a",
+    });
   });
 });

@@ -4,7 +4,7 @@ on:
     paths:
       - '.github/workflows/scheduled-job-monitor.yml'
       - 'scripts/scheduled-jobs/**'
-      - 'supabase/migrations/381_scheduled_job_monitoring.sql'
+      - 'supabase/migrations/382_scheduled_job_monitoring.sql'
   workflow_dispatch:
   schedule:
     - cron: '*/5 * * * *'
@@ -41,12 +41,16 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.JOB_MONITOR_PROJECT_REF }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.JOB_MONITOR_SUPABASE_ACCESS_TOKEN }}
           SENTRY_DSN_JOB_MONITOR: ${{ secrets.SENTRY_DSN_JOB_MONITOR }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SYSTEM_ALERT_EMAIL_FROM: ${{ vars.SYSTEM_ALERT_EMAIL_FROM }}
         shell: bash
         run: |
           report=$(mktemp "${RUNNER_TEMP}/haven-job-monitor-report.XXXXXX")
           trap 'rm -f -- "$report"; if [[ -n "${errors:-}" ]]; then rm -f -- "$errors"; fi' EXIT
           errors=$(mktemp "${RUNNER_TEMP}/haven-job-monitor-errors.XXXXXX")
-          if node scripts/scheduled-jobs/check.mjs --send-sentry >"$report" 2>"$errors"; then
+          args=(--send-email)
+          if [[ -n "${SENTRY_DSN_JOB_MONITOR:-}" ]]; then args+=(--send-sentry); fi
+          if node scripts/scheduled-jobs/check.mjs "${args[@]}" >"$report" 2>"$errors"; then
             echo "Scheduled job monitor completed."
           else
             echo "Scheduled job monitor requires attention. Review the approved private monitoring destination."

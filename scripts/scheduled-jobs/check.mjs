@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { assessJob, compareSecrets, sendSentry } from './monitor.mjs';
+import { dispatchEmail } from './email-dispatch.mjs';
 import { createHash } from 'node:crypto';
 
 const project=process.env.SUPABASE_PROJECT_REF;
@@ -9,10 +10,10 @@ if (!/^[a-z]{20}$/.test(project ?? '') || !token) {
   process.exit(1);
 }
 const args=new Set(process.argv.slice(2));
-if ([...args].some(a=>!['--secrets-only','--send-sentry'].includes(a))) {
-  console.error('Usage: check.mjs [--secrets-only] [--send-sentry]');process.exit(1);
+if ([...args].some(a=>!['--secrets-only','--send-sentry','--send-email'].includes(a))) {
+  console.error('Usage: check.mjs [--secrets-only] [--send-sentry] [--send-email]');process.exit(1);
 }
-if(args.has('--secrets-only') && args.has('--send-sentry')) {
+if(args.has('--secrets-only') && (args.has('--send-sentry') || args.has('--send-email'))) {
   console.error('A partial secrets-only check cannot update the full monitor alert state');process.exit(1);
 }
 async function api(path,body) {
@@ -58,6 +59,12 @@ try {
     report.jobs=outcomes;
   }
   const findings=[...parity.filter(p=>p.state!=='match'),...outcomes.filter(o=>o.alert)];
+  if (args.has('--send-email')) {
+    report.email=await dispatchEmail(sql,findings,outcomes);
+    // A successful collection clears the independent monitor-failure episode.
+    await dispatchEmail(sql,[],[],'monitor');
+    if(report.email.failed || !report.email.enabled_organizations) process.exitCode=1;
+  }
   if (args.has('--send-sentry')) {
     if (!process.env.SENTRY_DSN_JOB_MONITOR) throw new Error('SENTRY_DSN_JOB_MONITOR is required for delivery');
     // Dedupe by problem state, not request IDs/timestamps that change every run.
@@ -74,13 +81,17 @@ try {
     }
   }
   console.log(JSON.stringify(report,null,2));
-  if (findings.length) process.exitCode=2;
+  if (findings.length && !process.exitCode) process.exitCode=2;
 } catch (error) {
   // All error text originates in this script; never emit raw fetch/SQL exceptions.
   const message=String(error?.message ?? '');
   console.error(JSON.stringify({project_ref:project,monitor:'failed',
     reason:/^(Supabase |Sentry delivery failed:|Monitor requires |SENTRY_DSN_JOB_MONITOR |Invalid Sentry DSN)/.test(message)
       ? message:'Monitor request failed; inspect provider status without logging secrets'}));
+  if(args.has('--send-email')) {
+    try { await dispatchEmail(sql,[{state:'monitor_failed'}],[],'monitor'); }
+    catch { console.error('Monitor failure email could not be recorded or sent; workflow failure routing is required'); }
+  }
   if(args.has('--send-sentry') && process.env.SENTRY_DSN_JOB_MONITOR) {
     try {
       console.error(JSON.stringify({monitor_failure_signal:await sendSentry(process.env.SENTRY_DSN_JOB_MONITOR,

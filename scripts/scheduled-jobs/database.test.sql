@@ -17,7 +17,7 @@ create function net.http_post(url text,body jsonb default '{}'::jsonb,params jso
   language plpgsql as $$ begin insert into net.test_timeouts values(timeout_milliseconds);
     return nextval('net.request_ids'); end $$;
 create table net._http_response(id bigint,status_code integer,timed_out boolean,error_msg text,content text);
-\ir ../../supabase/migrations/381_scheduled_job_monitoring.sql
+\ir ../../supabase/migrations/382_scheduled_job_monitoring.sql
 
 insert into cron.job values(1,'test','select net.http_post(url := ''https://example.invalid/functions/v1/ar-aging-check'', body := ''{}''::jsonb);','postgres','* * * * *',true);
 select job_monitor.instrument(1);

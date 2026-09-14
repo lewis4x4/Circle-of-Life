@@ -45,6 +45,14 @@ const SETTINGS_CARDS: SettingsCard[] = [
     roles: ADMIN_ELIGIBLE_ROLES,
   },
   {
+    key: "system-alerts",
+    title: "System alerts",
+    description: "Manage email recipients for scheduled job failures, recovery, and monitoring interruptions.",
+    href: "/admin/settings/system-alerts",
+    icon: Bell,
+    roles: ["owner", "org_admin"],
+  },
+  {
     key: "thresholds",
     title: "Thresholds",
     description:
