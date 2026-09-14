@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-14T17:03:20.418438+00:00",
+  "sourceSha": "3026632a5d9cf9d442d2ab69ea6a1d9003aeae34",
+  "target": "iwcnajanvjvynolltflw",
+  "result": "FAIL",
+  "stage": "browser-proof.mjs deterministic409 injection (PLAN.md step 5)",
+  "supersedes": "browser-372-blocker.json, whose stated cause (obsolete expected_revision produces a slow 409) is now disproven",
+  "finding": "public.corporate_deliverable_command acquires an AccessExclusiveLock on public.operation_task_instances. Two overlapping invocations convoy on it and do not drain, so the request hangs indefinitely. An AccessExclusiveLock on that table blocks every read and write of operation tasks, not only corporate ones.",
+  "evidence": {
+    "reproducedAfterWithdrawal": "Identical failure at browser-proof.mjs:49 with 378 applied, i.e. with 374's original function restored. 376/377 were irrelevant to it, which independently confirms withdrawing them was correct.",
+    "serverDoesNotTakeThatLong": "The logged duration equals the CLIENT timeout every time: browser 30s wait -> 'POST 200 in 29.6s'; a 75s client -> 'POST 200 in 75s'; a 40s client -> timeout at 40s. The handler hangs until the client disconnects; Next then logs the request as 200 because no response was ever sent.",
+    "notAPlaywrightArtifact": "A plain urllib POST with a correct Content-Length reproduces the hang with no browser involved.",
+    "notAboutTheRevision": "A VALID expected_revision hangs identically to a bogus one. The original diagnosis was wrong.",
+    "errorPathIsHealthy": "A malformed payload returns a prompt 400 in 0.23s, and a 409 appears in the same run's log, so error mapping itself works.",
+    "lockEvidence": "pg_locks on public.operation_task_instances: pid 194544 held AccessExclusiveLock granted=true while pid 194396 waited for AccessExclusiveLock granted=false; both were executing the PostgREST call to public.corporate_deliverable_command. pg_stat_activity showed a chain 194291 <- 194368 <- 194313 on Lock/transactionid and Lock/tuple.",
+    "nothingBoundsIt": "On staging lock_timeout=0 and idle_in_transaction_session_timeout=0, so a convoy never breaks on its own."
+  },
+  "openQuestion": "The source of the ACCESS EXCLUSIVE escalation is NOT yet identified. No migration contains the string 'ACCESS EXCLUSIVE'; the command takes only SHARE MODE on other tables, and haven.lock_operation_authority uses row-level FOR UPDATE / FOR SHARE, which take RowShareLock rather than AccessExclusiveLock. Something in the call chain escalates, and naming it is the next step.",
+  "committedNothing": "No request row, version or event was written by any hung attempt.",
+  "recoveryPerformed": "Wedged PostgREST backends cancelled then terminated; AccessExclusive locks on operation_task_instances returned to 0. Fixture retired (actors banned and inactive, grants revoked, sites/entity/org retired, synthetic source and audit retained). Owned 4360 listener closed and absence recorded.",
+  "alsoPassing": "http-proof exercise PASS, all 12 cases, 0 outbound provider/email/Front Office calls. apply-staging inspect PASS with all 24 public/private posture checks.",
+  "notRun": [
+    "http-proof.py deny (PLAN.md step 6)"
+  ],
+  "boundaries": "No production, provider, email, Front Office receiver, live schedule, staff or operating acceptance was performed or claimed. COL-160 is NOT complete."
+}
