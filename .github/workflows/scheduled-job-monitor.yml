@@ -38,8 +38,8 @@ jobs:
           node-version: '22'
       - name: Collect actual HTTP outcomes and secret parity
         env:
-          SUPABASE_PROJECT_REF: ${{ secrets.JOB_MONITOR_PROJECT_REF }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.JOB_MONITOR_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.JOB_MONITOR_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.JOB_MONITOR_SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_ACCESS_TOKEN }}
           SENTRY_DSN_JOB_MONITOR: ${{ secrets.SENTRY_DSN_JOB_MONITOR }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SYSTEM_ALERT_EMAIL_FROM: ${{ vars.SYSTEM_ALERT_EMAIL_FROM }}

@@ -66,3 +66,5 @@ Run `check.mjs --send-email` to queue and dispatch alerts. Failure episodes, rec
 If the database, provider, GitHub runner, or its credentials are unavailable, the email path can also fail; retain independently verified GitHub workflow failure notification routing. A monitor cannot reliably alert on its own complete outage.
 
 Email reference: [Resend idempotency retention](https://resend.com/docs/dashboard/emails/idempotency-keys).
+
+The workflow reuses the repository's existing deployment project/token secrets when dedicated JOB_MONITOR overrides are absent. This avoids creating another database credential solely for monitoring. The email provider key remains a separate sending-only credential.
