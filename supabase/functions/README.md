@@ -2,7 +2,7 @@
 
 | Function | `verify_jwt` (gateway) | Purpose |
 |----------|------------------------|---------|
-| `stand-up-google` | no | Hosted current-week Google XLSX intake for Weekly Stand Up. Auth: **`x-cron-secret`** = `STAND_UP_GOOGLE_CRON_SECRET`. Reads a stable Drive snapshot and applies only conflict-free current-week changes through the fixed-organization service bridge. |
+| `stand-up-google` | no | Hosted current-week two-way Google XLSX synchronization for Weekly Stand Up. Auth: **`x-cron-secret`** = `STAND_UP_GOOGLE_CRON_SECRET`. Reads a stable Drive snapshot, imports conflict-free workbook changes, and conditionally exports Haven revisions through the fixed-organization service bridge. |
 | `stand-up-publisher` | no | Hosted Haven → Front Office current-week publisher. Auth: **`x-cron-secret`** = `STAND_UP_PUBLISHER_CRON_SECRET`. Uses a fenced database lease and durable exact-body replay. |
 | `stand-up-history-publisher` | no | Hosted Haven → Front Office 52-week correction publisher. Auth: **`x-cron-secret`** = `STAND_UP_HISTORY_PUBLISHER_CRON_SECRET`. Uses a distinct ingest key and durable ordered queue. |
 | `export-audit-log` | yes | `POST { "job_id" }` + user JWT — builds CSV from `audit_log`, updates `audit_log_export_jobs`, returns file + `X-Checksum-SHA256`. |
@@ -42,7 +42,7 @@ Production scheduling belongs to the Haven Supabase project, never an operator w
 
 Function credentials live in Edge Function secrets. Scheduler credentials live in Vault and are referenced by name from `cron.job`; never place either value directly in a cron command or repository file. Before enabling a replacement schedule, transfer the current publisher sequence, historical fingerprints, Google baselines, and any durable pending body while the old worker is stopped. Prove at least two scheduled Google/current cycles and one historical cycle from `cron.job_run_details`, the hidden worker state, and Front Office receipts before retiring the old schedule.
 
-The Google worker is intentionally current-week inbound only. A direct Haven edit is preserved and reported as `haven_change_not_exported`; it is not written back to the XLSX workbook. Full Haven-to-Google workbook editing requires a separately reviewed conditional-write implementation and provider readback proof.
+The Google worker synchronizes both directions for the current reporting week. A Haven revision is staged durably, patched only into the 16 mapped input cells, and uploaded with the strong Drive ETag observed during the stable download. The common baseline advances only after the uploaded revision is downloaded, checksummed, parsed, and matched to the staged Haven values. A stale ETag, an unresolved workbook edit, a formula in a mapped input, or an ambiguous readback stops the write and preserves review evidence; the worker never chooses a winner for concurrent changes. The workbook ZIP, formulas, styles, drawings, and unrelated cells remain outside the writable field boundary.
 
 ## `generate-monthly-invoices` — request body
 

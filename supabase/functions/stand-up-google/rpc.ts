@@ -35,12 +35,43 @@ export type ApplySnapshotResult = {
   baselines?: Record<string, HeldBaseline>;
   review?: unknown[];
 };
+export type ExportPlanResult =
+  | { state: "disabled" | "no_export" }
+  | { state: "review_required"; code: string }
+  | { state: "export_applied"; export_id: string }
+  | {
+    state: "export_required";
+    export_id: string;
+    updates: Record<string, ParsedWorkbook["records"][number]["values"]>;
+  };
+export type ExportSnapshotInput = {
+  workbook_id: string;
+  week_start: string;
+  source_sha256: string;
+  drive: ApplySnapshotInput["drive"];
+  observed_at: string;
+  records: ParsedWorkbook["records"];
+};
+export type CompleteExportInput = ExportSnapshotInput & { export_id: string };
 
 export interface BridgeRpc {
   loadContext(
     input: { workbook_id: string; week_start: string },
   ): Promise<BridgeContext>;
   applySnapshot(input: ApplySnapshotInput): Promise<ApplySnapshotResult>;
+  prepareExport(input: ExportSnapshotInput): Promise<ExportPlanResult>;
+  completeExport(
+    input: CompleteExportInput,
+  ): Promise<{ state: "synchronized" }>;
+  abandonExport(input: {
+    workbook_id: string;
+    week_start: string;
+    export_id: string;
+    reason:
+      | "provider_rejected"
+      | "provider_content_changed"
+      | "readback_mismatch";
+  }): Promise<void>;
   recordFailure(
     input: {
       workbook_id: string;
@@ -84,6 +115,37 @@ export class SupabaseBridgeRpc implements BridgeRpc {
     }
     return await response.json();
   }
+  async #exportCall(
+    action: string,
+    payload: Record<string, unknown>,
+  ): Promise<unknown> {
+    return await this.#post("stand_up_google_export_bridge", {
+      p_action: action,
+      p_payload: payload,
+    });
+  }
+  async #post(
+    endpoint: string,
+    payload: Record<string, unknown>,
+  ): Promise<unknown> {
+    const response = await this.fetcher(
+      `${this.url.replace(/\/$/, "")}/rest/v1/rpc/${endpoint}`,
+      {
+        method: "POST",
+        redirect: "error",
+        headers: {
+          apikey: this.serviceRoleKey,
+          authorization: `Bearer ${this.serviceRoleKey}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Stand Up bridge RPC failed (${response.status})`);
+    }
+    return await response.json();
+  }
   async loadContext(
     input: { workbook_id: string; week_start: string },
   ): Promise<BridgeContext> {
@@ -108,6 +170,56 @@ export class SupabaseBridgeRpc implements BridgeRpc {
       )
     ) throw new Error("Stand Up bridge receipt is invalid");
     return result as ApplySnapshotResult;
+  }
+  async prepareExport(input: ExportSnapshotInput): Promise<ExportPlanResult> {
+    const result = await this.#exportCall("prepare_export", input);
+    if (
+      !result || typeof result !== "object" ||
+      ![
+        "disabled",
+        "no_export",
+        "review_required",
+        "export_applied",
+        "export_required",
+      ]
+        .includes((result as ExportPlanResult).state)
+    ) throw new Error("Stand Up export plan is invalid");
+    const plan = result as ExportPlanResult;
+    if (
+      plan.state === "export_required" &&
+      (!plan.export_id || !plan.updates || typeof plan.updates !== "object")
+    ) throw new Error("Stand Up export plan is invalid");
+    if (plan.state === "export_applied" && !plan.export_id) {
+      throw new Error("Stand Up export plan is invalid");
+    }
+    return plan;
+  }
+  async completeExport(
+    input: CompleteExportInput,
+  ): Promise<{ state: "synchronized" }> {
+    const result = await this.#post("stand_up_google_complete_export", {
+      p_payload: input,
+    });
+    if (
+      !result || typeof result !== "object" ||
+      (result as { state?: string }).state !== "synchronized"
+    ) throw new Error("Stand Up export completion is invalid");
+    return result as { state: "synchronized" };
+  }
+  async abandonExport(input: {
+    workbook_id: string;
+    week_start: string;
+    export_id: string;
+    reason:
+      | "provider_rejected"
+      | "provider_content_changed"
+      | "readback_mismatch";
+  }): Promise<void> {
+    const result = await this.#exportCall("abandon_export", input);
+    if (
+      !result || typeof result !== "object" ||
+      (result as { state?: string }).state !== "abandoned"
+    ) throw new Error("Stand Up export abandonment is invalid");
   }
   async recordFailure(
     input: {
