@@ -7,7 +7,8 @@
  * Pipeline: upload → type-specific extraction → Markdown conversion → semantic chunk → embed → summarize → audit
  */
 import { Buffer } from "node:buffer";
-import { commitIngestGeneration, failIngestGeneration } from "./generation.ts";
+import { commitIngestGeneration, failIngestGeneration, failIngestPreflight } from "./generation.ts";
+import { fileKindFromUpload, type FileKind, verifyFileType } from "./file-kind.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import mammoth from "npm:mammoth@1.8.0";
 import pdfParse from "npm:pdf-parse@1.1.1";
@@ -115,31 +116,6 @@ function htmlTablesToMarkdown(html: string): string {
       .join("\n");
     return `\n\n${header}\n${separator}\n${body}\n\n`;
   });
-}
-
-// ---------------------------------------------------------------------------
-// File type detection
-// ---------------------------------------------------------------------------
-type FileKind = "pdf" | "docx" | "spreadsheet" | "markdown" | "text";
-
-function fileKindFromMime(mime: string): FileKind {
-  if (mime === "application/pdf") return "pdf";
-  if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
-  if (mime.includes("spreadsheet") || mime.includes("excel") || mime === "text/csv") return "spreadsheet";
-  if (mime === "text/markdown" || mime === "text/x-markdown") return "markdown";
-  return "text";
-}
-
-function verifyFileType(header: Uint8Array, kind: FileKind): boolean {
-  const isPdf = header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46;
-  const isZip = header[0] === 0x50 && header[1] === 0x4b && header[2] === 0x03 && header[3] === 0x04;
-  const isOle = header[0] === 0xd0 && header[1] === 0xcf && header[2] === 0x11 && header[3] === 0xe0;
-  switch (kind) {
-    case "pdf": return isPdf;
-    case "docx": return isZip;
-    case "spreadsheet": return isZip || isOle;
-    default: return true;
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -861,7 +837,7 @@ async function finalizeUploadedDocumentAuthorized(
     conversionMethod: string;
   },
   t: ReturnType<typeof withTiming>,
-) {
+): Promise<{ ok: true; chunkCount: number } | { ok: false; errorCode: string }> {
   const { userId, workspaceId, documentId, title, kind, fileSize, markdown, rawText, conversionMethod } = params;
 
   let chunkCount = 0;
@@ -870,37 +846,50 @@ async function finalizeUploadedDocumentAuthorized(
   } catch (ingestErr: unknown) {
     if (ingestErr instanceof CurrentActorError) throw ingestErr;
     const msg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
-    await actorAuth.revalidate();
-    await failIngestGeneration(admin, authorizationRunId);
+    try {
+      await actorAuth.revalidate();
+      await failIngestGeneration(admin, authorizationRunId);
+    } catch (receiptError) {
+      if (receiptError instanceof CurrentActorError) throw receiptError;
+      t.log({ event: "ingest_failure_receipt_error", outcome: "error", authorization_run_id: authorizationRunId });
+    }
     t.log({ event: "ingest_failed", outcome: "error", document_id: documentId, error_message: msg });
-    return;
+    return { ok: false, errorCode: "ingest_processing_failed" };
   }
 
-  await actorAuth.revalidate();
-  await admin.from("document_audit_events").insert({
-    actor_user_id: userId,
-    document_id: documentId,
-    document_title_snapshot: title,
-    event_type: "uploaded",
-    metadata: {
-      authorization_run_id: authorizationRunId,
-      chunk_count: chunkCount,
-      file_type: kind,
-      file_size: fileSize,
-      conversion_method: conversionMethod,
-      background: true,
-    },
-  });
+  // The atomic generation command already stored the authoritative completion
+  // event. These secondary analytics must never turn a completed index into an
+  // unhandled background rejection.
+  try {
+    await actorAuth.revalidate();
+    await admin.from("document_audit_events").insert({
+      actor_user_id: userId,
+      document_id: documentId,
+      document_title_snapshot: title,
+      event_type: "uploaded",
+      metadata: {
+        authorization_run_id: authorizationRunId,
+        chunk_count: chunkCount,
+        file_type: kind,
+        file_size: fileSize,
+        conversion_method: conversionMethod,
+        background: true,
+      },
+    });
 
-  await actorAuth.revalidate();
-  await admin.from("kb_analytics_events").insert({
-    workspace_id: workspaceId,
-    event_type: "doc_uploaded",
-    user_id: userId,
-    document_id: documentId,
-    metadata: { authorization_run_id: authorizationRunId, chunk_count: chunkCount, conversion_method: conversionMethod, background: true },
-  });
-  await actorAuth.revalidate();
+    await actorAuth.revalidate();
+    await admin.from("kb_analytics_events").insert({
+      workspace_id: workspaceId,
+      event_type: "doc_uploaded",
+      user_id: userId,
+      document_id: documentId,
+      metadata: { authorization_run_id: authorizationRunId, chunk_count: chunkCount, conversion_method: conversionMethod, background: true },
+    });
+    await actorAuth.revalidate();
+  } catch (postCommitError) {
+    const msg = postCommitError instanceof Error ? postCommitError.message : String(postCommitError);
+    t.log({ event: "ingest_post_commit_telemetry_failed", outcome: "error", document_id: documentId, error_message: msg });
+  }
 
   t.log({
     event: "upload_ok",
@@ -910,6 +899,7 @@ async function finalizeUploadedDocumentAuthorized(
     conversion_method: conversionMethod,
     background: true,
   });
+  return { ok: true, chunkCount };
 }
 
 async function finalizeUploadedDocument(
@@ -928,9 +918,9 @@ async function finalizeUploadedDocument(
     conversionMethod: string;
   },
   t: ReturnType<typeof withTiming>,
-): Promise<void> {
+): Promise<{ ok: true; chunkCount: number } | { ok: false; errorCode: string }> {
   try {
-    await finalizeUploadedDocumentAuthorized(
+    return await finalizeUploadedDocumentAuthorized(
       admin,
       actorAuth,
       authorizationRunId,
@@ -939,12 +929,17 @@ async function finalizeUploadedDocument(
     );
   } catch (error) {
     if (error instanceof CurrentActorError) {
-      await markIngestAuthorizationFailure(
-        admin,
-        authorizationRunId,
-      );
+      await markIngestAuthorizationFailure(admin, authorizationRunId).catch(() => {
+        t.log({ event: "ingest_authorization_failure_receipt_error", outcome: "error", authorization_run_id: authorizationRunId });
+      });
+      return { ok: false, errorCode: "authorization_changed" };
     }
-    throw error;
+    await failIngestGeneration(admin, authorizationRunId).catch(() => {
+      t.log({ event: "ingest_failure_receipt_error", outcome: "error", authorization_run_id: authorizationRunId });
+    });
+    const msg = error instanceof Error ? error.message : String(error);
+    t.log({ event: "ingest_background_error", outcome: "error", document_id: params.documentId, error_message: msg });
+    return { ok: false, errorCode: "ingest_processing_failed" };
   }
 }
 
@@ -977,6 +972,7 @@ Deno.serve(async (req) => {
 
   const contentType = req.headers.get("content-type") ?? "";
   let activeIngestAuthorizationRunId: string | null = null;
+  let activeNewDocumentId: string | null = null;
 
   try {
     // -----------------------------------------------------------------------
@@ -1101,7 +1097,7 @@ Deno.serve(async (req) => {
 
       const fileBuffer = await file.arrayBuffer();
       const header = new Uint8Array(fileBuffer.slice(0, 4));
-      const kind = fileKindFromMime(file.type);
+      const kind = fileKindFromUpload(file.type, file.name);
 
       if (!verifyFileType(header, kind)) {
         return jsonResponse({ error: "File type mismatch (magic bytes)" }, 400, origin);
@@ -1147,26 +1143,26 @@ Deno.serve(async (req) => {
       await actorAuth.revalidate();
       const { error: storageErr } = await admin.storage
         .from("documents")
-        .upload(storagePath, fileBuffer, { contentType: file.type });
-      const storageOk = !storageErr;
+        .upload(storagePath, fileBuffer, { contentType: file.type || "application/octet-stream" });
       if (storageErr) {
         t.log({
           event: "storage_upload_failed",
           outcome: "error",
           error_message: storageErr.message,
         });
+        throw new Error("Could not store uploaded file");
       }
 
       const metadata: Record<string, unknown> = {
         original_filename: file.name,
         upload_kind: kind,
+        ingest_target_status: gov.status,
+        storage_bucket: "documents",
+        storage_path: storagePath,
       };
-      if (storageOk) {
-        metadata.storage_bucket = "documents";
-        metadata.storage_path = storagePath;
-      }
 
-      // Step 4: Insert document record with both raw_text and markdown_text
+      // Step 4: Persist the document as non-live until the complete index and
+      // its generation receipt commit together.
       await actorAuth.revalidate();
       const { data: doc, error: docInsertErr } = await admin
         .from("documents")
@@ -1174,12 +1170,12 @@ Deno.serve(async (req) => {
           workspace_id: workspaceId,
           title,
           source: "manual_upload",
-          mime_type: file.type,
+          mime_type: file.type || "application/octet-stream",
           raw_text: rawText,
           markdown_text: markdown,
           conversion_method: conversionMethod,
           audience: gov.audience,
-          status: gov.status,
+          status: "draft",
           uploaded_by: user.id,
           metadata,
         })
@@ -1187,8 +1183,14 @@ Deno.serve(async (req) => {
         .single();
 
       if (docInsertErr || !doc) {
-        return jsonResponse({ error: `Insert failed: ${docInsertErr?.message}` }, 500, origin);
+        const { error: cleanupError } = await admin.storage.from("documents").remove([storagePath]);
+        if (cleanupError) {
+          t.log({ event: "storage_cleanup_failed", outcome: "error", storage_path: storagePath });
+        }
+        t.log({ event: "document_insert_failed", outcome: "error", error_message: docInsertErr?.message ?? "No document returned" });
+        throw new Error("Could not create document record");
       }
+      activeNewDocumentId = doc.id;
       activeIngestAuthorizationRunId = await createIngestAuthorizationRun(
         admin,
         actorAuth,
@@ -1205,7 +1207,7 @@ Deno.serve(async (req) => {
           file_type: kind,
           file_size: file.size,
           conversion_method: conversionMethod,
-          storage_ok: storageOk,
+          storage_ok: true,
         },
       });
 
@@ -1229,8 +1231,15 @@ Deno.serve(async (req) => {
       const queued = queueBackgroundTask(backgroundTask);
       if (queued) activeIngestAuthorizationRunId = null;
       if (!queued) {
-        await backgroundTask;
+        const outcome = await backgroundTask;
         activeIngestAuthorizationRunId = null;
+        if (!outcome.ok) {
+          return jsonResponse({
+            error: "The upload was saved, but indexing failed. Use Re-index after the source issue is corrected.",
+            error_code: outcome.errorCode,
+            document_id: doc.id,
+          }, 500, origin);
+        }
       }
 
       t.log({
@@ -1246,7 +1255,8 @@ Deno.serve(async (req) => {
           queued,
           document_id: doc.id,
           title: doc.title,
-          status: gov.status,
+          status: "draft",
+          target_status: gov.status,
           audience: gov.audience,
           conversion_method: conversionMethod,
         }),
@@ -1264,6 +1274,15 @@ Deno.serve(async (req) => {
           admin,
           activeIngestAuthorizationRunId,
         ).catch(() => undefined);
+      } else if (activeNewDocumentId) {
+        await failIngestPreflight(admin, {
+          documentId: activeNewDocumentId,
+          actorId: actor.userId,
+          sessionId: actor.sessionId,
+          claimVersion: actor.claimVersion,
+          organizationId: actor.organizationId,
+          errorCode: "authorization_changed",
+        }).catch(() => undefined);
       }
       return currentActorErrorResponse(err, getCorsHeaders(origin));
     }
@@ -1271,9 +1290,26 @@ Deno.serve(async (req) => {
       await failIngestGeneration(admin, activeIngestAuthorizationRunId).catch(() => {
         t.log({ event: "ingest_failure_receipt_error", outcome: "error", authorization_run_id: activeIngestAuthorizationRunId });
       });
+    } else if (activeNewDocumentId) {
+      await failIngestPreflight(admin, {
+        documentId: activeNewDocumentId,
+        actorId: actor.userId,
+        sessionId: actor.sessionId,
+        claimVersion: actor.claimVersion,
+        organizationId: actor.organizationId,
+        errorCode: "authorization_receipt_failed",
+      }).catch(() => {
+        t.log({ event: "ingest_preflight_failure_receipt_error", outcome: "error", document_id: activeNewDocumentId });
+      });
     }
     const msg = err instanceof Error ? err.message : String(err);
     t.log({ event: "ingest_error", outcome: "error", error_message: msg });
-    return jsonResponse({ error: "Ingest operation failed" }, 500, origin);
+    return jsonResponse({
+      error: activeNewDocumentId
+        ? "The upload was saved, but indexing could not start. It is not live and can be retried."
+        : "Ingest operation failed",
+      error_code: activeNewDocumentId ? "ingest_preflight_failed" : "ingest_operation_failed",
+      document_id: activeNewDocumentId,
+    }, 500, origin);
   }
 });

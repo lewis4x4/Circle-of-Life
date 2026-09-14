@@ -43,6 +43,11 @@ BEGIN
      OR NOT has_function_privilege('service_role', 'public.fail_kb_ingest_authority_change(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'rpc_grant_posture: fail_kb_ingest_authority_change grants incorrect';
   END IF;
+  IF has_function_privilege('anon', 'public.fail_kb_ingest_preflight(uuid,uuid,uuid,integer,uuid,text)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.fail_kb_ingest_preflight(uuid,uuid,uuid,integer,uuid,text)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.fail_kb_ingest_preflight(uuid,uuid,uuid,integer,uuid,text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: fail_kb_ingest_preflight grants incorrect';
+  END IF;
 
   IF has_function_privilege('anon', 'public.review_facility_launch_fact(uuid,text,text,uuid,uuid,integer,uuid)', 'EXECUTE')
      OR has_function_privilege('authenticated', 'public.review_facility_launch_fact(uuid,text,text,uuid,uuid,integer,uuid)', 'EXECUTE')
