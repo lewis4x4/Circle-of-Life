@@ -62,7 +62,17 @@ describe("formatDrillLogAttendanceLine", () => {
 describe("formatDrillRecordState", () => {
   it("never lets a stored row imply a satisfied requirement", () => {
     expect(formatDrillRecordState({ finalized_at: null, voided_at: null })).toBe("draft — does not satisfy the requirement yet");
-    expect(formatDrillRecordState({ finalized_at: "2026-09-13T18:00:00Z", voided_at: null })).toBe("final — delivered to its requirement");
+    expect(formatDrillRecordState({ finalized_at: "2026-09-13T18:00:00Z", voided_at: null })).toBe("final — whether it satisfied a requirement is recorded separately");
+  });
+
+  it("does not claim a final record was delivered, because these columns cannot know that", () => {
+    // A final record is unlinked when no rule is approved (COL-226) or when
+    // migration 358 refused the delivery as recorder_not_authorized. Both rows
+    // look identical here, so neither may be described as satisfied.
+    const final = formatDrillRecordState({ finalized_at: "2026-09-13T18:00:00Z", voided_at: null });
+    expect(final).toMatch(/^final\b/);
+    expect(final).not.toMatch(/delivered to its requirement/i);
+    expect(final).not.toMatch(/\bsatisfied its\b/i);
   });
 
   it("reports a voided record as retained history even though it was once final", () => {

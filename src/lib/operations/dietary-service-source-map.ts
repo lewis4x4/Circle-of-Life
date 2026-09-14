@@ -69,7 +69,7 @@ export const dietaryServiceSourceMap: DietaryServiceComponent[] = catalog.entrie
       questionIds: entry.questionIds,
       command: commands[component.key] ?? null,
       fallback: commands[component.key]
-        ? "A recorded source record satisfies this component once. Any separate review, evidence or verification still applies."
+        ? "A recorded source record can satisfy this component once, if an approved rule is matched and the person recording it is on its published recorder list; the database decides both and states its answer on the record. Any separate review, evidence or verification still applies."
         : COL_154_COMPONENTS.has(component.key)
           ? "Entered on the drill and generator surface; this surface does not record it a second time."
           : "Human recording or review through the existing path. A log never satisfies its own review, and nothing here publishes or sends anything.",

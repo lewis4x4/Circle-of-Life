@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fromZonedTime } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { z } from "zod";
 import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { CONTROL, DateTimeInput } from "./work-inputs";
@@ -28,11 +28,36 @@ export type CommandReply = z.infer<typeof commandReplySchema>;
 
 export const LATE_ENTRY_LABEL = "Reason for a late entry or an entry on someone else's behalf (required by the rules for those cases)";
 
-/** What a delivered command actually proved, stated without widening it. */
+/** A local date and time that does not exist on the clock, refused rather than moved. */
+export const IMPOSSIBLE_LOCAL_TIME_COPY =
+  "That date and time does not exist in this site's time zone — the clocks move forward across it. Enter the time as the clock actually read. Nothing was recorded.";
+
+/**
+ * The database's own refusal reason for a delivery, read off the reply rather
+ * than guessed. `link_reason` is only ever set when there is no delivery at
+ * all, so an unlinked delivery carries its reason here and nowhere else.
+ */
+export function deliveryReason(delivery: unknown): { reason: string; detail: string | null } | null {
+  if (!delivery || typeof delivery !== "object") return null;
+  const event = (delivery as { event?: unknown }).event;
+  if (!event || typeof event !== "object") return null;
+  const { reason, detail } = event as { reason?: unknown; detail?: unknown };
+  if (typeof reason !== "string" || reason.length === 0) return null;
+  return { reason, detail: typeof detail === "string" && detail.length > 0 ? detail : null };
+}
+
+/**
+ * What a delivered command actually proved, stated without widening it. An
+ * unlinked record never claims the requirement was missing when the database
+ * said something else — an unauthorised recorder is a found requirement that
+ * this person did not satisfy, not an absent one.
+ */
 export function deliveryNotice(reply: CommandReply): string {
+  const refusal = deliveryReason(reply.delivery);
+  const why = reply.link_reason ?? (refusal ? `${refusal.reason}${refusal.detail ? ` — ${refusal.detail}` : ""}` : "no matching requirement was found for it");
   const linked = reply.linked
     ? "It satisfied its matching requirement once."
-    : `It is recorded and retained, and it did not link: ${reply.link_reason ?? "no matching requirement was found for it"}.`;
+    : `It is recorded and retained, and it did not link: ${why}.`;
   const replay = reply.replayed ? " This was a replay of the same request, so nothing was recorded twice." : "";
   return `${linked}${replay} Any separate review, evidence or verification still applies.`;
 }
@@ -92,7 +117,9 @@ export function useSourceCommand(disabled: boolean, onLockChange: (locked: boole
     [disabled, onLockChange, onSaved],
   );
   const retry = useCallback((verify: (reply: CommandReply) => void, onRejected: () => void) => { if (pending) void send(pending, verify, onRejected); }, [pending, send]);
-  return { pending, busy, error, notice, send, retry };
+  /** Refuse a submission before it is sent, saying why. A refused entry never fails silently. */
+  const refuse = useCallback((message: string) => { setNotice(""); setError(message); }, []);
+  return { pending, busy, error, notice, send, retry, refuse };
 }
 
 const assetSchema = z.object({ id: databaseUuidSchema, name: z.string(), asset_type: z.string(), asset_tag: z.string().nullable(), status: z.string() });
@@ -141,11 +168,21 @@ export function describeAssetTypes(assetTypes: readonly string[] | null): string
   return assetTypes.map((type) => type.replaceAll("_", " ")).join(" or ");
 }
 
-/** A local date and time the person chose, sent as one instant. */
+/**
+ * A local date and time the person chose, sent as one instant.
+ *
+ * A nonexistent local time — the spring-forward hole — is refused, never
+ * quietly moved: `fromZonedTime` maps 02:30 to an instant that reads back as
+ * 01:30, so an unrefused entry would store an hour nobody chose. The
+ * round-trip check is the same one `task-reminder.tsx` and `work-inputs.tsx`
+ * already apply.
+ */
 export function instantFrom(localValue: string, timezone: string): string | null {
   try {
     const instant = fromZonedTime(localValue, timezone);
-    return Number.isNaN(instant.getTime()) ? null : instant.toISOString();
+    if (Number.isNaN(instant.getTime())) return null;
+    if (formatInTimeZone(instant, timezone, "yyyy-MM-dd'T'HH:mm") !== localValue) return null;
+    return instant.toISOString();
   } catch {
     return null;
   }
@@ -164,14 +201,14 @@ export function ObservationForm({ observationKind, assetTypes, facilityId, timez
   const [issue, setIssue] = useState("");
   const [note, setNote] = useState("");
   const [entryReason, setEntryReason] = useState("");
-  const { pending, busy, error, notice, send, retry } = useSourceCommand(disabled, onLockChange, onSaved);
+  const { pending, busy, error, notice, send, retry, refuse } = useSourceCommand(disabled, onLockChange, onSaved);
   function verify(reply: CommandReply) {
     if (!reply.record.id) throw new Error("Reply has no record");
   }
   function submit() {
     if (busy || pending || disabled || !assetId || !observedAt) return;
     const observedInstant = instantFrom(observedAt, timezone);
-    if (!observedInstant) return;
+    if (!observedInstant) { refuse(IMPOSSIBLE_LOCAL_TIME_COPY); return; }
     const body = {
       request_key: crypto.randomUUID(),
       payload: {

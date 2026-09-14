@@ -57,7 +57,7 @@ export const drillSourceMap: DrillSourceComponent[] = catalog.entries
       questionIds: entry.questionIds,
       command: commands[component.key] ?? null,
       fallback: commands[component.key]
-        ? "A recorded source record satisfies this component once. Any separate review, evidence or verification still applies."
+        ? "A recorded source record can satisfy this component once, if an approved rule is matched and the person recording it is on its published recorder list; the database decides both and states its answer on the record. Any separate review, evidence or verification still applies."
         : "Human review through the existing recording path. A log never satisfies its own review.",
     })),
   );

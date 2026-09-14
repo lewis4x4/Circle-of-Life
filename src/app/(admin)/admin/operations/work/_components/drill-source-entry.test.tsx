@@ -184,6 +184,27 @@ describe("drill source commands", () => {
     expect(screen.queryByText(/satisfied its matching requirement once/)).toBeNull();
   });
 
+  it("names an unauthorised recorder instead of claiming no requirement was found", async () => {
+    // Migration 358 refuses the delivery of a final record whose author is not
+    // on the published recorder list. The requirement was found; this person
+    // did not satisfy it. Saying "no matching requirement" would be false, and
+    // link_reason is never set on this path — the reason is on the delivery.
+    routes({
+      command: record({
+        linked: false,
+        delivery: { event: { id, state: "refused", reason: "recorder_not_authorized", detail: "Source author is not on the published recorder list for this activity" } },
+      }),
+    });
+    render(<DrillSourceEntry {...drillProps} />);
+    await openDrill();
+    await choose(draftId);
+    await userEvent.click(screen.getByRole("button", { name: "Finalize this drill record" }));
+    await screen.findByText(/recorder_not_authorized/);
+    expect(screen.getByText(/not on the published recorder list/)).toBeTruthy();
+    expect(screen.queryByText(/no matching requirement was found/)).toBeNull();
+    expect(screen.queryByText(/satisfied its matching requirement once/)).toBeNull();
+  });
+
   it("states that an unavailable read is not a satisfied requirement", async () => {
     fetchMock.mockImplementation(async () => { throw new Error("revoked"); });
     render(<DrillSourceEntry {...drillProps} />);
