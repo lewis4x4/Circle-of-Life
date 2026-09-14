@@ -95,7 +95,7 @@ Deno.test("revalidation blocks role, organization, and facility authority change
       createUserClient: () => rpcClient([ACTOR, changed]) as never,
     });
     try {
-      await authorization.revalidate(ACTOR.accessible_facility_ids[0]);
+      await authorization.revalidate();
       throw new Error("expected revalidation denial");
     } catch (error) {
       if (!(error instanceof CurrentActorError) || error.status !== 403) {

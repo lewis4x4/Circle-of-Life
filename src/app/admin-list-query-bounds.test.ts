@@ -145,15 +145,19 @@ describe("admin list query bounds", () => {
     expect(operationsTodaySource).not.toContain("Task detail modal placeholder");
   });
 
-  it("keeps referrals roster unbounded while bounding pipeline/upcoming tours and admissions fanout", () => {
+  it("bounds the authorized referrals projection, upcoming tours, and admissions fanout", () => {
     expect(referralsClientSource).toContain("const REFERRAL_PIPELINE_DISPLAY_LIMIT = 60;");
     expect(referralsBootstrapSource).toContain("export const REFERRAL_UPCOMING_TOUR_LIMIT = 6;");
+    expect(referralsBootstrapSource).toContain("export const REFERRAL_PIPELINE_LOAD_LIMIT = 200;");
     expect(referralsClientSource).toContain(".slice(0, REFERRAL_PIPELINE_DISPLAY_LIMIT)");
+    expect(referralsBootstrapSource).toContain("loadAuthorizedReferralLeads(supabase");
+    expect(referralsBootstrapSource).toContain("limit: REFERRAL_PIPELINE_LOAD_LIMIT + 1");
+    expect(referralsBootstrapSource).toContain("leadListTruncated");
     expect(referralsBootstrapSource).toContain('.gte("tour_scheduled_for", nowIso)');
     expect(referralsBootstrapSource).toContain(".limit(REFERRAL_UPCOMING_TOUR_LIMIT)");
+    expect(referralsClientSource).toContain("KPI counts and comparisons are withheld");
     expect(referralsClientSource).toContain("Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours");
 
-    expect(referralsBootstrapSource).not.toContain("tour_completed_at");
     expect(referralsBootstrapSource).not.toContain("const leadIds = leadRows.map");
     expect(referralsBootstrapSource).not.toContain('.in("referral_lead_id", leadIds)');
 

@@ -225,3 +225,13 @@ Migration `317_referral_lead_closure_reasons.sql` adds an organization-owned, au
 - This segment is schema/types only. UI capture, catalog administration, closure reporting, and CSV import remain follow-on work after the operator workflow and vocabulary are approved. It does not claim the lost-referral workflow is operational.
 
 Focused regression: `node scripts/test-referral-closure-migration.mjs` uses a disposable PostgreSQL 17 container, real referral policies/audit functions, and synthetic two-organization, multi-facility fixtures. It never reads or writes production.
+
+## COL-328 current-authority boundary (2026-09-14)
+
+The original policy intent above is superseded for current referral access by
+[`COL-328-REFERRAL-AUTHORITY.md`](COL-328-REFERRAL-AUTHORITY.md) and migration
+`379_referral_current_authority.sql`. That delivery uses database-current
+session, role, claim-version, and facility access; removes direct authenticated
+reads of protected contact/clinical/free-text columns; and routes the existing
+referral screens through explicit read/export/create/update RPCs. It is a
+source delivery only, not operating-policy, hosted, staff, or pilot acceptance.

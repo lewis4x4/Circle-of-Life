@@ -21,9 +21,12 @@ import {
 } from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import {
+  exportAuthorizedReferralLeads,
+  type AuthorizedReferralLeadRow,
+} from "@/lib/referrals/referral-authority";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import {
   facilityDatetimeLocalToUtcIso,
@@ -72,9 +75,7 @@ const LEAD_STATUS_FILTERS: { value: "all" | ReferralLeadStatus; label: string }[
 
 const REFERRAL_PIPELINE_DISPLAY_LIMIT = 60;
 
-type LeadExportRow = Database["public"]["Tables"]["referral_leads"]["Row"] & {
-  referral_sources: { name: string } | null;
-};
+type LeadExportRow = AuthorizedReferralLeadRow;
 
 type ReferralKpiScope = "7d" | "30d" | "quarter" | "all";
 
@@ -208,6 +209,7 @@ export function AdminReferralsPageClient({
   >(initialBootstrap.activeAdmissionCaseByLeadId);
   const [handoffRollup, setHandoffRollup] = useState<ReferralsHandoffRollup>(initialBootstrap.handoffRollup);
   const [hl7Counts, setHl7Counts] = useState(initialBootstrap.hl7Counts);
+  const [leadListTruncated, setLeadListTruncated] = useState(initialBootstrap.leadListTruncated);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | ReferralLeadStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -273,6 +275,7 @@ export function AdminReferralsPageClient({
     setActiveAdmissionCaseByLeadId(bootstrap.activeAdmissionCaseByLeadId);
     setHandoffRollup(bootstrap.handoffRollup);
     setHl7Counts(bootstrap.hl7Counts);
+    setLeadListTruncated(bootstrap.leadListTruncated);
   }, []);
 
   const load = useCallback(async () => {
@@ -292,6 +295,7 @@ export function AdminReferralsPageClient({
         activeAdmissionCaseByLeadId: {},
         handoffRollup: { blocked: 0, ready: 0, onboarding: 0 },
         hl7Counts: { pending: 0, failed: 0 },
+        leadListTruncated: false,
       });
       setLoading(false);
       return;
@@ -309,6 +313,7 @@ export function AdminReferralsPageClient({
         activeAdmissionCaseByLeadId: {},
         handoffRollup: { blocked: 0, ready: 0, onboarding: 0 },
         hl7Counts: { pending: 0, failed: 0 },
+        leadListTruncated: false,
       });
     } finally {
       setLoading(false);
@@ -324,19 +329,10 @@ export function AdminReferralsPageClient({
     setExportingCsv(true);
     setLoadError(null);
     try {
-      let query = supabase
-        .from("referral_leads")
-        .select("*, referral_sources(name)")
-        .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(500);
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
-      const { data, error: qErr } = await query;
-      if (qErr) throw qErr;
-      const list = (data ?? []) as LeadExportRow[];
+      const list = await exportAuthorizedReferralLeads(supabase, {
+        facilityId: selectedFacilityId,
+        status: statusFilter === "all" ? null : statusFilter,
+      });
       const csv = buildReferralLeadsCsv(list);
       const stamp = format(new Date(), "yyyy-MM-dd");
       const base = `referral-leads-${stamp}`;
@@ -358,7 +354,7 @@ export function AdminReferralsPageClient({
   }, [availableFacilities, selectedFacilityId]);
 
   const kpiMetrics = useMemo(() => {
-    if (noFacility) return null;
+    if (noFacility || leadListTruncated) return null;
     const range = kpiScopeRange(kpiScope);
     const inUpd = (r: LeadRow) => (!range ? true : tsInRange(r.updated_at, range));
     const inCreatedRange = (r: LeadRow) => {
@@ -443,7 +439,7 @@ export function AdminReferralsPageClient({
       convFootnote,
       newFootnote,
     };
-  }, [activeAdmissionCaseByLeadId, kpiScope, noFacility, rows]);
+  }, [activeAdmissionCaseByLeadId, kpiScope, leadListTruncated, noFacility, rows]);
 
   const allKpisZero =
     Boolean(kpiMetrics) && !loading && (kpiMetrics?.sumScoped ?? 1) === 0;
@@ -458,6 +454,7 @@ export function AdminReferralsPageClient({
   const kpiCtx: ReferralsHubKpiContext = {
     loading,
     loadFailed: Boolean(loadError),
+    partial: leadListTruncated,
   };
 
   return (
@@ -510,6 +507,15 @@ export function AdminReferralsPageClient({
           className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-400"
         >
           Select a facility in the header to load referral leads and KPIs for that site.
+        </div>
+      ) : null}
+
+      {leadListTruncated ? (
+        <div
+          role="status"
+          className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-400"
+        >
+          The pipeline roster is limited to the 200 most recently updated leads. KPI counts and comparisons are withheld until the complete reporting delivery is available.
         </div>
       ) : null}
 
@@ -922,7 +928,7 @@ export function AdminReferralsPageClient({
                     </>
                   ) : (
                     <>
-                      Showing {featuredRows.length} priority-ranked rows of {rows.length} loaded.
+                      Showing {featuredRows.length} priority-ranked rows of {rows.length} loaded{leadListTruncated ? " (limited roster)" : ""}.
                     </>
                   )}
                 </p>

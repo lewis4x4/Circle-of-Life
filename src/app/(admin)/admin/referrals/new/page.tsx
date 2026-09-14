@@ -35,12 +35,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
+import {
+  createAuthorizedReferralLead,
+  createAuthorizedReferralSource,
+} from "@/lib/referrals/referral-authority";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -79,7 +81,6 @@ function RequiredMark() {
 export default function AdminReferralsNewPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { user } = useHavenAuth();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
   const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
@@ -93,7 +94,6 @@ export default function AdminReferralsNewPage() {
   const [preferredContact, setPreferredContact] = useState<PreferredContact>("either");
   const [referralSourceId, setReferralSourceId] = useState<string>("");
   const [inquiryDate, setInquiryDate] = useState("");
-  const [notes, setNotes] = useState("");
   const [sources, setSources] = useState<{ id: string; name: string }[]>([]);
   const [loadingSources, setLoadingSources] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -150,16 +150,9 @@ export default function AdminReferralsNewPage() {
     }
     setLoadingSources(true);
     try {
-      const { data: fac } = await supabase.from("facilities").select("organization_id").eq("id", selectedFacilityId).single();
-      const orgId = fac?.organization_id;
-      if (!orgId) {
-        setSources([]);
-        return;
-      }
       const { data, error: qErr } = await supabase
         .from("referral_sources")
         .select("id, name")
-        .eq("organization_id", orgId)
         .is("deleted_at", null)
         .eq("is_active", true)
         .or(`facility_id.is.null,facility_id.eq.${selectedFacilityId}`)
@@ -230,47 +223,21 @@ export default function AdminReferralsNewPage() {
 
     setCreatingSource(true);
     try {
-      const { data: fac, error: facErr } = await supabase
-        .from("facilities")
-        .select("organization_id")
-        .eq("id", selectedFacilityId)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (facErr || !fac?.organization_id) {
-        setSourceError("Could not resolve organization for this facility.");
-        return;
-      }
-
-      if (!user?.id) {
-        setSourceError("You must be signed in.");
-        return;
-      }
-
-      const { data: inserted, error: insErr } = await supabase
-        .from("referral_sources")
-        .insert({
-          organization_id: fac.organization_id,
-          facility_id: newSourceFacilityOnly ? selectedFacilityId : null,
-          name: trimmedName,
-          source_type: newSourceType,
-          is_active: true,
-          created_by: user.id,
-        })
-        .select("id")
-        .single();
-
-      if (insErr || !inserted?.id) {
-        setSourceError(insErr?.message ?? "Could not create referral source.");
-        return;
-      }
+      const sourceId = await createAuthorizedReferralSource(supabase, {
+        facilityId: selectedFacilityId,
+        name: trimmedName,
+        sourceType: newSourceType,
+        facilityOnly: newSourceFacilityOnly,
+      });
 
       await loadSources();
-      setReferralSourceId(inserted.id);
+      setReferralSourceId(sourceId);
       setNewSourceName("");
       setNewSourceType("hospital");
       setNewSourceFacilityOnly(false);
       setCreateSourceOpen(false);
+    } catch (err) {
+      setSourceError(err instanceof Error ? err.message : "Could not create referral source.");
     } finally {
       setCreatingSource(false);
     }
@@ -292,59 +259,32 @@ export default function AdminReferralsNewPage() {
 
     setSubmitting(true);
     try {
-      const { data: fac, error: facErr } = await supabase
-        .from("facilities")
-        .select("organization_id")
-        .eq("id", selectedFacilityId)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (facErr || !fac?.organization_id) {
-        setFormError("Could not resolve organization for this facility.");
-        return;
-      }
-
-      if (!user?.id) {
-        setFormError("You must be signed in.");
-        return;
-      }
-
       const fn = firstName.trim();
       const ln = lastName.trim();
 
-      const payload = {
-        organization_id: fac.organization_id,
-        facility_id: selectedFacilityId,
-        first_name: fn,
-        last_name: ln,
+      const leadId = await createAuthorizedReferralLead(supabase, {
+        facilityId: selectedFacilityId,
+        firstName: fn,
+        lastName: ln,
         phone: phone.trim() || null,
         email: email.trim() || null,
-        referral_source_id: referralSourceId,
-        preferred_contact: preferredContact,
-        inquiry_date: inquiryDate.trim() || formatInTimeZone(new Date(), facilityTimezone, "yyyy-MM-dd"),
-        notes: notes.trim() || null,
-        status: "new" as const,
-        created_by: user.id,
-      };
-
-      const { data: inserted, error: insErr } = await supabase.from("referral_leads").insert(payload).select("id").single();
-      if (insErr) {
-        setFormError(insErr.message);
-        return;
-      }
-      if (inserted?.id) {
-        const leadId = inserted.id;
-        router.push("/admin/referrals");
-        toast.success("Lead created.", {
-          duration: 6000,
-          action: {
-            label: "Open lead",
-            onClick: () => {
-              router.push(`/admin/referrals/${leadId}`);
-            },
+        referralSourceId,
+        preferredContact,
+        inquiryDate: inquiryDate.trim() || formatInTimeZone(new Date(), facilityTimezone, "yyyy-MM-dd"),
+      });
+      router.push("/admin/referrals");
+      toast.success("Lead created.", {
+        duration: 6000,
+        action: {
+          label: "Open lead",
+          onClick: () => {
+            router.push(`/admin/referrals/${leadId}`);
           },
-        });
-        router.refresh();
-      }
+        },
+      });
+      router.refresh();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not create referral lead.");
     } finally {
       setSubmitting(false);
     }
@@ -652,19 +592,9 @@ export default function AdminReferralsNewPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ref-notes" className="text-[13px]">
-              Notes <span className="font-normal text-muted-foreground">(optional)</span>
-            </Label>
-            <Textarea
-              id="ref-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Anything the team should know about this inquiry..."
-              rows={4}
-              className="min-h-[6rem] resize-y text-[13px]"
-            />
-          </div>
+          <p className="rounded-[8px] border border-border bg-muted/20 px-4 py-3 text-[13px] text-muted-foreground">
+            Clinical notes are added only after the lead receives the approved clinical access tier.
+          </p>
 
           {formError ? (
             <p className="text-[13px] text-destructive" role="alert">

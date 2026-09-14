@@ -115,7 +115,11 @@ function sameActorBinding(
   return initial.userId === current.userId &&
     initial.organizationId === current.organizationId &&
     initial.role === current.role &&
-    initial.claimVersion === current.claimVersion;
+    initial.claimVersion === current.claimVersion &&
+    initial.accessibleFacilityIds.length === current.accessibleFacilityIds.length &&
+    initial.accessibleFacilityIds.every((facilityId, index) =>
+      facilityId === current.accessibleFacilityIds[index]
+    );
 }
 
 export async function requireCurrentActor(
