@@ -255,9 +255,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (intent === "submit" && inserted.referral_lead_id) {
-    await syncLeadToApplicationPending(actor.admin, {
+    await syncLeadToApplicationPending(actor.client, {
       leadId: inserted.referral_lead_id,
-      actorId: actor.id,
+      admissionCaseId: inserted.id,
     });
 
     await emitWorkflowEvent(actor.admin, {
