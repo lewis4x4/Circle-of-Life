@@ -1,4 +1,5 @@
 import base64
+import fcntl
 import hashlib
 import json
 import os
@@ -8,7 +9,7 @@ from datetime import date, datetime, timezone
 from unittest.mock import patch, mock_open
 
 from workbook import KEYS, parse_workbook, patch_workbook
-from worker import AggregateReader, BridgeError, Haven, HttpFailure, ReconnectRequired, State, changed_prior_weeks, file_target, publish_front_office, read_health, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
+from worker import AggregateReader, BridgeError, Haven, HttpFailure, ReconnectRequired, State, auth_fingerprint, changed_prior_weeks, file_target, install_haven_credentials, publish_front_office, read_health, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
 from test_workbook import MAP, fixture
 import worker
 from pathlib import Path
@@ -187,6 +188,35 @@ class GoogleTransportTests(unittest.TestCase):
 
 
 class WorkerTests(unittest.TestCase):
+    def install_fixture(self, directory):
+        state_directory = Path(directory) / 'production-state'
+        state = State(state_directory)
+        state.data.update(
+            baselines={'facility:2026-09-14': {'baseline_id': 'baseline-1', 'file_values': {'census': 12}}},
+            haven_refresh_token='old-token',
+            haven_pending={'action': 'save', 'payload': {'request_id': 'retained'}},
+            google_pending={'bytes': 'retained-google'},
+            front_office_pending={'body': 'retained-front-office'},
+            front_office_sequence=41,
+            front_office_last_receipt='receipt-41',
+            haven_connection={'state': 'reconnect_required', 'last_connected_at': '2026-09-13T12:00:00+00:00'},
+        )
+        state.save()
+        state.lock.close()
+        connection_directory = Path(directory) / 'connection'
+        connection_directory.mkdir(mode=0o700)
+        credential = connection_directory / 'haven-credentials.json'
+        payload = {
+            'HAVEN_STAND_UP_REFRESH_TOKEN': 'new-private-token',
+            'authorized_at': int(worker.time.time()),
+            'actor_id': '00000000-0000-4000-8000-000000000099',
+            'organization_id': worker.HAVEN_ORG,
+            'facility_ids': sorted(MAP.values()),
+        }
+        credential.write_text(json.dumps(payload))
+        credential.chmod(0o600)
+        return state_directory, credential, payload
+
     def test_expired_haven_session_records_reconnect_and_suppresses_blind_retries(self):
         with tempfile.TemporaryDirectory() as directory:
             os.chmod(directory, 0o700)
@@ -216,7 +246,7 @@ class WorkerTests(unittest.TestCase):
             state = State(directory)
             state.data.update(haven_refresh_token='expired-token', haven_connection={
                 'state': 'reconnect_required',
-                'credential_fingerprint': hashlib.sha256(b'expired-token').hexdigest(),
+                'credential_fingerprint': auth_fingerprint('expired-token', 'synthetic-anon'),
                 'checked_at': '2026-09-14T00:00:00+00:00',
             })
             state.save()
@@ -227,6 +257,30 @@ class WorkerTests(unittest.TestCase):
             self.assertEqual(request.call_count, 1)
             self.assertEqual(state.data['haven_refresh_token'], 'rotated-token')
             self.assertEqual(read_health(directory)['haven']['state'], 'connected')
+            state.lock.close()
+
+    def test_corrected_auth_configuration_retries_same_refresh_token(self):
+        with tempfile.TemporaryDirectory() as directory:
+            os.chmod(directory, 0o700)
+            state = State(directory)
+            state.data.update(haven_refresh_token='same-haven-token', haven_connection={
+                'state': 'reconnect_required',
+                'credential_fingerprint': auth_fingerprint('same-haven-token', 'old-anon'),
+            })
+            state.save()
+            with patch.dict('os.environ', {'NEXT_PUBLIC_SUPABASE_ANON_KEY': 'corrected-anon'}), patch('worker.http', return_value=(b'{"access_token":"access","refresh_token":"rotated"}', {})) as request:
+                Haven(state)
+            self.assertEqual(request.call_count, 1)
+
+            state.data['google_connection'] = {
+                'state': 'reconnect_required',
+                'credential_fingerprint': auth_fingerprint('same-google-token', 'client', 'old-secret'),
+            }
+            state.save()
+            environment = {'GOOGLE_CLIENT_ID': 'client', 'GOOGLE_CLIENT_SECRET': 'corrected-secret', 'GOOGLE_REFRESH_TOKEN': 'same-google-token'}
+            with patch.dict('os.environ', environment), patch('worker.http', return_value=(b'{"access_token":"google-access"}', {})) as request:
+                worker.Google(state)
+            self.assertEqual(request.call_count, 1)
             state.lock.close()
 
     def test_malformed_auth_response_does_not_disable_saved_credential(self):
@@ -301,6 +355,86 @@ class WorkerTests(unittest.TestCase):
         health.assert_called_once_with('/unused')
         request.assert_not_called()
         self.assertEqual(json.loads(output.call_args.args[0]), expected)
+
+    def test_install_command_uses_offline_helper_and_prints_only_redacted_receipt(self):
+        receipt = {'status': 'installed', 'state_preserved': True, 'provider': 'haven'}
+        arguments = ['worker.py', '--state-dir', '/private/state', '--facility-map', '/private/map.json',
+                     '--install-haven-credentials', '/private/connection/haven-credentials.json']
+        with patch('sys.argv', arguments), patch('worker.Path.read_text', return_value=json.dumps(MAP)), patch('worker.install_haven_credentials', return_value=receipt) as install, patch('worker.http') as request, patch('builtins.print') as output:
+            worker.main()
+        install.assert_called_once_with('/private/state', '/private/connection/haven-credentials.json', MAP)
+        request.assert_not_called()
+        self.assertEqual(json.loads(output.call_args.args[0]), receipt)
+        self.assertNotIn('token', output.call_args.args[0].lower())
+
+    def test_validated_haven_credentials_install_preserves_operational_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_directory, credential, _ = self.install_fixture(directory)
+            before = json.loads((state_directory / 'state.json').read_text())
+            result = install_haven_credentials(state_directory, credential, MAP)
+            after = json.loads((state_directory / 'state.json').read_text())
+            self.assertEqual(result, {'status': 'installed', 'state_preserved': True, 'provider': 'haven'})
+            for key in ('baselines', 'haven_pending', 'google_pending', 'front_office_pending', 'front_office_sequence', 'front_office_last_receipt'):
+                self.assertEqual(after[key], before[key])
+            self.assertEqual(after['haven_refresh_token'], 'new-private-token')
+            self.assertEqual(after['haven_connection']['state'], 'credentials_installed')
+            self.assertEqual(after['haven_connection']['last_connected_at'], '2026-09-13T12:00:00+00:00')
+            rendered = json.dumps({'result': result, 'health': read_health(state_directory)})
+            self.assertNotIn('new-private-token', rendered)
+            self.assertEqual(list(state_directory.glob('.*.next')), [])
+
+    def test_haven_credential_install_refuses_permissions_symlinks_and_wrong_schema(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_directory, credential, payload = self.install_fixture(directory)
+            credential.chmod(0o644)
+            with self.assertRaises(BridgeError):
+                install_haven_credentials(state_directory, credential, MAP)
+            credential.chmod(0o600)
+            link = Path(directory) / 'credential-link.json'
+            link.symlink_to(credential)
+            with self.assertRaises(BridgeError):
+                install_haven_credentials(state_directory, link, MAP)
+            credential.write_text(json.dumps({**payload, 'unexpected': True}))
+            with self.assertRaisesRegex(BridgeError, 'validated connection schema'):
+                install_haven_credentials(state_directory, credential, MAP)
+            credential.write_text(json.dumps({**payload, 'authorized_at': payload['authorized_at'] - worker.CREDENTIAL_INSTALL_MAX_AGE - 1}))
+            with self.assertRaisesRegex(BridgeError, 'validated connection schema'):
+                install_haven_credentials(state_directory, credential, MAP)
+            credential.write_text(json.dumps(payload))
+            wrong_mapping = {**MAP, next(iter(MAP)): '00000000-0000-4000-8000-000000000088'}
+            with self.assertRaisesRegex(BridgeError, 'reviewed production mapping'):
+                install_haven_credentials(state_directory, credential, wrong_mapping)
+            health_path = state_directory / 'health.json'
+            health_path.unlink()
+            health_path.symlink_to(credential)
+            with self.assertRaises(BridgeError):
+                install_haven_credentials(state_directory, credential, MAP)
+            state_link = Path(directory) / 'state-link'
+            state_link.symlink_to(state_directory, target_is_directory=True)
+            with self.assertRaises(BridgeError):
+                install_haven_credentials(state_link, credential, MAP)
+
+    def test_haven_credential_install_refuses_active_lock_and_invalid_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_directory, credential, _ = self.install_fixture(directory)
+            with (state_directory / 'worker.lock').open('r+') as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                with self.assertRaisesRegex(BridgeError, 'Connector is active'):
+                    install_haven_credentials(state_directory, credential, MAP)
+            state_path = state_directory / 'state.json'
+            state_path.write_text('{"baselines":[]}')
+            with self.assertRaisesRegex(BridgeError, 'required schema'):
+                install_haven_credentials(state_directory, credential, MAP)
+
+    def test_haven_credential_install_is_atomic_when_replace_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_directory, credential, _ = self.install_fixture(directory)
+            before = (state_directory / 'state.json').read_bytes()
+            with patch('worker.os.replace', side_effect=OSError('synthetic replacement failure')):
+                with self.assertRaisesRegex(BridgeError, 'state update failed'):
+                    install_haven_credentials(state_directory, credential, MAP)
+            self.assertEqual((state_directory / 'state.json').read_bytes(), before)
+            self.assertEqual(list(state_directory.glob('.*.next')), [])
 
     def test_empty_week_initializes_immutable_baseline_then_recovers_file_edit(self):
         raw = fixture(blank=True)

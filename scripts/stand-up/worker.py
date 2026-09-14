@@ -13,6 +13,7 @@ import hmac
 import json
 import os
 import re
+import stat
 import sys
 import time
 import urllib.error
@@ -36,6 +37,9 @@ CURRENT_REFRESH_SECONDS = 240
 FIELD_STATE_VERSION = 1
 FIELD_STATE_CODES = {"provided": 0, "not_provided": 1, "held_unit_unconfirmed": 2, "needs_duration_review": 3, "source_held": 4}
 HELD_UNIT_DISPOSITION = "historical_unit_unconfirmed"
+HAVEN_ORG = "00000000-0000-0000-0000-000000000001"
+MAX_STATE_BYTES = 64 * 1024 * 1024
+CREDENTIAL_INSTALL_MAX_AGE = 15 * 60
 
 
 class BridgeError(RuntimeError):
@@ -84,6 +88,10 @@ def http(url, method="GET", body=None, headers=None):
 
 def compact(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+
+
+def auth_fingerprint(*values):
+    return hashlib.sha256(compact(list(values))).hexdigest()
 
 
 def required(name):
@@ -143,51 +151,55 @@ class State:
 
     def health(self):
         """Redacted status for supervisors; never includes tokens, payloads or figures."""
-        haven = self.data.get("haven_connection", {})
-        google_status = self.data.get("google_status", {})
-        google_run = self.data.get("google_run", {})
-        front_run = self.data.get("front_office_run", {})
-        return {
-            "schema_version": 1,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "current_reporting_week": self.data.get("current_reporting_week"),
-            "haven": {
-                "state": haven.get("state", "unknown"),
-                "reconnect_required": haven.get("state") == "reconnect_required",
-                "reason": haven.get("reason"),
-                "checked_at": haven.get("checked_at"),
-                "last_connected_at": haven.get("last_connected_at"),
-                "http_status": haven.get("http_status"),
-                "last_command_rejection": self.data.get("last_command_rejection"),
-            },
-            "google": {
-                "state": google_run.get("state", google_status.get("state", "unknown")),
-                "detail_state": google_status.get("state"),
-                "checked_at": google_run.get("checked_at", google_status.get("checked_at")),
-                "last_synced_at": self.data.get("google_last_sync"),
-                "pending": "google_pending" in self.data,
-                "reconnect_required": self.data.get("google_connection", {}).get("state") == "reconnect_required",
-                "reason": self.data.get("google_connection", {}).get("reason"),
-                "http_status": self.data.get("google_connection", {}).get("http_status"),
-                "last_connected_at": self.data.get("google_connection", {}).get("last_connected_at"),
-                "error_code": google_run.get("error_code"),
-            },
-            "haven_to_front_office": {
-                "state": front_run.get("state", "unknown"),
-                "checked_at": front_run.get("checked_at"),
-                "last_published_at": self.data.get("front_office_last_published_at"),
-                "last_receipt": self.data.get("front_office_last_receipt"),
-                "sequence": self.data.get("front_office_sequence"),
-                "pending": "front_office_pending" in self.data,
-                "rejection": self.data.get("front_office_rejection"),
-                "error_code": front_run.get("error_code"),
-            },
-            "recovery": {
-                "haven_pending": "haven_pending" in self.data,
-                "google_pending": "google_pending" in self.data,
-                "front_office_pending": "front_office_pending" in self.data,
-            },
-        }
+        return redacted_health(self.data)
+
+
+def redacted_health(data):
+    haven = data.get("haven_connection", {})
+    google_status = data.get("google_status", {})
+    google_run = data.get("google_run", {})
+    front_run = data.get("front_office_run", {})
+    return {
+        "schema_version": 1,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "current_reporting_week": data.get("current_reporting_week"),
+        "haven": {
+            "state": haven.get("state", "unknown"),
+            "reconnect_required": haven.get("state") == "reconnect_required",
+            "reason": haven.get("reason"),
+            "checked_at": haven.get("checked_at"),
+            "last_connected_at": haven.get("last_connected_at"),
+            "http_status": haven.get("http_status"),
+            "last_command_rejection": data.get("last_command_rejection"),
+        },
+        "google": {
+            "state": google_run.get("state", google_status.get("state", "unknown")),
+            "detail_state": google_status.get("state"),
+            "checked_at": google_run.get("checked_at", google_status.get("checked_at")),
+            "last_synced_at": data.get("google_last_sync"),
+            "pending": "google_pending" in data,
+            "reconnect_required": data.get("google_connection", {}).get("state") == "reconnect_required",
+            "reason": data.get("google_connection", {}).get("reason"),
+            "http_status": data.get("google_connection", {}).get("http_status"),
+            "last_connected_at": data.get("google_connection", {}).get("last_connected_at"),
+            "error_code": google_run.get("error_code"),
+        },
+        "haven_to_front_office": {
+            "state": front_run.get("state", "unknown"),
+            "checked_at": front_run.get("checked_at"),
+            "last_published_at": data.get("front_office_last_published_at"),
+            "last_receipt": data.get("front_office_last_receipt"),
+            "sequence": data.get("front_office_sequence"),
+            "pending": "front_office_pending" in data,
+            "rejection": data.get("front_office_rejection"),
+            "error_code": front_run.get("error_code"),
+        },
+        "recovery": {
+            "haven_pending": "haven_pending" in data,
+            "google_pending": "google_pending" in data,
+            "front_office_pending": "front_office_pending" in data,
+        },
+    }
 
 
 def read_health(directory):
@@ -203,13 +215,156 @@ def read_health(directory):
     return result
 
 
+def _read_limited(descriptor, limit):
+    chunks, total = [], 0
+    while True:
+        chunk = os.read(descriptor, min(65536, limit + 1 - total))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        total += len(chunk)
+        if total > limit:
+            raise BridgeError("Private connector file exceeds its size limit")
+    try:
+        return json.loads(b"".join(chunks))
+    except (UnicodeDecodeError, ValueError):
+        raise BridgeError("Private connector file is not valid JSON") from None
+
+
+def _require_private(info, kind, mode):
+    type_matches = stat.S_ISDIR(info.st_mode) if kind == "directory" else stat.S_ISREG(info.st_mode)
+    if not type_matches or info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != mode:
+        raise BridgeError(f"Connector {kind} must be owned by the current user with mode {mode:04o}")
+
+
+def _read_private_file(path, limit):
+    path = Path(path).expanduser().absolute()
+    try:
+        _require_private(path.lstat(), "file", 0o600)
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except (FileNotFoundError, OSError):
+        raise BridgeError("Credential source must be an owned private regular file; symlinks are refused") from None
+    try:
+        _require_private(os.fstat(descriptor), "file", 0o600)
+        return _read_limited(descriptor, limit)
+    finally:
+        os.close(descriptor)
+
+
+def _read_private_at(directory_descriptor, name, limit):
+    try:
+        descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=directory_descriptor)
+    except (FileNotFoundError, OSError):
+        raise BridgeError(f"Existing {name} must be an owned private regular file; symlinks are refused") from None
+    try:
+        _require_private(os.fstat(descriptor), "file", 0o600)
+        return _read_limited(descriptor, limit)
+    finally:
+        os.close(descriptor)
+
+
+def _validate_optional_private_target(directory_descriptor, name):
+    try:
+        info = os.stat(name, dir_fd=directory_descriptor, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    except OSError:
+        raise BridgeError(f"Existing {name} cannot be safely inspected") from None
+    _require_private(info, "file", 0o600)
+
+
+def _atomic_private_write_at(directory_descriptor, name, value):
+    temporary = "." + name + "." + uuid.uuid4().hex + ".next"
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600, dir_fd=directory_descriptor)
+    try:
+        try:
+            with os.fdopen(descriptor, "wb", closefd=False) as handle:
+                handle.write(compact(value))
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, name, src_dir_fd=directory_descriptor, dst_dir_fd=directory_descriptor)
+            os.fsync(directory_descriptor)
+        except OSError as exc:
+            raise BridgeError("Private connector state update failed; inspect existing health before retrying") from exc
+    finally:
+        os.close(descriptor)
+        try:
+            os.unlink(temporary, dir_fd=directory_descriptor)
+        except FileNotFoundError:
+            pass
+
+
+def install_haven_credentials(state_directory, credential_file, mapping):
+    """Atomically replace only the Haven refresh token in an inactive current-feed state."""
+    required_keys = {"HAVEN_STAND_UP_REFRESH_TOKEN", "authorized_at", "actor_id", "organization_id", "facility_ids"}
+    credential = _read_private_file(credential_file, 32768)
+    token = credential.get("HAVEN_STAND_UP_REFRESH_TOKEN") if isinstance(credential, dict) else None
+    actor_id = credential.get("actor_id") if isinstance(credential, dict) else None
+    facility_ids = credential.get("facility_ids") if isinstance(credential, dict) else None
+    authorized_at = credential.get("authorized_at") if isinstance(credential, dict) else None
+    now = int(time.time())
+    if (not isinstance(credential, dict) or set(credential) != required_keys
+            or not isinstance(token, str) or not token or token != token.strip() or len(token) > 16384
+            or not isinstance(actor_id, str) or not isinstance(authorized_at, int) or isinstance(authorized_at, bool)
+            or authorized_at < now - CREDENTIAL_INSTALL_MAX_AGE or authorized_at > now + 300
+            or credential.get("organization_id") != HAVEN_ORG
+            or not isinstance(facility_ids, list) or len(facility_ids) != 5 or len(set(facility_ids)) != 5):
+        raise BridgeError("Haven credential file does not match the validated connection schema")
+    try:
+        uuid.UUID(actor_id)
+        if any(str(uuid.UUID(facility)) != facility for facility in facility_ids):
+            raise ValueError()
+    except (AttributeError, TypeError, ValueError):
+        raise BridgeError("Haven credential file does not match the validated connection schema") from None
+    if not isinstance(mapping, dict) or set(mapping) != set(FACILITIES) or set(facility_ids) != set(mapping.values()):
+        raise BridgeError("Haven credential facilities do not match the reviewed production mapping")
+
+    directory = Path(state_directory).expanduser().absolute()
+    try:
+        _require_private(directory.lstat(), "directory", 0o700)
+        directory_descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except (FileNotFoundError, OSError):
+        raise BridgeError("Existing state directory must be owned, private and must not be a symlink") from None
+    lock_descriptor = None
+    try:
+        _require_private(os.fstat(directory_descriptor), "directory", 0o700)
+        try:
+            lock_descriptor = os.open("worker.lock", os.O_RDWR | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=directory_descriptor)
+        except (FileNotFoundError, OSError):
+            raise BridgeError("Existing worker lock must be an owned private regular file; symlinks are refused") from None
+        _require_private(os.fstat(lock_descriptor), "file", 0o600)
+        try:
+            fcntl.flock(lock_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise BridgeError("Connector is active; stop its supervisor before installing credentials") from None
+        data = _read_private_at(directory_descriptor, "state.json", MAX_STATE_BYTES)
+        if (not isinstance(data, dict) or not isinstance(data.get("baselines"), dict)
+                or any(key.startswith("history_") for key in data)
+                or any(key in data and not isinstance(data[key], dict) for key in ("haven_pending", "google_pending", "front_office_pending"))
+                or ("front_office_sequence" in data and (not isinstance(data["front_office_sequence"], int) or isinstance(data["front_office_sequence"], bool) or data["front_office_sequence"] < 0))):
+            raise BridgeError("Existing current-feed state does not match the required schema")
+        _validate_optional_private_target(directory_descriptor, "health.json")
+        previous_connection = data.get("haven_connection", {})
+        installed_at = datetime.now(timezone.utc).isoformat()
+        data["haven_refresh_token"] = token
+        data["haven_connection"] = {"state": "credentials_installed", "checked_at": installed_at,
+                                    "last_connected_at": previous_connection.get("last_connected_at") if isinstance(previous_connection, dict) else None}
+        _atomic_private_write_at(directory_descriptor, "state.json", data)
+        _atomic_private_write_at(directory_descriptor, "health.json", redacted_health(data))
+        return {"status": "installed", "state_preserved": True, "provider": "haven"}
+    finally:
+        if lock_descriptor is not None:
+            os.close(lock_descriptor)
+        os.close(directory_descriptor)
+
+
 class Haven:
     def __init__(self, state):
         reject_history_state(state.data)
         self.state = state
         self.anon = required("NEXT_PUBLIC_SUPABASE_ANON_KEY")
         refresh = state.data.get("haven_refresh_token") or required("HAVEN_STAND_UP_REFRESH_TOKEN")
-        fingerprint = hashlib.sha256(refresh.encode()).hexdigest()
+        fingerprint = auth_fingerprint(refresh, self.anon)
         connection = state.data.get("haven_connection", {})
         if connection.get("state") == "reconnect_required" and connection.get("credential_fingerprint") == fingerprint:
             raise ReconnectRequired("haven", "Haven connector credentials expired or were revoked. Reconnect the dedicated Haven operator account; pending recovery state was retained.", suppressed=True)
@@ -231,7 +386,7 @@ class Haven:
         state.data["haven_refresh_token"] = result["refresh_token"]
         checked = datetime.now(timezone.utc).isoformat()
         state.data["haven_connection"] = {"state": "connected", "checked_at": checked, "last_connected_at": checked,
-                                            "credential_fingerprint": hashlib.sha256(result["refresh_token"].encode()).hexdigest()}
+                                            "credential_fingerprint": auth_fingerprint(result["refresh_token"], self.anon)}
         state.save()  # Persist rotated token before making any business command.
 
     def command(self, action, payload):
@@ -273,8 +428,9 @@ class Haven:
 class Google:
     def __init__(self, state=None):
         refresh = required("GOOGLE_REFRESH_TOKEN")
-        form = urllib.parse.urlencode({"client_id": required("GOOGLE_CLIENT_ID"), "client_secret": required("GOOGLE_CLIENT_SECRET"), "refresh_token": refresh, "grant_type": "refresh_token"}).encode()
-        fingerprint = hashlib.sha256(refresh.encode()).hexdigest()
+        client_id, client_secret = required("GOOGLE_CLIENT_ID"), required("GOOGLE_CLIENT_SECRET")
+        form = urllib.parse.urlencode({"client_id": client_id, "client_secret": client_secret, "refresh_token": refresh, "grant_type": "refresh_token"}).encode()
+        fingerprint = auth_fingerprint(refresh, client_id, client_secret)
         connection = state.data.get("google_connection", {}) if state else {}
         if connection.get("state") == "reconnect_required" and connection.get("credential_fingerprint") == fingerprint:
             raise ReconnectRequired("google", "Google connector credentials expired or were revoked. Reconnect the Stand Up workbook account; pending recovery state was retained.", suppressed=True)
@@ -855,14 +1011,22 @@ def main():
     parser.add_argument("--publisher-service", action="store_true", help="Haven-hosted aggregate read only; cannot be combined with Google or adoption")
     parser.add_argument("--probe-google", action="store_true", help="Rehearsal copy only; verifies conditional writes and restores exact original bytes")
     parser.add_argument("--status", action="store_true", help="Print the redacted durable connector health record without contacting a provider")
+    parser.add_argument("--install-haven-credentials", metavar="FILE", help="Atomically install a validated private Haven connection into an inactive existing state")
     args = parser.parse_args()
     if args.status:
-        if any((args.publish, args.publish_history, args.publisher_service, args.google, args.probe_google, args.adopt, args.from_week, args.to_week)):
+        if any((args.publish, args.publish_history, args.publisher_service, args.google, args.probe_google, args.adopt, args.from_week, args.to_week, args.install_haven_credentials)):
             raise BridgeError("Status is read-only and cannot be combined with connector operations")
         print(json.dumps(read_health(args.state_dir), sort_keys=True))
         return
     if not args.facility_map:
         parser.error("--facility-map is required for connector operations")
+    if args.install_haven_credentials:
+        if any((args.publish, args.publish_history, args.publisher_service, args.google, args.probe_google, args.adopt, args.from_week, args.to_week, args.week)):
+            raise BridgeError("Credential installation cannot be combined with connector operations")
+        mapping = json.loads(Path(args.facility_map).read_text())
+        result = install_haven_credentials(args.state_dir, args.install_haven_credentials, mapping)
+        print(json.dumps(result, sort_keys=True))
+        return
     if args.publish_history and (not args.publisher_service or args.publish or args.google or args.probe_google or args.adopt or not args.from_week or not args.to_week):
         raise BridgeError("History publication requires isolated service mode, dates and its own state")
     if args.publisher_service and (not (args.publish or args.publish_history) or args.google or args.probe_google or args.adopt):

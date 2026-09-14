@@ -123,6 +123,29 @@ account and five-facility scope, install the replacement into the existing
 worker-owned state, then restart and inspect `health.json` before accepting a
 new reporting entry.
 
+Install the newly validated loopback result into the existing Google worker
+state only while its supervisor is stopped:
+
+```sh
+python3 scripts/stand-up/worker.py \
+  --state-dir /private/stand-up-production \
+  --facility-map /private/path/facility-map.json \
+  --install-haven-credentials /private/connection/haven-credentials.json
+```
+
+The installer requires an existing owned `0700` state directory and owned
+`0600` regular credential, lock, state, and any existing health file. Run it
+within 15 minutes of the validated operator connection. It refuses symlinks,
+an active worker lock, history state, a stale or malformed credential, or a
+facility scope different from the reviewed mapping. It atomically replaces
+only the saved Haven refresh token and marks it `credentials_installed`; it
+does not reset baselines, pending recovery operations, source sequences, or
+prior publication receipts, and it never renders the token. A corrected Haven
+anon key or corrected Google client ID/secret also changes the private auth
+fingerprint, so the same refresh token is retried after configuration repair.
+Successful provider authentication remains required before health changes to
+`connected`.
+
 ```sh
 python3 scripts/stand-up/worker.py \
   --state-dir /private/stand-up-rehearsal \
