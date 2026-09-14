@@ -2,14 +2,21 @@ import { CurrentActorError } from "../_shared/current-actor.ts";
 
 type GenerationClient = {
   rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{
-    data: unknown; error: { code?: string } | null;
+    data: unknown;
+    error: { code?: string } | null;
   }>;
 };
 
 /** One durable generation command owns replacement and its audit receipt. */
 export async function commitIngestGeneration(
   admin: GenerationClient,
-  input: { runId: string; chunks: unknown[]; summary: string | null; wordCount: number; markdown?: Record<string, string> },
+  input: {
+    runId: string;
+    chunks: unknown[];
+    summary: string | null;
+    wordCount: number;
+    markdown?: Record<string, string>;
+  },
 ): Promise<number> {
   const { data, error } = await admin.rpc("commit_kb_ingest_generation", {
     p_run_id: input.runId,
@@ -19,18 +26,49 @@ export async function commitIngestGeneration(
     p_markdown: input.markdown ?? null,
   });
   if (error) {
-    if (error.code === "40001" || error.code === "42501") throw new CurrentActorError(403, "Forbidden");
+    if (error.code === "40001" || error.code === "42501") {
+      throw new CurrentActorError(403, "Forbidden");
+    }
     throw new Error("Could not commit the complete document index");
   }
   if (typeof data !== "number" || data !== input.chunks.length) {
-    throw new Error("Document index receipt does not match the complete chunk count");
+    throw new Error(
+      "Document index receipt does not match the complete chunk count",
+    );
   }
   return data;
 }
 
-export async function failIngestGeneration(admin: GenerationClient, runId: string): Promise<void> {
+export async function failIngestGeneration(
+  admin: GenerationClient,
+  runId: string,
+): Promise<void> {
   const { error } = await admin.rpc("fail_kb_ingest_generation", {
-    p_run_id: runId, p_error: "ingest_processing_failed",
+    p_run_id: runId,
+    p_error: "ingest_processing_failed",
   });
   if (error) throw new Error("Could not record ingest failure");
+}
+
+/** Marks a newly stored document failed when no authorization run was created. */
+export async function failIngestPreflight(
+  admin: GenerationClient,
+  input: {
+    documentId: string;
+    actorId: string;
+    sessionId: string;
+    claimVersion: number;
+    organizationId: string;
+    errorCode: string;
+  },
+): Promise<void> {
+  const { error } = await admin.rpc("fail_kb_ingest_preflight", {
+    p_document_id: input.documentId,
+    p_actor_id: input.actorId,
+    p_session_id: input.sessionId,
+    p_claim_version: input.claimVersion,
+    p_organization_id: input.organizationId,
+    p_error: input.errorCode,
+  });
+  if (error) throw new Error("Could not record ingest preflight failure");
 }
