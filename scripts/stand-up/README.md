@@ -97,6 +97,32 @@ Haven credentials represent an explicitly authorized reporting operator, not a f
 
 Use a separate state directory per Google file, mode 0700, outside the repository. State files contain tokens, immutable baseline references and durable pending operations; restrict backup access accordingly. Do not delete/reset state to clear an uncertain outcome or reset a source sequence.
 
+### Connector health and expired credentials
+
+Every state save also writes a private `health.json` beside `state.json`. It is a
+redacted supervisor surface: current reporting Monday, Haven connection state,
+last successful Google synchronization, last Haven-to-Front-Office receipt and
+sequence, current pending flags, and definitive rejection metadata. It contains
+no refresh tokens, signed bodies, workbook bytes, baselines, or report figures.
+Read it without contacting Haven, Google, or Front Office:
+
+```sh
+python3 scripts/stand-up/worker.py \
+  --state-dir /private/stand-up-production --status
+```
+
+Haven or Google refresh HTTP 400/401 marks that credential
+`reconnect_required`. Later supervisor ticks with the same credential do not
+repeat the rejected refresh request. They retain pending recovery state and exit
+with status 2 until the credential custodian reconnects the dedicated account.
+A genuinely replaced credential has a different private fingerprint and is
+tried immediately; successful rotation returns the connection to `connected`.
+Do not clear `state.json`, pending operations, baselines, or source sequences to
+force a retry. Stop the supervisor, use the loopback setup to verify the exact
+account and five-facility scope, install the replacement into the existing
+worker-owned state, then restart and inspect `health.json` before accepting a
+new reporting entry.
+
 ```sh
 python3 scripts/stand-up/worker.py \
   --state-dir /private/stand-up-rehearsal \

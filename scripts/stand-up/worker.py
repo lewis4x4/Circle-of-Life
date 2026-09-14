@@ -42,9 +42,19 @@ class BridgeError(RuntimeError):
     pass
 
 
+class ReconnectRequired(BridgeError):
+    """A saved connector credential can no longer establish a session."""
+
+    def __init__(self, provider, message, *, suppressed=False):
+        self.provider = provider
+        self.suppressed = suppressed
+        super().__init__(message)
+
+
 class HttpFailure(BridgeError):
-    def __init__(self, status):
+    def __init__(self, status, provider="provider"):
         self.status = status
+        self.provider = provider
         super().__init__(f"Provider returned HTTP {status}; no successful synchronization recorded")
 
 
@@ -62,7 +72,12 @@ def http(url, method="GET", body=None, headers=None):
                 raise BridgeError("Provider response exceeds size limit")
             return raw, response.headers
     except urllib.error.HTTPError as exc:
-        raise HttpFailure(exc.code) from None
+        provider = ("haven_auth" if "/auth/v1/" in url and url.startswith(HAVEN) else
+                    "haven_api" if url.startswith(HAVEN) else
+                    "google_auth" if url.startswith("https://oauth2.googleapis.com/") else
+                    "google_drive" if url.startswith("https://www.googleapis.com/") else
+                    "front_office" if url.startswith(FRONT_OFFICE) else "provider")
+        raise HttpFailure(exc.code, provider) from None
     except (urllib.error.URLError, TimeoutError) as exc:
         raise BridgeError("Provider outcome unknown; retained pending request for readback/retry") from exc
 
@@ -109,18 +124,83 @@ class State:
             reject_history_state(self.data)  # Recheck after acquiring the lock.
 
     def save(self):
-        temporary = self.directory / "state.next"
+        self._write_json(self.path, self.data)
+        self._write_json(self.directory / "health.json", self.health())
+
+    def _write_json(self, path, value):
+        temporary = path.with_name(path.name + ".next")
         descriptor = os.open(temporary, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600)
         with os.fdopen(descriptor, "wb") as handle:
-            handle.write(compact(self.data))
+            handle.write(compact(value))
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temporary, self.path)
+        os.replace(temporary, path)
         directory_fd = os.open(self.directory, os.O_RDONLY)
         try:
             os.fsync(directory_fd)
         finally:
             os.close(directory_fd)
+
+    def health(self):
+        """Redacted status for supervisors; never includes tokens, payloads or figures."""
+        haven = self.data.get("haven_connection", {})
+        google_status = self.data.get("google_status", {})
+        google_run = self.data.get("google_run", {})
+        front_run = self.data.get("front_office_run", {})
+        return {
+            "schema_version": 1,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "current_reporting_week": self.data.get("current_reporting_week"),
+            "haven": {
+                "state": haven.get("state", "unknown"),
+                "reconnect_required": haven.get("state") == "reconnect_required",
+                "reason": haven.get("reason"),
+                "checked_at": haven.get("checked_at"),
+                "last_connected_at": haven.get("last_connected_at"),
+                "http_status": haven.get("http_status"),
+                "last_command_rejection": self.data.get("last_command_rejection"),
+            },
+            "google": {
+                "state": google_run.get("state", google_status.get("state", "unknown")),
+                "detail_state": google_status.get("state"),
+                "checked_at": google_run.get("checked_at", google_status.get("checked_at")),
+                "last_synced_at": self.data.get("google_last_sync"),
+                "pending": "google_pending" in self.data,
+                "reconnect_required": self.data.get("google_connection", {}).get("state") == "reconnect_required",
+                "reason": self.data.get("google_connection", {}).get("reason"),
+                "http_status": self.data.get("google_connection", {}).get("http_status"),
+                "last_connected_at": self.data.get("google_connection", {}).get("last_connected_at"),
+                "error_code": google_run.get("error_code"),
+            },
+            "haven_to_front_office": {
+                "state": front_run.get("state", "unknown"),
+                "checked_at": front_run.get("checked_at"),
+                "last_published_at": self.data.get("front_office_last_published_at"),
+                "last_receipt": self.data.get("front_office_last_receipt"),
+                "sequence": self.data.get("front_office_sequence"),
+                "pending": "front_office_pending" in self.data,
+                "rejection": self.data.get("front_office_rejection"),
+                "error_code": front_run.get("error_code"),
+            },
+            "recovery": {
+                "haven_pending": "haven_pending" in self.data,
+                "google_pending": "google_pending" in self.data,
+                "front_office_pending": "front_office_pending" in self.data,
+            },
+        }
+
+
+def read_health(directory):
+    path = Path(directory).expanduser().resolve() / "health.json"
+    if not path.exists():
+        return {"schema_version": 1, "state": "unavailable", "message": "No connector health record exists yet."}
+    try:
+        result = json.loads(path.read_text())
+    except (OSError, ValueError):
+        raise BridgeError("Connector health record is invalid") from None
+    if not isinstance(result, dict) or result.get("schema_version") != 1:
+        raise BridgeError("Connector health record is invalid")
+    return result
 
 
 class Haven:
@@ -129,10 +209,29 @@ class Haven:
         self.state = state
         self.anon = required("NEXT_PUBLIC_SUPABASE_ANON_KEY")
         refresh = state.data.get("haven_refresh_token") or required("HAVEN_STAND_UP_REFRESH_TOKEN")
-        raw, _ = http(HAVEN + "/auth/v1/token?grant_type=refresh_token", "POST", compact({"refresh_token": refresh}), {"apikey": self.anon, "content-type": "application/json"})
-        result = json.loads(raw)
+        fingerprint = hashlib.sha256(refresh.encode()).hexdigest()
+        connection = state.data.get("haven_connection", {})
+        if connection.get("state") == "reconnect_required" and connection.get("credential_fingerprint") == fingerprint:
+            raise ReconnectRequired("haven", "Haven connector credentials expired or were revoked. Reconnect the dedicated Haven operator account; pending recovery state was retained.", suppressed=True)
+        try:
+            raw, _ = http(HAVEN + "/auth/v1/token?grant_type=refresh_token", "POST", compact({"refresh_token": refresh}), {"apikey": self.anon, "content-type": "application/json"})
+        except HttpFailure as exc:
+            if exc.provider != "haven_auth" or exc.status not in (400, 401):
+                raise
+            state.data["haven_connection"] = {"state": "reconnect_required", "reason": "credential_expired_or_revoked", "checked_at": datetime.now(timezone.utc).isoformat(), "last_connected_at": connection.get("last_connected_at"), "http_status": exc.status, "credential_fingerprint": fingerprint}
+            state.save()
+            raise ReconnectRequired("haven", "Haven connector credentials expired or were revoked. Reconnect the dedicated Haven operator account; pending recovery state was retained.") from None
+        try:
+            result = json.loads(raw)
+            if not isinstance(result, dict) or not isinstance(result.get("access_token"), str) or not isinstance(result.get("refresh_token"), str):
+                raise ValueError("missing session tokens")
+        except (TypeError, ValueError):
+            raise BridgeError("Haven authentication returned an invalid response; the saved credential was not disabled") from None
         self.token = result["access_token"]
         state.data["haven_refresh_token"] = result["refresh_token"]
+        checked = datetime.now(timezone.utc).isoformat()
+        state.data["haven_connection"] = {"state": "connected", "checked_at": checked, "last_connected_at": checked,
+                                            "credential_fingerprint": hashlib.sha256(result["refresh_token"].encode()).hexdigest()}
         state.save()  # Persist rotated token before making any business command.
 
     def command(self, action, payload):
@@ -166,15 +265,38 @@ class Haven:
                 self.state.save()
             raise
         self.state.data.pop("haven_pending")
+        self.state.data.pop("last_command_rejection", None)
         self.state.save()
         return result
 
 
 class Google:
-    def __init__(self):
-        form = urllib.parse.urlencode({"client_id": required("GOOGLE_CLIENT_ID"), "client_secret": required("GOOGLE_CLIENT_SECRET"), "refresh_token": required("GOOGLE_REFRESH_TOKEN"), "grant_type": "refresh_token"}).encode()
-        raw, _ = http("https://oauth2.googleapis.com/token", "POST", form, {"content-type": "application/x-www-form-urlencoded"})
-        self.token = json.loads(raw)["access_token"]
+    def __init__(self, state=None):
+        refresh = required("GOOGLE_REFRESH_TOKEN")
+        form = urllib.parse.urlencode({"client_id": required("GOOGLE_CLIENT_ID"), "client_secret": required("GOOGLE_CLIENT_SECRET"), "refresh_token": refresh, "grant_type": "refresh_token"}).encode()
+        fingerprint = hashlib.sha256(refresh.encode()).hexdigest()
+        connection = state.data.get("google_connection", {}) if state else {}
+        if connection.get("state") == "reconnect_required" and connection.get("credential_fingerprint") == fingerprint:
+            raise ReconnectRequired("google", "Google connector credentials expired or were revoked. Reconnect the Stand Up workbook account; pending recovery state was retained.", suppressed=True)
+        try:
+            raw, _ = http("https://oauth2.googleapis.com/token", "POST", form, {"content-type": "application/x-www-form-urlencoded"})
+        except HttpFailure as exc:
+            if not state or exc.provider != "google_auth" or exc.status not in (400, 401):
+                raise
+            state.data["google_connection"] = {"state": "reconnect_required", "reason": "credential_expired_or_revoked", "checked_at": datetime.now(timezone.utc).isoformat(), "last_connected_at": connection.get("last_connected_at"), "http_status": exc.status, "credential_fingerprint": fingerprint}
+            state.save()
+            raise ReconnectRequired("google", "Google connector credentials expired or were revoked. Reconnect the Stand Up workbook account; pending recovery state was retained.") from None
+        try:
+            result = json.loads(raw)
+            if not isinstance(result, dict) or not isinstance(result.get("access_token"), str):
+                raise ValueError("missing access token")
+        except (TypeError, ValueError):
+            raise BridgeError("Google authentication returned an invalid response; the saved credential was not disabled") from None
+        self.token = result["access_token"]
+        if state:
+            checked = datetime.now(timezone.utc).isoformat()
+            state.data["google_connection"] = {"state": "connected", "checked_at": checked, "last_connected_at": checked, "credential_fingerprint": fingerprint}
+            state.save()
 
     def metadata(self, file_id):
         fields = "id,mimeType,etag,version,headRevisionId,md5Checksum,fileSize,labels(trashed)"
@@ -503,7 +625,9 @@ def publish_front_office(state, workspace, mapping, week):
             or not 0 <= admitted_at <= sent_at):
         admitted_at = None
     state.data.update(front_office_sequence=pending["sequence"], front_office_fingerprint=pending["fingerprint"], front_office_last_receipt=receipt["receiptId"], front_office_last_admitted_at=admitted_at)
+    state.data["front_office_last_published_at"] = datetime.now(timezone.utc).isoformat()
     state.data.pop("front_office_pending")
+    state.data.pop("front_office_rejection", None)
     state.save()
     return "accepted"
 
@@ -675,7 +799,9 @@ def synchronize(state, haven, google, mapping, week, mode, adopt=None):
     if all(incoming.get(identity, dict.fromkeys(KEYS)) == values for identity, values in updates.items()):
         # Equality readback ties an immutable server baseline to the observed file state.
         state.data["baselines"].update(baselines)
-        state.data["google_status"] = {"state": "synchronized", "checked_at": datetime.now(timezone.utc).isoformat()}
+        checked = datetime.now(timezone.utc).isoformat()
+        state.data["google_status"] = {"state": "synchronized", "checked_at": checked}
+        state.data["google_last_sync"] = checked
         state.save()
         return
     etag = headers.get("ETag")
@@ -685,7 +811,9 @@ def synchronize(state, haven, google, mapping, week, mode, adopt=None):
     state.data["google_pending"] = {"file_id": file_id, "before_sha256": hashlib.sha256(raw).hexdigest(), "after_sha256": hashlib.sha256(patched).hexdigest(), "etag": etag, "bytes": base64.b64encode(patched).decode(), "baselines": baselines}
     state.save()
     recover_pending_google(state, google, file_id)
-    state.data["google_status"] = {"state": "synchronized", "checked_at": datetime.now(timezone.utc).isoformat()}
+    checked = datetime.now(timezone.utc).isoformat()
+    state.data["google_status"] = {"state": "synchronized", "checked_at": checked}
+    state.data["google_last_sync"] = checked
     state.save()
 
 
@@ -715,7 +843,7 @@ def changed_prior_weeks(state, google, mapping, current_week, mode):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--state-dir", required=True)
-    parser.add_argument("--facility-map", required=True)
+    parser.add_argument("--facility-map")
     parser.add_argument("--week", help="Default is Eastern reporting Monday (upcoming Monday on Sunday)")
     parser.add_argument("--mode", choices=("rehearsal", "production"), default="rehearsal")
     parser.add_argument("--adopt", choices=("file", "haven"), help="Explicitly select initial authority; does not resolve later conflicts")
@@ -726,7 +854,15 @@ def main():
     parser.add_argument("--to-week", help="Inclusive history Monday; range at most 104 weeks")
     parser.add_argument("--publisher-service", action="store_true", help="Haven-hosted aggregate read only; cannot be combined with Google or adoption")
     parser.add_argument("--probe-google", action="store_true", help="Rehearsal copy only; verifies conditional writes and restores exact original bytes")
+    parser.add_argument("--status", action="store_true", help="Print the redacted durable connector health record without contacting a provider")
     args = parser.parse_args()
+    if args.status:
+        if any((args.publish, args.publish_history, args.publisher_service, args.google, args.probe_google, args.adopt, args.from_week, args.to_week)):
+            raise BridgeError("Status is read-only and cannot be combined with connector operations")
+        print(json.dumps(read_health(args.state_dir), sort_keys=True))
+        return
+    if not args.facility_map:
+        parser.error("--facility-map is required for connector operations")
     if args.publish_history and (not args.publisher_service or args.publish or args.google or args.probe_google or args.adopt or not args.from_week or not args.to_week):
         raise BridgeError("History publication requires isolated service mode, dates and its own state")
     if args.publisher_service and (not (args.publish or args.publish_history) or args.google or args.probe_google or args.adopt):
@@ -749,6 +885,8 @@ def main():
     state = State(args.state_dir, history=args.publish_history)
     if not args.publish_history:
         reject_history_state(state.data)
+    state.data["current_reporting_week"] = week.isoformat()
+    state.save()
     if args.publish_history:
         archive = HistoryReader(date.fromisoformat(args.from_week), date.fromisoformat(args.to_week)).archive()
         result = publish_front_office_history(state, archive, mapping)
@@ -758,7 +896,14 @@ def main():
         workspace = AggregateReader(week).workspace()
         if not set(mapping.values()).issubset({f["id"] for f in workspace["facilities"]}):
             raise BridgeError("Publisher mapping does not belong to the configured organization")
-        result = publish_front_office(state, workspace, mapping, week)
+        try:
+            result = publish_front_office(state, workspace, mapping, week)
+            state.data["front_office_run"] = {"state": result, "checked_at": datetime.now(timezone.utc).isoformat()}
+        except Exception as error:
+            state.data["front_office_run"] = {"state": "failed", "checked_at": datetime.now(timezone.utc).isoformat(), "error_code": connector_error_code(error)}
+            state.save()
+            raise
+        state.save()
         print(json.dumps({"front_office": result, "google": "disabled", "checked_at": datetime.now(timezone.utc).isoformat()}))
         return
     haven = Haven(state)
@@ -767,35 +912,56 @@ def main():
         raise BridgeError("Bridge actor lacks all mapped facilities")
     def google_lane():
         haven.resume()
-        google = Google()
+        google = Google(state)
         recover_pending_google(state, google, file_target(args.mode))
         for prior_week in changed_prior_weeks(state, google, mapping, week, args.mode):
             synchronize(state, haven, google, mapping, prior_week, args.mode)
         synchronize(state, haven, google, mapping, week, args.mode, args.adopt)
         return state.data.get("google_status", {}).get("state", "unknown")
-    outcomes, failures = run_lanes(google_lane if args.google else None, (lambda: publish_front_office(state, haven.command("workspace", {}), mapping, week)) if args.publish else None)
+    outcomes, failures = run_lanes(google_lane if args.google else None, (lambda: publish_front_office(state, haven.command("workspace", {}), mapping, week)) if args.publish else None, state=state)
     print(json.dumps({**outcomes, "failures": failures}))
     if failures:
-        sys.exit(1)
+        sys.exit(2 if any(failure["error_code"].endswith("_reconnect_required") for failure in failures) else 1)
 
 
-def run_lanes(google_lane=None, publisher_lane=None):
+def connector_error_code(error):
+    if isinstance(error, ReconnectRequired):
+        return error.provider + "_reconnect_required"
+    if isinstance(error, HttpFailure):
+        return error.provider + "_http_" + str(error.status)
+    if isinstance(error, WorkbookError):
+        return "workbook_error"
+    return "bridge_error"
+
+
+def run_lanes(google_lane=None, publisher_lane=None, *, state=None):
     outcomes, failures = {"google": "disabled", "front_office": "disabled"}, []
     for name, action in (("google", google_lane), ("front_office", publisher_lane)):
         if action is None:
             continue
         try:
             outcomes[name] = action()
+            error_code = None
         except Exception as error:
             outcomes[name] = "failed"
             message = str(error) if isinstance(error, (BridgeError, WorkbookError)) else "Invalid local/provider configuration or response; no successful receipt recorded"
-            failures.append({"lane": name, "error": message})
+            error_code = connector_error_code(error)
+            failures.append({"lane": name, "error": message, "error_code": error_code})
+        if state:
+            state.data[name + "_run"] = {"state": outcomes[name], "checked_at": datetime.now(timezone.utc).isoformat(), "error_code": error_code}
+            state.save()
     return outcomes, failures
 
 
 if __name__ == "__main__":
     try:
         main()
+    except ReconnectRequired as error:
+        if error.suppressed:
+            print(json.dumps({"state": "reconnect_required", "provider": error.provider, "network_attempted": False}))
+        else:
+            print(str(error), file=sys.stderr)
+        sys.exit(2)
     except (BridgeError, WorkbookError) as error:
         print(str(error), file=sys.stderr)
         sys.exit(1)

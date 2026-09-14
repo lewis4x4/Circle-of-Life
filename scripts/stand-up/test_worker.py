@@ -1,12 +1,14 @@
 import base64
 import hashlib
 import json
+import os
+import tempfile
 import unittest
 from datetime import date, datetime, timezone
 from unittest.mock import patch, mock_open
 
 from workbook import KEYS, parse_workbook, patch_workbook
-from worker import AggregateReader, BridgeError, Haven, HttpFailure, changed_prior_weeks, file_target, publish_front_office, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
+from worker import AggregateReader, BridgeError, Haven, HttpFailure, ReconnectRequired, State, changed_prior_weeks, file_target, publish_front_office, read_health, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
 from test_workbook import MAP, fixture
 import worker
 from pathlib import Path
@@ -185,6 +187,121 @@ class GoogleTransportTests(unittest.TestCase):
 
 
 class WorkerTests(unittest.TestCase):
+    def test_expired_haven_session_records_reconnect_and_suppresses_blind_retries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            os.chmod(directory, 0o700)
+            state = State(directory)
+            state.data['haven_refresh_token'] = 'expired-token'
+            state.save()
+            with patch.dict('os.environ', {'NEXT_PUBLIC_SUPABASE_ANON_KEY': 'synthetic-anon'}), patch('worker.http', side_effect=HttpFailure(400, 'haven_auth')) as request:
+                with self.assertRaisesRegex(ReconnectRequired, 'Reconnect the dedicated Haven operator'):
+                    Haven(state)
+                self.assertEqual(request.call_count, 1)
+                with self.assertRaises(ReconnectRequired) as repeated:
+                    Haven(state)
+                self.assertTrue(repeated.exception.suppressed)
+                self.assertEqual(request.call_count, 1)
+            health = read_health(directory)
+            self.assertEqual(health['haven']['state'], 'reconnect_required')
+            self.assertTrue(health['haven']['reconnect_required'])
+            self.assertEqual(health['haven']['reason'], 'credential_expired_or_revoked')
+            self.assertEqual(health['haven']['http_status'], 400)
+            self.assertTrue(health['recovery']['haven_pending'] is False)
+            self.assertNotIn('expired-token', json.dumps(health))
+            state.lock.close()
+
+    def test_replaced_haven_session_bypasses_reconnect_suppression(self):
+        with tempfile.TemporaryDirectory() as directory:
+            os.chmod(directory, 0o700)
+            state = State(directory)
+            state.data.update(haven_refresh_token='expired-token', haven_connection={
+                'state': 'reconnect_required',
+                'credential_fingerprint': hashlib.sha256(b'expired-token').hexdigest(),
+                'checked_at': '2026-09-14T00:00:00+00:00',
+            })
+            state.save()
+            state.data['haven_refresh_token'] = 'replacement-token'
+            with patch.dict('os.environ', {'NEXT_PUBLIC_SUPABASE_ANON_KEY': 'synthetic-anon'}), patch('worker.http', return_value=(b'{"access_token":"access","refresh_token":"rotated-token"}', {})) as request:
+                client = Haven(state)
+            self.assertEqual(client.token, 'access')
+            self.assertEqual(request.call_count, 1)
+            self.assertEqual(state.data['haven_refresh_token'], 'rotated-token')
+            self.assertEqual(read_health(directory)['haven']['state'], 'connected')
+            state.lock.close()
+
+    def test_malformed_auth_response_does_not_disable_saved_credential(self):
+        with tempfile.TemporaryDirectory() as directory:
+            os.chmod(directory, 0o700)
+            state = State(directory)
+            state.data['haven_refresh_token'] = 'still-retryable'
+            state.save()
+            with patch.dict('os.environ', {'NEXT_PUBLIC_SUPABASE_ANON_KEY': 'synthetic-anon'}), patch('worker.http', return_value=(b'{}', {})) as request:
+                for _ in range(2):
+                    with self.assertRaisesRegex(BridgeError, 'saved credential was not disabled'):
+                        Haven(state)
+            self.assertEqual(request.call_count, 2)
+            self.assertNotIn('haven_connection', state.data)
+            state.lock.close()
+
+    def test_expired_google_session_requires_reconnect_without_discarding_pending_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            os.chmod(directory, 0o700)
+            state = State(directory)
+            state.data['google_pending'] = {'file_id': 'production', 'bytes': 'retained'}
+            state.save()
+            environment = {'GOOGLE_CLIENT_ID': 'client', 'GOOGLE_CLIENT_SECRET': 'secret', 'GOOGLE_REFRESH_TOKEN': 'expired-google'}
+            with patch.dict('os.environ', environment), patch('worker.http', side_effect=HttpFailure(400, 'google_auth')) as request:
+                with self.assertRaisesRegex(ReconnectRequired, 'Reconnect the Stand Up workbook account'):
+                    worker.Google(state)
+                self.assertEqual(request.call_count, 1)
+                with self.assertRaises(ReconnectRequired) as repeated:
+                    worker.Google(state)
+                self.assertTrue(repeated.exception.suppressed)
+                self.assertEqual(request.call_count, 1)
+            health = read_health(directory)
+            self.assertTrue(health['google']['reconnect_required'])
+            self.assertEqual(health['google']['reason'], 'credential_expired_or_revoked')
+            self.assertTrue(health['google']['pending'])
+            self.assertNotIn('expired-google', json.dumps(health))
+            state.lock.close()
+
+    def test_health_record_is_redacted_and_carries_delivery_and_recovery_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            os.chmod(directory, 0o700)
+            state = State(directory)
+            state.data.update(
+                current_reporting_week='2026-09-14',
+                haven_refresh_token='secret-refresh',
+                haven_pending={'payload': {'values': {'census': 40}}},
+                google_pending={'bytes': 'secret-workbook'},
+                front_office_pending={'body': 'secret-signed-body'},
+                google_last_sync='2026-09-14T12:00:00+00:00',
+                front_office_last_published_at='2026-09-14T12:01:00+00:00',
+                front_office_last_receipt='receipt-1',
+                front_office_sequence=42,
+                front_office_rejection={'status': 409, 'sequence': 43},
+            )
+            state.save()
+            health = read_health(directory)
+            self.assertEqual(health['current_reporting_week'], '2026-09-14')
+            self.assertEqual(health['google']['last_synced_at'], '2026-09-14T12:00:00+00:00')
+            self.assertEqual(health['haven_to_front_office']['last_receipt'], 'receipt-1')
+            self.assertEqual(health['haven_to_front_office']['sequence'], 42)
+            self.assertEqual(health['haven_to_front_office']['rejection']['status'], 409)
+            self.assertEqual(health['recovery'], {'haven_pending': True, 'google_pending': True, 'front_office_pending': True})
+            rendered = json.dumps(health)
+            for secret in ('secret-refresh', 'secret-workbook', 'secret-signed-body', 'census'):
+                self.assertNotIn(secret, rendered)
+            state.lock.close()
+
+    def test_status_command_reads_health_without_facility_map_or_provider(self):
+        expected = {'schema_version': 1, 'state': 'healthy'}
+        with patch('sys.argv', ['worker.py', '--state-dir', '/unused', '--status']), patch('worker.read_health', return_value=expected) as health, patch('worker.http') as request, patch('builtins.print') as output:
+            worker.main()
+        health.assert_called_once_with('/unused')
+        request.assert_not_called()
+        self.assertEqual(json.loads(output.call_args.args[0]), expected)
+
     def test_empty_week_initializes_immutable_baseline_then_recovers_file_edit(self):
         raw = fixture(blank=True)
         google, state = FakeGoogle(raw), FakeState()
@@ -325,6 +442,20 @@ class WorkerTests(unittest.TestCase):
         outcomes, failures = run_lanes(failed_google, lambda: 'accepted')
         self.assertEqual(outcomes, {'google': 'failed', 'front_office': 'accepted'})
         self.assertEqual(len(failures), 1)
+
+    def test_lane_outcomes_are_durable_without_discarding_pending_recovery(self):
+        state = FakeState({'baselines': {}, 'google_pending': {'bytes': 'retained'}})
+        outcomes, failures = run_lanes(lambda: (_ for _ in ()).throw(BridgeError('Drive unavailable')), lambda: 'accepted', state=state)
+        self.assertEqual(outcomes, {'google': 'failed', 'front_office': 'accepted'})
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(state.data['google_run']['state'], 'failed')
+        self.assertEqual(state.data['front_office_run']['state'], 'accepted')
+        self.assertIn('google_pending', state.data)
+        self.assertGreaterEqual(state.saves, 2)
+
+    def test_reconnect_failure_has_machine_readable_error_code(self):
+        _, failures = run_lanes(lambda: (_ for _ in ()).throw(ReconnectRequired('google', 'reconnect', suppressed=True)))
+        self.assertEqual(failures, [{'lane': 'google', 'error': 'reconnect', 'error_code': 'google_reconnect_required'}])
 
     def test_sunday_and_monday_eastern(self):
         self.assertEqual(reporting_week(datetime(2026, 9, 13, 23, tzinfo=timezone.utc)), date(2026, 9, 14))
@@ -561,6 +692,10 @@ class WorkerTests(unittest.TestCase):
             client.resume()
         self.assertNotIn('haven_pending', state.data)
         self.assertEqual(state.data['last_command_rejection']['status'], 409)
+        state.data['haven_pending'] = {'action': 'commit_recovery', 'payload': {'preview_id': 'fresh'}}
+        client.command = lambda *_: {'status': 'applied'}
+        self.assertEqual(client.resume(), {'status': 'applied'})
+        self.assertNotIn('last_command_rejection', state.data)
 
 
 if __name__ == '__main__':
