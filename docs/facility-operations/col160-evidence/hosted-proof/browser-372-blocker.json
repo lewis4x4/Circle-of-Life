@@ -1,0 +1,29 @@
+{
+  "at": "2026-09-14T02:53:20.990061+00:00",
+  "sourceSha": "1367d6c58c71bf4dfb5627d7c820deb764cb3f0e",
+  "target": "iwcnajanvjvynolltflw",
+  "result": "FAIL",
+  "stage": "browser-proof.mjs deterministic409 injection (PLAN.md step 5)",
+  "claim": "POST /api/admin/operations/corporate-deliverables with an obsolete or unknown expected_revision does not return a prompt deterministic 409. It blocks on a row lock, returns 200 after 30s-120s+, and commits nothing.",
+  "notIntroducedBy372": "Migration 372 changes only haven.corporate_meeting_projection (expectation:=nullif(site->'expectation','null'::jsonb)). The revision-conflict path belongs to 371's corporate_deliverable_command. This is a pre-existing 371 behaviour, first reachable now that the corrected projector lets the HTTP proof complete and the browser proof run for the first time.",
+  "evidence": {
+    "browserHarness": "browser-report.json: page.waitForResponse timeout 30000ms at browser-proof.mjs:49; app logged POST 200 in 29.7s, not 409; 3 history pages loaded, taskless FPC visible, 0 console/page/http errors",
+    "notAPlaywrightArtifact": "A direct HTTP POST with a correct Content-Length and the same bogus expected_revision also blocked, returning 200 in 2.0min",
+    "lockEvidence": "pg_stat_activity showed two haven.corporate_deliverable_command backends (p_task/p_request_key/p_action/p_payload) active 185s and 438s, each pg_blocking_pids the other",
+    "committedNothing": "browser request_key e4ad4cf3-a493-4491-b7ca-4777a84626ab absent from haven.corporate_deliverable_requests; versions=4 and events=66 unchanged; last request row 02:43:13Z predates every failed attempt"
+  },
+  "stagingStateAfter": {
+    "ledger_count": 375,
+    "sha_371_unchanged": true,
+    "has_372": true,
+    "versions": 4,
+    "events": 66,
+    "duplicates": 0
+  },
+  "recoveryPerformed": "Two stuck backends cancelled (pg_cancel_backend, rollback). Fixture retired via fixture.py cleanup (actors banned/inactive, grants revoked, sites/entity/org retired, synthetic source and audit retained). Owned 4360 listener closed and absence recorded.",
+  "notRun": [
+    "http-proof.py deny (PLAN.md step 6)"
+  ],
+  "cannotFixInThisSlice": "browser-proof.mjs is inside the protected source manifest, so editing it would invalidate the binding, the exact-source gate and the independent review. A server-side fix would require a new migration beyond the reviewed 372-only scope.",
+  "boundaries": "No production, provider, email, Front Office receiver, live schedule, staff or operating acceptance was performed or claimed. COL-160 is NOT complete."
+}

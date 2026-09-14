@@ -1,8 +1,8 @@
 {
   "result": "PASS",
   "target": "iwcnajanvjvynolltflw",
-  "sourceSha": "0d2cfa8004cf50f76ea3e21892fc30afdd64bf48",
-  "migration_sha256": "fe88a2a0e79247b4664d4712d682f866d9fcdb6ca2465056ed9e7e186f89d5d5",
+  "sourceSha": "1367d6c58c71bf4dfb5627d7c820deb764cb3f0e",
+  "migration_sha256": "5bab09edc15611ec19382ac702a652740e18388ac31ce6d9bfe8a0d2b77ae42f",
   "project": {
     "id": "iwcnajanvjvynolltflw",
     "name": "Haven HFO Staging",
@@ -33,8 +33,16 @@
       "anon_denied": true,
       "service_denied": true,
       "public_denied": true
+    },
+    "haven.corporate_meeting_projection(jsonb)": {
+      "security_definer": true,
+      "fixed_empty_search_path": true,
+      "authenticated_denied": true,
+      "anon_denied": true,
+      "service_denied": true,
+      "public_denied": true
     }
   },
-  "at": "2026-09-13T21:26:40.446168+00:00",
-  "scope": "Staging additive371 only; no rule publication or operating acceptance"
+  "at": "2026-09-14T02:35:32.913846+00:00",
+  "scope": "Staging private projector correction372 only; original371 ledger/source and failed fixture immutable history retained; no rule publication or operating acceptance"
 }
