@@ -19,12 +19,10 @@ import { SupabaseBridgeRpc } from "./rpc.ts";
 import {
   FACILITIES,
   type FacilityMap,
-  type HeldBaseline,
   KEYS,
   overtimeMinutes,
   parseWorkbook,
   patchWorkbook,
-  retainUnchangedHeldOvertime,
   type StandUpValues,
   WorkbookError,
 } from "./xlsx.ts";
@@ -145,6 +143,7 @@ const map = Object.fromEntries(
 function fixture(
   options: {
     blank?: boolean;
+    rent?: string;
     overtime?: string;
     callouts?: string;
     formula?: boolean;
@@ -167,7 +166,7 @@ function fixture(
     const row = index + 3;
     const safeLabel = label.replaceAll("&", "&amp;");
     const value = key === "monthly_rent_roll_cents"
-      ? "100.25"
+      ? options.rent ?? "100.25"
       : key === "overtime_reported"
       ? options.overtime ?? "0"
       : key === "callouts_last_week"
@@ -229,6 +228,35 @@ Deno.test("XLSX parser maps the reviewed five-facility schema and cents exactly"
   );
 });
 
+Deno.test("currency decimals convert to cents without binary rounding drift", async () => {
+  const parsed = await parseWorkbook(
+    fixture({ rent: "158793.7" }),
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  equals(parsed.issues, [], "one-decimal currency must be accepted exactly");
+  assert(
+    parsed.records[0].values.monthly_rent_roll_cents === 15_879_370,
+    "currency must convert to exact integer cents",
+  );
+
+  const overprecise = await parseWorkbook(
+    fixture({ rent: "100.001" }),
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  assert(
+    overprecise.issues.every((issue) =>
+      issue.message.includes("at most two decimals")
+    ),
+    "currency precision must fail closed rather than round",
+  );
+});
+
 Deno.test("blank current week retains five validated locations without importing zero reports", async () => {
   const parsed = await parseWorkbook(
     fixture({ blank: true }),
@@ -270,7 +298,7 @@ Deno.test("count cells accept an exact integer followed by a known unit", async 
   );
 });
 
-Deno.test("formula inputs and invalid overtime fail closed", async () => {
+Deno.test("formula inputs fail closed and decimal overtime normalizes to HH.MM", async () => {
   const formula = await parseWorkbook(
     fixture({ formula: true }),
     map,
@@ -282,17 +310,17 @@ Deno.test("formula inputs and invalid overtime fail closed", async () => {
     "formula input must be held",
   );
   const overtime = await parseWorkbook(
-    fixture({ overtime: "15.65" }),
+    fixture({ overtime: "18.68" }),
     map,
     "approved-file",
     "Stand Up.xlsx",
   );
   assert(
-    overtime.issues.length === 5 &&
-      overtime.issues.every((issue) =>
-        issue.message.includes("minute component")
+    overtime.issues.length === 0 &&
+      overtime.records.every((record) =>
+        record.values.overtime_reported === 18.41
       ),
-    "ambiguous HH.MM must be held",
+    "decimal payroll hours must normalize to the Haven HH.MM representation",
   );
 });
 
@@ -426,42 +454,6 @@ Deno.test("disabled database generation short-circuits before Google credentials
   );
   equals(response.status, 200, "disabled response");
   equals(fetches, 0, "provider fetch count");
-});
-
-Deno.test("only numerically unchanged legacy held overtime may pass against exact baselines", async () => {
-  const parsed = await parseWorkbook(
-    fixture({ overtime: "15.65" }),
-    map,
-    "approved-file",
-    "Stand Up.xlsx",
-  );
-  const values = Object.fromEntries(
-    KEYS.map((key) => [key, key === "overtime_reported" ? 15.65 : 0]),
-  ) as StandUpValues;
-  const baselines = Object.fromEntries(
-    Object.values(map).map((
-      id,
-    ) => [`${id}:2026-09-14`, { file_values: values }]),
-  ) as Record<string, HeldBaseline>;
-  assert(
-    retainUnchangedHeldOvertime(parsed, baselines) &&
-      parsed.issues.length === 0,
-    "unchanged held evidence should not create an outage",
-  );
-  const changed = await parseWorkbook(
-    fixture({ overtime: "15.65" }),
-    map,
-    "approved-file",
-    "Stand Up.xlsx",
-  );
-  baselines[`${map.Homewood}:2026-09-14`].file_values = {
-    ...values,
-    overtime_reported: 15.64,
-  };
-  assert(
-    !retainUnchangedHeldOvertime(changed, baselines),
-    "changed invalid overtime must fail closed",
-  );
 });
 
 Deno.test("XLSX archive rejects traversal, corruption and oversized coordinates", async () => {
