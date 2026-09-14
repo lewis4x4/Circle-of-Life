@@ -598,6 +598,26 @@ export function overtimeMinutes(value: number | null): number | null {
   return total;
 }
 
+function decimalHoursToHhMm(text: string): number {
+  const decimal = /^(?:(\d+)(?:\.(\d{0,2}))?|\.(\d{1,2}))$/.exec(text);
+  if (!decimal) {
+    throw new WorkbookError(
+      "Overtime decimal hours require at most two decimal places",
+    );
+  }
+  const hours = Number(decimal[1] ?? "0");
+  const hundredths = Number(
+    (decimal[2] ?? decimal[3] ?? "").padEnd(2, "0"),
+  );
+  const totalMinutes = Math.round((hours * 100 + hundredths) * 60 / 100);
+  if (totalMinutes > 2_147_483_647) {
+    throw new WorkbookError("Value exceeds supported numeric bound");
+  }
+  const hhMm = Math.trunc(totalMinutes / 60) + (totalMinutes % 60) / 100;
+  overtimeMinutes(hhMm);
+  return hhMm;
+}
+
 const COUNT_WITH_UNIT = new Map<StandUpKey, RegExp>([
   ["current_total_census", /^(\d+)\s*(?:residents?|people|persons?)$/i],
   ["sp_female_beds_open", /^(\d+)\s*beds?$/i],
@@ -642,18 +662,29 @@ function cellNumber(
   if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) {
     throw new WorkbookError("Expected numeric value");
   }
-  let number = Number(text);
+  let number: number;
+  if (key.endsWith("_cents")) {
+    const currency = /^(?:(\d+)(?:\.(\d{0,2}))?|\.(\d{1,2}))$/.exec(text);
+    if (!currency) {
+      throw new WorkbookError("Cents require at most two decimals");
+    }
+    const dollars = Number(currency[1] ?? "0");
+    const cents = Number((currency[2] ?? currency[3] ?? "").padEnd(2, "0"));
+    number = dollars * 100 + cents;
+  } else if (key === "overtime_reported") {
+    number = decimalHoursToHhMm(text);
+  } else {
+    number = Number(text);
+  }
   if (!Number.isFinite(number) || number < 0) {
     throw new WorkbookError("Value must be finite and nonnegative");
   }
-  if (key.endsWith("_cents")) number *= 100;
   if (key !== "overtime_reported" && !Number.isInteger(number)) {
     throw new WorkbookError("Count/cents must be whole numbers");
   }
   if (number > 2_147_483_647) {
     throw new WorkbookError("Value exceeds supported numeric bound");
   }
-  if (key === "overtime_reported") overtimeMinutes(number);
   return number;
 }
 
@@ -896,32 +927,6 @@ export async function parseWorkbook(
 }
 
 export type HeldBaseline = { file_values: StandUpValues };
-export function retainUnchangedHeldOvertime(
-  parsed: ParsedWorkbook,
-  baselines: Record<string, HeldBaseline>,
-): boolean {
-  if (!parsed.issues.length) return false;
-  for (const issue of parsed.issues) {
-    if (
-      issue.code !== "invalid_input" ||
-      issue.message !== "Overtime minute component must be 00 through 59"
-    ) return false;
-    const identity = `${issue.facility_id}:${issue.week_start}`;
-    const retained = baselines[identity]?.file_values.overtime_reported;
-    if (
-      retained === undefined || retained === null ||
-      issue.raw_value !== retained
-    ) return false;
-    const record = parsed.records.find((candidate) =>
-      candidate.facility_id === issue.facility_id &&
-      candidate.week_start === issue.week_start
-    );
-    if (!record) return false;
-    record.values.overtime_reported = retained;
-  }
-  parsed.issues = [];
-  return true;
-}
 
 function cellPatchNumber(key: StandUpKey, value: number | null): string | null {
   if (value === null) return null;
@@ -930,8 +935,8 @@ function cellPatchNumber(key: StandUpKey, value: number | null): string | null {
     value > 2_147_483_647
   ) throw new WorkbookError("Invalid patch numeric bounds");
   if (key === "overtime_reported") {
-    overtimeMinutes(value);
-    return String(value);
+    const minutes = overtimeMinutes(value);
+    return (minutes! / 60).toFixed(2);
   }
   if (!Number.isSafeInteger(value)) {
     throw new WorkbookError("Invalid patch numeric bounds");

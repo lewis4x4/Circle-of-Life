@@ -8,12 +8,7 @@ import {
   refreshGoogleAccessToken,
 } from "./google.ts";
 import { type BridgeRpc, driveReceipt, SupabaseBridgeRpc } from "./rpc.ts";
-import {
-  parseWorkbook,
-  patchWorkbook,
-  retainUnchangedHeldOvertime,
-  WorkbookError,
-} from "./xlsx.ts";
+import { parseWorkbook, patchWorkbook, WorkbookError } from "./xlsx.ts";
 
 export type EnvReader = (name: string) => string | undefined;
 type Dependencies = {
@@ -188,10 +183,7 @@ export async function handleStandUpGoogle(
       "Stand Up.xlsx",
       [weekStart],
     );
-    if (
-      parsed.issues.length &&
-      !retainUnchangedHeldOvertime(parsed, context.baselines)
-    ) {
+    if (parsed.issues.length) {
       await rpc.recordFailure({
         workbook_id: workbookId,
         week_start: weekStart,
