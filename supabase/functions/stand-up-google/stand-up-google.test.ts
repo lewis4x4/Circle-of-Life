@@ -146,6 +146,7 @@ function fixture(
   options: {
     blank?: boolean;
     overtime?: string;
+    callouts?: string;
     formula?: boolean;
     week?: string;
     missingCell?: string;
@@ -169,15 +170,27 @@ function fixture(
       ? "100.25"
       : key === "overtime_reported"
       ? options.overtime ?? "0"
+      : key === "callouts_last_week"
+      ? options.callouts ?? "0"
       : "0";
     rows.push(
       `<row r="${row}"><c r="A${row}" t="inlineStr"><is><t>${safeLabel}</t></is></c>${
         "BCDEF".split("").filter((column) =>
           `${column}${row}` !== options.missingCell
         ).map((column) =>
-          `<c r="${column}${row}">${
-            options.formula && row === 3 ? "<f>1+1</f>" : ""
-          }${options.blank ? "" : `<v>${value}</v>`}</c>`
+          `<c r="${column}${row}"${
+            key === "callouts_last_week" && options.callouts &&
+              !/^\d+$/.test(options.callouts)
+              ? ' t="inlineStr"'
+              : ""
+          }>${options.formula && row === 3 ? "<f>1+1</f>" : ""}${
+            options.blank
+              ? ""
+              : key === "callouts_last_week" && options.callouts &&
+                  !/^\d+$/.test(options.callouts)
+              ? `<is><t>${value}</t></is>`
+              : `<v>${value}</v>`
+          }</c>`
         ).join("")
       }</row>`,
     );
@@ -228,6 +241,32 @@ Deno.test("blank current week retains five validated locations without importing
     parsed.records.length === 0 && Object.keys(parsed.locations).length === 5 &&
       parsed.issues.length === 0,
     "blank template must remain blank and writable",
+  );
+});
+
+Deno.test("count cells accept an exact integer followed by a known unit", async () => {
+  const parsed = await parseWorkbook(
+    fixture({ callouts: "3shifts" }),
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  equals(parsed.issues, [], "known count-unit notation must be accepted");
+  assert(
+    parsed.records[0].values.callouts_last_week === 3,
+    "the count must be preserved without its unit label",
+  );
+  const unknown = await parseWorkbook(
+    fixture({ callouts: "3days" }),
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  assert(
+    unknown.issues.every((issue) => issue.code === "invalid_input"),
+    "unknown text must still fail closed",
   );
 });
 

@@ -598,6 +598,26 @@ export function overtimeMinutes(value: number | null): number | null {
   return total;
 }
 
+const COUNT_WITH_UNIT = new Map<StandUpKey, RegExp>([
+  ["current_total_census", /^(\d+)\s*(?:residents?|people|persons?)$/i],
+  ["sp_female_beds_open", /^(\d+)\s*beds?$/i],
+  ["sp_male_beds_open", /^(\d+)\s*beds?$/i],
+  ["sp_flexible_beds_open", /^(\d+)\s*beds?$/i],
+  ["private_beds_open", /^(\d+)\s*beds?$/i],
+  ["admissions_expected", /^(\d+)\s*admissions?$/i],
+  [
+    "hospital_and_rehab_total",
+    /^(\d+)\s*(?:residents?|patients?|people|persons?)$/i,
+  ],
+  ["expected_discharges", /^(\d+)\s*discharges?$/i],
+  ["callouts_last_week", /^(\d+)\s*(?:call\s*outs?|shifts?)$/i],
+  ["terminations_last_week", /^(\d+)\s*terminations?$/i],
+  ["current_open_positions", /^(\d+)\s*positions?$/i],
+  ["tours_expected", /^(\d+)\s*tours?$/i],
+  ["provider_activities_expected", /^(\d+)\s*activities?$/i],
+  ["outreach_engagements", /^(\d+)\s*engagements?$/i],
+]);
+
 function cellNumber(
   cellValue: Cell | undefined,
   key: StandUpKey,
@@ -614,7 +634,11 @@ function cellNumber(
   if (typeof cellValue.value === "boolean" || cellValue.value instanceof Date) {
     throw new WorkbookError("Expected numeric value");
   }
-  const text = String(cellValue.value).trim();
+  let text = String(cellValue.value).trim();
+  if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) {
+    const countWithUnit = COUNT_WITH_UNIT.get(key)?.exec(text);
+    if (countWithUnit) text = countWithUnit[1];
+  }
   if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) {
     throw new WorkbookError("Expected numeric value");
   }
