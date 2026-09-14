@@ -1,14 +1,17 @@
 import base64
 import fcntl
 import hashlib
+import io
 import json
 import os
 import tempfile
 import unittest
+import zipfile
 from datetime import date, datetime, timezone
 from unittest.mock import patch, mock_open
+from xml.etree import ElementTree as ET
 
-from workbook import KEYS, parse_workbook, patch_workbook
+from workbook import KEYS, NS, parse_workbook, patch_workbook
 from worker import AggregateReader, BridgeError, Haven, HttpFailure, ReconnectRequired, State, auth_fingerprint, changed_prior_weeks, file_target, install_haven_credentials, publish_front_office, read_health, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
 from test_workbook import MAP, fixture
 import worker
@@ -569,6 +572,54 @@ class WorkerTests(unittest.TestCase):
         changed = patch_workbook(original, parsed, {identity: {**r['values'], 'current_total_census': 3}})
         with patch.dict('os.environ', {'STAND_UP_REHEARSAL_FILE_ID': 'rehearsal', 'STAND_UP_PRODUCTION_FILE_ID': 'production'}):
             self.assertEqual(changed_prior_weeks(state, FakeGoogle(changed), MAP, date(2026, 9, 14), 'rehearsal'), [date(2026, 9, 7)])
+
+    def test_rollover_does_not_block_on_unchanged_held_overtime(self):
+        original = fixture()
+        clean = parse_workbook(original, MAP, 'rehearsal', 'file.xlsx')
+        identity = MAP['Homewood'] + ':2026-09-07'
+        address = clean['locations'][identity]['cells']['overtime_reported']
+
+        def workbook_values(overtime, census='0'):
+            before, output = zipfile.ZipFile(io.BytesIO(original)), io.BytesIO()
+            with zipfile.ZipFile(output, 'w') as target:
+                for name in before.namelist():
+                    content = before.read(name)
+                    if name == clean['locations'][identity]['path']:
+                        root = ET.fromstring(content)
+                        cell = next(node for node in root.findall(f'.//{{{NS}}}c') if node.get('r') == address)
+                        cell.find(f'{{{NS}}}v').text = overtime
+                        census_address = clean['locations'][identity]['cells']['current_total_census']
+                        census_cell = next(node for node in root.findall(f'.//{{{NS}}}c') if node.get('r') == census_address)
+                        census_cell.find(f'{{{NS}}}v').text = census
+                        content = ET.tostring(root, encoding='utf-8', xml_declaration=True)
+                    target.writestr(name, content)
+            return output.getvalue()
+
+        baseline_values = {**clean['records'][0]['values'], 'overtime_reported': 15.65}
+        baselines = {record['facility_id'] + ':2026-09-07': {'baseline_id': 'r1-' + record['facility_id'], 'file_values': record['values']} for record in clean['records']}
+        baselines[identity] = {'baseline_id': 'r1', 'file_values': baseline_values}
+        state = FakeState({'baselines': baselines})
+        with patch.dict('os.environ', {'STAND_UP_REHEARSAL_FILE_ID': 'rehearsal', 'STAND_UP_PRODUCTION_FILE_ID': 'production'}):
+            self.assertEqual(changed_prior_weeks(state, FakeGoogle(workbook_values('15.65')), MAP, date(2026, 9, 14), 'rehearsal'), [])
+            with self.assertRaises(BridgeError):
+                changed_prior_weeks(state, FakeGoogle(workbook_values('15.75')), MAP, date(2026, 9, 14), 'rehearsal')
+
+            class Operator:
+                resolved = False
+                def command(self, action, payload):
+                    report_values = baselines[payload['facility_id'] + ':2026-09-07']['file_values']
+                    report = {'baseline_id': 'r2-' + payload['facility_id'], 'version': 2, 'values': report_values}
+                    if action == 'export': return report
+                    if action == 'find_recovery': return {'resolved_result': report if self.resolved else None}
+                    if action == 'preview_recovery': return {'preview_id': 'review', 'conflicts': ['current_total_census'], 'clears': []}
+                    raise AssertionError(action)
+
+            google, operator = FakeGoogle(workbook_values('15.65', '3')), Operator()
+            with self.assertRaisesRegex(BridgeError, 'conflict/clear review'):
+                synchronize(state, operator, google, MAP, date(2026, 9, 7), 'rehearsal', allow_unchanged_held_overtime=True)
+            operator.resolved = True
+            synchronize(state, operator, google, MAP, date(2026, 9, 7), 'rehearsal', allow_unchanged_held_overtime=True)
+            self.assertEqual(parse_workbook(google.body, MAP, 'rehearsal', 'file.xlsx')['issues'][0]['cell'], address)
 
     def test_google_failure_does_not_block_front_office(self):
         def failed_google():

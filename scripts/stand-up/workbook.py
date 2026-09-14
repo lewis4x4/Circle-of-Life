@@ -347,6 +347,13 @@ def patch_workbook(raw, parsed, updates):
                 if isinstance(value, bool) or not isinstance(value, (int, float)):
                     raise WorkbookError("Invalid patch number")
                 number = Decimal(str(value))
+                existing = cell.find(f"{{{NS}}}v")
+                if key == "overtime_reported" and existing is not None:
+                    try:
+                        if Decimal(existing.text) == number:
+                            continue  # Preserve an unchanged held legacy value while patching other fields.
+                    except (InvalidOperation, TypeError):
+                        pass
                 if not number.is_finite() or number < 0 or number > 2147483647 or (key != "overtime_reported" and number != number.to_integral_value()):
                     raise WorkbookError("Invalid patch numeric bounds")
                 if key == "overtime_reported":

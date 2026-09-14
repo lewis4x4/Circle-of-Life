@@ -23,10 +23,11 @@ import uuid
 import io
 import zipfile
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from workbook import FACILITIES, KEYS, MAX_BYTES, WorkbookError, parse_workbook, patch_workbook, overtime_minutes
+from workbook import FACILITIES, KEYS, MAX_BYTES, WorkbookError, col_index, parse_workbook, patch_workbook, read_sheets, overtime_minutes
 
 HAVEN = "https://manfqmasfqppukpobpld.supabase.co"
 FRONT_OFFICE = "https://wecsjfiituxlityaacba.supabase.co/functions/v1/ingest"
@@ -900,7 +901,7 @@ def probe_google(state, google, file_id):
     print(json.dumps({"provider_probe": "passed", "restoration": "verified"}))
 
 
-def synchronize(state, haven, google, mapping, week, mode, adopt=None):
+def synchronize(state, haven, google, mapping, week, mode, adopt=None, allow_unchanged_held_overtime=False):
     reject_history_state(state.data)
     file_id = file_target(mode)
     if state.data.get("file_id") not in (None, file_id):
@@ -910,7 +911,9 @@ def synchronize(state, haven, google, mapping, week, mode, adopt=None):
     recover_pending_google(state, google, file_id)
     raw, headers = google.download(file_id)
     parsed = parse_workbook(raw, mapping, file_id, "Stand Up.xlsx", weeks=[week.isoformat()])
-    if parsed["issues"]:
+    if parsed["issues"] and not (
+        allow_unchanged_held_overtime and retain_unchanged_held_overtime(parsed, raw, state.data["baselines"])
+    ):
         state.data["google_status"] = {"state": "mapping_required", "issues": parsed["issues"]}
         state.save()
         raise BridgeError("Workbook mapping has unresolved issues; no file write")
@@ -981,7 +984,7 @@ def changed_prior_weeks(state, google, mapping, current_week, mode):
     file_id = file_target(mode)
     raw, _ = google.download(file_id)
     parsed = parse_workbook(raw, mapping, file_id, "Stand Up.xlsx", weeks=weeks)
-    if parsed["issues"]:
+    if parsed["issues"] and not retain_unchanged_held_overtime(parsed, raw, state.data["baselines"]):
         raise BridgeError("A prior baseline week changed layout; review backlog before Google writes")
     incoming = {r["facility_id"] + ":" + r["week_start"]: r["values"] for r in parsed["records"]}
     changed = set()
@@ -994,6 +997,48 @@ def changed_prior_weeks(state, google, mapping, current_week, mode):
         if incoming.get(identity, dict.fromkeys(KEYS)) != baseline["file_values"]:
             changed.add(week)
     return [date.fromisoformat(week) for week in sorted(changed)]
+
+
+def retain_unchanged_held_overtime(parsed, raw, baselines):
+    """Allow a retained invalid HH.MM value only when it is numerically unchanged.
+
+    Older imports preserved ambiguous overtime such as 15.65 for human review. A
+    stricter parser must not turn that already-held evidence into a permanent
+    current-week outage. Any different invalid value, formula, layout issue, or
+    missing baseline still fails closed.
+    """
+    if not parsed["issues"]:
+        return False
+    sheets = {sheet["name"]: sheet for sheet in read_sheets(raw)}
+    records = {(record["facility_id"], record["week_start"]): record for record in parsed["records"]}
+    for issue in parsed["issues"]:
+        if (issue.get("code"), issue.get("message")) != (
+            "invalid_input", "Overtime minute component must be 00 through 59"
+        ):
+            return False
+        identity = issue.get("facility_id", "") + ":" + issue.get("week_start", "")
+        baseline = baselines.get(identity)
+        location = parsed["locations"].get(identity)
+        if not baseline or not location or location["cells"].get("overtime_reported") != issue.get("cell"):
+            return False
+        sheet = sheets.get(issue.get("sheet"))
+        if not sheet:
+            return False
+        col, row = col_index(issue["cell"])
+        cell = sheet["cells"].get((row, col))
+        retained = baseline["file_values"].get("overtime_reported")
+        try:
+            unchanged = cell and Decimal(str(cell["value"])) == Decimal(str(retained))
+        except (InvalidOperation, ValueError):
+            unchanged = False
+        if not unchanged:
+            return False
+        record = records.get((issue["facility_id"], issue["week_start"]))
+        if not record:
+            return False
+        record["values"]["overtime_reported"] = retained
+    parsed["issues"] = []
+    return True
 
 
 def main():
@@ -1079,7 +1124,7 @@ def main():
         google = Google(state)
         recover_pending_google(state, google, file_target(args.mode))
         for prior_week in changed_prior_weeks(state, google, mapping, week, args.mode):
-            synchronize(state, haven, google, mapping, prior_week, args.mode)
+            synchronize(state, haven, google, mapping, prior_week, args.mode, allow_unchanged_held_overtime=True)
         synchronize(state, haven, google, mapping, week, args.mode, args.adopt)
         return state.data.get("google_status", {}).get("state", "unknown")
     outcomes, failures = run_lanes(google_lane if args.google else None, (lambda: publish_front_office(state, haven.command("workspace", {}), mapping, week)) if args.publish else None, state=state)
