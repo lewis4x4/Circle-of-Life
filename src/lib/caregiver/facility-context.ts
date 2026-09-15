@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 import type { Database } from "@/types/database";
 
 export type CaregiverFacilityContext = { facilityId: string; organizationId: string; facilityName: string | null; timeZone: string };
@@ -23,6 +24,18 @@ export async function loadCaregiverFacilityOptions(supabase: SupabaseClient<Data
   return (facilities.data ?? []).map((row) => ({ facilityId: row.id, organizationId: row.organization_id, facilityName: row.name, timeZone: row.timezone?.trim() || "America/New_York" }));
 }
 
+/**
+ * The caregiver shift header stores its choice in session storage; the admin/app shell
+ * facility picker stores its choice in the facility store. Either counts as the working
+ * facility — both are preferences only, re-authorized by `selectWorkingFacility`.
+ */
+export function preferredFacilityId(userId: string, selectedFacilityId?: string | null): string | null {
+  const explicit = selectedFacilityId?.trim();
+  if (explicit) return explicit;
+  const shiftHeader = typeof window !== "undefined" ? sessionStorage.getItem(workingFacilityKey(userId)) : null;
+  return shiftHeader?.trim() || useFacilityStore.getState().selectedFacilityId;
+}
+
 export function selectWorkingFacility(options: CaregiverFacilityContext[], preferred: string | null): CaregiverFacilityContext | null {
   if (preferred) return options.find((option) => option.facilityId === preferred) ?? null;
   return options.length === 1 ? options[0] : null;
@@ -31,9 +44,8 @@ export function selectWorkingFacility(options: CaregiverFacilityContext[], prefe
 export async function loadCaregiverFacilityContextForUser(supabase: SupabaseClient<Database>, { userId, selectedFacilityId }: CaregiverFacilityContextInput): Promise<{ ok: true; ctx: CaregiverFacilityContext } | { ok: false; error: string }> {
   try {
     const options = await loadCaregiverFacilityOptions(supabase, userId);
-    const preferred = selectedFacilityId ?? (typeof window !== "undefined" ? sessionStorage.getItem(workingFacilityKey(userId)) : null);
-    const ctx = selectWorkingFacility(options, preferred);
-    if (!ctx) return { ok: false, error: options.length ? "Choose your working facility in the shift header before continuing." : "No active facility access is assigned to your account." };
+    const ctx = selectWorkingFacility(options, preferredFacilityId(userId, selectedFacilityId));
+    if (!ctx) return { ok: false, error: options.length ? "Choose your working facility in the header before continuing." : "No active facility access is assigned to your account." };
     return { ok: true, ctx };
   } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Working facility is unavailable." }; }
 }
