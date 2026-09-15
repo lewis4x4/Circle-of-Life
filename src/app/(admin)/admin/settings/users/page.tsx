@@ -7,6 +7,8 @@
 
 import Link from "next/link";
 import { useState, useCallback } from "react";
+import { UserDeactivateDialog } from "@/components/admin/users/UserDeactivateDialog";
+import { UserResetPasswordDialog } from "@/components/admin/users/UserResetPasswordDialog";
 import { UserListView } from "@/components/admin/users/UserListView";
 import { UserCreateDialog } from "@/components/admin/users/UserCreateDialog";
 import { UserEditSheet } from "@/components/admin/users/UserEditSheet";
@@ -18,6 +20,8 @@ export default function UserManagementPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeactivated, setShowDeactivated] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deactivateTarget, setDeactivateTarget] = useState<{ id: string; full_name: string } | null>(null);
+  const [resetTarget, setResetTarget] = useState<{ id: string; email: string } | null>(null);
 
   const handleUserCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -29,19 +33,8 @@ export default function UserManagementPage() {
     setSelectedUserId(null);
   }, []);
 
-  const handleDeactivate = useCallback(async (userId: string) => {
-    if (!confirm("Deactivate this user? They will lose access immediately.")) return;
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "Deactivated via admin UI" }),
-      });
-      if (!res.ok) throw new Error("Failed to deactivate");
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to deactivate user");
-    }
+  const handleDeactivateRequest = useCallback((user: { id: string; full_name: string }) => {
+    setDeactivateTarget(user);
   }, []);
 
   const handleReactivate = useCallback((userId: string) => {
@@ -90,8 +83,9 @@ export default function UserManagementPage() {
           showDeactivated={showDeactivated}
           onShowDeactivatedChange={setShowDeactivated}
           onSelectUser={setSelectedUserId}
-          onDeactivate={handleDeactivate}
+          onDeactivate={handleDeactivateRequest}
           onReactivate={handleReactivate}
+          onResetPassword={setResetTarget}
         />
 
         {/* Create Dialog */}
@@ -107,6 +101,29 @@ export default function UserManagementPage() {
             key={selectedUserId}
             userId={selectedUserId}
             onClose={handleUserUpdated}
+          />
+        )}
+
+        {deactivateTarget && (
+          <UserDeactivateDialog
+            userId={deactivateTarget.id}
+            userName={deactivateTarget.full_name}
+            open={Boolean(deactivateTarget)}
+            onOpenChange={(open) => {
+              if (!open) setDeactivateTarget(null);
+            }}
+            onDeactivated={() => setRefreshKey((k) => k + 1)}
+          />
+        )}
+
+        {resetTarget && (
+          <UserResetPasswordDialog
+            userId={resetTarget.id}
+            userEmail={resetTarget.email}
+            open={Boolean(resetTarget)}
+            onOpenChange={(open) => {
+              if (!open) setResetTarget(null);
+            }}
           />
         )}
       </PermissionGuard>

@@ -18,6 +18,11 @@ vi.mock("@/lib/auth/client-role-context", () => ({
   primeClientRoleContext: authMocks.primeClientRoleContext,
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin",
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
+}));
+
 import { HavenAuthProvider, useHavenAuth } from "./haven-auth-context";
 
 function deferred<T>() {

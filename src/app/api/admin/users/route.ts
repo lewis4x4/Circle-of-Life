@@ -12,13 +12,13 @@ import {
 import { canManageUser } from "@/lib/rbac";
 import type { Database } from "@/types/database";
 import { listUsersQuerySchema, createUserSchema } from "@/lib/validation/user-management";
+import { adminGetAuthSnapshotsByIds } from "@/lib/supabase/admin-client";
+import { ensureUserFacilityAccessGrants } from "@/lib/admin/ensure-user-facility-access";
 import {
-  adminInviteUser,
-  adminCreateUser,
-  adminFindUserByEmail,
-  adminGetAuthSnapshotsByIds,
-  adminUpdateUserAccessMetadata,
-} from "@/lib/supabase/admin-client";
+  provisionAuthUserForAdminCreate,
+  UserCreateProvisionError,
+} from "@/lib/admin/user-create-provision";
+import { mergeMustChangePasswordSetting } from "@/lib/auth/must-change-password";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 
 type UserProfileRow = Pick<
@@ -266,7 +266,14 @@ export async function POST(request: NextRequest) {
     .eq("email", data.email)
     .maybeSingle();
   if (existing) {
-    return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+    return NextResponse.json(
+      {
+        error:
+          "A user with this email already exists. Open them in User Management to edit facility access or reset their password.",
+        code: "profile_email_exists",
+      },
+      { status: 409 },
+    );
   }
 
   // Verify facilities belong to actor's org and are accessible
@@ -289,36 +296,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "One or more facilities not found or inaccessible" }, { status: 400 });
   }
 
-  // Create auth user
   let authUserId: string;
   let temporaryPassword: string | undefined;
-  let invitationSent = data.send_invite;
+  let invitationSent = false;
+  let provisionMethod: string | undefined;
   try {
-    const existingAuthUser = await adminFindUserByEmail(data.email);
-
-    if (existingAuthUser) {
-      authUserId = existingAuthUser.id;
-      invitationSent = false;
-      await adminUpdateUserAccessMetadata(existingAuthUser.id, {
-        app_role: data.app_role,
-        organization_id: actor.organization_id!,
-      });
-    } else if (data.send_invite) {
-      const result = await adminInviteUser(data.email, {
-        app_role: data.app_role,
-        organization_id: actor.organization_id!,
-      });
-      authUserId = result.id;
-    } else {
-      const result = await adminCreateUser(data.email, {
-        app_role: data.app_role,
-        organization_id: actor.organization_id!,
-        email_confirm: true,
-      });
-      authUserId = result.user.id;
-      temporaryPassword = result.temporary_password;
-    }
+    const provisioned = await provisionAuthUserForAdminCreate({
+      email: data.email,
+      app_role: data.app_role,
+      organization_id: actor.organization_id!,
+      send_invite: data.send_invite,
+    });
+    authUserId = provisioned.userId;
+    invitationSent = provisioned.invitation_sent;
+    provisionMethod = provisioned.provision_method;
+    temporaryPassword = provisioned.temporary_password;
   } catch (err) {
+    if (err instanceof UserCreateProvisionError) {
+      return NextResponse.json({ error: err.message, code: err.code }, { status: err.status });
+    }
     const message = err instanceof Error ? err.message : "Auth API failure";
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -334,6 +330,7 @@ export async function POST(request: NextRequest) {
     avatar_url: data.avatar_url ?? null,
     manager_user_id: data.manager_user_id ?? null,
     is_active: true,
+    settings: temporaryPassword ? mergeMustChangePasswordSetting({}, true) : {},
   };
 
   const { data: profile, error: insertErr } = await admin
@@ -345,7 +342,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
   }
 
-  // Create facility access entries
   const accessRows = data.facilities.map((f) => ({
     user_id: authUserId,
     facility_id: f.facility_id,
@@ -353,9 +349,18 @@ export async function POST(request: NextRequest) {
     is_primary: f.is_primary,
     granted_by: actor.id,
   }));
-  const { error: accessErr } = await admin.from("user_facility_access").insert(accessRows);
+  const { error: accessErr } = await ensureUserFacilityAccessGrants(admin, accessRows);
   if (accessErr) {
-    return NextResponse.json({ error: "Failed to assign facility access" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          "User profile was created, but facility access could not be assigned. Open this user in User Management to fix facility access.",
+        profile_created: true,
+        user_id: authUserId,
+        details: accessErr,
+      },
+      { status: 500 },
+    );
   }
 
   // Audit
@@ -374,6 +379,7 @@ export async function POST(request: NextRequest) {
     {
       data: profile,
       invitation_sent: invitationSent,
+      provision_method: provisionMethod,
       ...(temporaryPassword && { temporary_password: temporaryPassword }),
     },
     { status: 201 },

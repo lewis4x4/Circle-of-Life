@@ -12,8 +12,9 @@ interface UserListViewProps {
   showDeactivated: boolean;
   onShowDeactivatedChange: (v: boolean) => void;
   onSelectUser: (id: string) => void;
-  onDeactivate: (id: string) => void;
+  onDeactivate: (user: { id: string; full_name: string }) => void;
   onReactivate: (id: string) => void;
+  onResetPassword?: (user: { id: string; email: string }) => void;
 }
 
 export function UserListView({
@@ -22,6 +23,7 @@ export function UserListView({
   onSelectUser,
   onDeactivate,
   onReactivate,
+  onResetPassword,
 }: UserListViewProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -109,6 +111,7 @@ export function UserListView({
         onSelectUser={onSelectUser}
         onDeactivate={onDeactivate}
         onReactivate={onReactivate}
+        onResetPassword={onResetPassword}
       />
 
       {/* Pagination */}

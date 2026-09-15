@@ -17,6 +17,7 @@ import {
 import { createClient, withSupabaseAuthLockRetry } from "@/lib/supabase/client";
 import { startupMark } from "@/lib/observability/startup-performance";
 import type { Database } from "@/types/database";
+import { MustChangePasswordGate } from "@/components/auth/MustChangePasswordGate";
 
 export type HavenAuthContextValue = {
   user: User | null;
@@ -28,6 +29,7 @@ export type HavenAuthContextValue = {
   fullName: string | null;
   avatarUrl: string | null;
   email: string | null;
+  mustChangePassword: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
 };
@@ -45,6 +47,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const [orgName, setOrgName] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const loadingRef = useRef(false);
   const loadGenerationRef = useRef(0);
@@ -75,6 +78,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         setOrgName(null);
         setFullName(null);
         setAvatarUrl(null);
+        setMustChangePassword(false);
         return;
       }
 
@@ -102,6 +106,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         avatar_url?: unknown;
         organization_name?: unknown;
         is_managed?: unknown;
+        must_change_password?: unknown;
       } | null;
       if (
         actorError ||
@@ -117,6 +122,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         setOrgName(null);
         setFullName(null);
         setAvatarUrl(null);
+        setMustChangePassword(false);
         return;
       }
 
@@ -129,6 +135,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       setOrgName(typeof actor.organization_name === "string" ? actor.organization_name : null);
       setFullName(typeof actor.full_name === "string" ? actor.full_name : null);
       setAvatarUrl(typeof actor.avatar_url === "string" ? actor.avatar_url : null);
+      setMustChangePassword(actor.must_change_password === true);
       if (actor.is_managed !== false) {
         primeClientRoleContext(supabase, {
           userId: user.id,
@@ -147,6 +154,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       setOrgName(null);
       setFullName(null);
       setAvatarUrl(null);
+      setMustChangePassword(false);
     } finally {
       if (generation === loadGenerationRef.current) {
         startupMark("auth-ready");
@@ -192,13 +200,18 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       fullName,
       avatarUrl,
       email: user?.email ?? null,
+      mustChangePassword,
       loading,
       refresh: load,
     }),
-    [user, session, appRole, organizationId, orgName, fullName, avatarUrl, loading, load],
+    [user, session, appRole, organizationId, orgName, fullName, avatarUrl, mustChangePassword, loading, load],
   );
 
-  return <HavenAuthContext.Provider value={value}>{children}</HavenAuthContext.Provider>;
+  return (
+    <HavenAuthContext.Provider value={value}>
+      <MustChangePasswordGate>{children}</MustChangePasswordGate>
+    </HavenAuthContext.Provider>
+  );
 }
 
 export function useHavenAuth(): HavenAuthContextValue {
