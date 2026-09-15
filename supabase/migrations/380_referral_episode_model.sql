@@ -24,7 +24,7 @@ AS $function$
   SELECT pg_catalog.encode(
     pg_catalog.sha256(
       pg_catalog.convert_to(
-        pg_catalog.concat_ws(':', pg_catalog.clock_timestamp()::text, public.gen_random_uuid()::text),
+        pg_catalog.concat_ws(':', pg_catalog.clock_timestamp()::text, pg_catalog.gen_random_uuid()::text),
         'UTF8'
       )
     ),
@@ -45,7 +45,7 @@ REVOKE ALL ON FUNCTION haven.referral_revision(), haven.referral_empty_revision(
   FROM PUBLIC, anon, authenticated, service_role;
 
 CREATE TABLE public.referral_people (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   first_name text NOT NULL CHECK (pg_catalog.btrim(first_name) <> ''),
   last_name text NOT NULL CHECK (pg_catalog.btrim(last_name) <> ''),
@@ -65,7 +65,7 @@ CREATE INDEX idx_referral_people_org_name
   WHERE deleted_at IS NULL;
 
 CREATE TABLE public.referral_opportunities (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   person_id uuid NOT NULL REFERENCES public.referral_people(id),
   state text NOT NULL DEFAULT 'open',
@@ -89,7 +89,7 @@ CREATE INDEX idx_referral_opportunities_person
   WHERE deleted_at IS NULL;
 
 CREATE TABLE public.referral_facility_considerations (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   opportunity_id uuid NOT NULL REFERENCES public.referral_opportunities(id),
   facility_id uuid NOT NULL REFERENCES public.facilities(id),
@@ -239,7 +239,7 @@ CREATE INDEX idx_referral_leads_next_action
   WHERE deleted_at IS NULL AND next_action IS NOT NULL AND work_state <> 'closed';
 
 CREATE TABLE public.referral_contacts (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   first_name text NOT NULL CHECK (pg_catalog.btrim(first_name) <> ''),
   last_name text NOT NULL CHECK (pg_catalog.btrim(last_name) <> ''),
@@ -262,7 +262,7 @@ CREATE INDEX idx_referral_contacts_org_name
   WHERE deleted_at IS NULL;
 
 CREATE TABLE public.referral_person_contacts (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   person_id uuid NOT NULL REFERENCES public.referral_people(id),
   contact_id uuid NOT NULL REFERENCES public.referral_contacts(id),
@@ -287,7 +287,7 @@ CREATE INDEX idx_referral_person_contacts_episode
   WHERE deleted_at IS NULL;
 
 CREATE TABLE public.referral_contact_permissions (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   person_contact_id uuid NOT NULL REFERENCES public.referral_person_contacts(id),
   channel public.referral_contact_channel NOT NULL,
@@ -304,7 +304,7 @@ CREATE TABLE public.referral_contact_permissions (
 );
 
 CREATE TABLE public.referral_outcome_reason_drafts (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   proposed_code text NOT NULL CHECK (pg_catalog.btrim(proposed_code) <> ''),
   proposed_label text NOT NULL CHECK (pg_catalog.btrim(proposed_label) <> ''),
@@ -343,7 +343,7 @@ INSERT INTO public.referral_status_compatibility (
   ('merged', 'superseded', true, false, 'Legacy duplicate marker; reviewed identity history is separate.');
 
 CREATE TABLE public.referral_episode_events (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   facility_id uuid NOT NULL REFERENCES public.facilities(id),
   referral_lead_id uuid NOT NULL REFERENCES public.referral_leads(id),
@@ -391,7 +391,7 @@ CREATE INDEX idx_referral_episode_events_effective
   ON public.referral_episode_events (facility_id, effective_date, effective_at, recorded_at);
 
 CREATE TABLE public.referral_identity_corrections (
-  id uuid PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   facility_id uuid NOT NULL REFERENCES public.facilities(id),
   referral_lead_id uuid NOT NULL REFERENCES public.referral_leads(id),
@@ -1619,7 +1619,7 @@ DECLARE
   v_opportunity_id uuid;
   v_existing_opportunity_id uuid;
   v_consideration_id uuid;
-  v_episode_id uuid := public.gen_random_uuid();
+  v_episode_id uuid := pg_catalog.gen_random_uuid();
   v_episode_sequence integer;
   v_first_name text;
   v_last_name text;
@@ -1761,9 +1761,9 @@ BEGIN
     IF v_first_name IS NULL OR v_last_name IS NULL THEN
       RAISE EXCEPTION 'Referral name is required' USING ERRCODE = '22023';
     END IF;
-    v_person_id := public.gen_random_uuid();
-    v_opportunity_id := public.gen_random_uuid();
-    v_consideration_id := public.gen_random_uuid();
+    v_person_id := pg_catalog.gen_random_uuid();
+    v_opportunity_id := pg_catalog.gen_random_uuid();
+    v_consideration_id := pg_catalog.gen_random_uuid();
 
     INSERT INTO public.referral_people (
       id, organization_id, first_name, last_name, preferred_name, date_of_birth,
@@ -1824,7 +1824,7 @@ BEGIN
       AND consideration.deleted_at IS NULL
     FOR UPDATE;
     IF NOT FOUND THEN
-      v_consideration_id := public.gen_random_uuid();
+      v_consideration_id := pg_catalog.gen_random_uuid();
       INSERT INTO public.referral_facility_considerations (
         id, organization_id, opportunity_id, facility_id, created_by, updated_by
       ) VALUES (
@@ -2465,8 +2465,8 @@ BEGIN
       RAISE EXCEPTION 'Contact name and relationship are required'
         USING ERRCODE = '22023';
     END IF;
-    v_contact_id := public.gen_random_uuid();
-    v_relationship_id := public.gen_random_uuid();
+    v_contact_id := pg_catalog.gen_random_uuid();
+    v_relationship_id := pg_catalog.gen_random_uuid();
     INSERT INTO public.referral_contacts (
       id, organization_id, first_name, last_name, phone, email,
       created_by, updated_by
@@ -2521,7 +2521,7 @@ BEGIN
        ) THEN
       RAISE EXCEPTION 'Referral contact is unavailable' USING ERRCODE = '42501';
     END IF;
-    v_relationship_id := public.gen_random_uuid();
+    v_relationship_id := pg_catalog.gen_random_uuid();
     BEGIN
       INSERT INTO public.referral_person_contacts (
         id, organization_id, person_id, contact_id, originating_referral_lead_id,
@@ -2609,7 +2609,7 @@ BEGIN
       RAISE EXCEPTION 'Current downstream reference review is required'
         USING ERRCODE = '40001';
     END IF;
-    v_correction_id := public.gen_random_uuid();
+    v_correction_id := pg_catalog.gen_random_uuid();
 
     IF p_command = 'identity_merge' THEN
       v_target_opportunity_revision := haven.referral_text(
@@ -2690,7 +2690,7 @@ BEGIN
         RAISE EXCEPTION 'Undo the active identity merge before splitting this referral'
           USING ERRCODE = '22023';
       END IF;
-      v_person_id := public.gen_random_uuid();
+      v_person_id := pg_catalog.gen_random_uuid();
       INSERT INTO public.referral_people (
         id, organization_id, first_name, last_name, preferred_name,
         date_of_birth, created_by, updated_by
@@ -3303,7 +3303,7 @@ DECLARE
 BEGIN
   PERFORM haven.activate_referral_command(true);
   v_reply := public.referral_episode_capture(
-    'compat-create:' || public.gen_random_uuid()::text,
+    'compat-create:' || pg_catalog.gen_random_uuid()::text,
     haven.referral_empty_revision(),
     pg_catalog.jsonb_strip_nulls(pg_catalog.jsonb_build_object(
       'facility_id', p_facility_id,
@@ -3355,7 +3355,7 @@ BEGIN
   PERFORM haven.activate_referral_command(true);
   v_reply := public.referral_episode_command(
     p_lead_id,
-    'compat-update:' || public.gen_random_uuid()::text,
+    'compat-update:' || pg_catalog.gen_random_uuid()::text,
     v_episode.episode_revision,
     'compatibility_update',
     p_patch || pg_catalog.jsonb_build_object('source_kind', 'system_compatibility')
@@ -3723,5 +3723,9 @@ COMMENT ON COLUMN public.referral_leads.owner_user_id IS
   'Current case owner, distinct from tour owner and source relationship owner.';
 COMMENT ON COLUMN public.referral_leads.follow_up_at IS
   'Required review time while waiting/review; overdue is evaluated at read time.';
+
+-- This migration adds ten tables, their views and their grants, so PostgREST
+-- answers 404/PGRST202 for every one of them until its schema cache is rebuilt.
+NOTIFY pgrst, 'reload schema';
 
 COMMIT;

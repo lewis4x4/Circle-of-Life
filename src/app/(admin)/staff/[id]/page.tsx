@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { StaffOffboardCard } from "@/components/staff/StaffOffboardCard";
 import { StaffProfileSections } from "@/components/staff/StaffProfileSections";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -26,6 +27,7 @@ import {
   STAFF_DETAIL_NO_CERTS_COPY,
   STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY,
 } from "@/lib/staff/staff-detail-display-copy";
+import { mapEmploymentToUiStatus, type StaffStatus } from "@/lib/staff/load-staff";
 import {
   buildStaffProfileSectionPatch,
   canEditStaffProfile,
@@ -38,7 +40,7 @@ import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 
 type StaffRoleUi = "nurse" | "caregiver" | "med_tech" | "admin";
-type StaffStatusUi = "active" | "on_leave" | "off_shift";
+type StaffStatusUi = StaffStatus;
 type CertificationStatus = "current" | "expiring_soon" | "expired";
 
 type SupabaseStaff = StaffProfileRow;
@@ -269,6 +271,8 @@ export default function AdminStaffDetailPage() {
         Employee file & onboarding
       </Link>
 
+      <StaffOffboardCard staff={staff} canEdit={canEditProfile} onStaffUpdated={setStaff} />
+
         <div className="grid gap-6 lg:grid-cols-2">
           <StaffProfileSections
             key={`${staff.id}-${staff.updated_at ?? ""}`}
@@ -369,11 +373,6 @@ function mapDbStaffRoleToUi(role: string): StaffRoleUi {
   return "admin";
 }
 
-function mapEmploymentToUiStatus(employment: string): StaffStatusUi {
-  if (employment === "on_leave") return "on_leave";
-  if (employment === "terminated" || employment === "suspended") return "off_shift";
-  return "active";
-}
 
 function aggregateCertStatus(
   certs: Array<{ status: string; expiration_date: string | null }>,
@@ -445,10 +444,10 @@ function StatusBadge({ status }: { status: StaffStatusUi }) {
       </Badge>
     );
   }
-  if (status === "off_shift") {
+  if (status === "inactive") {
     return (
       <Badge variant="outline" tone="none" className={RECORD_HEADER_CHIP}>
-        Off roster
+        Inactive
       </Badge>
     );
   }

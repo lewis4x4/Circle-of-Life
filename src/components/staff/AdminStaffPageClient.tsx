@@ -335,8 +335,8 @@ export function AdminStaffPageClient({
             options: [
               { value: "all", label: "All Statuses" },
               { value: "active", label: "Active" },
-              { value: "off_shift", label: "Off Shift" },
               { value: "on_leave", label: "On Leave" },
+              { value: "inactive", label: "Inactive" },
             ],
           },
           {
@@ -454,7 +454,7 @@ export function AdminStaffPageClient({
 
 /**
  * Healthy default = `active` → neutral pill + gray dot. Exceptions:
- *   `off_shift` → neutral (calm, no nag — not an exception, just not on)
+ *   `inactive`  → muted (employment ended; history stays on the roster)
  *   `on_leave`  → warning (operator attention needed for scheduling)
  *
  * Decorative-color rule: healthy "active" must NOT render green. Green is
@@ -464,8 +464,8 @@ function StaffStatusPill({ status }: { status: StaffStatus }) {
   switch (status) {
     case "on_leave":
       return <StatusPill tone="warning">On leave</StatusPill>;
-    case "off_shift":
-      return <StatusPill tone="muted">Off shift</StatusPill>;
+    case "inactive":
+      return <StatusPill tone="muted">Inactive</StatusPill>;
     case "active":
     default:
       return <StatusPill tone="muted">Active</StatusPill>;

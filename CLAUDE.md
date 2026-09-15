@@ -102,6 +102,8 @@ values ('NNN', 'name') on conflict (version) do nothing;
 
 Migrations applied outside the CLI land under a timestamp version rather than `NNN`, which is why 384, 385 and 387 are recorded as `20260914203602`, `20260914203613` and `20260915182400`. Read the ledger by name, not by `max(version)` — text ordering puts `2026…` below `383`.
 
+**Never schema-qualify an extension function with `public.`.** On a hosted Supabase project pgcrypto lives in `extensions`, so `public.gen_random_uuid()` is `42883: function does not exist` — which is how migration 380 failed hosted after replaying clean locally. Use the bare name (what the other ~128 migrations do; inside `SET search_path = ''` use `pg_catalog.` for built-ins like `gen_random_uuid`, or resolve the schema dynamically with `%I` the way `093` onward do for `crypt`/`gen_salt`). `scripts/pg-verify-stub.sql` now installs pgcrypto into `extensions` so the local replay reproduces this instead of hiding it.
+
 ### Edge Functions
 - `supabase/functions/<kebab-case>/` (Deno). Examples: `generate-emar-schedule`, `ar-aging-check`, `exec-alert-evaluator`, `process-referral-hl7-inbound`. Auth-first; secrets via env only; **no PHI in logs**. Shared code under `supabase/functions/_shared/`.
 

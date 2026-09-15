@@ -1,6 +1,30 @@
 -- Minimal Supabase-compatible stubs so Haven migrations apply on vanilla Postgres (local verify only).
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- pgcrypto lives in `extensions` on a hosted Supabase project, not in `public`.
+-- Installing it here without WITH SCHEMA put it in `public` and manufactured a
+-- `public.gen_random_uuid()` that production does not have, so migration 380
+-- replayed clean locally and then failed hosted with
+--   42883: function public.gen_random_uuid() does not exist.
+-- Mirror the hosted layout instead, so that class of bug fails here first.
+--
+-- Bare `gen_random_uuid()` is unaffected -- it is a pg_catalog built-in since
+-- PG13 and never came from pgcrypto. Bare `crypt()`/`gen_salt()` (033) keep
+-- resolving because `extensions` goes on the search_path below, which is also
+-- how they resolve on Supabase.
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
+-- Supabase puts `extensions` on the search_path for its roles. Set it three
+-- ways because the replay runners differ: one psql session for everything
+-- (SET), or a fresh session per migration file (ALTER ROLE / ALTER DATABASE).
+SET search_path = public, extensions;
+DO $do$
+BEGIN
+  EXECUTE format('ALTER DATABASE %I SET search_path = public, extensions', current_database());
+  EXECUTE format('ALTER ROLE %I IN DATABASE %I SET search_path = public, extensions',
+                 current_user, current_database());
+END
+$do$;
 
 -- Supabase Realtime ships a `supabase_realtime` publication; migrations may ADD TABLE to it.
 DO $do$
