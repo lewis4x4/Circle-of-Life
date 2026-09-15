@@ -35,6 +35,7 @@ function packet(overrides: Partial<CarePlanPrintPacket> = {}): CarePlanPrintPack
       },
     ],
     signature: { approvedAt: "2026-09-12T14:00:00.000Z", approverName: "Nurse Example", signatureData: "data:image/png;base64,AAAA" },
+    acknowledgements: [],
     printedAt: "2026-09-15T21:00:00.000Z",
     printedBy: "Printer Example",
     ...overrides,
@@ -68,6 +69,26 @@ describe("CarePlanPrintSheetPage", () => {
     expect(screen.getByAltText("Approver signature")).toBeTruthy();
     expect(screen.queryByText(CARE_PLAN_PRINT_DRAFT_BANNER)).toBeNull();
     expect(screen.getByText("Back to care plan").getAttribute("href")).toBe(`/admin/residents/${RESIDENT_ID}/care-plan`);
+    // Nothing acknowledged yet: the paper copy gets lines to sign on.
+    expect(screen.getByLabelText("Resident signature line")).toBeTruthy();
+    expect(screen.getByLabelText("Representative signature line")).toBeTruthy();
+  });
+
+  it("prints recorded acknowledgements instead of blank lines", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () =>
+        packet({
+          acknowledgements: [
+            { id: "a1", signerRole: "responsible_party", signerName: "Alice Example", relationship: "daughter", method: "in_person_signature", signatureData: "data:image/png;base64,BBBB", acknowledgedAt: "2026-09-13T15:00:00.000Z" },
+          ],
+        }),
+    });
+    render(<CarePlanPrintSheetPage />);
+
+    await waitFor(() => expect(screen.getByText("Responsible party · Alice Example (daughter)")).toBeTruthy());
+    expect(screen.getByAltText("Responsible party signature")).toBeTruthy();
+    expect(screen.queryByLabelText("Resident signature line")).toBeNull();
   });
 
   it("brands a draft as not in effect and says it is not signed", async () => {

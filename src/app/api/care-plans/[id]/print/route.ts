@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireCurrentApiActor } from "@/lib/auth/current-api-actor";
 import {
   buildCarePlanPrintPacket,
+  type CarePlanPrintAcknowledgementRow,
   type CarePlanPrintFacilityRow,
   type CarePlanPrintItemRow,
   type CarePlanPrintResidentRow,
@@ -75,7 +76,7 @@ export async function GET(
     return NextResponse.json({ error: "You do not have access to this care plan" }, { status: 403 });
   }
 
-  const [residentResult, facilityResult, itemsResult, approverResult, successorResult] = await Promise.all([
+  const [residentResult, facilityResult, itemsResult, approverResult, successorResult, acknowledgementResult] = await Promise.all([
     admin
       .from("residents")
       .select("id, first_name, last_name, date_of_birth, beds!fk_beds_resident ( bed_label, rooms ( room_number ) )")
@@ -115,10 +116,21 @@ export async function GET(
           .limit(1)
           .maybeSingle() as unknown as Promise<SingleResult<{ version: number | null }>>)
       : Promise.resolve<SingleResult<{ version: number | null }>>({ data: null, error: null }),
+    admin
+      .from("care_plan_acknowledgements")
+      .select("id, signer_role, signer_name, relationship_to_resident, method, signature_data, acknowledged_at")
+      .eq("care_plan_id", plan.id)
+      .is("deleted_at", null)
+      .order("acknowledged_at", { ascending: false }) as unknown as Promise<ListResult<CarePlanPrintAcknowledgementRow>>,
   ]);
 
   const firstError =
-    residentResult.error ?? facilityResult.error ?? itemsResult.error ?? approverResult.error ?? successorResult.error;
+    residentResult.error ??
+    facilityResult.error ??
+    itemsResult.error ??
+    approverResult.error ??
+    successorResult.error ??
+    acknowledgementResult.error;
   if (firstError) {
     logError("care-plans.print", firstError, { action: "load_packet", carePlanId });
     return NextResponse.json({ error: "Care plan could not be loaded for printing" }, { status: 500 });
@@ -136,6 +148,7 @@ export async function GET(
       ? formatUploadedByProfile(approverResult.data ?? { full_name: null, email: null })
       : null,
     supersededByVersion: successorResult.data?.version ?? null,
+    acknowledgements: acknowledgementResult.data ?? [],
     printedAt: new Date().toISOString(),
     printedBy: formatUploadedByProfile({
       full_name: actor.fullName,
