@@ -23,6 +23,7 @@ import {
 import { ResidentDetailTabStrip, type ResidentDetailHrefConfig } from "@/components/residents/ResidentDetailTabStrip";
 import { ResidentPresenceControl } from "@/components/residents/ResidentPresenceControl";
 import { HoldDeclineReturnButton } from "@/components/residents/HoldDeclineReturnButton";
+import { ResidentIntakeLinks } from "@/components/resident-intake";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -523,7 +524,9 @@ export function ResidentDetailOverviewClient({
                   Allergies
                 </p>
                 {detail.allergiesTokens.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground">NKDA / no known drug allergies documented</p>
+                  <p className="text-[13px] text-muted-foreground">
+                    {detail.allergyReviewedAt ? "No known drug allergies documented" : "Allergies not reviewed"}
+                  </p>
                 ) : (
                   <StatusPill tone="danger">{detail.allergiesTokens.map((t) => diagnosisDisplayTitle(t)).join("; ")}</StatusPill>
                 )}
@@ -632,6 +635,9 @@ export function ResidentDetailOverviewClient({
         </div>
 
         <div className="flex flex-col gap-4 lg:col-span-3">
+          <RecordDetailSection title="Packet reviews">
+            <ResidentIntakeLinks residentId={detail.id} compact />
+          </RecordDetailSection>
           <RecordDetailSection title="Location">
             <div className="space-y-4 text-[13px]">
               <div>
@@ -694,7 +700,9 @@ export function ResidentDetailOverviewClient({
             <div className="space-y-5 text-[13px]">
               <div>
                 <p className="text-muted-foreground mb-2 text-[12px] font-semibold">Diet order</p>
-                <p className="font-medium">{diagnosisDisplayTitle(detail.dietOrder ?? "") || "Regular"}</p>
+                <p className={cn("font-medium", !detail.dietOrder && "text-muted-foreground")}>
+                  {diagnosisDisplayTitle(detail.dietOrder ?? "") || "Not reviewed"}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground mb-2 text-[12px] font-semibold">Fall risk</p>

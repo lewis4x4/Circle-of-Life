@@ -120,7 +120,12 @@ export function polstMolstFriendly(status: string | null | undefined): string {
 
 export function ResidentFallRiskPresentation({ raw }: { raw: string | null }) {
   const v = (raw ?? "").trim().toLowerCase();
-  if (!v || v === "standard" || v === "normal" || v === "low") {
+  if (!v) {
+    return (
+      <span className="text-[13px] font-medium text-muted-foreground">Not reviewed</span>
+    );
+  }
+  if (v === "standard" || v === "normal" || v === "low") {
     return (
       <span className="text-[13px] font-medium tabular-nums text-muted-foreground">Standard baseline</span>
     );

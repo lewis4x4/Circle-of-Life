@@ -44,7 +44,9 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/reputation/replies/new`
 - `/admin/admissions` (Phase 4 Module 2 — `02-admissions-move-in.md`)
 - `/admin/admissions/new`
+- `/admin/admissions/new?tab=packet` (one bulk resident-packet upload entry; automatic or manual classification never writes without review)
 - `/admin/admissions/[id]`
+- `/admin/admissions/intake/[id]` (durable resident-record source, match, checklist, conflict-review, and approved-application workspace)
 - `/admin/discharge` (Phase 4 Module 3 — `05-discharge-transition.md`)
 - `/admin/discharge/new`
 - `/admin/discharge/[id]`

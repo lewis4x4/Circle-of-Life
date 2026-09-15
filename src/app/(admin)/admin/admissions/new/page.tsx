@@ -8,6 +8,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { ChevronDown, ChevronLeft, GripHorizontal, Info, Loader2, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
+import { ResidentRecordPacketStart } from "@/components/resident-intake";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -81,7 +82,7 @@ const TAB_QUERY = "tab";
 const LEGACY_TAB_QUERY = "origin";
 const RESIDENT_QUERY = "resident";
 
-type AdmissionOrigin = "inquiry" | "lead" | "direct";
+type AdmissionOrigin = "inquiry" | "lead" | "direct" | "packet";
 
 const OPTIONAL_LEAD_NONE = "__none__";
 const OPTIONAL_PAYER_NONE = "__payer_none__";
@@ -103,9 +104,16 @@ const INTAKE_PROGRAM_OPTIONS = [
 
 function normalizeAdmissionTab(tab: string | null, legacyOrigin: string | null): AdmissionOrigin {
   const next = typeof tab === "string" ? tab.trim() : "";
-  if (next === "inquiry" || next === "lead" || next === "direct") return next;
+  if (next === "inquiry" || next === "lead" || next === "direct" || next === "packet") return next;
   if (legacyOrigin === "lead" || legacyOrigin === "direct") return legacyOrigin;
   return "inquiry";
+}
+
+function originSafeUuid(value: string | null): string | null {
+  const candidate = value?.trim() ?? "";
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)
+    ? candidate
+    : null;
 }
 
 function todayYmdInZone(timeZone: string) {
@@ -360,6 +368,10 @@ function AdmissionsNewInner() {
   );
 
   const preselectedLeadId = searchParams.get("lead")?.trim() ?? "";
+  const packetResidentId = originSafeUuid(searchParams.get(RESIDENT_QUERY));
+  const packetAdmissionCaseId = originSafeUuid(searchParams.get("case"));
+  const packetIntakeId = originSafeUuid(searchParams.get("intake"));
+  const packetDocumentType = searchParams.get("document_type")?.trim() || null;
 
   const [origin, setOrigin] = useState<AdmissionOrigin>(() =>
     preselectedLeadId
@@ -803,7 +815,7 @@ function AdmissionsNewInner() {
   const intakeSummarySubject = useMemo(() => {
     const resident = residents.find((x) => x.id === residentId);
     const lead = leads.find((x) => x.id === referralLeadId);
-    return formatAdmissionsNewIntakeSummarySubject(origin, {
+    return formatAdmissionsNewIntakeSummarySubject(origin === "packet" ? "inquiry" : origin, {
       residentId,
       residentLabel: resident ? `${resident.last_name}, ${resident.first_name}` : null,
       leadId: referralLeadId,
@@ -987,6 +999,7 @@ function AdmissionsNewInner() {
   async function handleCreateCaseSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    if (origin === "packet") return;
     if (origin !== "direct") {
       await finalize("submit");
       return;
@@ -1233,7 +1246,10 @@ function AdmissionsNewInner() {
 
   const inquiryEmpty = origin === "inquiry" && residents.length === 0 && !loadingRefs;
   const leadEmpty = origin === "lead" && leads.length === 0 && !loadingRefs;
-  const showCaseDetails = origin === "direct" || (!inquiryEmpty && !leadEmpty);
+  const showCaseDetails =
+    origin === "direct" ||
+    (origin === "inquiry" && !inquiryEmpty) ||
+    (origin === "lead" && !leadEmpty);
 
   const directIntakeHref = useMemo(() => {
     const p = new URLSearchParams(searchParams.toString());
@@ -1334,6 +1350,7 @@ function AdmissionsNewInner() {
                 {pathTab("inquiry", "Existing inquiry", residents.length)}
                 {pathTab("lead", "Referral lead", leads.length)}
                 {pathTab("direct", "Direct admit", null)}
+                {pathTab("packet", "Upload packet", null)}
               </div>
             </div>
 
@@ -1445,6 +1462,17 @@ function AdmissionsNewInner() {
                 </>
               )}
             </div>
+          ) : null}
+
+          {origin === "packet" ? (
+            <ResidentRecordPacketStart
+              facilityId={selectedFacilityId}
+              facilityName={facilityDisplayName}
+              residentId={packetResidentId}
+              admissionCaseId={packetAdmissionCaseId}
+              existingIntakeId={packetIntakeId}
+              focusDocumentType={packetDocumentType}
+            />
           ) : null}
 
           {origin === "lead" ? (
@@ -2024,7 +2052,7 @@ function AdmissionsNewInner() {
           ) : null}
             </div>
 
-            <div className="sticky bottom-0 z-30 -mx-2 space-y-3 border-t border-border bg-background/95 px-2 py-4 shadow-[0_-10px_28px_-14px_rgba(0,0,0,0.18)] backdrop-blur supports-[backdrop-filter]:bg-background/90 sm:-mx-3 sm:rounded-b-lg sm:px-3">
+            {origin !== "packet" ? <div className="sticky bottom-0 z-30 -mx-2 space-y-3 border-t border-border bg-background/95 px-2 py-4 shadow-[0_-10px_28px_-14px_rgba(0,0,0,0.18)] backdrop-blur supports-[backdrop-filter]:bg-background/90 sm:-mx-3 sm:rounded-b-lg sm:px-3">
               <p className="text-[11px] text-muted-foreground" aria-live="polite">
                 Creating case for{" "}
                 <span className="font-medium text-foreground">{intakeSummarySubject}</span>
@@ -2137,7 +2165,7 @@ function AdmissionsNewInner() {
                 {submissionBlockers.join(" · ")}
               </p>
             ) : null}
-            </div>
+            </div> : null}
           </div>
 
           <aside
@@ -2180,16 +2208,23 @@ function AdmissionsNewInner() {
               </Link>
             </div>
             <div className="h-px w-full bg-border" aria-hidden />
-            <div className="space-y-2">
-              <p className="text-[12px] font-semibold text-foreground">Steps after case creation</p>
-              <ol className="list-decimal space-y-1.5 pl-4 text-[12px] text-muted-foreground">
-                <li>Reserve bed</li>
-                <li>Payer source</li>
-                <li>Family contacts</li>
-                <li>Initial care plan</li>
-              </ol>
-              <p className="text-[12px] text-muted-foreground">Typical time-to-complete: 25–40 min</p>
-            </div>
+            {origin === "packet" ? (
+              <div className="space-y-2">
+                <p className="text-[12px] font-semibold text-foreground">Packet review order</p>
+                <ol className="list-decimal space-y-1.5 pl-4 text-[12px] text-muted-foreground">
+                  <li>Confirm every document</li><li>Clear credential checks</li><li>Match the resident</li><li>Approve and apply facts</li>
+                </ol>
+                <p className="text-[12px] text-muted-foreground">Move-in and arrival remain separate.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-[12px] font-semibold text-foreground">Steps after case creation</p>
+                <ol className="list-decimal space-y-1.5 pl-4 text-[12px] text-muted-foreground">
+                  <li>Reserve bed</li><li>Payer source</li><li>Family contacts</li><li>Initial care plan</li>
+                </ol>
+                <p className="text-[12px] text-muted-foreground">Typical time-to-complete: 25–40 min</p>
+              </div>
+            )}
           </aside>
         </form>
       )}

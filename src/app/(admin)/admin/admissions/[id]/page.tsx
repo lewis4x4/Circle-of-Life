@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CalendarDays, Loader2 } from "lucide-react";
 
 import { AdmissionsHubNav } from "../admissions-hub-nav";
+import { ResidentIntakeLinks } from "@/components/resident-intake";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatColLabel } from "@/lib/col-labels";
 import { cn } from "@/lib/utils";
@@ -565,6 +566,13 @@ export default function AdminAdmissionCaseDetailPage() {
                 This case belongs to another facility. Switch the facility in the header to match.
               </div>
             )}
+
+            <RecordDetailSection
+              title="Resident packet reviews"
+              description="Admission documents stay available here after resident matching and review."
+            >
+              <ResidentIntakeLinks admissionCaseId={row.id} residentId={row.resident_id} />
+            </RecordDetailSection>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RecordDetailSection

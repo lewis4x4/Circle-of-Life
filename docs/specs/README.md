@@ -442,6 +442,8 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 
 #### Track E — Next roadmap DDL (after Tracks A–D and spec approval)
 
+**RRI-01 Resident Record Intake:** `RESIDENT-RECORD-INTAKE.md` defines the post-385 one-place admission packet upload, classification, resident match, missing/conflict review, and approved canonical resident-write workflow. Source completion does not authorize provider PHI processing, deployment, or Homewood acceptance.
+
 **Resident Assurance, Reporting, Exec v3, and onboarding migrations `096`–`109` are already in the repo** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109). Track E is for **what comes next**, using the current next free migration **`326`** and above (assign per spec when promoted).
 
 | Priority | Spec / theme | Notes |
