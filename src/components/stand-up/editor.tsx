@@ -179,8 +179,8 @@ export function StandUpEditor(props: Props) {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="font-medium"><span>{status.state}</span>{status.qualifier && <span> · {status.qualifier}</span>}</p>
-        <p className="mt-1 text-sm text-muted-foreground">{submissionEvidence(saved)}</p>
         <p className="mt-1 text-sm text-muted-foreground">{lastSaveLine(saved, props.userId)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{submissionEvidence(saved)}</p>
         {isLate && <p className="mt-1 text-sm">The 8:45 a.m. Haven submission target has passed; you can still finish or correct this report.</p>}
       </div>
       {prior && <Button variant="ghost" onClick={() => setHistory(value => !value)} aria-expanded={history}>Report history</Button>}
@@ -192,14 +192,16 @@ export function StandUpEditor(props: Props) {
     {history && <StandUpHistory reports={props.reports} facilityId={facility.id} facilityName={facility.name} />}
     {review && values ? <section aria-label="Review report" className="space-y-4 rounded border border-border p-5">
       <h3 ref={reviewHeading} tabIndex={-1} className="text-lg font-semibold outline-none">Review {facility.name} · {dateLabel(week)}</h3><p className="text-sm text-muted-foreground">Check the destination, period and all sixteen figures. Submission confirms your review; payroll verification is separate.</p>
-      <p className="text-sm text-muted-foreground">{lastSaveLine(saved, props.userId)} {submissionEvidence(saved)}</p>
+      {/* Last save and submission evidence are two facts; they stay on two lines here as they do at the top. */}
+      <p className="text-sm text-muted-foreground">{lastSaveLine(saved, props.userId)}</p>
+      <p className="text-sm text-muted-foreground">{submissionEvidence(saved)}</p>
       {missing.length > 0 && <p role="alert">Still needed: {missing.map(metric => metric.label).join(', ')}.</p>}
       {dirty && <p role="status" className="text-sm">Unsaved changes on this page are included when you submit.</p>}
       {/* Values stay grouped under the period they describe, so a forecast is
           never read as a result of the completed week. */}
       {SECTIONS.map(section => <div key={section.key} className="space-y-1">
         <h4 className="text-sm font-semibold">{section.label}</h4>
-        <p className="text-xs text-muted-foreground">{sectionPeriodLabel(section, week, asOf)}</p>
+        <p className="text-xs text-muted-foreground">{sectionPeriodLabel(section, week, asOf, !historical)}</p>
         <dl className="grid gap-x-8 sm:grid-cols-2">{sectionMetrics(section.key).map(metric => <div key={metric.key} className="flex justify-between gap-3 border-b border-border py-3 text-sm"><dt>{metric.label}</dt><dd className="whitespace-nowrap font-medium tabular-nums">{reviewDisplay(metric.key)}</dd></div>)}</dl>
       </div>)}
       {prior && <div className="space-y-1"><h4 className="text-sm font-semibold">Different from the previous report · {dateLabel(prior.week_start)}</h4>
@@ -209,7 +211,7 @@ export function StandUpEditor(props: Props) {
     </section> : <form noValidate id="stand-up-entry" className="space-y-5" onSubmit={event => { event.preventDefault(); void save('draft'); }}>
       <p className="text-sm text-muted-foreground">Leave a figure blank if it is not yet known. Enter 0 when there are none.{prior ? ` Previous figures come from the report for ${dateLabel(prior.week_start)}${prior.week_start !== shiftDay(week, -7) ? ', because the previous calendar week is missing' : ''}, and are not copied into this one.` : ''}</p>
       <SectionNav />
-      <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError} />
+      <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} open={!historical} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError} />
       {historical && correction && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
     </form>}
     <section aria-label="Save and submit report" className="sticky bottom-0 z-10 space-y-3 border-y border-border bg-background px-1 py-4 shadow-sm">

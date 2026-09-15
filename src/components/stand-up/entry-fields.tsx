@@ -24,9 +24,17 @@ export function SectionNav() {
   </nav>;
 }
 
-export function EntryQuestions({ fields, onChange, disabled, readOnly = false, week, prior, asOf, derived, overtimeError }: {
+/**
+ * Sticky chrome at both ends of the page: the shell's top bar and the save bar.
+ * Section jumps land below the top bar, and a focused input near the end of the
+ * form scrolls clear of the save bar instead of underneath it.
+ */
+const SECTION_SCROLL = 'scroll-mt-20';
+const INPUT_SCROLL = 'scroll-mb-48';
+
+export function EntryQuestions({ fields, onChange, disabled, readOnly = false, week, open = false, prior, asOf, derived, overtimeError }: {
   fields: EntryFields; onChange: (key: keyof EntryFields, value: string) => void; disabled: boolean; readOnly?: boolean;
-  week: string; prior?: StandUpReport; asOf?: string | null; derived: DerivedFigures | null; overtimeError?: OvertimeError;
+  week: string; open?: boolean; prior?: StandUpReport; asOf?: string | null; derived: DerivedFigures | null; overtimeError?: OvertimeError;
 }) {
   // A previous forecast is not evidence of what happened, so the reference label
   // says which kind of figure it is rather than repeating a bare date.
@@ -34,19 +42,19 @@ export function EntryQuestions({ fields, onChange, disabled, readOnly = false, w
   const reference = (key: MetricKey, period: string) => prior ? <span className="block text-xs text-muted-foreground">{referenceLabel(period)}: {fieldDisplay(prior, key)}</span> : null;
   return <div className="space-y-6">{SECTIONS.map((section, index) => {
     const metrics = sectionMetrics(section.key);
-    return <fieldset id={sectionDomId(section.key)} tabIndex={-1} disabled={disabled} key={section.key} className="space-y-3 border-t border-border pt-5 outline-none">
+    return <fieldset id={sectionDomId(section.key)} tabIndex={-1} disabled={disabled} key={section.key} className={`space-y-3 border-t border-border pt-5 outline-none ${SECTION_SCROLL}`}>
       <legend className="float-left flex w-full items-baseline gap-3"><span className="text-xs text-muted-foreground" aria-hidden="true">0{index + 1}</span><span className="font-semibold">{section.label}</span></legend>
-      <p className="clear-both text-sm font-medium">{sectionPeriodLabel(section, week, asOf)}</p>
+      <p className="clear-both text-sm font-medium">{sectionPeriodLabel(section, week, asOf, open)}</p>
       {section.period === 'expected' && <p className="text-xs text-muted-foreground">Enter what you expect. Any previous figure shown is what was forecast last week, not what happened.</p>}
       {SECTION_NOTES[section.key] && <p className="text-xs text-muted-foreground">{SECTION_NOTES[section.key]}</p>}
       <div className={`grid gap-x-5 gap-y-4 pt-1 ${metrics.length > 2 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
         {metrics.map(metric => metric.key === 'overtime_reported' ? <div key={metric.key} className="space-y-2">
           <p id="overtime-label" className="text-sm font-medium">Overtime last week</p><div role="group" aria-labelledby="overtime-label" className="grid max-w-sm grid-cols-2 gap-3">
-            <label htmlFor="overtime_hours" className="text-xs text-muted-foreground">Hours<Input id="overtime_hours" aria-label="Overtime hours" aria-invalid={overtimeError ? true : undefined} aria-describedby={overtimeError?.id} readOnly={readOnly} type="number" min="0" step="1" inputMode="numeric" value={fields.overtime_hours} onChange={e => onChange('overtime_hours', e.target.value)} className="mt-1 tabular-nums" /></label>
-            <label htmlFor="overtime_minutes" className="text-xs text-muted-foreground">Minutes<Input id="overtime_minutes" aria-label="Overtime minutes" aria-invalid={overtimeError ? true : undefined} aria-describedby={overtimeError?.id} readOnly={readOnly} type="number" min="0" max="59" step="1" inputMode="numeric" value={fields.overtime_minutes} onChange={e => onChange('overtime_minutes', e.target.value)} className="mt-1 tabular-nums" /></label>
+            <label htmlFor="overtime_hours" className="text-xs text-muted-foreground">Hours<Input id="overtime_hours" aria-label="Overtime hours" aria-invalid={overtimeError ? true : undefined} aria-describedby={overtimeError?.id} readOnly={readOnly} type="number" min="0" step="1" inputMode="numeric" value={fields.overtime_hours} onChange={e => onChange('overtime_hours', e.target.value)} className={`mt-1 tabular-nums ${INPUT_SCROLL}`} /></label>
+            <label htmlFor="overtime_minutes" className="text-xs text-muted-foreground">Minutes<Input id="overtime_minutes" aria-label="Overtime minutes" aria-invalid={overtimeError ? true : undefined} aria-describedby={overtimeError?.id} readOnly={readOnly} type="number" min="0" max="59" step="1" inputMode="numeric" value={fields.overtime_minutes} onChange={e => onChange('overtime_minutes', e.target.value)} className={`mt-1 tabular-nums ${INPUT_SCROLL}`} /></label>
           </div>{overtimeError && <p id={overtimeError.id} className="text-sm text-muted-foreground">{overtimeError.message}</p>}<p className="text-xs text-muted-foreground">{fieldHelp(metric.key)} For example: 17 hours, 15 minutes.</p>{reference(metric.key, section.period)}
         </div> : <label key={metric.key} htmlFor={metric.key} className="space-y-1.5 text-sm"><span className="block font-medium">{metric.label}{metric.key === 'monthly_rent_roll_cents' ? ' ($)' : ''}</span>
-          <Input id={metric.key} aria-label={`${metric.label}${metric.key === 'monthly_rent_roll_cents' ? ' ($)' : ''}`} readOnly={readOnly} type="number" min="0" step={metric.key === 'monthly_rent_roll_cents' ? '0.01' : '1'} inputMode={metric.key === 'monthly_rent_roll_cents' ? 'decimal' : 'numeric'} value={fields[metric.key]} onChange={e => onChange(metric.key, e.target.value)} className="h-10 tabular-nums" />
+          <Input id={metric.key} aria-label={`${metric.label}${metric.key === 'monthly_rent_roll_cents' ? ' ($)' : ''}`} readOnly={readOnly} type="number" min="0" step={metric.key === 'monthly_rent_roll_cents' ? '0.01' : '1'} inputMode={metric.key === 'monthly_rent_roll_cents' ? 'decimal' : 'numeric'} value={fields[metric.key]} onChange={e => onChange(metric.key, e.target.value)} className={`h-10 tabular-nums ${INPUT_SCROLL}`} />
           {metric.key === 'monthly_rent_roll_cents' && fields[metric.key] && Number.isFinite(Number(fields[metric.key])) && <span className="block text-xs text-muted-foreground">{metricDisplay(metric.key, Math.round(Number(fields[metric.key]) * 100))} per month</span>}
           <span className="block text-xs text-muted-foreground">{fieldHelp(metric.key)}</span>
           {reference(metric.key, section.period)}

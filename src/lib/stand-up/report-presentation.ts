@@ -7,11 +7,18 @@ import { METRICS, derivedValues, easternStamp, metricDisplay, reportState, type 
  * and any later surface say the same thing.
  */
 
-/** Current Haven status, plus the action it still needs from a person. */
+/**
+ * Current Haven status, plus the action it still needs from a person. Unsaved
+ * entries already make a report a draft, so the line never says "Not started"
+ * over figures the administrator is typing. A state that itself says "awaiting
+ * review" does not repeat the qualifier.
+ */
 export function reportStatus(report: StandUpReport | undefined, dirty = false): { state: string; qualifier: string | null } {
-  const state = dirty && (report?.last_submitted_at || report?.status === 'ready') ? 'Changes awaiting resubmission' : reportState(report)
+  const saved = reportState(report)
+  const state = dirty && (report?.last_submitted_at || report?.status === 'ready') ? 'Changes awaiting resubmission' : dirty && saved === 'Not started' ? 'Draft' : saved
   const populated = report ? derivedValues(report.values).completed_fields > 0 || dirty : dirty
-  return { state, qualifier: state !== 'Submitted' && populated ? 'Administrator review required' : null }
+  const reviewNeeded = populated && state !== 'Submitted' && state !== 'Imported, awaiting review'
+  return { state, qualifier: reviewNeeded ? 'Administrator review required' : null }
 }
 
 /**

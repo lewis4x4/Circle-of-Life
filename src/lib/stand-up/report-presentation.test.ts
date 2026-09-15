@@ -8,11 +8,17 @@ const populated = { ...emptyValues(), current_total_census: 34 }
 describe('Stand Up report presentation', () => {
  it('asks for administrator review whenever populated figures are not submitted', () => {
   expect(reportStatus(base({ values: populated, entry_origin: 'manual' }))).toEqual({ state: 'Draft', qualifier: 'Administrator review required' })
-  expect(reportStatus(base({ values: populated, entry_origin: 'imported' }))).toEqual({ state: 'Imported, awaiting review', qualifier: 'Administrator review required' })
+  // A connector revision carries no entry origin and reads as a draft that still needs a person.
+  expect(reportStatus(base({ values: populated }))).toEqual({ state: 'Draft', qualifier: 'Administrator review required' })
+  // The imported state already says it is awaiting review; the qualifier is not repeated.
+  expect(reportStatus(base({ values: populated, entry_origin: 'imported' }))).toEqual({ state: 'Imported, awaiting review', qualifier: null })
   expect(reportStatus(base({ values: populated, status: 'ready', last_submitted_at: '2026-09-14T12:40:00Z' }))).toEqual({ state: 'Submitted', qualifier: null })
   expect(reportStatus(base({ values: populated, status: 'ready', last_submitted_at: '2026-09-14T12:40:00Z' }, ), true)).toEqual({ state: 'Changes awaiting resubmission', qualifier: 'Administrator review required' })
   expect(reportStatus(base({ entry_origin: 'initialized' }))).toEqual({ state: 'Not started', qualifier: null })
   expect(reportStatus(undefined)).toEqual({ state: 'Not started', qualifier: null })
+  // Typing into a new report makes it a draft; "Not started" never sits over live entries.
+  expect(reportStatus(undefined, true)).toEqual({ state: 'Draft', qualifier: 'Administrator review required' })
+  expect(reportStatus(base({ entry_origin: 'initialized' }), true)).toEqual({ state: 'Draft', qualifier: 'Administrator review required' })
  })
  it('separates submission evidence from the last save and never invents a submission', () => {
   expect(submissionEvidence(base({ values: populated, last_submitted_at: '2026-09-14T12:40:00Z', status: 'ready' }))).toBe('Last submitted September 14 at 8:40 a.m. Eastern.')

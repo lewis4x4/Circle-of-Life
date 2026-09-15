@@ -318,7 +318,7 @@ describe('Stand Up report meaning', () => {
     await start(); await choose();
     expect(screen.getAllByText('Current snapshot · As of September 14 at 8:31 a.m. Eastern')).toHaveLength(2);
     expect(screen.getByText('Completed week · September 7–13, 2026')).toBeInTheDocument();
-    expect(screen.getAllByText('Expected this week · September 14–20, 2026')).toHaveLength(2);
+    expect(screen.getAllByText('Forecast week · September 14–20, 2026')).toHaveLength(2);
     const census = document.getElementById('stand-up-section-census')!;
     const admissions = document.getElementById('stand-up-section-admissions')!;
     expect(within(census as HTMLElement).getByLabelText('Residents at hospital or rehab')).toBeInTheDocument();
@@ -334,12 +334,25 @@ describe('Stand Up report meaning', () => {
     expect(within(bar).getByText('16/16 provided')).toBeInTheDocument();
     expect(within(bar).queryByText(/Average rent|Open beds/)).not.toBeInTheDocument();
   });
+  it('tells an open unsaved report when its snapshot time will be recorded, and a past report that none was', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ id: 'old', week_start: '2026-09-07', values: full(), source_as_of: null })] });
+    await start(); await choose();
+    expect(screen.getAllByText('Current snapshot · As of the time you save')).toHaveLength(2);
+    expect(screen.getByText('Not started')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
+    expect(screen.getAllByText('Current snapshot · As-of time not recorded')).toHaveLength(2);
+    expect(screen.getAllByText('Forecast week · September 7–13, 2026')).toHaveLength(2);
+    expect(screen.queryByText(/this week ·/)).not.toBeInTheDocument();
+  });
   it('names each save state and points both actions at it', async () => {
     await start(); await choose();
     const describedBy = screen.getByRole('button', { name: 'Review and submit' }).getAttribute('aria-describedby');
     expect(describedBy).toBe('stand-up-save-state');
     expect(document.getElementById(describedBy!)).toHaveTextContent('No saved report yet');
+    expect(screen.getByText('Not started')).toBeInTheDocument();
     changeCensus('20'); expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
+    // Live entries make the report a draft immediately, before any save receipt.
+    expect(screen.getByText('Draft')).toBeInTheDocument(); expect(screen.queryByText('Not started')).not.toBeInTheDocument();
     const slow = deferred<StandUpReport>(); mocks.request.mockReturnValueOnce(slow.promise); save();
     expect(screen.getByText('Saving…')).toBeInTheDocument();
     await act(async () => slow.resolve(report({ values: { ...emptyValues(), current_total_census: 20 } })));
@@ -360,7 +373,15 @@ describe('Stand Up report meaning', () => {
     expect(panel.getByText('Different from the previous report · September 7, 2026')).toBeInTheDocument();
     expect(panel.getByText('Current census: 34 to 36')).toBeInTheDocument();
     expect(panel.getByText('Expected admissions this week: 2 to 0')).toBeInTheDocument();
-    expect(panel.getByText(/Last saved September 14 at 8:31 a\.m\. Eastern\./)).toBeInTheDocument();
+    // Last save and submission evidence are two facts on two lines, as at the top of the form.
+    expect(panel.getByText('Last saved September 14 at 8:31 a.m. Eastern.')).toBeInTheDocument();
+    expect(panel.getByText('Original submission time unavailable.')).toBeInTheDocument();
+  });
+  it('does not repeat the review qualifier when the state already says the import awaits review', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: full(), entry_origin: 'imported' })] });
+    await start(); await choose();
+    expect(screen.getByText('Imported, awaiting review')).toBeInTheDocument();
+    expect(screen.queryByText('· Administrator review required')).not.toBeInTheDocument();
   });
   it('shows what each figure counts and says plainly which counting rules are unresolved', async () => {
     await start(); await choose();
