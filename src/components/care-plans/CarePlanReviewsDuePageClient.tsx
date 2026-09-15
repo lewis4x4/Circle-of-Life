@@ -14,11 +14,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-function StatusBadge({ daysOverdue }: { daysOverdue: number }) {
-  if (daysOverdue > 7) {
+function isDateDue(row: CarePlanReviewDueRow): boolean {
+  return row.reasons.some((reason) => reason.kind === "review_due");
+}
+
+function StatusBadge({ row }: { row: CarePlanReviewDueRow }) {
+  if (!isDateDue(row)) {
+    return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Change flagged</Badge>;
+  }
+  if (row.daysOverdue > 7) {
     return <Badge className="bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">Escalated</Badge>;
   }
-  if (daysOverdue > 0) {
+  if (row.daysOverdue > 0) {
     return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Overdue</Badge>;
   }
   return <Badge className="bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-300">Due now</Badge>;
@@ -39,6 +46,9 @@ export function CarePlanReviewsDuePageClient({
   const [rows, setRows] = useState<CarePlanReviewDueRow[]>(initialRows);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
+  const [dismissing, setDismissing] = useState<{ alertId: string; notes: string } | null>(null);
+  const [busyAlertId, setBusyAlertId] = useState<string | null>(null);
+  const [alertError, setAlertError] = useState<string | null>(null);
 
   const skipNextLoadRef = useRef(initialError == null);
 
@@ -66,8 +76,34 @@ export function CarePlanReviewsDuePageClient({
     void load();
   }, [load]);
 
-  const overdueCount = useMemo(() => rows.filter((row) => row.daysOverdue > 0).length, [rows]);
-  const dueTodayCount = useMemo(() => rows.filter((row) => row.daysOverdue === 0).length, [rows]);
+  const patchAlert = useCallback(
+    async (alertId: string, action: "acknowledge" | "dismiss", notes?: string) => {
+      setBusyAlertId(alertId);
+      setAlertError(null);
+      try {
+        const res = await fetch(`/api/care-plans/review-alerts/${alertId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, notes }),
+        });
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(data.error || "Review alert could not be updated");
+        }
+        setDismissing(null);
+        setRows(await fetchCarePlanReviewsDue(selectedFacilityId));
+      } catch (err) {
+        setAlertError(err instanceof Error ? err.message : "Review alert could not be updated");
+      } finally {
+        setBusyAlertId(null);
+      }
+    },
+    [selectedFacilityId],
+  );
+
+  const overdueCount = useMemo(() => rows.filter((row) => isDateDue(row) && row.daysOverdue > 0).length, [rows]);
+  const dueTodayCount = useMemo(() => rows.filter((row) => isDateDue(row) && row.daysOverdue === 0).length, [rows]);
+  const flaggedCount = useMemo(() => rows.filter((row) => row.reasons.some((r) => r.kind === "alert")).length, [rows]);
 
   if (isLoading) {
     return (
@@ -109,7 +145,8 @@ export function CarePlanReviewsDuePageClient({
             Reviews Due
           </h1>
           <p className="text-slate-600 dark:text-zinc-400">
-            Active care plans due today or overdue for review across the selected facility scope.
+            Active care plans due for review, or flagged by a significant change — a fall, a hospital return, a
+            condition or acuity change, a renewed Form 1823 — across the selected facility scope.
           </p>
         </div>
 
@@ -120,6 +157,9 @@ export function CarePlanReviewsDuePageClient({
           <div className="rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-bold tracking-wide text-primary-800 dark:border-primary-900/40 dark:bg-primary-950/20 dark:text-primary-300">
             {dueTodayCount} due today
           </div>
+          <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold tracking-wide text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
+            {flaggedCount} flagged by a change
+          </div>
         </div>
       </div>
 
@@ -128,7 +168,7 @@ export function CarePlanReviewsDuePageClient({
           <ClipboardList className="mx-auto mb-4 h-14 w-14 text-slate-300 dark:text-slate-600" />
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">No reviews due</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-400">
-            There are no active care plans due for review in the current facility scope.
+            There are no active care plans due for review or flagged by a change in the current facility scope.
           </p>
         </div>
       ) : (
@@ -137,8 +177,10 @@ export function CarePlanReviewsDuePageClient({
             <div>
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Review queue</h2>
               <p className="text-sm text-slate-500 dark:text-zinc-400">
-                Open the resident care plan to review, sign, or revise the active version.
+                Open the resident care plan to review, sign, or revise the active version. A new active version
+                resolves the older plan&apos;s flags; acknowledge one to show it has been seen, or dismiss it with a reason.
               </p>
+              {alertError ? <p className="mt-2 text-sm text-rose-700 dark:text-rose-400">{alertError}</p> : null}
             </div>
           </div>
 
@@ -151,14 +193,79 @@ export function CarePlanReviewsDuePageClient({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.residentName}</span>
-                    <StatusBadge daysOverdue={row.daysOverdue} />
+                    <StatusBadge row={row} />
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-zinc-400">
                     <span>Version {row.version}</span>
                     <span>Effective {row.effectiveDate}</span>
                     <span>Review due {row.reviewDueDate}</span>
-                    <span>{row.daysOverdue === 0 ? "Due today" : `${row.daysOverdue} days overdue`}</span>
                   </div>
+                  <ul className="mt-3 space-y-2">
+                    {row.reasons.map((reason) => (
+                      <li key={reason.alertId ?? `${row.id}:due`} className="flex flex-wrap items-center gap-2 text-sm">
+                        <span
+                          className={cn(
+                            "rounded-full border px-3 py-1 text-xs font-medium",
+                            reason.kind === "alert"
+                              ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200"
+                              : "border-slate-200 bg-slate-50 text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-200",
+                          )}
+                        >
+                          {reason.label}
+                          {reason.alertStatus === "acknowledged" ? " · acknowledged" : ""}
+                        </span>
+                        {reason.kind === "alert" && reason.alertId ? (
+                          dismissing?.alertId === reason.alertId ? (
+                            <span className="flex flex-wrap items-center gap-2">
+                              <input
+                                value={dismissing.notes}
+                                onChange={(e) => setDismissing({ alertId: reason.alertId!, notes: e.target.value })}
+                                placeholder="Reason for dismissing"
+                                aria-label="Reason for dismissing"
+                                className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-white/20 dark:bg-transparent"
+                              />
+                              <button
+                                type="button"
+                                disabled={busyAlertId === reason.alertId || dismissing.notes.trim().length < 3}
+                                onClick={() => void patchAlert(reason.alertId!, "dismiss", dismissing.notes)}
+                                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7 text-xs")}
+                              >
+                                Confirm dismiss
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDismissing(null)}
+                                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 text-xs")}
+                              >
+                                Cancel
+                              </button>
+                            </span>
+                          ) : (
+                            <span className="flex flex-wrap items-center gap-2">
+                              {reason.alertStatus === "open" ? (
+                                <button
+                                  type="button"
+                                  disabled={busyAlertId === reason.alertId}
+                                  onClick={() => void patchAlert(reason.alertId!, "acknowledge")}
+                                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7 text-xs")}
+                                >
+                                  Acknowledge
+                                </button>
+                              ) : null}
+                              <button
+                                type="button"
+                                disabled={busyAlertId === reason.alertId}
+                                onClick={() => setDismissing({ alertId: reason.alertId!, notes: "" })}
+                                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 text-xs")}
+                              >
+                                Dismiss
+                              </button>
+                            </span>
+                          )
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <Link
