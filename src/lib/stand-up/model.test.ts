@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { derivedValues, emptyValues, reportingWeek, validateValues, deadlinePassed, shiftDay, staffingPeriod, reportState, metricDisplay, reportOvertimeMinutes, reportDeadlineState, fieldState, fieldDisplay, overtimeNeedsReview, FIELD_STATE_TEXT, FIELD_STATE_CODES, FIELD_STATE_VERSION, type StandUpReport } from './model'
+import { derivedValues, emptyValues, reportingWeek, validateValues, deadlinePassed, shiftDay, staffingPeriod, reportState, metricDisplay, reportOvertimeMinutes, reportDeadlineState, fieldState, fieldDisplay, overtimeNeedsReview, easternStamp, periodRange, sectionPeriodLabel, metricSection, sectionMetrics, METRIC_KEYS, SECTIONS, FIELD_STATE_TEXT, FIELD_STATE_CODES, FIELD_STATE_VERSION, type StandUpReport } from './model'
 describe('Stand Up reporting contract', () => {
  it('opens upcoming Monday on Eastern Sunday, including DST transition', () => {
   expect(reportingWeek(new Date('2026-09-13T04:00:00Z'))).toBe('2026-09-14')
@@ -104,5 +104,27 @@ describe('field-state vocabulary', () => {
   const edited = base({ entry_origin: 'manual', values: { ...emptyValues(), current_total_census: 35 }, field_dispositions: { overtime_reported: 'historical_unit_unconfirmed' } })
   expect(fieldState(edited, 'overtime_reported')).toBe('held_unit_unconfirmed')
   expect(fieldState({ ...edited, values: { ...edited.values, overtime_reported: 3.16 }, field_dispositions: {} }, 'overtime_reported')).toBe('provided')
+ })
+ it('assigns every figure to exactly one section and keeps the away count out of the forecast', () => {
+  expect(METRIC_KEYS.every(key => SECTIONS.some(section => section.key === metricSection(key).key))).toBe(true)
+  expect(SECTIONS.flatMap(section => sectionMetrics(section.key)).length).toBe(METRIC_KEYS.length)
+  expect(metricSection('hospital_and_rehab_total')).toMatchObject({ key: 'census', period: 'current' })
+  expect(metricSection('admissions_expected').period).toBe('expected')
+  expect(metricSection('callouts_last_week').period).toBe('completed')
+ })
+ it('labels each section with the period it covers and never invents an as-of time', () => {
+  const [census, , admissions, staffing] = SECTIONS
+  expect(sectionPeriodLabel(staffing, '2026-09-14')).toBe('Completed week · September 7–13, 2026')
+  expect(sectionPeriodLabel(admissions, '2026-09-14')).toBe('Expected this week · September 14–20, 2026')
+  expect(sectionPeriodLabel(census, '2026-09-14', '2026-09-14T12:31:00Z')).toBe('Current snapshot · As of September 14 at 8:31 a.m. Eastern')
+  expect(sectionPeriodLabel(census, '2026-09-14', null)).toBe('Current snapshot · As-of time not recorded')
+ })
+ it('writes compact ranges across months and years', () => {
+  expect(periodRange('2026-08-31', '2026-09-06')).toBe('August 31 – September 6, 2026')
+  expect(periodRange('2025-12-29', '2026-01-04')).toBe('December 29, 2025 – January 4, 2026')
+ })
+ it('stamps attribution in Eastern time on both sides of noon', () => {
+  expect(easternStamp('2026-09-14T12:31:00Z')).toBe('September 14 at 8:31 a.m. Eastern')
+  expect(easternStamp('2026-09-15T19:05:00Z')).toBe('September 15 at 3:05 p.m. Eastern')
  })
 })

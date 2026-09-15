@@ -225,7 +225,9 @@ describe('Stand Up capture, autosave and review', () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values })] });
     await start();
     const row = screen.getByRole('row', { name: /Homewood/ }); expect(row).toHaveTextContent('15/16 provided'); expect(row).toHaveTextContent('Needs duration review'); expect(row).toHaveTextContent('Draft');
-    await choose(); expect(screen.getByText(/15\/16 provided · Open beds/)).toBeInTheDocument();
+    await choose(); expect(screen.getByText('15/16 provided')).toBeInTheDocument();
+    expect(screen.getByText(/Total open beds: 4 · adds the four figures above/)).toBeInTheDocument();
+    expect(screen.getByText(/Average rent: \$0\.01 · monthly rent roll ÷ current census/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Overtime hours'), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
     expect(screen.getByText('Still needed: Overtime last week.')).toBeInTheDocument();
@@ -235,9 +237,12 @@ describe('Stand Up capture, autosave and review', () => {
     const prior = report({ id: 'prior', week_start: '2026-09-07', values: { ...emptyValues(), current_total_census: 34, monthly_rent_roll_cents: 9645385 }, entry_origin: 'imported', field_dispositions: { overtime_reported: 'historical_unit_unconfirmed' } });
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [prior] });
     await start(); await choose();
-    expect(screen.getByText('September 7, 2026: Held: unit unconfirmed')).toBeInTheDocument();
-    expect(screen.getByText('September 7, 2026: $96,453.85')).toBeInTheDocument();
-    expect(screen.getAllByText('September 7, 2026: Not provided').length).toBeGreaterThan(0);
+    expect(screen.getByText('Previous report: Held: unit unconfirmed')).toBeInTheDocument();
+    expect(screen.getByText('Previous report: $96,453.85')).toBeInTheDocument();
+    expect(screen.getAllByText('Previous report: Not provided').length).toBeGreaterThan(0);
+    // A forecast field cites last week's forecast, never an actual result.
+    expect(screen.getAllByText('Previous forecast: Not provided').length).toBe(5);
+    expect(screen.getByText(/Previous figures come from the report for September 7, 2026, and are not copied into this one\./)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Reporting facility'), { target: { value: '' } }); await screen.findByRole('heading', { name: 'All facilities' });
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
     const row = screen.getByRole('row', { name: /Homewood/ }); expect(row).toHaveTextContent('Held: unit unconfirmed'); expect(row).toHaveTextContent('Imported, awaiting review');
@@ -270,7 +275,7 @@ describe('Stand Up capture, autosave and review', () => {
   it('never infers lateness for imported current reports or historical manual records', async () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, server_now: '2026-09-14T13:00:00Z', facilities: [workspace.facilities[0]], reports: [report({ values: { ...emptyValues(), current_total_census: 40 }, entry_origin: 'imported' }), report({ id: 'old', week_start: '2026-09-07', entry_origin: 'manual' })] });
     render(<StandUpWorkspace />); await screen.findByLabelText('Current census');
-    expect(screen.getByText(/Submission timing was not recorded/)).toBeInTheDocument(); expect(screen.queryByText(/target has passed/)).not.toBeInTheDocument();
+    expect(screen.getByText('Original submission time unavailable.')).toBeInTheDocument(); expect(screen.queryByText(/target has passed/)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
     expect(screen.queryByText(/target has passed|Past target/)).not.toBeInTheDocument();
   });
@@ -294,6 +299,77 @@ describe('Stand Up capture, autosave and review', () => {
   it('keeps technical imports out of facility-admin entry', async () => {
     await start(); await choose(); expect(screen.queryByRole('button', { name: 'Management tools' })).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Import JSON')).not.toBeInTheDocument(); expect(screen.queryByText(/Currency.*cents/)).not.toBeInTheDocument();
+  });
+});
+describe('Stand Up report meaning', () => {
+  const full = (patch: Partial<StandUpReport['values']> = {}) => ({ ...Object.fromEntries(Object.keys(emptyValues()).map(key => [key, 1])), overtime_reported: 17.15, ...patch } as StandUpReport['values']);
+  it('states provenance and the required action at the top, keeping save, submission and status apart', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: full(), updated_by: 'connector', updated_by_name: 'Hosted Stand Up Connector', source_as_of: '2026-09-14T12:31:00Z' })] });
+    await start(); await choose();
+    expect(screen.getByText('Draft')).toBeInTheDocument();
+    expect(screen.getByText('· Administrator review required')).toBeInTheDocument();
+    expect(screen.getByText('Last saved by Hosted Stand Up Connector on September 14 at 8:31 a.m. Eastern.')).toBeInTheDocument();
+    expect(screen.getByText('Original submission time unavailable.')).toBeInTheDocument();
+    // A connector's name is not a claim about which document the figures came from.
+    expect(screen.queryByText(/imported from the workbook/i)).not.toBeInTheDocument();
+  });
+  it('gives each section its period and keeps the current away count out of the forecast fields', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: full(), source_as_of: '2026-09-14T12:31:00Z' })] });
+    await start(); await choose();
+    expect(screen.getAllByText('Current snapshot · As of September 14 at 8:31 a.m. Eastern')).toHaveLength(2);
+    expect(screen.getByText('Completed week · September 7–13, 2026')).toBeInTheDocument();
+    expect(screen.getAllByText('Expected this week · September 14–20, 2026')).toHaveLength(2);
+    const census = document.getElementById('stand-up-section-census')!;
+    const admissions = document.getElementById('stand-up-section-admissions')!;
+    expect(within(census as HTMLElement).getByLabelText('Residents at hospital or rehab')).toBeInTheDocument();
+    expect(within(admissions as HTMLElement).queryByLabelText('Residents at hospital or rehab')).not.toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: 'Report sections' })).getByRole('link', { name: 'Beds' })).toHaveAttribute('href', '#stand-up-section-beds');
+  });
+  it('shows derived figures beside their inputs with the calculation named, not in the action bar', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: { ...full(), monthly_rent_roll_cents: 9645385, current_total_census: 34 } })] });
+    await start(); await choose();
+    expect(screen.getByText('Average rent: $2,836.88 · monthly rent roll ÷ current census, not a checked resident-level average.')).toBeInTheDocument();
+    expect(screen.getByText('Total open beds: 4 · adds the four figures above.')).toBeInTheDocument();
+    const bar = screen.getByLabelText('Save and submit report');
+    expect(within(bar).getByText('16/16 provided')).toBeInTheDocument();
+    expect(within(bar).queryByText(/Average rent|Open beds/)).not.toBeInTheDocument();
+  });
+  it('names each save state and points both actions at it', async () => {
+    await start(); await choose();
+    const describedBy = screen.getByRole('button', { name: 'Review and submit' }).getAttribute('aria-describedby');
+    expect(describedBy).toBe('stand-up-save-state');
+    expect(document.getElementById(describedBy!)).toHaveTextContent('No saved report yet');
+    changeCensus('20'); expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
+    const slow = deferred<StandUpReport>(); mocks.request.mockReturnValueOnce(slow.promise); save();
+    expect(screen.getByText('Saving…')).toBeInTheDocument();
+    await act(async () => slow.resolve(report({ values: { ...emptyValues(), current_total_census: 20 } })));
+    expect(screen.getByText(/Saved Sep 14, 8:31 AM Eastern · no unsaved changes/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled();
+    changeCensus('21'); mocks.request.mockRejectedValueOnce(new Error('Save failed')); save();
+    await screen.findByText('Not saved — retry required');
+  });
+  it('reviews by period and names what differs from the previous report', async () => {
+    const prior = report({ id: 'prior', week_start: '2026-09-07', values: full({ current_total_census: 34, admissions_expected: 2 }) });
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [prior, report({ values: full({ current_total_census: 36, admissions_expected: 0 }), source_as_of: '2026-09-14T12:31:00Z' })] });
+    await start(); await choose();
+    expect(screen.getByText('Previous forecast: 2')).toBeInTheDocument();
+    expect(screen.getByText('Previous report: 34')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
+    const panel = within(screen.getByLabelText('Review report'));
+    expect(panel.getByText('Completed week · September 7–13, 2026')).toBeInTheDocument();
+    expect(panel.getByText('Different from the previous report · September 7, 2026')).toBeInTheDocument();
+    expect(panel.getByText('Current census: 34 to 36')).toBeInTheDocument();
+    expect(panel.getByText('Expected admissions this week: 2 to 0')).toBeInTheDocument();
+    expect(panel.getByText(/Last saved September 14 at 8:31 a\.m\. Eastern\./)).toBeInTheDocument();
+  });
+  it('shows what each figure counts and says plainly which counting rules are unresolved', async () => {
+    await start(); await choose();
+    // A rule shared by the whole section is stated once, not under every field.
+    expect(screen.getByText('Total open beds adds these four figures, so count each open bed in one category only. Semi-private eligibility rules pending.')).toBeInTheDocument();
+    expect(screen.getByText('Open semi-private beds that could go to a man or a woman.')).toBeInTheDocument();
+    expect(screen.getByText(/Residents away at a hospital or in rehab right now\. Pending: whether they stay on census and whether their beds are held\./)).toBeInTheDocument();
+    expect(screen.getByText(/Counting rule pending: employees, shifts or occurrences\./)).toBeInTheDocument();
+    expect(screen.getByText(/Pending: vacancies at week end or every vacancy during the week\./)).toBeInTheDocument();
   });
 });
 describe('Friendly spreadsheet recovery', () => {

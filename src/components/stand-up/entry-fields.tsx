@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
-import { METRICS, METRIC_KEYS, emptyValues, metricDisplay, fieldDisplay, dateLabel, shiftDay, staffingPeriod, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
+import { METRIC_KEYS, SECTIONS, dollars, emptyValues, metricDisplay, fieldDisplay, sectionMetrics, sectionPeriodLabel, FIELD_STATE_TEXT, type DerivedFigures, type MetricKey, type SectionKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
+import { SECTION_NOTES, fieldHelp } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes, overtimeMinuteParts, overtimePartsToLegacy } from '@/lib/stand-up/duration';
 
 export type EntryFields = Record<MetricKey, string> & { overtime_hours: string; overtime_minutes: string };
@@ -13,32 +14,47 @@ export function entryValues(fields: EntryFields): StandUpValues {
   if (money && !/^\d+(\.\d{1,2})?$/.test(money)) throw new Error('Monthly rent roll: enter dollars with up to two decimal places.');
   return { ...Object.fromEntries(METRIC_KEYS.map(key => [key, fields[key].trim() === '' ? null : key === 'monthly_rent_roll_cents' ? Math.round(Number(fields[key]) * 100) : Number(fields[key])])), overtime_reported: overtimePartsToLegacy(fields.overtime_hours, fields.overtime_minutes) } as StandUpValues;
 }
-const sections = [...new Set(METRICS.map(metric => metric.section))];
+export const sectionDomId = (key: SectionKey) => `stand-up-section-${key}`;
 export type OvertimeError = { id: string; message: string };
-export function EntryQuestions({ fields, onChange, disabled, readOnly = false, week, prior, priorWeek, overtimeError }: {
+
+/** Jump row so a long form can be entered section by section. */
+export function SectionNav() {
+  return <nav aria-label="Report sections" className="flex flex-wrap gap-2">
+    {SECTIONS.map(section => <a key={section.key} href={`#${sectionDomId(section.key)}`} className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">{section.label}</a>)}
+  </nav>;
+}
+
+export function EntryQuestions({ fields, onChange, disabled, readOnly = false, week, prior, asOf, derived, overtimeError }: {
   fields: EntryFields; onChange: (key: keyof EntryFields, value: string) => void; disabled: boolean; readOnly?: boolean;
-  week: string; prior?: StandUpReport; priorWeek?: string; overtimeError?: OvertimeError;
+  week: string; prior?: StandUpReport; asOf?: string | null; derived: DerivedFigures | null; overtimeError?: OvertimeError;
 }) {
-  const reference = (key: MetricKey) => prior ? fieldDisplay(prior, key) : '';
-  return <div className="space-y-6">{sections.map((section, index) => {
-    const staffing = section.startsWith('Staffing');
-    const outlook = section === 'Marketing';
-    const context = staffing ? `Completed payroll week · ${staffingPeriod(week)}` : outlook ? `Expected this week · ${dateLabel(week)}–${dateLabel(shiftDay(week, 6))}` : section === 'Admissions' ? `Expected admissions and discharges for ${dateLabel(week)}–${dateLabel(shiftDay(week, 6))}. Hospital and rehab is the current count.` : 'Current figures at the time you prepare this report.';
-    return <fieldset disabled={disabled} key={section} className="space-y-4 border-t border-border pt-5">
-      <legend className="float-left flex w-full items-baseline gap-3"><span className="text-xs text-muted-foreground" aria-hidden="true">0{index + 1}</span><span className="font-semibold">{staffing ? 'Staffing and payroll' : section}</span></legend>
-      <p className="clear-both text-sm text-muted-foreground">{context}</p>
-      <div className={`grid gap-x-5 gap-y-4 ${section === 'Admissions' || section === 'Marketing' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
-        {METRICS.filter(metric => metric.section === section).map(metric => metric.key === 'overtime_reported' ? <div key={metric.key} className="space-y-2">
+  // A previous forecast is not evidence of what happened, so the reference label
+  // says which kind of figure it is rather than repeating a bare date.
+  const referenceLabel = (period: string) => period === 'expected' ? 'Previous forecast' : 'Previous report';
+  const reference = (key: MetricKey, period: string) => prior ? <span className="block text-xs text-muted-foreground">{referenceLabel(period)}: {fieldDisplay(prior, key)}</span> : null;
+  return <div className="space-y-6">{SECTIONS.map((section, index) => {
+    const metrics = sectionMetrics(section.key);
+    return <fieldset id={sectionDomId(section.key)} tabIndex={-1} disabled={disabled} key={section.key} className="space-y-3 border-t border-border pt-5 outline-none">
+      <legend className="float-left flex w-full items-baseline gap-3"><span className="text-xs text-muted-foreground" aria-hidden="true">0{index + 1}</span><span className="font-semibold">{section.label}</span></legend>
+      <p className="clear-both text-sm font-medium">{sectionPeriodLabel(section, week, asOf)}</p>
+      {section.period === 'expected' && <p className="text-xs text-muted-foreground">Enter what you expect. Any previous figure shown is what was forecast last week, not what happened.</p>}
+      {SECTION_NOTES[section.key] && <p className="text-xs text-muted-foreground">{SECTION_NOTES[section.key]}</p>}
+      <div className={`grid gap-x-5 gap-y-4 pt-1 ${metrics.length > 2 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
+        {metrics.map(metric => metric.key === 'overtime_reported' ? <div key={metric.key} className="space-y-2">
           <p id="overtime-label" className="text-sm font-medium">Overtime last week</p><div role="group" aria-labelledby="overtime-label" className="grid max-w-sm grid-cols-2 gap-3">
             <label htmlFor="overtime_hours" className="text-xs text-muted-foreground">Hours<Input id="overtime_hours" aria-label="Overtime hours" aria-invalid={overtimeError ? true : undefined} aria-describedby={overtimeError?.id} readOnly={readOnly} type="number" min="0" step="1" inputMode="numeric" value={fields.overtime_hours} onChange={e => onChange('overtime_hours', e.target.value)} className="mt-1 tabular-nums" /></label>
             <label htmlFor="overtime_minutes" className="text-xs text-muted-foreground">Minutes<Input id="overtime_minutes" aria-label="Overtime minutes" aria-invalid={overtimeError ? true : undefined} aria-describedby={overtimeError?.id} readOnly={readOnly} type="number" min="0" max="59" step="1" inputMode="numeric" value={fields.overtime_minutes} onChange={e => onChange('overtime_minutes', e.target.value)} className="mt-1 tabular-nums" /></label>
-          </div>{overtimeError && <p id={overtimeError.id} className="text-sm text-muted-foreground">{overtimeError.message}</p>}<p className="text-xs text-muted-foreground">Enter hours and minutes. For example: 17 hours, 15 minutes.</p>{prior && <p className="text-xs text-muted-foreground">{priorWeek}: {reference(metric.key)}</p>}
+          </div>{overtimeError && <p id={overtimeError.id} className="text-sm text-muted-foreground">{overtimeError.message}</p>}<p className="text-xs text-muted-foreground">{fieldHelp(metric.key)} For example: 17 hours, 15 minutes.</p>{reference(metric.key, section.period)}
         </div> : <label key={metric.key} htmlFor={metric.key} className="space-y-1.5 text-sm"><span className="block font-medium">{metric.label}{metric.key === 'monthly_rent_roll_cents' ? ' ($)' : ''}</span>
           <Input id={metric.key} aria-label={`${metric.label}${metric.key === 'monthly_rent_roll_cents' ? ' ($)' : ''}`} readOnly={readOnly} type="number" min="0" step={metric.key === 'monthly_rent_roll_cents' ? '0.01' : '1'} inputMode={metric.key === 'monthly_rent_roll_cents' ? 'decimal' : 'numeric'} value={fields[metric.key]} onChange={e => onChange(metric.key, e.target.value)} className="h-10 tabular-nums" />
           {metric.key === 'monthly_rent_roll_cents' && fields[metric.key] && Number.isFinite(Number(fields[metric.key])) && <span className="block text-xs text-muted-foreground">{metricDisplay(metric.key, Math.round(Number(fields[metric.key]) * 100))} per month</span>}
-          {prior && <span className="block text-xs text-muted-foreground">{priorWeek}: {reference(metric.key)}</span>}
+          <span className="block text-xs text-muted-foreground">{fieldHelp(metric.key)}</span>
+          {reference(metric.key, section.period)}
         </label>)}
       </div>
+      {/* Derived figures sit with the fields they come from, with their calculation named. */}
+      {section.key === 'census' && <p className="text-xs text-muted-foreground">Average rent: {dollars(derived?.average_rent_cents ?? null)} · monthly rent roll ÷ current census, not a checked resident-level average.</p>}
+      {section.key === 'beds' && <p className="text-xs text-muted-foreground">Total open beds: {derived?.total_beds_open ?? FIELD_STATE_TEXT.not_provided} · adds the four figures above.</p>}
     </fieldset>;
   })}</div>;
 }

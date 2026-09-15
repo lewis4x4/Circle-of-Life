@@ -1,24 +1,45 @@
 import { legacyOvertimeToMinutes, formatOvertimeMinutes } from './duration'
 
+/**
+ * Three different time frames share this one report, so every section declares
+ * which one it belongs to: `current` is the state of the ALF while the
+ * administrator prepares the report, `completed` is the closed Monday–Sunday
+ * payroll week, and `expected` is a forecast for the reporting week ahead.
+ * A previous `expected` figure is last week's forecast, never an actual result.
+ */
+export const SECTIONS = [
+  { key: 'census', label: 'Census and rent', period: 'current' },
+  { key: 'beds', label: 'Beds', period: 'current' },
+  { key: 'admissions', label: 'Admissions and discharges', period: 'expected' },
+  { key: 'staffing', label: 'Staffing and payroll', period: 'completed' },
+  { key: 'marketing', label: 'Marketing', period: 'expected' },
+] as const
+export type StandUpSection = typeof SECTIONS[number]
+export type SectionKey = StandUpSection['key']
+export type SectionPeriod = StandUpSection['period']
+
 export const METRICS = [
-  { key: 'monthly_rent_roll_cents', label: 'Monthly rent roll', section: 'Census and rent' },
-  { key: 'current_total_census', label: 'Current census', section: 'Census and rent' },
-  { key: 'sp_female_beds_open', label: 'Semi-private female beds open', section: 'Beds' },
-  { key: 'sp_male_beds_open', label: 'Semi-private male beds open', section: 'Beds' },
-  { key: 'sp_flexible_beds_open', label: 'Semi-private flexible beds open', section: 'Beds' },
-  { key: 'private_beds_open', label: 'Private beds open', section: 'Beds' },
-  { key: 'admissions_expected', label: 'Expected admissions this week', section: 'Admissions' },
-  { key: 'hospital_and_rehab_total', label: 'Residents at hospital or rehab', section: 'Admissions' },
-  { key: 'expected_discharges', label: 'Expected discharges this week', section: 'Admissions' },
-  { key: 'callouts_last_week', label: 'Callouts last week', section: 'Staffing — last Monday–Sunday' },
-  { key: 'terminations_last_week', label: 'Terminations last week', section: 'Staffing — last Monday–Sunday' },
-  { key: 'current_open_positions', label: 'Open positions last week', section: 'Staffing — last Monday–Sunday' },
-  { key: 'overtime_reported', label: 'Overtime last week', section: 'Staffing — last Monday–Sunday' },
-  { key: 'tours_expected', label: 'Expected tours this week', section: 'Marketing' },
-  { key: 'provider_activities_expected', label: 'Home-health activities this week', section: 'Marketing' },
-  { key: 'outreach_engagements', label: 'Outreach and engagements this week', section: 'Marketing' },
+  { key: 'monthly_rent_roll_cents', label: 'Monthly rent roll', section: 'census' },
+  { key: 'current_total_census', label: 'Current census', section: 'census' },
+  // A current count, kept out of the forecast fields it used to sit between.
+  { key: 'hospital_and_rehab_total', label: 'Residents at hospital or rehab', section: 'census' },
+  { key: 'sp_female_beds_open', label: 'Semi-private female beds open', section: 'beds' },
+  { key: 'sp_male_beds_open', label: 'Semi-private male beds open', section: 'beds' },
+  { key: 'sp_flexible_beds_open', label: 'Semi-private flexible beds open', section: 'beds' },
+  { key: 'private_beds_open', label: 'Private beds open', section: 'beds' },
+  { key: 'admissions_expected', label: 'Expected admissions this week', section: 'admissions' },
+  { key: 'expected_discharges', label: 'Expected discharges this week', section: 'admissions' },
+  { key: 'callouts_last_week', label: 'Callouts last week', section: 'staffing' },
+  { key: 'terminations_last_week', label: 'Terminations last week', section: 'staffing' },
+  { key: 'current_open_positions', label: 'Open positions last week', section: 'staffing' },
+  { key: 'overtime_reported', label: 'Overtime last week', section: 'staffing' },
+  { key: 'tours_expected', label: 'Expected tours this week', section: 'marketing' },
+  { key: 'provider_activities_expected', label: 'Home-health activities this week', section: 'marketing' },
+  { key: 'outreach_engagements', label: 'Outreach and engagements this week', section: 'marketing' },
 ] as const
 export type MetricKey = typeof METRICS[number]['key']
+export const sectionMetrics = (section: SectionKey) => METRICS.filter(metric => metric.section === section)
+export const metricSection = (key: MetricKey): StandUpSection => SECTIONS.find(section => section.key === METRICS.find(metric => metric.key === key)!.section)!
 export const METRIC_KEYS: MetricKey[] = METRICS.map(metric => metric.key)
 export type StandUpValues = Record<MetricKey, number | null>
 export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; field_dispositions?: Record<string, string> }
@@ -63,6 +84,7 @@ export function derivedValues(values: StandUpValues) {
     // A held raw notation is evidence, not a provided figure; it never counts.
     completed_fields: METRIC_KEYS.filter(key => values[key] !== null && (key !== 'overtime_reported' || validOvertime(values[key]))).length }
 }
+export type DerivedFigures = ReturnType<typeof derivedValues>
 function validOvertime(value: number | null): boolean { try { legacyOvertimeToMinutes(value); return true } catch { return false } }
 /** True when the stored overtime cannot be read as whole hours and minutes. */
 export function overtimeNeedsReview(report: StandUpReport | undefined): boolean {
@@ -114,7 +136,31 @@ export function shiftDay(day: string, count: number): string {
   const value = new Date(`${day}T12:00:00Z`); value.setUTCDate(value.getUTCDate() + count); return value.toISOString().slice(0, 10)
 }
 export function staffingPeriod(week: string): string { return `${dateLabel(shiftDay(week, -7))}–${dateLabel(shiftDay(week, -1))}` }
+const monthDay = (day: string) => new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric' }).format(new Date(`${day}T12:00:00Z`))
+/** Compact inclusive range for a section period label: "September 7–13, 2026". */
+export function periodRange(start: string, end: string): string {
+  if (start.slice(0, 4) !== end.slice(0, 4)) return `${dateLabel(start)} – ${dateLabel(end)}`
+  const sameMonth = start.slice(0, 7) === end.slice(0, 7)
+  const finish = sameMonth ? new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', day: 'numeric' }).format(new Date(`${end}T12:00:00Z`)) : monthDay(end)
+  return `${monthDay(start)}${sameMonth ? '–' : ' – '}${finish}, ${end.slice(0, 4)}`
+}
+/**
+ * The period a section covers, stated prominently enough that it is not skimmed
+ * past. A current section carries the recorded observation time when the report
+ * has one; it never invents one from the reader's clock.
+ */
+export function sectionPeriodLabel(section: StandUpSection, week: string, asOf?: string | null): string {
+  if (section.period === 'completed') return `Completed week · ${periodRange(shiftDay(week, -7), shiftDay(week, -1))}`
+  if (section.period === 'expected') return `Expected this week · ${periodRange(week, shiftDay(week, 6))}`
+  return `Current snapshot · ${asOf ? `As of ${easternStamp(asOf)}` : 'As-of time not recorded'}`
+}
 export function easternTime(value: string): string { return new Date(value).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+/** Full attribution stamp: "September 14 at 8:31 a.m. Eastern". */
+export function easternStamp(value: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(new Date(value))
+  const part = (type: string) => parts.find(item => item.type === type)?.value ?? ''
+  return `${part('month')} ${part('day')} at ${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase() === 'am' ? 'a.m.' : 'p.m.'} Eastern`
+}
 export function deadlinePassed(week: string, now: Date): boolean {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now)
   const get = (key: string) => parts.find(part => part.type === key)!.value
