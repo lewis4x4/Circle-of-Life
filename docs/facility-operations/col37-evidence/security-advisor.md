@@ -75,14 +75,117 @@ production before 389 failed on assertion 1 by name, so it discriminates.
 
 Staging is still missing 387 and 388 (pre-existing drift, not from this work).
 
+---
+
+# COL-391 — per-function rulings, pass 1 (NLQ threads, sequence allocators)
+
+Migration 397, 2026-09-15. Nine of the 53 ruled, plus five that arrived mid-pass.
+
+## The defect the rulings turned up
+
+All six NLQ thread RPCs (275, 276, 277) open their role guard with
+
+```sql
+IF COALESCE(haven.app_role(), '') NOT IN ('owner', 'org_admin') THEN
+```
+
+and `haven.app_role()` has returned the `public.app_role` enum since 004 — it was
+never text. COALESCE resolves `''` to that enum, Postgres folds the coercion at
+plan time, and the statement raises `22P02 invalid input value for enum
+app_role: ""` on every call, before the guard decides anything. Measured on
+staging with a fully resolved owner actor: the same test written against enum
+literals returns "guard passed" while the COALESCE form raises.
+
+So `rename_nlq_thread`, `set_nlq_thread_pinned`, `set_nlq_thread_archived`,
+`delete_nlq_thread`, `search_nlq_threads` and `set_nlq_message_feedback` have
+never worked — renaming, pinning, archiving, deleting, searching and rating a
+Haven Insight thread all failed for every user since those migrations shipped.
+Production carries 0 rows in `exec_nlq_sessions`, which is consistent. Scanning
+`prosrc` on production finds the shape in exactly those six functions.
+
+397 casts to text before the COALESCE.
+
+```
+before 397, staging, owner actor, calling the shipped definition:
+  rename_nlq_thread -> 22P02 invalid input value for enum app_role: ""
+
+after 397, production, real owner actor, read-only (every call names an id that
+does not exist, so nothing is written):
+  rename=P0002 pin=P0002 archive=P0002 delete=P0002
+  search=ok(0 rows) feedback=ok(no row matched)
+```
+
+`P0002` is the function's own `not_found` — the guard now runs and the statement
+reaches the row it was asked about. Section 9 of the probe refuses the pattern
+from now on: a role check that raises instead of deciding is worse than none,
+because it reads like protection.
+
+## The rulings
+
+| Function | Ruling |
+|---|---|
+| `rename_nlq_thread` | incidental → **SECURITY INVOKER** |
+| `set_nlq_thread_pinned` | incidental → **SECURITY INVOKER** |
+| `set_nlq_thread_archived` | incidental → **SECURITY INVOKER** |
+| `search_nlq_threads` | incidental → **SECURITY INVOKER** |
+| `delete_nlq_thread` | **definer required** — sets `deleted_at`, and `exec_nlq_sessions_update`'s WITH CHECK demands `deleted_at IS NULL` |
+| `set_nlq_message_feedback` | **definer required** — `exec_nlq_messages` has no UPDATE policy, and its AFTER trigger is an invoker that updates a table caregiver/family cannot |
+| `allocate_incident_number` | **definer required** — `incident_sequences` RLS excludes caregiver, who files incidents; the max-so-far scan must see every incident or it reissues a number |
+| `allocate_vendor_po_number` | **definer required** — `vendor_po_sequences` has RLS on and no policies at all; this is the counter's only door |
+| `haven_assert_authorized_request` | **definer required** — restated from 389 so it carries the ruling marker |
+| the five `care_plan_alert_*` | **revoked** — see below |
+
+The four invoker switches are safe because each body's checks are a restatement
+of the policy on the table it touches. Proven on staging against a synthetic
+owner actor, rolled back: rename, pin, archive/unarchive and search all take, a
+second user's thread is still refused `not_found`, and the two that kept definer
+rights still work. Script: `col391-invoker-evidence.sql` in this directory.
+
+## What the ratchet caught on its first run
+
+Section 7 fails on any `public` SECURITY DEFINER function executable by
+`authenticated` that carries no `COL-37 ruling:` comment, except the 44 named in
+its pending list — which only ever shrinks. Run against production it immediately
+named five functions that were not in the 53: `care_plan_alert_on_*` and
+`care_plan_alerts_resolve_on_activation`, added by migration 394 and applied to
+production while this pass was being written. They are trigger functions that
+kept the default EXECUTE grant to PUBLIC/anon/authenticated/service_role — the
+same oversight 389 found in the payroll guards. PL/pgSQL refuses a trigger
+function called as an ordinary function, so this was not an open write path; it
+was definer surface granted to roles with no use for it. 397 revokes all five and
+section 3 now holds them revoked and still attached.
+
+## Counts (production)
+
+| | before 397 | after 397 |
+|---|---|---|
+| `authenticated_security_definer_function_executable` | 58 (53 + 394's five) | **49** |
+| of those, carrying a recorded ruling | 0 | **5** |
+| still to rule on | 53 | **44** |
+| `anon_security_definer_function_executable` | 1 | 1 (documented exception) |
+
+## Applied
+
+| Where | 397 | Probe |
+|---|---|---|
+| Staging `iwcnajanvjvynolltflw` | applied, ledger row `397` | pass |
+| Production `manfqmasfqppukpobpld` | applied, ledger row `397` | pass |
+
+Negative control: before 397 the probe failed on production by naming all
+fourteen unruled functions, so section 7 discriminates.
+
+---
+
 ## Left open
 
-- **53 `authenticated`-executable SECURITY DEFINER functions.** These are real
-  RPCs — referral commands, resident record intake, finance, NLQ threads — and
-  each needs a per-function ruling on whether the definer is doing authorization
-  work the caller's RLS could not. `docs/facility-operations/COL-18-BASELINE.md`
-  warns against revoking invoker wrappers blindly, and it is right. Not a batch
-  edit.
+- **44 `authenticated`-executable SECURITY DEFINER functions.** Referral
+  commands, resident record intake, finance and payroll, corporate deliverables,
+  employee file, system alerts, compliance. Each needs a per-function ruling on
+  whether the definer is doing authorization work the caller's RLS could not.
+  `docs/facility-operations/COL-18-BASELINE.md` warns against revoking invoker
+  wrappers blindly, and it is right. Not a batch edit. The probe's pending list
+  is the backlog; take a family per pass and delete its names from the array in
+  the same change.
 - **`vector`, `pg_trgm`, `btree_gist` in `public`.** Moving them changes
   unqualified operator and index-opclass resolution across the schema, and this
   repo already has a hosted-extension failure mode (`migrations:check:hosted`,
