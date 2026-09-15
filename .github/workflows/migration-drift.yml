@@ -1,0 +1,55 @@
+name: Migration drift — merged but not applied
+
+# `main` has no deploy workflow for migrations; every one reaches production
+# because a person ran it by hand. 379, 380 and 386 sat merged and unapplied
+# while later migrations went in ahead of them, and an unrelated audit is the
+# only reason anyone noticed (COL-345, COL-370). This job is the thing that
+# notices.
+#
+# Deliberately NOT on push: there is a legitimate window between merging a
+# migration and applying it, and a red main during that window would train
+# everyone to ignore this. Twice a day catches it the same day instead.
+#
+# Read-only — it runs one SELECT against supabase_migrations.schema_migrations.
+# Needs the SUPABASE_ACCESS_TOKEN repo secret; until that exists the job
+# reports SKIP rather than failing, the same dormant pattern ci-gates.yml uses
+# for HAVEN_UI_GATES_ENABLED.
+
+on:
+  schedule:
+    - cron: '0 13 * * *' # 09:00 ET
+    - cron: '0 23 * * *' # 19:00 ET
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Project to check
+        type: choice
+        options: [production, staging]
+        default: production
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # No `npm ci`: the script is Node stdlib plus fetch, and this job runs
+      # on a schedule where an install is the entire cost.
+      - name: Ledger drift
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "${SUPABASE_ACCESS_TOKEN}" ]; then
+            echo "SKIP: SUPABASE_ACCESS_TOKEN secret is not set — drift is unchecked."
+            exit 0
+          fi
+          if [ "${{ inputs.target }}" = "staging" ]; then
+            node scripts/check-migration-ledger.mjs --staging
+          else
+            node scripts/check-migration-ledger.mjs
+          fi

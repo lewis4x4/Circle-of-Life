@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run migrations:check && npm run check:admin-shell && npm run check:memory-care && next build",
+    "build": "npm run migrations:check && npm run migrations:check:hosted && npm run check:admin-shell && npm run check:memory-care && next build",
     "build:web": "npm run build",
     "start": "next start",
     "lint": "eslint src --max-warnings 0 && npm run lint:constitution",
@@ -23,7 +23,9 @@
     "seed:repair": "node scripts/seed/repair-demo-auth.mjs",
     "seed:verify": "node scripts/seed/verify-auth-fixtures.mjs",
     "migrations:check": "node scripts/check-migration-order.mjs",
+    "migrations:check:hosted": "node scripts/check-hosted-sql.mjs",
     "migrations:verify:pg": "node scripts/pg-verify-migrations.mjs",
+    "migrations:verify:ledger": "node scripts/check-migration-ledger.mjs",
     "migrations:verify:remote": "node scripts/verify-remote-schema.mjs",
     "a11y:routes": "node scripts/a11y-axe-routes.mjs",
     "audit:primitive-enforcement": "node scripts/primitive-enforcement-audit.mjs",

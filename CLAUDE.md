@@ -36,7 +36,7 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 | Script | Purpose |
 |--------|---------|
 | `npm run dev` | Next dev server (Turbopack) |
-| `npm run build` | Runs `migrations:check` + `check:admin-shell` + `check:memory-care` then `next build` |
+| `npm run build` | Runs `migrations:check` + `migrations:check:hosted` + `check:admin-shell` + `check:memory-care` then `next build` |
 | `npm run lint` | ESLint `src/` with `--max-warnings 0`, then `lint:constitution` |
 | `npm run typecheck` | `tsc --noEmit -p tsconfig.typecheck.json` |
 | `npm run test` | Vitest (happy-dom, includes `src/**/*.test.{ts,tsx}`) |
@@ -45,7 +45,9 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 | `npx vitest run -t "<name pattern>"` | Run a single test by name |
 | `npm run segment:gates -- --segment "<id>"` | **Required** gate runner; add `--ui` when routes/layouts/visuals changed |
 | `npm run migrations:check` | SQL migration naming + sequence |
+| `npm run migrations:check:hosted` | Refuses `public.`-qualified extension functions that cannot resolve hosted |
 | `npm run migrations:verify:pg` | Replay migrations on throwaway Postgres (Docker) |
+| `npm run migrations:verify:ledger` | Which migrations are merged but not applied (add `--staging`) |
 | `npm run a11y:routes` | Playwright + axe (needs `BASE_URL`) |
 | `npm run design:review` | Playwright UI snapshots + report |
 | `npm run audit:ci` | `npm audit --audit-level=high` |
@@ -83,6 +85,7 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 ### Migrations
 - Sequential `supabase/migrations/NNN_*.sql`. Check `docs/Autonomous.md` and the latest file in `supabase/migrations/` for the next free number; `migrations:check` enforces ordering.
 - After touching migrations: `npm run migrations:verify:pg` (Docker replay).
+- **Is it actually applied?** `npm run migrations:verify:ledger` names every migration on your branch that production has not run, and `-- --staging` does the same for Haven HFO Staging. It compares by version and then by name — never `max(version)` — and only ever SELECTs. `.github/workflows/migration-drift.yml` runs it twice a day so merged-but-unapplied surfaces the same day rather than during an unrelated audit.
 
 **Applying to a hosted project.** `supabase db push` does not work on this repo: the 3-digit `NNN_` names collide with the 14-digit `2026…` ones (seven files begin with `202`), so the CLI cannot match remote version `202` to `202_workflow_events.sql`. Do **not** run the `migration repair --status reverted` it suggests — that rewrites the ledger to claim an applied migration was reverted. Apply the file directly instead:
 
@@ -102,7 +105,7 @@ values ('NNN', 'name') on conflict (version) do nothing;
 
 Migrations applied outside the CLI land under a timestamp version rather than `NNN`, which is why 384, 385 and 387 are recorded as `20260914203602`, `20260914203613` and `20260915182400`. Read the ledger by name, not by `max(version)` — text ordering puts `2026…` below `383`.
 
-**Never schema-qualify an extension function with `public.`.** On a hosted Supabase project pgcrypto lives in `extensions`, so `public.gen_random_uuid()` is `42883: function does not exist` — which is how migration 380 failed hosted after replaying clean locally. Use the bare name (what the other ~128 migrations do; inside `SET search_path = ''` use `pg_catalog.` for built-ins like `gen_random_uuid`, or resolve the schema dynamically with `%I` the way `093` onward do for `crypt`/`gen_salt`). `scripts/pg-verify-stub.sql` now installs pgcrypto into `extensions` so the local replay reproduces this instead of hiding it.
+**Never schema-qualify an extension function with `public.`.** On a hosted Supabase project pgcrypto lives in `extensions`, so `public.gen_random_uuid()` is `42883: function does not exist` — which is how migration 380 failed hosted after replaying clean locally. Use the bare name (what the other ~128 migrations do; inside `SET search_path = ''` use `pg_catalog.` for built-ins like `gen_random_uuid`, or resolve the schema dynamically with `%I` the way `093` onward do for `crypt`/`gen_salt`). `scripts/pg-verify-stub.sql` now installs pgcrypto into `extensions` so the local replay reproduces this instead of hiding it, and `npm run migrations:check:hosted` fails the build on a `public.`-qualified extension call without needing a database at all.
 
 ### Edge Functions
 - `supabase/functions/<kebab-case>/` (Deno). Examples: `generate-emar-schedule`, `ar-aging-check`, `exec-alert-evaluator`, `process-referral-hl7-inbound`. Auth-first; secrets via env only; **no PHI in logs**. Shared code under `supabase/functions/_shared/`.
