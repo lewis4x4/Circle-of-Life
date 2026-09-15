@@ -115,8 +115,16 @@ function examLabel(source: Form1823DraftSource): string {
 
 export function draftCarePlanFromForm1823(
   source: Form1823DraftSource,
-  options: { today: string; reviewMonths?: number },
+  options: {
+    today: string;
+    reviewMonths?: number;
+    /** The facility's medication orders-of-record label (COL-389); null when not set. */
+    medicationSystemLabel?: string | null;
+  },
 ): CarePlanDraft {
+  const ordersOfRecord = options.medicationSystemLabel
+    ? `Orders of record: ${options.medicationSystemLabel}`
+    : "Medication system of record not set for this facility";
   const items: CarePlanDraftItem[] = [];
   const gaps: CarePlanDraftGap[] = [];
   const exam = examLabel(source);
@@ -159,13 +167,13 @@ export function draftCarePlanFromForm1823(
 
   switch (source.medication_assistance) {
     case "self_administered":
-      items.push({ category: "medication_assistance", title: "Medications", description: `Self-administers medications per the ${exam}`, assistance_level: "independent", frequency: "Per orders", goal: "", interventions: ["Observe for changes in ability to self-administer"], special_instructions: "" });
+      items.push({ category: "medication_assistance", title: "Medications", description: `Self-administers medications per the ${exam}`, assistance_level: "independent", frequency: "Per orders", goal: "", interventions: ["Observe for changes in ability to self-administer"], special_instructions: ordersOfRecord });
       break;
     case "assistance_with_self_administration":
-      items.push({ category: "medication_assistance", title: "Medications", description: `Needs assistance with self-administration per the ${exam} (§2B)`, assistance_level: "limited_assist", frequency: "Per orders", goal: "", interventions: ["Unlicensed staff assist with self-administration of oral, topical, ophthalmic, otic and nasal medications"], special_instructions: "" });
+      items.push({ category: "medication_assistance", title: "Medications", description: `Needs assistance with self-administration per the ${exam} (§2B)`, assistance_level: "limited_assist", frequency: "Per orders", goal: "", interventions: ["Unlicensed staff assist with self-administration of oral, topical, ophthalmic, otic and nasal medications"], special_instructions: ordersOfRecord });
       break;
     case "administered_by_licensed_staff":
-      items.push({ category: "medication_assistance", title: "Medications", description: `Requires medication administration by licensed staff per the ${exam} (§2B)`, assistance_level: "extensive_assist", frequency: "Per orders", goal: "", interventions: ["Licensed staff administer medications"], special_instructions: "" });
+      items.push({ category: "medication_assistance", title: "Medications", description: `Requires medication administration by licensed staff per the ${exam} (§2B)`, assistance_level: "extensive_assist", frequency: "Per orders", goal: "", interventions: ["Licensed staff administer medications"], special_instructions: ordersOfRecord });
       break;
     default:
       gaps.push({ title: null, message: "Medications: the 1823 does not say whether the resident needs help with medications; add a medication line if they do." });

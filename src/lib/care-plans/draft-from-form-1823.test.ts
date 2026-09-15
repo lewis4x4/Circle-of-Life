@@ -53,9 +53,12 @@ describe("draftCarePlanFromForm1823", () => {
     // Mobility lines carry the physical limitation as special instructions; others do not.
     expect(draft.items[0].special_instructions).toBe("Wheelchair for ambulation, self propels");
     expect(draft.items[2].special_instructions).toBe("");
-    // Medication §2B choice maps to limited assist with the unlicensed-staff intervention.
-    expect(draft.items[7]).toMatchObject({ assistance_level: "limited_assist" });
+    // Medication §2B choice maps to limited assist with the unlicensed-staff intervention,
+    // and says where the orders live — or that nobody has said.
+    expect(draft.items[7]).toMatchObject({ assistance_level: "limited_assist", special_instructions: "Medication system of record not set for this facility" });
     expect(draft.items[7].interventions[0]).toMatch(/Unlicensed staff assist/);
+    const named = draftCarePlanFromForm1823(source(), { today: "2026-09-15", medicationSystemLabel: "QuickMAR (PointClickCare)" });
+    expect(named.items[7].special_instructions).toBe("Orders of record: QuickMAR (PointClickCare)");
     // Elopement: line with no interventions, plus a gap asking for them.
     expect(draft.items[8].interventions).toEqual([]);
     expect(draft.gaps.some((g) => g.title === "Elopement precautions")).toBe(true);

@@ -25,6 +25,7 @@ import {
   formatCarePlanAckSigner,
 } from "@/lib/care-plans/care-plan-acknowledgement-copy";
 import type { CarePlanPrintPacket } from "@/lib/care-plans/care-plan-print-packet";
+import { formatMedicationOrdersAttachment, formatMedicationSystemOfRecord } from "@/lib/admin/facilities/medication-system-of-record";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
@@ -205,6 +206,12 @@ export default function CarePlanPrintSheetPage() {
                     </li>
                   ))}
                 </ul>
+                {section.category === "medication_assistance" ? (
+                  <p className="mt-2 text-xs text-neutral-700">
+                    {formatMedicationSystemOfRecord(packet.facility.medicationSystem)}
+                    {formatMedicationOrdersAttachment(packet.facility.medicationSystem) ? ` · ${formatMedicationOrdersAttachment(packet.facility.medicationSystem)}` : ""}
+                  </p>
+                ) : null}
               </section>
             ))}
           </div>

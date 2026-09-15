@@ -2,6 +2,14 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { FacilityDetailRow, FacilityRow } from "@/types/facility";
+import type { MedicationSystemOfRecordKey } from "@/lib/admin/facilities/medication-system-of-record";
+
+/** Keys the PUT route folds into facilities.settings rather than columns. */
+export type FacilitySettingsUpdate = {
+  medication_system_of_record?: MedicationSystemOfRecordKey | null;
+  medication_system_label?: string | null;
+};
+export type FacilityUpdateInput = Partial<FacilityRow> & FacilitySettingsUpdate;
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 import { invalidateFacilitiesCache } from "@/hooks/useFacilities";
@@ -41,7 +49,7 @@ interface UseFacilityReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  updateFacility: (updates: Partial<FacilityRow>) => Promise<FacilityDetailRow | null>;
+  updateFacility: (updates: FacilityUpdateInput) => Promise<FacilityDetailRow | null>;
   isUpdating: boolean;
 }
 
@@ -104,7 +112,7 @@ export function useFacility(facilityId: string): UseFacilityReturn {
   const clearFacilityListCache = useFacilityStore((s) => s.clearFacilityCache);
 
   const updateFacility = useCallback(
-    async (updates: Partial<FacilityRow>): Promise<FacilityDetailRow | null> => {
+    async (updates: FacilityUpdateInput): Promise<FacilityDetailRow | null> => {
       setIsUpdating(true);
       setError(null);
       try {

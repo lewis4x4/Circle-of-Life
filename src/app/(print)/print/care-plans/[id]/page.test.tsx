@@ -26,7 +26,7 @@ function packet(overrides: Partial<CarePlanPrintPacket> = {}): CarePlanPrintPack
   return {
     plan: { id: PLAN_ID, version: 2, status: "active", effectiveDate: "2026-09-10", reviewDueDate: "2027-09-10", notes: null, supersededByVersion: null },
     resident: { id: RESIDENT_ID, name: "Test Resident", dateOfBirth: "1940-01-02", room: "10-B" },
-    facility: { name: "Homewood Lodge", addressLines: ["430 Mills St", "Mayo, FL 32066"], phone: null, licenseNumber: null },
+    facility: { name: "Homewood Lodge", addressLines: ["430 Mills St", "Mayo, FL 32066"], phone: null, licenseNumber: null, medicationSystem: null },
     sections: [
       {
         category: "bathing",
@@ -73,6 +73,21 @@ describe("CarePlanPrintSheetPage", () => {
     // Nothing acknowledged yet: the paper copy gets lines to sign on.
     expect(screen.getByLabelText("Resident signature line")).toBeTruthy();
     expect(screen.getByLabelText("Representative signature line")).toBeTruthy();
+  });
+
+  it("names where medication orders live under the medication section and asks for the attachment", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () =>
+        packet({
+          facility: { ...packet().facility, medicationSystem: { key: "quickmar", label: "QuickMAR (PointClickCare)", external: true } },
+          sections: [{ category: "medication_assistance", label: "Medication Assistance", items: [{ id: "m1", title: "Medications", description: "Assist", assistanceLevel: "limited_assist", frequency: null, goal: null, interventions: [], specialInstructions: null }] }],
+        }),
+    });
+    render(<CarePlanPrintSheetPage />);
+
+    await waitFor(() => expect(screen.getByText(/Orders of record: QuickMAR \(PointClickCare\)/)).toBeTruthy());
+    expect(screen.getByText(/Attach the current orders printout from QuickMAR/)).toBeTruthy();
   });
 
   it("prints recorded acknowledgements instead of blank lines", async () => {

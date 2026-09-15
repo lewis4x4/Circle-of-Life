@@ -4,6 +4,8 @@
  * Built from raw rows here so the shaping is testable without Supabase.
  */
 
+import { medicationSystemOfRecordFromSettings, type MedicationSystemOfRecord } from "@/lib/admin/facilities/medication-system-of-record";
+
 import { formatCarePlanResidentName } from "./care-plan-display-copy";
 import { formatCarePlanPrintCategoryLabel, formatCarePlanPrintRoom } from "./care-plan-print-copy";
 
@@ -72,6 +74,8 @@ export type CarePlanPrintPacket = {
     addressLines: string[];
     phone: string | null;
     licenseNumber: string | null;
+    /** Where medication orders live (COL-389); null when the facility has not said. */
+    medicationSystem: MedicationSystemOfRecord | null;
   };
   /** The Form 1823 the version was drafted from, when it named one. */
   form1823: { examDate: string | null; examinerName: string | null; examinerTitle: string | null } | null;
@@ -124,6 +128,7 @@ export type CarePlanPrintFacilityRow = {
   zip: string | null;
   phone: string | null;
   license_number: string | null;
+  settings?: unknown;
 };
 
 /** Enum order from `care_plan_item_category` — the order a caregiver reads the plan, not alphabetical. */
@@ -215,6 +220,7 @@ export function buildCarePlanPrintPacket(input: {
       addressLines,
       phone: facility.phone,
       licenseNumber: facility.license_number,
+      medicationSystem: medicationSystemOfRecordFromSettings(facility.settings),
     },
     form1823: input.form1823
       ? { examDate: input.form1823.exam_date, examinerName: input.form1823.physician_name, examinerTitle: input.form1823.examiner_title }
