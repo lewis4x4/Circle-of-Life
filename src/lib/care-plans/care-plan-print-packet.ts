@@ -31,6 +31,26 @@ export type CarePlanPrintSignature = {
   signatureData: string | null;
 };
 
+export type CarePlanPrintAcknowledgement = {
+  id: string;
+  signerRole: string;
+  signerName: string;
+  relationship: string | null;
+  method: string;
+  signatureData: string | null;
+  acknowledgedAt: string;
+};
+
+export type CarePlanPrintAcknowledgementRow = {
+  id: string;
+  signer_role: string;
+  signer_name: string;
+  relationship_to_resident: string | null;
+  method: string;
+  signature_data: string | null;
+  acknowledged_at: string;
+};
+
 export type CarePlanPrintPacket = {
   plan: {
     id: string;
@@ -55,6 +75,8 @@ export type CarePlanPrintPacket = {
   };
   sections: CarePlanPrintSection[];
   signature: CarePlanPrintSignature | null;
+  /** Resident / representative acknowledgements of this version, newest first. */
+  acknowledgements: CarePlanPrintAcknowledgement[];
   printedAt: string;
   printedBy: string;
 };
@@ -156,6 +178,7 @@ export function buildCarePlanPrintPacket(input: {
   facility: CarePlanPrintFacilityRow;
   approverName: string | null;
   supersededByVersion: number | null;
+  acknowledgements?: CarePlanPrintAcknowledgementRow[];
   printedAt: string;
   printedBy: string;
 }): CarePlanPrintPacket {
@@ -195,6 +218,17 @@ export function buildCarePlanPrintPacket(input: {
     signature: plan.approved_at
       ? { approvedAt: plan.approved_at, approverName: input.approverName, signatureData: plan.signature_data }
       : null,
+    acknowledgements: [...(input.acknowledgements ?? [])]
+      .sort((a, b) => b.acknowledged_at.localeCompare(a.acknowledged_at))
+      .map((row) => ({
+        id: row.id,
+        signerRole: row.signer_role,
+        signerName: row.signer_name,
+        relationship: row.relationship_to_resident,
+        method: row.method,
+        signatureData: row.signature_data,
+        acknowledgedAt: row.acknowledged_at,
+      })),
     printedAt: input.printedAt,
     printedBy: input.printedBy,
   };

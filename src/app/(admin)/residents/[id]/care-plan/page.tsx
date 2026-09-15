@@ -1,4 +1,5 @@
 "use client";
+import { CarePlanAcknowledgements } from "@/components/care-plans/CarePlanAcknowledgements";
 import { CarePlanAuthor } from "@/components/care-plans/CarePlanAuthor";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -465,6 +466,8 @@ export default function AdminResidentCarePlanPage() {
                 ))}
               </div>
             )}
+
+            <CarePlanAcknowledgements key={plan.id} planId={plan.id} planStatus={plan.status} />
           </div>
         )}
       </div>

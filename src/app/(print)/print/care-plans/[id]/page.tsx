@@ -17,6 +17,13 @@ import {
   formatCarePlanPrintDateOfBirth,
   formatCarePlanPrintTimestamp,
 } from "@/lib/care-plans/care-plan-print-copy";
+import {
+  CARE_PLAN_ACK_PRINT_REPRESENTATIVE_LINE,
+  CARE_PLAN_ACK_PRINT_RESIDENT_LINE,
+  formatCarePlanAckMethod,
+  formatCarePlanAckRole,
+  formatCarePlanAckSigner,
+} from "@/lib/care-plans/care-plan-acknowledgement-copy";
 import type { CarePlanPrintPacket } from "@/lib/care-plans/care-plan-print-packet";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -211,6 +218,38 @@ export default function CarePlanPrintSheetPage() {
             </div>
           ) : (
             <p className="mt-2 text-sm">{CARE_PLAN_PRINT_UNSIGNED_COPY}</p>
+          )}
+        </section>
+
+        <section className="mt-6 break-inside-avoid border-t border-black pt-4">
+          <h2 className="text-sm font-bold uppercase tracking-wide">Resident / representative acknowledgement</h2>
+          {packet.acknowledgements.length > 0 ? (
+            <ul className="mt-2 space-y-3 text-sm">
+              {packet.acknowledgements.map((ack) => (
+                <li key={ack.id} className="flex flex-wrap items-end justify-between gap-4">
+                  <div>
+                    <p className="font-semibold">{formatCarePlanAckRole(ack.signerRole)} · {formatCarePlanAckSigner(ack.signerName, ack.relationship)}</p>
+                    <p className="text-xs text-neutral-700">{formatCarePlanAckMethod(ack.method)} · {formatCarePlanPrintTimestamp(ack.acknowledgedAt)}</p>
+                  </div>
+                  {ack.signatureData ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- inline data URL captured at acknowledgement
+                    <img src={ack.signatureData} alt={`${formatCarePlanAckRole(ack.signerRole)} signature`} className="h-14 max-w-xs border-b border-black" />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            // No acknowledgement on record: leave the lines the paper copy needs.
+            <dl className="mt-4 grid grid-cols-[auto_1fr_auto_8rem] items-end gap-x-3 gap-y-6 text-sm">
+              <dt className="font-semibold">{CARE_PLAN_ACK_PRINT_RESIDENT_LINE}</dt>
+              <dd className="border-b border-black" aria-label="Resident signature line" />
+              <dt className="font-semibold">Date</dt>
+              <dd className="border-b border-black" aria-label="Resident signature date line" />
+              <dt className="font-semibold">{CARE_PLAN_ACK_PRINT_REPRESENTATIVE_LINE}</dt>
+              <dd className="border-b border-black" aria-label="Representative signature line" />
+              <dt className="font-semibold">Date</dt>
+              <dd className="border-b border-black" aria-label="Representative signature date line" />
+            </dl>
           )}
         </section>
 

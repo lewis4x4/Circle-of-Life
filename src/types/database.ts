@@ -1162,6 +1162,89 @@ export type Database = {
           },
         ]
       }
+      care_plan_acknowledgements: {
+        Row: {
+          acknowledged_at: string
+          care_plan_id: string
+          created_at: string
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          method: string
+          notes: string | null
+          organization_id: string
+          recorded_by: string
+          relationship_to_resident: string | null
+          resident_id: string
+          signature_data: string | null
+          signer_name: string
+          signer_role: string
+        }
+        Insert: {
+          acknowledged_at?: string
+          care_plan_id: string
+          created_at?: string
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          method: string
+          notes?: string | null
+          organization_id: string
+          recorded_by: string
+          relationship_to_resident?: string | null
+          resident_id: string
+          signature_data?: string | null
+          signer_name: string
+          signer_role: string
+        }
+        Update: {
+          acknowledged_at?: string
+          care_plan_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          organization_id?: string
+          recorded_by?: string
+          relationship_to_resident?: string | null
+          resident_id?: string
+          signature_data?: string | null
+          signer_name?: string
+          signer_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_plan_acknowledgements_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "care_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_acknowledgements_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_acknowledgements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_plan_acknowledgements_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_plan_change_tasks: {
         Row: {
           care_plan_id: string

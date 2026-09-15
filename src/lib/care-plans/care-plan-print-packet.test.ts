@@ -116,6 +116,26 @@ describe("buildCarePlanPrintPacket", () => {
     });
     expect(packet.plan.supersededByVersion).toBeNull();
     expect(packet.printedBy).toBe("Printer Example");
+    expect(packet.acknowledgements).toEqual([]);
+  });
+
+  it("carries acknowledgements newest first with the signer's relationship", () => {
+    const packet = buildCarePlanPrintPacket({
+      plan,
+      items: [],
+      resident,
+      facility,
+      approverName: null,
+      supersededByVersion: null,
+      acknowledgements: [
+        { id: "old", signer_role: "resident", signer_name: "Test Resident", relationship_to_resident: null, method: "verbal_review", signature_data: null, acknowledged_at: "2026-09-12T15:00:00.000Z" },
+        { id: "new", signer_role: "responsible_party", signer_name: "Alice Example", relationship_to_resident: "daughter", method: "in_person_signature", signature_data: "data:image/png;base64,BBBB", acknowledged_at: "2026-09-13T15:00:00.000Z" },
+      ],
+      printedAt: "2026-09-15T21:00:00.000Z",
+      printedBy: "Printer Example",
+    });
+    expect(packet.acknowledgements.map((a) => a.id)).toEqual(["new", "old"]);
+    expect(packet.acknowledgements[0]).toMatchObject({ signerRole: "responsible_party", relationship: "daughter", signatureData: "data:image/png;base64,BBBB" });
   });
 
   it("has no signature block until the plan was approved, even if signature bytes exist", () => {
