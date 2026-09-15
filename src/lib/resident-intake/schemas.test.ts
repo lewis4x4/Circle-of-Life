@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { providerExtractionSchema, residentIntakeCommandBodySchema, validateResidentIntakeCommandFacts } from "./schemas";
 
-const requestKey = "0f3ddfcb-76fd-4a95-815b-6ad5b75b1b77";
+// Synthetic low-entropy v4 UUID: a random one reads as key material to the
+// gitleaks generic-api-key rule (identifier ending in "Key" + high entropy).
+const requestKey = "00000000-0000-4000-8000-000000000002";
 const revision = "50d2c3d8-6ad0-4308-b923-838f4ab49fde";
 const sourceId = "7a6cae60-acd2-4056-8e60-d22685d43b3d";
 

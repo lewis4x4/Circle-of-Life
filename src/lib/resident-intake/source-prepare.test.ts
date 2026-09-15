@@ -17,7 +17,9 @@ const orgId = "7b290f39-a878-460f-b3dc-9dfb22d409f6";
 const facilityId = "90b3d1a4-84e9-46cf-b96a-c764c26d57b6";
 const expectedRevision = "7a9971d4-b707-4f51-8ba3-7431b356dcfe";
 const nextRevision = "b621d18a-d4a5-4037-b9a3-c0c1ca9628ab";
-const requestKey = "0bf2d6ff-5cf4-403a-9060-e6695251eaf1";
+// Synthetic low-entropy v4 UUID: a random one reads as key material to the
+// gitleaks generic-api-key rule (identifier ending in "Key" + high entropy).
+const requestKey = "00000000-0000-4000-8000-000000000004";
 const sha256 = "a".repeat(64);
 const path = `${orgId}/${facilityId}/${intakeId}/${sourceId}/source`;
 
