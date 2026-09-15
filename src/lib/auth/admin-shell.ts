@@ -34,6 +34,8 @@ const ADMIN_SHELL_SEGMENTS = [
   "/search",
   "/reports",
   "/admin/settings/users",
+  // Print sheets live in src/app/(print)/ — no shell, same session and role requirement.
+  "/print",
 ] as const;
 
 export function isAdminShellPath(pathname: string): boolean {

@@ -341,7 +341,7 @@ export default function AdminResidentCarePlanPage() {
                   )}
                   {plan?.id ? (
                     <Link
-                      href={`/admin/residents/${residentId}/care-plan/print?plan=${plan.id}`}
+                      href={`/print/care-plans/${plan.id}`}
                       target="_blank"
                       rel="noopener"
                       className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex gap-1")}
