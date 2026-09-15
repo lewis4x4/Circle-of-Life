@@ -40,6 +40,13 @@ jobs:
           python3 -B -m unittest discover -s scripts/stand-up -p 'test_*.py'
           npx vitest run src/lib/stand-up src/components/stand-up src/app/api/stand-up
 
+      - name: Migrations can apply to a hosted project
+        # Not gated behind HAVEN_UI_GATES_ENABLED. Migration 380 called
+        # public.gen_random_uuid() in 22 places and could never have applied
+        # hosted, yet it passed review and passed the local replay (COL-370).
+        # Static, no credentials, sub-second.
+        run: npm run migrations:check:hosted
+
       - name: Stand Up database authorization and recovery replay
         run: npm run migrations:verify:pg
         env:
