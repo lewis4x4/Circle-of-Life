@@ -158,6 +158,15 @@ export default function CarePlanPrintSheetPage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-700">Review due</p>
             <p className="tabular-nums">{formatCarePlanDateOnly(packet.plan.reviewDueDate)}</p>
           </div>
+          {packet.form1823 ? (
+            <div className="col-span-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-700">Based on</p>
+              <p>
+                Form 1823 exam {formatCarePlanDateOnly(packet.form1823.examDate)}
+                {packet.form1823.examinerName ? ` · ${packet.form1823.examinerName}${packet.form1823.examinerTitle ? ` (${packet.form1823.examinerTitle})` : ""}` : ""}
+              </p>
+            </div>
+          ) : null}
           {packet.plan.notes ? (
             <div className="col-span-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-700">Notes</p>

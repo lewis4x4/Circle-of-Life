@@ -29,6 +29,7 @@ import {
   isCarePlanAuthor,
 } from "@/lib/care-plans/care-plan-approval-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import type { Form1823DraftSource } from "@/lib/care-plans/draft-from-form-1823";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -77,7 +78,13 @@ type CarePlanRow = {
   notes: string | null;
   updated_at: string | null;
   created_by: string | null;
+  source_form_1823_id: string | null;
 };
+
+type Form1823Row = Form1823DraftSource & { is_current: boolean; status: string | null };
+
+const FORM_1823_COLUMNS =
+  "id, exam_date, physician_name, examiner_title, allergies, prescribed_diet, medication_assistance, elopement_risk, adl_bathing, adl_dressing, adl_eating, adl_transferring, adl_toileting, adl_grooming, adl_walking, condition_pressure_injury, physical_limitations, cognitive_behavioral_status, service_requirements, precautions, is_current, status";
 
 type CarePlanItemRow = {
   id: string;
@@ -97,6 +104,10 @@ type LoadedState = {
   residentAcuity: string | null;
   plan: CarePlanRow | null;
   items: CarePlanItemRow[];
+  /** The resident's current, received Form 1823 — the one a draft may start from. */
+  currentForm1823: Form1823Row | null;
+  /** The 1823 the shown plan was drafted from, if it named one. */
+  sourceForm1823: Form1823Row | null;
 };
 
 export default function AdminResidentCarePlanPage() {
@@ -160,23 +171,35 @@ export default function AdminResidentCarePlanPage() {
         last_name: resident.last_name,
       });
 
-      const plansResult = (await supabase
-        .from("care_plans" as never)
-        .select("id, version, status, effective_date, review_due_date, notes, updated_at, created_by")
-        .eq("resident_id", residentId)
-        .is("deleted_at", null)) as unknown as QueryListResult<CarePlanRow>;
+      const [plansResult, formsResult] = (await Promise.all([
+        supabase
+          .from("care_plans" as never)
+          .select("id, version, status, effective_date, review_due_date, notes, updated_at, created_by, source_form_1823_id")
+          .eq("resident_id", residentId)
+          .is("deleted_at", null),
+        supabase
+          .from("form_1823_records" as never)
+          .select(FORM_1823_COLUMNS)
+          .eq("resident_id", residentId)
+          .is("deleted_at", null)
+          .order("exam_date", { ascending: false, nullsFirst: false }),
+      ])) as unknown as [QueryListResult<CarePlanRow>, QueryListResult<Form1823Row>];
 
       if (plansResult.error) throw plansResult.error;
+      if (formsResult.error) throw formsResult.error;
       const plans = plansResult.data ?? [];
+      const forms = formsResult.data ?? [];
+      const currentForm1823 = forms.find((form) => form.is_current && form.status === "received") ?? null;
       setPlanChoices(plans);
       const plan = plans.find((candidate) => candidate.id === selectedPlanId) ?? pickCarePlan(plans);
 
       if (!plan) {
         setNoPlan(true);
-        setLoaded({ residentName, residentAcuity: resident.acuity_level, plan: null, items: [] });
+        setLoaded({ residentName, residentAcuity: resident.acuity_level, plan: null, items: [], currentForm1823, sourceForm1823: null });
         setLoading(false);
         return;
       }
+      const sourceForm1823 = plan.source_form_1823_id ? forms.find((form) => form.id === plan.source_form_1823_id) ?? null : null;
 
       const itemsResult = (await supabase
         .from("care_plan_items" as never)
@@ -191,7 +214,7 @@ export default function AdminResidentCarePlanPage() {
       if (itemsResult.error) throw itemsResult.error;
       const items = itemsResult.data ?? [];
 
-      setLoaded({ residentName, residentAcuity: resident.acuity_level, plan, items });
+      setLoaded({ residentName, residentAcuity: resident.acuity_level, plan, items, currentForm1823, sourceForm1823 });
     } catch (err) {
       setError(
         formatLiveDataLoadError(err, "Care plan data is unavailable. Check your connection and try again."),
@@ -302,7 +325,16 @@ export default function AdminResidentCarePlanPage() {
         />
 
         {planChoices.length > 1 && <label>Plan version<select value={plan?.id ?? ""} onChange={(e) => setSelectedPlanId(e.target.value)} className="ml-3 rounded border p-2">{planChoices.map((choice) => <option key={choice.id} value={choice.id}>Version {choice.version} · {choice.status}</option>)}</select></label>}
-        {plan?.status !== "archived" && <CarePlanAuthor key={`${residentId}:${plan?.id ?? "new"}`} residentId={residentId} previousId={plan?.id} initialItems={items} onSaved={() => { setSelectedPlanId(""); void load(); }} />}
+        {plan?.status !== "archived" && <CarePlanAuthor key={`${residentId}:${plan?.id ?? "new"}`} residentId={residentId} previousId={plan?.id} initialItems={items} sourceForm1823={loaded.currentForm1823} onSaved={() => { setSelectedPlanId(""); void load(); }} />}
+        {plan && loaded.sourceForm1823 ? (
+          <p className="text-sm text-muted-foreground">
+            Based on Form 1823 exam {formatCarePlanDateOnly(loaded.sourceForm1823.exam_date)}
+            {loaded.sourceForm1823.physician_name ? ` · ${loaded.sourceForm1823.physician_name}` : ""}
+            {loaded.currentForm1823 && loaded.currentForm1823.id !== loaded.sourceForm1823.id
+              ? ` — a newer Form 1823 (exam ${formatCarePlanDateOnly(loaded.currentForm1823.exam_date)}) is on file`
+              : ""}
+          </p>
+        ) : null}
         {noPlan || !plan?.id ? (
           <AdminEmptyState
             title="No care plan on file"

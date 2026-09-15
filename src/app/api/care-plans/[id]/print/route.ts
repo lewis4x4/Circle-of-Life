@@ -31,7 +31,10 @@ type PlanRow = {
   approved_at: string | null;
   approved_by: string | null;
   signature_data: string | null;
+  source_form_1823_id: string | null;
 };
+
+type Form1823ProvenanceRow = { exam_date: string | null; physician_name: string | null; examiner_title: string | null };
 
 /**
  * GET /api/care-plans/[id]/print — the print packet for one plan version.
@@ -55,7 +58,7 @@ export async function GET(
   const planResult = (await admin
     .from("care_plans")
     .select(
-      "id, resident_id, facility_id, organization_id, version, status, effective_date, review_due_date, notes, approved_at, approved_by, signature_data",
+      "id, resident_id, facility_id, organization_id, version, status, effective_date, review_due_date, notes, approved_at, approved_by, signature_data, source_form_1823_id",
     )
     .eq("id", carePlanId)
     .eq("organization_id", actor.organizationId)
@@ -76,7 +79,7 @@ export async function GET(
     return NextResponse.json({ error: "You do not have access to this care plan" }, { status: 403 });
   }
 
-  const [residentResult, facilityResult, itemsResult, approverResult, successorResult, acknowledgementResult] = await Promise.all([
+  const [residentResult, facilityResult, itemsResult, approverResult, successorResult, acknowledgementResult, form1823Result] = await Promise.all([
     admin
       .from("residents")
       .select("id, first_name, last_name, date_of_birth, beds!fk_beds_resident ( bed_label, rooms ( room_number ) )")
@@ -122,6 +125,15 @@ export async function GET(
       .eq("care_plan_id", plan.id)
       .is("deleted_at", null)
       .order("acknowledged_at", { ascending: false }) as unknown as Promise<ListResult<CarePlanPrintAcknowledgementRow>>,
+    plan.source_form_1823_id
+      ? // form_1823_records is not yet in the generated Database types (same staleness as COL-347).
+        (admin
+          .from("form_1823_records" as never)
+          .select("exam_date, physician_name, examiner_title")
+          .eq("id" as never, plan.source_form_1823_id as never)
+          .eq("resident_id" as never, plan.resident_id as never)
+          .maybeSingle() as unknown as Promise<SingleResult<Form1823ProvenanceRow>>)
+      : Promise.resolve<SingleResult<Form1823ProvenanceRow>>({ data: null, error: null }),
   ]);
 
   const firstError =
@@ -130,7 +142,8 @@ export async function GET(
     itemsResult.error ??
     approverResult.error ??
     successorResult.error ??
-    acknowledgementResult.error;
+    acknowledgementResult.error ??
+    form1823Result.error;
   if (firstError) {
     logError("care-plans.print", firstError, { action: "load_packet", carePlanId });
     return NextResponse.json({ error: "Care plan could not be loaded for printing" }, { status: 500 });
@@ -149,6 +162,7 @@ export async function GET(
       : null,
     supersededByVersion: successorResult.data?.version ?? null,
     acknowledgements: acknowledgementResult.data ?? [],
+    form1823: form1823Result.data,
     printedAt: new Date().toISOString(),
     printedBy: formatUploadedByProfile({
       full_name: actor.fullName,

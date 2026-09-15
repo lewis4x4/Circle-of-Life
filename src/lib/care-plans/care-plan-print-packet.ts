@@ -73,6 +73,8 @@ export type CarePlanPrintPacket = {
     phone: string | null;
     licenseNumber: string | null;
   };
+  /** The Form 1823 the version was drafted from, when it named one. */
+  form1823: { examDate: string | null; examinerName: string | null; examinerTitle: string | null } | null;
   sections: CarePlanPrintSection[];
   signature: CarePlanPrintSignature | null;
   /** Resident / representative acknowledgements of this version, newest first. */
@@ -179,6 +181,7 @@ export function buildCarePlanPrintPacket(input: {
   approverName: string | null;
   supersededByVersion: number | null;
   acknowledgements?: CarePlanPrintAcknowledgementRow[];
+  form1823?: { exam_date: string | null; physician_name: string | null; examiner_title: string | null } | null;
   printedAt: string;
   printedBy: string;
 }): CarePlanPrintPacket {
@@ -213,6 +216,9 @@ export function buildCarePlanPrintPacket(input: {
       phone: facility.phone,
       licenseNumber: facility.license_number,
     },
+    form1823: input.form1823
+      ? { examDate: input.form1823.exam_date, examinerName: input.form1823.physician_name, examinerTitle: input.form1823.examiner_title }
+      : null,
     sections: groupCarePlanPrintItems(input.items),
     // Only an approval instant proves a signature happened; signature_data alone does not.
     signature: plan.approved_at

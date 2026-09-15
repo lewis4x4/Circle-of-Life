@@ -1633,6 +1633,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           signature_data: string | null
+          source_form_1823_id: string | null
           status: Database["public"]["Enums"]["care_plan_status"]
           updated_at: string
           updated_by: string | null
@@ -1656,6 +1657,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           signature_data?: string | null
+          source_form_1823_id?: string | null
           status?: Database["public"]["Enums"]["care_plan_status"]
           updated_at?: string
           updated_by?: string | null
@@ -1679,6 +1681,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           signature_data?: string | null
+          source_form_1823_id?: string | null
           status?: Database["public"]["Enums"]["care_plan_status"]
           updated_at?: string
           updated_by?: string | null
