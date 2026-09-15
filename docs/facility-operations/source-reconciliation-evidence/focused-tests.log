@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /Users/brianlewis/Circle of Life/Haven HFO Source Reconciliation
+
+
+ Test Files  85 passed (85)
+      Tests  958 passed (958)
+   Start at  21:04:32
+   Duration  18.65s (transform 22.39s, setup 18.61s, import 100.98s, tests 23.68s, environment 81.29s)
