@@ -20,7 +20,11 @@ import {
 } from "./source-bytes";
 
 const PROVIDER = "anthropic";
-const DEFAULT_MODEL = "claude-sonnet-4-6";
+// The fallback when RESIDENT_RECORD_INTAKE_MODEL is unset. It has to name a
+// model that currently exists: a stale identifier fails at the provider and the
+// failure reads as "external parsing is not configured", which sends staff to
+// the manual path for what is really a wrong constant.
+const DEFAULT_MODEL = "claude-sonnet-5";
 const MAX_PROVIDER_IMAGE_EDGE = 4_096;
 const MAX_PROVIDER_IMAGE_PIXELS = 20_000_000;
 
