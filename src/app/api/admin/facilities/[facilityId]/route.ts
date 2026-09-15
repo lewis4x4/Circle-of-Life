@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import type { Database } from "@/types/database";
 import { createClient } from "@/lib/supabase/server";
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { updateFacilitySchema } from "@/lib/validation/facility-admin";
@@ -225,7 +226,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   }
 
   // Build update payload
-  const updatePayload: Record<string, unknown> = {
+  const updatePayload: Database["public"]["Tables"]["facilities"]["Update"] = {
     updated_at: new Date().toISOString(),
     updated_by: actor.id,
   };
@@ -255,7 +256,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
   const { data: updated, error: updateErr } = await admin
     .from("facilities")
-    .update(updatePayload as Record<string, unknown>)
+    .update(updatePayload)
     .eq("id", facilityId)
     .select()
     .single();

@@ -72,7 +72,7 @@ export default function VendorInvoiceDetailPage() {
     if (!inv || !organizationId || loading || loadError) return;
     setSaving(true);
     setLoadError(null);
-    const payload: Record<string, unknown> = { status };
+    const payload: Database["public"]["Tables"]["vendor_invoices"]["Update"] = { status };
     if (withApproval) {
       payload.approved_by = user?.id ?? null;
       payload.approved_at = new Date().toISOString();

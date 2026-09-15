@@ -258,7 +258,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   }
 
   // Build update payload
-  const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const updatePayload: Database["public"]["Tables"]["user_profiles"]["Update"] = { updated_at: new Date().toISOString() };
   if (updates.full_name !== undefined) updatePayload.full_name = updates.full_name;
   if (updates.phone !== undefined) updatePayload.phone = updates.phone;
   if (updates.email !== undefined) updatePayload.email = updates.email;

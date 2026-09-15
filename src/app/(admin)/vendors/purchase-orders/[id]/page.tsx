@@ -72,7 +72,7 @@ export default function PurchaseOrderDetailPage() {
     if (!po || !organizationId) return;
     setSaving(true);
     setLoadError(null);
-    const payload: Record<string, unknown> = { status };
+    const payload: Database["public"]["Tables"]["purchase_orders"]["Update"] = { status };
     if (opts?.approved) {
       payload.approved_by = user?.id ?? null;
       payload.approved_at = new Date().toISOString();

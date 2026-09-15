@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Database } from "@/types/database";
 
 import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
@@ -81,7 +82,7 @@ export async function PATCH(
 
   const now = new Date().toISOString();
   const note = reason || buildDefaultReason(action);
-  const patch: Record<string, string | null> = {
+  const patch: Database["public"]["Tables"]["resident_watch_instances"]["Update"] = {
     updated_by: context.userId,
   };
 

@@ -84,10 +84,9 @@ export interface FacilityRow extends BaseFacilityRow {
   licensed_beds?: number;
   /** Legal entity display (detail API) */
   entity_name?: string | null;
-  /** Migration 131 — care services (never `memory_care`) */
-  care_services_offered?: string[] | null;
-  /** Waitlist count (from detail/list API) */
-  waitlist_count?: number;
+  // Migration 131's care_services_offered and waitlist_count now come from the
+  // generated Row. They were declared here while database.ts was missing them;
+  // redeclaring them as optional would widen the base with `undefined`.
   /** Most recent AHCA survey date */
   last_survey_date?: string | null;
   /** Most recent AHCA survey result */

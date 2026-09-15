@@ -1537,6 +1537,7 @@ export type Database = {
           review_due_date: string
           reviewed_at: string | null
           reviewed_by: string | null
+          signature_data: string | null
           status: Database["public"]["Enums"]["care_plan_status"]
           updated_at: string
           updated_by: string | null
@@ -1559,6 +1560,7 @@ export type Database = {
           review_due_date: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          signature_data?: string | null
           status?: Database["public"]["Enums"]["care_plan_status"]
           updated_at?: string
           updated_by?: string | null
@@ -1581,6 +1583,7 @@ export type Database = {
           review_due_date?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          signature_data?: string | null
           status?: Database["public"]["Enums"]["care_plan_status"]
           updated_at?: string
           updated_by?: string | null
@@ -4262,6 +4265,12 @@ export type Database = {
       }
       facilities: {
         Row: {
+          care_services_offered: string[] | null
+          current_administrator_id: string | null
+          opening_date: string | null
+          pharmacy_vendor: string | null
+          target_occupancy_pct: number | null
+          waitlist_count: number
           address_line_1: string
           address_line_2: string | null
           administrator_name: string | null
@@ -4294,6 +4303,12 @@ export type Database = {
           zip: string
         }
         Insert: {
+          care_services_offered?: string[] | null
+          current_administrator_id?: string | null
+          opening_date?: string | null
+          pharmacy_vendor?: string | null
+          target_occupancy_pct?: number | null
+          waitlist_count?: number
           address_line_1: string
           address_line_2?: string | null
           administrator_name?: string | null
@@ -4326,6 +4341,12 @@ export type Database = {
           zip: string
         }
         Update: {
+          care_services_offered?: string[] | null
+          current_administrator_id?: string | null
+          opening_date?: string | null
+          pharmacy_vendor?: string | null
+          target_occupancy_pct?: number | null
+          waitlist_count?: number
           address_line_1?: string
           address_line_2?: string | null
           administrator_name?: string | null
@@ -11051,6 +11072,7 @@ export type Database = {
           id: string
           organization_id: string
           resident_id: string
+          resolution_rationale: string | null
           resolution_note: string | null
           resolved_at: string | null
           status: Database["public"]["Enums"]["resident_observation_follow_up_status"]
@@ -11072,6 +11094,7 @@ export type Database = {
           id?: string
           organization_id: string
           resident_id: string
+          resolution_rationale?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
           status?: Database["public"]["Enums"]["resident_observation_follow_up_status"]
@@ -11093,6 +11116,7 @@ export type Database = {
           id?: string
           organization_id?: string
           resident_id?: string
+          resolution_rationale?: string | null
           resolution_note?: string | null
           resolved_at?: string | null
           status?: Database["public"]["Enums"]["resident_observation_follow_up_status"]
