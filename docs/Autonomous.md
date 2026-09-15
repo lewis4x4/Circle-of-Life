@@ -4,6 +4,20 @@
 
 ---
 
+## RECORD — resident overview care workspace (2026-09-15)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `resident-overview-care-workspace` |
+| **Mission alignment** | **pass** — staff can read care facts, recent activity, and due work without treating missing documentation as a quiet shift. |
+| **Change** | Resident overview (`ResidentDetailOverviewClient` on `/admin/residents/[id]` and `/clinical/residents/[id]`; shared tab shell actions). Factual 7-day Eastern empty activity copy; code status + verification at equal prominence; compact care summary; two-column activity / attention layout; diagnoses shown as recorded (no heuristic grouping); documentation actions as `min-h-11` outline buttons. |
+| **Diagnosis inspect** | `primary_diagnosis` is free text (often a combined list). `diagnosis_list` is a separate array. The loader concatenates and exact-match-dedupes only. Heuristic category grouping was removed from this page so combined + individual phrases stay visible. |
+| **Validation** | 42 focused tests passed. Changed-file ESLint clean. Authenticated browser UAT not run (login wall). |
+| **Gates** | Required segment gates **not PASS**. Inherited repo ESLint (419) and gitleaks (intake test fixtures) were advisory. Docker migration replay skipped (`SKIP_PG_VERIFY=1`; Docker hung). `next build` failed on concurrent stand-up editor type errors outside this segment. Failed artifact: `test-results/agent-gates/2026-09-15T20-41-38-764Z-resident-overview-care-workspace.json`. Implementation is on `cursor/resident-overview-presentation`. |
+| **Next** | Re-run `npm run segment:gates -- --segment resident-overview-care-workspace --ui` after stand-up typecheck is green. No deploy. |
+
+---
+
 ## RECORD — staff offboard COL-349 (2026-09-15)
 
 | Field | Value |
