@@ -3,9 +3,12 @@
  * Patch builders keep optional text as SQL NULL when cleared (Quiet Operator display copy).
  */
 
+import { employmentStatusCommandError } from "./staff-offboard";
+
 export const STAFF_PROFILE_SELECT_COLUMNS = [
   "id",
   "facility_id",
+  "user_id",
   "first_name",
   "last_name",
   "preferred_name",
@@ -38,6 +41,7 @@ export const STAFF_PROFILE_SELECT_COLUMNS = [
 export type StaffProfileRow = {
   id: string;
   facility_id: string;
+  user_id: string | null;
   first_name: string;
   last_name: string;
   preferred_name: string | null;
@@ -120,13 +124,10 @@ export function canEditStaffProfile(appRole: string): boolean {
 }
 
 export function staffProfileEmploymentStatusOptions(current: string): { value: string; label: string }[] {
-  const opts = [...EMPLOYMENT_STATUS_CREATE_OPTIONS];
   if (current === "terminated" || current === "suspended") {
-    if (!opts.some((o) => o.value === current)) {
-      opts.push({ value: current, label: LEGACY_EMPLOYMENT_STATUSES[current] ?? current });
-    }
+    return [{ value: current, label: LEGACY_EMPLOYMENT_STATUSES[current] ?? current }];
   }
-  return opts;
+  return [...EMPLOYMENT_STATUS_CREATE_OPTIONS];
 }
 
 function optionalTextToNull(value: string): string | null {
@@ -280,6 +281,10 @@ export function buildStaffProfileSectionPatch(
       return { ok: false, error: "Hire date is required." };
     }
     const status = draft.employment_status.trim() || currentStatus;
+    const commandError = employmentStatusCommandError(currentStatus, status);
+    if (commandError) {
+      return { ok: false, error: commandError };
+    }
     const maxParsed = parseMaxHours(draft.max_hours_per_week);
     if (!maxParsed.ok) {
       return { ok: false, error: maxParsed.error };

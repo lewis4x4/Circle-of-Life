@@ -20,6 +20,7 @@ function makeStaffRow(overrides: Partial<StaffProfileRow> = {}): StaffProfileRow
   return {
     id: STAFF_ID,
     facility_id: FACILITY_ID,
+    user_id: null,
     first_name: "Harbor",
     last_name: "Example",
     preferred_name: null,
@@ -142,6 +143,7 @@ describe("AdminStaffDetailPage profile edit", () => {
     render(<AdminStaffDetailPage />);
     expect(await screen.findByText("Harbor Example")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^offboard$/i })).not.toBeInTheDocument();
   });
 
   it("shows Edit for facility_admin and saves contact patch with null phone when cleared", async () => {
@@ -153,6 +155,7 @@ describe("AdminStaffDetailPage profile edit", () => {
 
     const editButtons = screen.getAllByRole("button", { name: /^edit$/i });
     expect(editButtons.length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /^offboard$/i })).toBeInTheDocument();
 
     const contactSection = screen.getByRole("region", { name: "Contact" });
     const contactEdit = withinContactEdit(contactSection, editButtons);

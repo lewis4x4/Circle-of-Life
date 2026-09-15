@@ -4,6 +4,18 @@
 
 ---
 
+## RECORD — staff offboard COL-349 (2026-09-15)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `staff-offboard-col-349` |
+| **Mission alignment** | **pass** — administrators can end employment and revoke Haven sign-in without deleting staff history, certifications, or time records. |
+| **Change** | Workforce staff detail Offboard / Restore employment. Linked logins use the existing user disable/reactivate lifecycle (facility grants revoked; sign-in banned). Roster filter **Inactive**. Physical access-control revoke is flagged in `audit_log` for COL-355 / CDVI, not vendor-cutover. |
+| **Validation** | 58 focused tests passed. Typecheck clean for the new files. Segment gate `test-results/agent-gates/2026-09-15T20-31-53-138Z-staff-offboard-col-349.json` **PASS**. ESLint and gitleaks were advisory (pre-existing repo debt). Docker migration replay skipped (`SKIP_PG_VERIFY=1`); no new DDL. Authenticated browser UAT not run. |
+| **Next** | Hosted apply is app-only. COL-355 remains the vendor/HR gate for CDVI Atrium. |
+
+---
+
 ## RECORD — executive static startup (2026-09-05)
 
 - **Mission alignment: pass.** Reduce the owner's observed entry delay while preserving authenticated, organization-scoped data access and current metric calculations.

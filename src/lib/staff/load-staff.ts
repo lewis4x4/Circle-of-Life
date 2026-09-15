@@ -7,7 +7,7 @@ import { formatStaffRosterNextShift } from "@/lib/staff/staff-roster-display-cop
 import type { Database } from "@/types/database";
 
 export type StaffRole = "nurse" | "caregiver" | "med_tech" | "admin";
-export type StaffStatus = "active" | "on_leave" | "off_shift";
+export type StaffStatus = "active" | "on_leave" | "inactive";
 export type CertificationStatus = "current" | "expiring_soon" | "expired" | "not_verified";
 
 export type StaffRow = {
@@ -280,9 +280,9 @@ export function formatStaffRoleLabel(role: string): string {
   return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function mapEmploymentToUiStatus(employment: string): StaffStatus {
+export function mapEmploymentToUiStatus(employment: string): StaffStatus {
   if (employment === "on_leave") return "on_leave";
-  if (employment === "terminated" || employment === "suspended") return "off_shift";
+  if (employment === "terminated" || employment === "suspended") return "inactive";
   return "active";
 }
 

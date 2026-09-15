@@ -15,6 +15,7 @@ function baseRow(overrides: Partial<StaffProfileRow> = {}): StaffProfileRow {
   return {
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     facility_id: "11111111-1111-1111-1111-111111111111",
+    user_id: null,
     first_name: "Roster",
     last_name: "Example",
     preferred_name: null,
@@ -67,10 +68,9 @@ describe("staffProfileEmploymentStatusOptions", () => {
     expect(opts.map((o) => o.value)).toEqual(["active", "on_leave"]);
   });
 
-  it("retains terminated when current status is terminated", () => {
+  it("keeps terminated profiles on the offboard command instead of a casual active option", () => {
     const opts = staffProfileEmploymentStatusOptions("terminated");
-    expect(opts.map((o) => o.value)).toContain("terminated");
-    expect(opts.map((o) => o.value)).toContain("active");
+    expect(opts.map((o) => o.value)).toEqual(["terminated"]);
   });
 
   it("retains suspended when current status is suspended", () => {
@@ -122,6 +122,13 @@ describe("buildStaffProfileSectionPatch", () => {
     const draft = baseDraft({ hire_date: "" });
     const res = buildStaffProfileSectionPatch("employment", draft, updatedBy, "active");
     expect(res.ok).toBe(false);
+  });
+
+  it("refuses a casual terminate from the employment section", () => {
+    const draft = baseDraft({ employment_status: "terminated" });
+    const res = buildStaffProfileSectionPatch("employment", draft, updatedBy, "active");
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toMatch(/Offboard/);
   });
 
   it("includes float pool and schedule on employment patch", () => {

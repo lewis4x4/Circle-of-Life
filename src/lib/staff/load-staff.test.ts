@@ -5,6 +5,7 @@ import {
   countUniqueActiveStaffDirectoryRecords,
   dedupeStaffDirectoryRecords,
   isSameStaffDirectoryPerson,
+  mapEmploymentToUiStatus,
   pickPreferredStaffDirectoryRecord,
   staffUpcomingShiftCutoffIso,
   type StaffDirectorySourceRow,
@@ -31,6 +32,15 @@ function row(
     ...overrides,
   };
 }
+
+describe("mapEmploymentToUiStatus", () => {
+  it("surfaces terminated and suspended as inactive, not off-shift", () => {
+    expect(mapEmploymentToUiStatus("active")).toBe("active");
+    expect(mapEmploymentToUiStatus("on_leave")).toBe("on_leave");
+    expect(mapEmploymentToUiStatus("terminated")).toBe("inactive");
+    expect(mapEmploymentToUiStatus("suspended")).toBe("inactive");
+  });
+});
 
 describe("staffUpcomingShiftCutoffIso", () => {
   /** 8:05 PM Eastern on 2026-08-20 (EDT, UTC−4) — after the UTC date rolls to tomorrow. */
