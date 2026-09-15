@@ -32,6 +32,13 @@ export type ResidentAssuranceFacilityRollup = {
   highOrCriticalSafetyResidents: number;
   heatScore: number;
   heatBand: "stable" | "watch" | "elevated" | "critical";
+  /**
+   * False when nothing has ever been recorded for this facility. Its counts are
+   * then absences of records, not observed zeros, and must not read as stable.
+   */
+  observed: boolean;
+  /** Most recent recorded resident safety scoring (ISO), or null when none exists. */
+  lastObservedAt: string | null;
 };
 
 export type ResidentAssuranceFacilityTrendPoint = {
@@ -42,6 +49,11 @@ export type ResidentAssuranceFacilityTrendPoint = {
   criticalResidents: number;
   heatScore: number;
   heatBand: ResidentAssuranceFacilityRollup["heatBand"];
+  /**
+   * True only when something was recorded for this facility on this day. An
+   * unobserved day is a gap in the series, never a healthy zero.
+   */
+  observed: boolean;
 };
 
 export type ResidentAssuranceFacilityTrendRow = {
@@ -51,6 +63,12 @@ export type ResidentAssuranceFacilityTrendRow = {
   peakHeatScore: number;
   avgHeatScore: number;
   points: ResidentAssuranceFacilityTrendPoint[];
+  /** Days in the window with a recorded observation. */
+  observedDays: number;
+  /** Days in the window. `observedDays` of `days` is the coverage of this row. */
+  days: number;
+  /** Most recent day with a recorded observation (YYYY-MM-DD), or null. */
+  lastObservedDate: string | null;
 };
 
 type RiskScoreRow = {
@@ -283,12 +301,17 @@ export async function fetchResidentAssuranceFacilityHeatMap(
   }
 
   const latestScoreByResident = new Map<string, { facility_id: string; risk_tier: "low" | "moderate" | "high" | "critical" }>();
+  const lastScoredAtByFacility = new Map<string, string>();
   for (const row of scoresRes.data ?? []) {
     if (!latestScoreByResident.has(row.resident_id)) {
       latestScoreByResident.set(row.resident_id, {
         facility_id: row.facility_id,
         risk_tier: row.risk_tier,
       });
+    }
+    const seen = lastScoredAtByFacility.get(row.facility_id);
+    if (!seen || row.computed_at > seen) {
+      lastScoredAtByFacility.set(row.facility_id, row.computed_at);
     }
   }
 
@@ -317,6 +340,14 @@ export async function fetchResidentAssuranceFacilityHeatMap(
       criticalSafetyResidents * 4 +
       Math.max(0, highOrCriticalSafetyResidents - criticalSafetyResidents);
 
+    const lastObservedAt = lastScoredAtByFacility.get(facility.id) ?? null;
+    const observed =
+      lastObservedAt !== null ||
+      activeWatches > 0 ||
+      pendingWatchApprovals > 0 ||
+      openEscalations > 0 ||
+      openIntegrityFlags > 0;
+
     return {
       facilityId: facility.id,
       facilityName: facility.name,
@@ -328,6 +359,8 @@ export async function fetchResidentAssuranceFacilityHeatMap(
       highOrCriticalSafetyResidents,
       heatScore,
       heatBand: computeHeatBand(heatScore),
+      observed,
+      lastObservedAt,
     };
   });
 }
@@ -456,6 +489,18 @@ export async function fetchResidentAssuranceFacilityTrendSeries(
     }
   }
 
+  // A day counts as observed when the assurance engine recorded anything for
+  // that facility — a scoring run or any watch, escalation or integrity entry.
+  // Days with no record are gaps in the series; a zero is only meaningful on a
+  // day something was actually recorded.
+  const observedKeys = new Set<string>();
+  for (const row of latestScoreByResidentDay.values()) {
+    observedKeys.add(`${row.facility_id}:${row.date}`);
+  }
+  for (const key of [...watchStartsByKey.keys(), ...escalationsByKey.keys(), ...integrityByKey.keys()]) {
+    observedKeys.add(key);
+  }
+
   return (facilitiesRes.data ?? []).map((facility) => {
     const points = dates.map((date) => {
       const key = `${facility.id}:${date}`;
@@ -480,12 +525,15 @@ export async function fetchResidentAssuranceFacilityTrendSeries(
         criticalResidents,
         heatScore,
         heatBand: computeHeatBand(heatScore),
+        observed: observedKeys.has(key),
       };
     });
 
     const latestHeatScore = points[points.length - 1]?.heatScore ?? 0;
     const peakHeatScore = points.reduce((max, point) => Math.max(max, point.heatScore), 0);
     const avgHeatScore = points.length > 0 ? Math.round((points.reduce((sum, point) => sum + point.heatScore, 0) / points.length) * 10) / 10 : 0;
+
+    const observedPoints = points.filter((point) => point.observed);
 
     return {
       facilityId: facility.id,
@@ -494,6 +542,9 @@ export async function fetchResidentAssuranceFacilityTrendSeries(
       peakHeatScore,
       avgHeatScore,
       points,
+      observedDays: observedPoints.length,
+      days: points.length,
+      lastObservedDate: observedPoints[observedPoints.length - 1]?.date ?? null,
     };
   });
 }

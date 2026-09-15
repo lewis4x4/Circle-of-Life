@@ -20,6 +20,15 @@ import {
   buildFacilitySnapshotQuery,
 } from "@/lib/executive/metric-snapshot-queries";
 import {
+  buildPortfolioMetricChanges,
+  type MetricChange,
+} from "@/lib/executive/metric-change";
+import {
+  facilityTodayIsoDate,
+  resolveSnapshotState,
+  type ExecutiveSnapshotState,
+} from "@/lib/executive/snapshot-evidence";
+import {
   fetchResidentAssuranceFacilityHeatMap,
   fetchResidentAssuranceFacilityTrendSeries,
   type ResidentAssuranceFacilityRollup,
@@ -40,12 +49,17 @@ export type ExecutiveOverviewData = {
   assuranceTrends: ResidentAssuranceFacilityTrendRow[];
   presenceCensus: PresenceCensus;
   occupancyContext: OccupancyContext | null;
+  /** When the portfolio figures were recorded, and the denominators behind them. */
+  snapshot: ExecutiveSnapshotState;
+  /** Dated portfolio-scope changes, keyed by metric code. Absent = nothing to compare. */
+  metricChanges: Record<string, MetricChange>;
 };
 
 type MetricSnapshotRow = {
   facility_id: string | null;
   metric_code: string;
   metric_value_numeric: number | null;
+  snapshot_date: string;
 };
 
 /** Per-query ceiling so one stuck Supabase call can't gate the whole dashboard. */
@@ -95,6 +109,7 @@ export async function loadExecutiveOverview(
     assuranceTrendRows,
     presenceCensusRes,
     bedCensusRes,
+    snapshotRunRes,
   ] = await Promise.allSettled([
       withTimeout(buildAggregateSnapshotQuery(supabase, organizationId), "aggregate-snapshots"),
       withTimeout(buildFacilitySnapshotQuery(supabase, organizationId), "facility-snapshots"),
@@ -123,6 +138,20 @@ export async function loadExecutiveOverview(
         })(),
         "bed-census",
       ),
+      // The run record behind the tiles: when it executed and what denominators
+      // it used. Its absence is reported, never silently read as "current".
+      withTimeout(
+        supabase
+          .from("exec_kpi_snapshots")
+          .select("snapshot_date, computed_at, metrics")
+          .eq("organization_id", organizationId)
+          .eq("scope_type", "organization")
+          .is("deleted_at", null)
+          .order("snapshot_date", { ascending: false })
+          .order("computed_at", { ascending: false })
+          .limit(1),
+        "kpi-snapshot-run",
+      ),
     ]);
 
   if (strict) {
@@ -145,6 +174,22 @@ export async function loadExecutiveOverview(
   const presenceCensus = presenceCensusRes.status === "fulfilled" ? presenceCensusRes.value : EMPTY_PRESENCE_CENSUS;
   const bedCensusByFacility =
     bedCensusRes.status === "fulfilled" ? bedCensusRes.value : new Map<string, never>();
+
+  const snapshotState = resolveSnapshotState({
+    row:
+      snapshotRunRes.status === "fulfilled" && !snapshotRunRes.value.error
+        ? (snapshotRunRes.value.data?.[0] as {
+            snapshot_date: string;
+            computed_at: string | null;
+            metrics: unknown;
+          } | undefined) ?? null
+        : null,
+    errorMessage:
+      snapshotRunRes.status === "rejected"
+        ? "read failed"
+        : snapshotRunRes.value.error?.message ?? null,
+    todayIsoDate: facilityTodayIsoDate(),
+  });
 
   const licensedBeds = facilityRows.reduce(
     (sum, facility) => sum + ((facility as { total_licensed_beds?: number | null }).total_licensed_beds ?? 0),
@@ -175,5 +220,7 @@ export async function loadExecutiveOverview(
     assuranceTrends: trends,
     presenceCensus,
     occupancyContext,
+    snapshot: snapshotState,
+    metricChanges: buildPortfolioMetricChanges(aggregateRows as MetricSnapshotRow[]),
   };
 }

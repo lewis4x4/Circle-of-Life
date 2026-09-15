@@ -21,12 +21,18 @@ type MetricSnapshotRow = {
   metric_value_numeric: number | null;
 };
 
+/**
+ * Latest recorded value per metric. A row with no numeric value is a metric
+ * that was never computed — it stays absent rather than becoming a zero the
+ * page would then display as an observed result.
+ */
 export function buildLatestMetricMap(rows: MetricSnapshotRow[]): Record<string, number> {
   const metrics: Record<string, number> = {};
 
   for (const row of rows) {
+    if (row.metric_value_numeric == null) continue;
     if (metrics[row.metric_code] === undefined) {
-      metrics[row.metric_code] = row.metric_value_numeric ?? 0;
+      metrics[row.metric_code] = row.metric_value_numeric;
     }
   }
 
@@ -41,9 +47,10 @@ export function attachFacilityMetrics(
 
   for (const row of rows) {
     if (!row.facility_id) continue;
+    if (row.metric_value_numeric == null) continue;
     const metricMap = byFacility.get(row.facility_id) ?? {};
     if (metricMap[row.metric_code] === undefined) {
-      metricMap[row.metric_code] = row.metric_value_numeric ?? 0;
+      metricMap[row.metric_code] = row.metric_value_numeric;
       byFacility.set(row.facility_id, metricMap);
     }
   }

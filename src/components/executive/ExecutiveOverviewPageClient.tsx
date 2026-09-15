@@ -21,6 +21,7 @@ import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHeldRoleHomeChrome } from "@/hooks/useHeldRoleHomeChrome";
 import {
   type AlertWithFacility,
@@ -34,21 +35,48 @@ import {
   type ResidentAssuranceFacilityRollup,
 } from "@/lib/resident-assurance/command-center-brief";
 import {
+  ROUNDING_EXPECTATION_NOT_RECORDED_COPY,
+  roundingBandLabel,
+  roundingCountsMeaningLine,
+  roundingLastObservedLine,
+  roundingTrendCoverageLine,
+} from "@/lib/resident-assurance/assurance-coverage-copy";
+import {
   type PresenceCensus,
 } from "@/lib/executive/presence-census";
 import {
   formatExecutiveOccPtPctWithSuffix,
-  formatExecutiveRevenueMtdCents,
-  resolveExecutiveOccupancyTileLabel,
+  formatExecutiveRelativeAge,
 } from "@/lib/executive/executive-display-copy";
 import {
+  occupancyCalculationLine,
   occupancyContextOccPtFraction,
+  occupancyCoverageHeading,
   executiveKpiEmptyCopy,
-  executiveKpiStripHelperLine,
   occupancyLoadedFootnote,
   type ExecutiveKpiMetricKey,
   type OccupancyContext,
 } from "@/lib/executive/kpi-tile-copy";
+import {
+  buildExecutiveCoverage,
+  coverageGapLine,
+  coverageSummaryLine,
+  isCoverageGap,
+  noAlertsCopy,
+  type CoverageRow,
+} from "@/lib/executive/evidence-coverage";
+import {
+  METRIC_CHANGE_UNAVAILABLE_COPY,
+  OCCUPANCY_CHANGE_UNAVAILABLE_COPY,
+  metricChangeLine,
+  type MetricChange,
+} from "@/lib/executive/metric-change";
+import {
+  billedRevenuePeriodLine,
+  incidentRateBasis,
+  snapshotFreshnessLine,
+  type ExecutiveSnapshotState,
+} from "@/lib/executive/snapshot-evidence";
 import { presenceLabel, presenceTone, type ResidencyStatus } from "@/lib/residents/presence";
 import type { StatusPillTone } from "@/components/ui/status-pill";
 import {
@@ -60,6 +88,19 @@ import type { Database } from "@/types/database";
 /** Named loading copy while auth hydrates or the first client fetch is in flight. */
 export const EXECUTIVE_OVERVIEW_LOADING_MESSAGE = "Loading portfolio overview…";
 
+/** This page is always the whole portfolio; the top-bar facility choice does not narrow it. */
+export const EXECUTIVE_SCOPE_NOTE =
+  "Every figure on this page covers the whole portfolio. The facility chosen in the top bar does not narrow it.";
+
+/**
+ * Data the product does not record yet. Named here so the gap is visible work
+ * rather than something the page quietly papers over.
+ */
+const NOT_RECORDED_FOLLOW_UPS = [
+  ROUNDING_EXPECTATION_NOT_RECORDED_COPY,
+  "Alerts record an owner account but not a person's name, so this page names the facility and age instead of an owner.",
+] as const;
+
 type ExecutiveOverviewPageClientProps = {
   initialMetrics: Record<string, number>;
   initialAlerts: AlertWithFacility[];
@@ -68,6 +109,8 @@ type ExecutiveOverviewPageClientProps = {
   initialAssuranceTrends: ResidentAssuranceFacilityTrendRow[];
   initialPresenceCensus: PresenceCensus;
   initialOccupancyContext: OccupancyContext | null;
+  initialSnapshot: ExecutiveSnapshotState;
+  initialMetricChanges: Record<string, MetricChange>;
   initialHasServerData: boolean;
 };
 
@@ -79,6 +122,8 @@ export function ExecutiveOverviewPageClient({
   initialAssuranceTrends,
   initialPresenceCensus,
   initialOccupancyContext,
+  initialSnapshot,
+  initialMetricChanges,
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
   const supabase = useMemo(() => createClient(), []);
@@ -106,6 +151,10 @@ export function ExecutiveOverviewPageClient({
   // Live resident-presence census (in-house vs on-hold) — additive to occupancy.
   const [presenceCensus, setPresenceCensus] = useState<PresenceCensus>(initialPresenceCensus);
   const [occupancyContext, setOccupancyContext] = useState<OccupancyContext | null>(initialOccupancyContext);
+
+  // When the displayed figures were recorded, and the change since the run before.
+  const [snapshot, setSnapshot] = useState<ExecutiveSnapshotState>(initialSnapshot);
+  const [metricChanges, setMetricChanges] = useState<Record<string, MetricChange>>(initialMetricChanges);
 
   // Skip the first client-side fetch when the server already supplied scoped
   // live data. If the server returned empty arrays, the client retries once;
@@ -145,6 +194,8 @@ export function ExecutiveOverviewPageClient({
       setOccupancyContext(data.occupancyContext);
       setAssuranceHeatMap(data.assuranceHeatMap);
       setAssuranceTrends(data.assuranceTrends);
+      setSnapshot(data.snapshot);
+      setMetricChanges(data.metricChanges);
 
     } catch (e) {
       if (generation !== requestGeneration.current) return;
@@ -171,146 +222,11 @@ export function ExecutiveOverviewPageClient({
     return () => { requestGeneration.current += 1; };
   }, [load]);
 
-  // View helpers
-  const hasMetric = (val: number | null | undefined): val is number => typeof val === "number" && Number.isFinite(val);
-  const formatPct = (val?: number | null) => hasMetric(val) ? `${(val * 100).toFixed(1)}%` : null;
-  const formatNum = (val?: number | null) => hasMetric(val) ? Math.round(val).toLocaleString() : null;
-  const formatCur = (val?: number | null) => hasMetric(val) ? `$${(val / 100).toLocaleString()}` : null;
-  const ownerPriorityCards = [
-    {
-      title: "Executive alerts",
-      description: "High-severity portfolio exceptions to clear first.",
-      href: "/admin/executive/alerts",
-      stat: `${alerts.length} open`,
-    },
-    {
-      title: "Finance hub",
-      description: "Billed revenue, labor pressure, monthly financials.",
-      href: "/admin/finance",
-      stat: formatExecutiveRevenueMtdCents(metrics["rev_mtd"]),
-    },
-    {
-      title: "Insurance & risk",
-      description: "Claims, renewals, and portfolio risk posture.",
-      href: "/admin/insurance",
-      stat: `${alerts.filter((alert) => alert.category === "risk").length} risk alerts`,
-    },
-    {
-      title: "High-severity incidents",
-      description: "Open incident exceptions, leadership-level only.",
-      href: "/admin/incidents?scope=open&severity=level_4",
-      stat: `${alerts.filter((alert) => alert.category === "incident").length} related`,
-    },
-  ];
-
-  const assuranceBandClass: Record<ResidentAssuranceFacilityRollup["heatBand"], string> = {
-    stable: "border-success/20",
-    watch: "border-warning/30",
-    elevated: "border-warning/40",
-    critical: "border-destructive/30",
-  };
-
-  const assuranceBandText: Record<ResidentAssuranceFacilityRollup["heatBand"], string> = {
-    stable: "text-success",
-    watch: "text-warning",
-    elevated: "text-warning",
-    critical: "text-destructive",
-  };
-
-  const KPI_TILES = [
-    { key: "occ_pt", label: "Occupancy", format: "pct" as const, trend: "up" as const },
-    { key: "rev_mtd", label: "Billed MTD", format: "cur" as const, trend: null },
-    { key: "labor_pct", label: "Labor cost %", format: "pct" as const, trend: "down" as const },
-    { key: "inc_rate", label: "Incidents / 1k days", format: "num" as const, trend: null },
-    { key: "survey_rd", label: "Survey readiness", format: "pct" as const, trend: null },
-  ] as const;
-
-  function renderFormattedMetric(
-    metricKey: ExecutiveKpiMetricKey,
-    value: number | undefined,
-    format: "pct" | "num" | "cur",
-    presentation: "tile" | "table",
-  ): ReactNode {
-    const gapClass =
-      presentation === "tile"
-        ? "text-[13px] font-medium leading-snug text-muted-foreground"
-        : "text-[12px] leading-snug text-muted-foreground";
-
-    if (!hasMetric(value)) {
-      return <span className={gapClass}>{executiveKpiEmptyCopy(metricKey)}</span>;
-    }
-
-    if (metricKey === "occ_pt") {
-      const rendered = renderPostedOccupancy(value);
-      if (presentation === "tile") {
-        return (
-          <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">{rendered}</span>
-        );
-      }
-      return rendered;
-    }
-
-    const formatted =
-      format === "pct" ? formatPct(value)! : format === "cur" ? formatCur(value)! : formatNum(value)!;
-
-    if (presentation === "tile") {
-      return (
-        <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">{formatted}</span>
-      );
-    }
-    return formatted;
-  }
-
-  function renderPostedOccupancy(value: number): string {
-    return formatExecutiveOccPtPctWithSuffix(value);
-  }
-
-  function renderKpiTileValue(
-    metricKey: ExecutiveKpiMetricKey,
-    value: number | undefined,
-    format: "pct" | "num" | "cur",
-  ): ReactNode {
-    if (metricKey === "occ_pt") {
-      const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
-      if (portfolioOcc !== undefined) {
-        return (
-          <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-            {renderPostedOccupancy(portfolioOcc)}
-          </span>
-        );
-      }
-    }
-    return renderFormattedMetric(metricKey, value, format, "tile");
-  }
-
-  function renderPortfolioMetric(
-    metricKey: ExecutiveKpiMetricKey,
-    value: number | undefined,
-    format: "pct" | "num" | "cur",
-    scope: "headline" | "facility",
-  ): ReactNode {
-    if (metricKey === "occ_pt" && scope === "headline") {
-      const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
-      if (portfolioOcc !== undefined) {
-        return renderPostedOccupancy(portfolioOcc);
-      }
-    }
-    return renderFormattedMetric(metricKey, value, format, "table");
-  }
-
-  const loadedKpiCount = KPI_TILES.filter((tile) => {
-    if (tile.key === "occ_pt") {
-      return occupancyContextOccPtFraction(occupancyContext) !== undefined || hasMetric(metrics[tile.key]);
-    }
-    return hasMetric(metrics[tile.key]);
-  }).length;
-  const kpiStripHelperLine = executiveKpiStripHelperLine(loadedKpiCount, KPI_TILES.length);
-
   /**
    * "Empty install" detection — an organization is connected and has facilities,
    * but no operational data has flowed yet. We replace the dashboard body with
    * a single onboarding card to avoid presenting a wall of unnamed KPI gaps, "0 OPEN"
-   * priority cards, and "STABLE 0/0/0/0" heat-map rows that read as broken UI.
+   * priority cards, and rounding rows that read as broken UI.
    *
    * The trigger is intentionally strict: any one of metrics / alerts / per-
    * facility metrics being non-empty means we have *something* worth showing,
@@ -321,15 +237,7 @@ export function ExecutiveOverviewPageClient({
   const orgHasFacilityMetrics = facilities.some(
     (f) => f.metrics && Object.values(f.metrics).some(hasMetric),
   );
-  const orgHasAssurance = assuranceHeatMap.some(
-    (r) =>
-      r.activeWatches > 0 ||
-      r.pendingWatchApprovals > 0 ||
-      r.openEscalations > 0 ||
-      r.openIntegrityFlags > 0 ||
-      r.criticalSafetyResidents > 0 ||
-      r.highOrCriticalSafetyResidents > 0,
-  );
+  const orgHasAssurance = assuranceHeatMap.some((r) => r.observed);
   const isOrgEmpty =
     !orgHasMetrics && !orgHasAlerts && !orgHasFacilityMetrics && !orgHasAssurance;
 
@@ -348,6 +256,14 @@ export function ExecutiveOverviewPageClient({
   const showOverviewLoading =
     (authLoading || loading) && !hasOrgScopedData && !organizationGapMessage;
 
+  const coverage = buildExecutiveCoverage({
+    facilityCount: facilities.length,
+    occupancy: occupancyContext,
+    metrics,
+    snapshot,
+    observedFacilityCount: assuranceHeatMap.filter((row) => row.observed).length,
+  });
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page header */}
@@ -357,7 +273,10 @@ export function ExecutiveOverviewPageClient({
             Executive intelligence
           </h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            Enterprise portfolio overview
+            <PortfolioScopeLine facilityCount={facilities.length} />
+          </p>
+          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+            {snapshotFreshnessLine(snapshot)}
           </p>
           {roleHomeSubtitle ? (
             <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
@@ -391,19 +310,53 @@ export function ExecutiveOverviewPageClient({
           assuranceTrends={assuranceTrends}
           presenceCensus={presenceCensus}
           occupancyContext={occupancyContext}
-          ownerPriorityCards={ownerPriorityCards}
+          snapshot={snapshot}
+          metricChanges={metricChanges}
+          coverage={coverage}
           roleConfig={roleConfig}
-          KPI_TILES={KPI_TILES}
-          hasMetric={hasMetric}
-          renderKpiTileValue={renderKpiTileValue}
-          renderPortfolioMetric={renderPortfolioMetric}
-          kpiStripHelperLine={kpiStripHelperLine}
-          assuranceBandClass={assuranceBandClass}
-          assuranceBandText={assuranceBandText}
         />
       )}
     </div>
   );
+}
+
+/** Names the scope this page covers and that the facility chooser does not apply. */
+function PortfolioScopeLine({ facilityCount }: { facilityCount: number }) {
+  const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
+  const availableFacilities = useFacilityStore((state) => state.availableFacilities);
+  // The persisted list is the only place a selection can be named; a missing or
+  // malformed one costs the name, never the scope statement itself.
+  const selectedName =
+    selectedFacilityId == null || !Array.isArray(availableFacilities)
+      ? null
+      : availableFacilities.find((facility) => facility.id === selectedFacilityId)?.name ?? null;
+
+  return (
+    <>
+      <span className="font-medium text-foreground">
+        All facilities{facilityCount > 0 ? ` · ${facilityCount} in scope` : ""}
+      </span>
+      {selectedName ? (
+        <span> — {selectedName} is selected in the top bar and does not narrow this page.</span>
+      ) : (
+        <span> — {EXECUTIVE_SCOPE_NOTE}</span>
+      )}
+    </>
+  );
+}
+
+// View helpers shared by the header, tiles and tables.
+function hasMetric(val: number | null | undefined): val is number {
+  return typeof val === "number" && Number.isFinite(val);
+}
+function formatPct(val?: number | null) {
+  return hasMetric(val) ? `${(val * 100).toFixed(1)}%` : null;
+}
+function formatNum(val?: number | null) {
+  return hasMetric(val) ? Math.round(val).toLocaleString() : null;
+}
+function formatCur(val?: number | null) {
+  return hasMetric(val) ? `$${(val / 100).toLocaleString()}` : null;
 }
 
 type ExecutiveRefreshFunctionStatus = {
@@ -778,7 +731,7 @@ function ResidentPresenceBand({ census }: { census: PresenceCensus }) {
     <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Resident presence
+          Resident presence — all facilities
         </span>
         <span className="text-[11px] tabular-nums text-muted-foreground">
           {census.total} in census · {census.onHold} on hold
@@ -797,10 +750,777 @@ function ResidentPresenceBand({ census }: { census: PresenceCensus }) {
         ))}
       </div>
       <p className="text-[11px] leading-relaxed text-muted-foreground">
-        Held beds (hospital &amp; leave) stay counted as occupied in Occupancy above — this is the
-        in-house vs on-hold split, not a second occupancy figure.
+        Counted across every facility, not the one chosen in the top bar. Held beds (hospital &amp;
+        leave) stay counted as occupied in occupancy above — this is the in-house vs on-hold split,
+        not a second occupancy figure.
       </p>
     </div>
+  );
+}
+
+const COVERAGE_STATE_LABEL: Record<CoverageRow["state"], string> = {
+  reported: "Reported",
+  partial: "Partial",
+  not_reported: "Not reported",
+  past: "Earlier day",
+  unreadable: "Unknown",
+};
+
+const COVERAGE_STATE_CLASS: Record<CoverageRow["state"], string> = {
+  reported: "border-success/30 text-success",
+  partial: "border-warning/40 text-warning",
+  not_reported: "border-border text-muted-foreground",
+  past: "border-warning/40 text-warning",
+  unreadable: "border-destructive/30 text-destructive",
+};
+
+/** Monitoring coverage — what the page can and cannot see, before any figure. */
+function CoveragePanel({ rows }: { rows: CoverageRow[] }) {
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="coverage-heading">
+      <div>
+        <h2 id="coverage-heading" className="text-[14px] font-semibold tracking-tight text-foreground">
+          Monitoring coverage
+        </h2>
+        <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">
+          {coverageSummaryLine(rows)}
+        </p>
+      </div>
+      <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+        {rows.map((row) => (
+          <li
+            key={row.key}
+            className="flex flex-col gap-1 rounded-lg border border-border bg-card px-3 py-2.5"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[13px] font-medium text-foreground">{row.label}</span>
+              <span
+                className={cn(
+                  "inline-flex h-5 shrink-0 items-center rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider",
+                  COVERAGE_STATE_CLASS[row.state],
+                )}
+              >
+                {COVERAGE_STATE_LABEL[row.state]}
+              </span>
+            </div>
+            <p className="text-[12px] leading-relaxed text-muted-foreground">{row.detail}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Recorded exceptions, then — kept separate — information that never arrived. */
+function NeedsAttentionPanel({
+  alerts,
+  coverage,
+}: {
+  alerts: AlertWithFacility[];
+  coverage: CoverageRow[];
+}) {
+  const gaps = coverage.filter(isCoverageGap);
+  const emptyCopy = noAlertsCopy(coverage);
+
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="attention-heading">
+      <div className="flex items-center justify-between">
+        <h2
+          id="attention-heading"
+          className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground"
+        >
+          <AlertTriangle className="size-4 text-warning" aria-hidden /> Needs your attention
+        </h2>
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          {alerts.length} recorded {alerts.length === 1 ? "alert" : "alerts"}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 flex flex-col gap-2 lg:col-span-7">
+          {alerts.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
+              <p className="text-[13px] font-medium text-foreground">{emptyCopy.headline}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{emptyCopy.body}</p>
+            </div>
+          ) : (
+            alerts.map((alert) => {
+              const isCritical = alert.severity === "critical";
+              return (
+                <div
+                  key={alert.id}
+                  className={cn(
+                    "flex flex-col gap-2 rounded-lg border bg-card p-3",
+                    isCritical ? "border-destructive/30" : "border-warning/30",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span
+                      className={cn(
+                        "truncate text-[10px] font-medium uppercase tracking-wider",
+                        isCritical ? "text-destructive" : "text-warning",
+                      )}
+                    >
+                      {alert.category} · {alert.facilities?.name || "All facilities"}
+                    </span>
+                    <span
+                      className={cn(
+                        "inline-flex h-5 shrink-0 items-center rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider",
+                        isCritical
+                          ? "border-destructive/30 bg-destructive/10 text-destructive"
+                          : "border-warning/30 bg-warning/10 text-warning",
+                      )}
+                    >
+                      {alert.severity}
+                    </span>
+                  </div>
+                  <h3 className="text-[13px] font-semibold leading-snug text-foreground">
+                    {alert.title}
+                  </h3>
+                  {alert.body && (
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">{alert.body}</p>
+                  )}
+                  {alert.why_it_matters && (
+                    <div className="rounded-md border border-border bg-secondary/50 px-2.5 py-2 text-[12px] leading-relaxed text-muted-foreground">
+                      <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
+                        Business impact
+                      </span>
+                      <span className="mt-0.5 block text-foreground/80">{alert.why_it_matters}</span>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    <span>First recorded {formatExecutiveRelativeAge(alert.first_triggered_at)}</span>
+                    <span aria-hidden>·</span>
+                    <span>{alert.owner_user_id ? "Owner assigned" : "No owner assigned"}</span>
+                    {alert.deep_link_path ? (
+                      <Link
+                        href={alert.deep_link_path}
+                        className="inline-flex items-center gap-1 font-medium text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        Open the record <ArrowRight className="size-3" aria-hidden />
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="col-span-12 lg:col-span-5">
+          <div className="flex h-full flex-col gap-2 rounded-lg border border-border bg-card p-4">
+            <h3 className="text-[13px] font-semibold tracking-tight text-foreground">
+              Information not received
+            </h3>
+            <p className="text-[12px] leading-relaxed text-muted-foreground">{coverageGapLine(coverage)}</p>
+            {gaps.length > 0 ? (
+              <ul className="mt-1 flex flex-col gap-1.5">
+                {gaps.map((row) => (
+                  <li key={row.key} className="text-[12px] leading-relaxed text-muted-foreground">
+                    <span className="font-medium text-foreground">{row.label}:</span> {row.detail}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <p className="mt-auto pt-2 text-[11px] leading-relaxed text-muted-foreground">
+              These are gaps in reporting, not clinical or operational exceptions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+type KpiTile = {
+  key: ExecutiveKpiMetricKey;
+  label: string;
+  format: "pct" | "num" | "cur";
+};
+
+const KPI_TILES: readonly KpiTile[] = [
+  { key: "occ_pt", label: "Occupancy", format: "pct" },
+  { key: "rev_mtd", label: "Billed month to date", format: "cur" },
+  { key: "labor_pct", label: "Labor cost % of billed revenue", format: "pct" },
+  { key: "inc_rate", label: "Incidents per 1,000 resident-days", format: "num" },
+  { key: "survey_rd", label: "Survey readiness", format: "pct" },
+] as const;
+
+function formatMetricValue(value: number, format: "pct" | "num" | "cur"): string {
+  if (format === "pct") return formatPct(value) ?? "";
+  if (format === "cur") return formatCur(value) ?? "";
+  return formatNum(value) ?? "";
+}
+
+/**
+ * One tile per portfolio figure. Every tile states the period or basis it was
+ * computed on, and change is only drawn against a dated earlier recording.
+ */
+function PortfolioFiguresStrip({
+  metrics,
+  occupancyContext,
+  snapshot,
+  metricChanges,
+}: {
+  metrics: Record<string, number>;
+  occupancyContext: OccupancyContext | null;
+  snapshot: ExecutiveSnapshotState;
+  metricChanges: Record<string, MetricChange>;
+}) {
+  const incidentBasis = incidentRateBasis(snapshot);
+  const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
+
+  return (
+    <section className="flex flex-col gap-2" aria-labelledby="figures-heading">
+      <h2 id="figures-heading" className="text-[14px] font-semibold tracking-tight text-foreground">
+        Portfolio figures
+      </h2>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {KPI_TILES.map((tile) => {
+          const change = metricChanges[tile.key];
+          const rawValue = metrics[tile.key];
+
+          // The tile and the comparison footer describe the same figure, so they
+          // carry the same coverage wording.
+          const label =
+            tile.key === "occ_pt" ? occupancyCoverageHeading(occupancyContext) : tile.label;
+
+          // Occupancy reads live from the bed grid; every other figure comes
+          // from the recorded run and may only be shown with its basis.
+          const value =
+            tile.key === "occ_pt"
+              ? portfolioOcc !== undefined
+                ? formatExecutiveOccPtPctWithSuffix(portfolioOcc)
+                : hasMetric(rawValue)
+                  ? formatExecutiveOccPtPctWithSuffix(rawValue)
+                  : null
+              : tile.key === "inc_rate"
+                ? hasMetric(rawValue) && incidentBasis.usable
+                  ? formatMetricValue(rawValue, tile.format)
+                  : null
+                : hasMetric(rawValue)
+                  ? formatMetricValue(rawValue, tile.format)
+                  : null;
+
+          const missingCopy =
+            tile.key === "inc_rate" && hasMetric(rawValue) && !incidentBasis.usable
+              ? incidentBasis.line
+              : executiveKpiEmptyCopy(tile.key);
+
+          const basis =
+            tile.key === "occ_pt"
+              ? [
+                  occupancyContext ? occupancyLoadedFootnote(occupancyContext) : null,
+                  occupancyCalculationLine(occupancyContext),
+                  OCCUPANCY_CHANGE_UNAVAILABLE_COPY,
+                ]
+              : tile.key === "rev_mtd"
+                ? [billedRevenuePeriodLine(snapshot), metricChangeLine(change, tile.format)]
+                : tile.key === "labor_pct"
+                  ? [
+                      "Labor cost divided by billed revenue for the same period.",
+                      metricChangeLine(change, tile.format),
+                    ]
+                  : tile.key === "inc_rate"
+                    ? [incidentBasis.line, metricChangeLine(change, tile.format)]
+                    : [
+                        "Most recent recorded readiness review per facility, averaged.",
+                        metricChangeLine(change, tile.format),
+                      ];
+
+          return (
+            <div
+              key={tile.key}
+              className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
+            >
+              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {label}
+              </span>
+              <div className="flex items-baseline gap-2">
+                {value != null ? (
+                  <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+                    {value}
+                  </span>
+                ) : (
+                  <span className="text-[13px] font-medium leading-snug text-muted-foreground">
+                    {missingCopy}
+                  </span>
+                )}
+                {value != null && change && change.direction !== "flat" ? (
+                  change.direction === "up" ? (
+                    <TrendingUp className="size-3.5 text-muted-foreground" aria-hidden />
+                  ) : (
+                    <TrendingDown className="size-3.5 text-muted-foreground" aria-hidden />
+                  )
+                ) : null}
+              </div>
+              {/* Basis belongs to a figure. When there is no figure, the line
+                  in its place already says why. */}
+              {(value != null ? basis : [])
+                .filter((line): line is string => Boolean(line))
+                .map((line) => (
+                  <p key={line} className="text-[11px] leading-relaxed text-muted-foreground">
+                    {line}
+                  </p>
+                ))}
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[12px] leading-relaxed text-muted-foreground">
+        Arrows mark movement against the dated recording named on each tile, not against a target.
+        Where nothing comparable exists the tile says {METRIC_CHANGE_UNAVAILABLE_COPY.toLowerCase()}
+      </p>
+    </section>
+  );
+}
+
+const PORTFOLIO_MEASURES: ReadonlyArray<{ key: ExecutiveKpiMetricKey; label: string; format: "pct" | "num" | "cur" }> = [
+  { key: "occ_pt", label: "Occupancy", format: "pct" },
+  { key: "labor_pct", label: "Labor %", format: "pct" },
+  { key: "inc_rate", label: "Incidents / 1k", format: "num" },
+  { key: "survey_rd", label: "Survey %", format: "pct" },
+];
+
+/** Facility comparison — each cell either a reported figure or a named gap. */
+function PortfolioComparisonTable({
+  facilities,
+  metrics,
+  occupancyContext,
+}: {
+  facilities: ExecutiveOverviewFacility[];
+  metrics: Record<string, number>;
+  occupancyContext: OccupancyContext | null;
+}) {
+  const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
+
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="comparison-heading">
+      <div className="flex items-center justify-between">
+        <h2
+          id="comparison-heading"
+          className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground"
+        >
+          <Activity className="size-4 text-info" aria-hidden /> Portfolio comparison
+        </h2>
+        <Link
+          href="/admin/executive/reports"
+          className={cn(
+            "inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
+            "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          )}
+        >
+          Open executive reports <ArrowRight className="size-3" aria-hidden />
+        </Link>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="max-h-[480px] overflow-auto">
+          <table className="w-full text-[13px]">
+            <caption className="sr-only">
+              Reported measures by facility. Cells without a figure say why the measure is missing.
+            </caption>
+            <thead className="sticky top-0 z-10 bg-background/95">
+              <tr className="border-b border-border">
+                <th scope="col" className="h-9 px-3 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Facility
+                </th>
+                {PORTFOLIO_MEASURES.map((measure) => (
+                  <th
+                    key={measure.key}
+                    scope="col"
+                    className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                  >
+                    {measure.label}
+                  </th>
+                ))}
+                <th scope="col" className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Coverage
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {facilities.length === 0 ? (
+                <tr>
+                  <td colSpan={PORTFOLIO_MEASURES.length + 2} className="px-3 py-8">
+                    <div className="text-[13px] font-medium text-foreground">No facilities in scope.</div>
+                    <div className="mt-0.5 text-[12px] text-muted-foreground">
+                      Confirm facility access for this account, or wait for the next recorded run.
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                facilities.map((facility) => {
+                  const facilityMetrics = facility.metrics ?? {};
+                  const reported = PORTFOLIO_MEASURES.filter((measure) =>
+                    hasMetric(facilityMetrics[measure.key]),
+                  ).length;
+                  return (
+                    <tr
+                      key={facility.id}
+                      className="border-b border-border/60 transition-colors even:bg-muted/30 hover:bg-muted/50"
+                    >
+                      <th scope="row" className="h-9 px-3 text-left font-medium text-foreground">
+                        {facility.name}
+                      </th>
+                      {PORTFOLIO_MEASURES.map((measure) => {
+                        const value = facilityMetrics[measure.key];
+                        return (
+                          <td key={measure.key} className="h-9 px-3 text-right">
+                            {hasMetric(value) ? (
+                              <span
+                                className={cn(
+                                  "tabular-nums",
+                                  facilityMeasureToneClass(measure.key, value),
+                                )}
+                              >
+                                {measure.key === "occ_pt"
+                                  ? formatExecutiveOccPtPctWithSuffix(value)
+                                  : formatMetricValue(value, measure.format)}
+                              </span>
+                            ) : (
+                              <span className="text-[12px] leading-snug text-muted-foreground">
+                                {executiveKpiEmptyCopy(measure.key)}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="h-9 px-3 text-right text-[12px] tabular-nums text-muted-foreground">
+                        {reported} of {PORTFOLIO_MEASURES.length}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+            {facilities.length > 0 && (
+              <tfoot>
+                <tr className="border-t border-border bg-secondary/40">
+                  <th scope="row" className="h-9 px-3 text-left text-[12px] font-semibold text-muted-foreground">
+                    {occupancyCoverageHeading(occupancyContext)}
+                  </th>
+                  <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
+                    {portfolioOcc !== undefined
+                      ? formatExecutiveOccPtPctWithSuffix(portfolioOcc)
+                      : hasMetric(metrics.occ_pt)
+                        ? formatExecutiveOccPtPctWithSuffix(metrics.occ_pt)
+                        : (
+                          <span className="text-[12px] font-normal text-muted-foreground">
+                            {executiveKpiEmptyCopy("occ_pt")}
+                          </span>
+                        )}
+                  </td>
+                  {PORTFOLIO_MEASURES.slice(1).map((measure) => (
+                    <td
+                      key={measure.key}
+                      className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground"
+                    >
+                      {hasMetric(metrics[measure.key]) ? (
+                        formatMetricValue(metrics[measure.key], measure.format)
+                      ) : (
+                        <span className="text-[12px] font-normal text-muted-foreground">
+                          {executiveKpiEmptyCopy(measure.key)}
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                  <td className="h-9 px-3" />
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+      {occupancyCalculationLine(occupancyContext) ? (
+        <p className="text-[12px] leading-relaxed text-muted-foreground">
+          {occupancyCalculationLine(occupancyContext)} Facility percentages below that figure are
+          weighted by bed count, so the portfolio percentage can sit below a facility&rsquo;s own.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+/** Colour follows the value, not the column — and only where a threshold is defined. */
+function facilityMeasureToneClass(key: ExecutiveKpiMetricKey, value: number): string {
+  if (key === "occ_pt") return value > 0.9 ? "text-success" : "text-warning";
+  if (key === "labor_pct") return value < 0.55 ? "text-success" : "text-destructive";
+  return "text-foreground";
+}
+
+/**
+ * Rounding assurance — one row per facility: whether anything was recorded,
+ * when, what is open, and the day-by-day record with its gaps left visible.
+ */
+function RoundingAssuranceTable({
+  heatMap,
+  trends,
+}: {
+  heatMap: ResidentAssuranceFacilityRollup[];
+  trends: ResidentAssuranceFacilityTrendRow[];
+}) {
+  const trendByFacility = new Map(trends.map((row) => [row.facilityId, row]));
+
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="rounding-heading">
+      <div className="flex items-center justify-between">
+        <div className="min-w-0">
+          <h2
+            id="rounding-heading"
+            className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground"
+          >
+            <Activity className="size-4 text-info" aria-hidden /> Rounding assurance
+          </h2>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">
+            {ROUNDING_EXPECTATION_NOT_RECORDED_COPY}
+          </p>
+        </div>
+        <Link
+          href="/admin/rounding"
+          className={cn(
+            "inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
+            "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          )}
+        >
+          Open Smart Rounding <ArrowRight className="size-3" aria-hidden />
+        </Link>
+      </div>
+
+      {heatMap.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
+          <p className="text-[13px] font-medium text-foreground">No rounding records in scope.</p>
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            Nothing has been recorded for the facilities this account can see.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="overflow-auto">
+            <table className="w-full text-[13px]">
+              <caption className="sr-only">
+                Recorded rounding findings by facility, with the days that carry no record shown as gaps.
+              </caption>
+              <thead className="bg-background/95">
+                <tr className="border-b border-border">
+                  <th scope="col" className="h-9 px-3 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Facility
+                  </th>
+                  <th scope="col" className="h-9 px-3 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Recorded
+                  </th>
+                  <th scope="col" className="h-9 px-3 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Last entry
+                  </th>
+                  <th scope="col" className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Open watches
+                  </th>
+                  <th scope="col" className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Awaiting approval
+                  </th>
+                  <th scope="col" className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Escalations
+                  </th>
+                  <th scope="col" className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Data checks
+                  </th>
+                  <th scope="col" className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Critical residents
+                  </th>
+                  <th scope="col" className="h-9 px-3 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Last 7 days
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {heatMap.map((row) => {
+                  const trend = trendByFacility.get(row.facilityId);
+                  return (
+                    <tr
+                      key={row.facilityId}
+                      className="border-b border-border/60 transition-colors even:bg-muted/30 hover:bg-muted/50"
+                    >
+                      <th scope="row" className="h-10 px-3 text-left font-medium text-foreground">
+                        <Link
+                          href={`/admin/executive/facility/${row.facilityId}`}
+                          className="hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          {row.facilityName}
+                        </Link>
+                      </th>
+                      <td className="h-10 px-3">
+                        <span
+                          className={cn(
+                            "inline-flex h-5 items-center whitespace-nowrap rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider",
+                            row.observed ? "border-border text-muted-foreground" : "border-warning/40 text-warning",
+                          )}
+                          title={roundingCountsMeaningLine(row.observed)}
+                        >
+                          {roundingBandLabel(row)}
+                        </span>
+                      </td>
+                      <td className="h-10 px-3 text-[12px] text-muted-foreground">
+                        {roundingLastObservedLine(row.lastObservedAt)}
+                      </td>
+                      <RoundingCountCell observed={row.observed} value={row.activeWatches} />
+                      <RoundingCountCell observed={row.observed} value={row.pendingWatchApprovals} />
+                      <RoundingCountCell observed={row.observed} value={row.openEscalations} danger />
+                      <RoundingCountCell observed={row.observed} value={row.openIntegrityFlags} danger />
+                      <RoundingCountCell observed={row.observed} value={row.criticalSafetyResidents} danger />
+                      <td className="h-10 px-3">
+                        {trend ? (
+                          <div className="flex items-center gap-2">
+                            <SevenDayRecord row={trend} />
+                            <span className="whitespace-nowrap text-[11px] text-muted-foreground">
+                              {roundingTrendCoverageLine(trend)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[12px] text-muted-foreground">No day series recorded</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        Bar height is the pressure recorded that day. A hatched slot means nothing was recorded for
+        that facility that day — it is a gap, not a clear day.
+      </p>
+    </section>
+  );
+}
+
+function RoundingCountCell({
+  observed,
+  value,
+  danger = false,
+}: {
+  observed: boolean;
+  value: number;
+  danger?: boolean;
+}) {
+  if (!observed) {
+    return (
+      <td className="h-10 px-3 text-right text-[12px] text-muted-foreground" title="Nothing recorded">
+        —
+      </td>
+    );
+  }
+  return (
+    <td
+      className={cn(
+        "h-10 px-3 text-right text-[14px] font-semibold tabular-nums",
+        danger && value > 0 ? "text-destructive" : "text-foreground",
+      )}
+    >
+      {value}
+    </td>
+  );
+}
+
+/** Seven slots, one per day. Unrecorded days render as gaps rather than as zero. */
+function SevenDayRecord({ row }: { row: ResidentAssuranceFacilityTrendRow }) {
+  return (
+    <div className="flex items-end gap-1" role="img" aria-label={sevenDayLabel(row)}>
+      {row.points.map((point) => (
+        <div key={`${row.facilityId}:${point.date}`} className="flex h-8 w-3 items-end" title={pointTitle(point)}>
+          {point.observed ? (
+            <div
+              className={cn(
+                "w-full rounded-t-sm",
+                point.heatBand === "critical"
+                  ? "bg-destructive"
+                  : point.heatBand === "elevated"
+                    ? "bg-warning"
+                    : point.heatBand === "watch"
+                      ? "bg-warning/60"
+                      : "bg-success",
+              )}
+              style={{ height: `${Math.max(12, Math.min(100, point.heatScore * 7))}%` }}
+            />
+          ) : (
+            // A gap reads as a low, hatched baseline — visibly not a bar.
+            <div className="h-1.5 w-full rounded-sm border border-dashed border-border" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function pointTitle(point: ResidentAssuranceFacilityTrendPointLike): string {
+  if (!point.observed) return `${point.date}: nothing recorded`;
+  return `${point.date}: recorded pressure ${point.heatScore}`;
+}
+
+type ResidentAssuranceFacilityTrendPointLike = ResidentAssuranceFacilityTrendRow["points"][number];
+
+function sevenDayLabel(row: ResidentAssuranceFacilityTrendRow): string {
+  return `${row.facilityName}: ${roundingTrendCoverageLine(row)} in the last ${row.days} days.`;
+}
+
+const SUPPORTING_LINKS = [
+  {
+    title: "Executive alerts",
+    description: "Every recorded portfolio exception, not just the latest five.",
+    href: "/admin/executive/alerts",
+  },
+  {
+    title: "Financial overview",
+    description: "Billed revenue, labor cost, and monthly financial statements.",
+    href: "/admin/finance",
+  },
+  {
+    title: "Insurance and risk",
+    description: "Claims, renewals, and portfolio risk posture.",
+    href: "/admin/insurance",
+  },
+  {
+    title: "Open incidents",
+    description: "Incident records still open at level 4.",
+    href: "/admin/incidents?scope=open&severity=level_4",
+  },
+] as const;
+
+function SupportingDestinations() {
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="destinations-heading">
+      <div>
+        <h2 id="destinations-heading" className="text-[14px] font-semibold tracking-tight text-foreground">
+          Where to go next
+        </h2>
+        <p className="mt-0.5 text-[12px] text-muted-foreground">
+          Destinations, not outstanding work. Anything needing a decision appears above.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {SUPPORTING_LINKS.map((link) => (
+          <Link
+            key={link.title}
+            href={link.href}
+            className={cn(
+              "group flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4",
+              "transition-colors hover:bg-secondary/40",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            )}
+          >
+            <h3 className="text-[14px] font-semibold tracking-tight text-foreground">{link.title}</h3>
+            <p className="text-[12px] leading-relaxed text-muted-foreground">{link.description}</p>
+            <span className="mt-auto inline-flex items-center gap-1 pt-1 text-[12px] font-medium text-foreground">
+              Open <ArrowRight className="size-3" aria-hidden />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -812,29 +1532,10 @@ type DashboardBodyProps = {
   assuranceTrends: ResidentAssuranceFacilityTrendRow[];
   presenceCensus: PresenceCensus;
   occupancyContext: OccupancyContext | null;
-  ownerPriorityCards: Array<{ title: string; description: string; href: string; stat: string }>;
+  snapshot: ExecutiveSnapshotState;
+  metricChanges: Record<string, MetricChange>;
+  coverage: CoverageRow[];
   roleConfig: ReturnType<typeof getRoleDashboardConfig>;
-  KPI_TILES: ReadonlyArray<{
-    key: ExecutiveKpiMetricKey;
-    label: string;
-    format: "pct" | "num" | "cur";
-    trend: "up" | "down" | null;
-  }>;
-  hasMetric: (v: number | null | undefined) => v is number;
-  renderKpiTileValue: (
-    metricKey: ExecutiveKpiMetricKey,
-    value: number | undefined,
-    format: "pct" | "num" | "cur",
-  ) => ReactNode;
-  renderPortfolioMetric: (
-    metricKey: ExecutiveKpiMetricKey,
-    value: number | undefined,
-    format: "pct" | "num" | "cur",
-    scope: "headline" | "facility",
-  ) => ReactNode;
-  kpiStripHelperLine: string;
-  assuranceBandClass: Record<ResidentAssuranceFacilityRollup["heatBand"], string>;
-  assuranceBandText: Record<ResidentAssuranceFacilityRollup["heatBand"], string>;
 };
 
 function ExecutiveDashboardBody({
@@ -845,489 +1546,51 @@ function ExecutiveDashboardBody({
   assuranceTrends,
   presenceCensus,
   occupancyContext,
-  ownerPriorityCards,
+  snapshot,
+  metricChanges,
+  coverage,
   roleConfig,
-  KPI_TILES,
-  hasMetric,
-  renderKpiTileValue,
-  renderPortfolioMetric,
-  kpiStripHelperLine,
-  assuranceBandClass,
-  assuranceBandText,
-}: DashboardBodyProps) {
-  const occupancyFootnote = occupancyContext ? occupancyLoadedFootnote(occupancyContext) : null;
-
+}: DashboardBodyProps): ReactNode {
   return (
     <>
-      {/* KPI strip — 2/3/5 responsive */}
-      <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-          {KPI_TILES.map((tile) => {
-            const value = metrics[tile.key];
-            const present =
-              tile.key === "occ_pt"
-                ? occupancyContextOccPtFraction(occupancyContext) !== undefined || hasMetric(value)
-                : hasMetric(value);
-            const footnote =
-              tile.key === "occ_pt" && occupancyContext?.occupancyPct != null ? occupancyFootnote : null;
-            return (
-              <div
-                key={tile.key}
-                className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
-              >
-                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {tile.key === "occ_pt"
-                    ? resolveExecutiveOccupancyTileLabel(occupancyContext)
-                    : tile.label}
-                </span>
-                <div className="flex items-baseline gap-2">
-                  {renderKpiTileValue(tile.key, value, tile.format)}
-                  {present && tile.trend === "up" && <TrendingUp className="size-3.5 text-success" />}
-                  {present && tile.trend === "down" && <TrendingDown className="size-3.5 text-warning" />}
-                </div>
-                {footnote ? (
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">{footnote}</p>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-        <p className="text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
-      </div>
+      <CoveragePanel rows={coverage} />
 
-      {/* Resident presence — in-house vs on-hold split (additive to Occupancy above) */}
+      <NeedsAttentionPanel alerts={alerts} coverage={coverage} />
+
+      <PortfolioFiguresStrip
+        metrics={metrics}
+        occupancyContext={occupancyContext}
+        snapshot={snapshot}
+        metricChanges={metricChanges}
+      />
+
+      <PortfolioComparisonTable
+        facilities={facilities}
+        metrics={metrics}
+        occupancyContext={occupancyContext}
+      />
+
+      <RoundingAssuranceTable heatMap={assuranceHeatMap} trends={assuranceTrends} />
+
       <ResidentPresenceBand census={presenceCensus} />
 
-      {/* Owner priority lanes */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-[14px] font-semibold tracking-tight text-foreground">Enterprise priorities</h2>
-          <p className="mt-0.5 text-[12px] text-muted-foreground">
-            {roleConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {ownerPriorityCards.map((card) => (
-            <Link
-              key={card.title}
-              href={card.href}
-              className={cn(
-                "group flex flex-col gap-2 rounded-lg border border-border bg-card p-4",
-                "transition-colors hover:bg-secondary/40",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              )}
-            >
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                {card.stat}
-              </span>
-              <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
-                {card.title}
-              </h3>
-              <p className="text-[12px] leading-relaxed text-muted-foreground">
-                {card.description}
-              </p>
-              <span className="mt-auto inline-flex items-center gap-1 text-[12px] font-medium text-foreground transition-colors group-hover:text-foreground/80">
-                Open lane <ArrowRight className="size-3" />
-              </span>
-            </Link>
+      <SupportingDestinations />
+
+      <section className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-card p-4">
+        <h2 className="text-[13px] font-semibold tracking-tight text-foreground">
+          Not recorded anywhere yet
+        </h2>
+        <ul className="flex flex-col gap-1.5">
+          {NOT_RECORDED_FOLLOW_UPS.map((item) => (
+            <li key={item} className="text-[12px] leading-relaxed text-muted-foreground">
+              {item}
+            </li>
           ))}
-        </div>
-      </section>
-
-      {/* Watchlist (4/12) + Portfolio Health table (8/12) */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Watchlist */}
-        <div className="col-span-12 lg:col-span-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
-              <AlertTriangle className="size-4 text-warning" /> Executive watchlist
-            </h2>
-            <span className="text-[11px] tabular-nums text-muted-foreground">
-              {alerts.length} {alerts.length === 1 ? "alert" : "alerts"}
-            </span>
-          </div>
-
-          {alerts.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
-              <p className="text-[13px] font-medium text-foreground">No critical alerts.</p>
-              <p className="mt-1 text-[12px] text-muted-foreground">
-                Nothing requires leadership intervention right now.
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {alerts.map((alert) => {
-                const isCritical = alert.severity === "critical";
-                return (
-                  <div
-                    key={alert.id}
-                    className={cn(
-                      "flex flex-col gap-2 rounded-lg border bg-card p-3",
-                      isCritical
-                        ? "border-destructive/30"
-                        : "border-warning/30",
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        {isCritical && <></>}
-                        <span
-                          className={cn(
-                            "truncate text-[10px] font-medium uppercase tracking-wider",
-                            isCritical ? "text-destructive" : "text-warning",
-                          )}
-                        >
-                          {alert.category} · {alert.facilities?.name || "Enterprise"}
-                        </span>
-                      </div>
-                      <span
-                        className={cn(
-                          "inline-flex h-5 shrink-0 items-center rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider",
-                          isCritical
-                            ? "border-destructive/30 bg-destructive/10 text-destructive"
-                            : "border-warning/30 bg-warning/10 text-warning",
-                        )}
-                      >
-                        {alert.severity}
-                      </span>
-                    </div>
-                    <h3 className="text-[13px] font-semibold leading-snug text-foreground">
-                      {alert.title}
-                    </h3>
-                    {alert.body && (
-                      <p className="text-[12px] leading-relaxed text-muted-foreground">
-                        {alert.body}
-                      </p>
-                    )}
-                    {alert.why_it_matters && (
-                      <div className="rounded-md border border-border bg-secondary/50 px-2.5 py-2 text-[12px] leading-relaxed text-muted-foreground">
-                        <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
-                          Business impact
-                        </span>
-                        <span className="mt-0.5 block text-foreground/80">{alert.why_it_matters}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Portfolio health table */}
-        <div className="col-span-12 lg:col-span-8 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
-              <Activity className="size-4 text-info" /> Portfolio health
-            </h2>
-            <Link
-              href="/admin/executive/reports"
-              className={cn(
-                "inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
-                "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
-              )}
-            >
-              Detailed views <ArrowRight className="size-3" />
-            </Link>
-          </div>
-
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="max-h-[480px] overflow-auto">
-              <table className="w-full text-[13px]">
-                <thead className="sticky top-0 z-10 bg-background/95">
-                  <tr className="border-b border-border">
-                    <th className="h-9 px-3 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Facility
-                    </th>
-                    <th className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Occupancy
-                    </th>
-                    <th className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Labor %
-                    </th>
-                    <th className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Inc / 1k
-                    </th>
-                    <th className="h-9 px-3 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Survey %
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {facilities.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-3 py-8">
-                        <div className="text-[13px] font-medium text-foreground">No facilities in scope.</div>
-                        <div className="mt-0.5 text-[12px] text-muted-foreground">
-                          Adjust the facility scope filter or wait for the next snapshot.
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    facilities.map((fac) => {
-                      const fm = fac.metrics ?? {};
-                      const occ = fm["occ_pt"];
-                      const labor = fm["labor_pct"];
-                      const inc = fm["inc_rate"];
-                      const survey = fm["survey_rd"];
-                      const occGood = hasMetric(occ) && occ > 0.9;
-                      const laborGood = hasMetric(labor) && labor < 0.55;
-                      const facilityAlerts = alerts.filter((a) => a.facility_id === fac.id);
-                      const hasCritical = facilityAlerts.some((a) => a.severity === "critical");
-                      const hasWarning = facilityAlerts.length > 0;
-                      return (
-                        <tr
-                          key={fac.id}
-                          className="border-b border-border/60 transition-colors even:bg-muted/30 hover:bg-muted/50"
-                        >
-                          <td className="h-9 px-3">
-                            <span className="inline-flex items-center gap-2">
-                              {hasCritical ? (
-                                <></>
-                              ) : hasWarning ? (
-                                <></>
-                              ) : (
-                                <span className="size-1.5 rounded-full bg-muted-foreground/40" />
-                              )}
-                              <span className="font-medium text-foreground">{fac.name}</span>
-                            </span>
-                          </td>
-                          <td className="h-9 px-3 text-right">
-                            <span
-                              className={cn(
-                                "inline-flex items-center justify-end gap-1 tabular-nums",
-                                hasMetric(occ)
-                                  ? occGood
-                                    ? "text-success"
-                                    : "text-warning"
-                                  : "text-muted-foreground/60",
-                              )}
-                            >
-                              {renderPortfolioMetric("occ_pt", occ, "pct", "facility")}
-                              {hasMetric(occ) && (occGood ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />)}
-                            </span>
-                          </td>
-                          <td className="h-9 px-3 text-right">
-                            <span
-                              className={cn(
-                                "inline-flex items-center justify-end gap-1 tabular-nums",
-                                hasMetric(labor)
-                                  ? laborGood
-                                    ? "text-success"
-                                    : "text-destructive"
-                                  : "text-muted-foreground/60",
-                              )}
-                            >
-                              {renderPortfolioMetric("labor_pct", labor, "pct", "facility")}
-                              {hasMetric(labor) && (laborGood ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />)}
-                            </span>
-                          </td>
-                          <td className="h-9 px-3 text-right tabular-nums text-foreground">
-                            {renderPortfolioMetric("inc_rate", inc, "num", "facility")}
-                          </td>
-                          <td className="h-9 px-3 text-right tabular-nums text-foreground">
-                            {renderPortfolioMetric("survey_rd", survey, "pct", "facility")}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-                {facilities.length > 0 && (
-                  <tfoot>
-                    <tr className="border-t border-border bg-secondary/40">
-                      <td className="h-9 px-3 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        Enterprise avg
-                      </td>
-                      <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderPortfolioMetric("occ_pt", metrics["occ_pt"], "pct", "headline")}
-                      </td>
-                      <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderPortfolioMetric("labor_pct", metrics["labor_pct"], "pct", "headline")}
-                      </td>
-                      <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderPortfolioMetric("inc_rate", metrics["inc_rate"], "num", "headline")}
-                      </td>
-                      <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderPortfolioMetric("survey_rd", metrics["survey_rd"], "pct", "headline")}
-                      </td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Smart rounding heat map */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
-            <Activity className="size-4 text-destructive" /> Smart rounding heat map
-          </h2>
-          <Link
-            href="/admin/rounding"
-            className={cn(
-              "inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
-              "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
-            )}
-          >
-            Open assurance hub <ArrowRight className="size-3" />
-          </Link>
-        </div>
-
-        {assuranceHeatMap.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
-            <p className="text-[13px] font-medium text-foreground">No heat map data in scope.</p>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              Wait for the next assurance rollup or change the facility scope.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {assuranceHeatMap.map((row) => (
-              <Link
-                key={row.facilityId}
-                href={`/admin/executive/facility/${row.facilityId}`}
-                className={cn(
-                  "grid grid-cols-1 gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-secondary/40",
-                  "md:grid-cols-[2fr_repeat(5,minmax(0,1fr))] md:items-center",
-                  assuranceBandClass[row.heatBand],
-                )}
-              >
-                <div className="min-w-0">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {row.heatBand}
-                  </p>
-                  <h3 className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
-                    {row.facilityName}
-                  </h3>
-                </div>
-                <HeatMetric label="Watches" value={row.activeWatches} />
-                <HeatMetric label="Pending" value={row.pendingWatchApprovals} />
-                <HeatMetric label="Escalations" value={row.openEscalations} danger={row.openEscalations > 0} />
-                <HeatMetric label="Integrity" value={row.openIntegrityFlags} danger={row.openIntegrityFlags > 0} />
-                <div className="flex flex-col items-start md:items-end leading-tight">
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Critical risk</span>
-                  <span className={cn("text-[18px] font-semibold tabular-nums tracking-tight", assuranceBandText[row.heatBand])}>
-                    {row.criticalSafetyResidents}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {row.highOrCriticalSafetyResidents} high + critical
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Smart rounding trend */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="min-w-0">
-            <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
-              <Activity className="size-4 text-info" /> Smart rounding trend (7d)
-            </h2>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">
-              Daily heat pressure by facility.
-            </p>
-          </div>
-          <Link
-            href="/admin/reports/run/template/resident-assurance-heat-trend"
-            className={cn(
-              "inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
-              "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
-            )}
-          >
-            Run report <ArrowRight className="size-3" />
-          </Link>
-        </div>
-
-        {assuranceTrends.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
-            <p className="text-[13px] font-medium text-foreground">No 7-day heat data.</p>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              The trend chart appears once rollups have been generated.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {assuranceTrends.map((row) => (
-              <Link
-                key={row.facilityId}
-                href={`/admin/executive/facility/${row.facilityId}`}
-                className={cn(
-                  "grid grid-cols-1 gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-secondary/40",
-                  "lg:grid-cols-[1.6fr_2.4fr_0.8fr_0.8fr_0.8fr] lg:items-center",
-                )}
-              >
-                <div className="min-w-0">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Facility</p>
-                  <h3 className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
-                    {row.facilityName}
-                  </h3>
-                </div>
-                <div className="flex items-end gap-1.5">
-                  {row.points.map((point) => (
-                    <div key={`${row.facilityId}:${point.date}`} className="flex flex-1 flex-col items-center gap-1.5">
-                      <div className="flex h-16 w-full items-end">
-                        <div
-                          className={cn(
-                            "w-full rounded-t-sm",
-                            point.heatBand === "critical"
-                              ? "bg-destructive"
-                              : point.heatBand === "elevated"
-                                ? "bg-warning"
-                                : point.heatBand === "watch"
-                                  ? "bg-warning/60"
-                                  : "bg-success",
-                          )}
-                          style={{ height: `${Math.max(10, Math.min(100, point.heatScore * 7))}%` }}
-                          title={`${point.date}: heat ${point.heatScore}`}
-                        />
-                      </div>
-                      <span className="text-[10px] font-medium text-muted-foreground">
-                        {point.date.slice(5)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <HeatMetric label="Latest" value={row.latestHeatScore} danger={row.latestHeatScore >= 7} />
-                <HeatMetric label="Peak" value={row.peakHeatScore} danger={row.peakHeatScore >= 7} />
-                <HeatMetric label="Avg" value={Number(row.avgHeatScore.toFixed(1))} danger={row.avgHeatScore >= 7} />
-              </Link>
-            ))}
-          </div>
-        )}
+        </ul>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          This home covers {roleConfig.firstScreenPriority.join(", ").replace(/_/g, " ")}.
+        </p>
       </section>
     </>
-  );
-}
-
-function HeatMetric({
-  label,
-  value,
-  danger = false,
-}: {
-  label: string;
-  value: number;
-  danger?: boolean;
-}) {
-  return (
-    <div className="flex flex-col items-start md:items-end leading-tight">
-      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-      <span
-        className={cn(
-          "text-[18px] font-semibold tabular-nums tracking-tight",
-          danger ? "text-destructive" : "text-foreground",
-        )}
-      >
-        {value}
-      </span>
-    </div>
   );
 }

@@ -63,6 +63,8 @@ const emptyProps = {
   initialAssuranceTrends: [],
   initialPresenceCensus: EMPTY_PRESENCE_CENSUS,
   initialOccupancyContext: null,
+  initialSnapshot: { kind: "never_recorded" } as const,
+  initialMetricChanges: {},
   initialHasServerData: false,
 };
 
@@ -113,7 +115,7 @@ describe("ExecutiveOverviewPageClient organization gap handling", () => {
     );
 
     expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
-    expect(screen.getByText("Enterprise priorities")).toBeInTheDocument();
+    expect(screen.getByText("Portfolio figures")).toBeInTheDocument();
   });
 
   it("shows named loading instead of empty KPI gaps while auth hydrates", () => {
@@ -282,5 +284,168 @@ describe("ExecutiveOverviewPageClient missing KPI gaps", () => {
 
     expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("—")).not.toBeInTheDocument();
+  });
+});
+
+const RECORDED_TODAY = {
+  kind: "recorded",
+  evidence: {
+    snapshotDate: "2026-09-15",
+    computedAt: "2026-09-15T06:00:00.000Z",
+    occupiedResidents: 25,
+    licensedBeds: 60,
+    incidentRatePer1kResidentDays: 0,
+    billedRevenueMtdCents: 0,
+    laborCostMtdCents: null,
+  },
+  ageDays: 0,
+  stale: false,
+} as const;
+
+describe("ExecutiveOverviewPageClient evidence claims", () => {
+  beforeEach(() => {
+    authMock.loading = false;
+    authMock.appRole = "owner";
+    authMock.organizationId = "org-1";
+    supabaseMock.loadError = null;
+  });
+
+  it("never claims nothing needs attention when measures are unreported", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 125000 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: { rev_mtd: 125000 } }]}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.queryByText("Nothing requires leadership intervention right now.")).not.toBeInTheDocument();
+    expect(screen.getByText("No critical alerts recorded in the available data.")).toBeInTheDocument();
+    expect(screen.getByText(/measures are not fully reported/)).toBeInTheDocument();
+  });
+
+  it("states the page scope instead of leaving the facility chooser ambiguous", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 1 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: {} }]}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.getByText(/All facilities/)).toBeInTheDocument();
+    expect(screen.getByText(/does not narrow it/)).toBeInTheDocument();
+  });
+
+  it("withholds an incident rate that has no recorded resident-day denominator", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ inc_rate: 0 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: { inc_rate: 0 } }]}
+        initialSnapshot={{ kind: "never_recorded" }}
+        initialHasServerData
+      />,
+    );
+
+    expect(
+      screen.getByText("No resident-day count is recorded with this figure, so the rate cannot be read."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the denominator when the run recorded one", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ inc_rate: 0 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: { inc_rate: 0 } }]}
+        initialSnapshot={RECORDED_TODAY}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.getByText(/750 resident-days \(25 residents × 30 days\)/)).toBeInTheDocument();
+  });
+
+  it("reads a facility with nothing recorded as not observed rather than stable", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 1 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: {} }]}
+        initialAssuranceHeatMap={[
+          {
+            facilityId: "site-a",
+            facilityName: "Site Alpha",
+            activeWatches: 0,
+            pendingWatchApprovals: 0,
+            openEscalations: 0,
+            openIntegrityFlags: 0,
+            criticalSafetyResidents: 0,
+            highOrCriticalSafetyResidents: 0,
+            heatScore: 0,
+            heatBand: "stable",
+            observed: false,
+            lastObservedAt: null,
+          },
+        ]}
+        initialAssuranceTrends={[
+          {
+            facilityId: "site-a",
+            facilityName: "Site Alpha",
+            latestHeatScore: 0,
+            peakHeatScore: 0,
+            avgHeatScore: 0,
+            observedDays: 0,
+            days: 7,
+            lastObservedDate: null,
+            points: Array.from({ length: 7 }, (_, index) => ({
+              date: `2026-09-0${index + 1}`,
+              watchStarts: 0,
+              escalations: 0,
+              integrityFlags: 0,
+              criticalResidents: 0,
+              heatScore: 0,
+              heatBand: "stable" as const,
+              observed: false,
+            })),
+          },
+        ]}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.getByText("Not observed")).toBeInTheDocument();
+    expect(screen.getByText("Nothing recorded yet")).toBeInTheDocument();
+    expect(screen.getByText("0 of 7 days recorded")).toBeInTheDocument();
+  });
+
+  it("labels the portfolio occupancy footer with the facilities it covers", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ occ_pt: 0.33 }}
+        initialOccupancyContext={{
+          occupiedResidents: 22,
+          licensedBeds: 66,
+          occupancyPct: 33,
+          allFacilitiesPosted: false,
+          postedFacilityCount: 2,
+          totalFacilityCount: 5,
+        }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: { occ_pt: 0.917 } }]}
+        initialHasServerData
+      />,
+    );
+
+    // The tile and the comparison footer must name the same coverage.
+    expect(
+      screen.getAllByText("Occupancy across reporting facilities · 2 of 5 facilities").length,
+    ).toBe(2);
+    expect(
+      screen.getAllByText(/22 occupied ÷ 66 beds at the 2 reporting facilities/).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });

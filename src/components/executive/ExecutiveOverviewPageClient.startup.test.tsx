@@ -27,11 +27,15 @@ it("discards an old organization's result after a newer request completes", asyn
     initialMetrics: {}, initialAlerts: [], initialFacilities: [],
     initialAssuranceHeatMap: [], initialAssuranceTrends: [],
     initialPresenceCensus: EMPTY_PRESENCE_CENSUS,
-    initialOccupancyContext: null, initialHasServerData: false,
+    initialOccupancyContext: null,
+    initialSnapshot: { kind: "never_recorded" } as const,
+    initialMetricChanges: {},
+    initialHasServerData: false,
   };
   const data: ExecutiveOverviewData = {
     metrics: { rev_mtd: 50000 }, alerts: [], facilities: [], assuranceHeatMap: [], assuranceTrends: [],
     presenceCensus: EMPTY_PRESENCE_CENSUS, occupancyContext: null,
+    snapshot: { kind: "never_recorded" }, metricChanges: {},
   };
   const { rerender } = render(<ExecutiveOverviewPageClient {...props} />);
   mocks.organizationId = "org-new";

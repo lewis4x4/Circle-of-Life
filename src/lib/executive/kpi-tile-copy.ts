@@ -64,6 +64,26 @@ export function occupancyLoadedFootnote(context: OccupancyContext): string | nul
   return `${occupiedResidents} in census · ${licensedBeds} licensed beds`;
 }
 
+/**
+ * The arithmetic behind the displayed occupancy, so a portfolio figure that sits
+ * below every visible facility percentage can be checked rather than doubted.
+ */
+export function occupancyCalculationLine(context: OccupancyContext | null): string | null {
+  if (!context || context.occupancyPct == null) return null;
+  const { occupiedResidents, licensedBeds, postedFacilityCount } = context;
+  if (licensedBeds <= 0) return null;
+  const facilityWord = postedFacilityCount === 1 ? "facility" : "facilities";
+  return `${occupiedResidents} occupied ÷ ${licensedBeds} beds at the ${postedFacilityCount} reporting ${facilityWord}.`;
+}
+
+/** Portfolio occupancy heading that matches the coverage it was computed from. */
+export function occupancyCoverageHeading(context: OccupancyContext | null): string {
+  if (!context || context.occupancyPct == null) return "Occupancy";
+  if (context.allFacilitiesPosted) return "Occupancy across all facilities";
+  const facilityWord = context.totalFacilityCount === 1 ? "facility" : "facilities";
+  return `Occupancy across reporting facilities · ${context.postedFacilityCount} of ${context.totalFacilityCount} ${facilityWord}`;
+}
+
 /** Summary line under the KPI strip — makes loaded vs empty tiles obvious at a glance. */
 export function executiveKpiStripHelperLine(
   loadedCount: number,
