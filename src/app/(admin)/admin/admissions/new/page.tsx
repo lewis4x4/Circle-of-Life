@@ -2182,7 +2182,13 @@ function AdmissionsNewInner() {
             <div className="space-y-1">
               <p className="text-[12px] font-medium text-foreground">Capacity</p>
               <p className="text-[13px] text-muted-foreground">
-                <span className="font-medium text-foreground">{beds.length}</span> open beds ·{" "}
+                <span className="font-medium text-foreground">{beds.length}</span>{" "}
+                <span
+                  title="Beds marked available or hold. The resident roster counts licensed minus census instead, so the two differ whenever a bed is in maintenance or offline."
+                >
+                  ready to assign
+                </span>{" "}
+                ·{" "}
                 <span className="font-medium text-foreground">
                   {formatBuildingTabLicensedBedCount(facilityPanel?.totalLicensedBeds)}
                 </span>{" "}
