@@ -401,6 +401,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         items: [
           { key: "residents", href: "/admin/residents", label: "Resident roster", enabled: true, icon: Users },
           { key: "care-plans", href: "/admin/care-plans/reviews-due", label: "Care plan reviews", enabled: true, icon: ClipboardList },
+          { key: "form-1823-alignment", href: "/admin/care-plans/form-1823-alignment", label: "Form 1823 alignment", enabled: true, icon: ClipboardCheck },
           { key: "assessments", href: "/admin/assessments/overdue", label: "Clinical Desk", enabled: true, icon: ClipboardCheck },
           { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", enabled: true, icon: Clock },
           { key: "med-tech", href: "/med-tech", label: "Med-Tech cockpit", enabled: true, icon: Pill },

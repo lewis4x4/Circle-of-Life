@@ -118,6 +118,7 @@ export const PILLARS: Pillar[] = [
     items: [
       { key: "residents", href: "/admin/residents", label: "Resident roster", icon: Users },
       { key: "care-plans", href: "/admin/care-plans/reviews-due", label: "Care plan reviews", icon: ClipboardList },
+      { key: "form-1823-alignment", href: "/admin/care-plans/form-1823-alignment", label: "Form 1823 alignment", icon: ClipboardCheck },
       { key: "clinical-desk", href: "/admin/assessments/overdue", label: "Clinical Desk", icon: ClipboardCheck },
       { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", icon: Clock },
       { key: "med-tech", href: "/med-tech", label: "Med-Tech cockpit", icon: Pill },

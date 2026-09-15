@@ -30,6 +30,7 @@ import {
 } from "@/lib/care-plans/care-plan-approval-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import type { Form1823DraftSource } from "@/lib/care-plans/draft-from-form-1823";
+import { ALIGNMENT_STATE_LABELS, alignForm1823WithPlan, type AlignmentState } from "@/lib/care-plans/form-1823-alignment";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -499,6 +500,10 @@ export default function AdminResidentCarePlanPage() {
               </div>
             )}
 
+            {loaded.currentForm1823 ? (
+              <Form1823AlignmentSection form={loaded.currentForm1823} items={plan.status === "active" ? items : null} planStatus={plan.status} />
+            ) : null}
+
             <CarePlanAcknowledgements key={plan.id} planId={plan.id} planStatus={plan.status} />
           </div>
         )}
@@ -574,6 +579,44 @@ export default function AdminResidentCarePlanPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+const ALIGNMENT_STATE_CLASS: Record<AlignmentState, string> = {
+  addressed: "bg-success/10 text-success border-success/20",
+  weaker: "bg-warning/10 text-warning border-warning/20",
+  not_addressed: "bg-destructive/10 text-destructive border-destructive/30",
+  not_assessed: "bg-muted text-muted-foreground border-border",
+  no_plan: "bg-destructive/10 text-destructive border-destructive/30",
+};
+
+/**
+ * What survey actually checks for a standard ALF licence: does what we do
+ * match the 1823? Compared against the active plan only; a draft is not yet
+ * what the facility does.
+ */
+function Form1823AlignmentSection({ form, items, planStatus }: { form: Form1823DraftSource; items: CarePlanItemRow[] | null; planStatus: string | null }) {
+  const { rows, summary } = alignForm1823WithPlan(form, items);
+  const description = summary.noPlan
+    ? planStatus === "active"
+      ? "No active plan"
+      : `Compared against the active plan only — this version is ${planStatus?.replace(/_/g, " ") ?? "not active"}`
+    : `${summary.addressed} addressed · ${summary.weaker} weaker · ${summary.notAddressed} not addressed · ${summary.notAssessed} not assessed on the 1823`;
+  return (
+    <RecordDetailSection title={`Form 1823 alignment · exam ${formatCarePlanDateOnly(form.exam_date)}`} description={description}>
+      <ul className="divide-y divide-border">
+        {rows.map((row) => (
+          <li key={row.need} className="grid grid-cols-1 gap-2 py-2 text-sm sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-center">
+            <span className="font-medium text-foreground">{row.need}</span>
+            <span className="text-muted-foreground">1823: {row.form1823}</span>
+            <span className="text-muted-foreground">Plan: {row.plan ?? "No line"}</span>
+            <Badge className={cn("justify-self-start text-[10px] uppercase font-bold tracking-wider px-2.5 border shadow-none sm:justify-self-end", ALIGNMENT_STATE_CLASS[row.state])}>
+              {ALIGNMENT_STATE_LABELS[row.state]}
+            </Badge>
+          </li>
+        ))}
+      </ul>
+    </RecordDetailSection>
   );
 }
 
