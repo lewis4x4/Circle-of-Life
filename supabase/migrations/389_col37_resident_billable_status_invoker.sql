@@ -26,6 +26,11 @@ ALTER VIEW public.resident_billable_status SET (security_invoker = true);
 REVOKE ALL ON public.resident_billable_status FROM anon;
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
   ON public.resident_billable_status FROM authenticated;
+-- Stated, not inherited. On the hosted project authenticated already had SELECT
+-- through Supabase's default privileges, but a clean replay has no such default
+-- and the view would come out readable by nobody -- which is exactly what the
+-- probe caught in CI. Same shape as the grant in 330.
+GRANT SELECT ON public.resident_billable_status TO authenticated;
 
 COMMENT ON VIEW public.resident_billable_status IS
   'Computed COL billing/census status. Caller RLS via security_invoker: rows follow the reader''s authority over public.residents, not the view owner''s. SELECT to authenticated only -- anon has no grant, and the view is not a write path. Active, hospital hold, and LOA are billable until provider-specific bed-hold policies are configured.';
