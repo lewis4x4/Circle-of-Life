@@ -3,7 +3,10 @@
  * Uses the service role client — server-only (Route Handlers / Server Actions).
  */
 
+import { createClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { adminSetMustChangePassword } from "@/lib/supabase/must-change-password-admin";
+import type { Database } from "@/types/database";
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -14,9 +17,11 @@ export interface AdminUserResult {
   organization_id: string;
 }
 
-type AuthAdminLookupResult = {
+export type AuthAdminLookupResult = {
   id: string;
   email: string;
+  email_confirmed_at: string | null;
+  last_sign_in_at: string | null;
 };
 
 type AuthAdminSnapshot = {
@@ -91,7 +96,16 @@ export async function adminInviteUser(
  * Find an existing auth user by email.
  * Uses paginated admin listing because GoTrue has no direct getUserByEmail API.
  */
-export async function adminFindUserByEmail(email: string): Promise<AuthAdminLookupResult | null> {
+/** @deprecated Use adminFindAuthUserByEmail */
+export async function adminFindUserByEmail(email: string): Promise<{ id: string; email: string } | null> {
+  const match = await adminFindAuthUserByEmail(email);
+  if (!match) {
+    return null;
+  }
+  return { id: match.id, email: match.email };
+}
+
+export async function adminFindAuthUserByEmail(email: string): Promise<AuthAdminLookupResult | null> {
   const users = await adminListAuthUsers();
   const normalized = email.trim().toLowerCase();
   const match = users.find(
@@ -100,13 +114,25 @@ export async function adminFindUserByEmail(email: string): Promise<AuthAdminLook
   if (!match?.email) {
     return null;
   }
-  return { id: match.id, email: match.email };
+  return {
+    id: match.id,
+    email: match.email,
+    email_confirmed_at: match.email_confirmed_at ?? null,
+    last_sign_in_at: match.last_sign_in_at ?? null,
+  };
 }
 
 async function adminListAuthUsers() {
   const supabase = createServiceRoleClient();
   let page = 1;
-  const users: Array<{ id: string; email?: string | null; last_sign_in_at?: string | null; app_metadata?: Record<string, unknown>; banned_until?: string | null }> = [];
+  const users: Array<{
+    id: string;
+    email?: string | null;
+    email_confirmed_at?: string | null;
+    last_sign_in_at?: string | null;
+    app_metadata?: Record<string, unknown>;
+    banned_until?: string | null;
+  }> = [];
 
   while (true) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
@@ -154,6 +180,55 @@ export async function adminGetAuthSnapshotsByIds(
 /**
  * Create a new user with a generated password (for cases where invite email is not sent).
  */
+/**
+ * Confirm email and set a fresh temporary password so the user can sign in immediately.
+ */
+export async function adminSetUserSignInReadyWithTemporaryPassword(
+  userId: string,
+): Promise<{ temporary_password: string }> {
+  const supabase = createServiceRoleClient();
+  const password = generateSecurePassword();
+
+  const { error } = await supabase.auth.admin.updateUserById(userId, {
+    password,
+    email_confirm: true,
+  });
+
+  if (error) {
+    throw new Error(`Auth sign-in ready update error: ${error.message}`);
+  }
+
+  await adminSetMustChangePassword(userId, true);
+
+  return { temporary_password: password };
+}
+
+function createPasswordResetAnonClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  }
+  return createClient<Database>(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+/** Sends Supabase password-reset email (same channel as admin reset-password route). */
+export async function adminSendPasswordResetEmail(email: string): Promise<void> {
+  const resetClient = createPasswordResetAnonClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://circleoflifealf.com";
+  const { error } = await resetClient.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/reset-password`,
+  });
+  if (error) {
+    throw new Error(`Password reset email error: ${error.message}`);
+  }
+}
+
 export async function adminCreateUser(
   email: string,
   options: { app_role: string; organization_id: string; email_confirm?: boolean },
@@ -175,6 +250,8 @@ export async function adminCreateUser(
   if (error) {
     throw new Error(`Auth create error: ${error.message}`);
   }
+
+  await adminSetMustChangePassword(data.user.id, true);
 
   return {
     user: {

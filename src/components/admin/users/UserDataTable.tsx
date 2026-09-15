@@ -35,8 +35,9 @@ interface UserDataTableProps {
   users: UserData[];
   isLoading: boolean;
   onSelectUser: (id: string) => void;
-  onDeactivate: (id: string) => void;
+  onDeactivate: (user: { id: string; full_name: string }) => void;
   onReactivate: (id: string) => void;
+  onResetPassword?: (user: { id: string; email: string }) => void;
 }
 
 export function UserDataTable({
@@ -45,6 +46,7 @@ export function UserDataTable({
   onSelectUser,
   onDeactivate,
   onReactivate,
+  onResetPassword,
 }: UserDataTableProps) {
   const formatLastLogin = (value: string | null) => {
     if (!value) return "Never";
@@ -122,8 +124,9 @@ export function UserDataTable({
                 <UserRowActions
                   user={user}
                   onSelect={() => onSelectUser(user.id)}
-                  onDeactivate={onDeactivate}
+                  onDeactivate={() => onDeactivate({ id: user.id, full_name: user.full_name })}
                   onReactivate={onReactivate}
+                  onResetPassword={onResetPassword}
                 />
               </TableCell>
             </TableRow>
