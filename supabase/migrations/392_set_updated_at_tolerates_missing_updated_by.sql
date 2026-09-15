@@ -1,4 +1,4 @@
--- haven_set_updated_at must not require an updated_by column.
+-- haven_set_updated_at must not require an updated_by column. (Numbered 390 when merged; renumbered after a collision with COL-37.)
 --
 -- The function (006) assigns NEW.updated_by unconditionally. It is attached as
 -- a BEFORE UPDATE trigger to 45 tables that were created without that column

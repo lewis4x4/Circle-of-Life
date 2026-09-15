@@ -28,7 +28,7 @@ const DEFAULT_MODEL = "claude-sonnet-5";
 const MAX_PROVIDER_IMAGE_EDGE = 4_096;
 const MAX_PROVIDER_IMAGE_PIXELS = 20_000_000;
 
-// Migration 389 already refuses allow_phi without a recorded BAA at the table;
+// Migration 391 already refuses allow_phi without a recorded BAA at the table;
 // requiring it here as well means a policy row read through any path that
 // bypasses the constraint (a stale cache, a hand-edited fixture) still fails
 // closed rather than sending a chart to the provider.
