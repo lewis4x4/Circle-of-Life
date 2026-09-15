@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -13,69 +13,35 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { StaffProfileSections } from "@/components/staff/StaffProfileSections";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import {
-  formatStaffDetailAltPhone,
   formatStaffDetailCertExpirationDate,
   formatStaffDetailCertIssueDate,
-  formatStaffDetailEmail,
-  formatStaffDetailEmergencyName,
-  formatStaffDetailEmergencyPhone,
-  formatStaffDetailEmergencyRelationship,
-  formatStaffDetailHireDate,
-  formatStaffDetailMaxHours,
-  formatStaffDetailPhone,
-  formatStaffDetailRateCents,
-  formatStaffDetailTerminationDate,
   formatStaffDetailUpdatedAt,
   STAFF_DETAIL_NO_CERTS_COPY,
   STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY,
 } from "@/lib/staff/staff-detail-display-copy";
-import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
-  DetailRow,
-  RecordDetailHeader,
-  RecordDetailSection,
-} from "@/design-system/components/record-detail";
+  buildStaffProfileSectionPatch,
+  canEditStaffProfile,
+  staffProfileSelectSql,
+  type StaffProfileDraft,
+  type StaffProfileRow,
+  type StaffProfileSection,
+} from "@/lib/staff/staff-profile-edit";
+import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 
 type StaffRoleUi = "nurse" | "caregiver" | "med_tech" | "admin";
 type StaffStatusUi = "active" | "on_leave" | "off_shift";
 type CertificationStatus = "current" | "expiring_soon" | "expired";
 
-type SupabaseStaff = {
-  id: string;
-  facility_id: string;
-  first_name: string;
-  last_name: string;
-  preferred_name: string | null;
-  phone: string | null;
-  phone_alt: string | null;
-  email: string | null;
-  address_line_1: string | null;
-  address_line_2: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  emergency_contact_name: string | null;
-  emergency_contact_phone: string | null;
-  emergency_contact_relationship: string | null;
-  staff_role: string;
-  employment_status: string;
-  hire_date: string;
-  termination_date: string | null;
-  termination_reason: string | null;
-  hourly_rate: number | null;
-  overtime_rate: number | null;
-  is_full_time: boolean;
-  is_float_pool: boolean;
-  max_hours_per_week: number | null;
-  photo_url: string | null;
-  notes: string | null;
-  updated_at: string | null;
-};
+type SupabaseStaff = StaffProfileRow;
 
 type SupabaseCertRow = {
   id: string;
@@ -102,6 +68,7 @@ export default function AdminStaffDetailPage() {
   const rawId = params?.id;
   const staffId = typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : "";
   const { selectedFacilityId } = useFacilityStore();
+  const { user, appRole } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,39 +95,7 @@ export default function AdminStaffDetailPage() {
       const supabase = createClient();
       const staffRes = (await supabase
         .from("staff" as never)
-        .select(
-          [
-            "id",
-            "facility_id",
-            "first_name",
-            "last_name",
-            "preferred_name",
-            "phone",
-            "phone_alt",
-            "email",
-            "address_line_1",
-            "address_line_2",
-            "city",
-            "state",
-            "zip",
-            "emergency_contact_name",
-            "emergency_contact_phone",
-            "emergency_contact_relationship",
-            "staff_role",
-            "employment_status",
-            "hire_date",
-            "termination_date",
-            "termination_reason",
-            "hourly_rate",
-            "overtime_rate",
-            "is_full_time",
-            "is_float_pool",
-            "max_hours_per_week",
-            "photo_url",
-            "notes",
-            "updated_at",
-          ].join(", "),
-        )
+        .select(staffProfileSelectSql())
         .eq("id", staffId)
         .is("deleted_at", null)
         .maybeSingle()) as unknown as QueryResult<SupabaseStaff>;
@@ -223,6 +158,42 @@ export default function AdminStaffDetailPage() {
     void load();
   }, [load]);
 
+  const handleSaveSection = useCallback(
+    async (section: StaffProfileSection, draft: StaffProfileDraft) => {
+      if (!staff) return { error: "Staff record is not loaded." };
+      if (!user?.id) return { error: "You must be signed in." };
+
+      const built = buildStaffProfileSectionPatch(
+        section,
+        draft,
+        user.id,
+        staff.employment_status,
+      );
+      if (!built.ok) return { error: built.error };
+
+      try {
+        const supabase = createClient();
+        const res = (await supabase
+          .from("staff" as never)
+          .update(built.patch as never)
+          .eq("id", staffId)
+          .select(staffProfileSelectSql())
+          .single()) as unknown as QueryResult<SupabaseStaff>;
+
+        if (res.error) return { error: res.error.message };
+        if (!res.data) return { error: "Update did not return the staff row." };
+        return { staff: res.data };
+      } catch (err) {
+        return {
+          error: err instanceof Error ? err.message : "Failed to save staff profile.",
+        };
+      }
+    },
+    [staff, staffId, user?.id],
+  );
+
+  const canEditProfile = canEditStaffProfile(appRole);
+
   if (loading) {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
@@ -274,10 +245,6 @@ export default function AdminStaffDetailPage() {
       expiration_date: c.expiration_date,
     })),
   );
-  const addressLine = [staff.address_line_1, staff.address_line_2].filter(Boolean).join(", ");
-  const cityState = [staff.city, staff.state].filter(Boolean).join(", ");
-  const addrRest = [cityState, staff.zip].filter(Boolean).join(" ");
-
   return (
     <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
       <RecordDetailHeader
@@ -303,99 +270,14 @@ export default function AdminStaffDetailPage() {
       </Link>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <RecordDetailSection title="Contact">
-            <div className="space-y-4 text-sm">
-              <DetailRow label="Phone" value={formatStaffDetailPhone(staff.phone)} />
-              <DetailRow label="Alt phone" value={formatStaffDetailAltPhone(staff.phone_alt)} />
-              <DetailRow
-                label="Email"
-                value={
-                  staff.email?.trim() ? (
-                    <a
-                      href={`mailto:${staff.email}`}
-                      className="inline-flex items-center gap-1.5 font-medium underline-offset-4 hover:underline"
-                    >
-                      <Mail className="h-3.5 w-3.5" />
-                      {staff.email}
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground">{formatStaffDetailEmail(staff.email)}</span>
-                  )
-                }
-              />
-            </div>
-          </RecordDetailSection>
-
-          <RecordDetailSection title="Emergency contact">
-            <div className="space-y-4 text-sm">
-              <DetailRow
-                label="Name"
-                value={formatStaffDetailEmergencyName(staff.emergency_contact_name)}
-              />
-              <DetailRow
-                label="Relationship"
-                value={formatStaffDetailEmergencyRelationship(staff.emergency_contact_relationship)}
-              />
-              <DetailRow
-                label="Phone"
-                value={formatStaffDetailEmergencyPhone(staff.emergency_contact_phone)}
-              />
-            </div>
-          </RecordDetailSection>
-
-          <RecordDetailSection title="Address" className="lg:col-span-2">
-            <div className="text-sm">
-              {!addressLine && !addrRest ? (
-                <p className="text-muted-foreground">No address on file.</p>
-              ) : (
-                <p className="whitespace-pre-line leading-relaxed font-medium text-foreground">
-                  {[addressLine, addrRest].filter(Boolean).join("\n")}
-                </p>
-              )}
-            </div>
-          </RecordDetailSection>
-
-          <RecordDetailSection title="Employment">
-            <div className="space-y-4 text-sm">
-              <DetailRow label="Hire date" value={formatStaffDetailHireDate(staff.hire_date)} />
-              <DetailRow label="Status" value={formatSnake(staff.employment_status)} />
-              {staff.termination_date ? (
-                <DetailRow
-                  label="Termination"
-                  value={formatStaffDetailTerminationDate(staff.termination_date)}
-                />
-              ) : null}
-              {staff.termination_reason ? (
-                <DetailRow label="Termination reason" value={staff.termination_reason} />
-              ) : null}
-              <DetailRow label="Schedule" value={staff.is_full_time ? "Full time" : "Part time"} />
-              <DetailRow
-                label="Max hrs / week"
-                value={formatStaffDetailMaxHours(staff.max_hours_per_week)}
-              />
-            </div>
-          </RecordDetailSection>
-
-          <RecordDetailSection title="Compensation">
-            <div className="space-y-4 text-sm">
-              <DetailRow
-                label="Base hourly"
-                value={
-                  <span className="tabular-nums text-lg font-medium">
-                    {formatStaffDetailRateCents(staff.hourly_rate)}
-                  </span>
-                }
-              />
-              <DetailRow
-                label="Overtime"
-                value={
-                  <span className="tabular-nums text-lg font-medium">
-                    {formatStaffDetailRateCents(staff.overtime_rate)}
-                  </span>
-                }
-              />
-            </div>
-          </RecordDetailSection>
+          <StaffProfileSections
+            key={`${staff.id}-${staff.updated_at ?? ""}`}
+            staff={staff}
+            canEdit={canEditProfile}
+            updatedBy={user?.id ?? ""}
+            onStaffUpdated={setStaff}
+            onSaveSection={handleSaveSection}
+          />
 
           <RecordDetailSection title="Certifications" description="Active directory credentials" className="lg:col-span-2">
             {certs.length === 0 ? (
