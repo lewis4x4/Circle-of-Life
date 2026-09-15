@@ -102,7 +102,7 @@ describe("AdminResidentDetailShell", () => {
     );
 
     expect(screen.getByTestId("resident-subtitle")).toHaveTextContent(
-      "Age 82 · No gender posted · Room 101 A · Admitted Aug 1, 2026",
+      "Room 101 A · Admitted Aug 1, 2026 · Age 82 · Born No date posted · No gender posted",
     );
   });
 });

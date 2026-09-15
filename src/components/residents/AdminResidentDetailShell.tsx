@@ -37,6 +37,10 @@ import {
 } from "@/lib/residents/resident-detail-overview-load";
 import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
 import {
+  formatOverviewAgeDobLine,
+  formatOverviewIdentitySubtitle,
+} from "@/lib/residents/resident-overview-presentation";
+import {
   isPresenceStatus,
   lifecycleStatusLabel,
   presenceLabel,
@@ -110,7 +114,9 @@ export function AdminResidentDetailShell({
   }, [initialFacilityId, residentId, selectedFacilityId]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   // The overview already owns this exact header. Child routes inherit it here,
@@ -155,7 +161,10 @@ export function AdminResidentDetailShell({
     );
   }
 
-  const subtitle = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${formatResidentOverviewGenderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
+  const subtitle = [
+    formatOverviewIdentitySubtitle(detail),
+    formatOverviewAgeDobLine(detail, formatResidentOverviewGenderLabel(detail.gender)),
+  ].join(" · ");
 
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-4 pt-2">
@@ -163,6 +172,7 @@ export function AdminResidentDetailShell({
         title={detail.fullName}
         subtitle={subtitle}
         backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
+        className="mb-0"
         statusChips={
           !isPresenceStatus(detail.rawStatus) ? (
             <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
@@ -173,33 +183,34 @@ export function AdminResidentDetailShell({
           ) : null
         }
         actions={
-          <div className="flex shrink-0 flex-col items-end gap-2 md:flex-row md:items-start">
-            <div className="flex flex-row flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setBehaviorModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setConditionModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setGeneralNoteModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <FileText className="mr-1.5 size-4" aria-hidden /> General note
-              </Button>
-            </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBehaviorModalOpen(true)}
+              className="min-h-11 justify-center px-4 text-sm font-medium"
+            >
+              <Brain className="mr-1.5 size-4" aria-hidden />
+              Log behavior
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConditionModalOpen(true)}
+              className="min-h-11 justify-center px-4 text-sm font-medium"
+            >
+              <Stethoscope className="mr-1.5 size-4" aria-hidden />
+              Log condition
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setGeneralNoteModalOpen(true)}
+              className="min-h-11 justify-center px-4 text-sm font-medium"
+            >
+              <FileText className="mr-1.5 size-4" aria-hidden />
+              Add note
+            </Button>
           </div>
         }
       />

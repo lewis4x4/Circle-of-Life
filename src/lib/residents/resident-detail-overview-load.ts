@@ -110,6 +110,7 @@ export type ResidentOverviewDetail = {
     shift: string;
     snippet: string;
     loggedByLabel: string;
+    occurredAtIso: string;
   }>;
   recentAdl: Array<{
     id: string;
@@ -119,6 +120,7 @@ export type ResidentOverviewDetail = {
     summary: string;
     detailNote: string | null;
     loggedByLabel: string;
+    occurredAtIso: string;
   }>;
   recentBehavior: Array<{
     id: string;
@@ -129,6 +131,7 @@ export type ResidentOverviewDetail = {
     loggedByLabel: string;
     injuryOccurred: boolean;
     notesSnippet: string | null;
+    occurredAtIso: string;
   }>;
   recentConditionChanges: Array<{
     id: string;
@@ -139,6 +142,7 @@ export type ResidentOverviewDetail = {
     shift: string;
     loggedByLabel: string;
     nurseNotified: boolean;
+    occurredAtIso: string;
   }>;
 };
 
@@ -512,6 +516,7 @@ export async function loadResidentOverviewDetail(
     shift: r.shift,
     snippet: truncateSnippet(formatResidentOverviewDailyNoteSnippet(r.general_notes), 360),
     loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
+    occurredAtIso: r.log_date,
   }));
 
   const recentAdl = adlRows.map((r) => {
@@ -525,6 +530,7 @@ export async function loadResidentOverviewDetail(
       summary,
       detailNote: r.notes?.trim() ? truncateSnippet(r.notes.trim(), 240) : null,
       loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
+      occurredAtIso: r.log_time,
     };
   });
 
@@ -537,6 +543,7 @@ export async function loadResidentOverviewDetail(
     loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
     injuryOccurred: r.injury_occurred,
     notesSnippet: r.notes?.trim() ? truncateSnippet(r.notes.trim(), 200) : null,
+    occurredAtIso: r.occurred_at,
   }));
 
   const recentConditionChanges = conditionRows.map((r) => ({
@@ -548,6 +555,7 @@ export async function loadResidentOverviewDetail(
     shift: r.shift,
     loggedByLabel: nameById.get(r.reported_by) ?? "Staff",
     nurseNotified: r.nurse_notified,
+    occurredAtIso: r.reported_at,
   }));
 
   const activePlan = carePlanRows[0] ?? null;

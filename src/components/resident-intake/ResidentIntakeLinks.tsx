@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { FileStack, Loader2, RefreshCcw } from "lucide-react";
+import { Loader2, RefreshCcw } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+
+import { RESIDENT_OVERVIEW_UPLOAD_DOCUMENTS } from "@/lib/residents/resident-overview-display-copy";
 
 import { humanizeToken } from "./ui-labels";
 
@@ -98,22 +101,25 @@ export function ResidentIntakeLinks({ admissionCaseId = null, residentId = null,
   if (residentId) createParams.set("resident", residentId);
   const createHref = `/admin/admissions/new?${createParams.toString()}`;
 
-  if (state === "loading") return <div className="flex items-center gap-2 py-3 text-[12px] text-muted-foreground" role="status"><Loader2 className="size-4 animate-spin" aria-hidden />Loading packet reviews…</div>;
-  if (state === "error") return <div className="space-y-3"><p role="alert" className="text-[12px] text-destructive">{message}</p><Button type="button" variant="outline" size="sm" onClick={() => void load()}><RefreshCcw className="mr-1.5 size-3.5" aria-hidden />Try again</Button></div>;
+  if (state === "loading") return <div className="flex items-center gap-2 py-2 text-[12px] text-muted-foreground" role="status"><Loader2 className="size-4 animate-spin" aria-hidden />Loading packet reviews…</div>;
+  if (state === "error") return <div className="space-y-2"><p role="alert" className="text-[12px] text-destructive">{message}</p><Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => void load()}><RefreshCcw className="mr-1.5 size-3.5" aria-hidden />Try again</Button></div>;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {state === "empty" ? (
-        <div className="rounded-lg border border-dashed border-border px-4 py-5 text-center">
-          <FileStack className="mx-auto size-6 text-muted-foreground" aria-hidden />
-          <p className="mt-2 text-[13px] font-medium text-foreground">No packet reviews yet</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Upload admission documents to build a reviewed resident record.</p>
-        </div>
+        compact ? (
+          <p className="text-[13px] text-muted-foreground">No packet reviews on file.</p>
+        ) : (
+          <div className="rounded-lg border border-dashed border-border px-3 py-3">
+            <p className="text-[13px] font-medium text-foreground">No packet reviews on file.</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">Upload admission documents to build a reviewed resident record.</p>
+          </div>
+        )
       ) : (
         <ul className="space-y-2">
           {items.map((item) => (
             <li key={item.id}>
-              <Link href={`/admin/admissions/intake/${item.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Link href={`/admin/admissions/intake/${item.id}`} className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <div className="min-w-0"><p className="truncate text-[13px] font-medium text-foreground">{item.title}</p><p className="mt-0.5 text-[11px] text-muted-foreground">Updated {dateLabel(item.updated_at)}</p></div>
                 <StatusPill tone={stateTone(item.state)}>{humanizeToken(item.state)}</StatusPill>
               </Link>
@@ -121,7 +127,7 @@ export function ResidentIntakeLinks({ admissionCaseId = null, residentId = null,
           ))}
         </ul>
       )}
-      <Link href={createHref} className={buttonVariants({ variant: compact ? "ghost" : "outline", size: "sm" })}>Upload another packet</Link>
+      <Link href={createHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "min-h-11")}>{RESIDENT_OVERVIEW_UPLOAD_DOCUMENTS}</Link>
     </div>
   );
 }

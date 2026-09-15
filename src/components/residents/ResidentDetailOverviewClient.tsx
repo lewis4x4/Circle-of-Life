@@ -5,17 +5,14 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Brain,
-  ClipboardList,
   FileText,
   Stethoscope,
   User,
-  CheckCircle2,
 } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { BehaviorLogModal, ConditionLogModal, GeneralNoteModal } from "@/components/admin/resident-log-modals";
 import {
-  ResidentCodeStatusValue,
   ResidentFallRiskPresentation,
   hospiceElectionPhrase,
   polstMolstFriendly,
@@ -36,6 +33,7 @@ import {
 import { StatusPill } from "@/components/ui/status-pill";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { resolveCodeStatusPresentation } from "@/lib/residents/resident-code-status";
 import {
   loadResidentOverviewDetail,
   type ADLEventContent,
@@ -44,15 +42,28 @@ import {
   type ResidentContactRowView,
   type ResidentOverviewDetail,
 } from "@/lib/residents/resident-detail-overview-load";
-import { classifyAnnualReview } from "@/lib/residents/care-plan-annual-review-window";
-import { isPresenceStatus, lifecycleStatusLabel, presenceLabel, presenceTone } from "@/lib/residents/presence";
-import {
-  DX_CATEGORY_RENDER_ORDER,
-  diagnosisDisplayTitle,
-  groupDiagnosesByCategory,
-} from "@/lib/residents/clinical-text-format";
+import { diagnosisDisplayTitle } from "@/lib/residents/clinical-text-format";
 import { rosterAvatarAccentFromId } from "@/lib/residents/roster-format";
-import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
+import {
+  formatResidentOverviewGenderLabel,
+  RESIDENT_OVERVIEW_LOADING_COPY,
+} from "@/lib/residents/resident-overview-display-copy";
+import {
+  buildOverviewAttentionItems,
+  buildOverviewCompletenessItems,
+  formatCodeStatusHeadline,
+  formatCodeStatusVerificationLabel,
+  formatOverviewAgeDobLine,
+  formatOverviewDayLabel,
+  formatOverviewIdentitySubtitle,
+  formatResidentOverviewActivityEmptyCopy,
+  isTimestampInActivityWindow,
+  overviewAllergyPresentation,
+  overviewAttentionEmptyCopy,
+  recordedDiagnosisPhrases,
+  residentOverviewActivityWindow,
+} from "@/lib/residents/resident-overview-presentation";
+import { isPresenceStatus, lifecycleStatusLabel } from "@/lib/residents/presence";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -86,20 +97,6 @@ function residentHrefSet(id: string, workspace: ResidentOverviewWorkspace): Resi
   };
 }
 
-function isoDayLabel(iso: string | null): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
-}
-
-function verificationFooter(label: string, iso: string | null, actor: string | null): string {
-  const day = isoDayLabel(iso);
-  const who = actor?.trim().length ? actor : "Staff (not attributed)";
-  if (!day) return `${label} pending — capture verification in profile editor.`;
-  return `${label} ${day} by ${who}.`;
-}
-
 function severityClinicalLabel(raw: string): string {
   return diagnosisDisplayTitle(raw.replace(/_/g, " "));
 }
@@ -119,90 +116,7 @@ function AcuityInline({ acuity }: { acuity: number }) {
       </StatusPill>
     );
   }
-  return <span className="text-[13px] text-muted-foreground">Acuity level 1</span>;
-}
-
-type TaskTone = "danger" | "warning" | "muted";
-
-function buildTaskItems(detail: ResidentOverviewDetail): Array<{ id: string; title: string; tone: TaskTone; sub: string }> {
-  const items: Array<{ id: string; title: string; tone: TaskTone; sub: string }> = [];
-  const cpDelta = detail.carePlanAnnualDeltaDays;
-  if (cpDelta != null) {
-    const cls = classifyAnnualReview(cpDelta);
-    if (cls.kind === "overdue") {
-      items.push({
-        id: "cp-over",
-        title: "Annual care plan review",
-        tone: "danger",
-        sub: `${cls.days} days overdue`,
-      });
-    } else if (cls.kind === "dueToday") {
-      items.push({
-        id: "cp-today",
-        title: "Annual care plan review",
-        tone: "danger",
-        sub: "Due today",
-      });
-    } else if (cls.kind === "approaching") {
-      items.push({
-        id: "cp-soon",
-        title: "Annual care plan review",
-        tone: "warning",
-        sub: `${cls.days} days until due`,
-      });
-    } else {
-      items.push({
-        id: "cp-ok",
-        title: "Annual care plan review",
-        tone: "muted",
-        sub: ">30 days before due window",
-      });
-    }
-  }
-
-  detail.assessmentsUpcomingJson
-    .slice(0, 3)
-    .forEach((row, idx) => {
-      const dueIso = row.nextDue;
-      if (!dueIso) return;
-      const due = new Date(`${dueIso}T12:00:00`);
-      const now = new Date();
-      const diff = Math.round((due.getTime() - now.getTime()) / 86400000);
-      let tone: TaskTone = "muted";
-      let sub = `Due ${isoDayLabel(dueIso) ?? dueIso}`;
-      if (diff < 0) {
-        tone = "danger";
-        sub = `${Math.abs(diff)} days overdue`;
-      } else if (diff <= 30) {
-        tone = "warning";
-        sub = `Due in ${diff} days`;
-      }
-      items.push({
-        id: `asm-${idx}`,
-        title: diagnosisDisplayTitle(row.assessmentType.replace(/_/g, " ")) || row.assessmentType,
-        tone,
-        sub,
-      });
-    });
-
-  items.push({
-    id: "med-review",
-    title: "Medication regimen review",
-    tone: "muted",
-    sub: "Confirm scope in eMAR tooling",
-  });
-  items.push({
-    id: "vitals",
-    title: "Vitals checkpoints",
-    tone: "muted",
-    sub: "Follow vitals cadence protocol",
-  });
-
-  items.sort((a, b) => {
-    const order = { danger: 0, warning: 1, muted: 2 };
-    return order[a.tone] - order[b.tone];
-  });
-  return items;
+  return <span className="text-[13px] font-medium text-foreground">Acuity 1</span>;
 }
 
 export type ResidentDetailOverviewClientProps = {
@@ -237,6 +151,8 @@ export function ResidentDetailOverviewClient({
   const [contactModal, setContactModal] = useState<ResidentContactRowView | null>(null);
 
   const hrefs = useMemo(() => residentHrefSet(residentId, workspace), [residentId, workspace]);
+  const profileHref = `/admin/v2/residents/${residentId}`;
+  const activityWindow = useMemo(() => residentOverviewActivityWindow(), []);
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -274,7 +190,9 @@ export function ResidentDetailOverviewClient({
   }, [residentId, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   const onAfterLog = useCallback(() => {
@@ -283,23 +201,26 @@ export function ResidentDetailOverviewClient({
 
   if (loading) {
     return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
+      <div className="fade-in animate-in space-y-4 duration-[var(--motion-duration)]">
         <Link
           prefetch={false}
           href={hrefs.rosterHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex min-h-11 gap-1")}
         >
           ← Resident roster
         </Link>
-        <AdminTableLoadingState />
+        <div role="status" aria-live="polite" className="space-y-3">
+          <p className="text-sm text-muted-foreground">{RESIDENT_OVERVIEW_LOADING_COPY}</p>
+          <AdminTableLoadingState />
+        </div>
       </div>
     );
   }
 
   if (notFound) {
     return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
-        <Link prefetch={false} href={hrefs.rosterHref} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1")}>
+      <div className="fade-in animate-in space-y-4 duration-[var(--motion-duration)]">
+        <Link prefetch={false} href={hrefs.rosterHref} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "min-h-11 gap-1")}>
           ← Resident roster
         </Link>
         <Card className="border-border">
@@ -314,11 +235,15 @@ export function ResidentDetailOverviewClient({
 
   if (error || !detail) {
     return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
-        <Link prefetch={false} href={hrefs.rosterHref} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1")}>
+      <div className="fade-in animate-in space-y-4 duration-[var(--motion-duration)]">
+        <Link prefetch={false} href={hrefs.rosterHref} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "min-h-11 gap-1")}>
           ← Resident roster
         </Link>
-        {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
+        {error ? (
+          <div role="alert">
+            <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -326,13 +251,15 @@ export function ResidentDetailOverviewClient({
   const feedItems = [
     ...detail.recentConditionChanges.map((c) => ({
       type: "condition" as const,
-      time: new Date(c.reportedLabel).getTime() || 0,
+      time: new Date(c.occurredAtIso).getTime() || 0,
+      occurredAtIso: c.occurredAtIso,
       label: c.reportedLabel,
       content: c,
     })),
     ...detail.recentBehavior.map((b) => ({
       type: "behavior" as const,
-      time: new Date(b.occurredLabel).getTime() || 0,
+      time: new Date(b.occurredAtIso).getTime() || 0,
+      occurredAtIso: b.occurredAtIso,
       label: b.occurredLabel,
       content: b,
     })),
@@ -340,16 +267,36 @@ export function ResidentDetailOverviewClient({
       .filter((a) => a.summary.includes("refused"))
       .map((a) => ({
         type: "adl" as const,
-        time: new Date(a.logTimeLabel).getTime() || 0,
+        time: new Date(a.occurredAtIso).getTime() || 0,
+        occurredAtIso: a.occurredAtIso,
         label: a.logTimeLabel,
         content: a,
       })),
-  ].sort((a, b) => b.time - a.time);
+    ...detail.recentDailyNotes.map((note) => ({
+      type: "note" as const,
+      time: new Date(note.occurredAtIso).getTime() || 0,
+      occurredAtIso: note.occurredAtIso,
+      label: formatOverviewDayLabel(note.logDate) ?? note.logDate,
+      content: note,
+    })),
+  ]
+    .filter((item) => isTimestampInActivityWindow(item.occurredAtIso, activityWindow))
+    .sort((a, b) => b.time - a.time);
 
-  const subtitleLine = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${formatResidentOverviewGenderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
-
+  const identitySubtitle = formatOverviewIdentitySubtitle(detail);
+  const ageDobLine = formatOverviewAgeDobLine(
+    detail,
+    formatResidentOverviewGenderLabel(detail.gender),
+  );
   const accent = rosterAvatarAccentFromId(detail.id);
-  const dxBuckets = groupDiagnosesByCategory(detail.diagnosisRawList.length ? detail.diagnosisRawList : []);
+  const diagnosisPhrases = recordedDiagnosisPhrases(detail.diagnosisRawList);
+  const allergies = overviewAllergyPresentation(detail);
+  const codeHeadline = formatCodeStatusHeadline(
+    detail.codeStatusRaw,
+    detail.codeStatusVerifiedAt,
+    detail.codeStatusVerifiedByName,
+  );
+  const codeSemantic = resolveCodeStatusPresentation(detail.codeStatusRaw).semantic;
 
   const contactPrimaryCandidates = [...detail.contacts].filter((c) => c.isEmergencyContact).sort((a, b) => a.sortOrder - b.sortOrder);
   const primaryContactRow = contactPrimaryCandidates[0] ?? null;
@@ -357,24 +304,55 @@ export function ResidentDetailOverviewClient({
   const poaRows = [...detail.contacts].filter((c) => c.isHealthcareProxy || c.isPowerOfAttorney);
   const poaPreferred = [...poaRows].sort((a, b) => a.sortOrder - b.sortOrder)[0] ?? null;
 
-  const carePlanAnnual =
-    detail.carePlanAnnualDeltaDays != null ? classifyAnnualReview(detail.carePlanAnnualDeltaDays) : null;
-
-  const taskItems = buildTaskItems(detail);
+  const attentionItems = buildOverviewAttentionItems(detail, {
+    carePlanHref: hrefs.carePlanHref,
+    assessmentsHref: hrefs.assessmentsHref,
+    profileHref,
+  });
+  const completenessItems = buildOverviewCompletenessItems(detail, profileHref);
   const timelineEmpty = feedItems.length === 0;
-
   const polstMolst = polstMolstFriendly(detail.polstMolstRawStatus);
   const dietLower = detail.dietOrder?.toLowerCase() ?? "";
-  const tubeHint =
-    /tube|ng\s|gtube|peg|feeding\s+tube/i.test(dietLower) ? "Entered on diet orders" : "Not on file";
-  const dnhPhrase = detail.advanceDirectiveOnFile ? "Captured on file" : "Not on file";
+  const tubeHint = /tube|ng\s|gtube|peg|feeding\s+tube/i.test(dietLower)
+    ? "Entered on diet orders"
+    : "Not on file";
 
-  const profileEditHref = `/admin/v2/residents/${residentId}`;
+  const documentationActions = (
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setBehaviorModalOpen(true)}
+        className="min-h-11 justify-center px-4 text-sm font-medium"
+      >
+        <Brain className="mr-1.5 size-4" aria-hidden />
+        Log behavior
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setConditionModalOpen(true)}
+        className="min-h-11 justify-center px-4 text-sm font-medium"
+      >
+        <Stethoscope className="mr-1.5 size-4" aria-hidden />
+        Log condition
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setGeneralNoteModalOpen(true)}
+        className="min-h-11 justify-center px-4 text-sm font-medium"
+      >
+        <FileText className="mr-1.5 size-4" aria-hidden />
+        Add note
+      </Button>
+    </div>
+  );
 
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-4 pt-2">
-      <Dialog open={contactModal != null} onOpenChange={(o) => !o && setContactModal(null)}>
-        <DialogContent className="max-w-md rounded-xl">
+      <Dialog open={contactModal != null} onOpenChange={(open) => !open && setContactModal(null)}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{contactModal?.name}</DialogTitle>
           </DialogHeader>
@@ -384,7 +362,7 @@ export function ResidentDetailOverviewClient({
                 {contactModal.relationship ?? "Relationship pending"} · {contactModal.phone ?? "Phone pending"}
               </p>
               <p className="text-muted-foreground">
-                Last contact {isoDayLabel(contactModal.updatedAt) ?? "not recorded"}
+                Last contact {formatOverviewDayLabel(contactModal.updatedAt) ?? "not recorded"}
               </p>
             </div>
           ) : null}
@@ -393,357 +371,245 @@ export function ResidentDetailOverviewClient({
 
       <RecordDetailHeader
         title={detail.fullName}
-        subtitle={subtitleLine}
+        subtitle={identitySubtitle}
         backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
+        className="mb-0"
         statusChips={
-          !isPresenceStatus(detail.rawStatus) ? (
-            <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
-          ) : detail.status !== "active" ? (
-            <StatusPill tone={presenceTone(detail.status)}>{presenceLabel(detail.status)}</StatusPill>
-          ) : null
-        }
-        actions={
-          <div className="flex shrink-0 flex-col items-end gap-2 md:flex-row md:items-start">
-            <div className="flex flex-row flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setBehaviorModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setConditionModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setGeneralNoteModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <FileText className="mr-1.5 size-4" aria-hidden /> General note
-              </Button>
+          isPresenceStatus(detail.rawStatus) ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <ResidentPresenceControl
+                residentId={detail.id}
+                status={detail.status}
+                onChanged={onAfterLog}
+              />
+              <HoldDeclineReturnButton
+                residentId={detail.id}
+                status={detail.status}
+                onDone={onAfterLog}
+              />
             </div>
-          </div>
+          ) : (
+            <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
+          )
         }
+        actions={documentationActions}
       />
+
+      <div className="flex flex-wrap items-start gap-3">
+        <Avatar className="border-border size-12 border">
+          <AvatarImage src={detail.photoUrl ?? undefined} alt={detail.fullName} />
+          <AvatarFallback
+            style={{ backgroundColor: accent.background, color: accent.foreground }}
+            className="text-[13px] font-semibold"
+          >
+            {detail.initials}
+          </AvatarFallback>
+        </Avatar>
+        <p className="pt-1 text-sm text-muted-foreground">{ageDobLine}</p>
+      </div>
+
+      <section aria-label="Care summary" className="rounded-lg border border-border bg-card p-3">
+        <h2 className="mb-3 text-[14px] font-semibold text-foreground">Care summary</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div>
+            <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Allergies</p>
+            {allergies.state === "listed" ? (
+              <StatusPill tone="danger" className="normal-case tracking-tight">
+                {allergies.value}
+              </StatusPill>
+            ) : (
+              <p className="text-[13px] font-medium text-foreground">{allergies.value}</p>
+            )}
+            <p className="mt-1 text-[12px] text-muted-foreground">{allergies.reviewLabel}</p>
+          </div>
+          <div>
+            <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Code status</p>
+            <CodeStatusHeadline semantic={codeSemantic} headline={codeHeadline.headline} />
+          </div>
+          <div>
+            <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Acuity</p>
+            <AcuityInline acuity={detail.acuity} />
+          </div>
+        </div>
+
+        <details className="mt-3">
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Show directives and diagnoses
+          </summary>
+          <div className="space-y-4 pt-3">
+            <div id="directives-anchor" className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-3 text-[13px]">
+                <p className="text-[12px] font-semibold text-muted-foreground">Advance directives</p>
+                <DirectiveRow label="Do not hospitalize" value={detail.advanceDirectiveOnFile ? "Captured on file" : "Not on file"} />
+                <DirectiveRow label="POLST / MOLST" value={polstMolst} />
+                <DirectiveRow label="Feeding tube" value={tubeHint} />
+                <DirectiveRow
+                  label="Hospice election"
+                  value={
+                    detail.hospiceStatus === "active" ? (
+                      <StatusPill tone="danger" className="normal-case tracking-tight">
+                        {hospiceElectionPhrase(detail.hospiceStatus)}
+                      </StatusPill>
+                    ) : (
+                      hospiceElectionPhrase(detail.hospiceStatus ?? null)
+                    )
+                  }
+                />
+                <DirectiveRow
+                  label="Diet order"
+                  value={diagnosisDisplayTitle(detail.dietOrder ?? "") || "Not reviewed"}
+                />
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground">Fall risk</p>
+                  <ResidentFallRiskPresentation raw={detail.fallRiskRaw} />
+                </div>
+              </div>
+              <div>
+                <p className="text-[12px] font-semibold text-muted-foreground">Diagnoses</p>
+                {diagnosisPhrases.length ? (
+                  <ul className="mt-2 space-y-1">
+                    {diagnosisPhrases.map((phrase) => (
+                      <li key={phrase} className="text-[13px] text-foreground">
+                        {phrase}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-[13px] text-muted-foreground">No diagnoses documented</p>
+                )}
+                <p className="mt-2 text-[12px] text-muted-foreground">
+                  {detail.diagnosesReviewedAt
+                    ? formatCodeStatusVerificationLabel(
+                        detail.diagnosesReviewedAt,
+                        detail.diagnosesReviewedByName,
+                      ).label.replace(/^Verified /, "Reviewed ")
+                    : "Review pending"}
+                </p>
+              </div>
+            </div>
+            <Link
+              prefetch={false}
+              href={hrefs.carePlanHref}
+              className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Open care plan
+            </Link>
+          </div>
+        </details>
+      </section>
 
       <div className="w-full shrink-0">
         <ResidentDetailTabStrip hrefs={hrefs} active="overview" />
       </div>
 
-      <div className="grid flex-1 grid-cols-1 gap-5 lg:min-h-[480px] lg:grid-cols-12 lg:gap-6">
-        <div className="flex flex-col gap-4 lg:col-span-3">
-          <div className="border-border shadow-[var(--shadow-card)] scrollbar-hide flex flex-col overflow-hidden rounded-[8px] border bg-card">
-            <div className="border-border bg-muted/50 border-b p-[14px]">
-              <div className="flex items-start gap-4">
-                <Avatar className="border-border shadow-[var(--shadow-card)] h-16 w-16 border">
-                  <AvatarImage src={detail.photoUrl ?? undefined} alt={detail.fullName} />
-                  <AvatarFallback
-                    style={{ backgroundColor: accent.background, color: accent.foreground }}
-                    className="text-[15px] font-semibold"
-                  >
-                    {detail.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="mt-1 flex flex-col gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {isPresenceStatus(detail.rawStatus) ? (
-                      <>
-                        <ResidentPresenceControl
-                          residentId={detail.id}
-                          status={detail.status}
-                          onChanged={onAfterLog}
-                        />
-                        <HoldDeclineReturnButton
-                          residentId={detail.id}
-                          status={detail.status}
-                          onDone={onAfterLog}
-                        />
-                      </>
-                    ) : (
-                      <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
-                    )}
-                    <AcuityInline acuity={detail.acuity} />
-                  </div>
-                  <TooltipDob dobLabel={detail.dobLabel} />
-                </div>
-              </div>
-            </div>
-            <div className="space-y-6 p-[14px]">
-              <div id="directives-anchor" />
-              <div>
-                <p className="text-muted-foreground mb-2 text-[12px] font-semibold tracking-tight">
-                  Advance directives
-                </p>
-                <div className="space-y-3 text-[13px] leading-relaxed">
-                  <DirectiveRow label="Code status" value={<ResidentCodeStatusValue raw={detail.codeStatusRaw} />}>
-                    <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
-                      {verificationFooter("Last verified", detail.codeStatusVerifiedAt, detail.codeStatusVerifiedByName)}
-                    </p>
-                  </DirectiveRow>
-                  <DirectiveRow label="DNH (Do Not Hospitalize)" value={dnhPhrase} muted={!detail.advanceDirectiveOnFile}>
-                    {!detail.advanceDirectiveOnFile ? (
-                      <GhostAdd href={profileEditHref} label="+ Add DNH notation" />
-                    ) : null}
-                  </DirectiveRow>
-                  <DirectiveRow label="POLST / MOLST" value={polstMolst} muted={polstMolst.startsWith("Not")}>
-                    {polstMolst.startsWith("Not") ? <GhostAdd href={profileEditHref} label="+ Add directive document" /> : null}
-                  </DirectiveRow>
-                  <DirectiveRow label="Feeding tube" value={tubeHint} muted={tubeHint.includes("Not")}>
-                    {tubeHint.includes("Not") ? <GhostAdd href={profileEditHref} label="+ Add tube details" /> : null}
-                  </DirectiveRow>
-                  <DirectiveRow
-                    label="Hospice election"
-                    value={
-                      detail.hospiceStatus === "active" ? (
-                        <StatusPill tone="danger" className="normal-case tracking-tight">
-                          {hospiceElectionPhrase(detail.hospiceStatus)}
-                        </StatusPill>
-                      ) : (
-                        <span className="font-medium">{hospiceElectionPhrase(detail.hospiceStatus ?? null)}</span>
-                      )
-                    }
-                    muted={detail.hospiceStatus !== "active"}
-                  >
-                    {!detail.hospiceStatus || detail.hospiceStatus === "none" ? (
-                      <GhostAdd href={profileEditHref} label="+ Add hospice intake" />
-                    ) : null}
-                  </DirectiveRow>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-muted-foreground mb-2 text-[12px] font-semibold tracking-tight">
-                  Allergies
-                </p>
-                {detail.allergiesTokens.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground">
-                    {detail.allergyReviewedAt ? "No known drug allergies documented" : "Allergies not reviewed"}
-                  </p>
-                ) : (
-                  <StatusPill tone="danger">{detail.allergiesTokens.map((t) => diagnosisDisplayTitle(t)).join("; ")}</StatusPill>
-                )}
-                <p className="text-muted-foreground mt-2 text-[11px]">
-                  {verificationFooter("Last reviewed", detail.allergyReviewedAt, detail.allergyReviewedByName)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-muted-foreground mb-2 text-[12px] font-semibold tracking-tight">
-                  Primary diagnoses
-                </p>
-                <div className="space-y-3">
-                  {DX_CATEGORY_RENDER_ORDER.map((cat) => {
-                    const list = dxBuckets[cat];
-                    if (!list?.length) return null;
-                    return (
-                      <div key={cat}>
-                        <p className="text-muted-foreground mb-1 text-[11px] font-semibold">{cat}</p>
-                        <div className="flex flex-wrap gap-1">
-                          {list.map((phrase) => (
-                            <span
-                              key={phrase}
-                              className="text-foreground mr-2 inline-block rounded-sm bg-muted/40 px-2 py-0.5 text-[11px]"
-                            >
-                              {phrase}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {!DX_CATEGORY_RENDER_ORDER.some((cat) => dxBuckets[cat]?.length) ? (
-                    <p className="text-[13px] text-muted-foreground">No diagnoses documented</p>
-                  ) : null}
-                </div>
-                <p className="text-muted-foreground mt-2 text-[11px]">
-                  {verificationFooter("Last updated", detail.diagnosesReviewedAt, detail.diagnosesReviewedByName)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-muted-foreground mb-2 text-[12px] font-semibold tracking-tight">
-                  Contacts
-                </p>
-                <ContactBlock
-                  tier="Primary"
-                  row={primaryContactRow}
-                  onOpen={() => primaryContactRow && setContactModal(primaryContactRow)}
-                />
-                <ContactBlock
-                  tier="Secondary"
-                  row={secondaryContactRow}
-                  onOpen={() => secondaryContactRow && setContactModal(secondaryContactRow)}
-                  emptyHref={profileEditHref}
-                  emptyCopy="+ Add secondary contact"
-                />
-                <ContactBlock
-                  tier="POA / healthcare proxy"
-                  row={poaPreferred}
-                  onOpen={() => poaPreferred && setContactModal(poaPreferred)}
-                  emptyHref={profileEditHref}
-                  emptyCopy="+ Add POA"
-                />
-              </div>
-              <span id="contacts" />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            "flex flex-col overflow-hidden lg:col-span-6",
-            timelineEmpty && "lg:max-h-[220px]",
-          )}
-          id="activity-timeline"
-        >
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="lg:col-span-8" id="activity-timeline">
           <RecordDetailSection
-            title="Activity timeline"
-            className={timelineEmpty ? "border border-dashed border-border/70" : undefined}
+            title="Recent activity"
+            description={activityWindow.label}
           >
-            <div
-              className={cn(
-                "scrollbar-hide -mx-[14px] min-h-0 space-y-4 overflow-y-auto px-[14px]",
-                timelineEmpty ? "max-h-[180px]" : "max-h-[560px]",
-              )}
-            >
-              {timelineEmpty ? (
-                <div className="text-muted-foreground flex flex-col items-start gap-3 py-3">
-                  <CheckCircle2 className="opacity-70 size-9" aria-hidden />
-                  <p className="text-[13px] font-medium leading-relaxed">
-                    Quiet shift — log behavior/condition/note using the compact actions above to build this feed.
-                  </p>
-                  {detail.recentDailyNotes[0] ? (
-                    <div className="border-border rounded-md border bg-card/70 p-3 text-[11px]">
-                      <p className="text-muted-foreground mb-1">Latest daily note excerpt</p>
-                      <p className="leading-relaxed">{detail.recentDailyNotes[0]?.snippet?.trim() || "No note posted"}</p>
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                feedItems.map((item, idx) => renderFeedItem(item, idx))
-              )}
-            </div>
+            {timelineEmpty ? (
+              <p role="status" className="text-[13px] text-muted-foreground">
+                {formatResidentOverviewActivityEmptyCopy(activityWindow)}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {feedItems.map((item, idx) => renderFeedItem(item, idx))}
+              </div>
+            )}
           </RecordDetailSection>
         </div>
 
-        <div className="flex flex-col gap-4 lg:col-span-3">
-          <RecordDetailSection title="Packet reviews">
-            <ResidentIntakeLinks residentId={detail.id} compact />
-          </RecordDetailSection>
-          <RecordDetailSection title="Location">
-            <div className="space-y-4 text-[13px]">
-              <div>
-                <p className="text-muted-foreground mb-1 text-[12px] font-semibold">Unit</p>
-                <p className="font-medium">{detail.unitName}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-1 text-[12px] font-semibold">Room & bed</p>
-                <p className="font-medium">{detail.roomLabel}</p>
-              </div>
-            </div>
+        <div className="flex flex-col gap-4 lg:col-span-4">
+          <RecordDetailSection title="Needs attention">
+            {attentionItems.length === 0 ? (
+              <p className="text-[13px] text-muted-foreground">{overviewAttentionEmptyCopy()}</p>
+            ) : (
+              <ul className="space-y-2">
+                {attentionItems.map((task) => (
+                  <li key={task.id} className="flex gap-2">
+                    <span
+                      className={cn(
+                        "mt-1.5 size-2 shrink-0 rounded-full",
+                        task.tone === "danger" ? "bg-destructive" : "bg-warning",
+                      )}
+                    />
+                    <div className="min-w-0">
+                      {task.href ? (
+                        <Link
+                          prefetch={false}
+                          href={task.href}
+                          className="text-[13px] font-medium underline-offset-4 hover:underline"
+                        >
+                          {task.title}
+                        </Link>
+                      ) : (
+                        <p className="text-[13px] font-medium">{task.title}</p>
+                      )}
+                      <p className="text-[12px] text-muted-foreground">{task.detail}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </RecordDetailSection>
 
-          <RecordDetailSection title="Care team">
+          <RecordDetailSection title="Care contacts">
             <div className="space-y-3 text-[13px]">
               <div>
-                <p className="text-muted-foreground mb-1 text-[12px] font-semibold">Primary care physician</p>
+                <p className="mb-1 text-[12px] font-semibold text-muted-foreground">Primary care physician</p>
                 <p className="font-medium">{detail.primaryPhysicianName ?? "Not on file"}</p>
-                <p className="text-muted-foreground text-[12px]">{detail.primaryPhysicianPhone ?? "Phone pending"}</p>
+                {detail.primaryPhysicianPhone ? (
+                  <p className="text-[12px] text-muted-foreground">{detail.primaryPhysicianPhone}</p>
+                ) : null}
               </div>
-              <div>
-                <p className="text-muted-foreground mb-1 text-[12px] font-semibold">Last visit</p>
-                <p className="text-muted-foreground">Not tracked in Haven yet.</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-1 text-[12px] font-semibold">Next visit</p>
-                <p className="text-muted-foreground">Not scheduled</p>
-              </div>
-              <div className="text-muted-foreground text-[11px]">
-                Specialist consults on file:&nbsp;<span className="text-foreground font-semibold">{detail.specialistConsultActiveCount}</span>
-              </div>
-            </div>
-          </RecordDetailSection>
-
-          <RecordDetailSection title="Due soon / tasks">
-            <ul className="space-y-2 text-[12px]">
-              {taskItems.slice(0, 5).map((task) => (
-                <li key={task.id} className="flex gap-2">
-                  <span
-                    className={cn(
-                      "mt-1 size-2 shrink-0 rounded-full",
-                      task.tone === "danger" ? "bg-destructive" : task.tone === "warning" ? "bg-warning" : "bg-muted-foreground",
-                    )}
-                  />
-                  <div>
-                    <p className="font-medium">{task.title}</p>
-                    <p className="text-muted-foreground">{task.sub}</p>
+              <ContactBlock
+                tier="Emergency contact"
+                row={primaryContactRow}
+                onOpen={() => primaryContactRow && setContactModal(primaryContactRow)}
+              />
+              {secondaryContactRow || poaPreferred ? (
+                <details>
+                  <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    More contacts
+                  </summary>
+                  <div className="space-y-3 pt-2">
+                    <ContactBlock
+                      tier="Secondary"
+                      row={secondaryContactRow}
+                      onOpen={() => secondaryContactRow && setContactModal(secondaryContactRow)}
+                    />
+                    <ContactBlock
+                      tier="POA / healthcare proxy"
+                      row={poaPreferred}
+                      onOpen={() => poaPreferred && setContactModal(poaPreferred)}
+                    />
                   </div>
-                </li>
-              ))}
-            </ul>
-            {taskItems.length > 5 ? (
-              <Link prefetch={false} href={`${hrefs.assessmentsHref}`} className="mt-3 inline-block text-[12px] font-medium underline-offset-4 hover:underline">
-                View all ({taskItems.length})
-              </Link>
-            ) : null}
+                </details>
+              ) : null}
+            </div>
+            <span id="contacts" />
           </RecordDetailSection>
 
-          <RecordDetailSection title="Active orders">
-            <div className="space-y-5 text-[13px]">
-              <div>
-                <p className="text-muted-foreground mb-2 text-[12px] font-semibold">Diet order</p>
-                <p className={cn("font-medium", !detail.dietOrder && "text-muted-foreground")}>
-                  {diagnosisDisplayTitle(detail.dietOrder ?? "") || "Not reviewed"}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-2 text-[12px] font-semibold">Fall risk</p>
-                <ResidentFallRiskPresentation raw={detail.fallRiskRaw} />
-              </div>
-
-              <div>
-                <p className="text-muted-foreground mb-3 inline-flex items-center gap-1.5 text-[12px] font-semibold">
-                  <ClipboardList className="size-3.5" aria-hidden />
-                  Care plan status
-                </p>
-                <div className="bg-muted rounded-[8px] border border-border p-3 space-y-2">
-                  <p className="text-[14px] font-semibold leading-tight">
-                    {detail.carePlanVersion != null ? `Active v${detail.carePlanVersion}` : "Care plan inactive"}
-                  </p>
-                  {detail.carePlanEffectiveDate ? (
-                    <p className="text-muted-foreground text-[11px]">
-                      Effective {isoDayLabel(detail.carePlanEffectiveDate)}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground text-[11px]">No activated plan on record.</p>
-                  )}
-                  <div className="pt-2">
-                    {detail.carePlanAnnualDeltaDays == null || carePlanAnnual == null ? (
-                      <span className="text-muted-foreground text-[12px]">Annual review pacing unavailable.</span>
-                    ) : carePlanAnnual.kind === "overdue" ? (
-                      <StatusPill tone="danger">Review overdue by {carePlanAnnual.days} days</StatusPill>
-                    ) : carePlanAnnual.kind === "dueToday" ? (
-                      <StatusPill tone="danger">Review due today</StatusPill>
-                    ) : carePlanAnnual.kind === "approaching" ? (
-                      <StatusPill tone="warning">Review due in {carePlanAnnual.days} days</StatusPill>
+          <RecordDetailSection title="Record completeness">
+            {completenessItems.length ? (
+              <ul className="mb-3 space-y-1.5">
+                {completenessItems.map((item) => (
+                  <li key={item.id} className="text-[13px] text-muted-foreground">
+                    {item.href ? (
+                      <Link prefetch={false} href={item.href} className="underline-offset-4 hover:underline">
+                        {item.label}
+                      </Link>
                     ) : (
-                      <span className="text-muted-foreground text-[12px]">Annual review beyond 30-day window.</span>
+                      item.label
                     )}
-                  </div>
-                  <Link prefetch={false} href={hrefs.carePlanHref} className="text-primary inline-flex text-[12px] font-medium underline-offset-4 hover:underline">
-                    → Open care plan
-                  </Link>
-                </div>
-              </div>
-            </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mb-3 text-[13px] text-muted-foreground">No record gaps listed from this overview.</p>
+            )}
+            <ResidentIntakeLinks residentId={detail.id} compact />
           </RecordDetailSection>
         </div>
       </div>
@@ -773,38 +639,40 @@ export function ResidentDetailOverviewClient({
   );
 }
 
-function TooltipDob({ dobLabel }: { dobLabel: string }) {
-  return (
-    <span
-      className="text-muted-foreground cursor-help align-middle text-[11px] underline-offset-4"
-      title={`Date of birth (not shown inline): ${dobLabel}`}
-    >
-      DOB — hover label
-    </span>
-  );
+function CodeStatusHeadline({
+  semantic,
+  headline,
+}: {
+  semantic: "neutral" | "attention" | "critical";
+  headline: string;
+}) {
+  if (semantic === "attention") {
+    return (
+      <StatusPill tone="warning" className="normal-case tracking-tight">
+        {headline}
+      </StatusPill>
+    );
+  }
+  if (semantic === "critical") {
+    return (
+      <StatusPill tone="danger" className="normal-case tracking-tight">
+        {headline}
+      </StatusPill>
+    );
+  }
+  return <p className="text-[13px] font-medium leading-snug text-foreground">{headline}</p>;
 }
 
 function DirectiveRow(props: {
   label: string;
   value: React.ReactNode;
-  muted?: boolean;
-  children?: React.ReactNode;
 }) {
-  const { label, value, muted, children } = props;
+  const { label, value } = props;
   return (
     <div>
-      <p className={cn("text-muted-foreground text-[11px] font-semibold", muted && "opacity-75")}>{label}</p>
+      <p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
       <div className="text-[13px] font-medium">{value}</div>
-      {children}
     </div>
-  );
-}
-
-function GhostAdd({ href, label }: { href: string; label: string }) {
-  return (
-    <Link prefetch={false} href={href} className="mt-1 inline-flex text-[11px] font-medium text-muted-foreground underline-offset-4 hover:underline">
-      {label}
-    </Link>
   );
 }
 
@@ -812,25 +680,26 @@ function ContactBlock(props: {
   tier: string;
   row: ResidentContactRowView | null;
   onOpen: () => void;
-  emptyHref?: string;
-  emptyCopy?: string;
 }) {
-  const { tier, row, onOpen, emptyHref, emptyCopy } = props;
+  const { tier, row, onOpen } = props;
   return (
-    <div className="border-border mb-3 border-b pb-3">
-      <p className="text-muted-foreground mb-2 text-[11px] font-semibold">{tier}</p>
+    <div>
+      <p className="mb-1 text-[11px] font-semibold text-muted-foreground">{tier}</p>
       {row ? (
-        <button type="button" onClick={onOpen} className="text-[13px] font-medium underline-offset-4 hover:underline text-left leading-relaxed">
-          {row.name} <span className="text-muted-foreground">({row.relationship ?? "Relation pending"})</span>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="min-h-11 text-left text-[13px] font-medium leading-relaxed underline-offset-4 hover:underline"
+        >
+          {row.name}{" "}
+          <span className="text-muted-foreground">({row.relationship ?? "Relation pending"})</span>
           <br />
-          <span className="text-muted-foreground text-[11px]">
-            {row.phone ?? "Phone pending"} · Last contact {isoDayLabel(row.updatedAt) ?? "pending"}
+          <span className="text-[11px] text-muted-foreground">
+            {row.phone ?? "Phone pending"} · Last contact {formatOverviewDayLabel(row.updatedAt) ?? "pending"}
           </span>
         </button>
-      ) : emptyHref ? (
-        <GhostAdd href={emptyHref} label={emptyCopy ?? "+ Add"} />
       ) : (
-        <p className="text-muted-foreground text-[13px]">Not on file</p>
+        <p className="text-[13px] text-muted-foreground">Not on file</p>
       )}
     </div>
   );
@@ -840,28 +709,29 @@ function renderFeedItem(
   item:
     | { type: "condition"; label: string; content: ConditionEventContent }
     | { type: "behavior"; label: string; content: BehaviorEventContent }
-    | { type: "adl"; label: string; content: ADLEventContent },
+    | { type: "adl"; label: string; content: ADLEventContent }
+    | { type: "note"; label: string; content: { id: string; snippet: string; loggedByLabel: string } },
   idx: number,
 ) {
   if (item.type === "condition") {
     const c = item.content;
     return (
-      <div key={`cond-${c.id}-${idx}`} className="flex gap-4">
-        <div className="bg-destructive/10 text-destructive flex size-8 shrink-0 items-center justify-center rounded-full">
-          <Stethoscope className="size-4" />
+      <div key={`cond-${c.id}-${idx}`} className="flex gap-3">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <Stethoscope className="size-4" aria-hidden />
         </div>
-        <div className="bg-card rounded-[8px] border border-destructive/20 p-3 shadow-[var(--shadow-card)]">
+        <div className="min-w-0 flex-1 rounded-lg border border-destructive/20 bg-card p-3">
           <div className="mb-1 flex flex-wrap items-start justify-between gap-2">
             <span className="text-[13px] font-semibold text-foreground">
               {c.typeLabel}{" "}
-              <span className="text-destructive ml-1 text-[11px] font-semibold normal-case">
+              <span className="ml-1 text-[11px] font-semibold text-destructive">
                 ({severityClinicalLabel(c.severity)})
               </span>
             </span>
-            <span className="text-muted-foreground text-[11px] tabular-nums">{item.label}</span>
+            <span className="text-[11px] tabular-nums text-muted-foreground">{item.label}</span>
           </div>
-          <p className="text-muted-foreground mb-2 text-[12px] leading-relaxed">{c.description}</p>
-          <p className="text-muted-foreground text-[11px]">
+          <p className="mb-2 text-[12px] leading-relaxed text-muted-foreground">{c.description}</p>
+          <p className="text-[11px] text-muted-foreground">
             Logged by {c.loggedByLabel} {c.nurseNotified ? " · MD notified" : null}
           </p>
         </div>
@@ -871,17 +741,17 @@ function renderFeedItem(
   if (item.type === "behavior") {
     const b = item.content;
     return (
-      <div key={`beh-${b.id}-${idx}`} className="flex gap-4">
-        <div className="bg-warning/10 text-warning flex size-8 shrink-0 items-center justify-center rounded-full">
-          <Brain className="size-4" />
+      <div key={`beh-${b.id}-${idx}`} className="flex gap-3">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning">
+          <Brain className="size-4" aria-hidden />
         </div>
-        <div className="bg-card rounded-[8px] border border-warning/20 p-3 shadow-[var(--shadow-card)]">
+        <div className="min-w-0 flex-1 rounded-lg border border-warning/20 bg-card p-3">
           <div className="mb-1 flex flex-wrap items-start justify-between gap-2">
-            <span className="font-semibold text-[13px] text-foreground">{b.typeLabel}</span>
-            <span className="text-muted-foreground text-[11px] tabular-nums">{item.label}</span>
+            <span className="text-[13px] font-semibold text-foreground">{b.typeLabel}</span>
+            <span className="text-[11px] tabular-nums text-muted-foreground">{item.label}</span>
           </div>
-          <p className="text-muted-foreground mb-2 text-[12px] leading-relaxed">{b.behaviorText}</p>
-          <p className="text-muted-foreground text-[11px]">
+          <p className="mb-2 text-[12px] leading-relaxed text-muted-foreground">{b.behaviorText}</p>
+          <p className="text-[11px] text-muted-foreground">
             Logged by {b.loggedByLabel}{" "}
             {b.injuryOccurred ? (
               <>
@@ -893,18 +763,36 @@ function renderFeedItem(
       </div>
     );
   }
-  const a = item.content as ADLEventContent;
-  return (
-    <div key={`adl-${a.id}-${idx}`} className="flex gap-4">
-      <div className="bg-muted text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-full">
-        <User className="size-4" />
-      </div>
-      <div className="bg-card rounded-[8px] border border-border p-3 shadow-[var(--shadow-card)]">
-        <div className="mb-1 flex flex-wrap items-start justify-between gap-2">
-          <span className="font-semibold text-[13px] text-foreground">{a.summary}</span>
-          <span className="text-muted-foreground text-[11px] tabular-nums">{item.label}</span>
+  if (item.type === "note") {
+    const note = item.content;
+    return (
+      <div key={`note-${note.id}-${idx}`} className="flex gap-3">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <FileText className="size-4" aria-hidden />
         </div>
-        <p className="text-muted-foreground mt-1 text-[11px]">Logged by {a.loggedByLabel}</p>
+        <div className="min-w-0 flex-1 rounded-lg border border-border bg-card p-3">
+          <div className="mb-1 flex flex-wrap items-start justify-between gap-2">
+            <span className="text-[13px] font-semibold text-foreground">Note</span>
+            <span className="text-[11px] tabular-nums text-muted-foreground">{item.label}</span>
+          </div>
+          <p className="text-[12px] leading-relaxed text-muted-foreground">{note.snippet}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Logged by {note.loggedByLabel}</p>
+        </div>
+      </div>
+    );
+  }
+  const a = item.content;
+  return (
+    <div key={`adl-${a.id}-${idx}`} className="flex gap-3">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <User className="size-4" aria-hidden />
+      </div>
+      <div className="min-w-0 flex-1 rounded-lg border border-border bg-card p-3">
+        <div className="mb-1 flex flex-wrap items-start justify-between gap-2">
+          <span className="text-[13px] font-semibold text-foreground">{a.summary}</span>
+          <span className="text-[11px] tabular-nums text-muted-foreground">{item.label}</span>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">Logged by {a.loggedByLabel}</p>
       </div>
     </div>
   );

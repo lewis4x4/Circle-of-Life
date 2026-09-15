@@ -7,6 +7,12 @@ export const RESIDENT_OVERVIEW_NO_STAFF_COPY = "No staff posted";
 export const RESIDENT_OVERVIEW_NO_GENDER_COPY = "No gender posted";
 export const RESIDENT_OVERVIEW_NO_DATE_COPY = "No date posted";
 export const RESIDENT_OVERVIEW_NO_NOTE_COPY = "No note posted";
+export const RESIDENT_OVERVIEW_VERIFICATION_PENDING = "Verification pending";
+export const RESIDENT_OVERVIEW_LOADING_COPY = "Loading resident overview…";
+export const RESIDENT_OVERVIEW_UPLOAD_DOCUMENTS = "Upload admission documents";
+export const RESIDENT_OVERVIEW_NO_DUE_WORK = "No due work recorded.";
+export const RESIDENT_OVERVIEW_ALLERGIES_NOT_REVIEWED = "Allergies not reviewed";
+export const RESIDENT_OVERVIEW_NKDA = "No known drug allergies documented";
 
 function isResidentOverviewDateGap(value: string): boolean {
   const trimmed = value.trim();
