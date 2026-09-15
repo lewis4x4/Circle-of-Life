@@ -17,7 +17,9 @@ const actorId = "8ac58bac-bd8b-45b2-95c2-19aa6ff2cf92";
 const orgId = "1fef9308-22f0-432d-9a0e-69849076b11a";
 const facilityId = "477e2308-f90c-4281-877c-61e81593b3bb";
 const revision = "d4bf39e9-97d6-431d-86c8-8a8518fc6a84";
-const requestKey = "19f262c2-cb1c-4e1e-9b44-dd49bb6072a7";
+// Synthetic low-entropy v4 UUID: a random one reads as key material to the
+// gitleaks generic-api-key rule (identifier ending in "Key" + high entropy).
+const requestKey = "00000000-0000-4000-8000-000000000003";
 const bytes = new Uint8Array(Buffer.from("%PDF-1.7\nresident fixture"));
 const sha256 = createHash("sha256").update(bytes).digest("hex");
 const md5 = createHash("md5").update(bytes).digest("hex");

@@ -11,25 +11,25 @@ $$;
 
 CREATE TEMP TABLE referral_episode_fixture AS
 SELECT
-  public.gen_random_uuid() organization_id,
-  public.gen_random_uuid() entity_id,
-  public.gen_random_uuid() facility_a,
-  public.gen_random_uuid() facility_b,
-  public.gen_random_uuid() owner_user,
-  public.gen_random_uuid() owner_session,
+  gen_random_uuid() organization_id,
+  gen_random_uuid() entity_id,
+  gen_random_uuid() facility_a,
+  gen_random_uuid() facility_b,
+  gen_random_uuid() owner_user,
+  gen_random_uuid() owner_session,
   NULL::integer owner_version,
-  public.gen_random_uuid() backup_user,
-  public.gen_random_uuid() backup_session,
+  gen_random_uuid() backup_user,
+  gen_random_uuid() backup_session,
   NULL::integer backup_version,
-  public.gen_random_uuid() admissions_user,
-  public.gen_random_uuid() admissions_session,
+  gen_random_uuid() admissions_user,
+  gen_random_uuid() admissions_session,
   NULL::integer admissions_version,
-  public.gen_random_uuid() inactive_user,
-  public.gen_random_uuid() inactive_session,
-  public.gen_random_uuid() resident_id,
-  public.gen_random_uuid() admission_case_id,
-  public.gen_random_uuid() source_id,
-  public.gen_random_uuid() closure_reason_id;
+  gen_random_uuid() inactive_user,
+  gen_random_uuid() inactive_session,
+  gen_random_uuid() resident_id,
+  gen_random_uuid() admission_case_id,
+  gen_random_uuid() source_id,
+  gen_random_uuid() closure_reason_id;
 
 INSERT INTO public.organizations (id, name)
 SELECT organization_id, 'COL-329 isolated organization'
@@ -153,7 +153,7 @@ AS $$
       'role', 'authenticated',
       'auth_claim_version', p_version,
       'app_role', 'caregiver',
-      'organization_id', public.gen_random_uuid()
+      'organization_id', gen_random_uuid()
     )::text,
     true
   )
@@ -679,7 +679,7 @@ BEGIN
         'reason', 'Reviewed duplicate entry',
         'downstream_review', review || pg_catalog.jsonb_build_object(
           'workflow_events', pg_catalog.jsonb_build_array(
-            pg_catalog.jsonb_build_object('id', public.gen_random_uuid())
+            pg_catalog.jsonb_build_object('id', gen_random_uuid())
           )
         )
       )

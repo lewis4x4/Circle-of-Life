@@ -70,3 +70,13 @@ a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic
 2973ca39e00d2848137ad547463fa3fd13702cac:docs/finance-integration/INDEPENDENT-REVIEWS.json:generic-api-key:225
 2973ca39e00d2848137ad547463fa3fd13702cac:docs/finance-integration/INDEPENDENT-REVIEWS.json:generic-api-key:226
 2973ca39e00d2848137ad547463fa3fd13702cac:supabase/tests/review_finance_credential_lifecycle.sql:generic-api-key:374
+
+# 9bfc5e27 (COL-369) — resident-record-intake unit tests declared `const requestKey = "<random uuid>"`,
+# an idempotency-key fixture for the intake RPCs. generic-api-key matched on the identifier name plus
+# the UUID's entropy (~3.7); no credential is involved. The working-tree values are now synthetic
+# low-entropy v4 UUIDs (00000000-0000-4000-8000-00000000000N) so no future commit re-fingerprints these
+# lines; these four entries cover the one historical commit, which a scan of git history still reaches.
+9bfc5e27e76fffeeab1535c9bd69409a6e1e1f35:src/lib/resident-intake/parser-policy.test.ts:generic-api-key:25
+9bfc5e27e76fffeeab1535c9bd69409a6e1e1f35:src/lib/resident-intake/schemas.test.ts:generic-api-key:5
+9bfc5e27e76fffeeab1535c9bd69409a6e1e1f35:src/lib/resident-intake/source-finalize.test.ts:generic-api-key:20
+9bfc5e27e76fffeeab1535c9bd69409a6e1e1f35:src/lib/resident-intake/source-prepare.test.ts:generic-api-key:20

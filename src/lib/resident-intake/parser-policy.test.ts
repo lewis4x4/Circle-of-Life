@@ -22,7 +22,9 @@ import { parseResidentIntakeSource } from "./parser";
 const intakeId = "da182453-4d54-4658-ac57-d6d689148c87";
 const sourceId = "61f0877b-c3ce-4602-a112-d1cc347f9e91";
 const revision = "44cd948a-77dc-42b3-9fd1-132814ef5b74";
-const requestKey = "78973611-152a-45f4-a172-af84178c28c1";
+// Synthetic low-entropy v4 UUID: a random one reads as key material to the
+// gitleaks generic-api-key rule (identifier ending in "Key" + high entropy).
+const requestKey = "00000000-0000-4000-8000-000000000001";
 
 describe("resident intake PHI policy gate", () => {
   beforeEach(() => {
