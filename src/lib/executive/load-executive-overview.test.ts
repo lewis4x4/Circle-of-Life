@@ -47,7 +47,13 @@ describe("executive startup reads", () => {
     const start = Date.now();
     const pending = loadExecutiveOverview(client, "org", { strict: true });
     await vi.advanceTimersByTimeAsync(0);
-    expect(starts).toEqual(["facilities", "exec_metric_snapshots", "exec_metric_snapshots", "exec_alerts"]);
+    expect(starts).toEqual([
+      "facilities",
+      "exec_metric_snapshots",
+      "exec_metric_snapshots",
+      "exec_alerts",
+      "exec_kpi_snapshots",
+    ]);
     expect(mocks.heat).toHaveBeenCalledWith(client, "org");
     expect(mocks.trend).toHaveBeenCalledWith(client, "org", 7);
     expect(mocks.presence).toHaveBeenCalledWith(client, "org");
@@ -60,10 +66,23 @@ describe("executive startup reads", () => {
     expect(data.metrics).toEqual({ rev_mtd: 50000 });
     expect(data.facilities).toEqual([{ id: "f1", name: "Fixture facility", total_licensed_beds: 2, metrics: { rev_mtd: 50000, occ_pt: 0.5 } }]);
     expect(data.presenceCensus.total).toBe(1);
+    // No run row in the fixture: the page must be told nothing was recorded
+    // rather than reading the tiles as current.
+    expect(data.snapshot).toEqual({ kind: "never_recorded" });
+    expect(data.metricChanges).toEqual({});
     for (const table of ["facilities", "exec_metric_snapshots", "exec_alerts"]) {
       expect(filters).toContainEqual([table, "organization_id", "org"]);
       expect(filters).toContainEqual([table, "deleted_at", null]);
     }
+  });
+
+  it("reports an unreadable run record rather than presenting the tiles as current", async () => {
+    const pending = loadExecutiveOverview(fixture("exec_kpi_snapshots").client, "org", { strict: true });
+    await vi.runAllTimersAsync();
+    expect((await pending).snapshot).toEqual({
+      kind: "unreadable",
+      message: "exec_kpi_snapshots unavailable",
+    });
   });
 
   it("keeps required-data failures visible to the Retry UI", async () => {

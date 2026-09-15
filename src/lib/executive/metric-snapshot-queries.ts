@@ -8,7 +8,7 @@ export function buildAggregateSnapshotQuery(
 ) {
   return supabase
     .from("exec_metric_snapshots")
-    .select("facility_id, metric_code, metric_value_numeric")
+    .select("facility_id, metric_code, metric_value_numeric, snapshot_date")
     .eq("organization_id", organizationId)
     .is("entity_id", null)
     .is("facility_id", null)
@@ -23,7 +23,7 @@ export function buildFacilitySnapshotQuery(
 ) {
   return supabase
     .from("exec_metric_snapshots")
-    .select("facility_id, metric_code, metric_value_numeric")
+    .select("facility_id, metric_code, metric_value_numeric, snapshot_date")
     .eq("organization_id", organizationId)
     .not("facility_id", "is", null)
     .is("deleted_at", null)

@@ -59,13 +59,14 @@ describe("facility trend reads", () => {
   it("preserves daily counts, latest resident scores, facility order and empty days", async () => {
     const { client, operations } = fixture();
     const result = await run(client);
-    const empty = { watchStarts: 0, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 0, heatBand: "stable" };
+    const empty = { watchStarts: 0, escalations: 0, integrityFlags: 0, criticalResidents: 0, heatScore: 0, heatBand: "stable", observed: false };
     expect(result).toEqual({ value: [
-      { facilityId: "a", facilityName: "Alpha", latestHeatScore: 9, peakHeatScore: 9, avgHeatScore: 6, points: [
-        { ...empty, date: "2026-09-04", escalations: 1, heatScore: 3, heatBand: "watch" },
-        { date: "2026-09-05", watchStarts: 2, escalations: 0, integrityFlags: 1, criticalResidents: 1, heatScore: 9, heatBand: "elevated" },
+      { facilityId: "a", facilityName: "Alpha", latestHeatScore: 9, peakHeatScore: 9, avgHeatScore: 6, observedDays: 2, days: 2, lastObservedDate: "2026-09-05", points: [
+        { ...empty, date: "2026-09-04", escalations: 1, heatScore: 3, heatBand: "watch", observed: true },
+        { date: "2026-09-05", watchStarts: 2, escalations: 0, integrityFlags: 1, criticalResidents: 1, heatScore: 9, heatBand: "elevated", observed: true },
       ] },
-      { facilityId: "b", facilityName: "Beta", latestHeatScore: 0, peakHeatScore: 0, avgHeatScore: 0, points: [
+      // Beta recorded nothing on either day: the days are gaps, not clear days.
+      { facilityId: "b", facilityName: "Beta", latestHeatScore: 0, peakHeatScore: 0, avgHeatScore: 0, observedDays: 0, days: 2, lastObservedDate: null, points: [
         { ...empty, date: "2026-09-04" }, { ...empty, date: "2026-09-05" },
       ] },
     ] });

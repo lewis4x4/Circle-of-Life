@@ -10,6 +10,8 @@ const EMPTY_DATA: ExecutiveOverviewData = {
   assuranceTrends: [],
   presenceCensus: EMPTY_PRESENCE_CENSUS,
   occupancyContext: null,
+  snapshot: { kind: "never_recorded" },
+  metricChanges: {},
 };
 
 
@@ -24,6 +26,8 @@ export default function ExecutiveOverviewPage() {
       initialAssuranceTrends={EMPTY_DATA.assuranceTrends}
       initialPresenceCensus={EMPTY_DATA.presenceCensus}
       initialOccupancyContext={EMPTY_DATA.occupancyContext}
+      initialSnapshot={EMPTY_DATA.snapshot}
+      initialMetricChanges={EMPTY_DATA.metricChanges}
       initialHasServerData={false}
     />
   );
