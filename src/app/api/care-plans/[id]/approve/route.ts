@@ -3,6 +3,7 @@ import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/cu
 import { logError } from "@/lib/observability/logger";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 import { formatUploadedByProfile } from "@/lib/users/user-attribution";
+import { CARE_PLAN_AUTHOR_APPROVAL_REFUSED, isCarePlanAuthor } from "@/lib/care-plans/care-plan-approval-copy";
 
 type Body = {
   signature: string;
@@ -48,7 +49,7 @@ export async function POST(
   const { data: carePlan, error: planError } = await admin
     .from("care_plans")
     .select(
-      "id, resident_id, facility_id, organization_id, status, version, effective_date"
+      "id, resident_id, facility_id, organization_id, status, version, effective_date, created_by"
     )
     .eq("id", carePlanId)
     .eq("organization_id", actor.organizationId)
@@ -101,6 +102,11 @@ export async function POST(
     return NextResponse.json({ error: "You do not have access to this care plan" }, { status: 403 });
   }
 
+  // The author of a version does not sign it. The 393 trigger repeats this at the table.
+  if (isCarePlanAuthor(carePlan.created_by, currentActor.id)) {
+    return NextResponse.json({ error: CARE_PLAN_AUTHOR_APPROVAL_REFUSED }, { status: 409 });
+  }
+
   // Approve the care plan
   const nowIso = new Date().toISOString();
   const { data: updatedCarePlan, error: updateError } = await admin
@@ -122,6 +128,9 @@ export async function POST(
     .maybeSingle();
 
   if (updateError) {
+    if (updateError.message?.includes(CARE_PLAN_AUTHOR_APPROVAL_REFUSED)) {
+      return NextResponse.json({ error: CARE_PLAN_AUTHOR_APPROVAL_REFUSED }, { status: 409 });
+    }
     logError("care-plans.approve", updateError, { action: "update_care_plan", carePlanId });
     return NextResponse.json(
       { error: "Failed to approve care plan" },

@@ -21,6 +21,13 @@ import {
   formatCarePlanVersion,
 } from "@/lib/care-plans/care-plan-display-copy";
 import { formatCarePlanPrintAction } from "@/lib/care-plans/care-plan-print-copy";
+import {
+  CARE_PLAN_APPROVAL_RATE_COPY,
+  CARE_PLAN_AUTHOR_CANNOT_APPROVE_COPY,
+  formatCarePlanAcuityLabel,
+  isCarePlanAuthor,
+} from "@/lib/care-plans/care-plan-approval-copy";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -57,6 +64,7 @@ type ResidentMini = {
   facility_id: string;
   first_name: string | null;
   last_name: string | null;
+  acuity_level: string | null;
 };
 
 type CarePlanRow = {
@@ -67,6 +75,7 @@ type CarePlanRow = {
   review_due_date: string | null;
   notes: string | null;
   updated_at: string | null;
+  created_by: string | null;
 };
 
 type CarePlanItemRow = {
@@ -84,6 +93,7 @@ type CarePlanItemRow = {
 
 type LoadedState = {
   residentName: string;
+  residentAcuity: string | null;
   plan: CarePlanRow | null;
   items: CarePlanItemRow[];
 };
@@ -93,6 +103,7 @@ export default function AdminResidentCarePlanPage() {
   const rawId = params?.id;
   const residentId = typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : "";
   const { selectedFacilityId } = useFacilityStore();
+  const { user } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -124,7 +135,7 @@ export default function AdminResidentCarePlanPage() {
 
       const resResult = (await supabase
         .from("residents" as never)
-        .select("id, facility_id, first_name, last_name")
+        .select("id, facility_id, first_name, last_name, acuity_level")
         .eq("id", residentId)
         .is("deleted_at", null)
         .maybeSingle()) as unknown as QueryResult<ResidentMini>;
@@ -150,7 +161,7 @@ export default function AdminResidentCarePlanPage() {
 
       const plansResult = (await supabase
         .from("care_plans" as never)
-        .select("id, version, status, effective_date, review_due_date, notes, updated_at")
+        .select("id, version, status, effective_date, review_due_date, notes, updated_at, created_by")
         .eq("resident_id", residentId)
         .is("deleted_at", null)) as unknown as QueryListResult<CarePlanRow>;
 
@@ -161,7 +172,7 @@ export default function AdminResidentCarePlanPage() {
 
       if (!plan) {
         setNoPlan(true);
-        setLoaded({ residentName, plan: null, items: [] });
+        setLoaded({ residentName, residentAcuity: resident.acuity_level, plan: null, items: [] });
         setLoading(false);
         return;
       }
@@ -179,7 +190,7 @@ export default function AdminResidentCarePlanPage() {
       if (itemsResult.error) throw itemsResult.error;
       const items = itemsResult.data ?? [];
 
-      setLoaded({ residentName, plan, items });
+      setLoaded({ residentName, residentAcuity: resident.acuity_level, plan, items });
     } catch (err) {
       setError(
         formatLiveDataLoadError(err, "Care plan data is unavailable. Check your connection and try again."),
@@ -316,13 +327,17 @@ export default function AdminResidentCarePlanPage() {
                     </Badge>
                   ) : null}
                   {plan?.status && (plan.status === "draft" || plan.status === "under_review") && (
-                    <button
-                      type="button"
-                      onClick={() => setSigningOpen(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold uppercase tracking-wider transition-colors duration-[var(--motion-duration-micro)] shadow-[var(--shadow-card)]"
-                    >
-                      Review &amp; sign
-                    </button>
+                    isCarePlanAuthor(plan.created_by, user?.id) ? (
+                      <p className="text-xs text-muted-foreground">{CARE_PLAN_AUTHOR_CANNOT_APPROVE_COPY}</p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSigningOpen(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold uppercase tracking-wider transition-colors duration-[var(--motion-duration-micro)] shadow-[var(--shadow-card)]"
+                      >
+                        Review &amp; sign
+                      </button>
+                    )
                   )}
                   {plan?.id ? (
                     <Link
@@ -484,7 +499,12 @@ export default function AdminResidentCarePlanPage() {
                 <span className="text-muted-foreground">Effective:</span>
                 <span className="tabular-nums font-medium text-foreground">{formatCarePlanDateOnly(plan?.effective_date)}</span>
               </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Acuity level:</span>
+                <span className="font-medium text-foreground">{formatCarePlanAcuityLabel(loaded.residentAcuity)}</span>
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">{CARE_PLAN_APPROVAL_RATE_COPY}</p>
 
             <div>
               <label className="text-sm font-medium text-foreground block mb-3">
