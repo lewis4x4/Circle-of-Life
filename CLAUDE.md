@@ -84,6 +84,24 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 - Sequential `supabase/migrations/NNN_*.sql`. Check `docs/Autonomous.md` and the latest file in `supabase/migrations/` for the next free number; `migrations:check` enforces ordering.
 - After touching migrations: `npm run migrations:verify:pg` (Docker replay).
 
+**Applying to a hosted project.** `supabase db push` does not work on this repo: the 3-digit `NNN_` names collide with the 14-digit `2026…` ones (seven files begin with `202`), so the CLI cannot match remote version `202` to `202_workflow_events.sql`. Do **not** run the `migration repair --status reverted` it suggests — that rewrites the ledger to claim an applied migration was reverted. Apply the file directly instead:
+
+```
+supabase db query --linked -f supabase/migrations/NNN_name.sql
+```
+
+That sends the exact file through the Management API — no database password, no hand-pasting. Then do both of these, because that path does neither for you:
+
+1. **Reload the PostgREST schema cache.** It answers from a cache; without a reload the new surface 404s and pages reading changed tables fail in ways that point at the page, not the cache. Every migration that changes the API surface should end with `NOTIFY pgrst, 'reload schema';` — most in this repo do not, so check.
+2. **Record the ledger row**, or the next person cannot tell an applied migration from a missing one:
+
+```sql
+insert into supabase_migrations.schema_migrations (version, name)
+values ('NNN', 'name') on conflict (version) do nothing;
+```
+
+Migrations applied outside the CLI land under a timestamp version rather than `NNN`, which is why 384, 385 and 387 are recorded as `20260914203602`, `20260914203613` and `20260915182400`. Read the ledger by name, not by `max(version)` — text ordering puts `2026…` below `383`.
+
 ### Edge Functions
 - `supabase/functions/<kebab-case>/` (Deno). Examples: `generate-emar-schedule`, `ar-aging-check`, `exec-alert-evaluator`, `process-referral-hl7-inbound`. Auth-first; secrets via env only; **no PHI in logs**. Shared code under `supabase/functions/_shared/`.
 

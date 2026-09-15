@@ -1966,4 +1966,12 @@ COMMENT ON TABLE public.resident_record_application_receipts IS 'Replay-safe des
 COMMENT ON FUNCTION public.resident_record_intake_command(uuid,text,text,jsonb) IS 'Allowlisted current-authority intake command surface; it never activates census, occupies a bed, or creates eMAR history.';
 COMMENT ON FUNCTION public.stage_resident_record_parse_result(uuid,uuid,uuid,text,uuid,uuid,text,text,text,text,text,jsonb) IS 'Service-only staging of schema-validated provider output after direct revalidation of the current database actor and facility grant.';
 
+-- This migration adds tables, columns and functions that PostgREST serves, and
+-- PostgREST answers from a cached schema. Applied through a path that does not
+-- signal a reload, the API keeps serving the old surface: the new tables 404
+-- and, because resident_documents gained columns, pages that read it fail in
+-- ways that point at the page rather than at the cache. Signal it here so the
+-- migration is correct however it is applied.
+NOTIFY pgrst, 'reload schema';
+
 COMMIT;
