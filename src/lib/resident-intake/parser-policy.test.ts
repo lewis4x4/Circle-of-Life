@@ -50,6 +50,25 @@ describe("resident intake PHI policy gate", () => {
     providerFetch.mockRestore();
   });
 
+  it("makes zero provider calls when PHI is allowed and routed but no BAA is recorded", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: {}, error: null });
+    const policy = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { allow_phi: true, baa_reference: null, baa_verified_at: null, default_provider: "anthropic", routing_json: { resident_record_intake: { provider: "anthropic", enabled: true } } }, error: null }) };
+    policy.select.mockReturnValue(policy);
+    policy.eq.mockReturnValue(policy);
+    const actor = { id: "2383b30f-73cf-4d97-886c-31af8b505346", organizationId: "0a35a335-f0a6-4ae8-84ad-2adb0986168f", appRole: "nurse", client: { rpc }, admin: { from: vi.fn().mockReturnValue(policy) } };
+    mocks.requireActor.mockResolvedValue({ actor });
+    mocks.revalidateActor.mockResolvedValue({ actor });
+    mocks.readSnapshot.mockResolvedValue({ snapshot: { sources: [{ id: sourceId, revision, original_filename: "resident.pdf", declared_mime: "application/pdf", preflight_state: "safe" }] } });
+    const providerFetch = vi.spyOn(globalThis, "fetch");
+    const response = await parseResidentIntakeSource(new Request("http://localhost", { method: "POST", body: JSON.stringify({ source_id: sourceId, request_key: requestKey, expected_revision: revision }) }), intakeId);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ outcome: "manual_required", manual_available: true });
+    expect(providerFetch).not.toHaveBeenCalled();
+    expect(mocks.download).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith("resident_record_intake_command", expect.objectContaining({ p_command: "record_parse_failure", p_payload: expect.objectContaining({ error_code: "phi_not_authorized" }) }));
+    providerFetch.mockRestore();
+  });
+
   it("makes zero provider calls when PHI is allowed but resident-intake provider routing is absent", async () => {
     const rpc = vi.fn().mockResolvedValue({ data: {}, error: null });
     const policy = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { allow_phi: true, default_provider: "anthropic", routing_json: {} }, error: null }) };
