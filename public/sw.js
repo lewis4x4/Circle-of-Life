@@ -78,6 +78,11 @@ self.addEventListener("message", (event) => {
   const data = event.data || {};
   const port = event.ports && event.ports[0];
 
+  if (data.type === "HAVEN_SKIP_WAITING") {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
+
   if (data.type === "HAVEN_QUEUE_ROUNDING_COMPLETION") {
     event.waitUntil((async () => {
       try {
