@@ -3,6 +3,8 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { formatCarePlanDateOnly } from "@/lib/care-plans/care-plan-display-copy";
+import { draftCarePlanFromForm1823, type CarePlanDraftGap, type Form1823DraftSource } from "@/lib/care-plans/draft-from-form-1823";
 type Item = {
     category: string;
     title: string;
@@ -15,12 +17,19 @@ type Item = {
 };
 const categories = ["mobility", "bathing", "dressing", "grooming", "toileting", "eating", "medication_assistance", "behavioral", "fall_prevention", "skin_integrity", "pain_management", "cognitive", "social", "dietary", "other"];
 const blank = (): Item => ({ category: "", title: "", description: "", assistance_level: "", frequency: "", goal: "", interventions: [], special_instructions: "" });
-export function CarePlanAuthor({ residentId, previousId, initialItems, onSaved }: {
+function easternToday(): string {
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    return `${get("year")}-${get("month")}-${get("day")}`;
+}
+export function CarePlanAuthor({ residentId, previousId, initialItems, sourceForm1823, onSaved }: {
     residentId: string;
     previousId?: string;
     initialItems: Array<Partial<{
         [K in keyof Item]: Item[K] | null;
     }>>;
+    /** The resident's current Form 1823, when there is one to draft from. */
+    sourceForm1823?: Form1823DraftSource | null;
     onSaved: () => void;
 }) {
     const { appRole } = useHavenAuth();
@@ -33,10 +42,24 @@ export function CarePlanAuthor({ residentId, previousId, initialItems, onSaved }
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [requestId, setRequestId] = useState("");
-    function begin() { setItems(initialItems.length ? initialItems.map(item => ({ category: item.category ?? "", title: item.title ?? "", description: item.description ?? "", assistance_level: item.assistance_level ?? "", frequency: item.frequency ?? "", goal: item.goal ?? "", interventions: item.interventions ?? [], special_instructions: item.special_instructions ?? "" })) : [blank()]); setRequestId(crypto.randomUUID()); setOpen(true); }
+    const [gaps, setGaps] = useState<CarePlanDraftGap[]>([]);
+    const [sourceId, setSourceId] = useState<string | null>(null);
+    function begin() { setItems(initialItems.length ? initialItems.map(item => ({ category: item.category ?? "", title: item.title ?? "", description: item.description ?? "", assistance_level: item.assistance_level ?? "", frequency: item.frequency ?? "", goal: item.goal ?? "", interventions: item.interventions ?? [], special_instructions: item.special_instructions ?? "" })) : [blank()]); setGaps([]); setSourceId(null); setRequestId(crypto.randomUUID()); setOpen(true); }
+    function beginFromForm1823() {
+        if (!sourceForm1823) return;
+        const draft = draftCarePlanFromForm1823(sourceForm1823, { today: easternToday() });
+        setItems(draft.items);
+        setEffective(draft.effectiveDate);
+        setReview(draft.reviewDueDate);
+        setNotes(draft.notes);
+        setGaps(draft.gaps);
+        setSourceId(sourceForm1823.id);
+        setRequestId(crypto.randomUUID());
+        setOpen(true);
+    }
     async function save() { if (busy)
         return; setBusy(true); setError(null); try {
-        const result = await client.rpc("create_care_plan_revision_review" as never, { p_id: requestId, p_resident_id: residentId, p_previous_id: previousId ?? null, p_effective: effective, p_review: review, p_notes: notes, p_items: items } as never);
+        const result = await client.rpc("create_care_plan_revision_review" as never, { p_id: requestId, p_resident_id: residentId, p_previous_id: previousId ?? null, p_effective: effective, p_review: review, p_notes: notes, p_items: items, p_source_form_1823_id: sourceId } as never);
         if (result.error)
             throw result.error;
         if (typeof result.data !== "string")
@@ -53,6 +76,6 @@ export function CarePlanAuthor({ residentId, previousId, initialItems, onSaved }
     function patch(index: number, key: keyof Item, value: Item[keyof Item]) { setItems(prior => prior.map((item, i) => i === index ? { ...item, [key]: value } : item)); }
     if (!["owner", "org_admin", "facility_admin", "nurse"].includes(appRole ?? "")) return null;
     if (!open)
-        return <Button onClick={begin}>{previousId ? "Revise care plan" : "Start care plan"}</Button>;
-    return <section className="space-y-3 rounded border border-border p-4"><fieldset disabled={busy} className="contents"><h2 className="text-lg font-semibold">{previousId ? "Care-plan revision" : "New care plan"}</h2><p>Save a new version for clinical review. The current signed plan stays in effect until the new version is approved.</p><label>Effective date<input type="date" value={effective} onChange={e => setEffective(e.target.value)} className="m-2 rounded border p-2"/></label><label>Review due<input type="date" value={review} onChange={e => setReview(e.target.value)} className="m-2 rounded border p-2"/></label>{items.map((item, index) => <fieldset key={index} className="space-y-2 rounded border p-3"><legend>Need / intervention {index + 1}</legend><label>Category<select value={item.category} onChange={e => patch(index, "category", e.target.value)} className="block w-full rounded border p-2"><option value="">Choose category</option>{categories.map(c => <option key={c} value={c}>{c.replaceAll("_", " ")}</option>)}</select></label>{(["title", "description", "frequency", "goal", "special_instructions"] as const).map(key => <label className="block" key={key}>{key.replaceAll("_", " ")}<input value={item[key]} onChange={e => patch(index, key, e.target.value)} className="block w-full rounded border p-2"/></label>)}<label>Assistance level<select value={item.assistance_level} onChange={e => patch(index, "assistance_level", e.target.value)} className="block w-full rounded border p-2"><option value="">Choose support</option>{["independent", "supervision", "limited_assist", "extensive_assist", "total_dependence"].map(a => <option value={a} key={a}>{a.replaceAll("_", " ")}</option>)}</select></label><label>Interventions (one per line)<textarea value={item.interventions.join("\n")} onChange={e => patch(index, "interventions", e.target.value.split("\n"))} className="block w-full rounded border p-2"/></label><Button variant="outline" onClick={() => setItems(prior => prior.filter((_, i) => i !== index))}>Remove from this revision</Button></fieldset>)}<Button variant="outline" onClick={() => setItems(prior => [...prior, blank()])}>Add need</Button><label className="block">Reason for revision<textarea value={notes} onChange={e => setNotes(e.target.value)} className="block w-full rounded border p-2"/></label>{error && <p role="alert">{error}</p>}<Button disabled={busy || !effective || !review || !items.length || items.some(i => !i.category || !i.title.trim() || !i.description.trim() || !i.assistance_level)} onClick={() => void save()}>{busy ? "Saving…" : "Save for clinical review"}</Button></fieldset></section>;
+        return <div className="flex flex-wrap items-center gap-2"><Button onClick={begin}>{previousId ? "Revise care plan" : "Start care plan"}</Button>{sourceForm1823 ? <Button variant="outline" onClick={beginFromForm1823}>{previousId ? "Revise from" : "Start from"} Form 1823 (exam {formatCarePlanDateOnly(sourceForm1823.exam_date)})</Button> : null}</div>;
+    return <section className="space-y-3 rounded border border-border p-4"><fieldset disabled={busy} className="contents"><h2 className="text-lg font-semibold">{previousId ? "Care-plan revision" : "New care plan"}</h2><p>Save a new version for clinical review. The current signed plan stays in effect until the new version is approved.</p>{sourceId && sourceForm1823 ? <div className="rounded border border-warning/30 bg-warning/10 p-3 text-sm"><p className="font-medium">Drafted from Form 1823 exam {formatCarePlanDateOnly(sourceForm1823.exam_date)}. Every line is yours to change; the 1823 informs the plan, it does not write it.</p>{gaps.length > 0 ? <ul className="mt-2 list-disc space-y-1 pl-5">{gaps.map((gap, i) => <li key={i}>{gap.message}</li>)}</ul> : <p className="mt-1">The 1823 left no open judgments.</p>}</div> : null}<label>Effective date<input type="date" value={effective} onChange={e => setEffective(e.target.value)} className="m-2 rounded border p-2"/></label><label>Review due<input type="date" value={review} onChange={e => setReview(e.target.value)} className="m-2 rounded border p-2"/></label>{items.map((item, index) => <fieldset key={index} className="space-y-2 rounded border p-3"><legend>Need / intervention {index + 1}</legend><label>Category<select value={item.category} onChange={e => patch(index, "category", e.target.value)} className="block w-full rounded border p-2"><option value="">Choose category</option>{categories.map(c => <option key={c} value={c}>{c.replaceAll("_", " ")}</option>)}</select></label>{(["title", "description", "frequency", "goal", "special_instructions"] as const).map(key => <label className="block" key={key}>{key.replaceAll("_", " ")}<input value={item[key]} onChange={e => patch(index, key, e.target.value)} className="block w-full rounded border p-2"/></label>)}<label>Assistance level<select value={item.assistance_level} onChange={e => patch(index, "assistance_level", e.target.value)} className="block w-full rounded border p-2"><option value="">Choose support</option>{["independent", "supervision", "limited_assist", "extensive_assist", "total_dependence"].map(a => <option value={a} key={a}>{a.replaceAll("_", " ")}</option>)}</select></label><label>Interventions (one per line)<textarea value={item.interventions.join("\n")} onChange={e => patch(index, "interventions", e.target.value.split("\n"))} className="block w-full rounded border p-2"/></label><Button variant="outline" onClick={() => setItems(prior => prior.filter((_, i) => i !== index))}>Remove from this revision</Button></fieldset>)}<Button variant="outline" onClick={() => setItems(prior => [...prior, blank()])}>Add need</Button><label className="block">Reason for revision<textarea value={notes} onChange={e => setNotes(e.target.value)} className="block w-full rounded border p-2"/></label>{error && <p role="alert">{error}</p>}<Button disabled={busy || !effective || !review || !items.length || items.some(i => !i.category || !i.title.trim() || !i.description.trim() || !i.assistance_level)} onClick={() => void save()}>{busy ? "Saving…" : "Save for clinical review"}</Button></fieldset></section>;
 }

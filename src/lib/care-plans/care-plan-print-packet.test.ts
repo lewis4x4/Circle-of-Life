@@ -117,6 +117,22 @@ describe("buildCarePlanPrintPacket", () => {
     expect(packet.plan.supersededByVersion).toBeNull();
     expect(packet.printedBy).toBe("Printer Example");
     expect(packet.acknowledgements).toEqual([]);
+    expect(packet.form1823).toBeNull();
+  });
+
+  it("names the Form 1823 the version was drafted from", () => {
+    const packet = buildCarePlanPrintPacket({
+      plan,
+      items: [],
+      resident,
+      facility,
+      approverName: null,
+      supersededByVersion: null,
+      form1823: { exam_date: "2026-09-04", physician_name: "Examiner Example", examiner_title: "APRN" },
+      printedAt: "2026-09-15T21:00:00.000Z",
+      printedBy: "Printer Example",
+    });
+    expect(packet.form1823).toEqual({ examDate: "2026-09-04", examinerName: "Examiner Example", examinerTitle: "APRN" });
   });
 
   it("carries acknowledgements newest first with the signer's relationship", () => {
