@@ -16,6 +16,11 @@ CREATE FUNCTION pg_temp.sod_assert(ok boolean, msg text) RETURNS void LANGUAGE p
 INSERT INTO public.care_plans(id, resident_id, facility_id, organization_id, version, status, effective_date, review_due_date, created_by)
 SELECT 'c0000000-0000-4000-8000-000000000001', resident, facility, org, 1, 'draft', current_date, current_date + 365, author FROM sod_fixture;
 
+-- An empty version cannot be approved by anyone (398).
+SELECT pg_temp.sod_error(format($q$UPDATE public.care_plans SET status = 'active', approved_at = now(), approved_by = %L WHERE id = 'c0000000-0000-4000-8000-000000000001'$q$, reviewer), '23514') FROM sod_fixture;
+INSERT INTO public.care_plan_items(care_plan_id, resident_id, facility_id, organization_id, category, title, description, assistance_level)
+SELECT 'c0000000-0000-4000-8000-000000000001', resident, facility, org, 'bathing', 'Bathing', 'Assist', 'limited_assist' FROM sod_fixture;
+
 -- The author signing it is refused at the table.
 SELECT pg_temp.sod_error(format($q$UPDATE public.care_plans SET status = 'active', approved_at = now(), approved_by = %L WHERE id = 'c0000000-0000-4000-8000-000000000001'$q$, author), '23514') FROM sod_fixture;
 -- Activating with no approver at all is refused.
@@ -28,6 +33,8 @@ SELECT pg_temp.sod_assert((SELECT status = 'active' FROM public.care_plans WHERE
 UPDATE public.care_plans SET status = 'archived' WHERE id = 'c0000000-0000-4000-8000-000000000001';
 INSERT INTO public.care_plans(id, resident_id, facility_id, organization_id, version, status, effective_date, review_due_date, created_by)
 SELECT 'c0000000-0000-4000-8000-000000000002', resident, facility, org, 2, 'draft', current_date, current_date + 365, NULL FROM sod_fixture;
+INSERT INTO public.care_plan_items(care_plan_id, resident_id, facility_id, organization_id, category, title, description, assistance_level)
+SELECT 'c0000000-0000-4000-8000-000000000002', resident, facility, org, 'bathing', 'Bathing', 'Assist', 'limited_assist' FROM sod_fixture;
 UPDATE public.care_plans p SET status = 'active', approved_at = now(), approved_by = f.author FROM sod_fixture f WHERE p.id = 'c0000000-0000-4000-8000-000000000002';
 SELECT pg_temp.sod_assert((SELECT status = 'active' FROM public.care_plans WHERE id = 'c0000000-0000-4000-8000-000000000002'), 'Unknown author does not block approval');
 ROLLBACK;

@@ -68,6 +68,8 @@ SELECT pg_temp.cpa_assert(pg_temp.cpa_open('form_1823_renewed') = 1, 'A newer ex
 -- A new active version resolves every open alert on the old plan.
 INSERT INTO public.care_plans(id, resident_id, facility_id, organization_id, version, status, effective_date, review_due_date, previous_version_id)
 SELECT 'c0000000-0000-4000-8000-000000000102', resident, facility, org, 2, 'draft', '2026-09-15', '2027-09-15', 'c0000000-0000-4000-8000-000000000101' FROM cpa_fixture;
+INSERT INTO public.care_plan_items(care_plan_id, resident_id, facility_id, organization_id, category, title, description, assistance_level)
+SELECT 'c0000000-0000-4000-8000-000000000102', resident, facility, org, 'bathing', 'Bathing', 'Assist', 'limited_assist' FROM cpa_fixture;
 UPDATE public.care_plans p SET status = 'active', approved_by = f.reviewer, approved_at = now() FROM cpa_fixture f WHERE p.id = 'c0000000-0000-4000-8000-000000000102';
 SELECT pg_temp.cpa_assert((SELECT count(*) = 0 FROM public.care_plan_review_alerts a JOIN cpa_fixture f ON a.resident_id = f.resident WHERE a.status IN ('open','acknowledged')), 'Activation resolves the older plan alerts');
 SELECT pg_temp.cpa_assert((SELECT bool_and(resolution_notes = 'Superseded by v2' AND resolved_by = f.reviewer) FROM public.care_plan_review_alerts a JOIN cpa_fixture f ON a.resident_id = f.resident), 'Resolution names the version and approver');
