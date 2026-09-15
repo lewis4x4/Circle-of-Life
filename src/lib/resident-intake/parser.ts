@@ -28,8 +28,14 @@ const DEFAULT_MODEL = "claude-sonnet-5";
 const MAX_PROVIDER_IMAGE_EDGE = 4_096;
 const MAX_PROVIDER_IMAGE_PIXELS = 20_000_000;
 
+// Migration 389 already refuses allow_phi without a recorded BAA at the table;
+// requiring it here as well means a policy row read through any path that
+// bypasses the constraint (a stale cache, a hand-edited fixture) still fails
+// closed rather than sending a chart to the provider.
 const residentIntakePhiPolicySchema = z.object({
   allow_phi: z.literal(true),
+  baa_reference: z.string().trim().min(1),
+  baa_verified_at: z.string().datetime({ offset: true }),
   default_provider: z.literal(PROVIDER),
   routing_json: z.object({
     resident_record_intake: z.object({
@@ -260,7 +266,7 @@ export async function parseResidentIntakeSource(request: Request, intakeId: stri
 
   const policyResult = await auth.actor.admin
     .from("ai_invocation_policies")
-    .select("allow_phi, default_provider, routing_json")
+    .select("allow_phi, baa_reference, baa_verified_at, default_provider, routing_json")
     .eq("organization_id", auth.actor.organizationId)
     .maybeSingle();
   if (policyResult.error || !phiPolicyAllowsResidentIntake(policyResult.data)) {

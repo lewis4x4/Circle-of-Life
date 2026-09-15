@@ -587,30 +587,42 @@ export type Database = {
       ai_invocation_policies: {
         Row: {
           allow_phi: boolean
+          baa_reference: string | null
+          baa_verified_at: string | null
+          baa_verified_by: string | null
           created_at: string
           default_provider: string
           id: string
           organization_id: string
           routing_json: Json
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           allow_phi?: boolean
+          baa_reference?: string | null
+          baa_verified_at?: string | null
+          baa_verified_by?: string | null
           created_at?: string
           default_provider?: string
           id?: string
           organization_id: string
           routing_json?: Json
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           allow_phi?: boolean
+          baa_reference?: string | null
+          baa_verified_at?: string | null
+          baa_verified_by?: string | null
           created_at?: string
           default_provider?: string
           id?: string
           organization_id?: string
           routing_json?: Json
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
