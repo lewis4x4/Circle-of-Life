@@ -51,10 +51,10 @@ DO $$ DECLARE f record; revision uuid:=gen_random_uuid(); order_data jsonb; plan
  IF NOT EXISTS(SELECT 1 FROM resident_medications WHERE id=f.med AND status='discontinued') OR NOT EXISTS(SELECT 1 FROM resident_medications WHERE id=revision AND previous_medication_id=f.med AND status='active') THEN RAISE EXCEPTION 'Medication revision did not preserve lineage'; END IF;
  PERFORM create_care_plan_revision_review(plan_id,f.resident,NULL,f.business_today,f.business_today+30,'Initial plan','[{"category":"bathing","title":"Bathing support","description":"Provide safe shower support","assistance_level":"supervision","frequency":"daily","goal":"Safe bathing","interventions":["Offer supervision"],"special_instructions":"Resident preference"}]');
  PERFORM create_care_plan_revision_review(plan_id,f.resident,NULL,f.business_today,f.business_today+30,'Initial plan','[{"category":"bathing","title":"Bathing support","description":"Provide safe shower support","assistance_level":"supervision","frequency":"daily","goal":"Safe bathing","interventions":["Offer supervision"],"special_instructions":"Resident preference"}]');
- UPDATE care_plans SET status='active',approved_by=f.actor,approved_at=now() WHERE id=plan_id;
+ UPDATE care_plans SET status='active',approved_by=f.witness,approved_at=now() WHERE id=plan_id;
  PERFORM create_care_plan_revision_review(new_plan,f.resident,plan_id,f.business_today,f.business_today+30,'Updated need','[{"category":"bathing","title":"Bathing support","description":"Provide safe shower support","assistance_level":"limited_assist","interventions":[]}]');
  IF (SELECT status FROM care_plans WHERE id=plan_id)<>'active' THEN RAISE EXCEPTION 'Draft revision retired active plan'; END IF;
- UPDATE care_plans SET status='active',approved_by=f.actor,approved_at=now() WHERE id=new_plan;
+ UPDATE care_plans SET status='active',approved_by=f.witness,approved_at=now() WHERE id=new_plan;
  IF (SELECT status FROM care_plans WHERE id=plan_id)<>'archived' THEN RAISE EXCEPTION 'Approved plan did not retire prior version'; END IF;
 END $$;
 
