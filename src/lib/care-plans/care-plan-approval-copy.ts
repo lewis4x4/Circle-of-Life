@@ -5,6 +5,7 @@
  */
 
 export const CARE_PLAN_AUTHOR_APPROVAL_REFUSED = "The author of a care plan cannot approve it";
+export const CARE_PLAN_EMPTY_APPROVAL_REFUSED = "A care plan with no active needs cannot be approved";
 export const CARE_PLAN_AUTHOR_CANNOT_APPROVE_COPY =
   "You drafted this version — another authorized reviewer signs it.";
 export const CARE_PLAN_APPROVAL_RATE_COPY =

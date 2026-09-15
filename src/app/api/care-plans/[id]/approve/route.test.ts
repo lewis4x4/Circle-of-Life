@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CARE_PLAN_AUTHOR_APPROVAL_REFUSED } from "@/lib/care-plans/care-plan-approval-copy";
+import { CARE_PLAN_AUTHOR_APPROVAL_REFUSED, CARE_PLAN_EMPTY_APPROVAL_REFUSED } from "@/lib/care-plans/care-plan-approval-copy";
 
 type Result = { data: unknown; error: { message: string } | null };
 
 const state = vi.hoisted(() => ({
   plan: null as Record<string, unknown> | null,
+  firstItem: { id: "item-1" } as Record<string, unknown> | null,
   updateResult: { data: { id: "plan-1" }, error: null } as Result,
   updates: [] as Array<{ table: string; values: Record<string, unknown> }>,
   inserts: [] as Array<{ table: string; values: Record<string, unknown> }>,
@@ -18,8 +19,13 @@ function fakeFrom(table: string) {
     select: chain,
     eq: chain,
     is: chain,
+    limit: chain,
     maybeSingle: async (): Promise<Result> =>
-      table === "care_plans" && state.updates.length === 0 ? { data: state.plan, error: null } : state.updateResult,
+      table === "care_plan_items"
+        ? { data: state.firstItem, error: null }
+        : table === "care_plans" && state.updates.length === 0
+          ? { data: state.plan, error: null }
+          : state.updateResult,
     update: (values: Record<string, unknown>) => {
       state.updates.push({ table, values });
       return query;
@@ -96,6 +102,15 @@ describe("POST /api/care-plans/[id]/approve — separation of duties", () => {
     expect(state.updates[0].values).toMatchObject({ status: "active", approved_by: "reviewer-1" });
     expect(state.updates[0].values).not.toHaveProperty("acuity_level");
     expect(state.inserts.map((i) => i.table)).toEqual(["audit_log"]);
+  });
+
+  it("refuses a version with no active needs and writes nothing", async () => {
+    state.firstItem = null;
+    const response = await call();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: CARE_PLAN_EMPTY_APPROVAL_REFUSED });
+    expect(state.updates).toEqual([]);
+    state.firstItem = { id: "item-1" };
   });
 
   it("still approves a legacy version with no recorded author", async () => {

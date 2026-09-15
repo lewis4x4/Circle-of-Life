@@ -3,7 +3,7 @@ import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/cu
 import { logError } from "@/lib/observability/logger";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 import { formatUploadedByProfile } from "@/lib/users/user-attribution";
-import { CARE_PLAN_AUTHOR_APPROVAL_REFUSED, isCarePlanAuthor } from "@/lib/care-plans/care-plan-approval-copy";
+import { CARE_PLAN_AUTHOR_APPROVAL_REFUSED, CARE_PLAN_EMPTY_APPROVAL_REFUSED, isCarePlanAuthor } from "@/lib/care-plans/care-plan-approval-copy";
 
 type Body = {
   signature: string;
@@ -107,6 +107,23 @@ export async function POST(
     return NextResponse.json({ error: CARE_PLAN_AUTHOR_APPROVAL_REFUSED }, { status: 409 });
   }
 
+  // An empty version is not a plan. The 398 trigger repeats this at the table.
+  const { data: firstItem, error: itemError } = await admin
+    .from("care_plan_items")
+    .select("id")
+    .eq("care_plan_id", carePlanId)
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .limit(1)
+    .maybeSingle();
+  if (itemError) {
+    logError("care-plans.approve", itemError, { action: "count_items", carePlanId });
+    return NextResponse.json({ error: "Failed to approve care plan" }, { status: 500 });
+  }
+  if (!firstItem) {
+    return NextResponse.json({ error: CARE_PLAN_EMPTY_APPROVAL_REFUSED }, { status: 409 });
+  }
+
   // Approve the care plan
   const nowIso = new Date().toISOString();
   const { data: updatedCarePlan, error: updateError } = await admin
@@ -128,8 +145,10 @@ export async function POST(
     .maybeSingle();
 
   if (updateError) {
-    if (updateError.message?.includes(CARE_PLAN_AUTHOR_APPROVAL_REFUSED)) {
-      return NextResponse.json({ error: CARE_PLAN_AUTHOR_APPROVAL_REFUSED }, { status: 409 });
+    for (const refusal of [CARE_PLAN_AUTHOR_APPROVAL_REFUSED, CARE_PLAN_EMPTY_APPROVAL_REFUSED]) {
+      if (updateError.message?.includes(refusal)) {
+        return NextResponse.json({ error: refusal }, { status: 409 });
+      }
     }
     logError("care-plans.approve", updateError, { action: "update_care_plan", carePlanId });
     return NextResponse.json(
