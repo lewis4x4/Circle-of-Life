@@ -22,6 +22,7 @@ import {
   FACILITY_TABS,
 } from '@/lib/admin/facilities/facility-constants';
 import { thresholdPairError } from "@/lib/admin/facilities/operational-threshold-catalog";
+import { MEDICATION_SYSTEMS_OF_RECORD } from "@/lib/admin/facilities/medication-system-of-record";
 
 // ─── Facility List Query ─────────────────────────────────────────────────────
 
@@ -71,6 +72,9 @@ export const updateFacilitySchema = z.object({
   total_licensed_beds: z.number().int().min(1).optional(),
   alf_license_type: alfLicenseTypeSchema.optional(),
   status: z.enum(['active', 'inactive', 'under_renovation', 'archived']).optional(),
+  // Stored under facilities.settings; null clears the setting.
+  medication_system_of_record: z.enum(MEDICATION_SYSTEMS_OF_RECORD).nullable().optional(),
+  medication_system_label: z.string().trim().max(80).nullable().optional(),
 }).strict().refine(
   (data) => Object.keys(data).length > 0,
   { message: 'At least one field must be provided' }

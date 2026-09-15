@@ -22,7 +22,7 @@ function easternToday(): string {
     const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
     return `${get("year")}-${get("month")}-${get("day")}`;
 }
-export function CarePlanAuthor({ residentId, previousId, initialItems, sourceForm1823, onSaved }: {
+export function CarePlanAuthor({ residentId, previousId, initialItems, sourceForm1823, medicationSystemLabel, onSaved }: {
     residentId: string;
     previousId?: string;
     initialItems: Array<Partial<{
@@ -30,6 +30,8 @@ export function CarePlanAuthor({ residentId, previousId, initialItems, sourceFor
     }>>;
     /** The resident's current Form 1823, when there is one to draft from. */
     sourceForm1823?: Form1823DraftSource | null;
+    /** The facility's medication orders-of-record label, for the drafted medication line. */
+    medicationSystemLabel?: string | null;
     onSaved: () => void;
 }) {
     const { appRole } = useHavenAuth();
@@ -47,7 +49,7 @@ export function CarePlanAuthor({ residentId, previousId, initialItems, sourceFor
     function begin() { setItems(initialItems.length ? initialItems.map(item => ({ category: item.category ?? "", title: item.title ?? "", description: item.description ?? "", assistance_level: item.assistance_level ?? "", frequency: item.frequency ?? "", goal: item.goal ?? "", interventions: item.interventions ?? [], special_instructions: item.special_instructions ?? "" })) : [blank()]); setGaps([]); setSourceId(null); setRequestId(crypto.randomUUID()); setOpen(true); }
     function beginFromForm1823() {
         if (!sourceForm1823) return;
-        const draft = draftCarePlanFromForm1823(sourceForm1823, { today: easternToday() });
+        const draft = draftCarePlanFromForm1823(sourceForm1823, { today: easternToday(), medicationSystemLabel: medicationSystemLabel ?? null });
         setItems(draft.items);
         setEffective(draft.effectiveDate);
         setReview(draft.reviewDueDate);

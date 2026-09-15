@@ -108,6 +108,8 @@ describe("buildCarePlanPrintPacket", () => {
 
     expect(packet.resident).toEqual({ id: "res-1", name: "Test Resident", dateOfBirth: "1940-01-02", room: "10-B" });
     expect(packet.facility.addressLines).toEqual(["430 Mills St", "Mayo, FL 32066"]);
+    expect(packet.facility.medicationSystem).toBeNull();
+    expect(buildCarePlanPrintPacket({ plan, items: [], resident, facility: { ...facility, settings: { medication_system_of_record: "quickmar" } }, approverName: null, supersededByVersion: null, printedAt: "2026-09-15T21:00:00.000Z", printedBy: "P" }).facility.medicationSystem).toMatchObject({ key: "quickmar", external: true });
     expect(packet.sections).toHaveLength(1);
     expect(packet.signature).toEqual({
       approvedAt: "2026-09-12T14:00:00.000Z",

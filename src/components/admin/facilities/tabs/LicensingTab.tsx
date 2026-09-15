@@ -20,6 +20,12 @@ import {
 import type { CareLicenseScope, CareServiceAddon } from "@/lib/admin/facilities/facility-constants";
 import { defaultAssistedLivingAuthorityLabel } from "@/lib/admin/facilities/license-authority";
 import {
+  MEDICATION_SYSTEMS_OF_RECORD,
+  MEDICATION_SYSTEM_LABELS,
+  isMedicationSystemOfRecordKey,
+  medicationSystemOfRecordFromSettings,
+} from "@/lib/admin/facilities/medication-system-of-record";
+import {
   ahcaExpiryYmd,
   daysBetweenTodayAndRenewal,
   deriveLicenseStanding,
@@ -122,6 +128,21 @@ function LicensingTabBody({
 
   const [scopeKey, setScopeKey] = useState<CareLicenseScope>(careSnapshot.scopeKey);
   const [addonKeys, setAddonKeys] = useState<CareServiceAddon[]>(careSnapshot.addonKeys);
+  const medicationSystem = medicationSystemOfRecordFromSettings(facility.settings);
+  const [medicationSystemKey, setMedicationSystemKey] = useState<string>(medicationSystem?.key ?? "");
+  const [medicationSystemLabel, setMedicationSystemLabel] = useState<string>(
+    medicationSystem?.key === "other" ? medicationSystem.label : "",
+  );
+  async function saveMedicationSystem(nextKey: string, nextLabel: string) {
+    setMedicationSystemKey(nextKey);
+    const key = isMedicationSystemOfRecordKey(nextKey) ? nextKey : null;
+    const saved = await updateFacility({
+      medication_system_of_record: key,
+      medication_system_label: key === "other" && nextLabel.trim() ? nextLabel.trim() : null,
+    });
+    if (saved) toast.success(key ? "Medication orders of record saved." : "Medication orders of record cleared.");
+    else toast.error("Could not save the medication system of record.");
+  }
 
   const baselineSerialized = useRef<string>(careSnapshot.payloadSerialized);
   const saveTimerRef = useRef<number | null>(null);
@@ -322,6 +343,41 @@ function LicensingTabBody({
                   <span>{CARE_SERVICE_LABELS[k]}</span>
                 </label>
               ))}
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-[13px] font-semibold text-foreground">Medication orders of record</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Which system holds this facility&apos;s medication orders. Care plans and their printouts name it; nothing is assumed when it is not set.
+            </p>
+            <div className="mt-3 flex flex-wrap items-end gap-3">
+              <label className="text-sm">
+                <span className="block text-xs text-muted-foreground">System</span>
+                <select
+                  value={medicationSystemKey}
+                  disabled={isUpdating}
+                  onChange={(e) => void saveMedicationSystem(e.target.value, medicationSystemLabel)}
+                  className="mt-1 rounded border border-border bg-background p-2"
+                >
+                  <option value="">Not set</option>
+                  {MEDICATION_SYSTEMS_OF_RECORD.map((key) => (
+                    <option key={key} value={key}>{MEDICATION_SYSTEM_LABELS[key]}</option>
+                  ))}
+                </select>
+              </label>
+              {medicationSystemKey === "other" ? (
+                <label className="text-sm">
+                  <span className="block text-xs text-muted-foreground">Name of the system</span>
+                  <input
+                    value={medicationSystemLabel}
+                    disabled={isUpdating}
+                    onChange={(e) => setMedicationSystemLabel(e.target.value)}
+                    onBlur={() => void saveMedicationSystem(medicationSystemKey, medicationSystemLabel)}
+                    className="mt-1 rounded border border-border bg-background p-2"
+                  />
+                </label>
+              ) : null}
             </div>
           </div>
 

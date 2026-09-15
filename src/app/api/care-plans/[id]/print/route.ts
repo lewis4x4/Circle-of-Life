@@ -89,7 +89,7 @@ export async function GET(
       .maybeSingle() as unknown as Promise<SingleResult<CarePlanPrintResidentRow>>,
     admin
       .from("facilities")
-      .select("name, address_line_1, address_line_2, city, state, zip, phone, license_number")
+      .select("name, address_line_1, address_line_2, city, state, zip, phone, license_number, settings")
       .eq("id", plan.facility_id)
       .eq("organization_id", plan.organization_id)
       .maybeSingle() as unknown as Promise<SingleResult<CarePlanPrintFacilityRow>>,

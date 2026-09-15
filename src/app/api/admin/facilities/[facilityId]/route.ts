@@ -216,7 +216,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   // Fetch target facility
   const { data: facility, error: fetchErr } = await admin
     .from("facilities")
-    .select("id, organization_id, name, phone, email, address_line_1, city, state, zip, county, status")
+    .select("id, organization_id, name, phone, email, address_line_1, city, state, zip, county, status, settings")
     .eq("id", facilityId)
     .eq("organization_id", actor.organization_id!)
     .is("deleted_at", null)
@@ -253,6 +253,23 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   if (updates.total_licensed_beds !== undefined) updatePayload.total_licensed_beds = updates.total_licensed_beds;
   if (updates.status !== undefined) updatePayload.status = updates.status;
   if (updates.alf_license_type !== undefined) updatePayload.alf_license_type = updates.alf_license_type;
+  if (updates.medication_system_of_record !== undefined || updates.medication_system_label !== undefined) {
+    // settings is a JSON bag shared with other features: merge, never replace.
+    const existing =
+      facility.settings && typeof facility.settings === "object" && !Array.isArray(facility.settings)
+        ? (facility.settings as Record<string, unknown>)
+        : {};
+    const next: Record<string, unknown> = { ...existing };
+    if (updates.medication_system_of_record !== undefined) {
+      if (updates.medication_system_of_record === null) delete next.medication_system_of_record;
+      else next.medication_system_of_record = updates.medication_system_of_record;
+    }
+    if (updates.medication_system_label !== undefined) {
+      if (!updates.medication_system_label) delete next.medication_system_label;
+      else next.medication_system_label = updates.medication_system_label;
+    }
+    updatePayload.settings = next as Database["public"]["Tables"]["facilities"]["Update"]["settings"];
+  }
 
   const { data: updated, error: updateErr } = await admin
     .from("facilities")
