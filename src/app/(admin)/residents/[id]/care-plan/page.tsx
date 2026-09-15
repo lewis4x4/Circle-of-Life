@@ -4,7 +4,7 @@ import { CarePlanAuthor } from "@/components/care-plans/CarePlanAuthor";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Brain, CalendarClock } from "lucide-react";
+import { ArrowLeft, Brain, CalendarClock, Printer } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -20,6 +20,7 @@ import {
   formatCarePlanResidentName,
   formatCarePlanVersion,
 } from "@/lib/care-plans/care-plan-display-copy";
+import { formatCarePlanPrintAction } from "@/lib/care-plans/care-plan-print-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -323,6 +324,17 @@ export default function AdminResidentCarePlanPage() {
                       Review &amp; sign
                     </button>
                   )}
+                  {plan?.id ? (
+                    <Link
+                      href={`/admin/residents/${residentId}/care-plan/print?plan=${plan.id}`}
+                      target="_blank"
+                      rel="noopener"
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex gap-1")}
+                    >
+                      <Printer className="h-4 w-4" />
+                      {formatCarePlanPrintAction(plan.status)}
+                    </Link>
+                  ) : null}
                 </div>
               }
             >
