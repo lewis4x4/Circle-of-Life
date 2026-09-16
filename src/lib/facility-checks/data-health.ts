@@ -31,19 +31,49 @@ export type FacilityDataHealth = {
  */
 export type FacilityDataHealthError = "forbidden" | "unavailable";
 
+/**
+ * Which set of people or beds a count is actually measuring (COL-438).
+ *
+ * Two of the identity counts are computed across every facility in the
+ * organization, not just the one whose overview is on screen: an account with
+ * no live grant belongs to no facility by construction, and the duplicate rule
+ * matches on `organization_id`. Reported under a per-facility heading they read
+ * as facts about this building, so a change made only at another facility moved
+ * this one's panel. They are grouped and labelled separately instead.
+ *
+ * Circle of Life calls a single building a Facility -- Homewood Lodge is a
+ * Facility -- so the wider set is "All facilities", not "Organization".
+ */
+export type DataHealthScope = "facility" | "all_facilities";
+
+export const DATA_HEALTH_SCOPE_LABELS: Record<DataHealthScope, string> = {
+  facility: "This facility",
+  all_facilities: "All facilities",
+};
+
 export type DataHealthCount = {
   key: string;
   label: string;
   count: number;
   href: string;
+  scope: DataHealthScope;
   /** What a non-zero count means, so the number is not a riddle. */
   meaning: string;
 };
+
+/** The counts for one scope, in panel order. */
+export function dataHealthCountsByScope(
+  health: FacilityDataHealth,
+  scope: DataHealthScope,
+): DataHealthCount[] {
+  return dataHealthCounts(health).filter((entry) => entry.scope === scope);
+}
 
 export function dataHealthCounts(health: FacilityDataHealth): DataHealthCount[] {
   return [
     {
       key: "beds_occupied_with_no_resident",
+      scope: "facility" as const,
       label: "Beds occupied with nobody in them",
       count: health.beds_occupied_with_no_resident,
       href: "/admin/admissions",
@@ -52,6 +82,7 @@ export function dataHealthCounts(health: FacilityDataHealth): DataHealthCount[] 
     },
     {
       key: "residents_holding_no_bed",
+      scope: "facility" as const,
       label: "Residents on census with no bed",
       count: health.residents_holding_no_bed,
       href: "/admin/residents",
@@ -59,6 +90,7 @@ export function dataHealthCounts(health: FacilityDataHealth): DataHealthCount[] 
     },
     {
       key: "beds_with_two_residents",
+      scope: "facility" as const,
       label: "Beds with two residents",
       count: health.beds_with_two_residents,
       href: "/admin/residents",
@@ -66,6 +98,7 @@ export function dataHealthCounts(health: FacilityDataHealth): DataHealthCount[] 
     },
     {
       key: "staff_inactive_can_still_sign_in",
+      scope: "facility" as const,
       label: "Offboarded staff who can still sign in",
       count: health.staff_inactive_can_still_sign_in,
       href: "/admin/staff/staff-check",
@@ -73,17 +106,21 @@ export function dataHealthCounts(health: FacilityDataHealth): DataHealthCount[] 
     },
     {
       key: "active_profiles_with_no_grant",
+      scope: "all_facilities" as const,
       label: "Active accounts with no facility",
       count: health.active_profiles_with_no_grant,
       href: "/admin/settings/users",
-      meaning: "An account that can sign in but is granted no facility. Usually a leftover.",
+      meaning:
+        "An account that can sign in but is granted no facility at all. Counted across every facility, because an account with no grant belongs to none of them.",
     },
     {
       key: "duplicate_identity_candidates",
+      scope: "all_facilities" as const,
       label: "Possible duplicate identities",
       count: health.duplicate_identity_candidates,
       href: "/admin/staff/staff-check",
-      meaning: "Same email, same login on two staff records, or the same name twice. Suggestions, not findings.",
+      meaning:
+        "Same email, same login on two staff records, or the same name twice. Matched across every facility, so a duplicate at another building is counted here too. Suggestions, not findings.",
     },
   ];
 }

@@ -128,7 +128,18 @@ Counts only, each with a link to the list that explains it:
 
 A caller with no grant to the facility is refused with `42501`, not answered. Every count here is gated by a facility CTE that empties out for such a caller, and the outer statement has no `FROM` — so the function used to return one row of zeros, and "you cannot see this facility" rendered as "this facility is clean" (COL-442). The panel now says which of the two happened and claims nothing about the data either way.
 
-**Open (COL-438):** counts 6 and 7 are organization-wide, not facility-scoped — `active_profiles_with_no_grant` has no facility to scope to by construction, and the duplicate rule joins on `organization_id`. A change made only at facility B moves facility A's panel. Item 6 above says "in the organization" and item 7 says "inside one organization", so the counts match the spec and the panel's framing does not. Whether to relabel them as organization-wide or scope them to the facility is a product decision and is not yet made.
+**Settled (COL-438, 2026-09-16):** counts 6 and 7 are organization-wide, not facility-scoped — `active_profiles_with_no_grant` has no facility to scope to by construction, and the duplicate rule joins on `organization_id`. A change made only at facility B moved facility A's panel. Items 6 and 7 always said so; it was the panel's framing and the function's own comment that disagreed.
+
+The ruling is to **keep the counts as they are and label them honestly**, not to scope them. A profile with no grant anywhere genuinely belongs to no facility, and scoping it would either invent a home for it or drop it from view entirely.
+
+The panel therefore renders two groups:
+
+| Group | Counts |
+|---|---|
+| **This facility** | 1, 2, 3, 5 — beds, residents and offboarding at this building |
+| **All facilities** | 6, 7 — with a line saying plainly that another building can move these numbers |
+
+Circle of Life calls a single building a Facility (Homewood Lodge is a Facility), so the wider set is **"All facilities"** — not "Organization". Migration 411 corrects the `haven.facility_identity_health` comment to match; the function body, grants and the facility grant re-check are unchanged.
 
 ## Closure rules
 

@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   censusComparisonLine,
   dataHealthCounts,
+  dataHealthCountsByScope,
+  DATA_HEALTH_SCOPE_LABELS,
   formatStandUpWeek,
   lastCheckLine,
   type FacilityDataHealth,
@@ -59,6 +61,51 @@ describe("the counts", () => {
   it("says a stranded occupied bed should be zero after migration 388", () => {
     const stranded = dataHealthCounts(health()).find((e) => e.key === "beds_occupied_with_no_resident");
     expect(stranded?.meaning).toContain("388");
+  });
+});
+
+describe("what each count is actually measuring (COL-438)", () => {
+  it("keeps the two organization-wide identity counts out of the facility group", () => {
+    // These two are computed across every facility: an account with no live
+    // grant belongs to none of them, and duplicates match on organization_id.
+    // Grouped with the bed and staff counts they would read as facts about
+    // this building, which is how a change at facility B moved facility A.
+    expect(dataHealthCountsByScope(health(), "all_facilities").map((entry) => entry.key)).toEqual([
+      "active_profiles_with_no_grant",
+      "duplicate_identity_candidates",
+    ]);
+  });
+
+  it("scopes the bed, resident and offboarding counts to this facility", () => {
+    expect(dataHealthCountsByScope(health(), "facility").map((entry) => entry.key)).toEqual([
+      "beds_occupied_with_no_resident",
+      "residents_holding_no_bed",
+      "beds_with_two_residents",
+      "staff_inactive_can_still_sign_in",
+    ]);
+  });
+
+  it("accounts for every count in exactly one scope", () => {
+    const all = dataHealthCounts(health());
+    const grouped = [
+      ...dataHealthCountsByScope(health(), "facility"),
+      ...dataHealthCountsByScope(health(), "all_facilities"),
+    ];
+    expect(grouped).toHaveLength(all.length);
+    expect(new Set(grouped.map((entry) => entry.key)).size).toBe(all.length);
+  });
+
+  it("says the wider scope is all facilities, because a Facility is one building", () => {
+    // Circle of Life calls Homewood Lodge a Facility, so the set of five is
+    // "All facilities" — not "Organization".
+    expect(DATA_HEALTH_SCOPE_LABELS.facility).toBe("This facility");
+    expect(DATA_HEALTH_SCOPE_LABELS.all_facilities).toBe("All facilities");
+  });
+
+  it("tells the reader in the count's own meaning that it spans facilities", () => {
+    for (const entry of dataHealthCountsByScope(health(), "all_facilities")) {
+      expect(entry.meaning).toMatch(/every facility|no facility at all/i);
+    }
   });
 });
 

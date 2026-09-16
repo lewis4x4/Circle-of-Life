@@ -5,9 +5,11 @@ import Link from "next/link";
 import { formatFacilityTimestampEt } from "@/lib/facility-wall-clock";
 import {
   censusComparisonLine,
-  dataHealthCounts,
+  dataHealthCountsByScope,
+  DATA_HEALTH_SCOPE_LABELS,
   formatStandUpWeek,
   lastCheckLine,
+  type DataHealthCount,
   type FacilityDataHealth,
   type FacilityDataHealthError,
 } from "@/lib/facility-checks/data-health";
@@ -43,7 +45,8 @@ export function FacilityDataHealthPanel({
     );
   }
 
-  const counts = dataHealthCounts(health);
+  const facilityCounts = dataHealthCountsByScope(health, "facility");
+  const allFacilitiesCounts = dataHealthCountsByScope(health, "all_facilities");
 
   return (
     <section aria-labelledby="data-health-heading" className="space-y-4">
@@ -52,25 +55,21 @@ export function FacilityDataHealthPanel({
           Data health
         </h2>
         <p className="max-w-prose text-[13px] text-muted-foreground">
-          What is still inconsistent in this facility&rsquo;s data, counted live. Correct each one in the
-          flow that owns it.
+          What is still inconsistent, counted live. Correct each one in the flow that owns it.
         </p>
       </div>
 
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-        {counts.map((entry) => (
-          <div key={entry.key} className="flex items-baseline justify-between gap-3">
-            <dt className="text-[13px] text-muted-foreground">
-              <Link href={entry.href} className="underline underline-offset-4" title={entry.meaning}>
-                {entry.label}
-              </Link>
-            </dt>
-            <dd className="text-[13px] tabular-nums text-foreground" data-testid={`data-health-${entry.key}`}>
-              {entry.count}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <CountGroup
+        scopeKey="facility"
+        counts={facilityCounts}
+        description="Beds, residents and staff at this facility."
+      />
+
+      <CountGroup
+        scopeKey="all_facilities"
+        counts={allFacilitiesCounts}
+        description="Counted across every facility, not only this one. An account with no grant belongs to no facility, and duplicates are matched organization-wide, so these two numbers move when another building changes."
+      />
 
       <div className="space-y-1">
         <p className="text-[13px] text-foreground" data-testid="data-health-census">
@@ -96,6 +95,48 @@ export function FacilityDataHealthPanel({
         </div>
       </dl>
     </section>
+  );
+}
+
+/**
+ * One scope's counts under its own heading. The heading is what stops an
+ * organization-wide number from reading as a fact about this building (COL-438).
+ */
+function CountGroup({
+  scopeKey,
+  counts,
+  description,
+}: {
+  scopeKey: keyof typeof DATA_HEALTH_SCOPE_LABELS;
+  counts: DataHealthCount[];
+  description: string;
+}) {
+  if (counts.length === 0) return null;
+  const headingId = `data-health-scope-${scopeKey}`;
+
+  return (
+    <div className="space-y-2" data-testid={`data-health-group-${scopeKey}`}>
+      <div className="space-y-0.5">
+        <h3 id={headingId} className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {DATA_HEALTH_SCOPE_LABELS[scopeKey]}
+        </h3>
+        <p className="max-w-prose text-xs text-muted-foreground">{description}</p>
+      </div>
+      <dl aria-labelledby={headingId} className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+        {counts.map((entry) => (
+          <div key={entry.key} className="flex items-baseline justify-between gap-3">
+            <dt className="text-[13px] text-muted-foreground">
+              <Link href={entry.href} className="underline underline-offset-4" title={entry.meaning}>
+                {entry.label}
+              </Link>
+            </dt>
+            <dd className="text-[13px] tabular-nums text-foreground" data-testid={`data-health-${entry.key}`}>
+              {entry.count}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
