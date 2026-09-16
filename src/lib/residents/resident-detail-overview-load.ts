@@ -74,6 +74,8 @@ export type ResidentOverviewDetail = {
   fallRiskRaw: string | null;
   roomLabel: string;
   unitName: string;
+  /** `facilities.name` for the resident's facility; null when the facility row is unreadable. */
+  facilityName: string | null;
   admissionLabel: string;
   dobLabel: string;
   ageYears: number | null;
@@ -385,6 +387,7 @@ export async function loadResidentOverviewDetail(
     directiveDocsResult,
     assessmentsResult,
     specialistCountResult,
+    facilityResult,
   ] = await Promise.all([
     supabase
       .from("daily_logs")
@@ -457,6 +460,7 @@ export async function loadResidentOverviewDetail(
       .eq("facility_id", facilityId)
       .is("deleted_at", null)
       .ilike("assessment_type", "%consult%"),
+    supabase.from("facilities").select("name").eq("id", facilityId).maybeSingle(),
   ]);
 
   if (
@@ -645,6 +649,7 @@ export async function loadResidentOverviewDetail(
     fallRiskRaw: resident.fall_risk_level,
     roomLabel,
     unitName: unitName.length > 0 ? unitName : RESIDENT_NO_UNIT_COPY,
+    facilityName: facilityResult.data?.name?.trim() || null,
     admissionLabel: formatResidentOverviewAdmissionLabel(resident.admission_date),
     dobLabel: formatResidentOverviewDobLabel(resident.date_of_birth),
     ageYears: computeAgeYears(resident.date_of_birth),

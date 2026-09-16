@@ -24,6 +24,7 @@ function detail(overrides: Partial<ResidentOverviewDetail> = {}): ResidentOvervi
     fallRiskRaw: null,
     roomLabel: "1-A",
     unitName: "No unit on file",
+    facilityName: "Homewood Lodge",
     admissionLabel: "Dec 26, 2025",
     dobLabel: "March 3, 1947",
     ageYears: 79,
