@@ -6,6 +6,7 @@
 export const INCIDENTS_NO_DATE_POSTED_COPY = "No date posted";
 export const INCIDENTS_NO_RESIDENT_POSTED_COPY = "No resident posted";
 export const INCIDENTS_NO_NAME_POSTED_COPY = "No name posted";
+export const INCIDENTS_NO_LEVEL_POSTED_COPY = "No level posted";
 
 export type IncidentResidentNameParts = {
   first_name: string | null;
@@ -69,4 +70,38 @@ export function formatIncidentResidentName(
 
   if (isMissingIncidentResidentName(combined)) return INCIDENTS_NO_NAME_POSTED_COPY;
   return combined;
+}
+
+export type IncidentLevelNumber = 1 | 2 | 3 | 4;
+
+const INCIDENT_LEVEL_WORDS: Record<IncidentLevelNumber, string> = {
+  1: "Note",
+  2: "Heads-up",
+  3: "Urgent",
+  4: "Emergency",
+};
+
+/**
+ * Level number from a stored severity. Accepts `level_n`, `"n"`, or the number n
+ * for n in 1..4 (contract 07A §9). Anything else is null.
+ */
+export function levelNumberFromSeverity(
+  value: number | string | null | undefined,
+): IncidentLevelNumber | null {
+  let candidate: number | null = null;
+  if (typeof value === "number") {
+    candidate = value;
+  } else if (typeof value === "string") {
+    const trimmed = value.trim();
+    const match = /^(?:level_)?([1-4])$/.exec(trimmed);
+    candidate = match ? Number(match[1]) : null;
+  }
+  if (candidate === 1 || candidate === 2 || candidate === 3 || candidate === 4) return candidate;
+  return null;
+}
+
+/** Plain level word for the caregiver banner and the incidents board. */
+export function formatLevelWord(level: number | string | null | undefined): string {
+  const number = levelNumberFromSeverity(level);
+  return number === null ? INCIDENTS_NO_LEVEL_POSTED_COPY : INCIDENT_LEVEL_WORDS[number];
 }

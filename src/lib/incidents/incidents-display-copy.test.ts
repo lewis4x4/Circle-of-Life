@@ -4,9 +4,12 @@ import {
   formatIncidentFollowupDue,
   formatIncidentOccurredAt,
   formatIncidentResidentName,
+  formatLevelWord,
   INCIDENTS_NO_DATE_POSTED_COPY,
+  INCIDENTS_NO_LEVEL_POSTED_COPY,
   INCIDENTS_NO_NAME_POSTED_COPY,
   INCIDENTS_NO_RESIDENT_POSTED_COPY,
+  levelNumberFromSeverity,
 } from "./incidents-display-copy";
 
 const PARSEABLE_ISO = "2026-08-15T14:00:00.000Z";
@@ -138,5 +141,55 @@ describe("formatIncidentResidentName", () => {
     expect(formatIncidentResidentName(null)).not.toBe("—");
     expect(formatIncidentResidentName({ first_name: "Unknown", last_name: null })).not.toBe("Unknown");
     expect(formatIncidentResidentName({ first_name: "—", last_name: null })).not.toBe("—");
+  });
+});
+
+describe("levelNumberFromSeverity", () => {
+  it("accepts level_n, the digit string, and the number", () => {
+    expect(levelNumberFromSeverity("level_1")).toBe(1);
+    expect(levelNumberFromSeverity("level_4")).toBe(4);
+    expect(levelNumberFromSeverity("2")).toBe(2);
+    expect(levelNumberFromSeverity(" 3 ")).toBe(3);
+    expect(levelNumberFromSeverity(3)).toBe(3);
+  });
+
+  it("returns null for anything outside 1..4", () => {
+    expect(levelNumberFromSeverity(null)).toBeNull();
+    expect(levelNumberFromSeverity(undefined)).toBeNull();
+    expect(levelNumberFromSeverity("")).toBeNull();
+    expect(levelNumberFromSeverity("level_5")).toBeNull();
+    expect(levelNumberFromSeverity("level_0")).toBeNull();
+    expect(levelNumberFromSeverity("5")).toBeNull();
+    expect(levelNumberFromSeverity(0)).toBeNull();
+    expect(levelNumberFromSeverity(2.5)).toBeNull();
+    expect(levelNumberFromSeverity("high")).toBeNull();
+    expect(levelNumberFromSeverity("—")).toBeNull();
+  });
+});
+
+describe("formatLevelWord", () => {
+  it("names each level in plain words", () => {
+    expect(formatLevelWord(1)).toBe("Note");
+    expect(formatLevelWord(2)).toBe("Heads-up");
+    expect(formatLevelWord(3)).toBe("Urgent");
+    expect(formatLevelWord(4)).toBe("Emergency");
+    expect(formatLevelWord("level_1")).toBe("Note");
+    expect(formatLevelWord("level_2")).toBe("Heads-up");
+    expect(formatLevelWord("level_3")).toBe("Urgent");
+    expect(formatLevelWord("level_4")).toBe("Emergency");
+    expect(formatLevelWord("1")).toBe("Note");
+    expect(formatLevelWord("4")).toBe("Emergency");
+  });
+
+  it("names the gap for anything else", () => {
+    expect(INCIDENTS_NO_LEVEL_POSTED_COPY).toBe("No level posted");
+    expect(formatLevelWord(null)).toBe(INCIDENTS_NO_LEVEL_POSTED_COPY);
+    expect(formatLevelWord(undefined)).toBe(INCIDENTS_NO_LEVEL_POSTED_COPY);
+    expect(formatLevelWord("")).toBe(INCIDENTS_NO_LEVEL_POSTED_COPY);
+    expect(formatLevelWord("level_9")).toBe(INCIDENTS_NO_LEVEL_POSTED_COPY);
+    expect(formatLevelWord(0)).toBe(INCIDENTS_NO_LEVEL_POSTED_COPY);
+    expect(formatLevelWord("critical")).toBe(INCIDENTS_NO_LEVEL_POSTED_COPY);
+    expect(formatLevelWord(null)).not.toBe("Unknown");
+    expect(formatLevelWord(null)).not.toBe("—");
   });
 });
