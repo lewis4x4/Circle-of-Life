@@ -428,6 +428,87 @@ describe('Stand Up report meaning', () => {
     expect(panel.getByText('Submission').nextElementSibling).toHaveTextContent('Original submission time unavailable.');
   });
 });
+/** COL-350: three states of one entry page, and who may move the window. */
+describe('Stand Up entry window surfaces', () => {
+  const widened = { ...workspace, facilities: [{ ...workspace.facilities[0], entry_open_lead_minutes: 3405, open_week: '2026-09-14' }, workspace.facilities[1]] };
+  it('states the open, the target and the call on one line, in the chosen facility own window', async () => {
+    await start();
+    expect(screen.getByText('Opens Sunday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern')).toBeInTheDocument();
+    // The 8:45 target and the 9:15 call are never presented as settings.
+    expect(screen.queryByText('Monday operations · complete by 8:45 a.m. Eastern')).not.toBeInTheDocument();
+    cleanup();
+    mocks.request.mockResolvedValueOnce(widened);
+    await start(); await choose();
+    expect(screen.getByText('Opens Saturday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern')).toBeInTheDocument();
+  });
+  it('shows a meeting that has not opened as read-only with the minute it opens', async () => {
+    await start(); await choose();
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-21' } });
+    expect(screen.getByText('This report opens Sunday, September 20 at 12:00 a.m. Eastern.')).toBeInTheDocument();
+    const census = screen.getByLabelText('Current census');
+    expect(census).toHaveAttribute('readonly');
+    // Read-only, not disabled: the figures and their meaning stay legible.
+    expect(census).toBeEnabled();
+    expect(screen.getByLabelText('Overtime hours')).toHaveAttribute('readonly');
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Review and submit' })).toBeDisabled();
+    // Typing changes nothing and starts nothing.
+    fireEvent.change(census, { target: { value: '30' } });
+    expect(screen.getByLabelText('Current census')).toHaveValue(null);
+    expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
+    expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+    // The meeting ahead is offered by name, not as a mystery option.
+    expect(screen.getByLabelText('Meeting date')).toHaveTextContent('September 21, 2026 · opens Sunday, September 20 at 12:00 a.m. Eastern');
+  });
+  it('names the payroll week still running on a Sunday, and drops the line once it has closed', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, server_now: '2026-09-13T12:00:00Z' });
+    await start(); await choose();
+    expect(screen.getByText('Staffing and payroll run through Sunday 11:59 p.m. Update overtime and callouts before you submit.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current census')).not.toHaveAttribute('readonly');
+    cleanup(); useFacilityStore.setState({ selectedFacilityId: null });
+    await start(); await choose();
+    expect(screen.queryByText(/Staffing and payroll run through Sunday/)).not.toBeInTheDocument();
+  });
+  it('offers the entry window to an organization administrator and to nobody else', async () => {
+    mocks.auth.appRole = 'owner';
+    mocks.request.mockResolvedValueOnce({ ...widened, can_import: true });
+    await start();
+    fireEvent.click(screen.getByRole('button', { name: 'Management tools' }));
+    const control = screen.getByLabelText('Entry opens · Homewood');
+    expect(control).toHaveValue('3405');
+    expect(screen.getByLabelText('Entry opens · Oakridge')).toHaveValue('');
+    expect(within(control as HTMLSelectElement).getByRole('option', { name: 'Haven default · Sunday 12:00 a.m.' })).toBeInTheDocument();
+    expect(['Saturday 12:00 a.m.', 'Sunday 12:00 a.m.', 'Sunday 6:00 p.m.', 'Monday 12:00 a.m.'].every(label =>
+      within(control as HTMLSelectElement).getAllByRole('option').some(option => option.textContent === label))).toBe(true);
+    mocks.request.mockResolvedValueOnce({ facility_id: 'a', entry_open_lead_minutes: 885, open_week: '2026-09-14', entry_opens_at: '2026-09-13T22:00:00Z' });
+    mocks.request.mockResolvedValueOnce({ ...widened, can_import: true, facilities: [{ ...widened.facilities[0], entry_open_lead_minutes: 885 }, widened.facilities[1]] });
+    fireEvent.change(control, { target: { value: '885' } });
+    await screen.findByText('Homewood entry opens Sunday 6:00 p.m. Eastern.');
+    expect(mocks.request).toHaveBeenCalledWith('set_entry_window', { facility_id: 'a', entry_open_lead_minutes: 885 });
+    // The reload is what the page now believes, not the optimistic click.
+    expect(screen.getByLabelText('Entry opens · Homewood')).toHaveValue('885');
+    cleanup();
+    // A facility administrator never sees the control, because the whole
+    // management disclosure stays closed to them.
+    mocks.auth.appRole = 'facility_admin';
+    await start(); await choose();
+    expect(screen.queryByRole('button', { name: 'Management tools' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Entry opens · Homewood')).not.toBeInTheDocument();
+  });
+  it('reports a refused window change beside the control it belongs to', async () => {
+    mocks.auth.appRole = 'owner';
+    mocks.request.mockResolvedValueOnce({ ...widened, can_import: true });
+    await start();
+    fireEvent.click(screen.getByRole('button', { name: 'Management tools' }));
+    const control = screen.getByLabelText('Entry opens · Homewood');
+    mocks.request.mockRejectedValueOnce(new StandUpRequestError('Entry open lead must be between 60 and 3405 minutes', 400));
+    fireEvent.change(control, { target: { value: '525' } });
+    const alert = await screen.findByText('Entry open lead must be between 60 and 3405 minutes');
+    expect(control).toHaveAttribute('aria-invalid', 'true');
+    expect(control).toHaveAttribute('aria-describedby', alert.id);
+    expect(alert.id).toBe('entry-window-note-a');
+  });
+});
 /** COL-298 / NAV-008: a week nobody entered anything for is never reserved. */
 describe('Stand Up empty draft reserves nothing', () => {
   it('sends no save when the form is opened, read and left', async () => {
