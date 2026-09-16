@@ -140,7 +140,7 @@ const CASES = levelCases as unknown as LevelCase[];
 const PREFERRED_CASE_IDS: Record<CareEventKind, string> = {
   fall: "fall_head_yes_not_hurt",
   injury_found: "injury_bruise_cause_known_first_aid_photo",
-  condition_change: "condition_one_sign_today",
+  condition_change: "condition_chest_pain_alone",
   behavior: "behavior_yelling_no_one_over",
   wandering: "wandering_found_grounds_not_hurt",
   medication: "medication_refused_no_reaction_emar",

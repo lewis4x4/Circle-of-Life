@@ -3,7 +3,8 @@
 /**
  * "This shift's events" on the caregiver handoff page (spec 07A §6.3). The
  * live view of the outgoing shift's care events grouped by level word, built
- * by the same pure builder the future auto_summary writer will use.
+ * by the same pure builder that recordShiftHandoff writes into
+ * shift_handoffs.auto_summary when the caregiver taps Record handoff.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";

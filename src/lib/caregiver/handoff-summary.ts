@@ -329,9 +329,36 @@ export async function recordShiftHandoff(
     input.shiftDate ?? input.handoffDate,
   );
   const row = buildShiftHandoffInsert(input, careEvents);
+  const summary = row.auto_summary as unknown as Json;
+
+  // One handoff per facility, date, and outgoing shift: a second tap refreshes
+  // the same record instead of filing a duplicate the incoming shift must untangle.
+  const existing = await supabase
+    .from("shift_handoffs")
+    .select("id")
+    .eq("facility_id", row.facility_id)
+    .eq("handoff_date", row.handoff_date)
+    .eq("outgoing_shift", row.outgoing_shift)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existing.error) throw existing.error;
+
+  if (existing.data) {
+    const updated = await supabase
+      .from("shift_handoffs")
+      .update({ auto_summary: summary, outgoing_notes: row.outgoing_notes, updated_at: new Date().toISOString() })
+      .eq("id", existing.data.id)
+      .select("id")
+      .single();
+    if (updated.error) throw updated.error;
+    return { id: updated.data.id, summary: row.auto_summary };
+  }
+
   const inserted = await supabase
     .from("shift_handoffs")
-    .insert({ ...row, auto_summary: row.auto_summary as unknown as Json })
+    .insert({ ...row, auto_summary: summary })
     .select("id")
     .single();
   if (inserted.error) throw inserted.error;

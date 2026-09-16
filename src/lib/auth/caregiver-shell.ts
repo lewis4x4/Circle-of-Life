@@ -20,9 +20,9 @@ const CAREGIVER_ROOT_ALIAS_PREFIXES = [
 ] as const;
 
 /**
- * The "Something happened" flow (spec 07A). Every signed-in staff role may
- * open it so the admin shell's "Report incident" button lands here; the RPC
- * still decides who may submit.
+ * The "Something happened" flow (spec 07A). The nine capture roles below may
+ * open it, which is how the admin shell's "Report incident" button lands here;
+ * the RPC still decides who may submit.
  */
 const REPORT_PATH_PREFIX = "/caregiver/report";
 
@@ -65,8 +65,8 @@ export function isStaffRoleAllowedOnReportPath(role: string): boolean {
 
 /**
  * Caregiver UI requires a session and a floor role (`caregiver` or `housekeeper`).
- * Other known roles go to their shells, except on `/caregiver/report` where every
- * non-family staff role is allowed (spec 07A §6.3).
+ * Other known roles go to their shells, except on `/caregiver/report` where the
+ * nine capture roles in REPORT_PATH_ROLES are allowed (spec 07A §6.3).
  */
 export function caregiverShellAccessRedirect(request: NextRequest, user: AuthClaimUser | null): NextResponse | null {
   const nextUrl = request.nextUrl;

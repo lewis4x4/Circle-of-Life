@@ -142,7 +142,7 @@ The staff voice note is **not** part of the sentence. `submit_care_event` append
 ]
 ```
 
-`ids` are unique snake_case. A case may carry `"unknown_answer_keys": ["hurt"]` to declare that it deliberately fills those keys with a value outside the §2 vocabulary (the vitest vocabulary check then requires the value to be unknown instead of registered); such cases pin the "not answered" behaviour of both runtimes. The Playwright project reads this file to find the expected level word for the case it walks; the parity script `scripts/care-events/verify-level-parity.mjs` runs every case through `care_event_derive` and diffs against `expect`.
+`ids` are unique snake_case. A case may carry `"unknown_answer_keys": ["hurt"]` to declare that it deliberately fills those keys with a value outside the §2 vocabulary (the vitest vocabulary check then requires the value to be unknown instead of registered); such cases pin the "not answered" behavior of both runtimes. The Playwright project reads this file to find the expected level word for the case it walks; the parity script `scripts/care-events/verify-level-parity.mjs` runs every case through `care_event_derive` and diffs against `expect`.
 
 ## 9. Level words
 
