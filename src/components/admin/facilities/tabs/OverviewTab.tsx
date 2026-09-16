@@ -19,6 +19,8 @@ import {
   overviewTabOccupancyPctValue,
 } from "@/lib/facilities/overview-tab-occupancy-display";
 import { formatStaffingTabAdministratorName } from "@/lib/facilities/staffing-tab-display-copy";
+import { FacilityDataHealthPanel } from "@/components/facility-checks/FacilityDataHealthPanel";
+import { useFacilityDataHealth } from "@/hooks/useFacilityDataHealth";
 
 interface OverviewTabProps {
   facilityId: string;
@@ -50,6 +52,8 @@ export function OverviewTab({
   const { rows: beds, isLoading: bedsLoading, error: bedsError, isSaving: bedsSaving, canEdit, updateBed } =
     useFacilityBedAvailability(facilityId, { enabled: shouldLoadBedAvailability });
   const [blockedReasonDrafts, setBlockedReasonDrafts] = useState<Record<string, string>>({});
+  // COL-361: live anomaly counts, read only, beside the census they explain.
+  const dataHealth = useFacilityDataHealth(facilityId);
   const [bedFilter, setBedFilter] = useState<"all" | "open" | "blocked" | "unclassified">("all");
 
   // Facility-scoped presence split (in-house vs on-hold) for the Census panel.
@@ -250,6 +254,10 @@ export function OverviewTab({
           </div>
         </RecordDetailSection>
       </div>
+
+      <RecordDetailSection title="Data health">
+        <FacilityDataHealthPanel health={dataHealth.data} error={dataHealth.error} />
+      </RecordDetailSection>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RecordDetailSection title="Recent alerts">
