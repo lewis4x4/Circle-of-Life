@@ -113,6 +113,8 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/schedules/new`
 - `/admin/shift-swaps` (**shift swap CSV** hub filter scope — Track D D83)
 - `/admin/time-records` (bulk approve pending punches with clock-out — Track D60; CSV — D31; **CSV matches approval filter** — D79)
+- `/admin/timeclock` (facility timeclock review, pay period, export gate; `/admin/timeclock/[staffId]` timesheet with corrections and full history; `/admin/timeclock/compare` uPunch comparison; COL-352, `37-timeclock.md`)
+- `/kiosk/timeclock` (session-less punch kiosk outside the admin shell; device token in IndexedDB; COL-352)
 - `/admin/payroll` (Phase 6 — `13-payroll-integration.md`; **batch status filter + CSV** — D73; **hub search** — D74)
 - `/admin/payroll/new`
 - `/admin/payroll/[id]` (import mileage + **approved time records** into lines — Track D17 + D58; **full + flat + vendor handoff + hours split CSV** — D18 + D59 + D64 + D69)

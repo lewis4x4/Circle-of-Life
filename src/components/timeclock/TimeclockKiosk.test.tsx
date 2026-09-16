@@ -156,7 +156,7 @@ describe("TimeclockKiosk", () => {
     await screen.findByLabelText(KIOSK_COPY.identifierLabel);
     for (const digit of ["1", "5", "0"]) {
       const key = screen.getByRole("button", { name: `Digit ${digit}` });
-      expect(key.className).toContain("min-h-14");
+      expect(key.className).toContain("min-h-[56px]");
       fireEvent.click(key);
     }
     expect((screen.getByLabelText(KIOSK_COPY.pinLabel) as HTMLInputElement).value).toBe("150");

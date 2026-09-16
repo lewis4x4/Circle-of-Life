@@ -225,8 +225,8 @@ Order of checks, each returning `{ok:false, error}` rather than raising so that 
 5. Credential lookup by employee number or badge HMAC within the device's organization. Not found → `not_recognized` (401) and a device failure.
 6. Lock: `locked_until > now()` → `locked` (423). No counter change.
 7. PIN: `pin_hash = crypt(p_pin, pin_hash)`. Wrong → increment `failed_attempts`, device failure; on the fifth failure set `locked_until = now() + 15 minutes`, write `credential_locked`; return `not_recognized` (401). Right → reset `failed_attempts`.
-8. Staff: `employment_status in ('active','on_leave') and deleted_at is null` → else `inactive_staff` (403; the kiosk shows the same `Badge or PIN not recognized` copy).
-9. Facility membership: `staff.facility_id = device.facility_id` or a live `staff_facility_assignments` row → else `not_assigned` (403; same copy on the kiosk).
+8. Staff: `employment_status in ('active','on_leave') and deleted_at is null` → else `inactive_staff`; the route returns 401 `not_recognized` so the tablet never learns why.
+9. Facility membership: `staff.facility_id = device.facility_id` or a live `staff_facility_assignments` row → else `not_assigned`; the route returns 401 `not_recognized`.
 10. State machine: last effective punch (corrections applied) within the last 16 hours decides the valid next types. Older than 16 hours counts as `out` (the `missing_out` exception carries the review). Invalid → `invalid_next_type` (409).
 11. Insert. `punched_at = clock_timestamp()` when online; `= p_device_time` when `p_captured_offline`. Flags: `clock_skew` when `abs(device_time - server time) > 120 s` (online only), `offline_capture` when offline.
 12. Return `{ok:true, punch_id, first_name, punch_type, punched_at, today_worked_minutes, next_actions, flags, replayed:false}`.
@@ -353,6 +353,7 @@ Exit gate for the parallel run: consecutive pay periods with zero unexplained di
 3. `TIMECLOCK_BADGE_HMAC_SECRET` value and rotation owner (rotation invalidates every registered badge; re-scan required).
 4. Whether `on_leave` staff may punch (this build allows it; a manager can revoke by suspending).
 5. Mosyle steps marked `TBD verify` in the lockdown document.
+6. uPunch day attribution: the Punch-to-Pay export lists hours by date. If it puts a whole night shift on the date it started, a shift crossing Sunday midnight differs from Haven in both adjacent workweeks by design (Haven splits at Monday 00:00 America/New_York). Confirm uPunch's midnight split setting before reading a Sunday night difference as an error. The synthetic fixture in the COL-352 evidence shows both outcomes.
 
 ## 13. Follow ons
 

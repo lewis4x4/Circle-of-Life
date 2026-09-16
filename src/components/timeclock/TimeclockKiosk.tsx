@@ -52,12 +52,12 @@ export type TimeclockKioskProps = {
 };
 
 const BUTTON_BASE =
-  "inline-flex min-h-14 items-center justify-center rounded-[var(--radius)] px-6 text-lg font-semibold transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/50 disabled:opacity-40 disabled:pointer-events-none";
+  "inline-flex min-h-[56px] items-center justify-center rounded-[var(--radius)] px-6 text-lg font-semibold transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/50 disabled:opacity-40 disabled:pointer-events-none";
 const PRIMARY = `${BUTTON_BASE} bg-foreground text-background hover:bg-foreground/90`;
 const SECONDARY = `${BUTTON_BASE} border border-border bg-card text-foreground hover:bg-muted`;
-const KEY = "min-h-14 min-w-14 rounded-[var(--radius)] border border-border bg-card text-2xl font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/50 motion-reduce:transition-none";
+const KEY = "min-h-[56px] min-w-[56px] rounded-[var(--radius)] border border-border bg-card text-2xl font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/50 motion-reduce:transition-none";
 const INPUT =
-  "mt-2 w-full min-h-14 rounded-[var(--radius)] border border-input bg-card px-4 text-2xl text-foreground focus:outline-none focus:ring-4 focus:ring-ring/40 aria-[invalid=true]:border-destructive";
+  "mt-2 w-full min-h-[56px] rounded-[var(--radius)] border border-input bg-card px-4 text-2xl text-foreground focus:outline-none focus:ring-4 focus:ring-ring/40 aria-[invalid=true]:border-destructive";
 
 function errorCodeFromResponse(body: unknown, status: number): KioskErrorCode {
   const code = body && typeof body === "object" ? (body as { error?: unknown }).error : undefined;
@@ -524,7 +524,7 @@ export function TimeclockKiosk(props: TimeclockKioskProps) {
                   <button
                     key={action}
                     type="button"
-                    className={`${index === 0 ? PRIMARY : SECONDARY} min-w-56 text-2xl`}
+                    className={`${index === 0 ? PRIMARY : SECONDARY} min-h-[64px] min-w-[224px] text-2xl`}
                     onClick={() => void punch(action)}
                     disabled={busy}
                   >

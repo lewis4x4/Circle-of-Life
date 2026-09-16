@@ -7,11 +7,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Zoom stays enabled (WCAG 1.4.4); the kiosk is locked by Mosyle, not by the viewport meta.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: "#F5F2EA",
 };
 
