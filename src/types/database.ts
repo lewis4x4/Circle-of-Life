@@ -999,6 +999,78 @@ export type Database = {
           },
         ]
       }
+      board_check_results: {
+        Row: {
+          bed_id: string
+          haven_resident_id_at_mark: string | null
+          haven_resident_status_at_mark: string | null
+          id: string
+          organization_id: string
+          recorded_at: string
+          recorded_by: string
+          result: string
+          sequence: number
+          session_id: string
+        }
+        Insert: {
+          bed_id: string
+          haven_resident_id_at_mark?: string | null
+          haven_resident_status_at_mark?: string | null
+          id?: string
+          organization_id: string
+          recorded_at?: string
+          recorded_by: string
+          result: string
+          session_id: string
+        }
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "board_check_results_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_check_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "board_check_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      board_check_sessions: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          started_at: string
+          started_by: string
+        }
+        Insert: {
+          closed_at?: never
+          closed_by?: never
+          facility_id: string
+          id?: string
+          organization_id: string
+          started_at?: string
+          started_by: string
+        }
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "board_check_sessions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       behavioral_logs: {
         Row: {
           antecedent: string | null
@@ -14130,6 +14202,73 @@ export type Database = {
           },
         ]
       }
+      staff_check_results: {
+        Row: {
+          duplicate_of_staff_id: string | null
+          duplicate_of_user_profile_id: string | null
+          id: string
+          organization_id: string
+          recorded_at: string
+          recorded_by: string
+          result: string
+          sequence: number
+          session_id: string
+          subject_staff_id: string | null
+          subject_user_profile_id: string | null
+        }
+        Insert: {
+          duplicate_of_staff_id?: string | null
+          duplicate_of_user_profile_id?: string | null
+          id?: string
+          organization_id: string
+          recorded_at?: string
+          recorded_by: string
+          result: string
+          session_id: string
+          subject_staff_id?: string | null
+          subject_user_profile_id?: string | null
+        }
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "staff_check_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "staff_check_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_check_sessions: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          started_at: string
+          started_by: string
+        }
+        Insert: {
+          closed_at?: never
+          closed_by?: never
+          facility_id: string
+          id?: string
+          organization_id: string
+          started_at?: string
+          started_by: string
+        }
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "staff_check_sessions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_certifications: {
         Row: {
           certificate_number: string | null
@@ -16467,6 +16606,68 @@ export type Database = {
       }
     }
     Functions: {
+      board_check_state: {
+        Args: { p_session_id: string }
+        Returns: {
+          bed_id: string
+          room_number: string
+          bed_label: string
+          room_sort_order: number
+          bed_status: string
+          haven_resident_id: string | null
+          haven_resident_status: string | null
+          latest_result: string | null
+          latest_recorded_at: string | null
+          latest_recorded_by: string | null
+          marked_resident_id: string | null
+          unmarked: boolean
+          fix_open: boolean
+        }[]
+      }
+      staff_check_state: {
+        Args: { p_session_id: string }
+        Returns: {
+          subject_user_profile_id: string | null
+          subject_staff_id: string | null
+          display_name: string | null
+          role_label: string | null
+          facility_grant_count: number
+          last_sign_in_at: string | null
+          is_active: boolean
+          duplicate_candidate_user_profile_ids: string[]
+          duplicate_candidate_staff_ids: string[]
+          duplicate_candidate_count: number
+          latest_result: string | null
+          duplicate_of_user_profile_id: string | null
+          duplicate_of_staff_id: string | null
+          unmarked: boolean
+          fix_open: boolean
+        }[]
+      }
+      facility_data_health: {
+        Args: { p_facility_id: string }
+        Returns: {
+          beds_occupied_with_no_resident: number
+          residents_holding_no_bed: number
+          beds_with_two_residents: number
+          roster_census: number
+          stand_up_census: number | null
+          stand_up_week_start: string | null
+          staff_inactive_can_still_sign_in: number
+          active_profiles_with_no_grant: number
+          duplicate_identity_candidates: number
+          last_board_check_closed_at: string | null
+          last_staff_check_closed_at: string | null
+        }[]
+      }
+      close_board_check_session: {
+        Args: { p_session_id: string }
+        Returns: Database["public"]["Tables"]["board_check_sessions"]["Row"]
+      }
+      close_staff_check_session: {
+        Args: { p_session_id: string }
+        Returns: Database["public"]["Tables"]["staff_check_sessions"]["Row"]
+      }
       acknowledge_care_event: {
         Args: { p_care_event_id: string }
         Returns: undefined
