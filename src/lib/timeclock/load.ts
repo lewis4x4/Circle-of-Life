@@ -179,6 +179,21 @@ export async function loadStaffTimeclock(
   };
 }
 
+/** Employee numbers for the export and comparison, through the definer function (never the table). */
+export async function loadEmployeeNumbers(supabase: Client, staffIds: string[]): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (staffIds.length === 0) return result;
+  const { data, error } = await supabase.rpc("timeclock_employee_numbers", { p_staff_ids: staffIds });
+  fail(error);
+  for (const entry of Array.isArray(data) ? data : []) {
+    if (entry && typeof entry === "object" && "staff_id" in entry && "employee_number" in entry) {
+      const row = entry as { staff_id: string; employee_number: string };
+      result.set(row.staff_id, row.employee_number);
+    }
+  }
+  return result;
+}
+
 export const TIMECLOCK_MANAGER_ROLES = new Set(["owner", "org_admin", "facility_admin"]);
 export const TIMECLOCK_SETTINGS_ROLES = new Set(["owner", "org_admin"]);
 

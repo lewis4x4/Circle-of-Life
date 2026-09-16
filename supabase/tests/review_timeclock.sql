@@ -294,7 +294,20 @@ DO $$ DECLARE own integer; others integer; BEGIN
 END $$;
 RESET ROLE;
 
--- 13. Effective punches apply the void and the added punch.
+-- 13. Employee numbers are readable by managers for accessible staff only, and never by a caregiver.
+SELECT pg_temp.tc_actor('owner');
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE r jsonb; BEGIN
+  r := public.timeclock_employee_numbers(ARRAY[(SELECT staff_a FROM tc_fixture), (SELECT staff_d FROM tc_fixture)]);
+  IF jsonb_array_length(r) <> 2 OR r::text NOT LIKE '%A-100%' OR r::text LIKE '%pin_hash%' THEN RAISE EXCEPTION 'Employee numbers wrong: %', r; END IF;
+END $$;
+RESET ROLE;
+SELECT pg_temp.tc_actor('staff');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.tc_fail(format('SELECT public.timeclock_employee_numbers(ARRAY[%L::uuid])', staff_a), 'forbidden') FROM tc_fixture;
+RESET ROLE;
+
+-- 14. Effective punches apply the void and the added punch.
 DO $$ DECLARE n_raw integer; n_eff integer; BEGIN
   SELECT count(*) INTO n_raw FROM public.time_punches WHERE staff_id = (SELECT staff_a FROM tc_fixture);
   SELECT count(*) INTO n_eff FROM haven.timeclock_effective_punches((SELECT staff_a FROM tc_fixture), clock_timestamp() - interval '1 day', clock_timestamp() + interval '1 day');

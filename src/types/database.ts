@@ -17016,6 +17016,10 @@ export type Database = {
         Args: { p_staff_id: string }
         Returns: Json
       }
+      timeclock_employee_numbers: {
+        Args: { p_staff_ids: string[] }
+        Returns: Json
+      }
       acknowledge_care_event: {
         Args: { p_care_event_id: string }
         Returns: undefined

@@ -1155,4 +1155,28 @@ GRANT EXECUTE ON FUNCTION public.timeclock_unlock_credential(uuid) TO authentica
 COMMENT ON FUNCTION public.timeclock_unlock_credential(uuid) IS
   'Clears a PIN lockout early. COL-37 ruling: definer required -- timeclock_credentials holds no request-role grant; the body checks auth.uid(), haven.app_role(), the organization and haven.accessible_facility_ids() first.';
 
+CREATE OR REPLACE FUNCTION public.timeclock_employee_numbers(p_staff_ids uuid[])
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM haven.timeclock_assert_manager(NULL, ARRAY['owner', 'org_admin', 'facility_admin']);
+  RETURN COALESCE((
+    SELECT jsonb_agg(jsonb_build_object('staff_id', c.staff_id, 'employee_number', c.employee_number) ORDER BY c.employee_number)
+    FROM public.timeclock_credentials c
+    JOIN public.staff s ON s.id = c.staff_id
+    WHERE c.organization_id = haven.organization_id()
+      AND c.staff_id = ANY (p_staff_ids)
+      AND s.deleted_at IS NULL
+      AND s.facility_id IN (SELECT haven.accessible_facility_ids())
+  ), '[]'::jsonb);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.timeclock_employee_numbers(uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.timeclock_employee_numbers(uuid[]) TO authenticated;
+COMMENT ON FUNCTION public.timeclock_employee_numbers(uuid[]) IS
+  'Employee numbers for the payroll export and the uPunch comparison, for staff in facilities the caller can access; never a hash. COL-37 ruling: definer required -- timeclock_credentials holds no request-role grant; the body checks auth.uid(), haven.app_role(), the organization and haven.accessible_facility_ids() first.';
+
 NOTIFY pgrst, 'reload schema';
