@@ -12,7 +12,7 @@ from unittest.mock import patch, mock_open
 from xml.etree import ElementTree as ET
 
 from workbook import KEYS, NS, parse_workbook, patch_workbook
-from worker import AggregateReader, BridgeError, Haven, HttpFailure, ReconnectRequired, State, auth_fingerprint, changed_prior_weeks, file_target, install_haven_credentials, publish_front_office, read_health, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
+from worker import AggregateReader, BridgeError, Haven, HttpFailure, ReconnectRequired, State, auth_fingerprint, changed_prior_weeks, entry_opens_at, file_target, install_haven_credentials, publish_front_office, read_health, recover_pending_google, reporting_week, run_lanes, source_payload, synchronize
 from test_workbook import MAP, fixture
 import worker
 from pathlib import Path
@@ -646,6 +646,27 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(reporting_week(datetime(2026, 9, 13, 23, tzinfo=timezone.utc)), date(2026, 9, 14))
         self.assertEqual(reporting_week(datetime(2026, 9, 14, 4, tzinfo=timezone.utc)), date(2026, 9, 14))
         self.assertEqual(reporting_week(datetime(2026, 11, 1, 6, tzinfo=timezone.utc)), date(2026, 11, 2))
+
+    def test_publishing_week_turns_at_the_default_entry_open(self):
+        """The publisher stays on the organization default. A facility that opens
+        earlier must not move which Monday corporate receives."""
+        self.assertEqual(reporting_week(datetime(2026, 9, 20, 3, 59, 59, tzinfo=timezone.utc)), date(2026, 9, 14))
+        self.assertEqual(reporting_week(datetime(2026, 9, 20, 4, tzinfo=timezone.utc)), date(2026, 9, 21))
+        # Widening a facility to Saturday 12:00 a.m. changes nothing here.
+        self.assertEqual(reporting_week(datetime(2026, 9, 19, 4, tzinfo=timezone.utc)), date(2026, 9, 14))
+
+    def test_entry_open_instants_match_the_model_and_sql_table(self):
+        """Same five rows as src/lib/stand-up/model.test.ts and
+        supabase/tests/review_stand_up_entry_window.sql."""
+        for monday, lead, expected in (
+            (date(2026, 9, 21), 1965, '2026-09-20T04:00:00+00:00'),
+            (date(2026, 9, 21), 3405, '2026-09-19T04:00:00+00:00'),
+            (date(2026, 9, 21), 885, '2026-09-20T22:00:00+00:00'),
+            (date(2026, 11, 2), 1965, '2026-11-01T04:00:00+00:00'),
+            (date(2027, 3, 15), 1965, '2027-03-14T05:00:00+00:00'),
+            (date(2026, 11, 30), 3405, '2026-11-28T05:00:00+00:00'),
+        ):
+            self.assertEqual(entry_opens_at(monday, lead).astimezone(timezone.utc).isoformat(), expected)
 
     def test_aggregate_omits_missing_preserves_zero_and_old_asof(self):
         payload = source_payload(workspace(), MAP, date(2026, 9, 7), 1)

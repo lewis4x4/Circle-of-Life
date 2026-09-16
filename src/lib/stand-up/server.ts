@@ -8,8 +8,10 @@ export async function standUpCommand(action: string, payload: Record<string, unk
   const { data: auth, error: authError } = await client.auth.getUser()
   if (authError || !auth.user) throw new Error('Authentication required')
   // Migration-owned RPC is intentionally additive to the generated schema.
-  const rpc = client.rpc.bind(client) as unknown as (name: string, args: { p_action: string; p_payload: Json }) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>
+  const rpc = client.rpc.bind(client) as unknown as (name: string, args: { p_action: string; p_payload: Json }) => Promise<{ data: unknown; error: { message: string; code?: string; hint?: string } | null }>
   const { data, error } = await rpc('stand_up_command', { p_action: action, p_payload: payload as Json })
-  if (error) throw Object.assign(new Error(error.message), { code: error.code })
+  // The hint carries the refusal's machine-readable code (stand_up_entry_not_open);
+  // the message is the operator sentence and stays the only thing rendered.
+  if (error) throw Object.assign(new Error(error.message), { code: error.code, hint: error.hint })
   return data
 }

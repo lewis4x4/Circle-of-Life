@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { registerRouteLeaveGuard, supportsRouteLeaveProtection, standUpHasDocumentEntry, useRouteTransitionPending, isRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { METRICS, SECTIONS, dateLabel, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
+import { METRICS, SECTIONS, dateLabel, entryOpensStamp, getStandUpEntryWindow, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
 import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionChecklist, submissionEvidence } from '@/lib/stand-up/report-presentation';
 import { REPORTING_QUALIFICATION, UNCHECKED_KEYS, uncheckedNote } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
@@ -18,6 +18,8 @@ import type { RecoveryPreview } from './types';
 
 type Props = {
   facility: { id: string; name: string }; week: string; currentWeek: string;
+  /** This facility's entry-open lead; null means the Haven default. */
+  leadMinutes?: number | null;
   report?: StandUpReport; reports: StandUpReport[]; recoveries: RecoveryPreview[];
   canManage: boolean; userId: string; now: Date;
   onSaved: (report: StandUpReport) => void; onDenied: () => void; onReload: () => Promise<void>;
@@ -70,16 +72,24 @@ export function StandUpEditor(props: Props) {
   const draftRef = useRef(draft); const savedRef = useRef(saved);
   const generation = useRef(0); const dirtyRef = useRef(false);
   const savingRef = useRef(false); const pending = useRef<SaveAttempt | null>(null);
-  const historical = week !== currentWeek;
+  // One window model decides all three states of this page: a meeting whose
+  // entry has not opened yet, the open reporting period, and a past meeting.
+  const entryWindow = getStandUpEntryWindow({ meetingMonday: week, leadMinutes: props.leadMinutes, now: props.now });
+  const notOpen = entryWindow.state === 'not_open';
+  const historical = week < currentWeek;
+  // Roster suggestions belong to a report that can be entered now. A past
+  // meeting and a meeting that has not opened are both outside that.
+  const entering = !historical && !notOpen;
   const [browserProtected, setBrowserProtected] = useState(() => supportsRouteLeaveProtection());
   useLayoutEffect(() => {
     const documentEntry = standUpHasDocumentEntry();
     if (documentEntry === true) setBrowserProtected(true);
     else if (documentEntry === false) window.location.replace(window.location.href);
   }, []);
-  const editable = browserProtected && (!historical || (canManage && correction));
-  // Historical figures stay readable but reject typing until a reasoned correction is opened.
-  const readOnly = historical && !(canManage && correction);
+  const editable = browserProtected && !notOpen && (!historical || (canManage && correction));
+  // Figures stay readable but reject typing: before the window opens for anyone,
+  // and on a past meeting until a reasoned correction is opened.
+  const readOnly = notOpen || (historical && !(canManage && correction));
   const guardState = useRef({ dirty, advancedBusy });
   useLayoutEffect(() => { guardState.current = { dirty, advancedBusy }; }, [dirty, advancedBusy]);
   useLayoutEffect(() => {
@@ -98,7 +108,7 @@ export function StandUpEditor(props: Props) {
   }, [bindGuard, facility.name]);
   // The roster is re-read on mount, on page focus and after each save; never on a timer or a channel.
   const loadRoster = useCallback(async () => {
-    if (historical) return;
+    if (!entering) return;
     setRosterLoading(true);
     try {
       const data = await standUpRequest<RosterCensus>('roster', { facility_id: facility.id });
@@ -110,7 +120,7 @@ export function StandUpEditor(props: Props) {
       if (cause instanceof StandUpRequestError && [401, 403].includes(cause.status)) { onDenied(); return; }
       rosterRef.current = undefined; setRoster(undefined); setRosterError(cause instanceof Error ? cause.message : 'The roster could not be read.');
     } finally { if (mounted.current) setRosterLoading(false); }
-  }, [historical, facility.id, onDenied]);
+  }, [entering, facility.id, onDenied]);
   useEffect(() => {
     void loadRoster();
     const focus = () => { void loadRoster(); };
@@ -145,10 +155,10 @@ export function StandUpEditor(props: Props) {
         if (issues.length) throw new Error(issues.join(' '));
         if (historical && !reason.trim()) throw new Error('Enter a reason for this historical correction.');
         if (status === 'ready' && derivedValues(values).completed_fields !== 16) throw new Error('Complete all sixteen figures before submitting. Use zero when there are none.');
-        const blocked = Object.values(rosterIssues(values, historical ? undefined : rosterRef.current, reasonsRef.current));
+        const blocked = Object.values(rosterIssues(values, entering ? rosterRef.current : undefined, reasonsRef.current));
         if (blocked.length) throw new Error(blocked.join(' '));
         // The roster block carries only the chosen reasons; the server recomputes the suggestion and decides the source.
-        const rosterBlock: RosterPayload | undefined = !historical && rosterRef.current ? Object.fromEntries(ROSTER_FIELD_KEYS.map(key => [key, expectedSource(rosterRef.current, key, values[key]) === 'overridden' && reasonsRef.current[key] ? { override_reason: reasonsRef.current[key] } : {}])) as RosterPayload : undefined;
+        const rosterBlock: RosterPayload | undefined = entering && rosterRef.current ? Object.fromEntries(ROSTER_FIELD_KEYS.map(key => [key, expectedSource(rosterRef.current, key, values[key]) === 'overridden' && reasonsRef.current[key] ? { override_reason: reasonsRef.current[key] } : {}])) as RosterPayload : undefined;
         attempt = { generation: generation.current, status, payload: { facility_id: facility.id, week_start: week, expected_version: savedRef.current?.version ?? 0, values, status, ...(historical ? { reason: reason.trim() } : {}), ...(rosterBlock ? { roster: rosterBlock } : {}), request_id: crypto.randomUUID() } };
       } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check your figures.'); setPhase('failed'); return false; }
       pending.current = attempt;
@@ -158,7 +168,10 @@ export function StandUpEditor(props: Props) {
       const receipt = await standUpRequest<StandUpReport>('save', attempt.payload);
       if (!mounted.current) return false;
       if (receipt.facility_id !== facility.id || receipt.week_start !== week) throw new Error('The save receipt did not match this facility and meeting. Refresh reports before continuing.');
-      savedRef.current = receipt; setSaved(receipt); pending.current = null; onSaved(receipt);
+      // COL-298: a save that carried no figures reserves nothing, so there is no
+      // report to hold on to. The next save starts from version 0 again.
+      const stored = receipt.not_started ? undefined : receipt;
+      savedRef.current = stored; setSaved(stored); pending.current = null; onSaved(receipt);
       const unchanged = generation.current === attempt.generation;
       dirtyRef.current = !unchanged; setDirty(!unchanged); setPhase('saved');
       if (unchanged) { draftRef.current = fieldsFor(receipt.values); setDraft(draftRef.current); }
@@ -176,15 +189,15 @@ export function StandUpEditor(props: Props) {
       setError(cause instanceof Error ? cause.message : 'Save failed. Your entries are retained. Retry to check the save result.');
       return false;
     } finally { if (mounted.current) { savingRef.current = false; } }
-  }, [editable, conflict, historical, reason, facility.id, week, onSaved, onDenied, onReload, loadRoster]);
+  }, [editable, conflict, historical, entering, reason, facility.id, week, onSaved, onDenied, onReload, loadRoster]);
   let values: StandUpValues | undefined; let validationMessage = '';
   try { values = entryValues(draft); } catch (cause) { validationMessage = cause instanceof Error ? cause.message : 'Check the figures.'; }
-  const rosterBlocked = values && !historical ? Object.keys(rosterIssues(values, roster, reasons)).length > 0 : false;
+  const rosterBlocked = values && entering ? Object.keys(rosterIssues(values, roster, reasons)).length > 0 : false;
   useEffect(() => {
-    if (!dirty || !online || review || historical || conflict || phase === 'saving' || phase === 'failed' || advancedBusy || rosterBlocked) return;
+    if (!dirty || !online || review || !entering || conflict || phase === 'saving' || phase === 'failed' || advancedBusy || rosterBlocked) return;
     const timer = window.setTimeout(() => void save('draft'), 1200);
     return () => clearTimeout(timer);
-  }, [draft, dirty, online, review, historical, conflict, phase, advancedBusy, rosterBlocked, save]);
+  }, [draft, dirty, online, review, entering, conflict, phase, advancedBusy, rosterBlocked, save]);
   const change = (key: keyof EntryFields, value: string) => {
     if (isRouteTransitionPending() || readOnly) return;
     generation.current++; draftRef.current = { ...draftRef.current, [key]: value }; setDraft(draftRef.current);
@@ -203,7 +216,7 @@ export function StandUpEditor(props: Props) {
     if (suggested === null) return;
     setRosterReason(key, null); change(key, String(suggested));
   };
-  const rosterEntry: RosterEntry | undefined = historical ? undefined : { data: roster, loading: rosterLoading, error: rosterError, reasons, onReason: setRosterReason, onUseRoster: useRoster };
+  const rosterEntry: RosterEntry | undefined = !entering ? undefined : { data: roster, loading: rosterLoading, error: rosterError, reasons, onReason: setRosterReason, onUseRoster: useRoster };
   const discard = () => {
     if (savingRef.current || advancedBusy || pending.current) return;
     const latest = props.report && props.report.version > (savedRef.current?.version ?? 0) ? props.report : savedRef.current;
@@ -219,9 +232,8 @@ export function StandUpEditor(props: Props) {
   const prior = props.reports.filter(report => report.facility_id === facility.id && report.week_start < week).sort((a, b) => b.week_start.localeCompare(a.week_start))[0];
   const deadlineState = reportDeadlineState(saved, week, currentWeek, props.now);
   const isLate = deadlineState === 'past_target';
-  const easternParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(props.now);
-  const easternPart = (type: string) => easternParts.find(part => part.type === type)!.value;
-  const staffingClosed = `${easternPart('year')}-${easternPart('month')}-${easternPart('day')}` >= week;
+  // The Monday-to-Sunday payroll week closes at the meeting Monday's midnight.
+  const staffingClosed = props.now >= entryWindow.staffingPeriodEnd;
   let durationNeedsReview = !!saved?.overtime_issue;
   try { legacyOvertimeToMinutes(saved?.values.overtime_reported ?? null); } catch { durationNeedsReview = true; }
   // The save path refuses every save, including autosave of other figures, while the stored notation is unreadable.
@@ -245,6 +257,11 @@ export function StandUpEditor(props: Props) {
         <p className="mt-1 text-sm text-muted-foreground">{lastSaveLine(saved, props.userId)}</p>
         <p className="mt-1 text-sm text-muted-foreground">{submissionEvidence(saved)}</p>
         {isLate && <p className="mt-1 text-sm">The 8:45 a.m. Haven submission target has passed; you can still finish or correct this report.</p>}
+        {/* One line for a report nobody can enter yet, so the aide reading it at
+            11:30 p.m. knows exactly when it opens rather than why saving failed. */}
+        {notOpen && <p role="status" className="mt-1 text-sm">This report opens {entryOpensStamp(week, props.leadMinutes)}.</p>}
+        {/* Open, but the payroll week has not closed: name what is still moving. */}
+        {entering && !staffingClosed && <p className="mt-1 text-sm">Staffing and payroll run through Sunday 11:59 p.m. Update overtime and callouts before you submit.</p>}
       </div>
       {prior && <Button variant="ghost" onClick={() => setHistory(value => !value)} aria-expanded={history}>Report history</Button>}
     </div>
@@ -252,8 +269,7 @@ export function StandUpEditor(props: Props) {
       <summary className="cursor-pointer rounded text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Reporting periods and timings</summary>
       <ul className="mt-2 space-y-1 border-l-2 border-border pl-3 text-sm text-muted-foreground">
         <li>Staffing and payroll covers {staffingPeriod(week)}.</li>
-        <li>Complete by 8:45 a.m. Eastern; the management call is at 9:15 a.m.</li>
-        {!historical && <li>The next Monday report opens on Sunday, {dateLabel(shiftDay(currentWeek, 6))}.</li>}
+        {entering && <li>The next Monday report opens {entryOpensStamp(shiftDay(currentWeek, 7), props.leadMinutes)}.</li>}
         {prior && <li>Previous figures come from the report for {dateLabel(prior.week_start)}{prior.week_start !== shiftDay(week, -7) ? ', because the previous calendar week is missing' : ''}, and are not copied into this one.</li>}
       </ul>
     </details>
@@ -277,7 +293,7 @@ export function StandUpEditor(props: Props) {
           never read as a result of the completed week. */}
       {SECTIONS.map(section => <div key={section.key} className="space-y-1">
         <h4 className="text-sm font-semibold">{section.label}</h4>
-        <p className="text-xs text-muted-foreground">{sectionPeriodLabel(section, week, asOf, !historical)}</p>
+        <p className="text-xs text-muted-foreground">{sectionPeriodLabel(section, week, asOf, entering)}</p>
         <dl className="grid gap-x-8 sm:grid-cols-2">{sectionMetrics(section.key).map(metric => <div key={metric.key} className="flex justify-between gap-3 border-b border-border py-3 text-sm"><dt>{metric.label}</dt><dd className="whitespace-nowrap font-medium tabular-nums">{reviewDisplay(metric.key)}</dd></div>)}</dl>
       </div>)}
       {prior && <div className="space-y-1"><h4 className="text-sm font-semibold">Different from the previous report · {dateLabel(prior.week_start)}</h4>
@@ -300,8 +316,8 @@ export function StandUpEditor(props: Props) {
         </dl>
       </details>}
       <SectionNav />
-      <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} open={!historical} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError}
-        roster={rosterEntry} recorded={saved?.roster_confirmations} censusExtra={historical ? undefined : <OutOfHousePanel facilityId={facility.id} facilityName={facility.name} refreshKey={rosterTick} />} />
+      <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} open={entering} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError}
+        roster={rosterEntry} recorded={saved?.roster_confirmations} censusExtra={entering ? <OutOfHousePanel facilityId={facility.id} facilityName={facility.name} refreshKey={rosterTick} /> : undefined} />
       {historical && correction && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
     </form>}
     <section aria-label="Save and submit report" className="sticky bottom-0 z-10 space-y-3 border-y border-border bg-background px-1 py-4 shadow-sm">

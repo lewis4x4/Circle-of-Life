@@ -38,6 +38,11 @@ CURRENT_REFRESH_SECONDS = 240
 FIELD_STATE_VERSION = 1
 FIELD_STATE_CODES = {"provided": 0, "not_provided": 1, "held_unit_unconfirmed": 2, "needs_duration_review": 3, "source_held": 4}
 HELD_UNIT_DISPOSITION = "historical_unit_unconfirmed"
+# Entry window: owned by src/lib/stand-up/model.ts and enforced by
+# public.stand_up_entry_opens_at. These two numbers are the only shape of the
+# rule the publisher needs, and test_worker.py pins them to the model's table.
+DEADLINE_MINUTES = 8 * 60 + 45
+DEFAULT_ENTRY_OPEN_LEAD_MINUTES = 1965
 # Roster source (spec section 12): counts and tokens only, never a resident identifier.
 ROSTER_SOURCE_VERSION = 1
 ROSTER_KEYS = ("current_total_census", "hospital_and_rehab_total")
@@ -107,9 +112,29 @@ def required(name):
     return value
 
 
+def entry_opens_at(meeting_monday, lead_minutes=DEFAULT_ENTRY_OPEN_LEAD_MINUTES):
+    """When entry opens for one meeting Monday, in Eastern wall-clock minutes.
+
+    Mirrors src/lib/stand-up/model.ts standUpEntryOpensAt and the SQL
+    public.stand_up_entry_opens_at; scripts/stand-up/test_worker.py pins the
+    three of them to the same instants. Never UTC plus a fixed offset.
+    """
+    wall = (datetime.combine(meeting_monday, datetime.min.time())
+            + timedelta(minutes=DEADLINE_MINUTES - lead_minutes))
+    return wall.replace(tzinfo=ZoneInfo("America/New_York"))
+
+
 def reporting_week(now=None):
-    day = (now or datetime.now(timezone.utc)).astimezone(ZoneInfo("America/New_York")).date()
-    return day + timedelta(days=1 if day.weekday() == 6 else -day.weekday())
+    """The organization publishing week: the latest Monday whose default window
+    has opened. The publisher deliberately ignores per-facility overrides —
+    corporate timing does not move, so one payload covers all five ALFs.
+    """
+    moment = (now or datetime.now(timezone.utc)).astimezone(ZoneInfo("America/New_York"))
+    monday = moment.date() - timedelta(days=moment.date().weekday())
+    for candidate in (monday + timedelta(days=7), monday):
+        if moment >= entry_opens_at(candidate):
+            return candidate
+    return monday - timedelta(days=7)
 
 
 def reject_history_state(data):
