@@ -17,7 +17,7 @@ export const tokens = {
     semantic: {
       success: "#7A9B5E",
       info: "#6A8FA8",
-      warning: "#D49B5C",
+      warning: "#CC8533",
       danger: "#C26152",
       regulatory: "rgb(139 92 246)",
       neutral: "#928E85",
