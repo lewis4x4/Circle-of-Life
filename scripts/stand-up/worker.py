@@ -43,6 +43,11 @@ HELD_UNIT_DISPOSITION = "historical_unit_unconfirmed"
 # rule the publisher needs, and test_worker.py pins them to the model's table.
 DEADLINE_MINUTES = 8 * 60 + 45
 DEFAULT_ENTRY_OPEN_LEAD_MINUTES = 1965
+# Roster source (spec section 12): counts and tokens only, never a resident identifier.
+ROSTER_SOURCE_VERSION = 1
+ROSTER_KEYS = ("current_total_census", "hospital_and_rehab_total")
+ROSTER_SOURCE_CODES = {"roster_confirmed": 1, "entered_no_roster": 2, "overridden": 3}
+OVERRIDE_REASON_CODES = {"roster_not_current": 1, "change_not_entered": 2, "different_definition": 3, "other": 4}
 HAVEN_ORG = "00000000-0000-0000-0000-000000000001"
 MAX_STATE_BYTES = 64 * 1024 * 1024
 CREDENTIAL_INSTALL_MAX_AGE = 15 * 60
@@ -608,6 +613,41 @@ def field_state(report, key, overtime_issue):
     return "provided"
 
 
+def roster_confirmations(report):
+    """Stored roster confirmations for the report's revision; never inferred, never named."""
+    confirmations = report.get("roster_confirmations")
+    if confirmations is None:
+        return None
+    if not isinstance(confirmations, dict) or any(k not in ROSTER_KEYS or not isinstance(v, dict) for k, v in confirmations.items()):
+        raise BridgeError("Unexpected source roster confirmations")
+    for key, entry in confirmations.items():
+        if entry.get("source") not in ROSTER_SOURCE_CODES or report["values"].get(key) is None:
+            raise BridgeError("Unexpected source roster confirmations")
+        reason = entry.get("override_reason")
+        if (entry["source"] == "overridden") != (reason is not None) or (reason is not None and reason not in OVERRIDE_REASON_CODES):
+            raise BridgeError("Unexpected source roster confirmations")
+    return confirmations
+
+
+def roster_rows(prefix, report):
+    """Roster source rows for one reported facility (spec section 12.4)."""
+    confirmations = roster_confirmations(report) or {}
+    rows = []
+    as_of = None
+    for key in ROSTER_KEYS:
+        entry = confirmations.get(key)
+        if entry is None:
+            continue
+        rows.append({"metric": prefix + "_" + key + "_source", "value": ROSTER_SOURCE_CODES[entry["source"]]})
+        if entry["source"] == "overridden":
+            rows.append({"metric": prefix + "_" + key + "_override_reason", "value": OVERRIDE_REASON_CODES[entry["override_reason"]]})
+        if entry.get("roster_as_of") and as_of is None:
+            as_of = int(aware_timestamp(entry["roster_as_of"]).timestamp())
+    if as_of is not None:
+        rows.append({"metric": prefix + "_roster_as_of_epoch", "value": as_of})
+    return rows
+
+
 def source_payload(workspace, facility_map, week, sequence, now=None):
     reports = [r for r in workspace["reports"] if r["week_start"] == week.isoformat()]
     by_facility = {r["facility_id"]: r for r in reports}
@@ -619,6 +659,10 @@ def source_payload(workspace, facility_map, week, sequence, now=None):
     versioned = all(field_dispositions(r) is not None for r in reports)
     if versioned:
         rows.append({"metric": "field_state_version", "value": FIELD_STATE_VERSION})
+    # Roster source rows likewise: only a Haven that records confirmations publishes them.
+    roster_versioned = all(roster_confirmations(r) is not None for r in reports)
+    if roster_versioned:
+        rows.append({"metric": "roster_source_version", "value": ROSTER_SOURCE_VERSION})
     times = []
     for name in FACILITIES:
         prefix = PREFIXES[name]
@@ -668,6 +712,8 @@ def source_payload(workspace, facility_map, week, sequence, now=None):
         if versioned:
             for key in KEYS:
                 rows.append({"metric": prefix + "_" + key + "_state", "value": FIELD_STATE_CODES[field_state(report, key, issue)]})
+        if roster_versioned:
+            rows.extend(roster_rows(prefix, report))
     observed_at = now or datetime.now(timezone.utc)
     as_of = min([observed_at, *times]) if times else observed_at
     return {"source": "col", "dataset": "standup_weekly", "contractVersion": 1, "batchId": str(uuid.uuid4()), "sequence": sequence, "sourceAsOf": as_of.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"), "mode": "full", "complete": True, "rows": rows}

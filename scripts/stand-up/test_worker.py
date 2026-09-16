@@ -732,6 +732,58 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(rows['field_state_version'], 1)
         self.assertFalse(any(m.endswith('_state') for m in rows))
 
+    def test_roster_source_rows_carry_tokens_and_never_a_resident(self):
+        data = workspace()
+        data['reports'][0].update(values={**dict.fromkeys(KEYS), 'current_total_census': 34, 'hospital_and_rehab_total': 1}, roster_confirmations={
+            'current_total_census': {'source': 'overridden', 'suggested': 35, 'confirmed': 34, 'override_reason': 'roster_not_current', 'roster_as_of': '2026-09-07T11:30:00Z', 'confirmed_at': '2026-09-07T12:00:00Z'},
+            'hospital_and_rehab_total': {'source': 'roster_confirmed', 'suggested': 1, 'confirmed': 1, 'override_reason': None, 'roster_as_of': '2026-09-07T11:30:00Z', 'confirmed_at': '2026-09-07T12:00:00Z'}})
+        data['reports'].append({'facility_id': MAP['Oakridge'], 'week_start': '2026-09-07', 'status': 'draft', 'version': 1, 'source_as_of': None,
+                                'values': {**dict.fromkeys(KEYS), 'current_total_census': 12}, 'roster_confirmations': {
+                                    'current_total_census': {'source': 'entered_no_roster', 'suggested': None, 'confirmed': 12, 'override_reason': None, 'roster_as_of': None, 'confirmed_at': '2026-09-07T12:00:00Z'}}})
+        data['reports'].append({'facility_id': MAP['Rising Oaks'], 'week_start': '2026-09-07', 'status': 'draft', 'version': 1, 'source_as_of': None,
+                                'values': {**dict.fromkeys(KEYS), 'current_total_census': 20}, 'roster_confirmations': {}})
+        payload = source_payload(data, MAP, date(2026, 9, 7), 1)
+        rows = {r['metric']: r['value'] for r in payload['rows']}
+        self.assertEqual(rows['roster_source_version'], 1)
+        self.assertEqual(rows['homewood_current_total_census_source'], 3)
+        self.assertEqual(rows['homewood_current_total_census_override_reason'], 1)
+        self.assertEqual(rows['homewood_hospital_and_rehab_total_source'], 1)
+        self.assertNotIn('homewood_hospital_and_rehab_total_override_reason', rows)
+        self.assertEqual(rows['homewood_roster_as_of_epoch'], int(datetime(2026, 9, 7, 11, 30, tzinfo=timezone.utc).timestamp()))
+        self.assertEqual(rows['oakridge_current_total_census_source'], 2)
+        self.assertNotIn('oakridge_roster_as_of_epoch', rows)
+        self.assertFalse(any(m.startswith('rising_oaks_') and ('_source' in m or 'roster' in m) for m in rows))  # no confirmation, no rows
+        for metric in rows:
+            for forbidden in ('name', 'resident', 'room'):
+                self.assertNotIn(forbidden, metric)
+        self.assertTrue(all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in rows.values()))
+        self.assertNotIn('Test Resident', json.dumps(payload))
+
+    def test_roster_rows_are_legacy_until_every_report_carries_confirmations(self):
+        data = workspace()
+        data['reports'][0].update(values={**dict.fromkeys(KEYS), 'current_total_census': 34}, roster_confirmations={
+            'current_total_census': {'source': 'roster_confirmed', 'suggested': 34, 'confirmed': 34, 'override_reason': None, 'roster_as_of': None, 'confirmed_at': '2026-09-07T12:00:00Z'}})
+        data['reports'].append({'facility_id': MAP['Oakridge'], 'week_start': '2026-09-07', 'status': 'draft', 'version': 1, 'source_as_of': None,
+                                'values': {**dict.fromkeys(KEYS), 'current_total_census': 12}})
+        rows = {r['metric']: r['value'] for r in source_payload(data, MAP, date(2026, 9, 7), 1)['rows']}
+        self.assertNotIn('roster_source_version', rows)
+        self.assertFalse(any(m.endswith('_source') or m.endswith('_override_reason') or m.endswith('_roster_as_of_epoch') for m in rows))
+        rows = {r['metric']: r['value'] for r in source_payload(workspace(), MAP, date(2026, 9, 7), 1)['rows']}
+        self.assertNotIn('roster_source_version', rows)
+
+    def test_malformed_roster_confirmations_are_refused(self):
+        for bad in (['roster_confirmed'], {'invented': {'source': 'roster_confirmed'}}, {'current_total_census': {'source': 'guessed'}},
+                    {'current_total_census': {'source': 'overridden', 'override_reason': None}}, {'current_total_census': {'source': 'roster_confirmed', 'override_reason': 'other'}},
+                    {'current_total_census': {'source': 'overridden', 'override_reason': 'because'}}):
+            data = workspace()
+            data['reports'][0].update(values={**dict.fromkeys(KEYS), 'current_total_census': 34}, roster_confirmations=bad)
+            with self.assertRaisesRegex(BridgeError, 'roster confirmations'):
+                source_payload(data, MAP, date(2026, 9, 7), 1)
+        data = workspace()  # a confirmation for a figure that is blank on the revision is inconsistent
+        data['reports'][0].update(roster_confirmations={'hospital_and_rehab_total': {'source': 'roster_confirmed', 'override_reason': None}})
+        with self.assertRaisesRegex(BridgeError, 'roster confirmations'):
+            source_payload(data, MAP, date(2026, 9, 7), 1)
+
     def test_unknown_historic_asof_not_import_time(self):
         data = workspace()
         data['reports'][0]['source_as_of'] = None

@@ -125,10 +125,12 @@ LANGUAGE sql VOLATILE SET search_path='' AS $$ SELECT haven.stand_up_open_week(N
 -- ---------------------------------------------------------------------------
 -- Enforcement: haven.stand_up_save, unchanged except for the window
 -- ---------------------------------------------------------------------------
--- Differences from 336: the open week is read once per save from the facility's
--- own setting, and a save for a week whose window has not opened is refused with
--- P0409 / stand_up_entry_not_open rather than being treated as a historical
--- correction. Locks, CAS, idempotency, revisions and receipts are untouched.
+-- Differences from migration 404 (COL-351), whose body this is: the open week is
+-- read once per save from the facility's own setting instead of
+-- haven.stand_up_week(), and a save for a week whose window has not opened is
+-- refused with P0409 / stand_up_entry_not_open rather than being treated as a
+-- historical correction. The 336 locks, receipt, CAS, validation and revision
+-- writes and the 404 roster confirmation are untouched.
 CREATE OR REPLACE FUNCTION haven.stand_up_save(p jsonb,p_batch uuid DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE f uuid:=(p->>'facility_id')::uuid; w date:=(p->>'week_start')::date; o uuid; a uuid; r public.stand_up_reports%ROWTYPE; v_id uuid; result jsonb; request uuid:=(p->>'request_id')::uuid; receipt public.stand_up_receipts%ROWTYPE; asof timestamptz; s text:=coalesce(p->>'status','draft'); open_week date;
 BEGIN
@@ -151,6 +153,8 @@ BEGIN
  IF w<>open_week OR p_batch IS NOT NULL THEN
   PERFORM haven.stand_up_assert(f,true);
   IF nullif(btrim(p->>'reason'),'') IS NULL THEN RAISE EXCEPTION 'Historical change requires reason'; END IF;
+  -- A past meeting keeps the confirmation recorded at the time; today's roster is not its evidence.
+  IF p ? 'roster' THEN RAISE EXCEPTION 'Roster confirmation applies to the open reporting period only'; END IF;
  END IF;
  PERFORM haven.stand_up_validate(p->'values');
  asof:=CASE WHEN p ? 'as_of' THEN (p->>'as_of')::timestamptz WHEN w=open_week AND p_batch IS NULL THEN clock_timestamp() ELSE NULL END;
@@ -162,6 +166,7 @@ BEGIN
  IF coalesce(r.version,0)<>(p->>'expected_version')::integer THEN RAISE EXCEPTION 'Stale report version' USING ERRCODE='P0409'; END IF;
  IF r.id IS NULL THEN INSERT INTO public.stand_up_reports(organization_id,facility_id,week_start,values,status) VALUES(o,f,w,p->'values',s) RETURNING * INTO r; END IF;
  INSERT INTO public.stand_up_revisions(report_id,version,values,status,actor_id,reason,provenance,batch_id,source_as_of) VALUES(r.id,r.version+1,p->'values',s,a,p->>'reason',coalesce(p->'provenance','{}'),p_batch,asof) RETURNING id INTO v_id;
+ PERFORM haven.stand_up_roster_confirm(p,o,f,a,r.id,v_id);
  UPDATE public.stand_up_reports SET version=r.version+1,revision_id=v_id,values=p->'values',status=s,source_as_of=asof,updated_at=clock_timestamp() WHERE id=r.id RETURNING to_jsonb(stand_up_reports.*) INTO result;
  INSERT INTO public.stand_up_receipts(actor_id,request_id,payload,result) VALUES(a,request,p,result);
  RETURN result;
@@ -192,10 +197,10 @@ BEGIN
   'entry_opens_at',haven.stand_up_entry_opens_at(f,haven.stand_up_open_week(f)));
 END $$;
 
--- 338's wrapper (reverse_import and revisions kept), plus the new action and the
--- per-facility window on every workspace read. current_week stays the
--- organization default so the all-facilities overview and the corporate feed
--- are unchanged.
+-- Migration 404's wrapper (reverse_import, revisions and roster kept), plus the
+-- new action and the per-facility window on every workspace read. current_week
+-- stays the organization default so the all-facilities overview and the
+-- corporate feed are unchanged.
 CREATE OR REPLACE FUNCTION haven.stand_up_command(p_action text,p_payload jsonb) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE result jsonb; reports jsonb; facilities jsonb;
@@ -203,6 +208,7 @@ BEGIN
  IF p_action='set_entry_window' THEN RETURN haven.stand_up_set_entry_window(p_payload); END IF;
  IF p_action='reverse_import' THEN RETURN haven.stand_up_reverse_import(p_payload); END IF;
  IF p_action='revisions' THEN RETURN haven.stand_up_revision_history(p_payload); END IF;
+ IF p_action='roster' THEN RETURN haven.stand_up_roster_suggestion(p_payload); END IF;
  result:=haven.stand_up_command_v1(p_action,p_payload);
  IF p_action IN('workspace','list') THEN
   SELECT coalesce(jsonb_agg(x||coalesce(haven.stand_up_revision_metadata((x->>'revision_id')::uuid),'{}') ORDER BY x->>'week_start' DESC,x->>'facility_id'),'[]') INTO reports FROM jsonb_array_elements(result->'reports') x;

@@ -8,8 +8,10 @@ import { METRICS, SECTIONS, dateLabel, entryOpensStamp, getStandUpEntryWindow, r
 import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionChecklist, submissionEvidence } from '@/lib/stand-up/report-presentation';
 import { REPORTING_QUALIFICATION, UNCHECKED_KEYS, uncheckedNote } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
-import { EntryQuestions, SectionNav, entryValues, fieldsFor, type EntryFields } from './entry-fields';
+import { ROSTER_FIELD_KEYS, expectedSource, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterFieldKey, type RosterPayload } from '@/lib/stand-up/roster-census';
+import { EntryQuestions, SectionNav, entryValues, fieldsFor, rosterIssueMessage, type EntryFields, type RosterEntry } from './entry-fields';
 import { StandUpHistory } from './history';
+import { OutOfHousePanel } from './out-of-house';
 import { RecoveryTools } from './recovery';
 import { StandUpRequestError, standUpRequest } from './transport';
 import type { RecoveryPreview } from './types';
@@ -24,6 +26,17 @@ type Props = {
   bindGuard: (guard: (silent?: boolean) => boolean) => () => void;
 };
 type SaveAttempt = { payload: Record<string, unknown>; generation: number; status: 'draft' | 'ready' };
+type Reasons = Partial<Record<RosterFieldKey, OverrideReason>>;
+
+/** A typed figure that differs from the roster needs a reason before any save, including autosave. */
+function rosterIssues(values: StandUpValues, roster: RosterCensus | undefined, reasons: Reasons): Partial<Record<RosterFieldKey, string>> {
+  const issues: Partial<Record<RosterFieldKey, string>> = {};
+  if (!roster) return issues;
+  for (const key of ROSTER_FIELD_KEYS) {
+    if (expectedSource(roster, key, values[key]) === 'overridden' && !reasons[key]) issues[key] = rosterIssueMessage(key, rosterSuggestion(roster, key)!);
+  }
+  return issues;
+}
 
 export function StandUpEditor(props: Props) {
   const routePending = useRouteTransitionPending();
@@ -41,6 +54,13 @@ export function StandUpEditor(props: Props) {
   const [history, setHistory] = useState(false);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [advancedBusy, setAdvancedBusy] = useState(false);
+  // Roster suggestion for the open period. It is read, never written into a figure.
+  const [roster, setRoster] = useState<RosterCensus | undefined>(undefined);
+  const [rosterLoading, setRosterLoading] = useState(false);
+  const [rosterError, setRosterError] = useState('');
+  const [reasons, setReasons] = useState<Reasons>({});
+  const [rosterTick, setRosterTick] = useState(0);
+  const rosterRef = useRef(roster); const reasonsRef = useRef(reasons);
   const mounted = useRef(true);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   const reviewButton = useRef<HTMLButtonElement>(null);
@@ -57,6 +77,9 @@ export function StandUpEditor(props: Props) {
   const entryWindow = getStandUpEntryWindow({ meetingMonday: week, leadMinutes: props.leadMinutes, now: props.now });
   const notOpen = entryWindow.state === 'not_open';
   const historical = week < currentWeek;
+  // Roster suggestions belong to a report that can be entered now. A past
+  // meeting and a meeting that has not opened are both outside that.
+  const entering = !historical && !notOpen;
   const [browserProtected, setBrowserProtected] = useState(() => supportsRouteLeaveProtection());
   useLayoutEffect(() => {
     const documentEntry = standUpHasDocumentEntry();
@@ -83,6 +106,27 @@ export function StandUpEditor(props: Props) {
     const unbindRoute = registerRouteLeaveGuard(guard);
     return () => { unbindScope(); unbindRoute(); };
   }, [bindGuard, facility.name]);
+  // The roster is re-read on mount, on page focus and after each save; never on a timer or a channel.
+  const loadRoster = useCallback(async () => {
+    if (!entering) return;
+    setRosterLoading(true);
+    try {
+      const data = await standUpRequest<RosterCensus>('roster', { facility_id: facility.id });
+      if (!mounted.current) return;
+      if (data.facility_id !== facility.id) throw new Error('The roster response did not match this facility.');
+      rosterRef.current = data; setRoster(data); setRosterError(''); setRosterTick(tick => tick + 1);
+    } catch (cause) {
+      if (!mounted.current) return;
+      if (cause instanceof StandUpRequestError && [401, 403].includes(cause.status)) { onDenied(); return; }
+      rosterRef.current = undefined; setRoster(undefined); setRosterError(cause instanceof Error ? cause.message : 'The roster could not be read.');
+    } finally { if (mounted.current) setRosterLoading(false); }
+  }, [entering, facility.id, onDenied]);
+  useEffect(() => {
+    void loadRoster();
+    const focus = () => { void loadRoster(); };
+    window.addEventListener('focus', focus);
+    return () => window.removeEventListener('focus', focus);
+  }, [loadRoster]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => { if (dirtyRef.current || savingRef.current || pending.current || guardState.current.advancedBusy) { event.preventDefault(); event.returnValue = ''; } };
     const connection = () => setOnline(navigator.onLine);
@@ -111,7 +155,11 @@ export function StandUpEditor(props: Props) {
         if (issues.length) throw new Error(issues.join(' '));
         if (historical && !reason.trim()) throw new Error('Enter a reason for this historical correction.');
         if (status === 'ready' && derivedValues(values).completed_fields !== 16) throw new Error('Complete all sixteen figures before submitting. Use zero when there are none.');
-        attempt = { generation: generation.current, status, payload: { facility_id: facility.id, week_start: week, expected_version: savedRef.current?.version ?? 0, values, status, ...(historical ? { reason: reason.trim() } : {}), request_id: crypto.randomUUID() } };
+        const blocked = Object.values(rosterIssues(values, entering ? rosterRef.current : undefined, reasonsRef.current));
+        if (blocked.length) throw new Error(blocked.join(' '));
+        // The roster block carries only the chosen reasons; the server recomputes the suggestion and decides the source.
+        const rosterBlock: RosterPayload | undefined = entering && rosterRef.current ? Object.fromEntries(ROSTER_FIELD_KEYS.map(key => [key, expectedSource(rosterRef.current, key, values[key]) === 'overridden' && reasonsRef.current[key] ? { override_reason: reasonsRef.current[key] } : {}])) as RosterPayload : undefined;
+        attempt = { generation: generation.current, status, payload: { facility_id: facility.id, week_start: week, expected_version: savedRef.current?.version ?? 0, values, status, ...(historical ? { reason: reason.trim() } : {}), ...(rosterBlock ? { roster: rosterBlock } : {}), request_id: crypto.randomUUID() } };
       } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check your figures.'); setPhase('failed'); return false; }
       pending.current = attempt;
     }
@@ -128,22 +176,28 @@ export function StandUpEditor(props: Props) {
       dirtyRef.current = !unchanged; setDirty(!unchanged); setPhase('saved');
       if (unchanged) { draftRef.current = fieldsFor(receipt.values); setDraft(draftRef.current); }
       if (attempt.status === 'ready') setReview(false);
+      if (rosterRef.current) void loadRoster();
       return unchanged && attempt.status === status;
     } catch (cause) {
       if (!mounted.current) return false;
       setPhase('failed'); setReview(false);
       if (cause instanceof StandUpRequestError && [401, 403].includes(cause.status)) { onDenied(); return false; }
       if (cause instanceof StandUpRequestError && [400, 413, 422].includes(cause.status)) pending.current = null;
+      // The roster moved between the suggestion and the save: read it again so the reason control appears.
+      if (cause instanceof StandUpRequestError && cause.status === 400 && /differs from the Haven roster/.test(cause.message)) void loadRoster();
       if (cause instanceof StandUpRequestError && cause.status === 409) { setConflict(true); pending.current = null; void onReload(); }
       setError(cause instanceof Error ? cause.message : 'Save failed. Your entries are retained. Retry to check the save result.');
       return false;
     } finally { if (mounted.current) { savingRef.current = false; } }
-  }, [editable, conflict, historical, reason, facility.id, week, onSaved, onDenied, onReload]);
+  }, [editable, conflict, historical, entering, reason, facility.id, week, onSaved, onDenied, onReload, loadRoster]);
+  let values: StandUpValues | undefined; let validationMessage = '';
+  try { values = entryValues(draft); } catch (cause) { validationMessage = cause instanceof Error ? cause.message : 'Check the figures.'; }
+  const rosterBlocked = values && entering ? Object.keys(rosterIssues(values, roster, reasons)).length > 0 : false;
   useEffect(() => {
-    if (!dirty || !online || review || historical || conflict || phase === 'saving' || phase === 'failed' || advancedBusy) return;
+    if (!dirty || !online || review || !entering || conflict || phase === 'saving' || phase === 'failed' || advancedBusy || rosterBlocked) return;
     const timer = window.setTimeout(() => void save('draft'), 1200);
     return () => clearTimeout(timer);
-  }, [draft, dirty, online, review, historical, conflict, phase, advancedBusy, save]);
+  }, [draft, dirty, online, review, entering, conflict, phase, advancedBusy, rosterBlocked, save]);
   const change = (key: keyof EntryFields, value: string) => {
     if (isRouteTransitionPending() || readOnly) return;
     generation.current++; draftRef.current = { ...draftRef.current, [key]: value }; setDraft(draftRef.current);
@@ -152,6 +206,17 @@ export function StandUpEditor(props: Props) {
     // resume autosave. Network failures retain their request until manual retry.
     if (!pending.current && !conflict && !savingRef.current) { setPhase('idle'); setError(''); }
   };
+  const setRosterReason = (key: RosterFieldKey, value: OverrideReason | null) => {
+    const next = { ...reasonsRef.current }; if (value) next[key] = value; else delete next[key];
+    reasonsRef.current = next; setReasons(next);
+    if (phase === 'failed' && !pending.current) { setPhase('idle'); setError(''); }
+  };
+  const useRoster = (key: RosterFieldKey) => {
+    const suggested = rosterSuggestion(rosterRef.current, key);
+    if (suggested === null) return;
+    setRosterReason(key, null); change(key, String(suggested));
+  };
+  const rosterEntry: RosterEntry | undefined = !entering ? undefined : { data: roster, loading: rosterLoading, error: rosterError, reasons, onReason: setRosterReason, onUseRoster: useRoster };
   const discard = () => {
     if (savingRef.current || advancedBusy || pending.current) return;
     const latest = props.report && props.report.version > (savedRef.current?.version ?? 0) ? props.report : savedRef.current;
@@ -162,8 +227,6 @@ export function StandUpEditor(props: Props) {
     if (!mounted.current || report.facility_id !== facility.id || report.week_start !== week) return;
     savedRef.current = report; setSaved(report); draftRef.current = fieldsFor(report.values); setDraft(draftRef.current); setPhase('saved'); onSaved(report);
   };
-  let values: StandUpValues | undefined; let validationMessage = '';
-  try { values = entryValues(draft); } catch (cause) { validationMessage = cause instanceof Error ? cause.message : 'Check the figures.'; }
   const complete = values ? derivedValues(values) : null;
   const missing = values ? METRICS.filter(metric => values[metric.key] === null) : [];
   const prior = props.reports.filter(report => report.facility_id === facility.id && report.week_start < week).sort((a, b) => b.week_start.localeCompare(a.week_start))[0];
@@ -198,7 +261,7 @@ export function StandUpEditor(props: Props) {
             11:30 p.m. knows exactly when it opens rather than why saving failed. */}
         {notOpen && <p role="status" className="mt-1 text-sm">This report opens {entryOpensStamp(week, props.leadMinutes)}.</p>}
         {/* Open, but the payroll week has not closed: name what is still moving. */}
-        {!notOpen && !historical && !staffingClosed && <p className="mt-1 text-sm">Staffing and payroll run through Sunday 11:59 p.m. Update overtime and callouts before you submit.</p>}
+        {entering && !staffingClosed && <p className="mt-1 text-sm">Staffing and payroll run through Sunday 11:59 p.m. Update overtime and callouts before you submit.</p>}
       </div>
       {prior && <Button variant="ghost" onClick={() => setHistory(value => !value)} aria-expanded={history}>Report history</Button>}
     </div>
@@ -206,7 +269,7 @@ export function StandUpEditor(props: Props) {
       <summary className="cursor-pointer rounded text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Reporting periods and timings</summary>
       <ul className="mt-2 space-y-1 border-l-2 border-border pl-3 text-sm text-muted-foreground">
         <li>Staffing and payroll covers {staffingPeriod(week)}.</li>
-        {!historical && !notOpen && <li>The next Monday report opens {entryOpensStamp(shiftDay(currentWeek, 7), props.leadMinutes)}.</li>}
+        {entering && <li>The next Monday report opens {entryOpensStamp(shiftDay(currentWeek, 7), props.leadMinutes)}.</li>}
         {prior && <li>Previous figures come from the report for {dateLabel(prior.week_start)}{prior.week_start !== shiftDay(week, -7) ? ', because the previous calendar week is missing' : ''}, and are not copied into this one.</li>}
       </ul>
     </details>
@@ -230,7 +293,7 @@ export function StandUpEditor(props: Props) {
           never read as a result of the completed week. */}
       {SECTIONS.map(section => <div key={section.key} className="space-y-1">
         <h4 className="text-sm font-semibold">{section.label}</h4>
-        <p className="text-xs text-muted-foreground">{sectionPeriodLabel(section, week, asOf, !historical && !notOpen)}</p>
+        <p className="text-xs text-muted-foreground">{sectionPeriodLabel(section, week, asOf, entering)}</p>
         <dl className="grid gap-x-8 sm:grid-cols-2">{sectionMetrics(section.key).map(metric => <div key={metric.key} className="flex justify-between gap-3 border-b border-border py-3 text-sm"><dt>{metric.label}</dt><dd className="whitespace-nowrap font-medium tabular-nums">{reviewDisplay(metric.key)}</dd></div>)}</dl>
       </div>)}
       {prior && <div className="space-y-1"><h4 className="text-sm font-semibold">Different from the previous report · {dateLabel(prior.week_start)}</h4>
@@ -253,7 +316,8 @@ export function StandUpEditor(props: Props) {
         </dl>
       </details>}
       <SectionNav />
-      <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} open={!historical && !notOpen} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError} />
+      <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} open={entering} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError}
+        roster={rosterEntry} recorded={saved?.roster_confirmations} censusExtra={entering ? <OutOfHousePanel facilityId={facility.id} facilityName={facility.name} refreshKey={rosterTick} /> : undefined} />
       {historical && correction && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
     </form>}
     <section aria-label="Save and submit report" className="sticky bottom-0 z-10 space-y-3 border-y border-border bg-background px-1 py-4 shadow-sm">

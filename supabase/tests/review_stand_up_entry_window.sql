@@ -1,4 +1,4 @@
--- Native scratch-only probe for migration 404 (COL-350); fixtures and auth adaptation roll back.
+-- Native scratch-only probe for migration 405 (COL-350); fixtures and auth adaptation roll back.
 --
 -- Two layers are checked here. The boundary minutes are asserted against
 -- haven.stand_up_open_week(facility, instant), because a probe cannot move the

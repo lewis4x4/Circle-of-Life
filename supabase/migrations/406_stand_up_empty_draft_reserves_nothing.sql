@@ -15,9 +15,9 @@
 -- reasoned and reversible operations on a week that is already real, and the
 -- rule is scoped to the open reporting period for the same reason.
 --
--- Everything else in this function is exactly migration 404's text: the locks,
--- the CAS on version, the receipt contract, the immutable revisions and the
--- entry window.
+-- Everything else in this function is exactly migration 405's text: the locks,
+-- the CAS on version, the receipt contract, the immutable revisions, the COL-351
+-- roster confirmation and the entry window.
 BEGIN;
 
 CREATE OR REPLACE FUNCTION haven.stand_up_save(p jsonb,p_batch uuid DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
@@ -42,6 +42,8 @@ BEGIN
  IF w<>open_week OR p_batch IS NOT NULL THEN
   PERFORM haven.stand_up_assert(f,true);
   IF nullif(btrim(p->>'reason'),'') IS NULL THEN RAISE EXCEPTION 'Historical change requires reason'; END IF;
+  -- A past meeting keeps the confirmation recorded at the time; today's roster is not its evidence.
+  IF p ? 'roster' THEN RAISE EXCEPTION 'Roster confirmation applies to the open reporting period only'; END IF;
  END IF;
  PERFORM haven.stand_up_validate(p->'values');
  asof:=CASE WHEN p ? 'as_of' THEN (p->>'as_of')::timestamptz WHEN w=open_week AND p_batch IS NULL THEN clock_timestamp() ELSE NULL END;
@@ -52,7 +54,8 @@ BEGIN
  PERFORM haven.stand_up_assert(f,w<>open_week OR p_batch IS NOT NULL);
  IF coalesce(r.version,0)<>(p->>'expected_version')::integer THEN RAISE EXCEPTION 'Stale report version' USING ERRCODE='P0409'; END IF;
  -- COL-298 / NAV-008: nothing entered reserves nothing. The receipt is still
- -- written, so the same request_id keeps answering the same way.
+ -- written, so the same request_id keeps answering the same way. There is no
+ -- revision, so there is nothing for a roster confirmation to attach to either.
  -- Scoped to the open reporting period, which is the entry path the finding
  -- names. A historical correction and an import are owner-only, carry a written
  -- reason and land in an immutable revision; they stay exactly as they were.
@@ -60,6 +63,7 @@ BEGIN
   result:=jsonb_build_object('id',NULL,'organization_id',o,'facility_id',f,'week_start',w,'version',0,'revision_id',NULL,
    'values',p->'values','status','draft','source_as_of',NULL,'updated_at',NULL,
    'overtime_minutes',NULL,'overtime_issue',false,'entry_origin','initialized','field_dispositions','{}'::jsonb,
+   'roster_confirmations','{}'::jsonb,
    'updated_by',NULL,'updated_by_name',NULL,'first_submitted_at',NULL,'last_submitted_at',NULL,'last_submitted_revision_id',NULL,
    'not_started',true);
   INSERT INTO public.stand_up_receipts(actor_id,request_id,payload,result) VALUES(a,request,p,result);
@@ -67,6 +71,7 @@ BEGIN
  END IF;
  IF r.id IS NULL THEN INSERT INTO public.stand_up_reports(organization_id,facility_id,week_start,values,status) VALUES(o,f,w,p->'values',s) RETURNING * INTO r; END IF;
  INSERT INTO public.stand_up_revisions(report_id,version,values,status,actor_id,reason,provenance,batch_id,source_as_of) VALUES(r.id,r.version+1,p->'values',s,a,p->>'reason',coalesce(p->'provenance','{}'),p_batch,asof) RETURNING id INTO v_id;
+ PERFORM haven.stand_up_roster_confirm(p,o,f,a,r.id,v_id);
  UPDATE public.stand_up_reports SET version=r.version+1,revision_id=v_id,values=p->'values',status=s,source_as_of=asof,updated_at=clock_timestamp() WHERE id=r.id RETURNING to_jsonb(stand_up_reports.*) INTO result;
  INSERT INTO public.stand_up_receipts(actor_id,request_id,payload,result) VALUES(a,request,p,result);
  RETURN result;
@@ -76,6 +81,6 @@ COMMENT ON FUNCTION haven.stand_up_save(jsonb,uuid) IS 'COL-298: a stand_up_repo
 
 NOTIFY pgrst, 'reload schema';
 COMMIT;
--- Rollback: restore the 404 definition of haven.stand_up_save. No data or
+-- Rollback: restore the 405 definition of haven.stand_up_save. No data or
 -- column changes to undo; rows created before this migration are unaffected and
 -- an empty one simply reads Not started.

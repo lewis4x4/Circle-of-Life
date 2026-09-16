@@ -42,6 +42,17 @@ describe('Stand Up caller API', () => {
     mocks.command.mockRejectedValueOnce(new Error('Authentication required'));
     expect((await POST(request({ action: 'workspace', payload: {} }))).status).toBe(401);
   });
+  it('passes the roster suggestion command through and maps a facility grant denial to 403 (COL-351)', async () => {
+    mocks.command.mockResolvedValueOnce({ facility_id: 'f', roster_census_count: 34, in_house_count: 32, hospital_hold_count: 1, loa_count: 1, resident_count_in_haven: 40, roster_as_of: null });
+    const roster = await POST(request({ action: 'roster', payload: { facility_id: 'f' } }));
+    expect(roster.status).toBe(200); expect(mocks.command).toHaveBeenCalledWith('roster', { facility_id: 'f' });
+    expect(JSON.stringify(await roster.json())).not.toMatch(/name|resident_id|room/);
+    mocks.command.mockRejectedValueOnce(Object.assign(new Error('Stand Up access denied'), { code: '42501' }));
+    expect((await POST(request({ action: 'save', payload: { facility_id: 'other', roster: {} } }))).status).toBe(403);
+    mocks.command.mockRejectedValueOnce(Object.assign(new Error('Current census differs from the Haven roster (34). Choose why it is different or use the roster figure.'), { code: '22023' }));
+    const differs = await POST(request({ action: 'save', payload: { facility_id: 'f', roster: {} } }));
+    expect(differs.status).toBe(400); expect((await differs.json()).error).toMatch(/differs from the Haven roster/);
+  });
   it('returns a no-store receipt and exposes version conflicts for review', async () => {
     mocks.command.mockResolvedValueOnce({ revision_id: 'r' });
     const saved = await POST(request({ action: 'save', payload: { expected_version: 1 } }));

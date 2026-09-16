@@ -1,4 +1,4 @@
--- Native scratch-only probe for migration 405 (COL-298 / NAV-008); fixtures and
+-- Native scratch-only probe for migration 406 (COL-298 / NAV-008); fixtures and
 -- auth adaptation roll back.
 --
 -- The finding: "Standup draft creation can reserve the whole week with missing
