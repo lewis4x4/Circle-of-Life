@@ -40,7 +40,7 @@ export type BoardCheckBootstrap = {
 /**
  * The open walk for a facility, or the most recent closed one when there is
  * none. A facility has at most one open session at a time; the partial unique
- * index in migration 405 is what makes that true, not this query.
+ * index in migration 407 is what makes that true, not this query.
  */
 export async function fetchBoardCheckSession(
   supabase: Client,

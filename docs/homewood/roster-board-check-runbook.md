@@ -17,7 +17,7 @@ to agree with it.
 
 ### Before the walk
 
-- Confirm the deploy carrying migration `405_facility_data_checks.sql` is live,
+- Confirm the deploy carrying migration `407_facility_data_checks.sql` is live,
   and that the migration is applied to the production project and recorded in
   the ledger.
 - Sign in as someone who can admit and discharge residents: owner, org admin,

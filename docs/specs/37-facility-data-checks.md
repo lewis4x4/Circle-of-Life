@@ -2,7 +2,7 @@
 
 Status: FULL
 Linear: COL-361
-Migration: `405_facility_data_checks.sql`
+Migration: `407_facility_data_checks.sql`
 Database probe: `supabase/tests/review_facility_data_checks.sql`
 
 ## Purpose
