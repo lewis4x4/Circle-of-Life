@@ -15,7 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Dormant pre-launch — flip vars.HAVEN_UI_GATES_ENABLED to 'true' to enable.
-    if: vars.HAVEN_UI_GATES_ENABLED == 'true'
+    # COL-443: doubly gated. This suite's helpers build a service-role client,
+    # and the only service-role key available today belongs to the production
+    # project — an RLS-bypassing key for a database holding PHI, which does not
+    # belong in Actions secrets. The suite stays off until a dedicated non-PHI
+    # test project exists; then set SUPABASE_SERVICE_ROLE_KEY_TEST to that
+    # project's key and flip HAVEN_CI_TEST_PROJECT_READY to 'true'.
+    if: vars.HAVEN_UI_GATES_ENABLED == 'true' && vars.HAVEN_CI_TEST_PROJECT_READY == 'true'
     steps:
       - uses: actions/checkout@v4
 
