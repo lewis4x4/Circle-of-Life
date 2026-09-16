@@ -303,6 +303,7 @@ export async function POST(request: NextRequest) {
 
   let authUserId: string;
   let temporaryPassword: string | undefined;
+  let temporaryPasswordExpiry: string | null = null;
   let invitationSent = false;
   let provisionMethod: string | undefined;
   let authUserCreatedHere = false;
@@ -317,6 +318,7 @@ export async function POST(request: NextRequest) {
     invitationSent = provisioned.invitation_sent;
     provisionMethod = provisioned.provision_method;
     temporaryPassword = provisioned.temporary_password;
+    temporaryPasswordExpiry = provisioned.temporary_password_expires_at ?? null;
     authUserCreatedHere = provisioned.auth_user_created;
   } catch (err) {
     if (err instanceof UserCreateProvisionError) {
@@ -398,7 +400,9 @@ export async function POST(request: NextRequest) {
     avatar_url: data.avatar_url ?? null,
     manager_user_id: data.manager_user_id ?? null,
     is_active: true,
-    settings: temporaryPassword ? mergeMustChangePasswordSetting({}, true) : {},
+    settings: temporaryPassword
+      ? mergeMustChangePasswordSetting({}, true, temporaryPasswordExpiry)
+      : {},
   };
 
   const { data: profile, error: insertErr } = await admin
@@ -442,7 +446,10 @@ export async function POST(request: NextRequest) {
       data: profile,
       invitation_sent: invitationSent,
       provision_method: provisionMethod,
-      ...(temporaryPassword && { temporary_password: temporaryPassword }),
+      ...(temporaryPassword && {
+        temporary_password: temporaryPassword,
+        temporary_password_expires_at: temporaryPasswordExpiry,
+      }),
     },
     { status: 201 },
   );

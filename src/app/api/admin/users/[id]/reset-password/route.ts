@@ -71,6 +71,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   }
 
   let temporaryPassword: string | undefined;
+  let temporaryPasswordExpiry: string | null = null;
   let auditWritten = false;
 
   try {
@@ -86,8 +87,10 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
       await adminSendPasswordResetEmail(target.email);
     } else {
-      const { temporary_password } = await adminSetUserSignInReadyWithTemporaryPassword(targetUserId);
+      const { temporary_password, expires_at } =
+        await adminSetUserSignInReadyWithTemporaryPassword(targetUserId);
       temporaryPassword = temporary_password;
+      temporaryPasswordExpiry = expires_at;
     }
   } catch (err) {
     logError("admin.users.reset_password", err, {
@@ -114,6 +117,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
       ok: true,
       mode,
       temporary_password: temporaryPassword,
+      temporary_password_expires_at: temporaryPasswordExpiry,
     });
   }
 

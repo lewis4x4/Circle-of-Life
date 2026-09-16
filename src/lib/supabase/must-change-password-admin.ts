@@ -3,13 +3,19 @@
  */
 
 import { mergeMustChangePasswordSetting } from "@/lib/auth/must-change-password";
+import {
+  TEMPORARY_PASSWORD_EXPIRES_AT_KEY,
+  temporaryPasswordExpiresAt,
+} from "@/lib/auth/temporary-password";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 export async function adminSetMustChangePassword(
   userId: string,
   required: boolean,
-): Promise<void> {
+  options: { expiresAt?: string } = {},
+): Promise<{ expires_at: string | null }> {
   const supabase = createServiceRoleClient();
+  const expiresAt = required ? (options.expiresAt ?? temporaryPasswordExpiresAt()) : null;
 
   const { data: authUser, error: authReadErr } = await supabase.auth.admin.getUserById(userId);
   if (authReadErr) {
@@ -18,13 +24,16 @@ export async function adminSetMustChangePassword(
 
   const priorMeta =
     authUser.user?.app_metadata && typeof authUser.user.app_metadata === "object"
-      ? authUser.user.app_metadata
+      ? { ...authUser.user.app_metadata }
       : {};
+  // Never leave a deadline behind when the obligation is cleared.
+  delete (priorMeta as Record<string, unknown>)[TEMPORARY_PASSWORD_EXPIRES_AT_KEY];
 
   const { error: metaErr } = await supabase.auth.admin.updateUserById(userId, {
     app_metadata: {
       ...priorMeta,
       must_change_password: required,
+      ...(expiresAt ? { [TEMPORARY_PASSWORD_EXPIRES_AT_KEY]: expiresAt } : {}),
     },
   });
   if (metaErr) {
@@ -40,14 +49,16 @@ export async function adminSetMustChangePassword(
     throw new Error(`Profile settings read error: ${profileErr.message}`);
   }
   if (!profile) {
-    return;
+    return { expires_at: expiresAt };
   }
 
   const { error: updateErr } = await supabase
     .from("user_profiles")
-    .update({ settings: mergeMustChangePasswordSetting(profile.settings, required) })
+    .update({ settings: mergeMustChangePasswordSetting(profile.settings, required, expiresAt) })
     .eq("id", userId);
   if (updateErr) {
     throw new Error(`Profile settings update error: ${updateErr.message}`);
   }
+
+  return { expires_at: expiresAt };
 }

@@ -31,7 +31,7 @@ const options = { app_role: "caregiver", organization_id: "org-1" };
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.updateUserById.mockResolvedValue({ error: null });
-  mocks.setMustChange.mockResolvedValue(undefined);
+  mocks.setMustChange.mockResolvedValue({ expires_at: "2026-09-19T12:00:00.000Z" });
 });
 
 describe("adminInviteUser result inspection", () => {
@@ -111,6 +111,7 @@ describe("adminCreateUser result inspection", () => {
 
     expect(result.user.id).toBe("u2");
     expect(result.temporary_password).toHaveLength(20);
+    expect(result.expires_at).toBe("2026-09-19T12:00:00.000Z");
     expect(mocks.setMustChange).toHaveBeenCalledWith("u2", true);
   });
 });

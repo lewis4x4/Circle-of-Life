@@ -6,6 +6,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { adminSetMustChangePassword } from "@/lib/supabase/must-change-password-admin";
+import { generateSecurePassword } from "@/lib/auth/temporary-password";
 import type { Database } from "@/types/database";
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -35,13 +36,8 @@ type AuthAdminSnapshot = {
 
 // ── Helpers ───────────────────────────────────────────────────────
 
-/** Generate a secure random password for initial account creation. */
-function generateSecurePassword(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-  const array = new Uint8Array(20);
-  crypto.getRandomValues(array);
-  return Array.from(array, (b) => chars[b % chars.length]).join("");
-}
+// Generator lives in @/lib/auth/temporary-password so it can be unit-tested for
+// uniformity and character-class coverage without a Supabase client in scope.
 
 // ── Admin API wrappers ────────────────────────────────────────────
 
@@ -192,7 +188,7 @@ export async function adminGetAuthSnapshotsByIds(
  */
 export async function adminSetUserSignInReadyWithTemporaryPassword(
   userId: string,
-): Promise<{ temporary_password: string }> {
+): Promise<{ temporary_password: string; expires_at: string | null }> {
   const supabase = createServiceRoleClient();
   const password = generateSecurePassword();
 
@@ -205,9 +201,9 @@ export async function adminSetUserSignInReadyWithTemporaryPassword(
     throw new Error(`Auth sign-in ready update error: ${error.message}`);
   }
 
-  await adminSetMustChangePassword(userId, true);
+  const { expires_at } = await adminSetMustChangePassword(userId, true);
 
-  return { temporary_password: password };
+  return { temporary_password: password, expires_at };
 }
 
 function createPasswordResetAnonClient() {
@@ -239,7 +235,7 @@ export async function adminSendPasswordResetEmail(email: string): Promise<void> 
 export async function adminCreateUser(
   email: string,
   options: { app_role: string; organization_id: string; email_confirm?: boolean },
-): Promise<{ user: AdminUserResult; temporary_password: string }> {
+): Promise<{ user: AdminUserResult; temporary_password: string; expires_at: string | null }> {
   const supabase = createServiceRoleClient();
   const password = generateSecurePassword();
 
@@ -261,7 +257,7 @@ export async function adminCreateUser(
     throw new Error("Auth create error: create returned no user");
   }
 
-  await adminSetMustChangePassword(data.user.id, true);
+  const { expires_at } = await adminSetMustChangePassword(data.user.id, true);
 
   return {
     user: {
@@ -271,6 +267,7 @@ export async function adminCreateUser(
       organization_id: options.organization_id,
     },
     temporary_password: password,
+    expires_at,
   };
 }
 

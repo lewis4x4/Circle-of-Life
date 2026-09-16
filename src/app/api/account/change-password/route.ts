@@ -6,6 +6,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { changePasswordSchema } from "@/lib/validation/change-password";
 import { adminSetMustChangePassword } from "@/lib/supabase/must-change-password-admin";
+import {
+  TEMPORARY_PASSWORD_EXPIRES_AT_KEY,
+  isTemporaryPasswordExpired,
+} from "@/lib/auth/temporary-password";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -45,6 +49,24 @@ export async function POST(request: NextRequest) {
   }
 
   const { current_password, new_password } = parsed.data;
+
+  // A forced change carries a deadline. Past it the temporary password is no longer a
+  // credential the user may trade in for a permanent one — an admin has to reissue.
+  // Checked before the password probe so an expired account cannot be used as an oracle.
+  const appMetadata = (user.app_metadata ?? {}) as Record<string, unknown>;
+  if (appMetadata.must_change_password === true) {
+    const expiresAt = appMetadata[TEMPORARY_PASSWORD_EXPIRES_AT_KEY];
+    if (isTemporaryPasswordExpired(typeof expiresAt === "string" ? expiresAt : null)) {
+      return NextResponse.json(
+        {
+          error:
+            "Your temporary password has expired. Ask an administrator to issue a new one.",
+          code: "temporary_password_expired",
+        },
+        { status: 403 },
+      );
+    }
+  }
 
   const verifyClient = createPasswordVerifyClient();
   const { error: signInError } = await verifyClient.auth.signInWithPassword({
