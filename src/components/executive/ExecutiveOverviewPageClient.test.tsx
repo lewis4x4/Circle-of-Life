@@ -145,8 +145,15 @@ describe("ExecutiveOverviewPageClient organization gap handling", () => {
   });
 });
 
-describe("ExecutiveOverviewPageClient role-home subtitle", () => {
-  it("does not flash Loading role home on first paint while auth is loading", () => {
+describe("ExecutiveOverviewPageClient header", () => {
+  beforeEach(() => {
+    authMock.loading = false;
+    authMock.appRole = "owner";
+    authMock.organizationId = "org-1";
+    supabaseMock.loadError = null;
+  });
+
+  it("does not flash role-home framing on first paint while auth is loading", () => {
     authMock.loading = true;
     authMock.appRole = "facility_admin";
     authMock.organizationId = null;
@@ -158,45 +165,82 @@ describe("ExecutiveOverviewPageClient role-home subtitle", () => {
     expect(screen.queryByText(/Owner home/)).not.toBeInTheDocument();
   });
 
-  it("holds the last resolved subtitle when auth reloads after hydration", () => {
+  it("carries the page's own scope, not the shell's role framing", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 1 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: {} }]}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.getByRole("heading", { level: 1, name: "Executive intelligence" })).toBeInTheDocument();
+    expect(screen.getByText(/All facilities · 1 in scope/)).toBeInTheDocument();
+    // Role labelling belongs to the shell; repeating it here spent a line of
+    // the first screen on something the operator already knows.
+    expect(screen.queryByText(/Owner home/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/portfolio movement, exception pressure/)).not.toBeInTheDocument();
+  });
+});
+
+describe("ExecutiveOverviewPageClient information hierarchy", () => {
+  beforeEach(() => {
     authMock.loading = false;
     authMock.appRole = "owner";
     authMock.organizationId = "org-1";
-
-    const { rerender } = render(<ExecutiveOverviewPageClient {...emptyProps} />);
-
-    expect(
-      screen.getByText(
-        "Owner home — portfolio movement, exception pressure, leadership decisions only.",
-      ),
-    ).toBeInTheDocument();
-
-    authMock.loading = true;
-    authMock.appRole = "owner";
-    rerender(<ExecutiveOverviewPageClient {...emptyProps} />);
-
-    expect(
-      screen.getByText(
-        "Owner home — portfolio movement, exception pressure, leadership decisions only.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/Loading role home/)).not.toBeInTheDocument();
+    supabaseMock.loadError = null;
   });
 
-  it("shows the hydrated role home once auth resolves", () => {
-    authMock.loading = false;
-    authMock.appRole = "owner";
-    authMock.organizationId = "org-1";
+  function renderPortfolio() {
+    return render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 0 }}
+        initialFacilities={[
+          { id: "site-a", name: "Site Alpha", metrics: {} },
+          { id: "site-b", name: "Site Beta", metrics: {} },
+        ]}
+        initialSnapshot={RECORDED_TODAY}
+        initialHasServerData
+      />,
+    );
+  }
 
-    render(<ExecutiveOverviewPageClient {...emptyProps} />);
+  it("puts the facility comparison ahead of the figures and their explanations", () => {
+    renderPortfolio();
 
-    expect(
-      screen.getByText(
-        "Owner home — portfolio movement, exception pressure, leadership decisions only.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/Loading role home/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Facility Admin home/)).not.toBeInTheDocument();
+    const comparison = screen.getByRole("heading", { name: /Portfolio comparison/ });
+    const figures = screen.getByRole("heading", { name: "Portfolio figures" });
+
+    expect(comparison.compareDocumentPosition(figures) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("states coverage once, with the per-measure evidence behind a disclosure", () => {
+    renderPortfolio();
+
+    expect(screen.getByRole("heading", { name: "Coverage incomplete" })).toBeInTheDocument();
+    expect(screen.getByText("View coverage")).toBeInTheDocument();
+    // The old page repeated every gap in a second full-height card.
+    expect(screen.queryByText("Information not received")).not.toBeInTheDocument();
+    expect(screen.queryByText("Monitoring coverage")).not.toBeInTheDocument();
+  });
+
+  it("offers the gaps as follow-up work with destinations that exist", () => {
+    renderPortfolio();
+
+    expect(screen.getByRole("heading", { name: "Reporting follow-up" })).toBeInTheDocument();
+    const payroll = screen.getByRole("link", { name: /Open payroll/ });
+    expect(payroll).toHaveAttribute("href", "/admin/payroll");
+  });
+
+  it("keeps the recorded-alert empty state to a compact row", () => {
+    renderPortfolio();
+
+    expect(screen.getByText("No critical alerts recorded in the available data.")).toBeInTheDocument();
+    expect(screen.getByText(/Recorded alerts only/)).toBeInTheDocument();
+    // Arrow behaviour used to need a full-width paragraph of its own.
+    expect(screen.queryByText(/Arrows mark movement against the dated recording/)).not.toBeInTheDocument();
   });
 });
 
@@ -355,7 +399,7 @@ describe("ExecutiveOverviewPageClient evidence claims", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the denominator when the run recorded one", () => {
+  it("labels a projected resident-day denominator as an estimate", () => {
     render(
       <ExecutiveOverviewPageClient
         {...emptyProps}
@@ -366,7 +410,55 @@ describe("ExecutiveOverviewPageClient evidence claims", () => {
       />,
     );
 
-    expect(screen.getByText(/750 resident-days \(25 residents × 30 days\)/)).toBeInTheDocument();
+    // The visible qualifier says estimate; the arithmetic and the reason it is
+    // only an estimate sit in the tile's own disclosure.
+    expect(
+      screen.getByText("Estimated · incidents in the trailing 30 days per 1,000 resident-days."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/750 resident-days is 25 residents in census on 2026-09-15 × 30 days/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Daily census across the window is not recorded/)).toBeInTheDocument();
+  });
+
+  it("reads a portfolio-wide zero against the period and the invoices it counts", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 0 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: {} }]}
+        initialSnapshot={RECORDED_TODAY}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.getByText("$0")).toBeInTheDocument();
+    expect(screen.getAllByText(/Invoices dated 2026-09-01 through 2026-09-15\./).length)
+      .toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/Draft and voided invoices are not included\./).length,
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it("does not blame payroll for a labor percentage with no revenue behind it", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 0 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: {} }]}
+        initialSnapshot={{
+          ...RECORDED_TODAY,
+          evidence: { ...RECORDED_TODAY.evidence, laborCostMtdCents: 480_000 },
+        }}
+        initialHasServerData
+      />,
+    );
+
+    expect(
+      screen.getByText(/Payroll hours are loaded, but nothing was billed this period/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No payroll hours have been loaded for this period."))
+      .not.toBeInTheDocument();
   });
 
   it("reads a facility with nothing recorded as not observed rather than stable", () => {
