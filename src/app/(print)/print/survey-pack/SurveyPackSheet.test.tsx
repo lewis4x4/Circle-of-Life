@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SurveyPackSheet } from "./SurveyPackSheet";
@@ -156,6 +157,25 @@ describe("the sheet", () => {
     const button = await screen.findByRole("button", { name: "Print" });
     const controls = button.closest("div");
     expect(controls?.className).toMatch(/controls/);
+  });
+});
+
+describe("accessibility of the sheet", () => {
+  it("has no axe violations: the tables a surveyor reads have real headers", async () => {
+    const { container } = render(
+      <SurveyPackSheet
+        organizationId="org-1"
+        facilityId="fac-1"
+        facilityName="Homewood Lodge"
+        printedByName="Review clerk"
+      />,
+    );
+    await screen.findByText("Admission and discharge register");
+    const results = await axe.run(container, {
+      // Contrast needs real layout; a11y:routes judges that in a browser.
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(results.violations.map((v) => v.id)).toEqual([]);
   });
 });
 
