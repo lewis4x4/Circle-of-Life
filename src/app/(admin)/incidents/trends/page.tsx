@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BarChart3, TrendingUp } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -170,7 +171,7 @@ export default function AdminIncidentTrendsPage() {
                 {stats.bySeverity.map(([sev, count]) => (
                   <div key={sev} className="space-y-1.5 focus-within:outline-none group">
                     <div className="flex justify-between text-sm items-center">
-                      <span className="uppercase tracking-wider text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded">{sev.replace(/_/g, " ")}</span>
+                      <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">{formatLevelWord(sev)}</span>
                       <span className="font-bold tabular-nums text-slate-900 dark:text-white text-lg">{count}</span>
                     </div>
                     <div className="h-3 overflow-hidden rounded-full bg-muted shadow-inner relative">

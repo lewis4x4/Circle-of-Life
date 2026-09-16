@@ -15,8 +15,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { formatIncidentOccurredAt } from "@/lib/incidents/incidents-display-copy";
-import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
+import { formatIncidentOccurredAt, formatLevelWord } from "@/lib/incidents/incidents-display-copy";
+import { buildIncidentOpenObligations, type ObligationCareEvent } from "@/lib/incidents/workflow-obligations";
 import { cn } from "@/lib/utils";
 
 type QueueFilter = "all" | "notifications" | "regulatory" | "rca" | "care_plan";
@@ -113,7 +113,7 @@ export default function AdminIncidentObligationsPage() {
       const incidentIds = incidents.map((row) => row.id);
       const residentIds = [...new Set(incidents.map((row) => row.resident_id).filter(Boolean))] as string[];
 
-      const [residentsResult, rcaResult, followupsResult] = await Promise.all([
+      const [residentsResult, rcaResult, followupsResult, careEventsResult] = await Promise.all([
         residentIds.length > 0
           ? supabase.from("residents").select("id, first_name, last_name").in("id", residentIds)
           : Promise.resolve({ data: [], error: null }),
@@ -128,11 +128,33 @@ export default function AdminIncidentObligationsPage() {
               .is("deleted_at", null)
               .is("completed_at", null)
           : Promise.resolve({ data: [], error: null }),
+        incidentIds.length > 0
+          ? supabase
+              .from("care_events")
+              .select("id, incident_id, status, created_at, acknowledged_at, acknowledged_by, final_level")
+              .in("incident_id", incidentIds)
+              .is("deleted_at", null)
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (residentsResult.error) throw residentsResult.error;
       if (rcaResult.error) throw rcaResult.error;
       if (followupsResult.error) throw followupsResult.error;
+      if (careEventsResult.error) throw careEventsResult.error;
+
+      const careEventByIncidentId = new Map<string, ObligationCareEvent>();
+      for (const row of careEventsResult.data ?? []) {
+        if (row.incident_id && !careEventByIncidentId.has(row.incident_id)) {
+          careEventByIncidentId.set(row.incident_id, {
+            id: row.id,
+            status: row.status,
+            created_at: row.created_at,
+            acknowledged_at: row.acknowledged_at,
+            acknowledged_by: row.acknowledged_by,
+            final_level: row.final_level,
+          });
+        }
+      }
 
       const residentById = new Map(((residentsResult.data ?? []) as ResidentMini[]).map((row) => [row.id, row]));
       const rcaByIncidentId = new Map(
@@ -149,7 +171,12 @@ export default function AdminIncidentObligationsPage() {
           const residentName = resident
             ? `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Resident"
             : "Resident";
-          const openObligations = buildIncidentOpenObligations(row);
+          const openObligations = buildIncidentOpenObligations({
+            incident: row,
+            routes: [],
+            deliveries: [],
+            careEvent: careEventByIncidentId.get(row.id) ?? null,
+          });
           const openFollowups = openFollowupCountByIncident.get(row.id) ?? 0;
           const rootCausePending =
             row.severity === "level_3" || row.severity === "level_4" || openFollowups > 0
@@ -389,7 +416,7 @@ export default function AdminIncidentObligationsPage() {
           {severityFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-                Severity filter: {severityFilter.replace("level_", "L")}
+                Level filter: {formatLevelWord(severityFilter)}
               </Badge>
               {scopeFilter !== "all" ? (
                 <Badge variant="outline" className="border-info/30 bg-info/10 text-info">
@@ -437,7 +464,7 @@ export default function AdminIncidentObligationsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline" className="bg-muted text-muted-foreground border border-border">
-                        {row.severity.replace("level_", "L")}
+                        {formatLevelWord(row.severity)}
                       </Badge>
                       {row.missingNotificationActions.length > 0 ? (
                         <Badge variant="outline" className="bg-info/10 text-info border border-info/30">

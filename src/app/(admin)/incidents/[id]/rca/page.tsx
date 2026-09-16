@@ -18,6 +18,7 @@ import {
   RecordDetailHeader,
   RecordDetailSection,
 } from "@/design-system/components/record-detail";
+import { VoiceNoteButton } from "@/components/care-events/admin/VoiceNoteButton";
 
 const STORAGE_PREFIX = "haven-rca-draft-v1:";
 
@@ -749,16 +750,26 @@ export default function AdminIncidentRcaPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <label htmlFor="rca-root-cause-narrative" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Root cause narrative
             </label>
             <textarea
+              id="rca-root-cause-narrative"
               className={cn(textareaClass, "mt-1.5 min-h-[100px]")}
               value={rootCauseNarrative}
               disabled={locked}
               onChange={(e) => setRootCauseNarrative(e.target.value)}
               placeholder="Summarize the most likely root cause chain…"
             />
+            <div className="mt-2">
+              <VoiceNoteButton
+                label="Add voice note"
+                disabled={locked}
+                onTranscript={(text) =>
+                  setRootCauseNarrative((current) => (current.trim() ? `${current.trimEnd()} ${text}` : text))
+                }
+              />
+            </div>
           </div>
           <div>
             <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">

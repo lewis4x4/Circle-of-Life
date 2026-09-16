@@ -85,6 +85,9 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/incidents/[id]`
 - `/admin/incidents/[id]/rca`
 - `/admin/incidents/trends`
+- `/admin/incidents/reports-log` (spec 07A: the paper Incident Reports Log columns from `v_incident_reports_log`, month view plus CSV)
+- `/admin/care-events/[id]` (spec 07A: the Administrator's card and completion form; push deep-link target)
+- `/admin/residents/[id]/timeline` (spec 07A: Tier 3 resident timeline from `v_resident_timeline`)
 - `/admin/staff` (**roster CSV** hub filter scope — Track D D80)
 - `/admin/staff/new`
 - `/admin/staff/[id]`
@@ -187,6 +190,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/caregiver/report` (spec 07A "Something happened": Who, What, How bad, receipt; `?resident=<uuid>` and `?kind=<kind>` prefill)
 - `/caregiver/report/[careEventId]` (receipt revisit: acknowledgment, photo, voice note)
 - `/caregiver/incident-draft` → redirects to `/caregiver/report` (preserves `?resident=`)
+- `/caregiver/resident/[id]/timeline` (spec 07A: the resident timeline inside the caregiver shell)
 - `/caregiver/followups`
 - `/caregiver/resident/[id]`
 - `/caregiver/resident/[id]/log`

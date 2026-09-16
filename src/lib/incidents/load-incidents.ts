@@ -37,6 +37,9 @@ export type IncidentRow = {
   carePlanPending: boolean;
   ahcaReportable: boolean;
   ahcaReported: boolean;
+  /** The three-tap care event behind this incident, when one exists. */
+  careEventId: string | null;
+  careEventStatus: "open" | "acknowledged" | "closed" | null;
 };
 
 type SupabaseIncidentRow = {
@@ -81,6 +84,20 @@ type SupabaseProfileMini = {
   full_name: string | null;
 };
 
+type SupabaseCareEventMini = {
+  id: string;
+  incident_id: string | null;
+  status: string;
+  created_at: string;
+  acknowledged_at: string | null;
+  acknowledged_by: string | null;
+  final_level: string;
+};
+
+function narrowCareEventStatus(value: string): "open" | "acknowledged" | "closed" {
+  return value === "acknowledged" || value === "closed" ? value : "open";
+}
+
 export async function fetchIncidentsFromSupabase(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
@@ -109,7 +126,7 @@ export async function fetchIncidentsFromSupabase(
   // None of these four secondary fetches depend on each other — run them in
   // parallel instead of chaining four serial round-trips after the primary
   // incidents query. Saves ~3 RTTs on every load.
-  const [residentsResult, profilesResult, followupsResult, rcaResult] = await Promise.all([
+  const [residentsResult, profilesResult, followupsResult, rcaResult, careEventsResult] = await Promise.all([
     residentIds.length
       ? supabase.from("residents" as never).select("id, first_name, last_name").in("id", residentIds)
       : Promise.resolve({ data: [] }),
@@ -129,6 +146,13 @@ export async function fetchIncidentsFromSupabase(
           .select("incident_id, investigation_status")
           .in("incident_id", incidentIds)
       : Promise.resolve({ data: [] }),
+    incidentIds.length
+      ? supabase
+          .from("care_events")
+          .select("id, incident_id, status, created_at, acknowledged_at, acknowledged_by, final_level")
+          .in("incident_id", incidentIds)
+          .is("deleted_at", null)
+      : Promise.resolve({ data: [] as SupabaseCareEventMini[] }),
   ]);
 
   const residentById = new Map(
@@ -140,6 +164,10 @@ export async function fetchIncidentsFromSupabase(
   const rcaByIncidentId = new Map(
     (((rcaResult.data ?? []) as Array<{ incident_id: string; investigation_status: string }>)).map((row) => [row.incident_id, row.investigation_status] as const),
   );
+  const careEventByIncidentId = new Map<string, SupabaseCareEventMini>();
+  for (const row of (careEventsResult.data ?? []) as SupabaseCareEventMini[]) {
+    if (row.incident_id && !careEventByIncidentId.has(row.incident_id)) careEventByIncidentId.set(row.incident_id, row);
+  }
 
   const nextDueByIncident = new Map<string, number>();
   const openFollowupsByIncident = new Map<string, number>();
@@ -180,7 +208,13 @@ export async function fetchIncidentsFromSupabase(
     const unassignedFollowups = unassignedFollowupsByIncident.get(row.id) ?? 0;
     const escalatedFollowups = escalatedFollowupsByIncident.get(row.id) ?? 0;
     const criticalFollowups = criticalFollowupsByIncident.get(row.id) ?? 0;
-    const openObligations = buildIncidentOpenObligations(row).length;
+    const careEvent = careEventByIncidentId.get(row.id) ?? null;
+    const openObligations = buildIncidentOpenObligations({
+      incident: row,
+      routes: [],
+      deliveries: [],
+      careEvent,
+    }).length;
     const rcaStatus = rcaByIncidentId.get(row.id);
     const rootCausePending =
       row.severity === "level_3" ||
@@ -227,6 +261,8 @@ export async function fetchIncidentsFromSupabase(
       carePlanPending,
       ahcaReportable: row.ahca_reportable,
       ahcaReported: row.ahca_reported,
+      careEventId: careEvent?.id ?? null,
+      careEventStatus: careEvent ? narrowCareEventStatus(careEvent.status) : null,
     } as IncidentRow;
   });
 }

@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { AlertCircle, Clock, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AlertCircle, Clock, Loader2, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { IncidentsTodayStrip } from "@/components/incidents/IncidentsTodayStrip";
+import { acknowledgeCareEvent } from "@/lib/care-events/admin-data";
+import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import {
   adminIncidentsGlobalEmptyNotice,
   adminIncidentsKanbanColumnEmptyHelper,
@@ -18,6 +21,7 @@ import {
   type IncidentRow,
   type IncidentStatus,
 } from "@/lib/incidents/load-incidents";
+import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -220,9 +224,12 @@ export function AdminIncidentsPageClient({
            </h2>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/admin/incidents/reports-log" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}>
+            Reports log
+          </Link>
           <Link href={level4BadgeHref}>
             <Badge variant="outline" className="h-8 px-3 border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 cursor-pointer">
-              {level4ExceptionCount} Level-4 Exceptions
+              {level4ExceptionCount} {formatLevelWord(4)} exceptions
             </Badge>
           </Link>
           <Link href={severityFilter === "all"
@@ -291,7 +298,7 @@ export function AdminIncidentsPageClient({
           ) : null}
           {severityFilter !== "all" ? (
             <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-              Severity filter: {severityFilter.replace("level_", "L")}
+              Level filter: {formatLevelWord(severityFilter)}
             </Badge>
           ) : null}
           <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
@@ -308,6 +315,8 @@ export function AdminIncidentsPageClient({
           {adminIncidentsGlobalEmptyNotice()}
         </div>
       ) : null}
+
+      <IncidentsTodayStrip facilityId={selectedFacilityId} />
 
       {followupPressure.length > 0 && (
         <div className="relative z-10 rounded-[var(--radius)] border border-warning/20 bg-warning/10 p-4 sm:p-5">
@@ -456,6 +465,56 @@ export function AdminIncidentsPageClient({
   );
 }
 
+/**
+ * "Begin Triage" acknowledges the care event behind the incident (spec 07A
+ * §6.3) and opens the Administrator's card; without a care event it stays the
+ * plain link to the incident detail.
+ */
+function BeginTriageButton({ incident }: { incident: IncidentRow }) {
+  const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
+  const [working, setWorking] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const careEventId = incident.careEventId;
+  if (!careEventId) {
+    return (
+      <Button size="sm" variant="default" className="h-8 text-xs px-3 font-semibold">
+        Begin Triage <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+      </Button>
+    );
+  }
+  const alreadyAcknowledged = incident.careEventStatus !== "open";
+  return (
+    <Button
+      size="sm"
+      variant="default"
+      className="h-8 text-xs px-3 font-semibold"
+      disabled={working}
+      aria-label={alreadyAcknowledged ? "Open the care event card" : "Acknowledge and open the care event card"}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (alreadyAcknowledged) {
+          router.push(`/admin/care-events/${careEventId}`);
+          return;
+        }
+        setWorking(true);
+        setFailed(false);
+        acknowledgeCareEvent(supabase, careEventId)
+          .then(() => router.push(`/admin/care-events/${careEventId}`))
+          .catch(() => {
+            setFailed(true);
+            setWorking(false);
+          });
+      }}
+    >
+      {working ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" aria-hidden /> : null}
+      {failed ? "Try again" : alreadyAcknowledged ? "Open card" : "Begin Triage"}
+      {working ? null : <ArrowRight className="w-3.5 h-3.5 ml-1.5" />}
+    </Button>
+  );
+}
+
 function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
   // Compute DOH Countdown using `now` lifted into parent state (updated every 60s)
   let countdownRibbon = null;
@@ -494,11 +553,11 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
              <span className="font-bold text-foreground text-base">{incident.residentName}</span>
            </div>
            {incident.severity === "level_4" ? (
-             <Badge variant="destructive" className="h-6 px-2 text-[10px] tracking-wider font-bold rounded-md">L4 SEVERE</Badge>
+             <Badge variant="destructive" className="h-6 px-2 text-xs font-semibold rounded-md">{formatLevelWord(incident.severity)}</Badge>
            ) : incident.severity === "level_3" ? (
-             <Badge className="h-6 px-2 text-[10px] tracking-wider font-bold rounded-md bg-warning text-primary-foreground border-0 hover:bg-warning/90">L3 MAJOR</Badge>
+             <Badge className="h-6 px-2 text-xs font-semibold rounded-md bg-warning text-primary-foreground border-0 hover:bg-warning/90">{formatLevelWord(incident.severity)}</Badge>
            ) : (
-             <Badge variant="secondary" className="h-6 px-2 text-[10px] tracking-wider font-bold rounded-md border-0 bg-muted text-muted-foreground">{incident.severity.replace('level_', 'L')}</Badge>
+             <Badge variant="secondary" className="h-6 px-2 text-xs font-semibold rounded-md border-0 bg-muted text-muted-foreground">{formatLevelWord(incident.severity)}</Badge>
            )}
         </div>
         
@@ -573,9 +632,7 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
            </div>
            
            {incident.status === "new" && (
-             <Button size="sm" variant="default" className="h-8 text-xs px-3 font-semibold">
-               Begin Triage <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-             </Button>
+             <BeginTriageButton incident={incident} />
            )}
            {incident.status === "investigating" && (
              <Button size="sm" variant="outline" className="h-8 text-xs px-3 font-medium">
