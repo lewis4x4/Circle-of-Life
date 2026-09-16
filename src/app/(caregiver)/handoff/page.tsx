@@ -112,8 +112,9 @@ export default function CaregiverHandoffPage() {
   /**
    * Write this shift's handoff: the outgoing shift is the one on the floor now,
    * the incoming shift follows it (day, evening, night, day), handoff_date is
-   * today in the facility zone, and auto_summary carries every care event from
-   * the outgoing shift window grouped by level word (spec 07A §6.3).
+   * the date the outgoing window started in the facility zone (today, except a
+   * night recorded after midnight files under yesterday), and auto_summary
+   * carries every care event from that window grouped by level word (spec 07A §6.3).
    */
   const recordHandoff = useCallback(async () => {
     if (!facilityCtx || recording) return;
