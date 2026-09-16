@@ -151,13 +151,12 @@ const SKIN_INTEGRITY_SEEN: readonly string[] = ["bruise", "skin_tear", "burn", "
 
 const ALLEGATION_CATEGORIES: readonly string[] = ["abuse_allegation", "neglect_allegation"];
 
-const AHCA_LEVEL_4_KINDS: readonly CareEventKind[] = [
-  "fall",
-  "condition_change",
-  "wandering",
-  "medication",
-  "environment",
-];
+/**
+ * Kinds whose Level 4 alone makes the event AHCA reportable (spec 07A §3).
+ * Wandering, medication and environment need their own answer instead:
+ * "not found", "reaction", "danger".
+ */
+const AHCA_LEVEL_4_KINDS: readonly CareEventKind[] = ["fall", "condition_change"];
 
 /** Kinds whose Level 4 shows the "Call 911 first" line (contract §6). */
 export const CARE_EVENT_CALL_911_KINDS: readonly CareEventKind[] = [
@@ -272,9 +271,12 @@ function contextLevel(
 function deriveCategory(kind: CareEventKind, answers: CareEventAnswers): string {
   switch (kind) {
     case "fall":
-      return answers.hurt === "a_little" || answers.hurt === "badly"
-        ? "fall_with_injury"
-        : "fall_without_injury";
+      // Contract §5: without injury only when "not hurt" or unanswered. Any
+      // other value, including one outside the vocabulary, counts as injury so
+      // TS and SQL agree on a value neither runtime recognizes.
+      return answers.hurt == null || answers.hurt === "not_hurt"
+        ? "fall_without_injury"
+        : "fall_with_injury";
     case "injury_found": {
       const seen = multi(answers.seen);
       if (answers.cause_known === "no" && seen.includes("bruise")) return "unexplained_bruise";
@@ -325,6 +327,9 @@ function deriveFlags(
   return {
     ahca_reportable:
       (level === 4 && AHCA_LEVEL_4_KINDS.includes(kind)) ||
+      (kind === "wandering" && answers.where === "not_found") ||
+      (kind === "medication" && answers.reaction === "yes") ||
+      (kind === "environment" && answers.danger === "yes") ||
       allegation ||
       (kind === "fall" && answers.going_out === "yes"),
     insurance_reportable: level >= 3 || category === "elopement" || allegation,

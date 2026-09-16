@@ -6,6 +6,10 @@ import { parseCareEventReceipt } from "@/lib/care-events/submit";
 import { logError } from "@/lib/observability/logger";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 
+// Not exported: Next.js route modules may only export handlers and config.
+const CARE_EVENT_QUEUE_OWNER_MISMATCH =
+  "This event belongs to a different operator. Sign in as its original reporter to send it.";
+
 /**
  * Replay endpoint for the offline "Something happened" queue (spec 07A §2).
  * The service worker and the in-page fallback POST the same payload the
@@ -37,9 +41,20 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
   const { actor } = auth;
 
+  // The offline queue stamps the operator who captured the event. A service
+  // worker background sync has no page to filter by, so the server is the
+  // guard: another operator's session must not send someone else's report.
+  const { queue_owner_user_id: queueOwnerUserId, ...rpcPayload } = payload;
+  if (queueOwnerUserId !== undefined && queueOwnerUserId !== null && queueOwnerUserId !== actor.id) {
+    return NextResponse.json(
+      { error: CARE_EVENT_QUEUE_OWNER_MISMATCH },
+      { status: 403 },
+    );
+  }
+
   const { data, error } = await actor.client.rpc(
     "submit_care_event" as never,
-    { p_payload: { ...payload, captured_offline: payload.captured_offline === true } } as never,
+    { p_payload: { ...rpcPayload, captured_offline: rpcPayload.captured_offline === true } } as never,
   );
 
   if (error) {

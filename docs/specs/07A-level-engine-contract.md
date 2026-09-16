@@ -91,7 +91,7 @@ The engine never reads the database and never formats dates. Callers pass the la
 
 | flag | true when |
 |---|---|
-| `ahca_reportable` | level 4 and kind in (fall, condition_change, wandering, medication, environment); or category in (`abuse_allegation`, `neglect_allegation`); or fall `going_out=yes` |
+| `ahca_reportable` | (level 4 and kind in (fall, condition_change)); or (kind wandering and `where=not_found`); or (kind medication and `reaction=yes`); or (kind environment and `danger=yes`); or category in (`abuse_allegation`, `neglect_allegation`); or (kind fall and `going_out=yes`). Mirrors parent spec §3: Level 4 alone qualifies only for Fall and Sick; Wandering, Medicine and Building need their own answer. |
 | `insurance_reportable` | level 3 or 4; or category `elopement`; or category in (`abuse_allegation`, `neglect_allegation`) |
 | `dcf_report_required` | category in (`abuse_allegation`, `neglect_allegation`) |
 | `grievance_clock` | kind family_complaint and `what=resident_complaint` |
@@ -142,7 +142,7 @@ The staff voice note is **not** part of the sentence. `submit_care_event` append
 ]
 ```
 
-`ids` are unique snake_case. The Playwright project reads this file to find the expected level word for the case it walks; the parity script `scripts/care-events/verify-level-parity.mjs` runs every case through `care_event_derive` and diffs against `expect`.
+`ids` are unique snake_case. A case may carry `"unknown_answer_keys": ["hurt"]` to declare that it deliberately fills those keys with a value outside the §2 vocabulary (the vitest vocabulary check then requires the value to be unknown instead of registered); such cases pin the "not answered" behaviour of both runtimes. The Playwright project reads this file to find the expected level word for the case it walks; the parity script `scripts/care-events/verify-level-parity.mjs` runs every case through `care_event_derive` and diffs against `expect`.
 
 ## 9. Level words
 

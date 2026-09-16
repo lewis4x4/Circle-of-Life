@@ -6,13 +6,22 @@
  * The TypeScript side is covered by vitest; this script checks SQL against the
  * fixture's `expect` block. Binding contract: docs/specs/07A-level-engine-contract.md.
  *
- * Skips cleanly (exit 0) when the fixture is missing or CARE_EVENT_PARITY_DB_URL
- * is unset, so `npm run test` stays green on machines without the local stack.
+ * Two ways to reach a database, checked in this order:
  *
- *   CARE_EVENT_PARITY_DB_URL=postgresql://postgres@127.0.0.1:57432/haven \
- *     node scripts/care-events/verify-level-parity.mjs
+ *   1. CARE_EVENT_PARITY_DB_URL: a local psql on PATH (or CARE_EVENT_PARITY_PSQL)
+ *      connects to the URL.
+ *        CARE_EVENT_PARITY_DB_URL=postgresql://postgres@127.0.0.1:57432/haven \
+ *          node scripts/care-events/verify-level-parity.mjs
+ *   2. CARE_EVENT_PARITY_DOCKER_CONTAINER + CARE_EVENT_PARITY_DOCKER_DB: the SQL
+ *      runs through `docker exec -i <container> psql -h 127.0.0.1 -U postgres -d <db>`,
+ *      which is how scripts/pg-verify-migrations.mjs runs it against the replay
+ *      container in CI, so a TS/SQL drift fails the migration replay.
+ *        CARE_EVENT_PARITY_DOCKER_CONTAINER=haven-care-events-db \
+ *        CARE_EVENT_PARITY_DOCKER_DB=haven \
+ *          node scripts/care-events/verify-level-parity.mjs
  *
- * CARE_EVENT_PARITY_PSQL overrides the psql binary (default: `psql` on PATH).
+ * Skips cleanly (exit 0) when the fixture is missing or neither mode is
+ * configured, so `npm run test` stays green on machines without the local stack.
  * Never point this at a hosted project: it only SELECTs, but the fixture is
  * test data and the local stack is the contract's stated target.
  */
@@ -27,14 +36,16 @@ const root = process.cwd();
 const fixturePath = path.join(root, "src", "lib", "care-events", "level-cases.json");
 const dbUrl = process.env.CARE_EVENT_PARITY_DB_URL;
 const psqlBin = process.env.CARE_EVENT_PARITY_PSQL || "psql";
+const dockerContainer = process.env.CARE_EVENT_PARITY_DOCKER_CONTAINER;
+const dockerDb = process.env.CARE_EVENT_PARITY_DOCKER_DB;
 const COMPARE_KEYS = ["level", "derived_level", "category", "flags", "sentence"];
 
 if (!fs.existsSync(fixturePath)) {
   console.log(`${TAG} SKIP: no fixture file`);
   process.exit(0);
 }
-if (!dbUrl) {
-  console.log(`${TAG} SKIP: CARE_EVENT_PARITY_DB_URL not set`);
+if (!dbUrl && !(dockerContainer && dockerDb)) {
+  console.log(`${TAG} SKIP: neither CARE_EVENT_PARITY_DB_URL nor CARE_EVENT_PARITY_DOCKER_CONTAINER + CARE_EVENT_PARITY_DOCKER_DB set`);
   process.exit(0);
 }
 
@@ -76,16 +87,24 @@ FROM jsonb_array_elements('${literal}'::jsonb) WITH ORDINALITY AS c(value, ordin
 ORDER BY c.ordinality;
 `;
 
-const run = spawnSync(psqlBin, [dbUrl, "-X", "-At", "-F", "\t", "-v", "ON_ERROR_STOP=1", "-c", sql], {
-  encoding: "utf8",
-  maxBuffer: 64 * 1024 * 1024,
-});
+const psqlFlags = ["-X", "-At", "-F", "\t", "-v", "ON_ERROR_STOP=1"];
+const mode = dbUrl ? "url" : "docker";
+// The docker path feeds the SQL on stdin (`-i`) so the statement never has to
+// survive a second shell; the URL path passes it with -c as before.
+const run = dbUrl
+  ? spawnSync(psqlBin, [dbUrl, ...psqlFlags, "-c", sql], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
+  : spawnSync(
+      "docker",
+      ["exec", "-i", dockerContainer, "psql", "-h", "127.0.0.1", "-U", "postgres", "-d", dockerDb, ...psqlFlags],
+      { input: sql, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+const runner = mode === "url" ? psqlBin : `docker exec ${dockerContainer} psql`;
 if (run.error) {
-  console.error(`${TAG} FAIL: could not run ${psqlBin}: ${run.error.message}`);
+  console.error(`${TAG} FAIL: could not run ${runner}: ${run.error.message}`);
   process.exit(1);
 }
 if (run.status !== 0) {
-  console.error(`${TAG} FAIL: psql exited ${run.status}\n${run.stderr}`);
+  console.error(`${TAG} FAIL: ${runner} exited ${run.status}\n${run.stderr}`);
   process.exit(1);
 }
 
@@ -142,4 +161,4 @@ if (mismatches.length > 0) {
   process.exit(1);
 }
 
-console.log(`${TAG} PASS (${cases.length} cases)`);
+console.log(`${TAG} PASS (${cases.length} cases, ${mode === "url" ? "psql" : `docker exec ${dockerContainer}`})`);

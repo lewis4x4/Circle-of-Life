@@ -78,7 +78,9 @@ self.addEventListener("sync", (event) => {
     return;
   }
   if (event.tag === CARE_EVENT_SYNC_TAG) {
-    event.waitUntil(flushCareEventQueue());
+    // Background sync has no page and no signed-in operator to filter by; the
+    // owner travels in the body and the server refuses a mismatch with 403.
+    event.waitUntil(flushCareEventQueue(null));
   }
 });
 
@@ -154,7 +156,7 @@ self.addEventListener("message", (event) => {
   if (data.type === "HAVEN_FLUSH_CARE_EVENT_QUEUE") {
     event.waitUntil((async () => {
       try {
-        const result = await flushCareEventQueue();
+        const result = await flushCareEventQueue(data.ownerUserId || null);
         const state = await buildCareEventQueueState({ sent: result.sent, lastError: result.lastError }, data.ownerUserId);
         if (port) port.postMessage({ ok: true, state });
       } catch (error) {
@@ -335,7 +337,9 @@ async function flushQueue() {
 /* ---------------------------------------------------------------------------
  * Care event queue ("Something happened", spec 07A). Keyed by clientEventId so
  * the server replay is idempotent. 409 and 422 are terminal: the item stays for
- * reconciliation and is never retried automatically.
+ * reconciliation and is never retried automatically. 403 (the queue owner is
+ * not the signed-in operator) is retained but not terminal: the original
+ * reporter may sign in later and the item goes out then.
  * ------------------------------------------------------------------------- */
 
 async function putCareEventQueueItem(item) {
@@ -386,7 +390,14 @@ async function broadcastCareEventQueueState(extra = {}) {
 
 let careEventFlushPromise = null;
 
-async function flushCareEventQueue() {
+/**
+ * Replay the queue. `ownerUserId` is the signed-in operator for a page-driven
+ * flush: items that belong to someone else are left untouched, exactly like
+ * the in-page twin in src/lib/offline/care-event-queue.ts. A background sync
+ * passes null (no page, no operator) and every item carries its own
+ * `queue_owner_user_id` so the server can refuse a mismatch.
+ */
+async function flushCareEventQueue(ownerUserId = null) {
   if (careEventFlushPromise) return careEventFlushPromise;
 
   careEventFlushPromise = (async () => {
@@ -397,6 +408,7 @@ async function flushCareEventQueue() {
     let lastError = null;
     for (const item of items) {
       if (item.terminal) continue;
+      if (ownerUserId && item.ownerUserId !== ownerUserId) continue;
       try {
         if (!item.ownerUserId) {
           item.lastError = "Original operator is unknown. Retained for manual reconciliation.";
@@ -409,7 +421,7 @@ async function flushCareEventQueue() {
             "Content-Type": "application/json",
             "x-haven-sync": "service-worker",
           },
-          body: JSON.stringify({ ...item.payload, captured_offline: true }),
+          body: JSON.stringify({ ...item.payload, captured_offline: true, queue_owner_user_id: item.ownerUserId }),
           credentials: "same-origin",
         });
 
@@ -428,6 +440,7 @@ async function flushCareEventQueue() {
         lastError = await readError(response);
         item.retryCount = (item.retryCount || 0) + 1;
         item.lastError = lastError;
+        // 403 is deliberately not terminal: the owner may sign in later.
         item.terminal = response.status === 409 || response.status === 422;
         await putCareEventQueueItem(item);
       } catch (error) {

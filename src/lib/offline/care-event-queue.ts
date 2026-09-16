@@ -43,7 +43,7 @@ export type CareEventQueueItem = {
   queuedAt: string;
   retryCount: number;
   lastError: string | null;
-  /** 409 or 422 from the server: keep for reconciliation, never auto-retry. */
+  /** 409 or 422 from the server: keep for reconciliation, never auto-retry. 403 (wrong operator) stays retryable. */
   terminal: boolean;
 };
 
@@ -213,7 +213,7 @@ export async function replayQueuedCareEvents(input: {
       const response = await fetchImpl(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-haven-sync": "page" },
-        body: JSON.stringify({ ...item.payload, captured_offline: true }),
+        body: JSON.stringify({ ...item.payload, captured_offline: true, queue_owner_user_id: item.ownerUserId }),
         credentials: "same-origin",
       });
       if (response.ok) {
@@ -223,6 +223,8 @@ export async function replayQueuedCareEvents(input: {
         continue;
       }
       const error = await readErrorMessage(response);
+      // 403 means the signed-in operator is not the item's owner: retained, not
+      // terminal, so the original reporter can send it after signing in.
       const terminal = response.status === 409 || response.status === 422;
       await store.put({ ...item, retryCount: item.retryCount + 1, lastError: error, terminal });
       result.failed.push({ clientEventId: item.clientEventId, error, terminal });

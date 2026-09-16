@@ -4,8 +4,10 @@ import {
   HANDOFF_NO_RESIDENT_COPY,
   autoSummaryCareEventLines,
   buildShiftHandoffAutoSummary,
+  buildShiftHandoffInsert,
   currentShiftWindowFor,
   handoffSummaryLine,
+  nextShift,
   residentInitialLast,
   shiftWindow,
   type HandoffCareEventInput,
@@ -169,5 +171,78 @@ describe("autoSummaryCareEventLines", () => {
     expect(autoSummaryCareEventLines({ care_events: { total: 0 } })).toEqual([]);
     expect(autoSummaryCareEventLines(null)).toEqual([]);
     expect(autoSummaryCareEventLines("text")).toEqual([]);
+  });
+});
+
+describe("nextShift", () => {
+  it("hands day to evening, evening to night, and night to day", () => {
+    expect(nextShift("day")).toBe("evening");
+    expect(nextShift("evening")).toBe("night");
+    expect(nextShift("night")).toBe("day");
+  });
+});
+
+describe("buildShiftHandoffInsert", () => {
+  const input = {
+    facilityId: "00000000-0000-4000-8000-0000000000f1",
+    organizationId: "00000000-0000-4000-8000-0000000000a1",
+    timeZone: TIME_ZONE,
+    outgoingShift: "evening" as const,
+    incomingShift: "night" as const,
+    handoffDate: "2026-09-14",
+    outgoingStaffId: "00000000-0000-4000-8000-0000000000c1",
+    now: new Date("2026-09-15T03:00:00.000Z"),
+  };
+
+  it("writes the built summary as auto_summary and the trimmed note as outgoing_notes", () => {
+    const row = buildShiftHandoffInsert({ ...input, outgoingNotes: "  Mrs. B asked for her daughter.  " }, [
+      event({ id: "a", final_level: "level_2", kind: "behavior", occurred_at: "2026-09-14T22:00:00.000Z" }),
+      event({ id: "b", final_level: "level_1", kind: "medication", occurred_at: "2026-09-14T20:00:00.000Z" }),
+    ]);
+    expect(row).toMatchObject({
+      facility_id: input.facilityId,
+      organization_id: input.organizationId,
+      handoff_date: "2026-09-14",
+      outgoing_shift: "evening",
+      incoming_shift: "night",
+      outgoing_staff_id: input.outgoingStaffId,
+      outgoing_notes: "Mrs. B asked for her daughter.",
+    });
+    expect(row.auto_summary).toEqual(
+      buildShiftHandoffAutoSummary({
+        careEvents: [
+          event({ id: "a", final_level: "level_2", kind: "behavior", occurred_at: "2026-09-14T22:00:00.000Z" }),
+          event({ id: "b", final_level: "level_1", kind: "medication", occurred_at: "2026-09-14T20:00:00.000Z" }),
+        ],
+        timeZone: TIME_ZONE,
+        shift: "evening",
+        date: "2026-09-14",
+        now: input.now,
+      }),
+    );
+    expect(row.auto_summary.care_events.total).toBe(2);
+    expect(row.auto_summary.lines).toEqual([
+      "Heads-up 1: P. Brownell, room 12, Upset or behavior at 6:00 PM",
+      "Note 1: P. Brownell, room 12, Medicine at 4:00 PM",
+    ]);
+    expect(autoSummaryCareEventLines(row.auto_summary)).toEqual(row.auto_summary.lines);
+    expect(JSON.stringify(row)).not.toMatch(/level_[1-4]/);
+  });
+
+  it("stores null outgoing_notes for an empty or missing note and an empty summary for a quiet shift", () => {
+    const blank = buildShiftHandoffInsert({ ...input, outgoingNotes: "   " }, []);
+    expect(blank.outgoing_notes).toBeNull();
+    expect(blank.auto_summary.care_events).toMatchObject({ total: 0, shift: "evening", date: "2026-09-14", by_level: [] });
+    expect(blank.auto_summary.lines).toEqual([]);
+    expect(buildShiftHandoffInsert(input, []).outgoing_notes).toBeNull();
+  });
+
+  it("keeps handoff_date as today while the summary covers the night window that started yesterday", () => {
+    const row = buildShiftHandoffInsert(
+      { ...input, outgoingShift: "night", incomingShift: "day", handoffDate: "2026-09-15", shiftDate: "2026-09-14" },
+      [event({ id: "n", final_level: "level_1", occurred_at: "2026-09-15T06:00:00.000Z" })],
+    );
+    expect(row.handoff_date).toBe("2026-09-15");
+    expect(row.auto_summary.care_events).toMatchObject({ shift: "night", date: "2026-09-14", total: 1 });
   });
 });

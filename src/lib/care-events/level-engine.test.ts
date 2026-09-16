@@ -25,6 +25,8 @@ type LevelCase = {
   answers: CareEventAnswers;
   context: CareEventContext;
   expect: CareEventDerivation;
+  /** Answer keys this case deliberately fills with a value outside the tile vocabulary (contract §1: "not answered"). */
+  unknown_answer_keys?: string[];
 };
 
 const cases = casesJson as LevelCase[];
@@ -86,7 +88,12 @@ describe("deriveCareEvent", () => {
       { location_label: "Resident Room" },
     );
     const empty = deriveCareEvent("fall", {}, { location_label: "Resident Room" });
-    expect(unknown).toEqual(empty);
+    // Level, flags and sentence ignore the unknown values. The category is the
+    // one exception (contract §5): any hurt value other than not_hurt or
+    // unanswered is an injury, in TS and in SQL alike.
+    expect({ ...unknown, category: null }).toEqual({ ...empty, category: null });
+    expect(unknown.category).toBe("fall_with_injury");
+    expect(empty.category).toBe("fall_without_injury");
 
     const signs = deriveCareEvent("condition_change", { signs: ["mystery", "confused"] }, {});
     expect(signs.derived_level).toBe(2);
@@ -167,8 +174,13 @@ describe("tiles", () => {
         const options = registered.get(key);
         expect(options, `${levelCase.id}: ${key} is not a question on this tile`).toBeDefined();
         const values = Array.isArray(raw) ? raw : [raw];
+        const deliberatelyUnknown = levelCase.unknown_answer_keys?.includes(answerKey) === true;
         for (const value of values) {
           expect(typeof value).toBe("string");
+          if (deliberatelyUnknown) {
+            expect(options?.has(value as string), `${levelCase.id}: ${key}=${String(value)} is in the vocabulary`).toBe(false);
+            continue;
+          }
           expect(options?.has(value as string), `${levelCase.id}: ${key}=${String(value)}`).toBe(
             true,
           );

@@ -16475,6 +16475,10 @@ export type Database = {
         Args: { p_care_event_id: string; p_note: string | null; p_photo_path: string | null }
         Returns: Json
       }
+      care_event_close_gate: {
+        Args: { p_care_event_id: string }
+        Returns: Json
+      }
       care_event_derive: {
         Args: { p_kind: string; p_answers: Json; p_context: Json }
         Returns: Json

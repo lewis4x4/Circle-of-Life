@@ -193,7 +193,12 @@ BEGIN
   END;
 
   -- ---- Section 6: flags (from the final level and the category) ----------
-  v_ahca := (v_level = 4 AND p_kind IN ('fall','condition_change','wandering','medication','environment'))
+  -- Spec 07A section 3: Level 4 alone qualifies only for fall and condition_change;
+  -- wandering, medication and environment need their own answer.
+  v_ahca := (v_level = 4 AND p_kind IN ('fall','condition_change'))
+            OR (p_kind = 'wandering' AND v_where = 'not_found')
+            OR (p_kind = 'medication' AND v_reaction = 'yes')
+            OR (p_kind = 'environment' AND v_danger = 'yes')
             OR v_category IN ('abuse_allegation','neglect_allegation')
             OR (p_kind = 'fall' AND v_going_out = 'yes');
   v_insurance := v_level >= 3 OR v_category = 'elopement' OR v_category IN ('abuse_allegation','neglect_allegation');
@@ -1234,6 +1239,92 @@ COMMENT ON FUNCTION public.acknowledge_care_event(uuid) IS
   'Acknowledges an open care event, stamps incidents.administrator_notified (and nurse_notified for a nurse), marks the caller''s queued deliveries acknowledged and cancels unsent escalation rows. COL-37 ruling: definer required -- nurse and coordinator may acknowledge but hold no UPDATE policy on care_events, care_event_deliveries or exec_alerts. The body checks auth.uid(), haven.app_role(), the organization and haven.accessible_facility_ids() first.';
 
 -- ---------------------------------------------------------------------------
+-- 3b. care_event_close_gate: the close gate as a read-only query.
+-- The admin card loads this on every view; it must never write (a phantom
+-- audit_log row per page view is not "audit everything").
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.care_event_close_gate(p_care_event_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_role text := haven.app_role()::text;
+  v_event record;
+  v_admin jsonb;
+  v_family_notified boolean := false;
+  v_physician_notified boolean := false;
+  v_level_int integer;
+  v_missing text[] := '{}';
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  IF v_role IS NULL OR v_role NOT IN ('owner','org_admin','facility_admin','admin_assistant','manager') THEN
+    RAISE EXCEPTION 'care_event: forbidden';
+  END IF;
+
+  SELECT ce.* INTO v_event
+  FROM public.care_events ce
+  WHERE ce.id = p_care_event_id AND ce.deleted_at IS NULL;
+  IF v_event.id IS NULL
+     OR v_event.organization_id <> haven.organization_id()
+     OR v_event.facility_id NOT IN (SELECT haven.accessible_facility_ids()) THEN
+    RAISE EXCEPTION 'care_event: forbidden';
+  END IF;
+
+  v_admin := CASE WHEN jsonb_typeof(v_event.answers -> 'admin') = 'object' THEN v_event.answers -> 'admin' ELSE '{}'::jsonb END;
+  IF v_event.incident_id IS NOT NULL THEN
+    SELECT i.family_notified, i.physician_notified
+      INTO v_family_notified, v_physician_notified
+    FROM public.incidents i WHERE i.id = v_event.incident_id;
+  END IF;
+  v_level_int := substring(v_event.final_level::text FROM '[0-9]+$')::integer;
+
+  IF v_level_int >= 2 AND v_event.status = 'open' THEN
+    v_missing := array_append(v_missing, 'acknowledgment');
+  END IF;
+  IF v_level_int >= 3 THEN
+    IF NOT (COALESCE(v_family_notified, false) OR COALESCE((v_admin ->> 'family_later')::boolean, false)) THEN
+      v_missing := array_append(v_missing, 'family_notified');
+    END IF;
+    IF NOT (COALESCE(v_physician_notified, false) OR COALESCE((v_admin ->> 'physician_later')::boolean, false)) THEN
+      v_missing := array_append(v_missing, 'physician_notified');
+    END IF;
+    IF NOT (v_admin ? 'ahca_reportable') THEN
+      v_missing := array_append(v_missing, 'ahca_decision');
+    END IF;
+  END IF;
+  IF v_level_int >= 4 THEN
+    IF NOT (v_admin ? 'ems') THEN
+      v_missing := array_append(v_missing, 'ems_decision');
+    END IF;
+    IF NOT (v_admin ? 'video_secured') THEN
+      v_missing := array_append(v_missing, 'video_secured');
+    END IF;
+  END IF;
+  IF COALESCE((v_event.flags ->> 'dcf_report_required')::boolean, false) AND NOT (v_admin ? 'dcf_reported_at') THEN
+    v_missing := array_append(v_missing, 'dcf_report');
+  END IF;
+
+  RETURN jsonb_build_object(
+    'status', v_event.status,
+    'final_level', v_level_int,
+    'missing', to_jsonb(v_missing)
+  );
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.care_event_close_gate(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.care_event_close_gate(uuid) TO authenticated;
+
+COMMENT ON FUNCTION public.care_event_close_gate(uuid) IS
+  'Read-only close gate for the administrator card (spec 07A section 5): returns {status, final_level, missing} without writing anything, so a page view never produces an audit row. COL-37 ruling: definer required -- complete_care_event_admin_section (definer) calls this to decide whether an event may close, and the card must show the same answer, so the gate reads care_events and incidents with the same rights as the writer instead of through the caller''s RLS view; it stays STABLE so a card load is a pure read. The body checks auth.uid(), haven.app_role(), the organization and haven.accessible_facility_ids() first, exactly as complete_care_event_admin_section does.';
+
+-- ---------------------------------------------------------------------------
 -- 4. complete_care_event_admin_section: Sections 2 and 4 of the paper form.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.complete_care_event_admin_section(p_care_event_id uuid, p_section jsonb)
@@ -1246,8 +1337,6 @@ DECLARE
   v_uid uuid := auth.uid();
   v_role text := haven.app_role()::text;
   v_event record;
-  v_family_notified boolean := false;
-  v_physician_notified boolean := false;
   v_admin jsonb;
   v_section jsonb := COALESCE(p_section, '{}'::jsonb);
   v_item jsonb;
@@ -1259,6 +1348,10 @@ DECLARE
   v_missing text[] := '{}';
   v_tz text;
   v_status text;
+  v_gate jsonb;
+  -- True once any section key carried something to merge into answers->'admin';
+  -- an empty section (the read-only card load) must not touch the row.
+  v_touched boolean := false;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not authenticated';
@@ -1298,6 +1391,7 @@ BEGIN
     ELSE
       v_admin := v_admin || jsonb_build_object('family_later', true);
     END IF;
+    v_touched := true;
   END IF;
 
   -- physician_notified
@@ -1314,6 +1408,7 @@ BEGIN
     ELSE
       v_admin := v_admin || jsonb_build_object('physician_later', true);
     END IF;
+    v_touched := true;
   END IF;
 
   -- ems
@@ -1323,6 +1418,7 @@ BEGIN
       UPDATE public.incidents SET injury_treatment = v_item ->> 'treatment' WHERE id = v_event.incident_id;
     END IF;
     v_admin := v_admin || jsonb_build_object('ems', v_item ->> 'treatment');
+    v_touched := true;
   END IF;
 
   -- corrective_actions
@@ -1341,6 +1437,7 @@ BEGIN
       WHERE id = v_event.incident_id;
     END IF;
     v_admin := v_admin || jsonb_build_object('corrective_actions', to_jsonb(v_chips), 'corrective_other', v_other);
+    v_touched := true;
   END IF;
 
   -- ahca
@@ -1362,16 +1459,19 @@ BEGIN
       END IF;
     END IF;
     v_admin := v_admin || jsonb_build_object('ahca_reportable', (v_item ->> 'reportable')::boolean, 'ahca_reason', NULLIF(v_item ->> 'reason_code', ''));
+    v_touched := true;
   END IF;
 
   -- dcf_reported_at
   IF v_section ? 'dcf_reported_at' AND NULLIF(v_section ->> 'dcf_reported_at', '') IS NOT NULL THEN
     v_admin := v_admin || jsonb_build_object('dcf_reported_at', (v_section ->> 'dcf_reported_at')::timestamptz);
+    v_touched := true;
   END IF;
 
   -- video_secured
   IF v_section ->> 'video_secured' IN ('yes','no','na') THEN
     v_admin := v_admin || jsonb_build_object('video_secured', v_section ->> 'video_secured');
+    v_touched := true;
   END IF;
 
   -- lower_level
@@ -1395,47 +1495,22 @@ BEGIN
     END IF;
   END IF;
 
-  UPDATE public.care_events
-  SET answers = answers || jsonb_build_object('admin', v_admin)
-  WHERE id = v_event.id;
-
-  -- Reload after the writes above, then compute the close gate.
-  SELECT ce.* INTO v_event FROM public.care_events ce WHERE ce.id = p_care_event_id;
-  v_admin := CASE WHEN jsonb_typeof(v_event.answers -> 'admin') = 'object' THEN v_event.answers -> 'admin' ELSE '{}'::jsonb END;
-  IF v_event.incident_id IS NOT NULL THEN
-    SELECT i.family_notified, i.physician_notified
-      INTO v_family_notified, v_physician_notified
-    FROM public.incidents i WHERE i.id = v_event.incident_id;
-  END IF;
-  v_level_int := substring(v_event.final_level::text FROM '[0-9]+$')::integer;
-
-  IF v_level_int >= 2 AND v_event.status = 'open' THEN
-    v_missing := array_append(v_missing, 'acknowledgment');
-  END IF;
-  IF v_level_int >= 3 THEN
-    IF NOT (COALESCE(v_family_notified, false) OR COALESCE((v_admin ->> 'family_later')::boolean, false)) THEN
-      v_missing := array_append(v_missing, 'family_notified');
-    END IF;
-    IF NOT (COALESCE(v_physician_notified, false) OR COALESCE((v_admin ->> 'physician_later')::boolean, false)) THEN
-      v_missing := array_append(v_missing, 'physician_notified');
-    END IF;
-    IF NOT (v_admin ? 'ahca_reportable') THEN
-      v_missing := array_append(v_missing, 'ahca_decision');
-    END IF;
-  END IF;
-  IF v_level_int >= 4 THEN
-    IF NOT (v_admin ? 'ems') THEN
-      v_missing := array_append(v_missing, 'ems_decision');
-    END IF;
-    IF NOT (v_admin ? 'video_secured') THEN
-      v_missing := array_append(v_missing, 'video_secured');
-    END IF;
-  END IF;
-  IF COALESCE((v_event.flags ->> 'dcf_report_required')::boolean, false) AND NOT (v_admin ? 'dcf_reported_at') THEN
-    v_missing := array_append(v_missing, 'dcf_report');
+  -- Only write when a section key actually carried something. The read-only
+  -- card load goes through care_event_close_gate and never reaches here with
+  -- v_touched = true.
+  IF v_touched THEN
+    UPDATE public.care_events
+    SET answers = answers || jsonb_build_object('admin', v_admin)
+    WHERE id = v_event.id;
   END IF;
 
-  v_status := v_event.status;
+  -- The close gate, computed once, in one place, after the writes above.
+  v_gate := public.care_event_close_gate(p_care_event_id);
+  v_level_int := (v_gate ->> 'final_level')::integer;
+  SELECT COALESCE(array_agg(x ORDER BY ord), '{}') INTO v_missing
+  FROM jsonb_array_elements_text(v_gate -> 'missing') WITH ORDINALITY AS t(x, ord);
+
+  v_status := v_gate ->> 'status';
   IF COALESCE((v_section ->> 'close')::boolean, false) AND v_status <> 'closed' THEN
     IF cardinality(v_missing) > 0 THEN
       RAISE EXCEPTION 'care_event: close gate: %', v_missing[1];

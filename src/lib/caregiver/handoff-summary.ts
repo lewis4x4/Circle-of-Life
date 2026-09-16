@@ -5,7 +5,9 @@
  *
  * `buildShiftHandoffAutoSummary` is pure and returns the `auto_summary` jsonb
  * shape plus printable lines. `loadOutgoingShiftCareEvents` reads the rows for
- * one shift window. Level words only ever come from formatLevelWord.
+ * one shift window. `recordShiftHandoff` is the writer: it loads, builds and
+ * inserts one `shift_handoffs` row. Level words only ever come from
+ * formatLevelWord.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -14,7 +16,7 @@ import { fromZonedTime } from "date-fns-tz";
 import { careEventTileWord } from "@/lib/care-events/tiles";
 import { isCareEventKind } from "@/lib/care-events/level-engine";
 import { formatLevelWord, levelNumberFromSeverity } from "@/lib/incidents/incidents-display-copy";
-import type { Database } from "@/types/database";
+import type { Database, Json } from "@/types/database";
 
 import { zonedYmd } from "./emar-queue";
 import type { ShiftType } from "./shift";
@@ -64,6 +66,19 @@ export type HandoffAutoSummary = {
 
 export const HANDOFF_NO_RESIDENT_COPY = "No resident";
 export const HANDOFF_NO_EVENTS_COPY = "No events this shift.";
+export const HANDOFF_RECORDED_COPY = "Handoff recorded";
+
+/** The shift that takes the floor after `shift`: day to evening, evening to night, night to day. */
+export function nextShift(shift: HandoffShift): HandoffShift {
+  switch (shift) {
+    case "day":
+      return "evening";
+    case "evening":
+      return "night";
+    case "night":
+      return "day";
+  }
+}
 
 /** Emergency first: the next shift reads the worst news before the notes. */
 const LEVEL_ORDER: ReadonlyArray<1 | 2 | 3 | 4> = [4, 3, 2, 1];
@@ -237,4 +252,88 @@ export async function loadOutgoingShiftCareEvents(
       room: resident?.bed_id ? (roomByBed.get(resident.bed_id) ?? null) : null,
     };
   });
+}
+
+export type RecordShiftHandoffInput = {
+  facilityId: string;
+  organizationId: string;
+  timeZone: string;
+  outgoingShift: HandoffShift;
+  incomingShift: HandoffShift;
+  /** The row's `handoff_date`: today in the facility zone. */
+  handoffDate: string;
+  /**
+   * The calendar date the outgoing shift's window started on (facility zone).
+   * Differs from `handoffDate` only for a night shift recorded after midnight.
+   * Defaults to `handoffDate`.
+   */
+  shiftDate?: string;
+  outgoingStaffId: string;
+  outgoingNotes?: string | null;
+  now?: Date;
+};
+
+/** The `shift_handoffs` row the writer inserts, before the database fills defaults. */
+export type ShiftHandoffInsert = {
+  facility_id: string;
+  organization_id: string;
+  handoff_date: string;
+  outgoing_shift: HandoffShift;
+  incoming_shift: HandoffShift;
+  outgoing_staff_id: string;
+  outgoing_notes: string | null;
+  auto_summary: HandoffAutoSummary;
+};
+
+/** Pure: the row for one handoff from the outgoing shift's care events. */
+export function buildShiftHandoffInsert(
+  input: RecordShiftHandoffInput,
+  careEvents: readonly HandoffCareEventInput[],
+): ShiftHandoffInsert {
+  const note = input.outgoingNotes?.trim() ?? "";
+  return {
+    facility_id: input.facilityId,
+    organization_id: input.organizationId,
+    handoff_date: input.handoffDate,
+    outgoing_shift: input.outgoingShift,
+    incoming_shift: input.incomingShift,
+    outgoing_staff_id: input.outgoingStaffId,
+    outgoing_notes: note.length > 0 ? note : null,
+    auto_summary: buildShiftHandoffAutoSummary({
+      careEvents,
+      timeZone: input.timeZone,
+      shift: input.outgoingShift,
+      date: input.shiftDate ?? input.handoffDate,
+      now: input.now,
+    }),
+  };
+}
+
+/**
+ * Record the outgoing shift's handoff: every care event in the shift window
+ * grouped by level word lands in `shift_handoffs.auto_summary`, so Level 1
+ * notes reach the next shift without anyone re-typing them (spec 07A §6.3).
+ * Inserts directly: the `staff_create_shift_handoffs` policy (019) admits
+ * owner, org_admin, facility_admin, nurse and caregiver within their
+ * accessible facilities. Returns the new row id and the summary written.
+ */
+export async function recordShiftHandoff(
+  supabase: SupabaseClient<Database>,
+  input: RecordShiftHandoffInput,
+): Promise<{ id: string; summary: HandoffAutoSummary }> {
+  const careEvents = await loadOutgoingShiftCareEvents(
+    supabase,
+    input.facilityId,
+    input.timeZone,
+    input.outgoingShift,
+    input.shiftDate ?? input.handoffDate,
+  );
+  const row = buildShiftHandoffInsert(input, careEvents);
+  const inserted = await supabase
+    .from("shift_handoffs")
+    .insert({ ...row, auto_summary: row.auto_summary as unknown as Json })
+    .select("id")
+    .single();
+  if (inserted.error) throw inserted.error;
+  return { id: inserted.data.id, summary: row.auto_summary };
 }

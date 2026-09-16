@@ -91,6 +91,26 @@ describe("replayQueuedCareEvents", () => {
     expect(await listQueuedCareEvents("operator", store)).toHaveLength(1);
   });
 
+  it("posts the queue owner and keeps a 403 (wrong operator) retryable, not terminal", async () => {
+    const store = createMemoryQueueStore([item()]);
+    const fetchImpl = vi.fn(async () =>
+      responseWith(403, { error: "This event belongs to a different operator. Sign in as its original reporter to send it." }),
+    );
+    const result = await replayQueuedCareEvents({ fetchImpl: fetchImpl as unknown as typeof fetch, store, ownerUserId: "operator" });
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toMatchObject({ queue_owner_user_id: "operator" });
+    expect(result.failed).toEqual([
+      { clientEventId: item().clientEventId, error: "This event belongs to a different operator. Sign in as its original reporter to send it.", terminal: false },
+    ]);
+    const kept = await store.get(item().clientEventId);
+    expect(kept?.terminal).toBe(false);
+    expect(kept?.retryCount).toBe(1);
+    // Still pending for the owner: a later replay tries again.
+    expect(await queueSizeForOwner("operator", store)).toBe(1);
+    await replayQueuedCareEvents({ fetchImpl: fetchImpl as unknown as typeof fetch, store, ownerUserId: "operator" });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   it("never replays another owner's items", async () => {
     const store = createMemoryQueueStore([item({ ownerUserId: "someone-else" })]);
     const fetchImpl = vi.fn(async () => responseWith(200, RECEIPT));

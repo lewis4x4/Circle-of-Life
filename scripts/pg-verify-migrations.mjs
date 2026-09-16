@@ -35,6 +35,28 @@ function orderedMigrationFiles() {
   return fs.readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort();
 }
 
+/**
+ * 07A level-engine parity (TS fixture vs public.care_event_derive) against the
+ * freshly replayed database. Runs after every migration file and before the
+ * SQL probes so a TS/SQL drift fails the replay, not a later audit. `env`
+ * selects the script's transport: CARE_EVENT_PARITY_DB_URL for the native
+ * cluster, CARE_EVENT_PARITY_DOCKER_CONTAINER + _DB for the Docker container.
+ * Returns the failure text, or null when the script passed.
+ */
+function runLevelParity(env) {
+  const script = path.join(root, "scripts", "care-events", "verify-level-parity.mjs");
+  if (!fs.existsSync(script)) return null;
+  const result = spawnSync(process.execPath, [script], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    env: { ...process.env, ...env },
+  });
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.status === 0) return null;
+  return result.stderr || result.stdout || result.error?.message || `exited ${result.status}`;
+}
+
 function nativeVerification(socket) {
   // Only use the explicitly identified run-owned temporary cluster. Never
   // accept a normal application socket or a network database URL here.
@@ -54,12 +76,19 @@ function nativeVerification(socket) {
     const files = orderedMigrationFiles();
     const tests = fs.readdirSync(path.join(root, "supabase", "tests"))
       .filter((name) => /^review_.*\.sql$/.test(name) || ["rpc_grant_posture.sql", "family_portal_messages_one_way.sql", "team_space_rls_no_recursion.sql"].includes(name)).sort();
-    const inputs = [path.join(root, "scripts", "pg-verify-stub.sql"), ...files.map((file) => path.join(migrationsDir, file)), ...tests.map((file) => path.join(root, "supabase", "tests", file))];
-    for (const file of inputs) {
+    const applyFile = (file) => {
       const result = run("psql", [...connection, "-d", database, "-v", "ON_ERROR_STOP=1", "-f", file]);
       if (result.status !== 0) throw new Error(`${path.basename(file)}: ${result.stderr || result.error?.message || "SQL failed"}`);
-    }
-    console.log(`[migrations:verify:pg] PASS (${files.length} migration files, ${tests.length} SQL probes; native PostgreSQL with Supabase stubs)`);
+    };
+    for (const file of [path.join(root, "scripts", "pg-verify-stub.sql"), ...files.map((file) => path.join(migrationsDir, file))]) applyFile(file);
+    // Level-engine parity against the replayed cluster over its socket, before the probes.
+    const parityFailure = runLevelParity({
+      CARE_EVENT_PARITY_DB_URL: `postgresql://postgres@/${database}?host=${encodeURIComponent(resolved)}&port=${process.env.PG_VERIFY_NATIVE_PORT || "55439"}`,
+      CARE_EVENT_PARITY_PSQL: path.join(bin, "psql"),
+    });
+    if (parityFailure) throw new Error(`care-events level parity: ${parityFailure}`);
+    for (const file of tests.map((file) => path.join(root, "supabase", "tests", file))) applyFile(file);
+    console.log(`[migrations:verify:pg] PASS (${files.length} migration files, ${tests.length} SQL probes, level parity; native PostgreSQL with Supabase stubs)`);
   } finally {
     const dropped = run("dropdb", [...connection, database]);
     if (dropped.status !== 0) throw new Error(`Run-owned replay database retained: ${database}. ${dropped.stderr}`);
@@ -180,6 +209,17 @@ async function main() {
       runFile(f, path.join(migrationsDir, f));
     }
 
+    // Level-engine parity (07A) against the replayed container, before the probes.
+    const parityFailure = runLevelParity({
+      CARE_EVENT_PARITY_DOCKER_CONTAINER: name,
+      CARE_EVENT_PARITY_DOCKER_DB: database,
+    });
+    if (parityFailure) {
+      console.error(`[migrations:verify:pg] FAIL at care-events level parity\n`, parityFailure);
+      cleanup();
+      process.exit(1);
+    }
+
     const rpcGrantPosturePath = path.join(root, "supabase", "tests", "rpc_grant_posture.sql");
     if (fs.existsSync(rpcGrantPosturePath)) {
       runFile("rpc_grant_posture", rpcGrantPosturePath);
@@ -199,7 +239,7 @@ async function main() {
       runFile(file, path.join(root, "supabase", "tests", file));
     }
 
-    console.log(`[migrations:verify:pg] PASS (${files.length} migration file(s))`);
+    console.log(`[migrations:verify:pg] PASS (${files.length} migration file(s), level parity)`);
   } finally {
     cleanup();
   }

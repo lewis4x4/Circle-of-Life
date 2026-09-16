@@ -1900,7 +1900,7 @@
       "derived_level": 4,
       "category": "elopement",
       "flags": {
-        "ahca_reportable": true,
+        "ahca_reportable": false,
         "insurance_reportable": true,
         "dcf_report_required": false,
         "grievance_clock": false,
@@ -1929,7 +1929,7 @@
       "derived_level": 4,
       "category": "wandering",
       "flags": {
-        "ahca_reportable": true,
+        "ahca_reportable": false,
         "insurance_reportable": true,
         "dcf_report_required": false,
         "grievance_clock": false,
@@ -2013,7 +2013,7 @@
       "derived_level": 3,
       "category": "elopement",
       "flags": {
-        "ahca_reportable": true,
+        "ahca_reportable": false,
         "insurance_reportable": true,
         "dcf_report_required": false,
         "grievance_clock": false,
@@ -2319,7 +2319,7 @@
     }
   },
   {
-    "id": "medication_wrong_worried_to_4_no_ahca_without_reaction",
+    "id": "medication_wrong_no_reaction_worried_to_4_not_ahca",
     "kind": "medication",
     "answers": {
       "what": "wrong",
@@ -2335,7 +2335,7 @@
       "derived_level": 3,
       "category": "medication_error",
       "flags": {
-        "ahca_reportable": true,
+        "ahca_reportable": false,
         "insurance_reportable": true,
         "dcf_report_required": false,
         "grievance_clock": false,
@@ -2602,7 +2602,7 @@
       "derived_level": 4,
       "category": "environmental_fire",
       "flags": {
-        "ahca_reportable": true,
+        "ahca_reportable": false,
         "insurance_reportable": true,
         "dcf_report_required": false,
         "grievance_clock": false,
@@ -2886,6 +2886,118 @@
         "emar_reminder": false
       },
       "sentence": "Building in the kitchen at 6:30 AM. Smoke, fire, or alarm. Someone in danger."
+    }
+  },
+  {
+    "id": "wandering_off_property_hurt_worried_clamps_at_4_not_ahca",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_off_property",
+      "hurt": "yes",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Parking Lot",
+      "time_label": "9:40 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "elopement",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the parking lot at 9:40 PM. Found off the property. Hurt."
+    }
+  },
+  {
+    "id": "environment_smoke_fire_no_danger_level_4_not_ahca_no_context",
+    "kind": "environment",
+    "answers": {
+      "what": "smoke_fire",
+      "danger": "no"
+    },
+    "context": {},
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "environmental_fire",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building. Smoke, fire, or alarm. No one in danger."
+    }
+  },
+  {
+    "id": "medication_wrong_reaction_yes_level_4_ahca_no_context",
+    "kind": "medication",
+    "answers": {
+      "what": "wrong",
+      "reaction": "yes"
+    },
+    "context": {},
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine. Wrong medicine, dose, time, or person. Reaction or feeling bad."
+    }
+  },
+  {
+    "id": "fall_unknown_hurt_value_counts_as_injury_no_hurt_fragment",
+    "kind": "fall",
+    "answers": {
+      "hurt": "somewhat",
+      "head": "no",
+      "witnessed": "yes",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "2:15 PM"
+    },
+    "unknown_answer_keys": [
+      "hurt"
+    ],
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the hallway at 2:15 PM. Witnessed. Did not hit head. Not going out."
     }
   }
 ]

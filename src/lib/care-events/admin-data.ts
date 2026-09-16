@@ -268,15 +268,14 @@ export async function fetchCareEventDeliveries(supabase: Client, careEventId: st
 }
 
 /**
- * The close gate without writing anything the operator would notice: an empty
- * section performs no stamps and returns `{ status, final_level, missing }`.
- * Returns null when the role may not complete the form.
+ * The close gate without writing anything at all: `care_event_close_gate` is
+ * STABLE and returns `{ status, final_level, missing }`. Returns null when the
+ * role may not complete the form.
  */
 export async function fetchCloseGate(supabase: Client, careEventId: string): Promise<AdminSectionResult | null> {
-  const result = await supabase.rpc("complete_care_event_admin_section", {
-    p_care_event_id: careEventId,
-    p_section: {},
-  });
+  // Read-only (STABLE) twin of the admin section function: a card load must
+  // never write a phantom audit row.
+  const result = await supabase.rpc("care_event_close_gate", { p_care_event_id: careEventId });
   if (result.error) {
     if (/forbidden/i.test(result.error.message)) return null;
     throw result.error;
