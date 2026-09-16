@@ -336,6 +336,12 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'timeclock: staff member not found in this organization' USING ERRCODE = '23514';
   END IF;
+  -- Without this, a manager of facility A could add a punch for a facility B employee:
+  -- the RLS policy only checks that the row's facility_id is one they can access, and
+  -- add_punch and acknowledge carry no target row to inherit a facility from.
+  IF NOT haven.timeclock_assigned_to_facility(NEW.staff_id, NEW.facility_id) THEN
+    RAISE EXCEPTION 'timeclock: staff member does not work at this facility' USING ERRCODE = '23514';
+  END IF;
   RETURN NEW;
 END;
 $$;
@@ -616,6 +622,10 @@ BEGIN
     RETURN v_context || jsonb_build_object('ok', false, 'error', 'facility_off');
   END IF;
 
+  -- FOR UPDATE: the lockout counter is only a limit if concurrent attempts serialize
+  -- here. Without it, N parallel wrong PINs all read failed_attempts = 0 and all get a
+  -- guess. The lock is held to the end of the transaction, which also serializes two
+  -- punches for the same staff member so a double tap cannot open two shifts.
   SELECT c.organization_id, c.staff_id, c.pin_hash, c.failed_attempts, c.locked_until INTO v_cred
   FROM public.timeclock_credentials c
   WHERE c.organization_id = v_dev.organization_id
@@ -624,7 +634,8 @@ BEGIN
       OR (p_badge_lookup_hmac IS NOT NULL AND p_badge_lookup_hmac <> '' AND c.badge_lookup_hmac = p_badge_lookup_hmac)
     )
   ORDER BY (c.employee_number = v_identifier) DESC
-  LIMIT 1;
+  LIMIT 1
+  FOR UPDATE;
   IF NOT FOUND THEN
     PERFORM haven.timeclock_note_device_failure(v_dev.id);
     RETURN v_context || jsonb_build_object('ok', false, 'error', 'not_recognized');
@@ -662,11 +673,7 @@ BEGIN
   IF NOT FOUND OR v_staff.deleted_at IS NOT NULL OR v_staff.employment_status NOT IN ('active', 'on_leave') THEN
     RETURN v_context || jsonb_build_object('ok', false, 'error', 'inactive_staff');
   END IF;
-  IF v_staff.facility_id <> v_dev.facility_id AND NOT EXISTS (
-    SELECT 1 FROM public.staff_facility_assignments a
-    WHERE a.staff_id = v_staff.id AND a.facility_id = v_dev.facility_id
-      AND a.deleted_at IS NULL AND a.end_date IS NULL
-  ) THEN
+  IF v_staff.facility_id <> v_dev.facility_id AND NOT haven.timeclock_assigned_to_facility(v_staff.id, v_dev.facility_id) THEN
     RETURN v_context || jsonb_build_object('ok', false, 'error', 'not_assigned');
   END IF;
 
@@ -684,6 +691,27 @@ AS $$
   SELECT COALESCE((SELECT timezone FROM public.facilities WHERE id = p_facility_id), 'America/New_York')
 $$;
 REVOKE ALL ON FUNCTION haven.timeclock_facility_timezone(uuid) FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION haven.timeclock_assigned_to_facility(p_staff_id uuid, p_facility_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SET search_path = public
+AS $$
+  -- A staff member belongs to a facility through their home facility or through a
+  -- staff_facility_assignments row whose date window contains the facility's today.
+  -- end_date IS NULL alone would refuse every dated assignment that is currently live.
+  SELECT EXISTS (
+    SELECT 1 FROM public.staff s
+    WHERE s.id = p_staff_id AND s.facility_id = p_facility_id AND s.deleted_at IS NULL
+  ) OR EXISTS (
+    SELECT 1 FROM public.staff_facility_assignments a
+    WHERE a.staff_id = p_staff_id AND a.facility_id = p_facility_id AND a.deleted_at IS NULL
+      AND a.start_date <= ((clock_timestamp() AT TIME ZONE haven.timeclock_facility_timezone(p_facility_id))::date)
+      AND (a.end_date IS NULL OR a.end_date >= ((clock_timestamp() AT TIME ZONE haven.timeclock_facility_timezone(p_facility_id))::date))
+  )
+$$;
+REVOKE ALL ON FUNCTION haven.timeclock_assigned_to_facility(uuid, uuid) FROM PUBLIC, anon, authenticated, service_role;
 
 -- Manager authority for the credential and device functions.
 CREATE OR REPLACE FUNCTION haven.timeclock_assert_manager(p_facility_id uuid, p_roles text[])

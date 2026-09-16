@@ -301,6 +301,11 @@ function walk(effective: EffectivePunch[], now: Date): Walk {
       }
       case "meal_end": {
         if (!shiftOpen) break;
+        // Only a meal that was actually open may reset the work start. Overwriting it
+        // on a stray meal_end (which a manager can add as a correction, since the
+        // correction shape check does not validate sequence) would erase every minute
+        // worked since the last in, with nothing on the timesheet to show for it.
+        if (!mealStart) break;
         closeMeal(p.at);
         workStart = p.at;
         state = { state: "in", since: shiftIn?.at ?? p.at };
@@ -387,10 +392,10 @@ export function computeTimesheet(input: ComputeTimesheetInput): Timesheet {
   const acknowledgedKeys = new Set(corrections.filter((c) => c.correction_type === "acknowledge" && c.exception_key).map((c) => c.exception_key as string));
 
   const exceptions: TimesheetException[] = walked.map((e) => ({ ...e, staffId: input.staffId, acknowledged: acknowledgedKeys.has(e.key) }));
-  for (const p of punches) {
-    for (const flag of p.flags ?? []) {
+  for (const p of effective) {
+    for (const flag of p.flags) {
       if (flag === "clock_skew" || flag === "offline_capture") {
-        exceptions.push({ key: `${flag}:${p.id}`, type: flag, staffId: input.staffId, anchorId: p.id, at: toDate(p.punched_at), acknowledged: acknowledgedKeys.has(`${flag}:${p.id}`) });
+        exceptions.push({ key: `${flag}:${p.id}`, type: flag, staffId: input.staffId, anchorId: p.id, at: p.at, acknowledged: acknowledgedKeys.has(`${flag}:${p.id}`) });
       }
     }
   }
@@ -432,9 +437,12 @@ export function computeTimesheet(input: ComputeTimesheetInput): Timesheet {
     for (const flag of p.flags) if (!row.flags.includes(flag)) row.flags.push(flag);
   }
   for (const segment of segments) {
-    if (!inPeriod(segment.start)) continue;
-    const row = dayFor(facilityDateIso(segment.start, timeZone));
     const minutes = segmentMinutesWithin(segment, input.periodStart, input.periodEnd, input.now);
+    if (minutes === 0) continue;
+    // Attribute to the segment's start day, clamped into the period: a night shift that
+    // began before periodStart lands on the period's first day rather than vanishing.
+    const attributedAt = segment.start.getTime() < input.periodStart.getTime() ? input.periodStart : segment.start;
+    const row = dayFor(facilityDateIso(attributedAt, timeZone));
     if (segment.kind === "work") row.workedMinutes += minutes;
     else row.mealMinutes += minutes;
   }

@@ -314,4 +314,33 @@ DO $$ DECLARE n_raw integer; n_eff integer; BEGIN
   IF n_eff <> n_raw THEN RAISE EXCEPTION 'Effective count % vs raw % (one void, one add)', n_eff, n_raw; END IF;
 END $$;
 
+-- 15. A correction may not name a staff member who does not work at that facility.
+--     RLS only checks the row's facility_id, and add_punch/acknowledge carry no target
+--     row to inherit a facility from, so the guard has to make the link.
+SELECT pg_temp.tc_actor('owner');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.tc_fail(
+  format('INSERT INTO public.time_punch_corrections(organization_id, facility_id, staff_id, correction_type, punch_type, corrected_punched_at, reason, corrected_by) VALUES (%L,%L,%L,''add_punch'',''in'',clock_timestamp(),''missed_punch'',%L)', org, facility, staff_c, owner_actor),
+  'does not work at this facility') FROM tc_fixture;
+SELECT pg_temp.tc_fail(
+  format('INSERT INTO public.time_punch_corrections(organization_id, facility_id, staff_id, correction_type, exception_key, reason, corrected_by) VALUES (%L,%L,%L,''acknowledge'',''clock_skew:x'',''manager_verified_time'',%L)', org, facility, staff_c, owner_actor),
+  'does not work at this facility') FROM tc_fixture;
+RESET ROLE;
+
+-- 16. A dated assignment that covers today grants the facility; a future one does not.
+DO $$ DECLARE f uuid; s_c uuid; s_b uuid; BEGIN
+  SELECT facility, staff_c, staff_b INTO f, s_c, s_b FROM tc_fixture;
+  IF haven.timeclock_assigned_to_facility(s_c, f) THEN RAISE EXCEPTION 'Unassigned staff already counted as assigned'; END IF;
+  INSERT INTO public.staff_facility_assignments(organization_id, staff_id, facility_id, start_date, end_date)
+    SELECT org, s_c, f, current_date - 10, current_date + 10 FROM tc_fixture;
+  IF NOT haven.timeclock_assigned_to_facility(s_c, f) THEN RAISE EXCEPTION 'A live dated assignment was refused'; END IF;
+  INSERT INTO public.staff_facility_assignments(organization_id, staff_id, facility_id, start_date, end_date)
+    SELECT org, s_b, f, current_date + 5, current_date + 30 FROM tc_fixture
+    ON CONFLICT DO NOTHING;
+  IF (SELECT facility_id FROM public.staff WHERE id = s_b) <> f
+     AND haven.timeclock_assigned_to_facility(s_b, f) THEN
+    RAISE EXCEPTION 'A future-dated assignment granted access today';
+  END IF;
+END $$;
+
 ROLLBACK;

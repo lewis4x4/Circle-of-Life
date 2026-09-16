@@ -355,6 +355,16 @@ Exit gate for the parallel run: consecutive pay periods with zero unexplained di
 5. Mosyle steps marked `TBD verify` in the lockdown document.
 6. uPunch day attribution: the Punch-to-Pay export lists hours by date. If it puts a whole night shift on the date it started, a shift crossing Sunday midnight differs from Haven in both adjacent workweeks by design (Haven splits at Monday 00:00 America/New_York). Confirm uPunch's midnight split setting before reading a Sunday night difference as an error. The synthetic fixture in the COL-352 evidence shows both outcomes.
 
+## 12a. Known limits from the pre-merge review (not defects that block the parallel run)
+
+These were found by an adversarial review of this build and judged lower severity than the five that were fixed. Each is a real behaviour a reader should know before the cutover.
+
+- **The kiosk is an employee-number oracle.** A wrong PIN on an existing credential eventually returns `Locked for 15 minutes`, while an unknown identifier always returns `Badge or PIN not recognized`, and only the existing credential pays the bcrypt cost. Someone holding the tablet can therefore learn which employee numbers exist, and can lock a colleague out for 15 minutes. The device throttle (20 failures per 10 minutes) bounds the rate, device enrollment bounds who can try, and a manager can clear a lock. Revisit if employee numbers are issued sequentially.
+- **A replayed punch is returned without re-checking the credential.** `timeclock_record_punch` answers an already recorded `(device, client_punch_id)` before it validates the PIN, so that the retry of a lost response is safe. Someone who knew a previously used client punch id would get that punch's first name and today's minutes back. The id is a random UUID, so this is not reachable in practice.
+- **Queue order follows the tablet clock.** Offline punches replay in `queuedAt` order. If the tablet's clock jumps backwards between two captures (an NTP correction), they can replay out of order and the later one is refused as an invalid next type. Mosyle sets the clock automatically, which is why the lockdown document requires it.
+- **A punch queued for more than 24 hours is dropped by the tablet** with no server-side record, because the server never saw it. A tablet offline across a weekend loses that shift from the timesheet with nothing to flag it; the manager finds it as a missing punch and corrects it with `device_outage`.
+- **`haven.timeclock_worked_minutes` floors each segment separately** for the kiosk receipt, so the tablet can read one minute below `src/lib/timeclock/compute.ts` on a shift with several meal breaks. The receipt is informational; payroll uses `compute.ts`.
+
 ## 13. Follow ons
 
 - Bridge timeclock workweeks into `time_records` or point the payroll batch import at the timeclock export (COL-357).
@@ -362,3 +372,4 @@ Exit gate for the parallel run: consecutive pay periods with zero unexplained di
 - Automatic credential revocation on termination (COL-355); today a terminated person is rejected at the kiosk because the function checks `employment_status`.
 - Pay period selector history beyond the current and previous period.
 - Kiosk cached last-known state per staff for a better offline action choice.
+- Close the items in §12a: constant-time credential lookup, a credential check on the replay path, a monotonic capture sequence for the offline queue, and a server-side record when the tablet drops an expired punch.

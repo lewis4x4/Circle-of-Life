@@ -227,12 +227,23 @@ export async function replayKioskQueue(input: {
         result.sent += 1;
         continue;
       }
-      if (response.status >= 400 && response.status < 500) {
+      if (response.status === 422) {
+        // The server recorded a timeclock_sync_rejections row; the manager sees it.
         await store.dequeue(item.clientPunchId);
         pinMemory.delete(item.clientPunchId);
         result.rejected += 1;
         continue;
       }
+      if (response.status === 400) {
+        // Malformed item this tablet built; it can never be accepted, and leaving it at
+        // the head of the queue would block every later punch behind it.
+        await store.dequeue(item.clientPunchId);
+        pinMemory.delete(item.clientPunchId);
+        result.dropped += 1;
+        continue;
+      }
+      // 401 revoked device, 429 throttled, 5xx: the punch was not recorded anywhere.
+      // Keep it and stop, so capture order survives.
       result.stopped = true;
       break;
     }

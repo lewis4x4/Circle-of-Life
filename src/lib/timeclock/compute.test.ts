@@ -169,6 +169,50 @@ describe("computeTimesheet", () => {
     expect(sheet.weeks[0]!.workedMinutes).toBe(240 + 480);
   });
 
+  it("a stray meal_end does not erase the hour already worked (COL-352 review S4)", () => {
+    // A manager can add a meal_end as a correction; the shape check does not validate sequence.
+    const punches = [punch("2026-11-03 08:00", "in"), punch("2026-11-03 09:00", "meal_end"), punch("2026-11-03 17:00", "out")];
+    const sheet = computeTimesheet({ staffId: STAFF, punches, corrections: [], periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: new Date("2026-11-10T12:00:00Z") });
+    expect(sheet.weeks[0]!.workedMinutes).toBe(9 * 60);
+    expect(sheet.periodMealMinutes).toBe(0);
+  });
+
+  it("a shift that began before the period still lands on a day row, so days sum to the period total (COL-352 review S3)", () => {
+    // Sunday 23:00 into Monday 07:00, with the period starting that Monday.
+    const punches = [punch("2026-11-01 23:00", "in"), punch("2026-11-02 07:00", "out")];
+    const sheet = computeTimesheet({ staffId: STAFF, punches, corrections: [], periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: new Date("2026-11-10T12:00:00Z") });
+    expect(sheet.periodWorkedMinutes).toBe(7 * 60);
+    expect(sheet.days.reduce((sum, d) => sum + d.workedMinutes, 0)).toBe(sheet.periodWorkedMinutes);
+    expect(sheet.days[0]).toMatchObject({ dateIso: "2026-11-02", workedMinutes: 420 });
+  });
+
+  it("voiding a flagged punch clears its exception, and changing its time moves it (COL-352 review M7)", () => {
+    const offline = punch("2026-11-03 07:00", "in", { flags: ["offline_capture"] });
+    const punches = [offline, punch("2026-11-03 15:00", "out")];
+    const open = computeTimesheet({ staffId: STAFF, punches, corrections: [], periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: new Date("2026-11-10T12:00:00Z") });
+    expect(open.exceptions.filter((e) => !e.acknowledged)).toHaveLength(1);
+
+    const voided = computeTimesheet({
+      staffId: STAFF,
+      punches,
+      corrections: [correction({ correction_type: "void_punch", reason: "duplicate", target_punch_id: offline.id })],
+      periodStart: dstWeekStart,
+      periodEnd: dstWeekEnd,
+      now: new Date("2026-11-10T12:00:00Z"),
+    });
+    expect(voided.exceptions.filter((e) => e.type === "offline_capture")).toHaveLength(0);
+
+    const moved = computeTimesheet({
+      staffId: STAFF,
+      punches,
+      corrections: [correction({ correction_type: "change_time", reason: "manager_verified_time", target_punch_id: offline.id, corrected_punched_at: et("2026-11-03 06:30").toISOString() })],
+      periodStart: dstWeekStart,
+      periodEnd: dstWeekEnd,
+      now: new Date("2026-11-10T12:00:00Z"),
+    });
+    expect(moved.exceptions.find((e) => e.type === "offline_capture")!.at.toISOString()).toBe(et("2026-11-03 06:30").toISOString());
+  });
+
   it("reports the current status line from the last effective punch", () => {
     const now = et("2026-11-03 10:00");
     const punches = [punch("2026-11-03 06:58", "in")];
