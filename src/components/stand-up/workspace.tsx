@@ -5,7 +5,7 @@ import { useHavenAuth } from '@/contexts/haven-auth-context';
 import { selectionBelongsToPeriod, useFacilityStore } from '@/hooks/useFacilityStore';
 import { useRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
-import { dateLabel, reportDeadlineState, derivedValues, easternTime, fieldDisplay, reportState, staffingPeriod, shiftDay, FIELD_STATE_TEXT, type StandUpReport } from '@/lib/stand-up/model';
+import { dateLabel, entryOpensStamp, reportDeadlineState, derivedValues, easternTime, fieldDisplay, reportState, staffingPeriod, shiftDay, FIELD_STATE_TEXT, type StandUpReport } from '@/lib/stand-up/model';
 import { StandUpEditor } from './editor';
 import { HistoricalImports } from './imports';
 import { StandUpRequestError, standUpRequest } from './transport';
@@ -99,7 +99,7 @@ function StandUpSession({ userId }: { userId: string }) {
           {/* Identity only: which ALF, which meeting. The reporting periods each
               section covers are stated on that section, and the remaining
               timings sit in the report's own disclosure rather than here. */}
-          <div><h2 className="text-xl font-semibold">{selected?.name ?? 'All facilities'}</h2><p className="mt-1 font-medium">Stand Up for {week && dateLabel(week, true)}</p>{!selected && week === workspace.current_week && <p className="mt-1 text-sm text-muted-foreground">Staffing and payroll covers {staffingPeriod(week)}. The next Monday report opens on Sunday, {dateLabel(shiftDay(workspace.current_week, 6))}.</p>}</div>
+          <div><h2 className="text-xl font-semibold">{selected?.name ?? 'All facilities'}</h2><p className="mt-1 font-medium">Stand Up for {week && dateLabel(week, true)}</p>{!selected && week === workspace.current_week && <p className="mt-1 text-sm text-muted-foreground">Staffing and payroll covers {staffingPeriod(week)}. The next Monday report opens {entryOpensStamp(shiftDay(workspace.current_week, 7))}.</p>}</div>
           <div className="space-y-3">
             {workspace.facilities.length > 1 && <label className="block text-xs font-medium">Reporting facility<select disabled={routePending} aria-label="Reporting facility" className="mt-1 block min-h-10 w-full rounded border border-border bg-background px-3 text-sm" value={selected?.id ?? ''} onChange={e => { if (setSelectedFacility(e.target.value || null)) setTools(false); }}><option value="">All facilities — choose an ALF to enter</option>{workspace.facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>}
             <label className="block text-xs font-medium">Meeting date<select disabled={routePending} aria-label="Meeting date" className="mt-1 block min-h-10 w-full rounded border border-border bg-background px-3 text-sm" value={week} onChange={e => changeWeek(e.target.value)}>{weeks.map(value => <option key={value} value={value}>{dateLabel(value)}{value === workspace.current_week ? ' · open reporting period' : ' · history'}</option>)}</select></label>

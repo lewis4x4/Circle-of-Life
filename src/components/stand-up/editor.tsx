@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { registerRouteLeaveGuard, supportsRouteLeaveProtection, standUpHasDocumentEntry, useRouteTransitionPending, isRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { METRICS, SECTIONS, dateLabel, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
+import { METRICS, SECTIONS, dateLabel, entryOpensStamp, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
 import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionChecklist, submissionEvidence } from '@/lib/stand-up/report-presentation';
 import { REPORTING_QUALIFICATION, UNCHECKED_KEYS, uncheckedNote } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
@@ -16,6 +16,8 @@ import type { RecoveryPreview } from './types';
 
 type Props = {
   facility: { id: string; name: string }; week: string; currentWeek: string;
+  /** This facility's entry-open lead; null means the Haven default. */
+  leadMinutes?: number | null;
   report?: StandUpReport; reports: StandUpReport[]; recoveries: RecoveryPreview[];
   canManage: boolean; userId: string; now: Date;
   onSaved: (report: StandUpReport) => void; onDenied: () => void; onReload: () => Promise<void>;
@@ -193,7 +195,7 @@ export function StandUpEditor(props: Props) {
       <ul className="mt-2 space-y-1 border-l-2 border-border pl-3 text-sm text-muted-foreground">
         <li>Staffing and payroll covers {staffingPeriod(week)}.</li>
         <li>Complete by 8:45 a.m. Eastern; the management call is at 9:15 a.m.</li>
-        {!historical && <li>The next Monday report opens on Sunday, {dateLabel(shiftDay(currentWeek, 6))}.</li>}
+        {!historical && <li>The next Monday report opens {entryOpensStamp(shiftDay(currentWeek, 7), props.leadMinutes)}.</li>}
         {prior && <li>Previous figures come from the report for {dateLabel(prior.week_start)}{prior.week_start !== shiftDay(week, -7) ? ', because the previous calendar week is missing' : ''}, and are not copied into this one.</li>}
       </ul>
     </details>
