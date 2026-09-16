@@ -23,6 +23,8 @@ import {
   billedRevenuePeriod,
   incidentRateBasis,
   INCIDENT_RATE_WINDOW_DAYS,
+  metricFreshness,
+  metricRecordedLine,
   type ExecutiveSnapshotState,
 } from "@/lib/executive/snapshot-evidence";
 
@@ -68,6 +70,14 @@ export type CoverageInput = {
   /** Portfolio metric map as displayed — a key is present only when a value exists. */
   metrics: Record<string, number | undefined>;
   snapshot: ExecutiveSnapshotState;
+  /**
+   * Operating day each displayed metric was recorded on. A metric can be older
+   * than the run that last executed, because a run writes only what it could
+   * compute.
+   */
+  metricDates: Record<string, string | undefined>;
+  /** The facilities' operating day, which every metric is aged against. */
+  todayIsoDate: string;
   /** Facilities with at least one recorded assurance observation. */
   observedFacilityCount: number;
   /** Facilities carrying a recorded survey readiness review of their own. */
@@ -95,6 +105,48 @@ function pastRow(
     short: "Earlier day",
     detail: `Recorded ${snapshotDate}, ${ageDays} ${ageDays === 1 ? "day" : "days"} ago.`,
   };
+}
+
+/**
+ * A measure describes an earlier day when *its own* recording is older than the
+ * operating day — not when the run that last executed happens to be old. The
+ * two disagree whenever a measure goes unavailable for a day and its previous
+ * value stays the newest one on file.
+ *
+ * Falls back to the run's own age when the value arrived without a date, so a
+ * stale run is never read as current.
+ */
+function earlierDayRow(
+  key: CoverageMeasureKey,
+  label: string,
+  input: CoverageInput,
+  metricKey: string,
+  action: { actionLabel: string; href: string },
+): CoverageRow | null {
+  const followUpFor = (date: string): CoverageFollowUp => ({
+    summary: `${label} last recorded ${date}`,
+    ...action,
+  });
+
+  const freshness = metricFreshness(input.metricDates[metricKey], input.todayIsoDate);
+  if (freshness.kind === "earlier") {
+    return {
+      key,
+      label,
+      state: "past",
+      short: "Earlier day",
+      detail: metricRecordedLine(freshness)!,
+      followUp: followUpFor(freshness.date),
+    };
+  }
+  if (freshness.kind === "undated" && input.snapshot.kind === "recorded" && input.snapshot.stale) {
+    const { snapshotDate, } = input.snapshot.evidence;
+    return {
+      ...pastRow(key, label, snapshotDate, input.snapshot.ageDays),
+      followUp: followUpFor(snapshotDate),
+    };
+  }
+  return null;
 }
 
 function censusRow(input: CoverageInput): CoverageRow {
@@ -167,9 +219,8 @@ function billingRow(input: CoverageInput): CoverageRow {
   if (input.snapshot.kind !== "recorded") {
     return { key: "billing", label, state: "unreadable", short: "Undated", detail: UNDATED_DETAIL };
   }
-  if (input.snapshot.stale) {
-    return pastRow("billing", label, input.snapshot.evidence.snapshotDate, input.snapshot.ageDays);
-  }
+  const billingPast = earlierDayRow("billing", label, input, "rev_mtd", { actionLabel: "Open billing", href: "/admin/billing" });
+  if (billingPast) return billingPast;
 
   // The exclusions are stated beside the figure itself; this row answers the
   // coverage question — which facilities were read, and over what period.
@@ -259,9 +310,8 @@ function payrollRow(input: CoverageInput): CoverageRow {
   if (input.snapshot.kind !== "recorded") {
     return { key: "payroll", label, state: "unreadable", short: "Undated", detail: UNDATED_DETAIL };
   }
-  if (input.snapshot.stale) {
-    return pastRow("payroll", label, input.snapshot.evidence.snapshotDate, input.snapshot.ageDays);
-  }
+  const payrollPast = earlierDayRow("payroll", label, input, "labor_pct", { actionLabel: "Open payroll", href: "/admin/payroll" });
+  if (payrollPast) return payrollPast;
   return {
     key: "payroll",
     label,
@@ -296,9 +346,8 @@ function surveyRow(input: CoverageInput): CoverageRow {
   if (input.snapshot.kind !== "recorded") {
     return { key: "survey", label, state: "unreadable", short: "Undated", detail: UNDATED_DETAIL };
   }
-  if (input.snapshot.stale) {
-    return pastRow("survey", label, input.snapshot.evidence.snapshotDate, input.snapshot.ageDays);
-  }
+  const surveyPast = earlierDayRow("survey", label, input, "survey_rd", { actionLabel: "Open risk command", href: "/admin/risk" });
+  if (surveyPast) return surveyPast;
 
   const total = input.facilityCount;
   const reviewed = input.surveyFacilityCount;
@@ -420,9 +469,8 @@ function incidentRow(input: CoverageInput): CoverageRow {
       },
     };
   }
-  if (input.snapshot.kind === "recorded" && input.snapshot.stale) {
-    return pastRow("incidents", label, input.snapshot.evidence.snapshotDate, input.snapshot.ageDays);
-  }
+  const incidentsPast = earlierDayRow("incidents", label, input, "inc_rate", { actionLabel: "Open incident queue", href: "/admin/incidents" });
+  if (incidentsPast) return incidentsPast;
   // The arithmetic itself belongs beside the figure, not here as well.
   return {
     key: "incidents",

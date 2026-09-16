@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   attachFacilityMetrics,
   applyFacilityOccupancyMetricHonesty,
+  buildLatestMetricDates,
   buildLatestMetricMap,
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
@@ -53,6 +54,14 @@ export type ExecutiveOverviewData = {
   snapshot: ExecutiveSnapshotState;
   /** Dated portfolio-scope changes, keyed by metric code. Absent = nothing to compare. */
   metricChanges: Record<string, MetricChange>;
+  /**
+   * Operating day each displayed metric was recorded on. A run writes only the
+   * metrics it could compute, so these can differ from each other and from the
+   * run's own date.
+   */
+  metricDates: Record<string, string>;
+  /** The facilities' operating day the page ages every recording against. */
+  todayIsoDate: string;
 };
 
 type MetricSnapshotRow = {
@@ -175,6 +184,7 @@ export async function loadExecutiveOverview(
   const bedCensusByFacility =
     bedCensusRes.status === "fulfilled" ? bedCensusRes.value : new Map<string, never>();
 
+  const todayIsoDate = facilityTodayIsoDate();
   const snapshotState = resolveSnapshotState({
     row:
       snapshotRunRes.status === "fulfilled" && !snapshotRunRes.value.error
@@ -188,7 +198,7 @@ export async function loadExecutiveOverview(
       snapshotRunRes.status === "rejected"
         ? "read failed"
         : snapshotRunRes.value.error?.message ?? null,
-    todayIsoDate: facilityTodayIsoDate(),
+    todayIsoDate,
   });
 
   const licensedBeds = facilityRows.reduce(
@@ -222,5 +232,7 @@ export async function loadExecutiveOverview(
     occupancyContext,
     snapshot: snapshotState,
     metricChanges: buildPortfolioMetricChanges(aggregateRows as MetricSnapshotRow[]),
+    metricDates: buildLatestMetricDates(aggregateRows as MetricSnapshotRow[]),
+    todayIsoDate,
   };
 }

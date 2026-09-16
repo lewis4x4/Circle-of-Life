@@ -74,7 +74,10 @@ import {
 import {
   BILLED_REVENUE_SCOPE_LINE,
   billedRevenuePeriodLine,
+  facilityTodayIsoDate,
   incidentRateBasis,
+  metricFreshness,
+  metricRecordedLine,
   snapshotFreshnessLine,
   type ExecutiveSnapshotState,
 } from "@/lib/executive/snapshot-evidence";
@@ -111,6 +114,7 @@ type ExecutiveOverviewPageClientProps = {
   initialOccupancyContext: OccupancyContext | null;
   initialSnapshot: ExecutiveSnapshotState;
   initialMetricChanges: Record<string, MetricChange>;
+  initialMetricDates: Record<string, string>;
   initialHasServerData: boolean;
 };
 
@@ -124,6 +128,7 @@ export function ExecutiveOverviewPageClient({
   initialOccupancyContext,
   initialSnapshot,
   initialMetricChanges,
+  initialMetricDates,
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
   const supabase = useMemo(() => createClient(), []);
@@ -149,6 +154,9 @@ export function ExecutiveOverviewPageClient({
   // When the displayed figures were recorded, and the change since the run before.
   const [snapshot, setSnapshot] = useState<ExecutiveSnapshotState>(initialSnapshot);
   const [metricChanges, setMetricChanges] = useState<Record<string, MetricChange>>(initialMetricChanges);
+  // Each displayed figure carries the day it was recorded, which a run that
+  // skipped that metric does not.
+  const [metricDates, setMetricDates] = useState<Record<string, string>>(initialMetricDates);
 
   // Skip the first client-side fetch when the server already supplied scoped
   // live data. If the server returned empty arrays, the client retries once;
@@ -190,6 +198,7 @@ export function ExecutiveOverviewPageClient({
       setAssuranceTrends(data.assuranceTrends);
       setSnapshot(data.snapshot);
       setMetricChanges(data.metricChanges);
+      setMetricDates(data.metricDates);
 
     } catch (e) {
       if (generation !== requestGeneration.current) return;
@@ -255,6 +264,8 @@ export function ExecutiveOverviewPageClient({
     occupancy: occupancyContext,
     metrics,
     snapshot,
+    metricDates,
+    todayIsoDate: facilityTodayIsoDate(),
     observedFacilityCount: assuranceHeatMap.filter((row) => row.observed).length,
     surveyFacilityCount: facilities.filter((facility) => hasMetric(facility.metrics?.survey_rd))
       .length,
@@ -302,6 +313,7 @@ export function ExecutiveOverviewPageClient({
           occupancyContext={occupancyContext}
           snapshot={snapshot}
           metricChanges={metricChanges}
+          metricDates={metricDates}
           coverage={coverage}
         />
       )}
@@ -1025,13 +1037,16 @@ function PortfolioFiguresStrip({
   occupancyContext,
   snapshot,
   metricChanges,
+  metricDates,
 }: {
   metrics: Record<string, number>;
   occupancyContext: OccupancyContext | null;
   snapshot: ExecutiveSnapshotState;
   metricChanges: Record<string, MetricChange>;
+  metricDates: Record<string, string>;
 }) {
   const incidentBasis = incidentRateBasis(snapshot);
+  const todayIsoDate = facilityTodayIsoDate();
   const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
 
   return (
@@ -1073,9 +1088,18 @@ function PortfolioFiguresStrip({
 
           const changeLine = metricChangeLine(change, tile.format);
 
+          // Occupancy is read live from the bed grid, so it has no recorded day
+          // of its own; every other figure is aged against the operating day
+          // rather than against the run, which may have skipped it.
+          const recordedLine =
+            tile.key === "occ_pt"
+              ? null
+              : metricRecordedLine(metricFreshness(metricDates[tile.key], todayIsoDate));
+
           // One qualifier stays visible — the one that changes how the figure
-          // is read. The arithmetic behind it sits in the disclosure.
-          const summaryLine =
+          // is read. A figure describing an earlier day outranks its basis,
+          // which moves into the disclosure with the rest.
+          const basisLine =
             tile.key === "occ_pt"
               ? occupancyCalculationLine(occupancyContext)
               : tile.key === "rev_mtd"
@@ -1083,9 +1107,12 @@ function PortfolioFiguresStrip({
                 : tile.key === "inc_rate"
                   ? incidentBasis.line
                   : changeLine;
+          const summaryLine = recordedLine ?? basisLine;
 
-          const detailLines =
-            tile.key === "occ_pt"
+          const detailLines = [
+            // Displaced by a recorded-day line above; it still belongs to the figure.
+            recordedLine ? basisLine : null,
+            ...(tile.key === "occ_pt"
               ? [
                   occupancyContext ? occupancyLoadedFootnote(occupancyContext) : null,
                   OCCUPANCY_CHANGE_UNAVAILABLE_COPY,
@@ -1096,7 +1123,8 @@ function PortfolioFiguresStrip({
                   ? ["Payroll cost for the period divided by billed revenue for the same period."]
                   : tile.key === "inc_rate"
                     ? [incidentBasis.detail, changeLine]
-                    : ["Most recent recorded readiness review per facility, averaged.", changeLine];
+                    : ["Most recent recorded readiness review per facility, averaged.", changeLine]),
+          ];
 
           const details = (value != null ? detailLines : []).filter(
             (line): line is string => Boolean(line),
@@ -1632,6 +1660,7 @@ type DashboardBodyProps = {
   occupancyContext: OccupancyContext | null;
   snapshot: ExecutiveSnapshotState;
   metricChanges: Record<string, MetricChange>;
+  metricDates: Record<string, string>;
   coverage: CoverageRow[];
 };
 
@@ -1645,6 +1674,7 @@ function ExecutiveDashboardBody({
   occupancyContext,
   snapshot,
   metricChanges,
+  metricDates,
   coverage,
 }: DashboardBodyProps): ReactNode {
   return (
@@ -1673,6 +1703,7 @@ function ExecutiveDashboardBody({
         occupancyContext={occupancyContext}
         snapshot={snapshot}
         metricChanges={metricChanges}
+        metricDates={metricDates}
       />
 
       <RoundingAssuranceTable heatMap={assuranceHeatMap} trends={assuranceTrends} />
