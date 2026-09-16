@@ -316,7 +316,7 @@ describe('Stand Up report meaning', () => {
   it('gives each section its period and keeps the current away count out of the forecast fields', async () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: full(), source_as_of: '2026-09-14T12:31:00Z' })] });
     await start(); await choose();
-    expect(screen.getAllByText('Current snapshot · Figures recorded September 14 at 8:31 a.m. Eastern')).toHaveLength(2);
+    expect(screen.getAllByText('Monday morning · Figures recorded September 14 at 8:31 a.m. Eastern')).toHaveLength(2);
     expect(screen.getByText('Completed week · September 7–13, 2026')).toBeInTheDocument();
     expect(screen.getAllByText('Forecast week · September 14–20, 2026')).toHaveLength(2);
     const census = document.getElementById('stand-up-section-census')!;
@@ -331,7 +331,7 @@ describe('Stand Up report meaning', () => {
     // "Average rent" read as an average of what residents are charged. It is a ratio.
     expect(screen.getByText('Monthly rent roll per census resident: $2,836.88')).toBeInTheDocument();
     expect(screen.queryByText(/^Average rent/)).not.toBeInTheDocument();
-    expect(screen.getByText('Monthly rent roll ÷ current census. Not a checked resident-level average of what residents are charged.')).toBeInTheDocument();
+    expect(screen.getByText(/Monthly rent roll ÷ current census\. Census counts beds held/)).toBeInTheDocument();
     expect(screen.getByText('Total open beds: 4')).toBeInTheDocument();
     const bar = screen.getByLabelText('Save and submit report');
     // Provided counts populated figures; the bar that stays on screen never implies approval.
@@ -341,10 +341,10 @@ describe('Stand Up report meaning', () => {
   it('tells an open unsaved report when its snapshot time will be recorded, and a past report that none was', async () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ id: 'old', week_start: '2026-09-07', values: full(), source_as_of: null })] });
     await start(); await choose();
-    expect(screen.getAllByText('Current snapshot · Figures recorded when you save')).toHaveLength(2);
+    expect(screen.getAllByText('Monday morning · Figures recorded when you save')).toHaveLength(2);
     expect(screen.getByText('Not started')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
-    expect(screen.getAllByText('Current snapshot · No recorded time')).toHaveLength(2);
+    expect(screen.getAllByText('Monday morning · No recorded time')).toHaveLength(2);
     expect(screen.getAllByText('Forecast week · September 7–13, 2026')).toHaveLength(2);
     expect(screen.queryByText(/this week ·/)).not.toBeInTheDocument();
   });
@@ -393,37 +393,38 @@ describe('Stand Up report meaning', () => {
     const staffing = document.getElementById('stand-up-section-staffing') as HTMLElement;
     // Beside the input: the label and the previous figure, and nothing else.
     expect(within(staffing).getByLabelText('Callouts last week').closest('label')).toHaveTextContent(/^Callouts last weekPrevious report: 1$/);
-    // The definition and its unresolved rule are one disclosure away, not under the input.
-    expect(within(staffing).getByText('What these figures count · 4 not settled')).toBeInTheDocument();
-    expect(within(staffing).getByText(/^Callouts in the completed payroll week\./).closest('details')).not.toBeNull();
-    expect(within(staffing).getByText('Open positions in the completed payroll week. Not settled: Vacancies open at the end of the week, or every vacancy during it.')).toBeInTheDocument();
+    // The definition is one disclosure away, not under the input.
+    expect(within(staffing).getByText('What these figures count · 2 Haven cannot check')).toBeInTheDocument();
+    expect(within(staffing).getByText(/^Scheduled shifts missed to a callout/).closest('details')).not.toBeNull();
+    // A settled rule reads as an instruction; only what Haven cannot check is qualified.
+    expect(within(staffing).getByText(/^Budgeted positions still unfilled Monday morning\./)).toHaveTextContent('Haven does not record how many positions each facility is budgeted for.');
     // A rule shared by the whole section is stated once, above the fields.
     expect(screen.getByText('Total open beds adds these four figures, so count each open bed in one category only.')).toBeInTheDocument();
-    // Development notes never reach ordinary field help.
+    // Development notes and unfinished questions never reach ordinary field help.
     expect(screen.queryByText(/carried-over/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Horizon pending/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/pending|not settled/i)).not.toBeInTheDocument();
   });
-  it('states the unresolved counting rules once for the whole report, naming every figure they touch', async () => {
+  it('states once which figures Haven cannot check, naming each one, and qualifies nothing else', async () => {
     await start(); await choose();
-    const notice = screen.getByText('Counting rules not settled · 14 of the sixteen figures');
+    const notice = screen.getByText('Haven cannot check 2 of the sixteen figures');
     fireEvent.click(notice);
     const panel = notice.parentElement as HTMLElement;
-    expect(within(panel).getByText(/The recorded time is when the figures reached Haven, not a separate observation time\./)).toBeInTheDocument();
-    expect(within(panel).getByText(/treat these figures as provisional and not comparable between ALFs/)).toBeInTheDocument();
-    expect(within(panel).getByText('Vacancies open at the end of the week, or every vacancy during it.')).toBeInTheDocument();
-    expect(within(panel).getByText('Whether one callout is an employee, a shift or an occurrence.')).toBeInTheDocument();
-    // The two figures whose rule the company has agreed are not listed as unsettled.
-    expect(within(panel).queryByText('Expected admissions this week')).not.toBeInTheDocument();
-    expect(within(panel).queryByText('Expected tours this week')).not.toBeInTheDocument();
+    expect(within(panel).getByText(/no record of its own to check these against/)).toBeInTheDocument();
+    expect(within(panel).getByText('Haven does not record how many positions each facility is budgeted for.')).toBeInTheDocument();
+    expect(within(panel).getByText('Haven has no approved time source to check the hours against.')).toBeInTheDocument();
+    // Everything the owner settled on COL-374 is an instruction now, not a qualification.
+    for (const label of ['Current census', 'Callouts last week', 'Private beds open', 'Expected discharges this week']) {
+      expect(within(panel).queryByText(label)).not.toBeInTheDocument();
+    }
   });
-  it('separates populated figures, administrator review, unresolved rules and submission at review', async () => {
+  it('separates populated figures, administrator review, unverified figures and submission at review', async () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values: full(), entry_origin: 'imported' })] });
     await start(); await choose();
     fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
     const panel = within(screen.getByLabelText('Review report'));
     expect(panel.getByText('Figures provided').nextElementSibling).toHaveTextContent('All 16');
     expect(panel.getByText('Administrator review').nextElementSibling).toHaveTextContent('Not confirmed yet — submitting confirms yours');
-    expect(panel.getByText('Unresolved definitions').nextElementSibling).toHaveTextContent('14 figures — Circle of Life has not settled how they are counted, so they stay provisional');
+    expect(panel.getByText('Unverified figures').nextElementSibling).toHaveTextContent('2 — Haven holds no record to check them against, so they rest on your count');
     expect(panel.getByText('Submission').nextElementSibling).toHaveTextContent('Original submission time unavailable.');
   });
 });

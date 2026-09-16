@@ -50,19 +50,19 @@ export const snapshotAsOf = (report?: StandUpReport): string | null => report?.s
 
 /**
  * What the review step has to keep apart. Every figure being populated is not
- * an administrator's review, an administrator's review is not a settled
- * counting rule, and none of the three is a submission. Each is stated on its
- * own row so the decision to submit is made against four separate facts.
+ * an administrator's review, an administrator's review is not a figure Haven
+ * can check, and none of the three is a submission. Each is stated on its own
+ * row so the decision to submit is made against four separate facts.
  */
 export function submissionChecklist(input: {
-  report?: StandUpReport; dirty?: boolean; provided: number | null; total: number; unresolved: number
+  report?: StandUpReport; dirty?: boolean; provided: number | null; total: number; unchecked: number
 }): { term: string; detail: string }[] {
-  const { report, dirty = false, provided, total, unresolved } = input
+  const { report, dirty = false, provided, total, unchecked } = input
   const state = reportStatus(report, dirty).state
   return [
     { term: 'Figures provided', detail: provided === null ? 'Not countable while a figure needs correction' : provided === total ? `All ${total}` : `${provided} of ${total} — all ${total} are needed to submit` },
     { term: 'Administrator review', detail: state === 'Submitted' ? 'Confirmed by the last submission' : 'Not confirmed yet — submitting confirms yours' },
-    { term: 'Unresolved definitions', detail: unresolved === 0 ? 'None' : `${unresolved} figures — Circle of Life has not settled how they are counted, so they stay provisional` },
+    { term: 'Unverified figures', detail: unchecked === 0 ? 'None — Haven can check every figure' : `${unchecked} — Haven holds no record to check them against, so they rest on your count` },
     { term: 'Submission', detail: submissionEvidence(report) },
   ]
 }

@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { METRIC_KEYS, SECTIONS, dollars, emptyValues, metricDisplay, fieldDisplay, sectionMetrics, sectionPeriodLabel, FIELD_STATE_TEXT, type DerivedFigures, type MetricKey, type SectionKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
-import { DERIVED_NOTES, SECTION_NOTES, fieldHelp, pendingDefinition, sectionUnresolvedCount } from '@/lib/stand-up/field-definitions';
+import { DERIVED_NOTES, SECTION_NOTES, fieldHelp, uncheckedNote, sectionUncheckedCount } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes, overtimeMinuteParts, overtimePartsToLegacy } from '@/lib/stand-up/duration';
 
 export type EntryFields = Record<MetricKey, string> & { overtime_hours: string; overtime_minutes: string };
@@ -34,26 +34,26 @@ const INPUT_SCROLL = 'scroll-mb-48';
 
 /**
  * A field shows its label, its input and its previous figure. The definition —
- * and the counting rule where the company has not settled one — sits in one
- * disclosure per section, so an administrator entering a figure reads a label
- * rather than a paragraph, and can still reach the meaning without leaving the
- * page.
+ * and, where Haven has nothing to check the figure against, what is missing —
+ * sits in one disclosure per section, so an administrator entering a figure
+ * reads a label rather than a paragraph, and can still reach the meaning
+ * without leaving the page.
  */
 function SectionDefinitions({ section }: { section: SectionKey }) {
-  const unresolved = sectionUnresolvedCount(section);
+  const unchecked = sectionUncheckedCount(section);
   const derived = DERIVED_NOTES[section];
   return <details className="text-xs">
     {/* Keep the browser's disclosure marker: `inline-block` would replace
         `display: list-item` and leave the row looking like ordinary text. */}
     <summary className="cursor-pointer rounded font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
-      What these figures count{unresolved > 0 ? ` · ${unresolved} not settled` : ''}
+      What these figures count{unchecked > 0 ? ` · ${unchecked} Haven cannot check` : ''}
     </summary>
     <dl className="mt-2 space-y-2 border-l-2 border-border pl-3">
       {sectionMetrics(section).map(metric => {
-        const pending = pendingDefinition(metric.key);
+        const missing = uncheckedNote(metric.key);
         return <div key={metric.key}>
           <dt className="font-medium">{metric.label}</dt>
-          <dd className="text-muted-foreground">{fieldHelp(metric.key)}{pending ? ` Not settled: ${pending}` : ''}</dd>
+          <dd className="text-muted-foreground">{fieldHelp(metric.key)}{missing ? ` ${missing}` : ''}</dd>
         </div>;
       })}
       {derived && <div><dt className="font-medium">{derived.term}</dt><dd className="text-muted-foreground">{derived.detail}</dd></div>}
