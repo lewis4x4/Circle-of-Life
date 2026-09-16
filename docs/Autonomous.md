@@ -4,6 +4,19 @@
 
 ---
 
+## RECORD — Form 1823 alignment queue COL-408 (2026-09-15)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `form-1823-alignment-queue-col-408` |
+| **Mission alignment** | **pass** — the queue now tells staff exactly what Haven knows about each resident's Form 1823 and care plan, with one population and one set of state definitions for summary and rows; no compliance rule was invented or changed. |
+| **Change** | `/admin/care-plans/form-1823-alignment` rebuilt as a compact table (stacked list under 768 px) with resident search, document / plan / alignment filters, and summary counts that state their denominator and filter the list. Alignment states: cannot assess (no 1823 recorded in Haven), no plan to compare, N needs unanswered, answers the 1823. Row actions carry visible text and an accessible name and point at what the destination can do (record the form on the admission case, open the resident, open or review the care plan). Record expiration and the FAC 59A-36.006 three-year ceiling are reported as separate states. Fixed: `counts.noPlan` had excluded residents without a 1823 ("0 without an active plan" over 25 rows saying "No active plan"); row action used the undefined `bg-primary-600` class and rendered blank. |
+| **Validation** | 81 care-plan tests pass, including a component test for summary/row agreement, filters, search, labels and the error state. Typecheck clean. ESLint clean on the six changed files (repo-wide lint is COL-348 debt, advisory). Segment gate `test-results/agent-gates/2026-09-16T01-25-39-795Z-form-1823-alignment-queue-col-408.json` **PASS** (build, secrets, gitleaks, audit, migration sequence; Docker replay skipped, no DDL). Authenticated browser evidence against Homewood (25 residents, all "Not recorded in Haven") plus a mixed-state fixture: desktop 1440, 390 px, dark; axe 0 violations on all five passes; keyboard focus on the row action. Evidence: `/Users/brianlewis/Circle of Life/Haven Form 1823 Alignment Evidence/SUMMARY.md`. |
+| **Findings** | COL-410 (`bg-primary-600` blank buttons in 19 other files), COL-411 (StatusPill / FilterPill contrast), COL-412 (no way to record a Form 1823 for a resident without an admission case — all 25 Homewood residents). Rule context posted on COL-378. |
+| **Next** | Operating acceptance with Homewood staff once COL-412 gives the queue a place to record the form. |
+
+---
+
 ## RECORD — staff offboard COL-349 (2026-09-15)
 
 | Field | Value |

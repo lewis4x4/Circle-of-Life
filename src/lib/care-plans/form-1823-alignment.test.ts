@@ -109,13 +109,17 @@ describe("alignForm1823WithPlan", () => {
 });
 
 describe("form1823AgeState", () => {
-  it("expires three years after the exam, or at a posted expiration date", () => {
+  it("tells the record's own expiration apart from the three-year statutory ceiling", () => {
     expect(form1823AgeState("2026-09-04", null, "2026-09-15")).toBe("current");
-    expect(form1823AgeState("2023-09-14", null, "2026-09-15")).toBe("expired");
+    expect(form1823AgeState("2023-09-14", null, "2026-09-15")).toBe("over_age");
     expect(form1823AgeState("2023-09-15", null, "2026-09-15")).toBe("current");
     expect(form1823AgeState("2026-09-04", "2026-09-10", "2026-09-15")).toBe("expired");
+    // Both breached: the facility's own date is the one staff set, so it wins.
+    expect(form1823AgeState("2020-01-01", "2021-01-01", "2026-09-15")).toBe("expired");
     expect(form1823AgeState(null, null, "2026-09-15")).toBe("unknown");
-    expect(formatForm1823AgeLabel("2023-01-01", null, "2026-09-15")).toBe("Exam Jan 1, 2023 — older than 3 years or expired");
-    expect(formatForm1823AgeLabel(null, null, "2026-09-15")).toBe("Exam date not posted");
+    expect(formatForm1823AgeLabel("2023-01-01", null, "2026-09-15")).toBe("Exam Jan 1, 2023 · older than 3 years");
+    expect(formatForm1823AgeLabel("2026-09-04", "2026-09-10", "2026-09-15")).toBe("Exam Sep 4, 2026 · expired Sep 10, 2026");
+    expect(formatForm1823AgeLabel("2026-09-04", null, "2026-09-15")).toBe("Exam Sep 4, 2026");
+    expect(formatForm1823AgeLabel(null, null, "2026-09-15")).toBe("Exam date not recorded");
   });
 });
