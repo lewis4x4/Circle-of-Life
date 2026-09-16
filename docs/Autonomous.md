@@ -881,3 +881,12 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Segment** | `docs-index-317` |
 | **Mission alignment** | `pass` — index-only; no schema or clinical behavior change. |
 | **BUILD** | README / UNIFIED-ROADMAP / PHASE1-ENV-CONFIRMATION now say next free DDL **`317`**, remote tracking through **`316`**, Track F **built except F4-1**, 37 Edge Function folders. |
+
+## RECORD — assessment-entry-instrument-context (2026-09-16)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `assessment-entry-instrument-context` |
+| **Mission alignment** | `pass` — the resident New assessment form keeps the instrument, progress, and provisional-vs-recorded state in view; no assessment content, schedule, threshold, or acuity mapping was invented or changed; records still carry resident, facility, author, answers, and result. |
+| **Evidence** | Gate `test-results/agent-gates/2026-09-16T14-18-34-757Z-assessment-entry-instrument-context.json` PASS (strict, `--ui`, axe on `/` + the new-assessment route). Unit: 83 tests across `src/lib/assessments` + the page. Browser: 35/35 checks on the local scratch stack, `docs/specs/handoff-evidence/assessment-entry-2026-09-16/`. Earlier gate runs `…T12-52-53…` (FAIL: pre-existing `StatusPill` warning-tone contrast in the resident shell, history route) and `…T13-42-44…` (FAIL: transient HTTP 503 from the scratch stack on one viewport) are kept for the record. |
+| **Docs** | `HANDOFFS/2026-09-16__assessment-entry-instrument-context.md` — clinical-content verification (no instrument version column; Katz direction vs published index; PHQ-9 stem/safety/≥10 rule open; Braden descriptors licensed; intervals are seed defaults) reported separately from functional/visual checks. |

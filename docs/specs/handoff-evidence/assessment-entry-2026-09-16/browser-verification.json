@@ -1,0 +1,173 @@
+{
+  "base": "http://127.0.0.1:3177",
+  "resident": "c0000003-0000-0000-0000-000000000001",
+  "actor": "assessment-qa-nurse@synthetic.invalid",
+  "ranAt": "2026-09-16T12:49:15.455Z",
+  "results": [
+    {
+      "step": "login",
+      "ok": true,
+      "detail": "http://127.0.0.1:3177/admin/nurse-dashboard (attempt 1)"
+    },
+    {
+      "step": "picker: four instruments offered",
+      "ok": true,
+      "detail": "New assessment |  | Choose the assessment to complete for Elena Price."
+    },
+    {
+      "step": "picker: interval labelled as Haven default",
+      "ok": true
+    },
+    {
+      "step": "picker: no duplicate resident-name heading",
+      "ok": true,
+      "detail": "h1 count 1 (shell header only)"
+    },
+    {
+      "step": "braden: instrument name is the heading",
+      "ok": true
+    },
+    {
+      "step": "braden: no 'No score posted'",
+      "ok": true
+    },
+    {
+      "step": "braden: progress 0 of 6",
+      "ok": true,
+      "detail": "0 of 6 sections completed Complete all required items to calculate the result."
+    },
+    {
+      "step": "braden: Review disabled while incomplete",
+      "ok": true
+    },
+    {
+      "step": "keyboard: ArrowDown moves selection within the group",
+      "ok": true,
+      "detail": "1 of 6 sections completed Complete all required items to calculate the result."
+    },
+    {
+      "step": "keyboard: ArrowDown again selects third option",
+      "ok": true
+    },
+    {
+      "step": "keyboard: focused option shows a visible focus treatment",
+      "ok": true
+    },
+    {
+      "step": "partial: 3 of 6, no provisional total, no risk label",
+      "ok": true,
+      "detail": "3 of 6 sections completed Complete all required items to calculate the result."
+    },
+    {
+      "step": "partial: section nav marks answered/unanswered",
+      "ok": true,
+      "detail": "1. Sensory Perception | , answered | 2. Moisture | , answered | 3. Activity | , answered | 4. Mobility | , unanswered | 5. Nutrition | , unanswered | 6. Friction & Shear | , unanswered"
+    },
+    {
+      "step": "partial: Next unanswered focuses the Mobility group",
+      "ok": true,
+      "detail": "focused=mobility"
+    },
+    {
+      "step": "switch: prompt names the answers at risk",
+      "ok": true,
+      "detail": "Changing the assessment discards the 3 answers entered for Braden Scale for Predicting Pressure Sore Risk. Answers are never carried into another instrument.\nKeep answers\nDiscard and change"
+    },
+    {
+      "step": "switch: Keep answers preserves progress",
+      "ok": true
+    },
+    {
+      "step": "switch: answers never carried over",
+      "ok": true,
+      "detail": "0 of 6 sections completed Complete all required items to calculate the result."
+    },
+    {
+      "step": "complete: provisional result labelled and not recorded",
+      "ok": true,
+      "detail": "Provisional result 14 of 23 moderate · Not yet recorded"
+    },
+    {
+      "step": "narrow: sticky footer does not cover the last option",
+      "ok": true,
+      "detail": "{\"ok\":true,\"last\":[957.578125,991.078125],\"footer\":[698.5,780]}"
+    },
+    {
+      "step": "review: every section with answer and points",
+      "ok": true,
+      "detail": "Answers for Braden Scale for Predicting Pressure Sore Risk | Section\tAnswer\tPoints | 1. Sensory Perception\tCompletely Limited\t1 | 2. Moisture\tVery Moist\t2 | 3. Activity\tWalks Occasionally\t3 | 4. Mobil"
+    },
+    {
+      "step": "review: provisional, not recorded",
+      "ok": true,
+      "detail": "Provisional result 14 of 23 moderate · Not yet recorded"
+    },
+    {
+      "step": "recorded: record completed (with stack retries if needed)",
+      "ok": true
+    },
+    {
+      "step": "recorded: instrument, date, score, risk, history attribution",
+      "ok": true,
+      "detail": "Braden Scale for Predicting Pressure Sore Risk |  | Elena Price · Assessment date 2026-09-16 · Recorded score 14 of 23 · moderate |  | Recorded to Elena Price's assessment history by Assessment QA Nurse. Next due 2026-12-15 (Haven default interval). |  | View history | Start another assessment"
+    },
+    {
+      "step": "history: Braden row present with score and risk",
+      "ok": true,
+      "detail": "Assessment history | DATE | TYPE | RISK LEVEL | SCORE | ASSESSED BY | 2026-09-16 | Braden Scale | MODERATE | 14 | Assessment QA Nurse | 2026-09-16 | Braden Scale | MODERATE | 14 | Assessment QA Nurse | 2026-09-16 | Braden Scale | MODERATE |"
+    },
+    {
+      "step": "duplicate: same-day entry warned, explicit 'Record anyway'",
+      "ok": true
+    },
+    {
+      "step": "failure: answers kept, error shown, nothing recorded",
+      "ok": true,
+      "detail": "The assessment was not recorded. Your answers are kept. simulated outage"
+    },
+    {
+      "step": "failure: still on review with answers",
+      "ok": true
+    },
+    {
+      "step": "failure: retry records exactly once",
+      "ok": true,
+      "detail": "Katz Index of Independence in ADLs |  | Elena Price · Assessment date 2026-09-16 · Recorded score 3 of 6 · level 2 |  | Recorded to Elena Price's assessment history by Assessment QA Nurse. Next due 2026-12-15 (Haven default interval). |  | View history | Start another assessment"
+    },
+    {
+      "step": "morse: 6 sections, incomplete blocks review",
+      "ok": true,
+      "detail": "5 of 6 sections completed Complete all required items to calculate the result."
+    },
+    {
+      "step": "morse: provisional appears only when complete",
+      "ok": true,
+      "detail": "Provisional result 75 of 125 high · Not yet recorded"
+    },
+    {
+      "step": "morse: recorded",
+      "ok": true,
+      "detail": "Morse Fall Scale |  | Elena Price · Assessment date 2026-09-16 · Recorded score 75 of 125 · high |  | Recorded to Elena Price's assessment history by Assessment QA Nurse. Next due 2026-12-15 (Haven default interval). |  | View history | Start another assessment"
+    },
+    {
+      "step": "phq9: 9 sections, incomplete blocks review",
+      "ok": true,
+      "detail": "8 of 9 sections completed Complete all required items to calculate the result."
+    },
+    {
+      "step": "phq9: provisional appears only when complete",
+      "ok": true,
+      "detail": "Provisional result 12 of 27 moderate · Not yet recorded"
+    },
+    {
+      "step": "phq9: recorded",
+      "ok": true,
+      "detail": "PHQ-9 Patient Health Questionnaire |  | Elena Price · Assessment date 2026-09-16 · Recorded score 12 of 27 · moderate |  | Recorded to Elena Price's assessment history by Assessment QA Nurse. Next due 2027-03-15 (Haven default interval). |  | View history | Start another assessment"
+    },
+    {
+      "step": "history: all four instruments readable",
+      "ok": true,
+      "detail": "Assessment history | DATE | TYPE | RISK LEVEL | SCORE | ASSESSED BY | 2026-09-16 | Braden Scale | MODERATE | 14 | Assessment QA Nurse | 2026-09-16 | Braden Scale | MODERATE | 14 | Assessment QA Nurse | 2026-09-16 | Braden Scale | MODERATE | 14 | Assessment QA Nurse | 2026-09-16 | Braden Scale | MODERATE | 14 | Assessment QA Nurse | 2026-09-16 | Braden Scale | MODERATE | 14 | Assessment QA Nurse | "
+    }
+  ]
+}
