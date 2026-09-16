@@ -22,6 +22,8 @@ const BASE: CoverageInput = {
   },
   metrics: {},
   snapshot: { kind: "never_recorded" },
+  metricDates: {},
+  todayIsoDate: "2026-09-15",
   observedFacilityCount: 0,
   surveyFacilityCount: 0,
 };
@@ -137,6 +139,52 @@ describe("executive evidence coverage", () => {
     expect(estimated.detail).toContain("projected from one day's census");
     // The arithmetic itself lives beside the figure, not restated here.
     expect(estimated.detail).not.toContain("resident-days is");
+  });
+
+  it("ages each measure against its own recording, not the run's", () => {
+    // The run executed today and wrote billed revenue. Survey readiness was
+    // last computed three days ago, so its value is the newest on file — and
+    // reading it off the run's date would report it as current.
+    const mixed: CoverageInput = {
+      ...BASE,
+      metrics: { rev_mtd: 125_000, survey_rd: 0.92 },
+      snapshot: RECORDED_TODAY,
+      surveyFacilityCount: 5,
+      metricDates: { rev_mtd: "2026-09-15", survey_rd: "2026-09-12" },
+      todayIsoDate: "2026-09-15",
+    };
+
+    expect(row(mixed, "billing").state).toBe("reported");
+    expect(row(mixed, "survey")).toMatchObject({
+      state: "past",
+      short: "Earlier day",
+      detail: "Recorded 2026-09-12, 3 days ago.",
+    });
+    // A measure describing an earlier day is still outstanding work, so it
+    // keeps a row in the follow-up list rather than dropping out of sight.
+    expect(row(mixed, "survey").followUp).toMatchObject({
+      summary: "Survey readiness last recorded 2026-09-12",
+      href: "/admin/risk",
+    });
+  });
+
+  it("still ages an undated value off the run, so a stale run is never read as current", () => {
+    const staleRun: CoverageInput = {
+      ...BASE,
+      metrics: { survey_rd: 0.9 },
+      snapshot: {
+        ...RECORDED_TODAY,
+        evidence: { ...RECORDED_TODAY.evidence, snapshotDate: "2026-09-12" },
+        ageDays: 3,
+        stale: true,
+      },
+      metricDates: {},
+    };
+
+    expect(row(staleRun, "survey")).toMatchObject({
+      state: "past",
+      detail: "Recorded 2026-09-12, 3 days ago.",
+    });
   });
 
   it("reports unknown coverage when the run could not be read", () => {

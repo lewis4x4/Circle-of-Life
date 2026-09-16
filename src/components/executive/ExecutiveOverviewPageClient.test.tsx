@@ -65,6 +65,7 @@ const emptyProps = {
   initialOccupancyContext: null,
   initialSnapshot: { kind: "never_recorded" } as const,
   initialMetricChanges: {},
+  initialMetricDates: {},
   initialHasServerData: false,
 };
 
@@ -419,6 +420,31 @@ describe("ExecutiveOverviewPageClient evidence claims", () => {
       screen.getByText(/750 resident-days is 25 residents in census on 2026-09-15 × 30 days/),
     ).toBeInTheDocument();
     expect(screen.getByText(/Daily census across the window is not recorded/)).toBeInTheDocument();
+  });
+
+  it("dates a figure the latest run did not write, instead of reading it as today's", () => {
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 0, survey_rd: 0.92 }}
+        initialFacilities={[{ id: "site-a", name: "Site Alpha", metrics: { survey_rd: 0.92 } }]}
+        initialSnapshot={RECORDED_TODAY}
+        initialMetricDates={{ rev_mtd: "2026-09-15", survey_rd: "2026-09-12" }}
+        initialHasServerData
+      />,
+    );
+
+    // The header still names the run; the figure the run did not write names
+    // its own day, where it is read.
+    expect(screen.getAllByText("Recorded 2026-09-12, 3 days ago.").length).toBeGreaterThanOrEqual(1);
+    // Coverage marks that one measure, and only that one, as an earlier day.
+    const normalised = (node: Element | null) => node?.textContent?.replace(/\s+/g, " ") ?? "";
+    expect(
+      screen.getAllByText((_, node) => normalised(node).includes("Survey readiness Earlier day")).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.queryAllByText((_, node) => normalised(node).includes("Billing Earlier day")).length,
+    ).toBe(0);
   });
 
   it("reads a portfolio-wide zero against the period and the invoices it counts", () => {

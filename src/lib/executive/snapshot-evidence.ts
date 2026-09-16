@@ -133,6 +133,39 @@ export function snapshotFreshnessLine(state: ExecutiveSnapshotState): string {
   }
 }
 
+/**
+ * How old one displayed figure is, independently of the run that last executed.
+ *
+ * A run only writes a metric it could compute, so a measure that went
+ * unavailable for a day leaves yesterday's value as the newest one. Ageing the
+ * whole page off the run's date would report that value as current.
+ */
+export type MetricFreshness =
+  /** Recorded on the operating day this page is being read. */
+  | { kind: "current"; date: string }
+  /** Recorded earlier — the figure describes that day, not today. */
+  | { kind: "earlier"; date: string; ageDays: number }
+  /** The value arrived without a recorded day, so its age is unknown. */
+  | { kind: "undated" };
+
+/** Age one metric against the facilities' operating day, not against the run. */
+export function metricFreshness(
+  metricDate: string | null | undefined,
+  todayIsoDate: string,
+): MetricFreshness {
+  if (!metricDate) return { kind: "undated" };
+  const ageDays = wholeDaysBetween(metricDate, todayIsoDate);
+  if (ageDays < SNAPSHOT_STALE_AFTER_DAYS) return { kind: "current", date: metricDate };
+  return { kind: "earlier", date: metricDate, ageDays };
+}
+
+/** "Recorded 2026-09-12, 3 days ago." — the same sentence the run uses. */
+export function metricRecordedLine(freshness: MetricFreshness): string | null {
+  if (freshness.kind !== "earlier") return null;
+  const dayWord = freshness.ageDays === 1 ? "day" : "days";
+  return `Recorded ${freshness.date}, ${freshness.ageDays} ${dayWord} ago.`;
+}
+
 export type IncidentRateBasis = {
   /** Resident-days the rate was divided by, when the run recorded a census. */
   residentDays: number | null;

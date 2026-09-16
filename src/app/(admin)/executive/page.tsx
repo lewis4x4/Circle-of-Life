@@ -1,6 +1,7 @@
 import { ExecutiveOverviewPageClient } from "@/components/executive/ExecutiveOverviewPageClient";
 import type { ExecutiveOverviewData } from "@/lib/executive/load-executive-overview";
 import { EMPTY_PRESENCE_CENSUS } from "@/lib/executive/presence-census";
+import { facilityTodayIsoDate } from "@/lib/executive/snapshot-evidence";
 
 const EMPTY_DATA: ExecutiveOverviewData = {
   metrics: {},
@@ -12,6 +13,8 @@ const EMPTY_DATA: ExecutiveOverviewData = {
   occupancyContext: null,
   snapshot: { kind: "never_recorded" },
   metricChanges: {},
+  metricDates: {},
+  todayIsoDate: facilityTodayIsoDate(),
 };
 
 
@@ -28,6 +31,7 @@ export default function ExecutiveOverviewPage() {
       initialOccupancyContext={EMPTY_DATA.occupancyContext}
       initialSnapshot={EMPTY_DATA.snapshot}
       initialMetricChanges={EMPTY_DATA.metricChanges}
+      initialMetricDates={EMPTY_DATA.metricDates}
       initialHasServerData={false}
     />
   );

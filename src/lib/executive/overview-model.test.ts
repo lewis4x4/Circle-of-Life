@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+
 import {
   applyFacilityOccupancyMetricHonesty,
   attachFacilityMetrics,
+  buildLatestMetricDates,
   buildLatestMetricMap,
 } from "./overview-model";
 
@@ -18,6 +20,31 @@ describe("executive overview model", () => {
       occ_pt: 0,
       rev_mtd: 123_45,
     });
+  });
+
+  it("keeps the recorded day of each metric, because a run writes only what it could compute", () => {
+    // Newest-first, as the query returns them. Survey readiness was not written
+    // today, so its newest row is older than billed revenue's.
+    const rows = [
+      { facility_id: null, metric_code: "rev_mtd", metric_value_numeric: 0, snapshot_date: "2026-09-15" },
+      { facility_id: null, metric_code: "survey_rd", metric_value_numeric: 0.92, snapshot_date: "2026-09-12" },
+      { facility_id: null, metric_code: "survey_rd", metric_value_numeric: 0.9, snapshot_date: "2026-09-11" },
+    ];
+
+    expect(buildLatestMetricDates(rows)).toEqual({
+      rev_mtd: "2026-09-15",
+      survey_rd: "2026-09-12",
+    });
+    // The value view is unchanged for callers that only display a figure.
+    expect(buildLatestMetricMap(rows)).toEqual({ rev_mtd: 0, survey_rd: 0.92 });
+  });
+
+  it("omits a metric that arrived without a recorded day rather than inventing one", () => {
+    expect(
+      buildLatestMetricDates([
+        { facility_id: null, metric_code: "occ_pt", metric_value_numeric: 0.9 },
+      ]),
+    ).toEqual({});
   });
 
   it("attaches only explicit facility-level metrics to facility rows", () => {
