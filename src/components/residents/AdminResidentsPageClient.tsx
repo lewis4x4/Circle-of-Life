@@ -14,7 +14,6 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { KpiCard, type KpiCardTone } from "@/components/ui/kpi-card";
 import {
   Select,
   SelectContent,
@@ -24,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -40,9 +38,22 @@ import {
   residentRosterCarePlanReviewsEmptyCopy,
   residentRosterKpiStripHelperLine,
   residentRosterOpenBedsEmptyCopy,
-  rosterOpenBedsLoadedFootnote,
 } from "@/lib/residents/resident-roster-kpi-copy";
 import type { ResidentRosterMetrics } from "@/lib/residents/resident-roster-metrics";
+import {
+  acuityCoverage,
+  CARE_PLAN_REVIEWS_LABEL,
+  carePlanFigure,
+  effectiveRosterGroupBy,
+  highAcuityFigure,
+  presenceBreakdown,
+  presenceLine,
+  rosterShowingCopy,
+  type ResidentRosterGroupBy,
+  type SummaryFigure,
+  UNOCCUPIED_BEDS_LABEL,
+  unoccupiedBedsFigure,
+} from "@/lib/residents/resident-roster-summary";
 import { presenceLabel, presenceTone } from "@/lib/residents/presence";
 import {
   averageAcuity,
@@ -51,10 +62,9 @@ import {
   formatResidentRosterAdlCell,
   formatResidentRosterAdlExport,
   formatResidentRosterUpdatedAt,
-  rosterAvatarAccentFromId,
   truncateCareNoteSubtitle,
 } from "@/lib/residents/roster-format";
-import { RESIDENT_ROSTER_NO_ACUITY_COPY } from "@/lib/residents/roster-display-copy";
+import { RESIDENT_ROSTER_NO_ACUITY_COPY, RESIDENT_ROSTER_NO_ADL_COPY } from "@/lib/residents/roster-display-copy";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +79,10 @@ const DEFAULT_FILTERS = {
 const GROUP_BY_STORAGE_KEY = "haven.residentRoster.groupBy.v1";
 const COLLAPSED_STORAGE_KEY = "haven.residentRoster.collapsedGroups.v1";
 
-export type ResidentRosterGroupBy = "unit" | "acuity" | "status" | "none";
+export type { ResidentRosterGroupBy };
+
+/** Filter value for "this record has no posted acuity / ADL" — the missing-data view. */
+const NOT_POSTED_FILTER = "not_posted";
 
 type SortKey = "resident" | "location" | "acuity" | "updated";
 type SortDir = "asc" | "desc";
@@ -193,6 +206,50 @@ function AdlCell({ acuityLevel, status }: { acuityLevel: string | null; status: 
   return <StatusPill tone={cell.tone}>{cell.label}</StatusPill>;
 }
 
+const summaryToneClass: Record<SummaryFigure["tone"], string> = {
+  neutral: "text-foreground",
+  warning: "text-amber-600 dark:text-amber-400",
+  danger: "text-destructive",
+};
+
+/**
+ * One cell of the compact facility summary strip. Renders the figure's honest
+ * headline (a number, or "Not established") over the inputs that produced it.
+ * When the figure did not load, the cell says what is missing instead.
+ */
+function SummaryCell({
+  label,
+  figure,
+  emptyCopy,
+  action,
+}: {
+  label: string;
+  figure: SummaryFigure | null;
+  emptyCopy?: string | null;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-[72px] flex-col justify-between gap-1 bg-card px-4 py-2.5">
+      <dt className="text-[12px] leading-snug text-muted-foreground">{label}</dt>
+      <dd className="m-0 flex flex-col gap-0.5">
+        {figure ? (
+          <>
+            <span className={cn("text-[20px] font-semibold leading-tight tabular-nums", summaryToneClass[figure.tone])}>
+              {figure.headline}
+            </span>
+            <span className="text-[12px] leading-snug text-muted-foreground">{figure.detail}</span>
+          </>
+        ) : (
+          <span className="text-[13px] font-medium leading-snug text-muted-foreground">
+            {emptyCopy ?? "Not loaded"}
+          </span>
+        )}
+        {action ? <span className="mt-0.5">{action}</span> : null}
+      </dd>
+    </div>
+  );
+}
+
 function ResidentStatusCell({ status }: { status: ResidencyStatus }) {
   // Show every presence state explicitly, including In-house. A Status column
   // full of em-dashes reads as "no data" when in fact everyone is in-house.
@@ -286,7 +343,11 @@ export function AdminResidentsPageClient({
       const { fetchResidentRosterMetrics } = await import("@/lib/residents/resident-roster-metrics");
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const nextMetrics = await fetchResidentRosterMetrics(selectedFacilityId, liveRows.length, supabase);
+      const nextMetrics = await fetchResidentRosterMetrics(
+        selectedFacilityId,
+        liveRows.map((row) => row.id),
+        supabase,
+      );
       setMetrics(nextMetrics);
     } catch (err) {
       setRows([]);
@@ -317,10 +378,14 @@ export function AdminResidentsPageClient({
     const requestedStatus = searchParams.get("status") ?? DEFAULT_FILTERS.status;
 
     setSearch(requestedSearch);
-    setAcuity(["all", "1", "2", "3", "watchlist"].includes(requestedAcuity) ? requestedAcuity : DEFAULT_FILTERS.acuity);
+    setAcuity(
+      ["all", "1", "2", "3", "watchlist", NOT_POSTED_FILTER].includes(requestedAcuity)
+        ? requestedAcuity
+        : DEFAULT_FILTERS.acuity,
+    );
     setUnit(requestedUnit || DEFAULT_FILTERS.unit);
     setAdl(
-      ["all", "independent", "assisted", "dependent"].includes(requestedAdl)
+      ["all", "independent", "assisted", "dependent", NOT_POSTED_FILTER].includes(requestedAdl)
         ? requestedAdl
         : DEFAULT_FILTERS.adl,
     );
@@ -355,21 +420,22 @@ export function AdminResidentsPageClient({
           row.name.toLowerCase().includes(loweredSearch) ||
           row.room.toLowerCase().includes(loweredSearch) ||
           row.unit.toLowerCase().includes(loweredSearch);
+        const acuityPosted = row.acuityLevel != null && row.acuityLevel.trim().length > 0;
         const matchesAcuity =
           effectiveAcuity === "all" ||
-          (row.acuityLevel != null &&
-            row.acuityLevel.trim().length > 0 &&
-            (effectiveAcuity === "watchlist"
-              ? row.acuity === 2 || row.acuity === 3
-              : String(row.acuity) === effectiveAcuity));
+          (effectiveAcuity === NOT_POSTED_FILTER
+            ? !acuityPosted
+            : acuityPosted &&
+              (effectiveAcuity === "watchlist"
+                ? row.acuity === 2 || row.acuity === 3
+                : String(row.acuity) === effectiveAcuity));
         const matchesUnit =
           effectiveUnit === "all" ||
           (effectiveUnit === "__no_unit__" ? row.unit.trim().length === 0 : row.unit === effectiveUnit);
+        // ADL support is derived from posted acuity, so "not posted" is the same population.
         const matchesAdl =
           effectiveAdl === "all" ||
-          (row.acuityLevel != null &&
-            row.acuityLevel.trim().length > 0 &&
-            row.adlStatus === effectiveAdl);
+          (effectiveAdl === NOT_POSTED_FILTER ? !acuityPosted : acuityPosted && row.adlStatus === effectiveAdl);
         const matchesStatus =
           effectiveStatus === "all" ||
           (effectiveStatus === "away" ? row.status === "hospital" || row.status === "loa" : row.status === effectiveStatus);
@@ -432,46 +498,42 @@ export function AdminResidentsPageClient({
     [rows.length],
   );
 
-  const residentsInViewCount = filteredRows.length;
-  const highAcuityInViewCount = filteredRows.filter((row) => row.acuity >= 3).length;
-  let highAcuityTone: KpiCardTone = "neutral";
-  if (highAcuityInViewCount >= 4) highAcuityTone = "danger";
-  else if (highAcuityInViewCount >= 1) highAcuityTone = "warning";
+  // Facility-wide figures come from the complete scoped roster (`rows`), never
+  // from the filtered rows on screen. The filtered population is stated once,
+  // beside the table, as "Showing X of N".
+  const facilityPresence = presenceBreakdown(rows);
+  const coverage = acuityCoverage(rows);
+  const highAcuity = highAcuityFigure(coverage);
+  const residentsWithoutPostedAcuity = coverage.total - coverage.assessed;
+  const unoccupiedBeds = unoccupiedBedsFigure(metrics);
+  const carePlans = carePlanFigure(metrics?.carePlanCoverage ?? null);
+  const showingCopy = rosterShowingCopy(filteredRows.length, rows.length);
 
   const openBedsEmptyCopy = residentRosterOpenBedsEmptyCopy(selectedFacilityId, metrics);
   const careReviewsEmptyCopy = residentRosterCarePlanReviewsEmptyCopy(selectedFacilityId, metrics);
-  const openBedsLoaded = openBedsEmptyCopy == null && metrics?.openBeds != null;
-  const careReviewsLoaded = careReviewsEmptyCopy == null && metrics?.carePlanReviewsDueWeek != null;
-  const openBedsFootnote =
-    openBedsLoaded && metrics != null ? rosterOpenBedsLoadedFootnote(metrics) : null;
   const kpiStripHelperLine = residentRosterKpiStripHelperLine(
     selectedFacilityId,
-    openBedsLoaded,
-    careReviewsLoaded,
+    unoccupiedBeds != null,
+    carePlans != null,
   );
 
-  // Presence breakdown of the residents in view — additive to census, computed
-  // client-side from the rows already loaded (no extra query).
-  const presenceInView = {
-    inHouse: filteredRows.filter((row) => row.status === "active").length,
-    hospital: filteredRows.filter((row) => row.status === "hospital").length,
-    onLeave: filteredRows.filter((row) => row.status === "loa").length,
-  };
+  const grouping = useMemo(() => effectiveRosterGroupBy(groupBy, rows), [groupBy, rows]);
+  const effectiveGroupBy = grouping.groupBy;
 
   const grouped = useMemo(() => {
-    if (groupBy === "none") {
+    if (effectiveGroupBy === "none") {
       return [{ key: "_flat_", label: "", rows: sortedRows }];
     }
     const map = new Map<string, ResidentRow[]>();
     for (const row of sortedRows) {
-      const label = groupLabelForRow(groupBy, row);
+      const label = groupLabelForRow(effectiveGroupBy, row);
       const cur = map.get(label);
       if (cur) cur.push(row);
       else map.set(label, [row]);
     }
     const keys = Array.from(map.keys()).sort((a, b) => collator.compare(a, b));
-    return keys.map((key) => ({ key: `grp:${groupBy}:${key}`, label: key, rows: map.get(key) ?? [] }));
-  }, [groupBy, sortedRows]);
+    return keys.map((key) => ({ key: `grp:${effectiveGroupBy}:${key}`, label: key, rows: map.get(key) ?? [] }));
+  }, [effectiveGroupBy, sortedRows]);
 
   const flatRowsForBulk = sortedRows;
 
@@ -511,6 +573,9 @@ export function AdminResidentsPageClient({
     }
   };
 
+  const ariaSortFor = (key: SortKey): "ascending" | "descending" | "none" =>
+    sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+
   const toggleRowSelected = (id: string, next: boolean) => {
     setSelectedIds((prev) => {
       const n = new Set(prev);
@@ -540,16 +605,6 @@ export function AdminResidentsPageClient({
     a.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${chosen.length} residents (CSV).`);
-  };
-
-  const queueCarePlanReview = () => {
-    const n = selectedIds.size;
-    toast.message("Batch care plan review queue", {
-      description:
-        n > 0
-          ? `${n} selected — confirm workflow routing with clinical ops before we wire this queue.`
-          : "Select residents to stage a batch review.",
-    });
   };
 
   const SortHeaderBtn = ({
@@ -585,27 +640,42 @@ export function AdminResidentsPageClient({
       </span>
     );
 
-  const renderRowCells = (resident: ResidentRow) => {
-    const rosterAccent = rosterAvatarAccentFromId(resident.id);
-    return (
-    <>
-      <div className="flex-[3] flex min-w-0 items-center gap-2.5">
-        <Tooltip>
-          <TooltipTrigger>
-            <span
-              aria-hidden
-              className="inline-flex size-[10px] shrink-0 cursor-default rounded-full ring-1 ring-border/70"
-              style={{ backgroundColor: rosterAccent.foreground }}
-            />
-          </TooltipTrigger>
-          <TooltipContent side="bottom" align="start" className="max-w-sm text-[12px]">
-            Identity marker — color distinguishes similar names.
-          </TooltipContent>
-        </Tooltip>
+  // Columns: Resident · Room · Acuity · ADL support · Presence · Profile updated.
+  // No identity dot beside the name — an unexplained color next to a resident
+  // reads as a clinical status. Acuity and ADL yield to name / room / presence
+  // below `md`; the row stays a single line at every width.
+  // Flat, conventional rows: a hairline between rows instead of a rounded
+  // border around each one, and no hover lift. The 36px height, hover
+  // background, and focus ring from the primitive stay. Every cell carries
+  // `role="cell"` so the row is a real ARIA row; the resident's name is the
+  // link and it stretches over the row (`after:inset-0`), which keeps one tab
+  // stop per row and lets the checkbox sit above it.
+  const renderRow = (resident: ResidentRow) => (
+    <TableRow
+      key={resident.id}
+      className="group relative rounded-none border-0 border-b border-border px-2 last:border-b-0 hover:translate-y-0 focus-within:bg-muted/40"
+    >
+      <div role="cell" className="relative z-10 flex w-10 shrink-0 items-center justify-center">
+        <label className="flex cursor-pointer items-center justify-center rounded-md p-1 hover:bg-muted/40">
+          <input
+            type="checkbox"
+            className="size-3.5 rounded border border-input"
+            aria-label={`Select ${resident.name}`}
+            checked={selectedIds.has(resident.id)}
+            onChange={(e) => toggleRowSelected(resident.id, e.target.checked)}
+          />
+        </label>
+      </div>
+
+      <div role="cell" className="flex-[3] flex min-w-0 items-center gap-2.5">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate text-[13px] font-medium text-foreground underline-offset-4 group-hover:underline">
-            {resident.name}
-          </span>
+          {/* No `truncate` on the link itself — overflow:hidden would clip the stretched ::after. */}
+          <Link
+            href={`${detailBaseHref}/${resident.id}`}
+            className="block min-w-0 text-[13px] font-medium text-foreground underline-offset-4 after:absolute after:inset-0 after:content-[''] group-hover:underline focus-visible:outline-none focus-visible:underline"
+          >
+            <span className="block truncate">{resident.name}</span>
+          </Link>
           {resident.careSummary.trim().length > 0 ? (
             <span className="hidden truncate text-[11px] text-muted-foreground md:block" title={resident.careSummary}>
               {truncateCareNoteSubtitle(resident.careSummary, 60)}
@@ -614,71 +684,37 @@ export function AdminResidentsPageClient({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-[13px] font-medium text-foreground">{resident.room}</span>
+      <div role="cell" className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate text-[13px] font-medium tabular-nums text-foreground">{resident.room}</span>
         {resident.unit.trim().length > 0 ? (
           <span className="truncate text-[11px] text-muted-foreground">{resident.unit}</span>
         ) : null}
       </div>
 
-      <div className="flex-1">
+      <div role="cell" className="hidden flex-1 md:block">
         <AcuityCell acuityLevel={resident.acuityLevel} acuity={resident.acuity} />
       </div>
 
-      <div className="flex-1">
+      <div role="cell" className="hidden flex-1 md:block">
         <AdlCell acuityLevel={resident.acuityLevel} status={resident.adlStatus} />
       </div>
 
-      <div className="flex-1">
+      <div role="cell" className="flex-1">
         <ResidentStatusCell status={resident.status} />
       </div>
 
-      <div className="flex flex-1 items-center justify-end gap-2">
-        <Tooltip>
-          <TooltipTrigger>
-            <span className="cursor-default text-[11px] tabular-nums text-muted-foreground whitespace-nowrap">
-              {formatResidentRosterUpdatedAt(resident.updatedAtIso)}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs text-[12px]">
-            Today this reflects the latest resident profile save time (database row save). Confirm the operator-facing
-            lifecycle you want surfaced before renaming this column.
-          </TooltipContent>
-        </Tooltip>
+      <div role="cell" className="hidden flex-1 items-center justify-end gap-2 lg:flex">
+        <span
+          className="cursor-default text-[11px] tabular-nums text-muted-foreground whitespace-nowrap"
+          title={`Profile updated ${resident.updatedAtIso ?? "— no date posted"} (last save of the resident record; not an assessment or presence check)`}
+        >
+          {formatResidentRosterUpdatedAt(resident.updatedAtIso)}
+        </span>
         <ChevronRight
           aria-hidden
           className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
         />
       </div>
-    </>
-    );
-  };
-
-  const renderRow = (resident: ResidentRow) => (
-    <TableRow
-      key={resident.id}
-      className="group px-2"
-    >
-      <label
-        className="flex w-10 shrink-0 cursor-pointer items-center justify-center rounded-md hover:bg-muted/40"
-        onClick={(event) => event.stopPropagation()}
-        onMouseDown={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
-      >
-        <input
-          type="checkbox"
-          className="size-3.5 rounded border border-input"
-          aria-label={`Select ${resident.name}`}
-          checked={selectedIds.has(resident.id)}
-          onChange={(e) => toggleRowSelected(resident.id, e.target.checked)}
-        />
-      </label>
-      <Link
-        href={`${detailBaseHref}/${resident.id}`}
-        className="flex min-w-0 flex-1 items-center gap-3"
-      >
-        {renderRowCells(resident)}
-      </Link>
     </TableRow>
   );
 
@@ -692,71 +728,65 @@ export function AdminResidentsPageClient({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger>
-              <Link
-                href="/pipeline/admissions/new"
-                className={cn(
-                  buttonVariants({ size: "default" }),
-                  "h-9 px-3 text-[12px] font-medium",
-                )}
-              >
-                + New admission
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-[12px]">Start a new admission case in the pipeline.</TooltipContent>
-          </Tooltip>
+          <Link
+            href="/pipeline/admissions/new"
+            title="Start a new admission case in the pipeline — the intake form checks for an existing resident or inquiry before creating one."
+            className={cn(
+              buttonVariants({ size: "default" }),
+              "h-9 px-3 text-[12px] font-medium",
+            )}
+          >
+            + New admission
+          </Link>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
-          <KpiCard
-            value={residentsInViewCount}
-            label="Residents in view"
-            tone="neutral"
-            className="flex min-h-[118px] flex-col justify-between"
-          />
-          <KpiCard
-            value={presenceInView.inHouse}
-            label="In-house"
-            tone="neutral"
-            footnote={`Hospital ${presenceInView.hospital} · On leave ${presenceInView.onLeave}`}
-            className="flex min-h-[118px] flex-col justify-between"
-          />
-          <KpiCard
-            value={highAcuityInViewCount}
-            label="High acuity in view (level 3+)"
-            tone={highAcuityTone}
-            className="flex min-h-[118px] flex-col justify-between"
-          />
-          <KpiCard
-            value={openBedsEmptyCopy ?? metrics?.openBeds}
-            valuePresentation={openBedsEmptyCopy != null ? "message" : "metric"}
-            label="Open beds (licensed − occupied census)"
-            tone="neutral"
-            footnote={openBedsFootnote ?? undefined}
-            className="flex min-h-[118px] flex-col justify-between"
-          />
-          <KpiCard
-            value={careReviewsEmptyCopy ?? metrics?.carePlanReviewsDueWeek}
-            valuePresentation={careReviewsEmptyCopy != null ? "message" : "metric"}
-            label="Care plan reviews due (7 days)"
-            tone={
-              careReviewsEmptyCopy == null && metrics?.carePlanReviewsDueWeek != null && metrics.carePlanReviewsDueWeek > 0
-                ? "warning"
-                : "neutral"
-            }
-            footnote={
-              careReviewsLoaded
-                ? "Active / under-review plans with review due in the next week"
-                : undefined
-            }
-            className="flex min-h-[118px] flex-col justify-between"
-          />
+      <section aria-label="Facility summary" className="flex flex-col gap-2">
+        <p className="text-[13px] text-foreground">
+          <span className="font-medium">{presenceLine(facilityPresence)}</span>
+          <span className="text-muted-foreground"> · facility-wide, not affected by filters</span>
+        </p>
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)] ring-1 ring-border/60">
+          <dl className="grid grid-cols-1 gap-px bg-border sm:grid-cols-3">
+            <SummaryCell
+              label="High acuity (level 3)"
+              figure={highAcuity}
+              action={
+                residentsWithoutPostedAcuity > 0 ? (
+                  <button
+                    type="button"
+                    className="text-[12px] font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setAcuity(NOT_POSTED_FILTER)}
+                  >
+                    View {residentsWithoutPostedAcuity === 1 ? "the resident" : `${residentsWithoutPostedAcuity} residents`} without posted acuity
+                  </button>
+                ) : null
+              }
+            />
+            <SummaryCell
+              label={UNOCCUPIED_BEDS_LABEL}
+              figure={unoccupiedBeds}
+              emptyCopy={openBedsEmptyCopy}
+            />
+            <SummaryCell
+              label={CARE_PLAN_REVIEWS_LABEL}
+              figure={carePlans}
+              emptyCopy={careReviewsEmptyCopy}
+              action={
+                <Link
+                  href="/admin/care-plans/reviews-due"
+                  className="text-[12px] font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Open reviews due
+                </Link>
+              }
+            />
+          </dl>
         </div>
-        <p className="text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
-      </div>
+        {kpiStripHelperLine ? (
+          <p className="text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
+        ) : null}
+      </section>
 
       <AdminFilterBar
         searchValue={search}
@@ -774,7 +804,10 @@ export function AdminResidentsPageClient({
                 )
               }
             >
-              <SelectTrigger className="h-8 w-[min(100vw-2rem,176px)] min-w-[136px] rounded-md border border-input bg-card px-3 text-[13px] shadow-none">
+              <SelectTrigger
+                aria-label="Group by"
+                className="h-8 w-[min(100vw-2rem,176px)] min-w-[136px] rounded-md border border-input bg-card px-3 text-[13px] shadow-none"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -798,6 +831,11 @@ export function AdminResidentsPageClient({
               { value: "1", label: `Level 1 (${applyResidentFilters(rows, { acuity: "1" }).length})` },
               { value: "2", label: `Level 2 (${applyResidentFilters(rows, { acuity: "2" }).length})` },
               { value: "3", label: `Level 3 (${applyResidentFilters(rows, { acuity: "3" }).length})` },
+              {
+                value: NOT_POSTED_FILTER,
+                label: `${RESIDENT_ROSTER_NO_ACUITY_COPY} (${applyResidentFilters(rows, { acuity: NOT_POSTED_FILTER }).length})`,
+                shortLabel: RESIDENT_ROSTER_NO_ACUITY_COPY,
+              },
             ],
           },
           {
@@ -831,6 +869,11 @@ export function AdminResidentsPageClient({
                 value: "dependent",
                 label: `Total assist (${applyResidentFilters(rows, { adl: "dependent" }).length})`,
                 shortLabel: "Total assist",
+              },
+              {
+                value: NOT_POSTED_FILTER,
+                label: `${RESIDENT_ROSTER_NO_ADL_COPY} (${applyResidentFilters(rows, { adl: NOT_POSTED_FILTER }).length})`,
+                shortLabel: RESIDENT_ROSTER_NO_ADL_COPY,
               },
             ],
           },
@@ -882,54 +925,75 @@ export function AdminResidentsPageClient({
       ) : null}
 
       {!isLoading && !error && filteredRows.length > 0 ? (
-        <AdminOperationalListPanel>
-          <TableRowHeader className="hidden px-2 text-[11px] font-semibold lg:flex normal-case tracking-tight">
-            <div className="flex w-10 shrink-0 items-center justify-center">
+        <AdminOperationalListPanel
+          toolbar={
+            <>
+              <p className="text-[12px] text-muted-foreground" aria-live="polite">
+                <span className="font-medium text-foreground">{showingCopy}</span>
+                {grouping.notice ? <span> · {grouping.notice}</span> : null}
+              </p>
+            </>
+          }
+        >
+          <div role="table" aria-label="Resident roster" aria-rowcount={filteredRows.length}>
+          <div role="rowgroup">
+          <TableRowHeader className="hidden px-2 text-[11px] font-semibold md:flex normal-case tracking-tight">
+            <div role="columnheader" className="flex w-10 shrink-0 items-center justify-center">
               <input
                 ref={headerCheckboxRef}
                 type="checkbox"
-                aria-label="Select all residents in view"
+                aria-label="Select all residents shown"
                 checked={selectAllChecked}
                 onChange={toggleSelectAllInView}
                 className="size-3.5 rounded border border-input"
               />
             </div>
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <div className="flex-[3]">
-                <SortHeaderBtn colKey="resident" label="Resident" />
-              </div>
-              <div className="flex-1">
-                <SortHeaderBtn colKey="location" label="Location" />
-              </div>
-              <div className="flex-1">
-                <SortHeaderBtn colKey="acuity" label="Acuity" />
-              </div>
-              <div className="flex-1">
-                <SortHeaderBtn colKey={null} label="ADL" />
-              </div>
-              <div className="flex-1">
-                <SortHeaderBtn colKey={null} label="Status" />
-              </div>
-              <div className="flex flex-1 justify-end gap-2 text-right">
-                <SortHeaderBtn
-                  colKey="updated"
-                  label="Updated"
-                  align="right"
-                  title="Sort by last profile save timestamp. Confirm the operator-facing lifecycle before renaming."
-                />
-              </div>
+            <div role="columnheader" aria-sort={ariaSortFor("resident")} className="flex-[3]">
+              <SortHeaderBtn colKey="resident" label="Resident" />
+            </div>
+            <div role="columnheader" aria-sort={ariaSortFor("location")} className="flex-1">
+              <SortHeaderBtn colKey="location" label="Room" title="Sorted by unit, then room number (numeric)" />
+            </div>
+            <div role="columnheader" aria-sort={ariaSortFor("acuity")} className="flex-1">
+              <SortHeaderBtn colKey="acuity" label="Acuity" />
+            </div>
+            <div role="columnheader" className="flex-1">
+              <SortHeaderBtn
+                colKey={null}
+                label={
+                  <>
+                    <abbr title="Activities of daily living" className="no-underline">
+                      ADL
+                    </abbr>{" "}
+                    support
+                  </>
+                }
+                title="Activities of daily living — support level derived from posted acuity"
+              />
+            </div>
+            <div role="columnheader" className="flex-1">
+              <SortHeaderBtn colKey={null} label="Presence" />
+            </div>
+            <div role="columnheader" aria-sort={ariaSortFor("updated")} className="hidden flex-1 justify-end gap-2 text-right lg:flex">
+              <SortHeaderBtn
+                colKey="updated"
+                label="Profile updated"
+                align="right"
+                title="Last save of the resident record. Not an assessment date or a presence check."
+              />
             </div>
           </TableRowHeader>
-          <div className="space-y-4 p-1">
+          </div>
+          <div className="flex flex-col">
             {grouped.map((group) =>
-              groupBy === "none" ? (
-                <div key={group.key} className="space-y-1">
-                  {group.rows.map((resident) => (
-                    <div key={resident.id}>{renderRow(resident)}</div>
-                  ))}
+              effectiveGroupBy === "none" ? (
+                <div key={group.key} role="rowgroup" className="flex flex-col">
+                  {group.rows.map((resident) => renderRow(resident))}
                 </div>
               ) : (
-                <div key={group.key} className="space-y-1">
+                <div key={group.key} role="rowgroup" className="flex flex-col">
+                  <div role="row">
+                  <div role="cell" className="flex w-full">
                   <button
                     type="button"
                     onClick={() => {
@@ -941,7 +1005,8 @@ export function AdminResidentsPageClient({
                         return n;
                       });
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg border border-border bg-muted/40 px-[13px] py-2 text-left text-[12px]"
+                    className="flex w-full items-center gap-2 border-b border-border bg-muted/40 px-[13px] py-2 text-left text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-expanded={!collapsedKeys.has(group.key)}
                   >
                     {collapsedKeys.has(group.key) ? (
                       <ChevronRightSmall className="size-4 shrink-0" aria-hidden />
@@ -952,16 +1017,20 @@ export function AdminResidentsPageClient({
                       <span>{group.label}</span>
                       <span className="text-muted-foreground">
                         {" "}
-                        · {group.rows.length} residents · avg acuity {averageAcuity(group.rows)}
+                        · {group.rows.length} {group.rows.length === 1 ? "resident" : "residents"}
+                        {averageAcuity(group.rows) === RESIDENT_ROSTER_NO_ACUITY_COPY
+                          ? " · no acuity posted"
+                          : ` · avg acuity ${averageAcuity(group.rows)}`}
                       </span>
                     </span>
                   </button>
-                  {!collapsedKeys.has(group.key) ? (
-                    <div className="space-y-1">{group.rows.map((resident) => renderRow(resident))}</div>
-                  ) : null}
+                  </div>
+                  </div>
+                  {!collapsedKeys.has(group.key) ? group.rows.map((resident) => renderRow(resident)) : null}
                 </div>
               ),
             )}
+          </div>
           </div>
         </AdminOperationalListPanel>
       ) : null}
@@ -978,9 +1047,6 @@ export function AdminResidentsPageClient({
               </Button>
               <span className="hidden text-[11px] text-muted-foreground sm:inline">Eastern (ET)</span>
             </div>
-            <Button type="button" variant="outline" size="sm" className="h-8 shrink-0 text-[12px]" onClick={queueCarePlanReview}>
-              Send to care plan review queue
-            </Button>
             <Button
               type="button"
               variant="ghost"

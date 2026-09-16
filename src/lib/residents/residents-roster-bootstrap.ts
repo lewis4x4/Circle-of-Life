@@ -44,7 +44,11 @@ export async function loadResidentsRosterBootstrap(): Promise<ResidentsRosterBoo
 
   try {
     if (initialError == null) {
-      initialMetrics = await fetchResidentRosterMetrics(initialFacilityId, initialRows.length, supabase);
+      initialMetrics = await fetchResidentRosterMetrics(
+        initialFacilityId,
+        initialRows.map((row) => row.id),
+        supabase,
+      );
     }
   } catch (error) {
     console.error("[Haven] resident roster metrics failed:", queryErrorMessage(error), error);
