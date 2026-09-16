@@ -21,6 +21,7 @@ import { UUID_STRING_RE } from "@/lib/supabase/env";
 
 import { CareEventCard } from "./CareEventCard";
 import { CareEventDeliveryLedger } from "./CareEventDeliveryLedger";
+import { CareEventWitnesses } from "./CareEventWitnesses";
 import { CorrectiveSection, EmsSection, FamilySection, PhysicianSection } from "./CompletionNotifySections";
 import { AhcaSection, CloseSection, DcfSection, LowerLevelSection, VideoSection } from "./CompletionRegulatorySections";
 
@@ -184,6 +185,19 @@ export function AdminCareEventPageClient({ careEventId }: { careEventId: string 
           <LowerLevelSection {...sectionProps} />
           <CloseSection {...sectionProps} />
         </div>
+      </RecordDetailSection>
+
+      <RecordDetailSection
+        title="Witness statements"
+        description="Section 3 of the incident form. Everyone on that shift was asked, except the person who reported it."
+      >
+        <CareEventWitnesses
+          careEventId={careEventId}
+          incidentId={card.incident?.id ?? null}
+          facilityId={card.facilityId}
+          timeZone={card.timeZone}
+          canManage={!locked}
+        />
       </RecordDetailSection>
 
       <RecordDetailSection title="Who was told" description={open ? "Refreshes every 10 seconds while the event is open." : undefined}>
