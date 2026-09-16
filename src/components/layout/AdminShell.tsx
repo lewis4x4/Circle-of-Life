@@ -103,6 +103,7 @@ import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { resolveExecutiveCommandNav } from "@/lib/auth/executive-nav-access";
 import { useHeldRoleHomeChrome } from "@/hooks/useHeldRoleHomeChrome";
 import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
+import { filterStaffLaunchHiddenItems } from "@/lib/navigation/staff-launch-hidden";
 import { cn } from "@/lib/utils";
 
 /** Workspace strip inside main column (`--background`); persisted sidebar uses `haven-chrome-*`. Mercury pattern. */
@@ -480,6 +481,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           if (!resolved) return [];
           return [{ ...item, href: resolved.href, label: resolved.label }];
         }),
+      }))
+      .map((group) => ({
+        ...group,
+        items: filterStaffLaunchHiddenItems(group.items, roleConfig.visibleItemKeys),
       }))
       .filter((group) => group.items.length > 0);
 

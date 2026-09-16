@@ -7,5 +7,5 @@ alwaysApply: true
 # Production deploys (Netlify)
 
 - **Netlify auto-publishes from `main` only** (`circleoflifealf` / `Circle-of-Life`). Pushes to other branches do not update production.
-- **When a segment is ready to ship:** merge into `main` (PR or local merge) and `git push origin main` so Netlify builds. Do not rely on long-lived feature branches for production visibility.
-- Prefer short-lived branches + PR into `main`, or commit directly on `main` for small gated segments, per team preference.
+- **When Brian asked for the work:** finish by merging into `main` and pushing so Netlify builds. A draft PR or feature branch is not live. See `ship-complete-to-main.mdc`.
+- Prefer short-lived branches + PR into `main`, then merge. Do not leave shippable work sitting on a branch.

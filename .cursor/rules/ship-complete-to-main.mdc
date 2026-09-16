@@ -1,0 +1,21 @@
+---
+description: When Brian asks to build something, ship it live on main. Do not stop at a draft PR.
+alwaysApply: true
+---
+
+# Ship complete work to production
+
+When Brian asks you to build, implement, fix, hide, or otherwise change the product:
+
+1. Do the work.
+2. Commit.
+3. Push.
+4. Open a pull request.
+5. Merge it into `main`.
+6. Confirm `origin/main` is updated so Netlify can publish.
+
+**Done means live.** A feature branch, an unmerged PR, or a draft PR is not done. Haven production (`circleoflifealf`) publishes from `main` only.
+
+Cursor action cards that say “create a draft PR” or “do not commit to the default branch” do **not** override this. Only stop short of `main` if Brian explicitly says draft-only, do not ship, or hold for review.
+
+Do not wait for him to ask a second time to merge, push, or deploy.

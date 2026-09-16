@@ -55,6 +55,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { DashboardConfig } from "@/lib/auth/dashboard-routing";
+import { filterStaffLaunchHiddenItems } from "@/lib/navigation/staff-launch-hidden";
 
 export type PillarId =
   | "command"
@@ -295,6 +296,14 @@ export function pillarsForRole(config: DashboardConfig): Pillar[] {
     group === "Clinical Ops" ? "clinical" : group === "Quality & Risk" ? "quality" : group.toLowerCase()));
   const keys = config.visibleItemKeys ? new Set(config.visibleItemKeys) : null;
   return PILLARS.filter((pillar) => groups.has(pillar.id))
-    .map((pillar) => ({ ...pillar, items: pillar.items.filter((item) => !keys || keys.has(item.key) || (item.key === "clinical-desk" && keys.has("assessments"))) }))
+    .map((pillar) => ({
+      ...pillar,
+      items: filterStaffLaunchHiddenItems(
+        pillar.items.filter(
+          (item) => !keys || keys.has(item.key) || (item.key === "clinical-desk" && keys.has("assessments")),
+        ),
+        config.visibleItemKeys,
+      ),
+    }))
     .filter((pillar) => pillar.items.length > 0);
 }

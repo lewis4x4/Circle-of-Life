@@ -181,6 +181,14 @@ describe("AppShell all-sections jump list", () => {
     expect(within(jumpList).getByText("Snack pass")).toBeInTheDocument();
     expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
     expect(within(jumpList).getByText("Incident queue")).toBeInTheDocument();
+    expect(within(jumpList).queryByText("Medication reconciliation")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Med-Tech cockpit")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Medications")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Medication errors")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Dietary & Nutrition")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Finance")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Insurance")).not.toBeInTheDocument();
+    expect(within(jumpList).getByText("Vendors & AP")).toBeInTheDocument();
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
 
@@ -245,6 +253,22 @@ describe("AppShell all-sections jump list", () => {
     await user.type(search, "knowledge");
 
     expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "medication");
+    expect(within(jumpList).queryByText("Medication reconciliation")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Medications")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Medication errors")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Med-Tech cockpit")).not.toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "finance");
+    expect(within(jumpList).queryByText("Finance")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Insurance")).not.toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "vendor");
+    expect(within(jumpList).getByText("Vendors & AP")).toBeInTheDocument();
   });
 
   it("navigates when a filtered destination is chosen", async () => {
