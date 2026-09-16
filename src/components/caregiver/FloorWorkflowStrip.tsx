@@ -14,7 +14,7 @@ const WORKFLOW_LINKS: Array<{ key: WorkflowKey; href: string; label: string }> =
   { key: "rounds", href: "/caregiver/rounds", label: "Rounds" },
   { key: "followups", href: "/caregiver/followups", label: "Condition follow-ups" },
   { key: "prn", href: "/caregiver/prn-followup", label: "PRN reassessment" },
-  { key: "incident", href: "/caregiver/incident-draft", label: "Incident report" },
+  { key: "incident", href: "/caregiver/report", label: "Something happened" },
   { key: "handoff", href: "/caregiver/handoff", label: "Shift handoff" },
 ];
 

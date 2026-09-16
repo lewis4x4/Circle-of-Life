@@ -111,6 +111,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         "/caregiver/meds",
         "/caregiver/followups",
         "/caregiver/prn-followup",
+        "/caregiver/report",
         "/caregiver/incident-draft",
         "/caregiver/handoff",
       ].some((route) => pathname.startsWith(route)),
@@ -133,7 +134,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
     { href: "/caregiver", icon: <Home className="h-5 w-5" aria-hidden />, label: "Home", isActive: pathname === "/caregiver" },
     { href: "/caregiver/meds", icon: <Pill className="h-5 w-5" aria-hidden />, label: "Meds", isActive: pathname.startsWith("/caregiver/meds") },
     { href: "/caregiver/rounds", icon: <ClipboardList className="h-5 w-5" aria-hidden />, label: "Rounds", isActive: pathname.startsWith("/caregiver/rounds") },
-    { href: "/caregiver/incident-draft", icon: <AlertTriangle className="h-5 w-5" aria-hidden />, label: "Report", isActive: pathname.startsWith("/caregiver/incident-draft") },
+    { href: "/caregiver/report", icon: <AlertTriangle className="h-5 w-5" aria-hidden />, label: "Report", isActive: pathname.startsWith("/caregiver/report") },
   ];
   const housekeeperNavItems = [
     { href: "/caregiver/housekeeper", icon: <Home className="h-5 w-5" aria-hidden />, label: "Home", isActive: pathname.startsWith("/caregiver/housekeeper") },

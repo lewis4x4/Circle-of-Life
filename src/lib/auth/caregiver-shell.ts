@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isOnboardingAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
@@ -19,6 +19,13 @@ const CAREGIVER_ROOT_ALIAS_PREFIXES = [
   "/resident",
 ] as const;
 
+/**
+ * The "Something happened" flow (spec 07A). Every signed-in staff role may
+ * open it so the admin shell's "Report incident" button lands here; the RPC
+ * still decides who may submit.
+ */
+const REPORT_PATH_PREFIX = "/caregiver/report";
+
 export function isCaregiverShellPath(pathname: string): boolean {
   if (pathname === "/caregiver" || pathname.startsWith("/caregiver/")) {
     return true;
@@ -28,9 +35,25 @@ export function isCaregiverShellPath(pathname: string): boolean {
   );
 }
 
+export function isCaregiverReportPath(pathname: string): boolean {
+  return pathname === REPORT_PATH_PREFIX || pathname.startsWith(`${REPORT_PATH_PREFIX}/`);
+}
+
+/**
+ * Any signed-in staff role that is not `family` or `onboarding` may open the
+ * report flow. Housekeepers keep their own allow-list (the report path is not on it).
+ */
+export function isStaffRoleAllowedOnReportPath(role: string): boolean {
+  if (!role) return false;
+  if (role === "family" || isOnboardingAppRole(role)) return false;
+  if (role === "housekeeper") return isHousekeeperAllowedPath(REPORT_PATH_PREFIX);
+  return true;
+}
+
 /**
  * Caregiver UI requires a session and a floor role (`caregiver` or `housekeeper`).
- * Other known roles go to their shells.
+ * Other known roles go to their shells, except on `/caregiver/report` where every
+ * non-family staff role is allowed (spec 07A §6.3).
  */
 export function caregiverShellAccessRedirect(request: NextRequest, user: AuthClaimUser | null): NextResponse | null {
   const nextUrl = request.nextUrl;
@@ -51,6 +74,9 @@ export function caregiverShellAccessRedirect(request: NextRequest, user: AuthCla
   }
   if (role === "family") {
     return NextResponse.redirect(new URL("/family", nextUrl.origin));
+  }
+  if (isCaregiverReportPath(nextUrl.pathname) && isStaffRoleAllowedOnReportPath(role)) {
+    return null;
   }
   if (isAdminEligibleAppRole(role)) {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));

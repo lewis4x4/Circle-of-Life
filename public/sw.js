@@ -1,9 +1,13 @@
-/* Minimal PWA service worker with caregiver rounds queue + background sync. */
+/* Minimal PWA service worker with caregiver rounds queue, care event queue, and background sync. */
 
-const STATIC_CACHE = "haven-static-v4";
+const STATIC_CACHE = "haven-static-v5";
 const DB_NAME = "haven-offline";
+const DB_VERSION = 2;
 const STORE_NAME = "roundingQueue";
+const CARE_EVENT_STORE_NAME = "careEventQueue";
 const SYNC_TAG = "haven-rounding-sync";
+const CARE_EVENT_SYNC_TAG = "haven-care-event-sync";
+const CARE_EVENT_SUBMIT_ENDPOINT = "/api/care-events/submit";
 const STATIC_ASSETS = ["/manifest.webmanifest", "/icon.svg", "/apple-icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -20,7 +24,7 @@ self.addEventListener("activate", (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((key) => ["haven-static-v3", "haven-runtime-v3", "haven-rounding-v3"].includes(key))
+        .filter((key) => ["haven-static-v3", "haven-runtime-v3", "haven-rounding-v3", "haven-static-v4"].includes(key))
         .map((key) => caches.delete(key)),
     );
     await self.clients.claim();
@@ -71,6 +75,10 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("sync", (event) => {
   if (event.tag === SYNC_TAG) {
     event.waitUntil(flushQueue());
+    return;
+  }
+  if (event.tag === CARE_EVENT_SYNC_TAG) {
+    event.waitUntil(flushCareEventQueue());
   }
 });
 
@@ -115,6 +123,44 @@ self.addEventListener("message", (event) => {
         if (port) port.postMessage({ ok: false, error: error instanceof Error ? error.message : String(error) });
       }
     })());
+    return;
+  }
+
+  if (data.type === "HAVEN_QUEUE_CARE_EVENT") {
+    event.waitUntil((async () => {
+      try {
+        if (!data.item || !data.item.clientEventId || !data.item.ownerUserId || data.item.ownerUserId !== data.ownerUserId) {
+          throw new Error("The care event is missing its original operator. Keep it on this screen and sign in again.");
+        }
+        await putCareEventQueueItem(data.item);
+        const state = await buildCareEventQueueState({}, data.ownerUserId);
+        if (port) port.postMessage({ ok: true, state });
+        await broadcastCareEventQueueState({});
+      } catch (error) {
+        if (port) port.postMessage({ ok: false, error: error instanceof Error ? error.message : String(error) });
+      }
+    })());
+    return;
+  }
+
+  if (data.type === "HAVEN_PING_CARE_EVENT_QUEUE_STATE") {
+    event.waitUntil((async () => {
+      const state = await buildCareEventQueueState({}, data.ownerUserId);
+      if (port) port.postMessage({ ok: true, state });
+    })());
+    return;
+  }
+
+  if (data.type === "HAVEN_FLUSH_CARE_EVENT_QUEUE") {
+    event.waitUntil((async () => {
+      try {
+        const result = await flushCareEventQueue();
+        const state = await buildCareEventQueueState({ sent: result.sent, lastError: result.lastError }, data.ownerUserId);
+        if (port) port.postMessage({ ok: true, state });
+      } catch (error) {
+        if (port) port.postMessage({ ok: false, error: error instanceof Error ? error.message : String(error) });
+      }
+    })());
   }
 });
 
@@ -131,12 +177,15 @@ async function cacheFirst(request, cacheName) {
 
 function openQueueDb() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
         store.createIndex("taskId", "taskId", { unique: false });
+      }
+      if (!db.objectStoreNames.contains(CARE_EVENT_STORE_NAME)) {
+        db.createObjectStore(CARE_EVENT_STORE_NAME, { keyPath: "clientEventId" });
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -144,11 +193,11 @@ function openQueueDb() {
   });
 }
 
-async function withStore(mode, callback) {
+async function withStore(mode, callback, storeName = STORE_NAME) {
   const db = await openQueueDb();
   return await new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, mode);
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction(storeName, mode);
+    const store = transaction.objectStore(storeName);
     let result;
 
     transaction.oncomplete = () => {
@@ -281,4 +330,117 @@ async function flushQueue() {
   })();
 
   try { return await flushPromise; } finally { flushPromise = null; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Care event queue ("Something happened", spec 07A). Keyed by clientEventId so
+ * the server replay is idempotent. 409 and 422 are terminal: the item stays for
+ * reconciliation and is never retried automatically.
+ * ------------------------------------------------------------------------- */
+
+async function putCareEventQueueItem(item) {
+  return await withStore("readwrite", (store) => {
+    store.put(item);
+  }, CARE_EVENT_STORE_NAME);
+}
+
+async function deleteCareEventQueueItem(clientEventId) {
+  return await withStore("readwrite", (store) => {
+    store.delete(clientEventId);
+  }, CARE_EVENT_STORE_NAME);
+}
+
+async function getAllCareEventQueueItems() {
+  return await withStore("readonly", (store, setResult) => {
+    const request = store.getAll();
+    request.onsuccess = () => setResult(request.result || []);
+  }, CARE_EVENT_STORE_NAME);
+}
+
+async function buildCareEventQueueState(extra = {}, ownerUserId = null) {
+  const allItems = await getAllCareEventQueueItems();
+  const items = ownerUserId ? allItems.filter((item) => item.ownerUserId === ownerUserId) : [];
+  const pending = items.filter((item) => !item.terminal);
+  return {
+    pendingCount: pending.length,
+    isSyncing: Boolean(extra.isSyncing),
+    lastError: extra.lastError || items.find((item) => item.lastError)?.lastError || null,
+    sent: Array.isArray(extra.sent) ? extra.sent : [],
+  };
+}
+
+async function broadcastCareEventQueueState(extra = {}) {
+  const allItems = await getAllCareEventQueueItems();
+  const state = {
+    pendingCount: allItems.filter((item) => !item.terminal).length,
+    isSyncing: Boolean(extra.isSyncing),
+    lastError: extra.lastError || null,
+    sent: Array.isArray(extra.sent) ? extra.sent : [],
+  };
+  const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  for (const client of clients) {
+    client.postMessage({ type: "HAVEN_CARE_EVENT_QUEUE_STATE", state });
+  }
+  return state;
+}
+
+let careEventFlushPromise = null;
+
+async function flushCareEventQueue() {
+  if (careEventFlushPromise) return careEventFlushPromise;
+
+  careEventFlushPromise = (async () => {
+    await broadcastCareEventQueueState({ isSyncing: true });
+
+    const items = await getAllCareEventQueueItems();
+    const sent = [];
+    let lastError = null;
+    for (const item of items) {
+      if (item.terminal) continue;
+      try {
+        if (!item.ownerUserId) {
+          item.lastError = "Original operator is unknown. Retained for manual reconciliation.";
+          await putCareEventQueueItem(item);
+          continue;
+        }
+        const response = await fetch(CARE_EVENT_SUBMIT_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-haven-sync": "service-worker",
+          },
+          body: JSON.stringify({ ...item.payload, captured_offline: true }),
+          credentials: "same-origin",
+        });
+
+        if (response.ok) {
+          let receipt = null;
+          try {
+            receipt = await response.json();
+          } catch {
+            receipt = null;
+          }
+          await deleteCareEventQueueItem(item.clientEventId);
+          sent.push({ clientEventId: item.clientEventId, receipt });
+          continue;
+        }
+
+        lastError = await readError(response);
+        item.retryCount = (item.retryCount || 0) + 1;
+        item.lastError = lastError;
+        item.terminal = response.status === 409 || response.status === 422;
+        await putCareEventQueueItem(item);
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : String(error);
+        item.retryCount = (item.retryCount || 0) + 1;
+        item.lastError = lastError;
+        await putCareEventQueueItem(item);
+      }
+    }
+
+    await broadcastCareEventQueueState({ isSyncing: false, lastError, sent });
+    return { sent, lastError };
+  })();
+
+  try { return await careEventFlushPromise; } finally { careEventFlushPromise = null; }
 }

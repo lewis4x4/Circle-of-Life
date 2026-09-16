@@ -425,7 +425,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         icon: ShieldCheck,
         items: [
           { key: "risk", href: "/admin/risk", label: "Risk command", enabled: true, icon: Radar },
-          { key: "incidents-new", href: "/admin/incidents/new", label: "Report incident", enabled: true, icon: ShieldAlert },
+          { key: "incidents-new", href: "/caregiver/report", label: "Report incident", enabled: true, icon: ShieldAlert },
           { key: "incidents", href: "/admin/incidents", label: "Incident queue", enabled: true, icon: ShieldAlert },
           { key: "infection", href: "/admin/infection-control", label: "Infection Control", enabled: true, icon: Biohazard },
           { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", enabled: true, icon: Scale },

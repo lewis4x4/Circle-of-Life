@@ -228,12 +228,17 @@ export default function CaregiverHomePage() {
           <h3 className="text-lg font-medium text-foreground">Work Now</h3>
         </div>
         <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link
+            href="/caregiver/report"
+            className="flex min-h-14 items-center gap-4 rounded-lg bg-primary px-5 py-4 text-primary-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 motion-reduce:transition-none sm:col-span-2"
+          >
+            <AlertTriangle className="size-6 shrink-0" aria-hidden />
+            <span className="flex flex-col">
+              <span className="text-lg font-semibold">Something happened</span>
+              <span className="text-sm opacity-90">Fall, hurt, sick, upset, wandering, medicine, family, or the building. Three taps.</span>
+            </span>
+          </Link>
           <ActionTile href="/caregiver/meds" icon={<Pill className="text-primary" />} title="Medication Pass" />
-          <ActionTile
-            href="/caregiver/incident-draft"
-            icon={<AlertTriangle className="text-warning" />}
-            title="Report An Incident"
-          />
           <ActionTile
             href="/caregiver/rounds"
             icon={<CheckCircle2 className="text-success" />}

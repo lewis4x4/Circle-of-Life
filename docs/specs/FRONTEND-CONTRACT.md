@@ -184,7 +184,9 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/caregiver/rounds`
 - `/caregiver/rounds/[residentId]`
 - `/caregiver/tasks`
-- `/caregiver/incident-draft`
+- `/caregiver/report` (spec 07A "Something happened": Who, What, How bad, receipt; `?resident=<uuid>` and `?kind=<kind>` prefill)
+- `/caregiver/report/[careEventId]` (receipt revisit: acknowledgment, photo, voice note)
+- `/caregiver/incident-draft` → redirects to `/caregiver/report` (preserves `?resident=`)
 - `/caregiver/followups`
 - `/caregiver/resident/[id]`
 - `/caregiver/resident/[id]/log`
