@@ -112,16 +112,17 @@ describe('field-state vocabulary', () => {
   expect(metricSection('admissions_expected').period).toBe('expected')
   expect(metricSection('callouts_last_week').period).toBe('completed')
  })
- it('labels each section with the period it covers, reads the same on a past report, and never invents an as-of time', () => {
+ it('labels each section with the period it covers, reads the same on a past report, and never claims an observation time', () => {
   const [census, , admissions, staffing] = SECTIONS
   expect(sectionPeriodLabel(staffing, '2026-09-14')).toBe('Completed week · September 7–13, 2026')
   // Not "this week": the label is read on historical reports too, where the range is the only truthful anchor.
   expect(sectionPeriodLabel(admissions, '2026-09-14')).toBe('Forecast week · September 14–20, 2026')
   expect(sectionPeriodLabel(admissions, '2026-09-07', null, false)).toBe('Forecast week · September 7–13, 2026')
-  expect(sectionPeriodLabel(census, '2026-09-14', '2026-09-14T12:31:00Z')).toBe('Current snapshot · As of September 14 at 8:31 a.m. Eastern')
-  // Haven stamps the observation time on every save of the open period, so an open report without one is unsaved.
-  expect(sectionPeriodLabel(census, '2026-09-14', null, true)).toBe('Current snapshot · As of the time you save')
-  expect(sectionPeriodLabel(census, '2026-09-07', null, false)).toBe('Current snapshot · As-of time not recorded')
+  // source_as_of is when the figures reached Haven — a save, or the connector reading the
+  // workbook. Nothing records when the ALF was observed, so the label never says "as of".
+  expect(sectionPeriodLabel(census, '2026-09-14', '2026-09-14T12:31:00Z')).toBe('Current snapshot · Figures recorded September 14 at 8:31 a.m. Eastern')
+  expect(sectionPeriodLabel(census, '2026-09-14', null, true)).toBe('Current snapshot · Figures recorded when you save')
+  expect(sectionPeriodLabel(census, '2026-09-07', null, false)).toBe('Current snapshot · No recorded time')
  })
  it('writes compact ranges across months and years', () => {
   expect(periodRange('2026-08-31', '2026-09-06')).toBe('August 31 – September 6, 2026')

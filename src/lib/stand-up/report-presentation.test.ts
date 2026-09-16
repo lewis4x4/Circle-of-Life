@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionEvidence } from './report-presentation'
+import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionChecklist, submissionEvidence } from './report-presentation'
 import { emptyValues, type StandUpReport } from './model'
 
 const base = (patch: Partial<StandUpReport> = {}): StandUpReport => ({ id: 'r', facility_id: 'a', week_start: '2026-09-14', version: 1, revision_id: 'rev', values: emptyValues(), status: 'draft', updated_at: '2026-09-14T12:31:00Z', ...patch })
@@ -35,6 +35,23 @@ describe('Stand Up report presentation', () => {
   expect(lastSaveLine(base({ updated_by: 'u', updated_by_name: 'Charlene Elmore' }), 'u')).toBe('Last saved by you on September 14 at 8:31 a.m. Eastern.')
   expect(lastSaveLine(base(), 'u')).toBe('Last saved September 14 at 8:31 a.m. Eastern.')
   expect(lastSaveLine(undefined, 'u')).toBe('No saved report yet.')
+ })
+ it('keeps populated figures, review, unresolved rules and submission as four separate facts', () => {
+  const complete = Object.fromEntries(Object.keys(emptyValues()).map(key => [key, 1])) as StandUpReport['values']
+  // Every figure present, and still not reviewed: completeness never stands in for approval.
+  expect(submissionChecklist({ report: base({ values: complete, entry_origin: 'imported' }), provided: 16, total: 16, unresolved: 14 })).toEqual([
+   { term: 'Figures provided', detail: 'All 16' },
+   { term: 'Administrator review', detail: 'Not confirmed yet — submitting confirms yours' },
+   { term: 'Unresolved definitions', detail: '14 figures — Circle of Life has not settled how they are counted, so they stay provisional' },
+   { term: 'Submission', detail: 'Original submission time unavailable.' },
+  ])
+  const submitted = submissionChecklist({ report: base({ values: complete, status: 'ready', last_submitted_at: '2026-09-14T12:40:00Z' }), provided: 16, total: 16, unresolved: 0 })
+  expect(submitted[1].detail).toBe('Confirmed by the last submission')
+  expect(submitted[2].detail).toBe('None')
+  // A held duration leaves the count unknowable; it is never reported as a figure provided.
+  const partial = submissionChecklist({ provided: 15, total: 16, unresolved: 14 })
+  expect(partial[0].detail).toBe('15 of 16 — all 16 are needed to submit')
+  expect(submissionChecklist({ provided: null, total: 16, unresolved: 14 })[0].detail).toBe('Not countable while a figure needs correction')
  })
  it('reports the recorded observation time only when the report carries one', () => {
   expect(snapshotAsOf(base({ source_as_of: '2026-09-14T12:31:00Z' }))).toBe('2026-09-14T12:31:00Z')
