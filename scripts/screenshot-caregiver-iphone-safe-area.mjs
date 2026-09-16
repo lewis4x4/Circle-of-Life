@@ -25,7 +25,7 @@
  * Env:
  *   BASE_URL                 default http://127.0.0.1:3000
  *   PHASE1_DEMO_PASSWORD     default HavenDemo2026!
- *   SCREENSHOT_USER_EMAIL    default maria.garcia@circleoflifealf.com
+ *   SCREENSHOT_USER_EMAIL    required (no default)
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -51,7 +51,12 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const password = process.env.PHASE1_DEMO_PASSWORD ?? "HavenDemo2026!";
-const email = process.env.SCREENSHOT_USER_EMAIL ?? "maria.garcia@circleoflifealf.com";
+const email = process.env.SCREENSHOT_USER_EMAIL;
+if (!email) {
+  console.error("[screenshot-caregiver-iphone-safe-area] SCREENSHOT_USER_EMAIL is required.");
+  console.error("[screenshot-caregiver-iphone-safe-area] The old default (maria.garcia@circleoflifealf.com) was a fictitious persona retired 2026-09-16; there is no account behind it any more.");
+  process.exit(2);
+}
 const outPath = path.resolve(
   ROOT,
   "docs/ui-audit/screenshots-phase-c-portals/caregiver/caregiver-393x852-dark-safe-area.png",

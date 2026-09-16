@@ -1,5 +1,23 @@
 # SEED_DRIFT.md
 
+> **Closed 2026-09-16 — the accounts this ledger tracked no longer exist.**
+>
+> Every account in it was a fictitious `@circleoflifealf.com` persona. All 15 were
+> retired from the pilot project: facility grants revoked, profiles soft-deleted,
+> `auth.users` rows banned, and the 11 with no `audit_log` history deleted outright.
+> `medtech@`, `maria.garcia@`, `milton.smith@` and `admin@` remain as banned,
+> zero-grant tombstones only because `audit_log.user_id -> auth.users` is
+> `ON DELETE NO ACTION` and `audit_log` is immutable by design.
+>
+> `scripts/seed/canonical-roster.mjs` is now empty, so `seed:verify` and
+> `seed:repair` are both no-ops and the CI gate below passes trivially. **Do not
+> repopulate the roster to "fix" that** — `seed:repair` calls
+> `auth.admin.createUser` with each entry's fixed UUID, so adding a persona back
+> recreates it in production, along with the duplicate-identity findings the Data
+> Health panel exists to surface (COL-438).
+>
+> Everything below is historical.
+
 Ledger of demo / seeded auth accounts whose state has diverged from what the migrations describe. Each entry records:
 
 1. The account

@@ -16,7 +16,8 @@ export const HOMEWOOD_FACILITY_ID =
   process.env.HOMEWOOD_FACILITY_ID ?? "00000000-0000-0000-0002-000000000003";
 
 export const CAREGIVER = {
-  email: process.env.CARE_EVENT_CAREGIVER_EMAIL ?? "maria.garcia@circleoflifealf.com",
+  // No default: the old @circleoflifealf.com persona was retired 2026-09-16.
+  email: process.env.CARE_EVENT_CAREGIVER_EMAIL ?? "",
   userId: process.env.CARE_EVENT_CAREGIVER_USER_ID ?? "a0000000-0000-0000-0000-000000000004",
 } as const;
 

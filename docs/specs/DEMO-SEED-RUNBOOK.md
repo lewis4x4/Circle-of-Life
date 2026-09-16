@@ -34,12 +34,18 @@ If optional IDs are missing, those auth-linked demo rows are skipped while core 
 
 ## Auth diagnostics
 
+> **2026-09-16:** the `@circleoflifealf.com` addresses these probes used to
+> default to were fictitious personas and have been retired from the pilot
+> project. No script carries a persona default any more — each one now requires
+> the account(s) to be named explicitly and exits `2` with a clear message when
+> they are not. See `scripts/seed/canonical-roster.mjs`.
+
 - `demo:auth-check` is the canonical Track A auth probe.
 - `demo:auth-smoke` is the canonical local app smoke for Phase 1 `PH1-A02` and `PH1-A03`.
 - It reads `.env.local` when shell env vars are not already exported.
 - It checks:
   - `auth/v1/settings`
-  - password login for current pilot addresses (`@circleoflifealf.com`)
+  - password login for the addresses named in `DEMO_AUTH_EMAILS` (required, comma-separated)
   - password login for legacy seed addresses (`.demo` / `.family.demo`)
 - If `SUPABASE_SERVICE_ROLE_KEY` is present, it also lists matching auth users through the Admin API for comparison.
 - `demo:auth-smoke` expects the app to already be running at `BASE_URL` (defaults to `http://127.0.0.1:3000`) and uses Playwright to verify:

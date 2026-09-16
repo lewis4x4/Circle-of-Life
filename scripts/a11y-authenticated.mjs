@@ -8,7 +8,7 @@
  *
  * Env:
  *   BASE_URL                 default http://127.0.0.1:3000
- *   SCREENSHOT_USER_EMAIL    default jessica.murphy@circleoflifealf.com
+ *   SCREENSHOT_USER_EMAIL    required (no default)
  *   AXE_AUTH_ROUTES          comma-separated paths (default /admin,/admin/executive)
  *   AXE_FAIL_LEVELS          comma-separated impact (default serious,critical)
  */
@@ -37,7 +37,12 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const password = process.env.PHASE1_DEMO_PASSWORD ?? "HavenDemo2026!";
-const email = process.env.SCREENSHOT_USER_EMAIL ?? "jessica.murphy@circleoflifealf.com";
+const email = process.env.SCREENSHOT_USER_EMAIL;
+if (!email) {
+  console.error("[a11y-authenticated] SCREENSHOT_USER_EMAIL is required.");
+  console.error("[a11y-authenticated] The old default (jessica.murphy@circleoflifealf.com) was a fictitious persona retired 2026-09-16; there is no account behind it any more.");
+  process.exit(2);
+}
 const routes = (process.env.AXE_AUTH_ROUTES ?? "/admin,/admin/executive")
   .split(",").map((s) => s.trim()).filter(Boolean);
 const failLevels = new Set(
