@@ -9,6 +9,7 @@ import {
   formatStandUpWeek,
   lastCheckLine,
   type FacilityDataHealth,
+  type FacilityDataHealthError,
 } from "@/lib/facility-checks/data-health";
 
 /**
@@ -23,7 +24,7 @@ export function FacilityDataHealthPanel({
   error,
 }: {
   health: FacilityDataHealth | null;
-  error?: string | null;
+  error?: FacilityDataHealthError | null;
 }) {
   if (error || !health) {
     return (
@@ -31,8 +32,12 @@ export function FacilityDataHealthPanel({
         <h2 id="data-health-heading" className="text-sm font-medium text-foreground">
           Data health
         </h2>
-        <p className="text-sm text-muted-foreground">
-          These counts are not available right now. Try again in a moment.
+        <p className="text-sm text-muted-foreground" data-testid="data-health-unavailable">
+          {/* COL-442: "you are not scoped to this facility" is not "try again in
+              a moment", and it must never be mistaken for a clean panel. */}
+          {error === "forbidden"
+            ? "You do not have access to this facility, so there are no counts to show. This is not a statement that its data is clean."
+            : "These counts are not available right now. Try again in a moment."}
         </p>
       </section>
     );

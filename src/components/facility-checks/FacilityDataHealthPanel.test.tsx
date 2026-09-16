@@ -81,4 +81,19 @@ describe("data health panel", () => {
     // The raw failure never reaches the screen.
     expect(screen.queryByText(/unavailable/)).toBeNull();
   });
+
+  // COL-442. Before migration 409 the database answered an ungranted caller
+  // with a row of zeros, so this state rendered as a clean facility. It now
+  // refuses, and the panel has to say which of the two happened -- without ever
+  // implying the facility's data is fine.
+  it("distinguishes no access from a transient failure, and claims nothing about the data", () => {
+    render(<FacilityDataHealthPanel health={null} error="forbidden" />);
+    const said = screen.getByTestId("data-health-unavailable").textContent ?? "";
+    expect(said).toMatch(/do not have access to this facility/);
+    expect(said).toMatch(/not a statement that its data is clean/);
+    expect(said).not.toMatch(/try again/i);
+    // No count is rendered, so nothing can read as an all-clear.
+    expect(screen.queryByTestId("data-health-duplicate_identity_candidates")).toBeNull();
+    expect(screen.queryByTestId("data-health-census")).toBeNull();
+  });
 });
