@@ -148,20 +148,21 @@ export function periodRange(start: string, end: string): string {
  * The period a section covers, stated prominently enough that it is not skimmed
  * past, and worded so it still reads correctly on a past meeting's report.
  *
- * A current section carries `source_as_of`, which is when the figures reached
- * Haven: `haven.stand_up_save` stamps `clock_timestamp()` on every save of the
- * open reporting period, and the hosted connector passes the time it read the
- * workbook. Nothing records when an administrator actually observed the ALF,
- * and the as-of point these figures are meant to describe is an open company
- * question, so the label says "recorded" and never claims "as of". An open
- * report without a stamp is simply not saved yet; a historical report without
- * one has no recorded time, and the label never invents one from the reader's
- * clock.
+ * The owner settled the `current` as-of point on 2026-09-15 (COL-374): these
+ * figures describe the ALF as it stands Monday morning, the state the week
+ * starts from. That is the moment the report is saved, so the section names
+ * Monday morning and then carries `source_as_of` — the time Haven recorded the
+ * figures, stamped by `haven.stand_up_save` on every save of the open period,
+ * or passed by the hosted connector as the time it read the workbook. Each ALF
+ * saves at its own minute, so the recorded time is shown rather than implied.
+ * An open report without a stamp is simply not saved yet; a historical report
+ * without one has no recorded time, and the label never invents one from the
+ * reader's clock.
  */
 export function sectionPeriodLabel(section: StandUpSection, week: string, asOf?: string | null, open = false): string {
   if (section.period === 'completed') return `Completed week · ${periodRange(shiftDay(week, -7), shiftDay(week, -1))}`
   if (section.period === 'expected') return `Forecast week · ${periodRange(week, shiftDay(week, 6))}`
-  return `Current snapshot · ${asOf ? `Figures recorded ${easternStamp(asOf)}` : open ? 'Figures recorded when you save' : 'No recorded time'}`
+  return `Monday morning · ${asOf ? `Figures recorded ${easternStamp(asOf)}` : open ? 'Figures recorded when you save' : 'No recorded time'}`
 }
 export function easternTime(value: string): string { return new Date(value).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 /** Full attribution stamp: "September 14 at 8:31 a.m. Eastern". */

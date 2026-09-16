@@ -282,6 +282,14 @@ export const STANDUP_SECTION_LABELS: Record<StandupSectionKey, string> = {
   marketing: "Marketing Plans For This Week",
 };
 
+/**
+ * A callout is a scheduled shift that was not worked (COL-374). `left_early` is
+ * a partial shift and `attendance_note` is not an absence, so neither is one.
+ * Both Stand Up surfaces count the same thing; see
+ * `src/lib/stand-up/field-definitions.ts`.
+ */
+export const MISSED_SHIFT_EVENT_TYPES: string[] = ["callout", "late_callout", "no_show"];
+
 export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
   {
     key: "ar_goal_cents",
@@ -1349,9 +1357,13 @@ export async function fetchExecutiveStandupLive(
       if (!row.discharge_target_date) return false;
       return row.discharge_target_date >= weekOf && row.discharge_target_date <= thisWeekEnd;
     }).length;
+    // One definition of a callout across both Stand Up surfaces (COL-374): a
+    // scheduled shift that was not worked. `left_early` is a partial shift, not
+    // a missed one, and `attendance_note` is not an absence — neither counts.
+    // The facility form states the same rule in its field definitions.
     const calloutsLastWeek = facilityAttendance.filter((row) => {
       return inCompletedLastWeek(row.occurred_at)
-        && ["callout", "late_callout", "no_show", "left_early"].includes(row.event_type);
+        && MISSED_SHIFT_EVENT_TYPES.includes(row.event_type);
     }).length;
     const terminationsLastWeek = facilityStaff.filter((row) => {
       if (!row.termination_date) return false;
@@ -1485,7 +1497,7 @@ export async function fetchExecutiveStandupLive(
     metrics.callouts_last_week = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "callouts_last_week")!,
       calloutsLastWeek,
-      { sourceRefJson: [{ table: "staff_attendance_events", event_types: ["callout", "late_callout", "no_show", "left_early"] }] },
+      { sourceRefJson: [{ table: "staff_attendance_events", event_types: MISSED_SHIFT_EVENT_TYPES }] },
     );
     metrics.terminations_last_week = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "terminations_last_week")!,

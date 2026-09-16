@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { METRICS, SECTIONS, dateLabel, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
 import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionChecklist, submissionEvidence } from '@/lib/stand-up/report-presentation';
-import { REPORTING_QUALIFICATION, UNRESOLVED_DEFINITIONS, pendingDefinition } from '@/lib/stand-up/field-definitions';
+import { REPORTING_QUALIFICATION, UNCHECKED_KEYS, uncheckedNote } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
 import { EntryQuestions, SectionNav, entryValues, fieldsFor, type EntryFields } from './entry-fields';
 import { StandUpHistory } from './history';
@@ -208,7 +208,7 @@ export function StandUpEditor(props: Props) {
       {/* Four separate facts. Populated figures are not a review, a review is
           not a settled counting rule, and none of them is a submission. */}
       <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[max-content_1fr]">
-        {submissionChecklist({ report: saved, dirty, provided: complete?.completed_fields ?? null, total: METRICS.length, unresolved: UNRESOLVED_DEFINITIONS.length }).map(row =>
+        {submissionChecklist({ report: saved, dirty, provided: complete?.completed_fields ?? null, total: METRICS.length, unchecked: UNCHECKED_KEYS.length }).map(row =>
           <div key={row.term} className="contents"><dt className="font-medium">{row.term}</dt><dd className="text-muted-foreground">{row.detail}</dd></div>)}
       </dl>
       {missing.length > 0 && <p role="alert">Still needed: {missing.map(metric => metric.label).join(', ')}.</p>}
@@ -226,16 +226,16 @@ export function StandUpEditor(props: Props) {
       <div className="flex flex-wrap gap-3"><Button variant="outline" onClick={() => setReview(false)}>Back to figures</Button><Button className="h-auto min-h-10 whitespace-normal text-left" disabled={routePending || !online || phase === 'saving' || advancedBusy || complete?.completed_fields !== 16 || !staffingClosed} onClick={() => void save('ready')}>Submit {facility.name} for {dateLabel(week)}</Button></div>
     </section> : <form noValidate id="stand-up-entry" className="space-y-5" onSubmit={event => { event.preventDefault(); void save('draft'); }}>
       <p className="text-sm text-muted-foreground">Leave a figure blank if it is not yet known. Enter 0 when there are none.</p>
-      {/* The company's unresolved counting rules are one qualification on the
-          whole report, named once with every figure it touches, rather than a
-          reporting question repeated under each input. */}
-      {UNRESOLVED_DEFINITIONS.length > 0 && <details className="rounded border border-border p-3 text-sm">
-        <summary className="cursor-pointer rounded font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Counting rules not settled · {UNRESOLVED_DEFINITIONS.length} of the sixteen figures</summary>
+      {/* Figures Haven cannot check are one qualification on the whole report,
+          named once with every figure it touches, rather than a note repeated
+          under each input. */}
+      {UNCHECKED_KEYS.length > 0 && <details className="rounded border border-border p-3 text-sm">
+        <summary className="cursor-pointer rounded font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Haven cannot check {UNCHECKED_KEYS.length} of the sixteen figures</summary>
         <p className="mt-2 text-sm text-muted-foreground">{REPORTING_QUALIFICATION}</p>
         <dl className="mt-3 space-y-2 border-l-2 border-border pl-3 text-xs">
-          {UNRESOLVED_DEFINITIONS.map(key => <div key={key}>
+          {UNCHECKED_KEYS.map(key => <div key={key}>
             <dt className="font-medium">{METRICS.find(metric => metric.key === key)!.label}</dt>
-            <dd className="text-muted-foreground">{pendingDefinition(key)}</dd>
+            <dd className="text-muted-foreground">{uncheckedNote(key)}</dd>
           </div>)}
         </dl>
       </details>}
