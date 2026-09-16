@@ -15,6 +15,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { StaffOffboardCard } from "@/components/staff/StaffOffboardCard";
 import { StaffProfileSections } from "@/components/staff/StaffProfileSections";
+import { StaffTimeclockAccess } from "@/components/staff/StaffTimeclockAccess";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
@@ -329,6 +330,8 @@ export default function AdminStaffDetailPage() {
               </ul>
             )}
           </RecordDetailSection>
+
+          <StaffTimeclockAccess staffId={staff.id} canEdit={canEditProfile} className="lg:col-span-2" />
 
           {staff.notes ? (
             <RecordDetailSection title="Notes" className="lg:col-span-2">

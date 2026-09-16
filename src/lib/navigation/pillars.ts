@@ -53,6 +53,7 @@ import {
   Utensils,
   Zap,
   type LucideIcon,
+  Timer,
 } from "lucide-react";
 import type { DashboardConfig } from "@/lib/auth/dashboard-routing";
 import { filterStaffLaunchHiddenItems } from "@/lib/navigation/staff-launch-hidden";
@@ -154,6 +155,7 @@ export const PILLARS: Pillar[] = [
       { key: "training", href: "/admin/training", label: "Training", icon: GraduationCap },
       { key: "time-records", href: "/admin/time-records", label: "Time records", icon: Clock },
       { key: "payroll", href: "/admin/payroll", label: "Payroll", icon: Banknote },
+      { key: "timeclock", href: "/admin/timeclock", label: "Timeclock", icon: Timer },
     ],
   },
   {

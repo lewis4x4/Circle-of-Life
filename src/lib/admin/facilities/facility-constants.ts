@@ -250,7 +250,7 @@ export const GENERATOR_FUEL_TYPES = [
 export const FACILITY_TABS = [
   'overview', 'licensing', 'rates', 'building', 'emergency',
   'vendors', 'documents', 'staffing', 'communication',
-  'thresholds', 'audit', 'timeline',
+  'thresholds', 'timeclock', 'audit', 'timeline',
 ] as const;
 
 export type FacilityTab = (typeof FACILITY_TABS)[number];
@@ -266,6 +266,7 @@ export const FACILITY_TAB_LABELS: Record<FacilityTab, string> = {
   staffing: 'Staff',
   communication: 'Communications & Policy',
   thresholds: 'Alert Thresholds',
+  timeclock: 'Timeclock',
   audit: 'Audit Log',
   timeline: 'Timeline',
 };
