@@ -403,10 +403,33 @@ COMMENT ON FUNCTION public.care_event_remove_witness(uuid, text) IS
 -- RLS: a caregiver may complete their own task, not somebody else's.
 -- ---------------------------------------------------------------------------
 -- 022 shipped one FOR ALL policy, facility-scoped, with no assignee test, so a
--- caregiver could complete any task in the building. Replaced with the same
--- reach for admin roles and own-or-unassigned rows for everyone else. This
--- narrows access; nothing that could be read or written before is widened.
+-- caregiver could complete any task in the building, including a witness
+-- statement belonging to somebody else. Replaced with an explicit insert policy
+-- and an update policy.
+--
+-- This is not purely a narrowing, and it should not be described as one:
+--
+--   narrowed  caregiver: any follow-up at the facility -> own or unassigned only
+--   narrowed  DELETE: the FOR ALL policy permitted it; no policy grants it now,
+--             which matches the soft-delete-only rule. care_event_remove_witness
+--             is definer and is unaffected
+--   WIDENED   admin_assistant and manager: no insert or update before, both now.
+--             Spec 07A section 6.2 already counts them among the admin roles for
+--             care events, so the follow-up table was the outlier
+--   WIDENED   coordinator, med_tech and the other capture roles: update on a
+--             follow-up assigned to them, or on an unassigned one. They could
+--             not update any before
+--
+-- The two widenings are deliberate. A witness statement is worthless if the
+-- person it was assigned to cannot answer it, and 07A assigns witness tasks to
+-- whoever was on that shift, which includes med_tech and coordinator.
 DROP POLICY IF EXISTS clinical_staff_manage_incident_followups ON public.incident_followups;
+-- Dropped before creating so a re-run of this file is a no-op rather than an
+-- abort. The runbook applies it to staging and then to production, and an
+-- operator who re-runs it should get the same schema, not a rolled-back
+-- transaction that leaves them guessing which half landed.
+DROP POLICY IF EXISTS clinical_staff_insert_incident_followups ON public.incident_followups;
+DROP POLICY IF EXISTS clinical_staff_update_incident_followups ON public.incident_followups;
 
 CREATE POLICY clinical_staff_insert_incident_followups ON public.incident_followups
   FOR INSERT
@@ -444,6 +467,18 @@ CREATE POLICY clinical_staff_update_incident_followups ON public.incident_follow
 ALTER TABLE public.incident_photos
   ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'photo';
 
+-- A Level 1 Note has no incident, and spec 07A section 2.1 asks for a photo on
+-- exactly that case ("Known cause, first aid enough = L1 with a photo prompt").
+-- While incident_id was the only link and was NOT NULL, a Note's photo could
+-- reach storage with no row pointing at it: orphaned in the bucket and invisible
+-- on every surface. The care event is the durable subject here, so it gets its
+-- own column and incident_id becomes the optional one.
+ALTER TABLE public.incident_photos
+  ADD COLUMN IF NOT EXISTS care_event_id uuid REFERENCES public.care_events(id);
+
+ALTER TABLE public.incident_photos
+  ALTER COLUMN incident_id DROP NOT NULL;
+
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'incident_photos_kind_check') THEN
@@ -451,11 +486,24 @@ BEGIN
       ADD CONSTRAINT incident_photos_kind_check
       CHECK (kind IN ('photo','scanned_form','physician_order','other'));
   END IF;
+  -- Relaxing incident_id must not allow a row attached to nothing at all.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'incident_photos_subject_check') THEN
+    ALTER TABLE public.incident_photos
+      ADD CONSTRAINT incident_photos_subject_check
+      CHECK (incident_id IS NOT NULL OR care_event_id IS NOT NULL);
+  END IF;
 END
 $$;
 
+CREATE INDEX IF NOT EXISTS idx_incident_photos_care_event
+  ON public.incident_photos (care_event_id) WHERE care_event_id IS NOT NULL;
+
 COMMENT ON COLUMN public.incident_photos.kind IS
   'photo, scanned_form, physician_order or other. Existing rows default to photo, which is what the caregiver receipt uploader has only ever produced.';
+COMMENT ON COLUMN public.incident_photos.care_event_id IS
+  'The care event this file belongs to. Set on everything attached through attach_care_event_file, including a Level 1 Note, which has no incident. Rows written before COL-354 carry only incident_id.';
+COMMENT ON COLUMN public.incident_photos.incident_id IS
+  'Nullable since COL-354: a Level 1 Note has no incident but may still carry a photo. incident_photos_subject_check keeps every row attached to one or the other.';
 
 -- The bucket: PDF for a scanned incident form or a faxed physician order, and
 -- 20 MB because a phone photograph of a full letter page clears 15. Still
@@ -552,14 +600,14 @@ BEGIN
   SET answers = answers || jsonb_build_object('attachments', v_attachments)
   WHERE id = v_event.id;
 
-  IF v_event.incident_id IS NOT NULL THEN
-    INSERT INTO public.incident_photos (
-      incident_id, facility_id, organization_id, storage_path, description, kind, taken_by
-    ) VALUES (
-      v_event.incident_id, v_event.facility_id, v_event.organization_id, v_path,
-      NULLIF(btrim(COALESCE(p_description, '')), ''), v_kind, v_uid
-    );
-  END IF;
+  -- Always a row, incident or not. Without one the object is in the bucket and
+  -- on no surface, which is the same as losing it.
+  INSERT INTO public.incident_photos (
+    incident_id, care_event_id, facility_id, organization_id, storage_path, description, kind, taken_by
+  ) VALUES (
+    v_event.incident_id, v_event.id, v_event.facility_id, v_event.organization_id, v_path,
+    NULLIF(btrim(COALESCE(p_description, '')), ''), v_kind, v_uid
+  );
 
   RETURN jsonb_build_object(
     'care_event_id', v_event.id,
@@ -575,6 +623,78 @@ GRANT EXECUTE ON FUNCTION public.attach_care_event_file(uuid, text, text, text) 
 
 COMMENT ON FUNCTION public.attach_care_event_file(uuid, text, text, text) IS
   'Records one attachment against a care event and its incident: photo, scanned_form, physician_order or other, at most ten per incident, no duplicate paths. Enforces the <organization_id>/<facility_id>/<care_event_id>/<file> path law the storage policies depend on. COL-37 ruling: definer required -- the reporter holds no INSERT policy on incident_photos and no UPDATE policy on care_events beyond the note. The body checks auth.uid(), the organization and haven.accessible_facility_ids() first.';
+
+-- ---------------------------------------------------------------------------
+-- append_care_event_note: the note path stays, the photo path delegates.
+-- ---------------------------------------------------------------------------
+-- 402's version appended to answers->'attachments' and inserted incident_photos
+-- itself, with no kind, no duplicate check and no cap. Leaving it that way would
+-- have meant two writers for one array and a ten-file limit that the older path
+-- walked straight past. The note behaviour is unchanged.
+CREATE OR REPLACE FUNCTION public.append_care_event_note(p_care_event_id uuid, p_note text, p_photo_path text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_role text := haven.app_role()::text;
+  v_event record;
+  v_note text := NULLIF(btrim(COALESCE(p_note, '')), '');
+  v_path text := NULLIF(btrim(COALESCE(p_photo_path, '')), '');
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+
+  SELECT ce.id, ce.organization_id, ce.facility_id, ce.reported_by, ce.incident_id
+    INTO v_event
+  FROM public.care_events ce
+  WHERE ce.id = p_care_event_id AND ce.deleted_at IS NULL;
+  IF v_event.id IS NULL
+     OR v_event.organization_id <> haven.organization_id()
+     OR v_event.facility_id NOT IN (SELECT haven.accessible_facility_ids()) THEN
+    RAISE EXCEPTION 'care_event: forbidden';
+  END IF;
+  IF v_event.reported_by <> v_uid
+     AND (v_role IS NULL OR v_role NOT IN ('owner','org_admin','facility_admin','admin_assistant','manager')) THEN
+    RAISE EXCEPTION 'care_event: forbidden';
+  END IF;
+
+  PERFORM set_config('haven.care_event_definer', '1', true);
+
+  IF v_note IS NOT NULL THEN
+    UPDATE public.care_events
+    SET note = CASE WHEN note IS NULL OR btrim(note) = '' THEN v_note ELSE note || E'\n' || v_note END
+    WHERE id = v_event.id;
+    IF v_event.incident_id IS NOT NULL THEN
+      UPDATE public.incidents
+      SET description = description || E'\n\nStaff note: ' || v_note
+      WHERE id = v_event.incident_id;
+    END IF;
+  END IF;
+
+  -- One writer for attachments: path law, kind, duplicate and cap all live there.
+  IF v_path IS NOT NULL THEN
+    PERFORM public.attach_care_event_file(v_event.id, v_path, 'photo', NULL);
+  END IF;
+
+  RETURN jsonb_build_object(
+    'care_event_id', v_event.id,
+    'note', (SELECT ce.note FROM public.care_events ce WHERE ce.id = v_event.id),
+    'attachments', COALESCE(
+      (SELECT ce.answers -> 'attachments' FROM public.care_events ce WHERE ce.id = v_event.id),
+      '[]'::jsonb)
+  );
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.append_care_event_note(uuid, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.append_care_event_note(uuid, text, text) TO authenticated;
+
+COMMENT ON FUNCTION public.append_care_event_note(uuid, text, text) IS
+  'Appends the caregiver voice note to care_events.note and incidents.description (as "Staff note:"). A photo path is handed to attach_care_event_file so the path law, the kind, the duplicate check and the ten-file cap are enforced in one place. Reporter or admin roles only. COL-37 ruling: definer required -- the reporter holds no UPDATE policy on incidents. The body checks auth.uid(), the organization and haven.accessible_facility_ids() first.';
 
 -- The list an administrator reads: kind, uploader and when, never the bytes.
 CREATE OR REPLACE VIEW public.v_care_event_attachments
@@ -593,11 +713,13 @@ AS
     ip.taken_by,
     up.full_name AS taken_by_name
   FROM public.incident_photos ip
-  JOIN public.care_events ce ON ce.incident_id = ip.incident_id AND ce.deleted_at IS NULL
+  -- Joined on the care event, not the incident. Joining on incident_id would
+  -- drop every Level 1 Note's files, because a Note has no incident.
+  JOIN public.care_events ce ON ce.id = ip.care_event_id AND ce.deleted_at IS NULL
   LEFT JOIN public.user_profiles up ON up.id = ip.taken_by;
 
 COMMENT ON VIEW public.v_care_event_attachments IS
-  'Attachments for a care event with their kind and who uploaded them. security_invoker: the caller''s RLS on incident_photos, care_events and user_profiles applies. Holds paths, never signed URLs; the client signs for five minutes at read time.';
+  'Attachments for a care event with their kind and who uploaded them, at every level including a Level 1 Note. security_invoker: the caller''s RLS on incident_photos, care_events and user_profiles applies. Holds paths, never signed URLs; the client signs for five minutes at read time. Rows written before COL-354 have no care_event_id and are read through the incident, not here.';
 
 REVOKE ALL ON public.v_care_event_attachments FROM PUBLIC, anon;
 GRANT SELECT ON public.v_care_event_attachments TO authenticated, service_role;
@@ -1115,9 +1237,12 @@ NOTIFY pgrst, 'reload schema';
 -- public.attach_care_event_file(uuid,text,text,text),
 -- public.care_event_remove_witness(uuid,text), public.care_event_add_witness(uuid,uuid),
 -- public.complete_incident_followup(uuid,text,text),
--- public.care_event_sync_witness_tasks(uuid); restore submit_care_event and the
--- clinical_staff_manage_incident_followups policy from their 402 and 022 bodies;
--- ALTER TABLE public.incident_photos DROP COLUMN kind; ALTER TABLE
--- public.incident_followups DROP COLUMN witness_choice; reset the bucket's
--- file_size_limit to 15728640 and its MIME list to the five image types.
+-- public.care_event_sync_witness_tasks(uuid); restore submit_care_event and
+-- append_care_event_note from their 402 bodies and the
+-- clinical_staff_manage_incident_followups policy from 022; ALTER TABLE
+-- public.incident_photos DROP COLUMN kind, DROP COLUMN care_event_id and
+-- re-assert incident_id NOT NULL (only safe once every Level 1 row is gone, so
+-- read them first); ALTER TABLE public.incident_followups DROP COLUMN
+-- witness_choice; reset the bucket's file_size_limit to 15728640 and its MIME
+-- list to the five image types.
 -- Witness statements and attachments already given are records: keep the rows.

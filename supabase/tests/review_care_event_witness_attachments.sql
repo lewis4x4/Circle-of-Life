@@ -395,6 +395,66 @@ DO $$ DECLARE v_kinds text; v_n integer; BEGIN
   END IF;
 END $$;
 
+-- 11b. A Level 1 Note has no incident, and its files must still be findable.
+-- Before COL-354 the row was only written when an incident existed and the view
+-- joined through it, so a Note's photo reached the bucket and no surface.
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.actor(cg_a, cg_a_s) FROM wf;
+DO $$
+DECLARE v_event uuid; v_org uuid; v_fac uuid; v_prefix text; v_rows integer; v_incident uuid;
+BEGIN
+  SELECT (r->>'care_event_id')::uuid INTO v_event FROM w_l1;
+  SELECT ce.organization_id, ce.facility_id, ce.incident_id INTO v_org, v_fac, v_incident
+  FROM public.care_events ce WHERE ce.id = v_event;
+  IF v_incident IS NOT NULL THEN
+    RAISE EXCEPTION 'The Level 1 fixture grew an incident; this probe no longer tests what it claims';
+  END IF;
+
+  v_prefix := v_org::text || '/' || v_fac::text || '/' || v_event::text || '/';
+  PERFORM public.attach_care_event_file(v_event, v_prefix || 'note.jpg', 'photo', NULL);
+
+  SELECT count(*) INTO v_rows FROM public.v_care_event_attachments v WHERE v.care_event_id = v_event;
+  IF v_rows <> 1 THEN
+    RAISE EXCEPTION 'A Level 1 Note''s attachment is invisible: expected 1 row, got %', v_rows;
+  END IF;
+
+  SELECT count(*) INTO v_rows FROM public.incident_photos ip
+  WHERE ip.care_event_id = v_event AND ip.incident_id IS NULL;
+  IF v_rows <> 1 THEN
+    RAISE EXCEPTION 'A Level 1 Note''s file has no incident_photos row: got %', v_rows;
+  END IF;
+END $$;
+RESET ROLE;
+
+-- 11c. append_care_event_note's photo path goes through the same writer, so the
+-- kind, the duplicate check and the ten-file cap cannot be walked past.
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.actor(cg_a, cg_a_s) FROM wf;
+DO $$
+DECLARE v_event uuid; v_org uuid; v_fac uuid; v_prefix text; v_kind text;
+BEGIN
+  SELECT (r->>'care_event_id')::uuid INTO v_event FROM w_l1;
+  SELECT ce.organization_id, ce.facility_id INTO v_org, v_fac FROM public.care_events ce WHERE ce.id = v_event;
+  v_prefix := v_org::text || '/' || v_fac::text || '/' || v_event::text || '/';
+
+  PERFORM public.append_care_event_note(v_event, 'Voice note on a Note.', v_prefix || 'via-note.jpg');
+  SELECT kind INTO v_kind FROM public.incident_photos WHERE storage_path = v_prefix || 'via-note.jpg';
+  IF v_kind IS DISTINCT FROM 'photo' THEN
+    RAISE EXCEPTION 'append_care_event_note did not record a kind: %', COALESCE(v_kind,'null');
+  END IF;
+
+  -- The same path twice is refused by the shared writer.
+  PERFORM pg_temp.must_fail(
+    format('SELECT public.append_care_event_note(%L, NULL, %L)', v_event, v_prefix || 'via-note.jpg'),
+    'already attached');
+
+  -- And the path law still holds through the older entry point.
+  PERFORM pg_temp.must_fail(
+    format('SELECT public.append_care_event_note(%L, NULL, %L)', v_event, 'elsewhere/x.jpg'),
+    'file path must be');
+END $$;
+RESET ROLE;
+
 -- 12. A caregiver at facility B cannot read facility A's attachment rows.
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.actor(cg_far, cg_far_s) FROM wf;

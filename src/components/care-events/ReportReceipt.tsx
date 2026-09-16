@@ -148,12 +148,7 @@ export function ReportReceipt(props: ReportReceiptProps) {
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{sentence}</p>
       </div>
 
-      <ReportReceiptActions
-        supabase={supabase}
-        careEventId={careEventId}
-        organizationId={props.organizationId}
-        facilityId={props.facilityId}
-      />
+      <ReportReceiptActions supabase={supabase} careEventId={careEventId} />
 
       {careEventId ? (
         <div>

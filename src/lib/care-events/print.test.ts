@@ -58,16 +58,24 @@ describe("the Incident Reports Log column order", () => {
 describe("printFooterLine", () => {
   const printedAt = new Date("2026-09-16T22:06:00Z");
 
-  it("reads exactly as the decision fixes it", () => {
+  it("names who printed it, when, and which building", () => {
     expect(
       printFooterLine({ printedBy: "K. Sorensen", printedAt, facilityName: "Homewood Lodge", timeZone: TZ }),
-    ).toBe("Printed from Haven by K. Sorensen on Sep 16, 2026, 6:06 PM Eastern · Page N of M · Homewood Lodge");
+    ).toBe("Printed from Haven by K. Sorensen on Sep 16, 2026, 6:06 PM Eastern · Homewood Lodge");
   });
 
   it("leaves a blank line when nobody typed a name, rather than guessing from the session", () => {
     const line = printFooterLine({ printedBy: "   ", printedAt, facilityName: "Homewood Lodge", timeZone: TZ });
     expect(line).toContain("Printed from Haven by ________________ on");
-    expect(line).toContain("· Page N of M · Homewood Lodge");
+    expect(line).toContain("· Homewood Lodge");
+  });
+
+  it("never claims a page number it cannot know", () => {
+    // A body string renders once and cannot know its page. Numbering is an
+    // @page margin box in globals.css; the literal used to print on every sheet.
+    const line = printFooterLine({ printedBy: "A", printedAt, facilityName: "Homewood Lodge", timeZone: TZ });
+    expect(line).not.toContain("Page N of M");
+    expect(line).not.toMatch(/Page \d+ of/);
   });
 
   it("stamps in the facility's clock, not the browser's", () => {

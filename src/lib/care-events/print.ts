@@ -54,12 +54,20 @@ export async function recordCareEventPrint(
 }
 
 /**
- * The footer every page carries, per the COL-354 decision:
- * `Printed from Haven by {name} on {date time} Eastern · Page N of M · {facility}`.
+ * The footer every page carries:
+ * `Printed from Haven by {name} on {date time} Eastern · {facility}`.
  *
  * `name` is typed by the administrator at print time and is never stored; it is
  * not read from the session, because the person at the printer is not always
  * the person signed in.
+ *
+ * The COL-354 decision also asked for `Page N of M` in this line. It is not
+ * here, deliberately. A string in the body renders once, in one place, and
+ * cannot know the page it lands on, so a literal "Page N of M" is what would
+ * print on every sheet. Page numbering belongs in an `@page` margin box, which
+ * `globals.css` now declares; engines that implement it number the pages, and
+ * Chrome falls back to the page numbers its own print dialog adds. Better an
+ * honest line plus a real mechanism than a decided phrase that lies on paper.
  */
 export function printFooterLine(input: {
   printedBy: string;
@@ -76,9 +84,7 @@ export function printFooterLine(input: {
     hour: "numeric",
     minute: "2-digit",
   }).format(input.printedAt);
-  // Page N of M is filled by the browser's page counters in print CSS; the
-  // literal stays so the line reads the same in the DOM and on paper.
-  return `Printed from Haven by ${name} on ${stamp} Eastern · Page N of M · ${input.facilityName}`;
+  return `Printed from Haven by ${name} on ${stamp} Eastern · ${input.facilityName}`;
 }
 
 /** A blank line where the paper form expects a value Haven does not hold. */

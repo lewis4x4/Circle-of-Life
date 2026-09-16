@@ -786,6 +786,18 @@
    removed rather than tucked away, and the scrolling main column is released so
    a long sheet breaks across pages instead of clipping at the viewport.
    ========================================================================= */
+@page {
+  /* Page numbering lives here, not in the sheet's footer text: a string in the
+     body renders once and cannot know which page it is on. Engines that
+     implement margin boxes number the pages; Chrome ignores this and the user's
+     own print-dialog header and footer carry the numbers instead. */
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-size: 9pt;
+    color: #444;
+  }
+}
+
 @media print {
   [data-print-hide],
   aside[aria-label="Sidebar"],

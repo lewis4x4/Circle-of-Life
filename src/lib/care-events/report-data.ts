@@ -418,30 +418,3 @@ export async function fetchCareEventReceiptStatus(
     })),
   };
 }
-
-// ---------------------------------------------------------------------------
-// Photo upload (private incident-photos bucket)
-// ---------------------------------------------------------------------------
-
-const PHOTO_BUCKET = "incident-photos";
-
-function fileExtension(file: File): string {
-  const fromName = /\.([a-z0-9]{2,5})$/i.exec(file.name)?.[1]?.toLowerCase();
-  if (fromName) return fromName;
-  const fromType = /^image\/([a-z0-9]+)$/i.exec(file.type)?.[1]?.toLowerCase();
-  return fromType === "jpeg" ? "jpg" : fromType || "jpg";
-}
-
-/** Upload to `<organization_id>/<facility_id>/<care_event_id>/<uuid>.<ext>` and return the path. */
-export async function uploadCareEventPhoto(
-  supabase: Client,
-  input: { organizationId: string; facilityId: string; careEventId: string; file: File },
-): Promise<string> {
-  const path = `${input.organizationId}/${input.facilityId}/${input.careEventId}/${crypto.randomUUID()}.${fileExtension(input.file)}`;
-  const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, input.file, {
-    contentType: input.file.type || undefined,
-    upsert: false,
-  });
-  if (error) throw error;
-  return path;
-}
