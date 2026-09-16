@@ -642,3 +642,175 @@ Deno.test("HTTP handler enforces dedicated cron secret before constructing servi
     "Request may not select organization or publisher config",
   );
 });
+
+Deno.test("roster source rows carry tokens and never a resident (COL-425)", () => {
+  const report = workspace({
+    values: values({ current_total_census: 34, hospital_and_rehab_total: 1 }),
+    overtime_minutes: null,
+    overtime_issue: false,
+    roster_confirmations: {
+      current_total_census: {
+        source: "overridden",
+        override_reason: "roster_not_current",
+        roster_as_of: "2026-09-07T11:30:00Z",
+      },
+      hospital_and_rehab_total: {
+        source: "roster_confirmed",
+        override_reason: null,
+        roster_as_of: "2026-09-07T11:30:00Z",
+      },
+    },
+  });
+  const actual = rows(
+    buildSourcePayload(
+      report,
+      MAP,
+      "2026-09-07",
+      1,
+      new Date("2026-09-13T12:00:00Z"),
+      IDS.batch,
+    ),
+  );
+  assert(
+    actual.roster_source_version === 1,
+    "Roster source vocabulary must be declared",
+  );
+  assert(
+    actual.homewood_current_total_census_source === 3,
+    "Overridden census must publish source code 3",
+  );
+  assert(
+    actual.homewood_current_total_census_override_reason === 1,
+    "Override reason must travel as its code",
+  );
+  assert(
+    actual.homewood_hospital_and_rehab_total_source === 1,
+    "Confirmed hospital figure must publish source code 1",
+  );
+  assert(
+    !("homewood_hospital_and_rehab_total_override_reason" in actual),
+    "A confirmed figure carries no override reason",
+  );
+  assert(
+    actual.homewood_roster_as_of_epoch ===
+      Math.floor(Date.parse("2026-09-07T11:30:00Z") / 1000),
+    "Roster as-of must travel as epoch seconds",
+  );
+  assert(
+    Object.keys(actual).every((metric) => !/name|resident|room/.test(metric)),
+    "No roster row may name a resident",
+  );
+  assert(
+    Object.values(actual).every((value) => typeof value === "number"),
+    "Every published row stays numeric",
+  );
+});
+
+Deno.test("roster rows stay legacy until every report carries confirmations (COL-425)", () => {
+  const legacy = rows(
+    buildSourcePayload(
+      workspace(),
+      MAP,
+      "2026-09-07",
+      1,
+      new Date("2026-09-13T12:00:00Z"),
+      IDS.batch,
+    ),
+  );
+  assert(
+    !("roster_source_version" in legacy),
+    "A Haven without confirmations publishes no roster version",
+  );
+  assert(
+    Object.keys(legacy).every((metric) =>
+      !metric.endsWith("_source") && !metric.endsWith("_override_reason") &&
+      !metric.endsWith("_roster_as_of_epoch")
+    ),
+    "A legacy payload carries no roster rows",
+  );
+  const empty = rows(
+    buildSourcePayload(
+      workspace({ roster_confirmations: {} }),
+      MAP,
+      "2026-09-07",
+      1,
+      new Date("2026-09-13T12:00:00Z"),
+      IDS.batch,
+    ),
+  );
+  assert(
+    empty.roster_source_version === 1,
+    "An empty confirmation set still declares the version",
+  );
+  assert(
+    !("homewood_current_total_census_source" in empty),
+    "No confirmation means no per-facility source row",
+  );
+});
+
+Deno.test("malformed roster confirmations fail closed (COL-425)", () => {
+  const bad: Array<Record<string, unknown>> = [
+    { invented: { source: "roster_confirmed" } },
+    { current_total_census: { source: "guessed" } },
+    { current_total_census: { source: "overridden" } },
+    {
+      current_total_census: {
+        source: "roster_confirmed",
+        override_reason: "other",
+      },
+    },
+    {
+      current_total_census: {
+        source: "overridden",
+        override_reason: "because",
+      },
+    },
+  ];
+  for (const roster_confirmations of bad) {
+    let refused = false;
+    try {
+      buildSourcePayload(
+        workspace({
+          values: values({ current_total_census: 34 }),
+          overtime_minutes: null,
+          overtime_issue: false,
+          roster_confirmations,
+        }),
+        MAP,
+        "2026-09-07",
+        1,
+        new Date("2026-09-13T12:00:00Z"),
+        IDS.batch,
+      );
+    } catch {
+      refused = true;
+    }
+    assert(
+      refused,
+      `Malformed roster confirmation must fail closed: ${
+        JSON.stringify(roster_confirmations)
+      }`,
+    );
+  }
+  let blankRefused = false;
+  try {
+    buildSourcePayload(
+      workspace({
+        roster_confirmations: {
+          hospital_and_rehab_total: { source: "roster_confirmed" },
+        },
+      }),
+      MAP,
+      "2026-09-07",
+      1,
+      new Date("2026-09-13T12:00:00Z"),
+      IDS.batch,
+    );
+  } catch {
+    blankRefused = true;
+  }
+  assert(
+    blankRefused,
+    "A confirmation for a blank figure is inconsistent and must fail closed",
+  );
+});
