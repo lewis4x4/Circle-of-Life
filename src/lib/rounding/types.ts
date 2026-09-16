@@ -107,6 +107,12 @@ export type CompletionPayload = {
   fallHazardObserved?: boolean;
   refusedAssistance?: boolean;
   interventionCodes?: string[];
+  /**
+   * Chips that compose the stored sentence, keyed by vocabulary group to the
+   * codes tapped. Present means the caregiver used the chip capture surface;
+   * absent means an older completion path wrote this observation.
+   */
+  chipSelections?: Record<string, string[]>;
   note?: string | null;
   lateReason?: string | null;
   exceptionType?: ObservationExceptionType | null;

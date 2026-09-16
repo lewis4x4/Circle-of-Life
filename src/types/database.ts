@@ -12285,6 +12285,8 @@ export type Database = {
         Row: {
           assigned_staff_id: string | null
           breathing_concern: boolean
+          chip_selections: Json
+          composed_summary: string
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -12320,6 +12322,8 @@ export type Database = {
         Insert: {
           assigned_staff_id?: string | null
           breathing_concern?: boolean
+          chip_selections?: Json
+          composed_summary: string
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -12355,6 +12359,8 @@ export type Database = {
         Update: {
           assigned_staff_id?: string | null
           breathing_concern?: boolean
+          chip_selections?: Json
+          composed_summary?: string
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -17192,6 +17198,27 @@ export type Database = {
       record_cadence_observation_tasks: {
         Args: { p_rows: Json }
         Returns: number
+      }
+      submit_observation: {
+        Args: {
+          p_task_id: string
+          p_chip_selections: Json
+          p_resident_location: string
+          p_resident_state: string
+          p_quick_status: string
+          p_note?: string | null
+          p_resident_position?: string | null
+          p_intervention_codes?: string[] | null
+          p_observed_at?: string | null
+          p_late_reason?: string | null
+          p_request_id?: string | null
+          p_offline?: boolean | null
+          p_actor_id?: string | null
+          p_actor_role?: string | null
+          p_session_id?: string | null
+          p_claim_version?: number | null
+        }
+        Returns: Json
       }
       board_check_state: {
         Args: { p_session_id: string }

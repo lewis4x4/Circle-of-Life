@@ -6,7 +6,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { CaregiverRoundsEmptyNotice } from "@/components/caregiver/CaregiverRoundsEmptyNotice";
-import { QuickObservationForm } from "@/components/rounding/QuickObservationForm";
+import { ObservationCapture } from "@/components/rounding/ObservationCapture";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -289,7 +289,7 @@ export default function CaregiverResidentRoundPage() {
           </Link>
         </div>
       ) : (
-        <QuickObservationForm
+        <ObservationCapture
           key={key}
           pendingPayload={pending?.payload}
           reasonRequired={pending?.reasonRequired}

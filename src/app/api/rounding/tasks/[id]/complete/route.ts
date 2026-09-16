@@ -104,6 +104,19 @@ export async function POST(
     return NextResponse.json({ error: "interventionCodes must be an array" }, { status: 400 });
   }
 
+  // Chip capture. Presence of this key is what routes the write through the
+  // composing command; the command itself rejects a code this facility does
+  // not offer rather than dropping it, so nothing is validated twice here
+  // beyond the shape.
+  const usesChipCapture = body.chipSelections !== undefined;
+  if (usesChipCapture) {
+    const chips = body.chipSelections;
+    if (!chips || typeof chips !== "object" || Array.isArray(chips)
+      || Object.values(chips).some((codes) => !Array.isArray(codes) || codes.some((code) => typeof code !== "string"))) {
+      return NextResponse.json({ error: "chipSelections must map a chip group to a list of codes" }, { status: 400 });
+    }
+  }
+
   const accessibleFacilityIds = await getAccessibleRoundingFacilityIds(context);
   const { data: task, error: taskError } = await context.admin
     .from("resident_observation_tasks")
@@ -143,7 +156,29 @@ export async function POST(
     return NextResponse.json({ error: "A staff profile is required to complete a task" }, { status: 422 });
   }
 
-  const { data: completionData, error: logInsertError } = await context.admin.rpc(
+  const { data: completionData, error: logInsertError } = usesChipCapture
+    ? await context.admin.rpc(
+      "submit_observation" as never,
+      {
+        p_task_id: task.id,
+        p_chip_selections: body.chipSelections ?? {},
+        p_resident_location: body.residentLocation ?? null,
+        p_resident_state: body.residentState ?? null,
+        p_quick_status: body.quickStatus,
+        p_note: body.note ?? null,
+        p_resident_position: body.residentPosition ?? null,
+        p_intervention_codes: body.interventionCodes ?? null,
+        p_observed_at: observedAt.toISOString(),
+        p_late_reason: body.lateReason ?? null,
+        p_request_id: requestId,
+        p_offline: !!body.offline,
+        p_actor_id: context.userId,
+        p_actor_role: context.appRole,
+        p_session_id: context.sessionId,
+        p_claim_version: context.authClaimVersion,
+      } as never,
+    )
+    : await context.admin.rpc(
     "complete_rounding_task_review" as never,
     {
       p_task_id: task.id,
@@ -196,7 +231,15 @@ export async function POST(
       : status === 400 ? "Check the observation time, late-entry reason, and completion details."
       : "Could not save observation. Retry with the same request.";
     const reasonRequired = code === "22023" && logInsertError?.message === "lateReason is required for late entries";
-    return NextResponse.json({ error: reasonRequired ? "Add a reason for this delayed entry, then retry." : error, reasonRequired }, { status });
+    const chipRejected = usesChipCapture && code === "22023" && !reasonRequired;
+    return NextResponse.json({
+      error: reasonRequired
+        ? "Add a reason for this delayed entry, then retry."
+        : chipRejected
+          ? "Tap at least one meal, mood or medication chip, and confirm where the resident was and how they presented."
+          : error,
+      reasonRequired,
+    }, { status });
   }
 
   return NextResponse.json({

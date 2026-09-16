@@ -231,6 +231,13 @@ Plantation helper be deprecated. Part 6 removes the operator entry point that ca
 `src/lib/rounding/apply-col-discovery-observation-plan.ts`), which is what takes it out of
 the product.
 
+**D12. The facility pool is explicit in the assignee guard.** `haven.complete_rounding_task_core`
+now treats a task with `assigned_staff_id IS NULL` as satisfiable by any permitted staff
+member, written as its own `WHEN` branch rather than left to NULL propagation through
+`AND`. Spec sections 2.2 and 3.5 require it and Part 1 made pool tasks routine. This is the
+only authorization change in the module; every other line of both locked bodies is the
+approved text.
+
 **D9. American spelling. No em dashes** in code comments, UI copy, or documentation.
 
 ---
@@ -271,6 +278,42 @@ new mutable table.
 
 ---
 
+## 4a. Shapes later parts depend on
+
+**Chip storage (Part 2).** `resident_observation_logs.chip_selections jsonb NOT NULL
+DEFAULT '{}'::jsonb`, constrained to `jsonb_typeof = 'object'`. Keys are
+`observation_vocab.field_name`; values are arrays of `value_code` ordered by the
+vocabulary's `display_order`. **A group with no selection is absent, not present and
+empty.** Index `idx_obs_logs_chip_selections` is GIN `jsonb_path_ops`, partial on
+`deleted_at IS NULL`, so query it with containment:
+
+```sql
+WHERE chip_selections @> '{"med_response":["refused_meds"]}'::jsonb
+WHERE chip_selections @> '{"mood_state":["agitated"]}'::jsonb
+WHERE chip_selections @> '{"meal_intake":["refused_meal"]}'::jsonb
+```
+
+Chip codes: `meal_intake` = `ate_well`, `ate_some`, `refused_meal`, `ate_in_room`,
+`no_meal_this_window`. `mood_state` = `pleasant`, `quiet`, `grouchy`, `agitated`,
+`confused`, `tearful`. `med_response` = `took_meds`, `refused_meds`,
+`no_meds_this_window`.
+
+**`composed_summary text NOT NULL`** on the same table, with a `BEFORE INSERT` trigger
+(`tr_resident_observation_logs_compose_summary`) that composes one from the row when the
+writer does not supply it, so the column is never null whichever command wrote the log.
+
+**The completion command is locked.** `public.complete_rounding_task_review` delegates to
+`haven.complete_rounding_task_core`, both SYS-001 authoritative-actor functions.
+`public.submit_observation` validates and composes, then calls the review command; it does
+not write the log itself. **Do not replay either locked body again.** If a later part needs
+a new log column, add the column and let the insert-time trigger fill it, or come to the
+orchestrator.
+
+**Evidence is immutable.** Migration `331` put a `BEFORE UPDATE` trigger
+(`tr_rounding_logs_immutable`) on `resident_observation_logs` that refuses every update
+from every role. A backfill must disable and re-enable it in the same transaction, as `413`
+does.
+
 ## 5. Part ledger
 
 Filled in by the orchestrator as parts land.
@@ -278,7 +321,7 @@ Filled in by the orchestrator as parts land.
 | Part | Name | Status | Commit |
 |---|---|---|---|
 | 1 | Cadence and task generation | **done** | `412` + generator rewrite |
-| 2 | Chip capture and composed narrative | pending | |
+| 2 | Chip capture and composed narrative | **done** | `413` + capture surface |
 | 3 | Monitoring Orders | pending | |
 | 4 | Escalation policy and engine | pending | |
 | 5 | Watchlist | pending | |
