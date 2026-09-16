@@ -15,6 +15,8 @@ import {
   formatResidentOverviewVerifiedByStaffLabel,
 } from "@/lib/residents/resident-overview-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
+import { parseDocumentedAcuityLevel } from "@/lib/residents/resident-acuity-display";
+import { RESIDENT_NO_BED_COPY, RESIDENT_NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
 
 export type Acuity = 1 | 2 | 3;
@@ -61,7 +63,10 @@ export type ResidentOverviewDetail = {
   initials: string;
   preferredName: string | null;
   photoUrl: string | null;
+  /** Sort/threshold level; read `acuityLevel` to tell "not recorded" from level 1. */
   acuity: Acuity;
+  /** Raw `residents.acuity_level` — null when no acuity assessment is recorded. */
+  acuityLevel: string | null;
   /** Projected presence value (non-presence lifecycle values collapse to "active"). */
   status: ResidencyStatus;
   /** Raw `resident_status` enum value — gates whether presence is editable. */
@@ -74,6 +79,10 @@ export type ResidentOverviewDetail = {
   ageYears: number | null;
   gender: string | null;
   diagnosisRawList: string[];
+  /** `residents.primary_diagnosis` verbatim (may be a combined list for imported residents). */
+  primaryDiagnosisRaw: string | null;
+  /** `residents.diagnosis_list` verbatim. */
+  diagnosisListRaw: string[];
   allergiesTokens: string[];
   dietOrder: string | null;
   codeStatusRaw: string | null;
@@ -109,11 +118,15 @@ export type ResidentOverviewDetail = {
     logDate: string;
     shift: string;
     snippet: string;
+    /** True when the daily log carries general note text. */
+    hasNote: boolean;
     loggedByLabel: string;
   }>;
   recentAdl: Array<{
     id: string;
     logTimeLabel: string;
+    /** Raw `adl_logs.log_time` for period filtering. */
+    logTimeIso: string;
     logDate: string;
     shift: string;
     summary: string;
@@ -125,6 +138,8 @@ export type ResidentOverviewDetail = {
     typeLabel: string;
     behaviorText: string;
     occurredLabel: string;
+    /** Raw `behavioral_logs.occurred_at` for period filtering. */
+    occurredAtIso: string;
     shift: string;
     loggedByLabel: string;
     injuryOccurred: boolean;
@@ -136,6 +151,8 @@ export type ResidentOverviewDetail = {
     severity: string;
     description: string;
     reportedLabel: string;
+    /** Raw `condition_changes.reported_at` for period filtering. */
+    reportedAtIso: string;
     shift: string;
     loggedByLabel: string;
     nurseNotified: boolean;
@@ -210,10 +227,9 @@ type SupabaseBedJoin = {
   rooms: SupabaseRoomJoin | null;
 };
 
+/** Sort/threshold level only; the UI reads `acuityLevel` so a missing assessment is never shown as level 1. */
 function mapAcuity(value: string | null): Acuity {
-  if (value === "level_3") return 3;
-  if (value === "level_2") return 2;
-  return 1;
+  return parseDocumentedAcuityLevel(value) ?? 1;
 }
 
 function truncateSnippet(text: string, max: number): string {
@@ -354,7 +370,7 @@ export async function loadResidentOverviewDetail(
 
   const roomLabel = room?.room_number
     ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}`
-    : "No bed link";
+    : RESIDENT_NO_BED_COPY;
   const unitName = unit?.name?.trim() ?? "";
 
   const facilityId = resident.facility_id;
@@ -511,6 +527,7 @@ export async function loadResidentOverviewDetail(
     logDate: r.log_date,
     shift: r.shift,
     snippet: truncateSnippet(formatResidentOverviewDailyNoteSnippet(r.general_notes), 360),
+    hasNote: Boolean(r.general_notes?.trim()),
     loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
   }));
 
@@ -520,6 +537,7 @@ export async function loadResidentOverviewDetail(
     return {
       id: r.id,
       logTimeLabel: formatLogTime(r.log_time),
+      logTimeIso: r.log_time,
       logDate: r.log_date,
       shift: r.shift,
       summary,
@@ -533,6 +551,7 @@ export async function loadResidentOverviewDetail(
     typeLabel: behaviorTypeLabel(r.behavior_type),
     behaviorText: r.behavior,
     occurredLabel: formatLogTime(r.occurred_at),
+    occurredAtIso: r.occurred_at,
     shift: r.shift,
     loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
     injuryOccurred: r.injury_occurred,
@@ -545,6 +564,7 @@ export async function loadResidentOverviewDetail(
     severity: r.severity,
     description: r.description,
     reportedLabel: formatLogTime(r.reported_at),
+    reportedAtIso: r.reported_at,
     shift: r.shift,
     loggedByLabel: nameById.get(r.reported_by) ?? "Staff",
     nurseNotified: r.nurse_notified,
@@ -619,16 +639,19 @@ export async function loadResidentOverviewDetail(
     preferredName: resident.preferred_name,
     photoUrl: resident.photo_url,
     acuity,
+    acuityLevel: resident.acuity_level,
     status,
     rawStatus: resident.status,
     fallRiskRaw: resident.fall_risk_level,
     roomLabel,
-    unitName: unitName.length > 0 ? unitName : "No unit linked",
+    unitName: unitName.length > 0 ? unitName : RESIDENT_NO_UNIT_COPY,
     admissionLabel: formatResidentOverviewAdmissionLabel(resident.admission_date),
     dobLabel: formatResidentOverviewDobLabel(resident.date_of_birth),
     ageYears: computeAgeYears(resident.date_of_birth),
     gender: resident.gender,
     diagnosisRawList,
+    primaryDiagnosisRaw: resident.primary_diagnosis?.trim() || null,
+    diagnosisListRaw: secondaries,
     allergiesTokens,
     dietOrder: resident.diet_order,
     codeStatusRaw: resident.code_status ?? null,

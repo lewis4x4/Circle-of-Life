@@ -5,6 +5,8 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { throwIfQueryError } from "@/lib/supabase/query-error";
 import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
+import { parseDocumentedAcuityLevel } from "@/lib/residents/resident-acuity-display";
+import { RESIDENT_NO_BED_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
 
 export type Acuity = 1 | 2 | 3;
@@ -56,6 +58,9 @@ type SupabaseResidentJoined = {
   acuity_level: string | null;
   updated_at: string | null;
   deleted_at: string | null;
+  /** The bed the resident record points at (`residents.bed_id`). */
+  bed_by_id: SupabaseBedJoin | null;
+  /** Beds whose `current_resident_id` points back at the resident. */
   beds: SupabaseBedJoin[] | null;
 };
 
@@ -75,6 +80,10 @@ export async function fetchResidentsFromSupabase(
     .from("residents" as never)
     .select(
       `id, first_name, last_name, facility_id, status, acuity_level, updated_at, deleted_at,
+       bed_by_id: beds!residents_bed_id_fkey (
+         id, bed_label, room_id,
+         rooms ( id, room_number, unit_id, units ( id, name ) )
+       ),
        beds!fk_beds_resident (
          id, bed_label, room_id,
          rooms ( id, room_number, unit_id, units ( id, name ) )
@@ -102,9 +111,10 @@ export async function fetchResidentsFromSupabase(
     const fullName = formatLoadResidentsFullName(firstName, lastName);
     const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
 
-    // A resident is assigned to at most one bed; the nested array will
-    // normally hold one row. If a stale row is returned we take the first.
-    const bed = resident.beds?.[0] ?? null;
+    // Same bed resolution as the resident overview (resident-detail-overview-load):
+    // the record's own bed_id first, then a bed pointing back at the resident,
+    // so the roster and the record never name different rooms.
+    const bed = resident.bed_by_id ?? resident.beds?.[0] ?? null;
     const room = bed?.rooms ?? null;
     const unit = room?.units ?? null;
 
@@ -115,7 +125,7 @@ export async function fetchResidentsFromSupabase(
       id: resident.id,
       name: fullName,
       initials,
-      room: room?.room_number ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}` : "No bed linked",
+      room: room?.room_number ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}` : RESIDENT_NO_BED_COPY,
       unit: (unit?.name ?? "").trim(),
       acuity,
       acuityLevel: resident.acuity_level,
@@ -127,10 +137,9 @@ export async function fetchResidentsFromSupabase(
   });
 }
 
+/** Sort/filter level; callers must read `acuityLevel` to tell "not recorded" from level 1. */
 function mapAcuity(value: string | null): Acuity {
-  if (value === "level_3") return 3;
-  if (value === "level_2") return 2;
-  return 1;
+  return parseDocumentedAcuityLevel(value) ?? 1;
 }
 
 function mapAdlStatusFromAcuity(acuity: Acuity): AdlStatus {
