@@ -303,17 +303,21 @@ export function ResidentDetailOverviewClient({
 
   const hrefs = useMemo(() => residentHrefSet(residentId, workspace), [residentId, workspace]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
       skipNextLoadRef.current = false;
       return;
     }
     skipNextLoadRef.current = false;
 
-    setLoading(true);
+    // A silent refresh (after a quick-entry save) keeps the current page and
+    // any open dialog mounted; a full load blanks the page into its loading state.
+    if (!options?.silent) {
+      setLoading(true);
+      setDetail(null);
+    }
     setError(null);
     setNotFound(false);
-    setDetail(null);
 
     const uuidOk = UUID_STRING_RE.test(residentId);
     if (!residentId || !uuidOk) {
@@ -343,7 +347,7 @@ export function ResidentDetailOverviewClient({
   }, [load]);
 
   const onAfterLog = useCallback(() => {
-    void load();
+    void load({ silent: true });
   }, [load]);
 
   if (loading) {
