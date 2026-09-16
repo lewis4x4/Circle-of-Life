@@ -61,6 +61,9 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
           HOMEWOOD_LAUNCH_PASSWORD: ${{ secrets.HOMEWOOD_LAUNCH_PASSWORD }}
           HOMEWOOD_FACILITY_ID: ${{ vars.HOMEWOOD_FACILITY_ID }}
+          # COL-443: the suite no longer carries hardcoded persona defaults.
+          # Without this the role lookups are empty and every test skips.
+          HOMEWOOD_LAUNCH_ACCOUNTS: ${{ secrets.HOMEWOOD_LAUNCH_ACCOUNTS }}
 
       - name: Upload Playwright report
         if: always()
