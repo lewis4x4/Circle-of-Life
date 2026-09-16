@@ -34,17 +34,16 @@ describe("isCaregiverShellPath", () => {
 });
 
 describe("isStaffRoleAllowedOnReportPath", () => {
-  it("allows every non-family staff role", () => {
-    for (const role of ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "nurse", "med_tech", "caregiver", "dietary", "maintenance_role", "broker"]) {
+  it("allows the nine capture roles that migration 401 lets report a care event", () => {
+    for (const role of ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "nurse", "med_tech", "caregiver"]) {
       expect(isStaffRoleAllowedOnReportPath(role)).toBe(true);
     }
   });
 
-  it("keeps family, onboarding, housekeeper, and unknown roles out", () => {
-    expect(isStaffRoleAllowedOnReportPath("family")).toBe(false);
-    expect(isStaffRoleAllowedOnReportPath("onboarding")).toBe(false);
-    expect(isStaffRoleAllowedOnReportPath("housekeeper")).toBe(false);
-    expect(isStaffRoleAllowedOnReportPath("")).toBe(false);
+  it("keeps family, onboarding, housekeeper, broker, dietary, maintenance, and unknown roles out", () => {
+    for (const role of ["family", "onboarding", "housekeeper", "broker", "dietary", "dietary_aide", "maintenance_role", ""]) {
+      expect(isStaffRoleAllowedOnReportPath(role)).toBe(false);
+    }
   });
 });
 

@@ -40,14 +40,27 @@ export function isCaregiverReportPath(pathname: string): boolean {
 }
 
 /**
- * Any signed-in staff role that is not `family` or `onboarding` may open the
- * report flow. Housekeepers keep their own allow-list (the report path is not on it).
+ * The nine capture roles that migration 401 lets report a care event may open
+ * the report flow (spec 07A §6.3). Family, onboarding, broker, dietary,
+ * maintenance and housekeeper roles never reach the census on the Who step.
  */
+const REPORT_PATH_ROLES: ReadonlySet<string> = new Set([
+  "owner",
+  "org_admin",
+  "facility_admin",
+  "manager",
+  "admin_assistant",
+  "coordinator",
+  "nurse",
+  "caregiver",
+  "med_tech",
+]);
+
 export function isStaffRoleAllowedOnReportPath(role: string): boolean {
   if (!role) return false;
   if (role === "family" || isOnboardingAppRole(role)) return false;
   if (role === "housekeeper") return isHousekeeperAllowedPath(REPORT_PATH_PREFIX);
-  return true;
+  return REPORT_PATH_ROLES.has(role);
 }
 
 /**

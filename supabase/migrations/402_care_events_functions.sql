@@ -851,7 +851,7 @@ BEGIN
     v_injury_occurred := CASE
       WHEN v_kind = 'fall' THEN v_hurt IS NOT NULL AND v_hurt <> 'not_hurt'
       WHEN v_kind = 'injury_found' THEN true
-      WHEN v_kind = 'wandering' THEN v_hurt = 'yes'
+      WHEN v_kind = 'wandering' THEN COALESCE(v_hurt = 'yes', false)
       WHEN v_kind = 'behavior' THEN v_touched IS NOT NULL AND v_touched <> 'no_one'
       ELSE false
     END;
@@ -949,6 +949,7 @@ BEGIN
           WHERE sa.facility_id = v_facility_id
             AND sa.deleted_at IS NULL
             AND sa.shift_date = (v_occurred_at AT TIME ZONE v_tz)::date
+            AND sa.shift_type = v_shift
             AND sa.status NOT IN ('called_out','no_show')
             AND s.user_id IS NOT NULL
         LOOP
@@ -1344,11 +1345,20 @@ BEGIN
 
   -- ahca
   v_item := v_section -> 'ahca';
-  IF jsonb_typeof(v_item) = 'object' AND v_item ? 'reportable' THEN
+  IF jsonb_typeof(v_item) = 'object' AND jsonb_typeof(v_item -> 'reportable') = 'boolean' THEN
     IF v_event.incident_id IS NOT NULL THEN
       UPDATE public.incidents SET ahca_reportable = (v_item ->> 'reportable')::boolean WHERE id = v_event.incident_id;
       IF (v_item ->> 'reportable')::boolean THEN
         PERFORM public.care_event_create_ahca_obligations(v_event.incident_id, v_event.facility_id, v_event.organization_id, v_event.occurred_at, v_tz);
+      ELSE
+        -- The Administrator says the flag was a false positive: withdraw the
+        -- unsubmitted FL_AHCA clocks so no phantom deadline stays on the board.
+        UPDATE public.regulatory_reporting_obligations
+        SET deleted_at = now()
+        WHERE incident_id = v_event.incident_id
+          AND jurisdiction = 'FL_AHCA'
+          AND submitted_at IS NULL
+          AND deleted_at IS NULL;
       END IF;
     END IF;
     v_admin := v_admin || jsonb_build_object('ahca_reportable', (v_item ->> 'reportable')::boolean, 'ahca_reason', NULLIF(v_item ->> 'reason_code', ''));
@@ -1737,6 +1747,11 @@ BEGIN
   END IF;
 
   IF v_path IS NOT NULL THEN
+    -- Path law: <organization_id>/<facility_id>/<care_event_id>/<file>; the
+    -- storage policies scope on the first two segments, so refuse anything else.
+    IF v_path !~ ('^' || v_event.organization_id::text || '/' || v_event.facility_id::text || '/' || v_event.id::text || '/[^/]+$') THEN
+      RAISE EXCEPTION 'care_event: photo path must be <organization_id>/<facility_id>/<care_event_id>/<file>';
+    END IF;
     v_attachments := v_attachments || to_jsonb(v_path);
     UPDATE public.care_events
     SET answers = answers || jsonb_build_object('attachments', v_attachments)

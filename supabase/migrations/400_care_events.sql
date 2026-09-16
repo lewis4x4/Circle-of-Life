@@ -158,7 +158,8 @@ COMMENT ON COLUMN public.notification_routes.user_targets IS
   'Explicit user_profiles ids added to the route in addition to staff_role_targets. Configured on the settings page, never in a migration.';
 
 -- ---------------------------------------------------------------------------
--- Private incident-photos bucket. Path law: <organization_id>/<facility_id>/<incident_id>/<file>.
+-- Private incident-photos bucket. Path law: <organization_id>/<facility_id>/<care_event_id>/<file>
+-- (append_care_event_note validates the prefix; the policies scope on the first two segments).
 -- Guarded so the replay stub (which carries a minimal storage schema) and a
 -- hosted project both pass; every policy is dropped before it is created.
 -- ---------------------------------------------------------------------------
