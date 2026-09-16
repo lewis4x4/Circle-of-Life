@@ -1,4 +1,4 @@
-# 37 — Facility data checks: Board Check, Staff Check, Data Health
+# 37. Facility data checks: Board Check, Staff Check, Data Health
 
 Status: FULL
 Linear: COL-361
@@ -11,9 +11,9 @@ A facility's physical census board is the source of truth for who sleeps in whic
 
 The correction itself is human work done inside Haven through the flows that already exist. What is missing is a way to **prove** the correction happened and to repeat it at the next facility. This spec defines three surfaces:
 
-- **Board Check** — a bed by bed walk that ends in a recorded, live-verified match.
-- **Staff Check** — an identity by identity pass that ends every active identity as keep, deactivate or duplicate.
-- **Data Health** — a read-only panel that shows the anomalies still present.
+- **Board Check**: a bed by bed walk that ends in a recorded, live-verified match.
+- **Staff Check**: an identity by identity pass that ends every active identity as keep, deactivate or duplicate.
+- **Data Health**: a read-only panel that shows the anomalies still present.
 
 Nothing here is Homewood specific. Homewood is named only in the runbook.
 
@@ -21,14 +21,14 @@ Nothing here is Homewood specific. Homewood is named only in the runbook.
 
 These are settled. Do not reopen them in a later segment without an owner decision.
 
-1. **No agent or bulk path writes production data.** This spec ships code and a runbook. Every correction goes through an existing Haven flow — admit, discharge, room move, bed hold, maintenance/offline, staff offboard, facility grant. No bulk update, merge or delete action for residents, beds, staff or grants is added anywhere.
+1. **No agent or bulk path writes production data.** This spec ships code and a runbook. Every correction goes through an existing Haven flow: admit, discharge, room move, bed hold, maintenance/offline, staff offboard, facility grant. No bulk update, merge or delete action for residents, beds, staff or grants is added anywhere.
 2. **Board Check is bed by bed.** One session per facility walk. Every non-deleted bed in the facility gets exactly one current result from: `match`, `board_empty_haven_occupied`, `board_occupied_haven_empty`, `different_occupant`, `bed_not_on_board`.
 3. **Board residents not in Haven** are recorded as a fix item reading `Add resident` against the bed. The administrator types no name into the check. The name enters Haven through the admit flow, using the admission paperwork, which is where PHI already lives.
 4. **Re-check after fixes.** A fix item closes only when the bed's current Haven state, read live at query time, satisfies the rule below. The state function recomputes it. Nobody ticks it closed.
 5. **Staff Check is identity by identity.** Every staff record and every user profile with live access to the facility gets one result from: `keep`, `deactivate`, `duplicate_of`. A duplicate is deactivated through the same COL-349 offboard flow and its facility grants are listed for reassignment in the existing grant UI. No data is merged between identities.
 6. **Duplicate candidates are suggested, never resolved automatically.** Same normalized email, same auth user id on more than one staff row, or same normalized full name inside one organization. Normalization is lowercase, trimmed, whitespace collapsed, diacritics removed.
 7. **Sessions and results are append only.** A newer result row for the same bed or identity in the same session supersedes the older one. Nothing is updated or deleted; a database trigger enforces it.
-8. **Who can run a check.** Board Check: the roles that can admit and discharge — `owner`, `org_admin`, `facility_admin`, `nurse`. Staff Check: the roles that can deactivate staff — `owner`, `org_admin`, `facility_admin`. Both on granted facilities only.
+8. **Who can run a check.** Board Check: the roles that can admit and discharge, which are `owner`, `org_admin`, `facility_admin` and `nurse`. Staff Check: the roles that can deactivate staff, which are `owner`, `org_admin` and `facility_admin`. Both on granted facilities only.
 9. **PHI stays inside Haven.** Resident names appear on the Board Check screen for granted users because they already appear on the roster. The session tables store bed ids, resident ids and result codes, never names. No names reach logs, Sentry, fixtures, evidence, commits, Linear or pull request bodies.
 10. **The Board Check never replaces the physical fire census board.** It reconciles Haven against it.
 
@@ -51,10 +51,10 @@ These are settled. Do not reopen them in a later segment without an owner decisi
 
 Four tables in `public`, all with `organization_id` denormalized for RLS, all append only.
 
-- `board_check_sessions` — one per facility walk. `facility_id`, `started_by`, `started_at`, `closed_by`, `closed_at`.
-- `board_check_results` — one row per mark. `session_id`, `bed_id`, `result`, `haven_resident_id_at_mark`, `haven_resident_status_at_mark`, `recorded_by`, `recorded_at`. The snapshot columns record what Haven said at the moment the administrator marked the bed; they are what `different_occupant` compares against later.
-- `staff_check_sessions` — mirrors `board_check_sessions`.
-- `staff_check_results` — `session_id`, `subject_user_profile_id`, `subject_staff_id` (at least one present), `result`, `duplicate_of_user_profile_id`, `duplicate_of_staff_id`, `recorded_by`, `recorded_at`. A `duplicate_of` result must name a target; the other two results must not.
+- `board_check_sessions`: one per facility walk. `facility_id`, `started_by`, `started_at`, `closed_by`, `closed_at`.
+- `board_check_results`: one row per mark. `session_id`, `bed_id`, `result`, `haven_resident_id_at_mark`, `haven_resident_status_at_mark`, `recorded_by`, `recorded_at`. The snapshot columns record what Haven said at the moment the administrator marked the bed; they are what `different_occupant` compares against later.
+- `staff_check_sessions`: mirrors `board_check_sessions`.
+- `staff_check_results`: `session_id`, `subject_user_profile_id`, `subject_staff_id` (at least one present), `result`, `duplicate_of_user_profile_id`, `duplicate_of_staff_id`, `recorded_by`, `recorded_at`. A `duplicate_of` result must name a target; the other two results must not.
 
 At most one open session per facility per check type, enforced by a partial unique index where `closed_at IS NULL`.
 
@@ -74,7 +74,7 @@ One row per non-deleted bed in the session's facility, in room order then bed la
 
 ### `public.staff_check_state(p_session_id uuid)`
 
-One row per identity with live access to the session's facility — a `staff` row at the facility, or a `user_profiles` row with an unrevoked `user_facility_access` grant to it — deduplicated by the `staff.user_id` link:
+One row per identity with live access to the session's facility, a `staff` row at the facility, or a `user_profiles` row with an unrevoked `user_facility_access` grant to it, deduplicated by the `staff.user_id` link:
 
 `subject_user_profile_id, subject_staff_id, display_name, role_label, facility_grant_count, last_sign_in_at, is_active, duplicate_candidate_count, duplicate_candidate_user_profile_ids, duplicate_candidate_staff_ids, latest_result, duplicate_of_user_profile_id, duplicate_of_staff_id, unmarked, fix_open`
 
@@ -118,7 +118,7 @@ Counts only, each with a link to the list that explains it:
 1. Beds whose `status` is `occupied` with no resident holding them. Should be `0` after migration 388.
 2. Residents `active`, `hospital_hold` or `loa` with no `bed_id`.
 3. Beds held by more than one resident.
-4. Roster census (`active + hospital_hold + loa`) beside the most recent Stand Up `current_total_census` for the facility, rendered as two plain numbers with the Stand Up week: `Roster 25 · Stand Up Sep 7: 34`. **No color.** The two numbers legitimately differ — the Stand Up is a point-in-time operator report, the roster is now — and coloring one of them would assert which is wrong.
+4. Roster census (`active + hospital_hold + loa`) beside the most recent Stand Up `current_total_census` for the facility, rendered as two plain numbers with the Stand Up week: `Roster 25 · Stand Up Sep 7: 34`. **No color.** The two numbers legitimately differ. The Stand Up is a point-in-time operator report and the roster is now, so coloring one of them would assert which is wrong.
 5. Staff inactive in HR status whose linked profile can still sign in.
 6. Active profiles in the organization with no live facility grant.
 7. Duplicate identity candidates, by the three rules above.
