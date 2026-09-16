@@ -27,12 +27,36 @@ import {
 } from "@/lib/facility-wall-clock";
 import {
   loadAuthorizedReferralLeads,
+  loadReferralEpisodeModel,
   updateAuthorizedReferralLead,
   type AuthorizedReferralLeadRow,
+  type ReferralEpisodeModel,
   type ReferralLeadUpdatePatch,
 } from "@/lib/referrals/referral-authority";
 
 type LeadDetail = AuthorizedReferralLeadRow;
+
+type LeadContact = ReferralEpisodeModel["contacts"][number];
+
+type ContactsState =
+  | { status: "loading" }
+  | { status: "loaded"; contacts: LeadContact[] }
+  | { status: "failed"; message: string };
+
+const CHANNEL_LABEL: Record<LeadContact["permissions"][number]["channel"], string> = {
+  phone: "Phone",
+  sms: "Text",
+  email: "Email",
+};
+
+/** Permissions are recorded per channel; an unrecorded one is said so, never implied. */
+function permissionSummary(contact: LeadContact): string {
+  const recorded = contact.permissions.filter((permission) => permission.permission_state !== "unknown");
+  if (recorded.length === 0) return "Contact permissions not recorded.";
+  return recorded
+    .map((permission) => `${CHANNEL_LABEL[permission.channel]}: ${permission.permission_state === "permitted" ? "permitted" : "declined"}`)
+    .join(" · ");
+}
 
 type EditableLeadStatus = Exclude<Database["public"]["Enums"]["referral_lead_status"], "merged">;
 
@@ -80,6 +104,7 @@ export default function AdminReferralLeadDetailPage() {
   const [actionLoading, setActionLoading] = useState<"status" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [contactsState, setContactsState] = useState<ContactsState>({ status: "loading" });
 
   const load = useCallback(async () => {
     if (!id) {
@@ -111,8 +136,23 @@ export default function AdminReferralLeadDetailPage() {
           .not("status", "eq", "cancelled")
           .maybeSingle();
         setLinkedAdmissionCaseId(admissionCase?.id ?? null);
+        // Linked contacts live behind their own read boundary; a failure here
+        // must not take the lead itself off the page.
+        try {
+          const model = await loadReferralEpisodeModel(supabase, leadRow.id);
+          setContactsState({
+            status: "loaded",
+            contacts: model.contacts.filter((contact) => contact.belongs_to_current_person),
+          });
+        } catch (contactsError) {
+          setContactsState({
+            status: "failed",
+            message: contactsError instanceof Error ? contactsError.message : "Contacts could not be read.",
+          });
+        }
       } else {
         setLinkedAdmissionCaseId(null);
+        setContactsState({ status: "loaded", contacts: [] });
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Could not load lead.");
@@ -317,6 +357,50 @@ export default function AdminReferralLeadDetailPage() {
                 </div>
               </dl>
             </div>
+          </RecordDetailSection>
+
+          <RecordDetailSection
+            title="Contacts"
+            description="People to reach about this inquiry, with how they are related to the prospective resident."
+          >
+            {contactsState.status === "loading" ? (
+              <p className="text-sm text-muted-foreground">Loading contacts…</p>
+            ) : contactsState.status === "failed" ? (
+              <p className="text-sm text-muted-foreground" role="status">
+                Contacts could not be read: {contactsState.message}
+              </p>
+            ) : contactsState.contacts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No separate contact is recorded. The phone and email above are the prospective resident&apos;s own.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border text-sm">
+                {contactsState.contacts.map((contact) => (
+                  <li key={contact.person_contact_id} className="space-y-1 py-3 first:pt-0 last:pb-0">
+                    <p className="font-medium text-foreground">
+                      {contact.first_name} {contact.last_name}
+                      <span className="ml-2 font-normal text-muted-foreground">{contact.relationship}</span>
+                      {contact.is_primary ? (
+                        <span className="ml-2 rounded-[6px] border border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                          Primary contact
+                        </span>
+                      ) : null}
+                    </p>
+                    <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Phone</dt>
+                        <dd className="mt-0.5 text-foreground">{formatReferralDetailPhone(contact.phone)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</dt>
+                        <dd className="mt-0.5 break-all text-foreground">{formatReferralDetailEmail(contact.email)}</dd>
+                      </div>
+                    </dl>
+                    <p className="text-xs text-muted-foreground">{permissionSummary(contact)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </RecordDetailSection>
 
           <RecordDetailSection title="Tour workflow">
