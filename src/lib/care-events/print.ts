@@ -168,6 +168,25 @@ export function printShift(shift: string | null | undefined): string {
   return SHIFT_WORDS[shift] ?? shift.replace(/_/g, " ");
 }
 
+/**
+ * A coded list (contributing factors, corrective chips) as words. The paper
+ * form was filled in by hand, so a printed "improper_footwear" is the one thing
+ * on the sheet that could only have come from a database.
+ */
+export function printCodeList(codes: readonly string[] | null | undefined): string {
+  if (!codes || codes.length === 0) return PRINT_BLANK;
+  return codes
+    .map((code) => code.replace(/_/g, " ").replace(/^./, (first) => first.toUpperCase()))
+    .join("; ");
+}
+
+/** One coded value as words: `right_hip` is not something a physician reads. */
+export function printCode(code: string | null | undefined): string {
+  const trimmed = code?.trim();
+  if (!trimmed) return PRINT_BLANK;
+  return trimmed.replace(/_/g, " ").replace(/^./, (first) => first.toUpperCase());
+}
+
 export function describePrintError(error: unknown): string {
   const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
   if (/forbidden/i.test(message)) return "This print is for the Administrator or Assistant.";

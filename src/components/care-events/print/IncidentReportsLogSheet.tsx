@@ -2,6 +2,7 @@
 
 import {
   INCIDENT_REPORTS_LOG_COLUMNS,
+  printCodeList,
   printDate,
   printShift,
   printTick,
@@ -45,8 +46,13 @@ export function IncidentReportsLogSheet({ facility, rows, from, to }: IncidentRe
         return printTick(row.nonApparent);
       case "other":
         return printTick(row.other);
-      case "contributing_factors":
-        return row.contributingFactors ?? "";
+      case "contributing_factors": {
+        // The view joins the array with "; ", so split it back before wording
+        // it. A surveyor reading "improper_footwear" is reading a column name.
+        if (!row.contributingFactors) return "";
+        const codes = row.contributingFactors.split(";").map((code) => code.trim()).filter(Boolean);
+        return codes.length === 0 ? "" : printCodeList(codes);
+      }
       case "shift":
         return printShift(row.shift);
     }

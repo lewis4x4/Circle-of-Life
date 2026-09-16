@@ -44,6 +44,7 @@ export type PrintResident = {
  * the size the Administrator's screen actually uses.
  */
 export type PrintIncidentExtras = {
+  immediateActions: string | null;
   injuryOccurred: boolean | null;
   injuryDescription: string | null;
   injurySeverity: string | null;
@@ -120,13 +121,14 @@ async function fetchIncidentExtras(supabase: Client, incidentId: string): Promis
   const result = await supabase
     .from("incidents")
     .select(
-      "injury_occurred, injury_description, injury_severity, injury_body_location, location_description, contributing_factors, physician_notified_at, family_notified_at, resolution_notes",
+      "immediate_actions, injury_occurred, injury_description, injury_severity, injury_body_location, location_description, contributing_factors, physician_notified_at, family_notified_at, resolution_notes",
     )
     .eq("id", incidentId)
     .maybeSingle();
   if (result.error) throw result.error;
   if (!result.data) return null;
   return {
+    immediateActions: result.data.immediate_actions,
     injuryOccurred: result.data.injury_occurred,
     injuryDescription: result.data.injury_description,
     injurySeverity: result.data.injury_severity,

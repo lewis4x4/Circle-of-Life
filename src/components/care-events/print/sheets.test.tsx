@@ -107,6 +107,7 @@ function packet(overrides: Partial<CareEventPrintPacket> = {}): CareEventPrintPa
       physicianFax: "555-0112",
     },
     incidentExtras: {
+      immediateActions: "First aid given.",
       injuryOccurred: true,
       injuryDescription: "Bruise forming on the right hip",
       injurySeverity: "minor",
@@ -143,6 +144,10 @@ describe("IncidentFormSheet", () => {
     expect(screen.getByText("HOM-2026-0007")).toBeInTheDocument();
     expect(screen.getByText("Probe, Resident")).toBeInTheDocument();
     expect(screen.getByText("114")).toBeInTheDocument();
+    expect(screen.getByText("First aid given.")).toBeInTheDocument();
+    // Coded factors are words on paper, never snake_case out of a column.
+    expect(screen.getByText("Rushing; Improper footwear")).toBeInTheDocument();
+    expect(screen.queryByText(/improper_footwear/)).not.toBeInTheDocument();
     // The level is a word, never a raw enum.
     expect(screen.getByText("Urgent")).toBeInTheDocument();
     expect(screen.queryByText(/level_3/)).not.toBeInTheDocument();
@@ -192,6 +197,13 @@ describe("PhysicianSheet", () => {
     expect(screen.getAllByText("________________________").length).toBeGreaterThanOrEqual(2);
   });
 
+  it("says what was actually done, and never prints a raw coded value", () => {
+    render(<PhysicianSheet packet={packet()} />);
+    expect(screen.getByText("First aid given.")).toBeInTheDocument();
+    expect(screen.getByText("Right hip")).toBeInTheDocument();
+    expect(screen.queryByText("right_hip")).not.toBeInTheDocument();
+  });
+
   it("carries the facility letterhead and a callback number", () => {
     render(<PhysicianSheet packet={packet()} />);
     expect(screen.getAllByText("Test Lodge").length).toBeGreaterThan(0);
@@ -229,7 +241,19 @@ describe("IncidentReportsLogSheet", () => {
     render(<IncidentReportsLogSheet facility={facility} rows={[logRow()]} from="2026-09-01" to="2026-09-30" />);
     const cells = screen.getAllByRole("cell").map((cell) => cell.textContent);
     // Date, room, resident, fall X, bruise X, then four empty tick cells.
-    expect(cells).toEqual(["Sep 16, 2026", "114", "Probe, Resident", "X", "X", "", "", "", "", "rushing; improper_footwear", "Evening"]);
+    expect(cells).toEqual(["Sep 16, 2026", "114", "Probe, Resident", "X", "X", "", "", "", "", "Rushing; Improper footwear", "Evening"]);
+  });
+
+  it("words the contributing factors rather than printing the column's codes", () => {
+    render(<IncidentReportsLogSheet facility={facility} rows={[logRow()]} from="2026-09-01" to="2026-09-30" />);
+    expect(screen.getByText("Rushing; Improper footwear")).toBeInTheDocument();
+    expect(screen.queryByText(/improper_footwear/)).not.toBeInTheDocument();
+  });
+
+  it("leaves the cell empty when the incident has no recorded factors", () => {
+    render(<IncidentReportsLogSheet facility={facility} rows={[logRow({ contributingFactors: null })]} from="2026-09-01" to="2026-09-30" />);
+    const cells = screen.getAllByRole("cell").map((cell) => cell.textContent);
+    expect(cells[9]).toBe("");
   });
 
   it("dates a row on the day the log says, not the day before", () => {

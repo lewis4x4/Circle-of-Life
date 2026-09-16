@@ -3,6 +3,7 @@
 import type { CareEventPrintPacket } from "@/lib/care-events/print-data";
 import {
   PRINT_BLANK,
+  printCodeList,
   printDateTime,
   printValue,
   printYesNo,
@@ -78,7 +79,7 @@ export function IncidentFormSheet({ packet }: { packet: CareEventPrintPacket }) 
         ) : null}
         <Field label="Injury" value={printYesNo(incidentExtras?.injuryOccurred ?? null)} />
         <Field label="Injury description" value={printValue(incidentExtras?.injuryDescription)} />
-        <Field label="First aid or treatment given" value={printValue(emsTreatmentLabel(admin.ems ?? incident?.injuryTreatment))} />
+        <Field label="First aid or treatment given" value={printValue(incidentExtras?.immediateActions)} />
         <Field label="Location" value={printValue(incidentExtras?.locationDescription)} />
       </Section>
 
@@ -145,11 +146,7 @@ export function IncidentFormSheet({ packet }: { packet: CareEventPrintPacket }) 
         <Field label="Other" value={printValue(admin.correctiveOther)} />
         <Field
           label="Contributing factors"
-          value={
-            incidentExtras?.contributingFactors && incidentExtras.contributingFactors.length > 0
-              ? incidentExtras.contributingFactors.join("; ")
-              : PRINT_BLANK
-          }
+          value={printCodeList(incidentExtras?.contributingFactors)}
         />
         <Field label="Video secured" value={printValue(videoSecuredLabel(admin.videoSecured))} />
         <Field label="Closed" value={card.closedAt ? printDateTime(card.closedAt, tz) : PRINT_BLANK} />

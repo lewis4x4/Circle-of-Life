@@ -1,7 +1,7 @@
 "use client";
 
 import type { CareEventPrintPacket } from "@/lib/care-events/print-data";
-import { PRINT_BLANK, printDateTime, printValue } from "@/lib/care-events/print";
+import { PRINT_BLANK, printCode, printDateTime, printValue } from "@/lib/care-events/print";
 import { emsTreatmentLabel } from "@/lib/care-events/admin-copy";
 import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 
@@ -67,11 +67,9 @@ export function PhysicianSheet({ packet }: { packet: CareEventPrintPacket }) {
         <Line label="When" value={printDateTime(card.occurredAt, tz)} />
         <Line label="Level" value={formatLevelWord(card.level)} />
         <Line label="Injury" value={printValue(incidentExtras?.injuryDescription)} />
-        <Line label="Body location" value={printValue(incidentExtras?.injuryBodyLocation)} />
-        <Line
-          label="First aid and treatment"
-          value={printValue(emsTreatmentLabel(card.admin.ems ?? card.incident?.injuryTreatment))}
-        />
+        <Line label="Body location" value={printCode(incidentExtras?.injuryBodyLocation)} />
+        <Line label="First aid and treatment" value={printValue(incidentExtras?.immediateActions)} />
+        <Line label="Sent to hospital or seen by EMS" value={printValue(emsTreatmentLabel(card.admin.ems))} />
         <Line label="Vitals taken" value={PRINT_BLANK} />
       </section>
 
