@@ -9,13 +9,13 @@ vi.mock("@/contexts/haven-auth-context",()=>({useHavenAuth:()=>({appRole:"nurse"
 afterEach(()=>{cleanup();rpc.mockReset();});
 function pendingReceipt(){let resolve!:(value:{data:string;error:null})=>void;rpc.mockReturnValue(new Promise<{data:string;error:null}>(done=>{resolve=done;}));return async()=>{await act(async()=>{resolve({data:"saved-record",error:null});});};}
 it("locks a care-plan draft while its submitted version is being saved",async()=>{
- const finish=pendingReceipt();render(<CarePlanAuthor residentId="resident" initialItems={[]} onSaved={vi.fn()} />);
+ const finish=pendingReceipt();render(<CarePlanAuthor residentId="resident" residentName="Fixture resident" facilityName="Fixture facility" mode="first" previous={null} initialItems={[]} onSaved={vi.fn()} />);
  fireEvent.click(screen.getByRole("button",{name:"Start care plan"}));
- for(const [label,value] of [["Effective date","2026-09-06"],["Review due","2026-10-06"],["Category","bathing"],["title","Bathing support"],["description","Documented support need"],["Assistance level","supervision"]])fireEvent.change(screen.getByLabelText(label),{target:{value}});
+ for(const [label,value] of [[/^Effective date/,"2026-09-06"],[/^Review due/,"2026-10-06"],[/^Category/,"bathing"],[/^Need title/,"Bathing support"],[/^Description of need/,"Documented support need"],[/^Assistance level/,"supervision"]] as const)fireEvent.change(screen.getByLabelText(label),{target:{value}});
  fireEvent.click(screen.getByRole("button",{name:"Save for clinical review"}));
  await waitFor(()=>expect(rpc).toHaveBeenCalledOnce());
- expect(screen.getByLabelText("title")).toBeDisabled();
- expect(screen.getByLabelText("Interventions (one per line)")).toBeDisabled();
+ expect(screen.getByLabelText(/^Need title/)).toBeDisabled();
+ expect(screen.getByLabelText(/^Interventions/)).toBeDisabled();
  await finish();
  expect(screen.getByRole("button",{name:"Start care plan"})).toBeInTheDocument();
 });
