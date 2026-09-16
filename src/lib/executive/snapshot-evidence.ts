@@ -138,19 +138,38 @@ export type IncidentRateBasis = {
   residentDays: number | null;
   /** True when the figure may be displayed as a rate. */
   usable: boolean;
+  /**
+   * True when the resident-days were projected from a single day's census
+   * rather than counted day by day across the window.
+   */
+  estimated: boolean;
+  /** Short qualifier shown beside the figure. */
   line: string;
+  /** The arithmetic and its limits, for a disclosure beside the figure. */
+  detail: string;
 };
+
+const NO_DENOMINATOR_LINE =
+  "No resident-day count is recorded with this figure, so the rate cannot be read.";
 
 /**
  * A rate with no denominator is not zero. This returns the denominator the run
  * used, or says plainly that there isn't one.
+ *
+ * The run stores one census count — residents in census on the day it executed —
+ * and multiplies it by the window length. That projects a single day across
+ * thirty; it does not measure the resident-days actually served, because no
+ * daily census history is recorded. Everything derived from it is labelled an
+ * estimate rather than presented as an established rate.
  */
 export function incidentRateBasis(state: ExecutiveSnapshotState): IncidentRateBasis {
   if (state.kind !== "recorded") {
     return {
       residentDays: null,
       usable: false,
-      line: "No resident-day count is recorded with this figure, so the rate cannot be read.",
+      estimated: false,
+      line: NO_DENOMINATOR_LINE,
+      detail: NO_DENOMINATOR_LINE,
     };
   }
 
@@ -159,14 +178,18 @@ export function incidentRateBasis(state: ExecutiveSnapshotState): IncidentRateBa
     return {
       residentDays: null,
       usable: false,
-      line: "No resident-day count is recorded with this figure, so the rate cannot be read.",
+      estimated: false,
+      line: NO_DENOMINATOR_LINE,
+      detail: NO_DENOMINATOR_LINE,
     };
   }
   if (residents <= 0) {
     return {
       residentDays: 0,
       usable: false,
+      estimated: false,
       line: "No residents in census over the window — there is no denominator, so no rate.",
+      detail: "No residents in census over the window — there is no denominator, so no rate.",
     };
   }
 
@@ -174,15 +197,34 @@ export function incidentRateBasis(state: ExecutiveSnapshotState): IncidentRateBa
   return {
     residentDays,
     usable: true,
-    line: `Per 1,000 resident-days · trailing ${INCIDENT_RATE_WINDOW_DAYS} days · ${residentDays.toLocaleString()} resident-days (${residents} residents × ${INCIDENT_RATE_WINDOW_DAYS} days).`,
+    estimated: true,
+    line: `Estimated · incidents in the trailing ${INCIDENT_RATE_WINDOW_DAYS} days per 1,000 resident-days.`,
+    detail:
+      `${residentDays.toLocaleString()} resident-days is ${residents} residents in census on ` +
+      `${state.evidence.snapshotDate} × ${INCIDENT_RATE_WINDOW_DAYS} days. Daily census across the ` +
+      `window is not recorded, so this projects one day's census over the window rather than ` +
+      `counting the resident-days actually served.`,
   };
+}
+
+/** The dates billed revenue covers, or null when no run dates the figure. */
+export function billedRevenuePeriod(state: ExecutiveSnapshotState): string | null {
+  if (state.kind !== "recorded") return null;
+  const monthStart = `${state.evidence.snapshotDate.slice(0, 7)}-01`;
+  return `${monthStart} through ${state.evidence.snapshotDate}`;
 }
 
 /** Billed revenue period — named so "$0" is read against a period, not in the air. */
 export function billedRevenuePeriodLine(state: ExecutiveSnapshotState): string {
-  if (state.kind !== "recorded") {
-    return "No billing period is recorded with this figure.";
-  }
-  const monthStart = `${state.evidence.snapshotDate.slice(0, 7)}-01`;
-  return `Invoices dated ${monthStart} through ${state.evidence.snapshotDate}.`;
+  const period = billedRevenuePeriod(state);
+  if (!period) return "No billing period is recorded with this figure.";
+  return `Invoices dated ${period}.`;
 }
+
+/**
+ * What the billed total counts, so a portfolio-wide zero is read as "nothing
+ * was issued" rather than "billing was not looked at". Issued invoices only:
+ * drafts and voided invoices are outside the figure by design.
+ */
+export const BILLED_REVENUE_SCOPE_LINE =
+  "Counts issued invoices at every facility in scope. Draft and voided invoices are not included.";

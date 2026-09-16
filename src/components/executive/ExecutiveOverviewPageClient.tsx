@@ -9,7 +9,9 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  Building2,
   CheckCircle2,
+  ChevronDown,
   RefreshCw,
   TrendingDown,
   TrendingUp,
@@ -20,9 +22,7 @@ import { cn } from "@/lib/utils";
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { useHeldRoleHomeChrome } from "@/hooks/useHeldRoleHomeChrome";
 import {
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
@@ -59,19 +59,20 @@ import {
 } from "@/lib/executive/kpi-tile-copy";
 import {
   buildExecutiveCoverage,
+  coverageFollowUps,
   coverageGapLine,
+  coverageHeadline,
   coverageSummaryLine,
-  isCoverageGap,
   noAlertsCopy,
   type CoverageRow,
 } from "@/lib/executive/evidence-coverage";
 import {
-  METRIC_CHANGE_UNAVAILABLE_COPY,
   OCCUPANCY_CHANGE_UNAVAILABLE_COPY,
   metricChangeLine,
   type MetricChange,
 } from "@/lib/executive/metric-change";
 import {
+  BILLED_REVENUE_SCOPE_LINE,
   billedRevenuePeriodLine,
   incidentRateBasis,
   snapshotFreshnessLine,
@@ -83,7 +84,6 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
-import type { Database } from "@/types/database";
 
 /** Named loading copy while auth hydrates or the first client fetch is in flight. */
 export const EXECUTIVE_OVERVIEW_LOADING_MESSAGE = "Loading portfolio overview…";
@@ -127,13 +127,7 @@ export function ExecutiveOverviewPageClient({
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
   const supabase = useMemo(() => createClient(), []);
-  const { organizationId, appRole, loading: authLoading } = useHavenAuth();
-  type AppRole = Database["public"]["Enums"]["app_role"];
-  const roleConfig = getRoleDashboardConfig(appRole as AppRole);
-  const { resolveSubtitle } = useHeldRoleHomeChrome(authLoading, appRole);
-  const roleHomeSubtitle = resolveSubtitle(
-    "portfolio movement, exception pressure, leadership decisions only.",
-  );
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const [loading, setLoading] = useState(!initialHasServerData);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -262,27 +256,23 @@ export function ExecutiveOverviewPageClient({
     metrics,
     snapshot,
     observedFacilityCount: assuranceHeatMap.filter((row) => row.observed).length,
+    surveyFacilityCount: facilities.filter((facility) => hasMetric(facility.metrics?.survey_rd))
+      .length,
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {/* Page header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
             Executive intelligence
           </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            <PortfolioScopeLine facilityCount={facilities.length} />
-          </p>
-          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-            {snapshotFreshnessLine(snapshot)}
-          </p>
-          {roleHomeSubtitle ? (
-            <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
-              {roleHomeSubtitle}
-            </p>
-          ) : null}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12px] text-muted-foreground">
+            <PortfolioScopePill facilityCount={facilities.length} />
+            <span aria-hidden>·</span>
+            <span className="leading-relaxed">{snapshotFreshnessLine(snapshot)}</span>
+          </div>
         </div>
         <ExecutiveHubNav />
       </div>
@@ -313,15 +303,19 @@ export function ExecutiveOverviewPageClient({
           snapshot={snapshot}
           metricChanges={metricChanges}
           coverage={coverage}
-          roleConfig={roleConfig}
         />
       )}
     </div>
   );
 }
 
-/** Names the scope this page covers and that the facility chooser does not apply. */
-function PortfolioScopeLine({ facilityCount }: { facilityCount: number }) {
+/**
+ * The scope this page reads, shown as a control-shaped chip so it reads as the
+ * page's own filter rather than as prose. The top-bar facility chooser is a
+ * different control and does not apply here; the chip says so in three words
+ * and carries the full sentence for assistive technology.
+ */
+function PortfolioScopePill({ facilityCount }: { facilityCount: number }) {
   const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
   const availableFacilities = useFacilityStore((state) => state.availableFacilities);
   // The persisted list is the only place a selection can be named; a missing or
@@ -331,17 +325,22 @@ function PortfolioScopeLine({ facilityCount }: { facilityCount: number }) {
       ? null
       : availableFacilities.find((facility) => facility.id === selectedFacilityId)?.name ?? null;
 
+  const note = selectedName
+    ? `${selectedName} is selected in the top bar and does not narrow it.`
+    : EXECUTIVE_SCOPE_NOTE;
+
   return (
-    <>
-      <span className="font-medium text-foreground">
-        All facilities{facilityCount > 0 ? ` · ${facilityCount} in scope` : ""}
-      </span>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-0.5 pl-2 pr-2.5 text-[12px] font-medium text-foreground"
+      title={note}
+    >
+      <Building2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+      All facilities{facilityCount > 0 ? ` · ${facilityCount} in scope` : ""}
       {selectedName ? (
-        <span> — {selectedName} is selected in the top bar and does not narrow this page.</span>
-      ) : (
-        <span> — {EXECUTIVE_SCOPE_NOTE}</span>
-      )}
-    </>
+        <span className="font-normal text-muted-foreground">· top-bar facility not applied</span>
+      ) : null}
+      <span className="sr-only"> — {note}</span>
+    </span>
   );
 }
 
@@ -761,87 +760,174 @@ function ResidentPresenceBand({ census }: { census: PresenceCensus }) {
 const COVERAGE_STATE_LABEL: Record<CoverageRow["state"], string> = {
   reported: "Reported",
   partial: "Partial",
+  estimated: "Estimated",
   not_reported: "Not reported",
   past: "Earlier day",
   unreadable: "Unknown",
 };
 
-const COVERAGE_STATE_CLASS: Record<CoverageRow["state"], string> = {
-  reported: "border-success/30 text-success",
-  partial: "border-warning/40 text-warning",
-  not_reported: "border-border text-muted-foreground",
-  past: "border-warning/40 text-warning",
-  unreadable: "border-destructive/30 text-destructive",
+/**
+ * State on the strip is carried by the words themselves ("2 of 5", "Estimated")
+ * and marked by a dot. The dot takes the colour so the reading stays on
+ * foreground text, which holds its contrast in both themes.
+ */
+const COVERAGE_DOT_CLASS: Record<CoverageRow["state"], string> = {
+  reported: "bg-success",
+  partial: "bg-warning",
+  estimated: "bg-info",
+  not_reported: "bg-muted-foreground/60",
+  past: "bg-warning",
+  unreadable: "bg-destructive",
 };
 
-/** Monitoring coverage — what the page can and cannot see, before any figure. */
-function CoveragePanel({ rows }: { rows: CoverageRow[] }) {
+/**
+ * Coverage in one line. The strip carries the whole answer at a glance; the
+ * per-measure evidence stays one keystroke away rather than filling the screen
+ * above the comparison an owner came here to read.
+ */
+function CoverageStrip({ rows }: { rows: CoverageRow[] }) {
   return (
-    <section className="flex flex-col gap-3" aria-labelledby="coverage-heading">
-      <div>
-        <h2 id="coverage-heading" className="text-[14px] font-semibold tracking-tight text-foreground">
-          Monitoring coverage
+    <details className="group rounded-lg border border-border bg-card" aria-labelledby="coverage-heading">
+      <summary
+        className={cn(
+          "flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2.5",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "[&::-webkit-details-marker]:hidden",
+        )}
+      >
+        <h2 id="coverage-heading" className="text-[13px] font-semibold tracking-tight text-foreground">
+          {coverageHeadline(rows)}
         </h2>
-        <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">
-          {coverageSummaryLine(rows)}
-        </p>
-      </div>
-      <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((row) => (
-          <li
-            key={row.key}
-            className="flex flex-col gap-1 rounded-lg border border-border bg-card px-3 py-2.5"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[13px] font-medium text-foreground">{row.label}</span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+          {rows.map((row) => (
+            <span key={row.key} className="inline-flex items-center gap-1.5 whitespace-nowrap">
               <span
-                className={cn(
-                  "inline-flex h-5 shrink-0 items-center rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider",
-                  COVERAGE_STATE_CLASS[row.state],
-                )}
+                className={cn("size-1.5 shrink-0 rounded-full", COVERAGE_DOT_CLASS[row.state])}
+                aria-hidden
+              />
+              {row.label} <span className="font-medium text-foreground">{row.short}</span>
+            </span>
+          ))}
+        </span>
+        <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-foreground">
+          View coverage
+          <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" aria-hidden />
+        </span>
+      </summary>
+
+      <div className="flex flex-col gap-3 border-t border-border px-4 py-3">
+        <p className="text-[12px] leading-relaxed text-muted-foreground">
+          {coverageSummaryLine(rows)} {coverageGapLine(rows)}
+        </p>
+        <ul className="flex flex-col gap-2">
+          {rows.map((row) => (
+            <li key={row.key} className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn("size-1.5 shrink-0 rounded-full", COVERAGE_DOT_CLASS[row.state])}
+                  aria-hidden
+                />
+                <span className="text-[13px] font-medium text-foreground">{row.label}</span>
+                <span className="text-[12px] text-muted-foreground">
+                  {COVERAGE_STATE_LABEL[row.state]}
+                </span>
+              </div>
+              <p className="pl-[calc(0.375rem+0.5rem)] text-[12px] leading-relaxed text-muted-foreground">
+                {row.detail}
+              </p>
+            </li>
+          ))}
+        </ul>
+        <div className="border-t border-border/60 pt-2">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Not recorded anywhere yet
+          </p>
+          <ul className="mt-1 flex flex-col gap-1">
+            {NOT_RECORDED_FOLLOW_UPS.map((item) => (
+              <li key={item} className="text-[11px] leading-relaxed text-muted-foreground">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </details>
+  );
+}
+
+/**
+ * Reporting follow-up — the gaps as work, each pointed at a page that exists.
+ * Kept apart from alerts: a measure that never arrived is not an exception.
+ */
+function ReportingFollowUpPanel({ coverage }: { coverage: CoverageRow[] }) {
+  const followUps = coverageFollowUps(coverage);
+
+  return (
+    <section className="flex flex-col gap-2" aria-labelledby="follow-up-heading">
+      <h2 id="follow-up-heading" className="text-[14px] font-semibold tracking-tight text-foreground">
+        Reporting follow-up
+      </h2>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        {followUps.length === 0 ? (
+          <p className="px-3 py-2.5 text-[13px] text-muted-foreground">
+            Every measure on this page is reported. Nothing is outstanding.
+          </p>
+        ) : (
+          <ul>
+            {followUps.map((row) => (
+              <li
+                key={row.key}
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border/60 px-3 py-2 last:border-b-0"
               >
-                {COVERAGE_STATE_LABEL[row.state]}
-              </span>
-            </div>
-            <p className="text-[12px] leading-relaxed text-muted-foreground">{row.detail}</p>
-          </li>
-        ))}
-      </ul>
+                <span className="text-[13px] leading-snug text-foreground">{row.followUp.summary}</span>
+                <Link
+                  href={row.followUp.href}
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-muted-foreground",
+                    "transition-colors hover:text-foreground",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                >
+                  {row.followUp.actionLabel} <ArrowRight className="size-3" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }
 
-/** Recorded exceptions, then — kept separate — information that never arrived. */
-function NeedsAttentionPanel({
+/** Recorded exceptions only — never an all-clear for what was never reported. */
+function RecordedAlertsPanel({
   alerts,
   coverage,
 }: {
   alerts: AlertWithFacility[];
   coverage: CoverageRow[];
 }) {
-  const gaps = coverage.filter(isCoverageGap);
   const emptyCopy = noAlertsCopy(coverage);
 
   return (
-    <section className="flex flex-col gap-3" aria-labelledby="attention-heading">
-      <div className="flex items-center justify-between">
+    <section className="flex flex-col gap-2" aria-labelledby="attention-heading">
+      <div className="flex items-center justify-between gap-2">
         <h2
           id="attention-heading"
           className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground"
         >
-          <AlertTriangle className="size-4 text-warning" aria-hidden /> Needs your attention
+          <AlertTriangle className="size-4 text-warning" aria-hidden /> Recorded alerts
         </h2>
         <span className="text-[11px] tabular-nums text-muted-foreground">
           {alerts.length} recorded {alerts.length === 1 ? "alert" : "alerts"}
         </span>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 flex flex-col gap-2 lg:col-span-7">
-          {alerts.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6">
+      <div className="flex flex-col gap-2">
+        {alerts.length === 0 ? (
+            <div className="rounded-lg border border-border bg-card px-3 py-2.5">
               <p className="text-[13px] font-medium text-foreground">{emptyCopy.headline}</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{emptyCopy.body}</p>
+              <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{emptyCopy.body}</p>
             </div>
           ) : (
             alerts.map((alert) => {
@@ -905,28 +991,6 @@ function NeedsAttentionPanel({
               );
             })
           )}
-        </div>
-
-        <div className="col-span-12 lg:col-span-5">
-          <div className="flex h-full flex-col gap-2 rounded-lg border border-border bg-card p-4">
-            <h3 className="text-[13px] font-semibold tracking-tight text-foreground">
-              Information not received
-            </h3>
-            <p className="text-[12px] leading-relaxed text-muted-foreground">{coverageGapLine(coverage)}</p>
-            {gaps.length > 0 ? (
-              <ul className="mt-1 flex flex-col gap-1.5">
-                {gaps.map((row) => (
-                  <li key={row.key} className="text-[12px] leading-relaxed text-muted-foreground">
-                    <span className="font-medium text-foreground">{row.label}:</span> {row.detail}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <p className="mt-auto pt-2 text-[11px] leading-relaxed text-muted-foreground">
-              These are gaps in reporting, not clinical or operational exceptions.
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -1007,26 +1071,36 @@ function PortfolioFiguresStrip({
               ? incidentBasis.line
               : executiveKpiEmptyCopy(tile.key);
 
-          const basis =
+          const changeLine = metricChangeLine(change, tile.format);
+
+          // One qualifier stays visible — the one that changes how the figure
+          // is read. The arithmetic behind it sits in the disclosure.
+          const summaryLine =
+            tile.key === "occ_pt"
+              ? occupancyCalculationLine(occupancyContext)
+              : tile.key === "rev_mtd"
+                ? billedRevenuePeriodLine(snapshot)
+                : tile.key === "inc_rate"
+                  ? incidentBasis.line
+                  : changeLine;
+
+          const detailLines =
             tile.key === "occ_pt"
               ? [
                   occupancyContext ? occupancyLoadedFootnote(occupancyContext) : null,
-                  occupancyCalculationLine(occupancyContext),
                   OCCUPANCY_CHANGE_UNAVAILABLE_COPY,
                 ]
               : tile.key === "rev_mtd"
-                ? [billedRevenuePeriodLine(snapshot), metricChangeLine(change, tile.format)]
+                ? [BILLED_REVENUE_SCOPE_LINE, changeLine]
                 : tile.key === "labor_pct"
-                  ? [
-                      "Labor cost divided by billed revenue for the same period.",
-                      metricChangeLine(change, tile.format),
-                    ]
+                  ? ["Payroll cost for the period divided by billed revenue for the same period."]
                   : tile.key === "inc_rate"
-                    ? [incidentBasis.line, metricChangeLine(change, tile.format)]
-                    : [
-                        "Most recent recorded readiness review per facility, averaged.",
-                        metricChangeLine(change, tile.format),
-                      ];
+                    ? [incidentBasis.detail, changeLine]
+                    : ["Most recent recorded readiness review per facility, averaged.", changeLine];
+
+          const details = (value != null ? detailLines : []).filter(
+            (line): line is string => Boolean(line),
+          );
 
           return (
             <div
@@ -1046,31 +1120,48 @@ function PortfolioFiguresStrip({
                     {missingCopy}
                   </span>
                 )}
-                {value != null && change && change.direction !== "flat" ? (
+                {/* Direction is only drawn against a dated earlier recording,
+                    never against a target — the label says which. */}
+                {value != null && changeLine && change && change.direction !== "flat" ? (
                   change.direction === "up" ? (
-                    <TrendingUp className="size-3.5 text-muted-foreground" aria-hidden />
+                    <TrendingUp className="size-3.5 text-muted-foreground" aria-label={changeLine} />
                   ) : (
-                    <TrendingDown className="size-3.5 text-muted-foreground" aria-hidden />
+                    <TrendingDown className="size-3.5 text-muted-foreground" aria-label={changeLine} />
                   )
                 ) : null}
               </div>
               {/* Basis belongs to a figure. When there is no figure, the line
                   in its place already says why. */}
-              {(value != null ? basis : [])
-                .filter((line): line is string => Boolean(line))
-                .map((line) => (
-                  <p key={line} className="text-[11px] leading-relaxed text-muted-foreground">
-                    {line}
-                  </p>
-                ))}
+              {value != null && summaryLine ? (
+                <p className="text-[11px] leading-relaxed text-muted-foreground">{summaryLine}</p>
+              ) : null}
+              {details.length > 0 ? (
+                <details className="group/calc mt-auto pt-0.5">
+                  <summary
+                    className={cn(
+                      "inline-flex cursor-pointer list-none items-center gap-1 text-[11px] font-medium text-muted-foreground",
+                      "transition-colors hover:text-foreground",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "[&::-webkit-details-marker]:hidden",
+                    )}
+                  >
+                    How this is calculated
+                    <ChevronDown
+                      className="size-3 transition-transform group-open/calc:rotate-180"
+                      aria-hidden
+                    />
+                  </summary>
+                  {details.map((line) => (
+                    <p key={line} className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                      {line}
+                    </p>
+                  ))}
+                </details>
+              ) : null}
             </div>
           );
         })}
       </div>
-      <p className="text-[12px] leading-relaxed text-muted-foreground">
-        Arrows mark movement against the dated recording named on each tile, not against a target.
-        Where nothing comparable exists the tile says {METRIC_CHANGE_UNAVAILABLE_COPY.toLowerCase()}
-      </p>
     </section>
   );
 }
@@ -1116,7 +1207,14 @@ function PortfolioComparisonTable({
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div className="max-h-[480px] overflow-auto">
+        {/* The table scrolls inside the card, so the region needs to be reachable
+            by keyboard on narrow viewports. */}
+        <div
+          className="max-h-[480px] overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          tabIndex={0}
+          role="region"
+          aria-label="Portfolio comparison by facility"
+        >
           <table className="w-full text-[13px]">
             <caption className="sr-only">
               Reported measures by facility. Cells without a figure say why the measure is missing.
@@ -1535,7 +1633,6 @@ type DashboardBodyProps = {
   snapshot: ExecutiveSnapshotState;
   metricChanges: Record<string, MetricChange>;
   coverage: CoverageRow[];
-  roleConfig: ReturnType<typeof getRoleDashboardConfig>;
 };
 
 function ExecutiveDashboardBody({
@@ -1549,13 +1646,27 @@ function ExecutiveDashboardBody({
   snapshot,
   metricChanges,
   coverage,
-  roleConfig,
 }: DashboardBodyProps): ReactNode {
   return (
     <>
-      <CoveragePanel rows={coverage} />
+      {/* Coverage first and compact, then the work, then the comparison an
+          owner opens this page for — the explanations sit behind them. */}
+      <CoverageStrip rows={coverage} />
 
-      <NeedsAttentionPanel alerts={alerts} coverage={coverage} />
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 lg:col-span-7">
+          <ReportingFollowUpPanel coverage={coverage} />
+        </div>
+        <div className="col-span-12 lg:col-span-5">
+          <RecordedAlertsPanel alerts={alerts} coverage={coverage} />
+        </div>
+      </div>
+
+      <PortfolioComparisonTable
+        facilities={facilities}
+        metrics={metrics}
+        occupancyContext={occupancyContext}
+      />
 
       <PortfolioFiguresStrip
         metrics={metrics}
@@ -1564,33 +1675,11 @@ function ExecutiveDashboardBody({
         metricChanges={metricChanges}
       />
 
-      <PortfolioComparisonTable
-        facilities={facilities}
-        metrics={metrics}
-        occupancyContext={occupancyContext}
-      />
-
       <RoundingAssuranceTable heatMap={assuranceHeatMap} trends={assuranceTrends} />
 
       <ResidentPresenceBand census={presenceCensus} />
 
       <SupportingDestinations />
-
-      <section className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-card p-4">
-        <h2 className="text-[13px] font-semibold tracking-tight text-foreground">
-          Not recorded anywhere yet
-        </h2>
-        <ul className="flex flex-col gap-1.5">
-          {NOT_RECORDED_FOLLOW_UPS.map((item) => (
-            <li key={item} className="text-[12px] leading-relaxed text-muted-foreground">
-              {item}
-            </li>
-          ))}
-        </ul>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          This home covers {roleConfig.firstScreenPriority.join(", ").replace(/_/g, " ")}.
-        </p>
-      </section>
     </>
   );
 }

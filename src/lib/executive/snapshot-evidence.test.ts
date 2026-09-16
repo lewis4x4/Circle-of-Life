@@ -58,7 +58,6 @@ describe("snapshot evidence", () => {
     const usable = incidentRateBasis(resolveSnapshotState({ row: RUN, todayIsoDate: "2026-09-15" }));
     expect(usable.usable).toBe(true);
     expect(usable.residentDays).toBe(750);
-    expect(usable.line).toContain("750 resident-days (25 residents × 30 days)");
 
     const noCensus = incidentRateBasis(
       resolveSnapshotState({
@@ -72,6 +71,21 @@ describe("snapshot evidence", () => {
     const noRun = incidentRateBasis({ kind: "never_recorded" });
     expect(noRun.usable).toBe(false);
     expect(noRun.residentDays).toBeNull();
+  });
+
+  it("calls the resident-day denominator an estimate, because it projects one day's census", () => {
+    const basis = incidentRateBasis(resolveSnapshotState({ row: RUN, todayIsoDate: "2026-09-15" }));
+
+    expect(basis.estimated).toBe(true);
+    expect(basis.line).toContain("Estimated");
+    // The arithmetic and its limit travel together: a reader must not take
+    // 750 resident-days for exposure that was actually measured.
+    expect(basis.detail).toContain("750 resident-days is 25 residents in census on 2026-09-15 × 30 days");
+    expect(basis.detail).toContain("Daily census across the window is not recorded");
+
+    // Nothing to project from means nothing to estimate.
+    const noDenominator = incidentRateBasis({ kind: "never_recorded" });
+    expect(noDenominator.estimated).toBe(false);
   });
 
   it("ages a run against the facilities' operating day, not the browser's", () => {
