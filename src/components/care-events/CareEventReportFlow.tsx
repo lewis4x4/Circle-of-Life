@@ -33,7 +33,22 @@ import { ReportWhoStep } from "./ReportWhoStep";
 import { TapButton } from "./TapButton";
 import { useReportFlowData } from "./useReportFlowData";
 
+import { WizardStep, WizardSteps, type WizardStepState } from "@/components/ui/wizard-steps";
+
 const STEP_TITLES = { who: "Who", what: "What", how_bad: "How bad", receipt: "Saved" } as const;
+
+/** The three steps a caregiver walks before the receipt. */
+const REPORT_STEPS = ["who", "what", "how_bad"] as const;
+
+type WizardStepId = (typeof REPORT_STEPS)[number];
+
+function stepState(step: WizardStepId, current: WizardStepId): WizardStepState {
+  const stepIndex = REPORT_STEPS.indexOf(step);
+  const currentIndex = REPORT_STEPS.indexOf(current);
+  if (stepIndex < currentIndex) return "complete";
+  if (stepIndex === currentIndex) return "current";
+  return "upcoming";
+}
 
 function timeLabel(iso: string, timeZone: string): string {
   return new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).format(new Date(iso));
@@ -181,21 +196,34 @@ export function CareEventReportFlow({
   }
 
   const canGoBack = state.step === "what" || state.step === "how_bad";
+  // Held in a const so the "not the receipt" narrowing survives into the
+  // map callback below — reading state.step inside the closure would widen
+  // it back to include "receipt".
+  const currentStep = state.step;
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 pb-8">
-      <header className="flex items-center gap-3">
-        {canGoBack ? (
-          <TapButton className="w-auto flex-none px-4" aria-label="Back" onClick={() => dispatch({ type: "back" })}>
-            <ChevronLeft className="size-6" aria-hidden />
-          </TapButton>
-        ) : null}
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-foreground">Something happened</h1>
-          <p className="text-sm text-muted-foreground">
-            {state.step === "receipt" ? STEP_TITLES.receipt : `Step ${state.step === "who" ? 1 : state.step === "what" ? 2 : 3} of 3, ${STEP_TITLES[state.step]}`}
-          </p>
+      <header className="space-y-4">
+        <div className="flex items-center gap-3">
+          {canGoBack ? (
+            <TapButton className="w-auto flex-none px-4" aria-label="Back" onClick={() => dispatch({ type: "back" })}>
+              <ChevronLeft className="size-6" aria-hidden />
+            </TapButton>
+          ) : null}
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold text-foreground">Something happened</h1>
+            {currentStep === "receipt" ? (
+              <p className="text-sm text-muted-foreground">{STEP_TITLES.receipt}</p>
+            ) : null}
+          </div>
         </div>
+        {currentStep === "receipt" ? null : (
+          <WizardSteps aria-label="Report progress">
+            {REPORT_STEPS.map((step) => (
+              <WizardStep key={step} label={STEP_TITLES[step]} state={stepState(step, currentStep)} />
+            ))}
+          </WizardSteps>
+        )}
       </header>
 
       {state.step === "who" ? (
