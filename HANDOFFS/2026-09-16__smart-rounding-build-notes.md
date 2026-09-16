@@ -132,9 +132,13 @@ Consequences:
 - Helper functions available: `haven.organization_id()`, `haven.app_role()`,
   `haven.has_facility_access(uuid)`, `haven.accessible_facility_ids()`,
   `public.haven_capture_audit_log()`, `public.haven_set_updated_at()`.
-- COL organization id is `00000000-0000-0000-0000-000000000001`. The five facilities are
-  named `Oakridge ALF`, `Rising Oaks ALF`, `Homewood Lodge ALF`, `Plantation ALF`,
-  `Grande Cypress ALF`. Never hardcode a facility uuid; select by name within the org.
+- COL organization id is `00000000-0000-0000-0000-000000000001`.
+  **Never seed or filter by facility name.** Migration `318_col_facility_entity_names.sql`
+  renamed two of the five facilities to their registered form (`Homewood Lodge, ALF` with a
+  comma, `The Plantation on Summers`). Any seed carrying the pre-`318` names silently
+  touches three facilities out of five and reports success. Select every non-deleted
+  facility in the organization instead, which is also what should happen when a sixth
+  building is added. Never hardcode a facility uuid either.
 - `facilities.timezone` exists and defaults to `America/New_York` in COL data. Always read
   it; never hardcode the zone.
 
@@ -212,6 +216,21 @@ one chip group per line.
 **D8. TypeScript strict, no `any`** except where a third-party type forces it, and then
 with a one-line reason. Components under 300 lines.
 
+**D10. The 22:00 window is keyed `late_evening`, not `evening`.** The spec table named it
+`evening`; reusing the word the retired three-daypart model used for a shift, while
+`shift_type` still carries that value, would reintroduce the ambiguity defect 2 exists to
+remove. The spec table in the repo was updated to match. The rendered label is
+"Late evening check".
+
+**D11. `apply_col_discovery_round_observation_plan` stays working.** It carries the
+2026-08-14 times, but SYS-001 wrapped it in a five argument overload that
+`supabase/tests/review_authoritative_actor.sql` exercises as an authorization fixture, so
+retiring the body fails an unrelated acceptance probe. The spec only requires the
+Plantation helper be deprecated. Part 6 removes the operator entry point that calls it
+(`/api/rounding/plans/apply-discovery-default` and
+`src/lib/rounding/apply-col-discovery-observation-plan.ts`), which is what takes it out of
+the product.
+
 **D9. American spelling. No em dashes** in code comments, UI copy, or documentation.
 
 ---
@@ -258,7 +277,7 @@ Filled in by the orchestrator as parts land.
 
 | Part | Name | Status | Commit |
 |---|---|---|---|
-| 1 | Cadence and task generation | pending | |
+| 1 | Cadence and task generation | **done** | `412` + generator rewrite |
 | 2 | Chip capture and composed narrative | pending | |
 | 3 | Monitoring Orders | pending | |
 | 4 | Escalation policy and engine | pending | |

@@ -140,7 +140,11 @@ export function generateObservationTasks(args: GenerateArgs): GeneratedTaskInput
     return [];
   }
 
-  const intervalMinutes = args.rule.intervalMinutes ?? (args.rule.intervalType === "per_shift" ? 8 * 60 : null);
+  // A `per_shift` rule with no interval carries no cadence of its own. It used
+  // to fall back to an eight hour shift, which is the retired three daypart
+  // model; shift length is now facility configuration and belongs to
+  // `facility_shift_definitions`, never to a default in code.
+  const intervalMinutes = args.rule.intervalMinutes;
 
   if (!intervalMinutes || intervalMinutes <= 0) {
     return [];

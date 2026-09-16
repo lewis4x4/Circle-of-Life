@@ -46,10 +46,12 @@ Facility-level configuration. Every active resident at the facility inherits it.
 | `mid_morning` | 10:00 | 60 | 60 | 09:00 to 11:00 | day | day staff |
 | `afternoon` | 14:00 | 60 | 60 | 13:00 to 15:00 | day | day staff |
 | `shift_change_pm` | 18:00 | 0 | 60 | 18:00 to 19:00 | night | incoming night staff |
-| `evening` | 22:00 | 60 | 60 | 21:00 to 23:00 | night | night staff |
+| `late_evening` | 22:00 | 60 | 60 | 21:00 to 23:00 | night | night staff |
 | `overnight` | 02:00 | 60 | 60 | 01:00 to 03:00 | night | night staff |
 
 All times are facility-local (America/New_York for all five COL facilities). Store and compare in UTC; render in facility-local. Windows never overlap and the largest unobserved gap is 03:00 to 06:00.
+
+**Window key note.** The 22:00 window is keyed `late_evening`, not `evening`. The retired three-daypart model used the word `evening` for a shift, and `shift_type` still carries that value for other modules, so reusing it as a window key would reintroduce exactly the ambiguity defect 2 exists to remove. The key is internal; the rendered label is "Late evening check".
 
 ### 2.2 Why shift-change grace is one-sided
 

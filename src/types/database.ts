@@ -12633,9 +12633,223 @@ export type Database = {
           },
         ]
       }
+      facility_shift_definitions: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          ends_at_local: string
+          facility_id: string
+          id: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order: number
+          starts_at_local: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          ends_at_local: string
+          facility_id: string
+          id?: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order?: number
+          starts_at_local: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          ends_at_local?: string
+          facility_id?: string
+          id?: string
+          label?: string
+          organization_id?: string
+          shift_key?: string
+          sort_order?: number
+          starts_at_local?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_shift_definitions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_shift_definitions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_cadence_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          change_reason: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_from: string
+          effective_to: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          source_template_id: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          change_reason: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from: string
+          effective_to?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          source_template_id?: string | null
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          change_reason?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          source_template_id?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_cadence_versions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_cadence_versions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_cadence_windows: {
+        Row: {
+          cadence_version_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          due_at_local: string
+          enabled: boolean
+          facility_id: string
+          grace_after_minutes: number
+          grace_before_minutes: number
+          id: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+          window_key: string
+        }
+        Insert: {
+          cadence_version_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          due_at_local: string
+          enabled?: boolean
+          facility_id: string
+          grace_after_minutes: number
+          grace_before_minutes: number
+          id?: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_key: string
+        }
+        Update: {
+          cadence_version_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          due_at_local?: string
+          enabled?: boolean
+          facility_id?: string
+          grace_after_minutes?: number
+          grace_before_minutes?: number
+          id?: string
+          label?: string
+          organization_id?: string
+          shift_key?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_cadence_windows_cadence_version_id_fkey"
+            columns: ["cadence_version_id"]
+            isOneToOne: false
+            referencedRelation: "facility_cadence_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_cadence_windows_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resident_observation_tasks: {
         Row: {
           assigned_staff_id: string | null
+          cadence_version_id: string | null
           completed_log_id: string | null
           created_at: string
           deleted_at: string | null
@@ -12649,20 +12863,23 @@ export type Database = {
           id: string
           notes: string | null
           organization_id: string
-          plan_id: string
+          plan_id: string | null
           plan_rule_id: string | null
           reassigned_from_staff_id: string | null
           reassignment_reason: string | null
           resident_id: string
           scheduled_for: string
+          service_date: string | null
           shift_assignment_id: string | null
           status: Database["public"]["Enums"]["resident_observation_task_status"]
           updated_at: string
           updated_by: string | null
           watch_instance_id: string | null
+          window_key: string | null
         }
         Insert: {
           assigned_staff_id?: string | null
+          cadence_version_id?: string | null
           completed_log_id?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -12676,20 +12893,23 @@ export type Database = {
           id?: string
           notes?: string | null
           organization_id: string
-          plan_id: string
+          plan_id?: string | null
           plan_rule_id?: string | null
           reassigned_from_staff_id?: string | null
           reassignment_reason?: string | null
           resident_id: string
           scheduled_for: string
+          service_date?: string | null
           shift_assignment_id?: string | null
           status?: Database["public"]["Enums"]["resident_observation_task_status"]
           updated_at?: string
           updated_by?: string | null
           watch_instance_id?: string | null
+          window_key?: string | null
         }
         Update: {
           assigned_staff_id?: string | null
+          cadence_version_id?: string | null
           completed_log_id?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -12703,17 +12923,19 @@ export type Database = {
           id?: string
           notes?: string | null
           organization_id?: string
-          plan_id?: string
+          plan_id?: string | null
           plan_rule_id?: string | null
           reassigned_from_staff_id?: string | null
           reassignment_reason?: string | null
           resident_id?: string
           scheduled_for?: string
+          service_date?: string | null
           shift_assignment_id?: string | null
           status?: Database["public"]["Enums"]["resident_observation_task_status"]
           updated_at?: string
           updated_by?: string | null
           watch_instance_id?: string | null
+          window_key?: string | null
         }
         Relationships: [
           {
@@ -16918,6 +17140,59 @@ export type Database = {
       }
     }
     Functions: {
+      facility_cadence_in_force: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: string | null
+      }
+      facility_observation_windows_for_date: {
+        Args: { p_facility_id: string; p_service_date: string }
+        Returns: {
+          cadence_version_id: string
+          window_key: string
+          label: string
+          shift_key: string
+          due_at_utc: string
+          window_opens_at_utc: string
+          window_closes_at_utc: string
+        }[]
+      }
+      facility_shift_window_at: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: {
+          shift_key: string
+          shift_service_date: string
+          starts_at_utc: string
+          ends_at_utc: string
+        }[]
+      }
+      facility_next_shift_window: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: {
+          shift_key: string
+          shift_service_date: string
+          starts_at_utc: string
+          ends_at_utc: string
+        }[]
+      }
+      facility_next_shift_observation_windows: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: {
+          cadence_version_id: string
+          window_key: string
+          label: string
+          shift_key: string
+          shift_service_date: string
+          service_date: string
+          due_at_utc: string
+          window_opens_at_utc: string
+          window_closes_at_utc: string
+          starts_shift: boolean
+        }[]
+      }
+      record_cadence_observation_tasks: {
+        Args: { p_rows: Json }
+        Returns: number
+      }
       board_check_state: {
         Args: { p_session_id: string }
         Returns: {
