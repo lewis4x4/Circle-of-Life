@@ -260,12 +260,13 @@ export type RecordShiftHandoffInput = {
   timeZone: string;
   outgoingShift: HandoffShift;
   incomingShift: HandoffShift;
-  /** The row's `handoff_date`: today in the facility zone. */
+  /** Today in the facility zone (the wall-clock date the caregiver taps Record). */
   handoffDate: string;
   /**
    * The calendar date the outgoing shift's window started on (facility zone).
    * Differs from `handoffDate` only for a night shift recorded after midnight.
-   * Defaults to `handoffDate`.
+   * Defaults to `handoffDate`. The stored `handoff_date` is this window date,
+   * so one row keys one shift window and consecutive nights never collide.
    */
   shiftDate?: string;
   outgoingStaffId: string;
@@ -294,7 +295,7 @@ export function buildShiftHandoffInsert(
   return {
     facility_id: input.facilityId,
     organization_id: input.organizationId,
-    handoff_date: input.handoffDate,
+    handoff_date: input.shiftDate ?? input.handoffDate,
     outgoing_shift: input.outgoingShift,
     incoming_shift: input.incomingShift,
     outgoing_staff_id: input.outgoingStaffId,

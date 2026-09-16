@@ -237,12 +237,20 @@ describe("buildShiftHandoffInsert", () => {
     expect(buildShiftHandoffInsert(input, []).outgoing_notes).toBeNull();
   });
 
-  it("keeps handoff_date as today while the summary covers the night window that started yesterday", () => {
+  it("keys handoff_date on the window date so a night recorded after midnight is filed under the night it covers", () => {
     const row = buildShiftHandoffInsert(
       { ...input, outgoingShift: "night", incomingShift: "day", handoffDate: "2026-09-15", shiftDate: "2026-09-14" },
       [event({ id: "n", final_level: "level_1", occurred_at: "2026-09-15T06:00:00.000Z" })],
     );
-    expect(row.handoff_date).toBe("2026-09-15");
+    expect(row.handoff_date).toBe("2026-09-14");
     expect(row.auto_summary.care_events).toMatchObject({ shift: "night", date: "2026-09-14", total: 1 });
+
+    // The next night, recorded before midnight, keys on its own date and cannot collide with the one above.
+    const nextNight = buildShiftHandoffInsert(
+      { ...input, outgoingShift: "night", incomingShift: "day", handoffDate: "2026-09-15", shiftDate: "2026-09-15" },
+      [],
+    );
+    expect(nextNight.handoff_date).toBe("2026-09-15");
+    expect(nextNight.handoff_date).not.toBe(row.handoff_date);
   });
 });
