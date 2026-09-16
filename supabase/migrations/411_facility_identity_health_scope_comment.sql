@@ -1,0 +1,35 @@
+-- COL-438: say what haven.facility_identity_health actually counts.
+--
+-- Comment only. No function body, signature, grant or policy changes here --
+-- the counts are deliberately left as they are.
+--
+-- Migration 407 shipped this function with the comment "Three identity anomaly
+-- counts for one granted facility." Two of the three are not that. Both
+-- `active_profiles_with_no_grant` and `duplicate_identity_candidates` are
+-- computed across every facility in the organization:
+--
+--   * a profile with no live facility grant belongs to no facility by
+--     construction, so there is no facility to scope it to
+--   * the duplicate rule matches on organization_id, including the
+--     staff-duplicate branch
+--
+-- Only `staff_inactive_can_still_sign_in` is facility-scoped.
+--
+-- The spec always said organization-wide (docs/specs/37-facility-data-checks.md
+-- items 6 and 7); it was this comment and the panel's framing that disagreed,
+-- and the disagreement was load-bearing: a facility_admin granted one building
+-- watched another building's identity hygiene move their panel. The ruling is
+-- to keep the counts as they are and stop claiming they are per-facility. The
+-- panel now groups them under "All facilities" -- Circle of Life calls a single
+-- building a Facility, so the wider set is all facilities, not "the
+-- organization".
+--
+-- The facility grant re-check inside the function is unchanged and still
+-- required: it is what stops an ungranted caller reading anything at all, and
+-- it is the basis of the COL-37 definer ruling. What follows from this comment
+-- is only that two of the three numbers describe a wider set than the facility
+-- the caller asked about. Counts only -- no id, name or email leaves the
+-- function.
+
+COMMENT ON FUNCTION haven.facility_identity_health (uuid) IS
+'Three identity anomaly counts for a caller granted one facility. Scope differs per count (COL-438): staff_inactive_can_still_sign_in is scoped to the facility; active_profiles_with_no_grant and duplicate_identity_candidates are organization-wide, because an account with no live grant belongs to no facility and the duplicate rule matches on organization_id. The panel groups the latter two under "All facilities" so they are not read as facts about the one building. COL-361. COL-37 ruling: definer required -- every count here is about an identity that user_profiles RLS hides from a facility-scoped caller (no live grant, or a grant revoked by the offboard being audited), so an invoker reader would return 0 for precisely the anomalies the panel exists to surface. The body re-checks haven.organization_id() and haven.has_facility_access(), and returns three integers and nothing else.';

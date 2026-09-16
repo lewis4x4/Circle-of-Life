@@ -47,6 +47,47 @@ describe("data health panel", () => {
     ).toBe("/admin/staff/staff-check");
   });
 
+  // COL-438. Two of the identity counts are organization-wide on a panel that
+  // is rendered per facility and gated on a per-facility grant, so a change
+  // made only at facility B moved facility A's numbers. They stay org-wide --
+  // an account with no grant belongs to no facility -- but they no longer sit
+  // under a heading that claims they are about this building.
+  it("separates the counts that span every facility from the ones about this one", () => {
+    render(
+      <FacilityDataHealthPanel
+        health={health({ beds_with_two_residents: 1, duplicate_identity_candidates: 5 })}
+      />,
+    );
+
+    const facilityGroup = screen.getByTestId("data-health-group-facility");
+    const allGroup = screen.getByTestId("data-health-group-all_facilities");
+
+    expect(facilityGroup.textContent).toMatch(/This facility/);
+    expect(allGroup.textContent).toMatch(/All facilities/);
+
+    // A per-building count is in the facility group and nowhere else.
+    expect(facilityGroup.querySelector('[data-testid="data-health-beds_with_two_residents"]')).toBeTruthy();
+    expect(allGroup.querySelector('[data-testid="data-health-beds_with_two_residents"]')).toBeNull();
+
+    // Both org-wide counts sit under the wider heading.
+    expect(allGroup.querySelector('[data-testid="data-health-duplicate_identity_candidates"]')).toBeTruthy();
+    expect(allGroup.querySelector('[data-testid="data-health-active_profiles_with_no_grant"]')).toBeTruthy();
+    expect(facilityGroup.querySelector('[data-testid="data-health-duplicate_identity_candidates"]')).toBeNull();
+  });
+
+  it("warns in the wider group that another building can move these numbers", () => {
+    render(<FacilityDataHealthPanel health={health()} />);
+    const allGroup = screen.getByTestId("data-health-group-all_facilities");
+    expect(allGroup.textContent).toMatch(/every facility/i);
+    expect(allGroup.textContent).toMatch(/another building/i);
+  });
+
+  it("never calls the wider scope the organization, because a Facility is one building", () => {
+    render(<FacilityDataHealthPanel health={health()} />);
+    expect(screen.getByTestId("data-health-group-all_facilities").textContent).not.toMatch(/^Organization/);
+    expect(screen.queryByRole("heading", { name: /^Organization$/ })).toBeNull();
+  });
+
   it("puts the two census numbers side by side with no colour on either", () => {
     const { container } = render(<FacilityDataHealthPanel health={health()} />);
     const line = screen.getByTestId("data-health-census");
