@@ -15,7 +15,7 @@
  * Env:
  *   BASE_URL                 default http://127.0.0.1:3000
  *   PHASE1_DEMO_PASSWORD     default HavenDemo2026!
- *   SCREENSHOT_USER_EMAIL    default milton.smith@circleoflifealf.com
+ *   SCREENSHOT_USER_EMAIL    required (no default)
  *   SCREENSHOT_OUT_DIR       default docs/ui-audit/screenshots
  *   ROUTES_JSON              optional override, e.g. '[{"id":"med-tech","path":"/med-tech"}]'
  *   VIEWPORTS_JSON           optional override, e.g. '[{"name":"393x852","width":393,"height":852}]'
@@ -45,7 +45,12 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const password = process.env.PHASE1_DEMO_PASSWORD ?? "HavenDemo2026!";
-const email = process.env.SCREENSHOT_USER_EMAIL ?? "milton.smith@circleoflifealf.com";
+const email = process.env.SCREENSHOT_USER_EMAIL;
+if (!email) {
+  console.error("[screenshot-dashboard] SCREENSHOT_USER_EMAIL is required.");
+  console.error("[screenshot-dashboard] The old default (milton.smith@circleoflifealf.com) was a fictitious persona retired 2026-09-16; there is no account behind it any more.");
+  process.exit(2);
+}
 const outDir = path.resolve(ROOT, process.env.SCREENSHOT_OUT_DIR ?? "docs/ui-audit/screenshots");
 
 if (!supabaseUrl || !supabaseAnonKey) {

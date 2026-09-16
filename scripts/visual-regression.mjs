@@ -19,7 +19,7 @@
  *
  * Env:
  *   VR_THRESHOLD_PCT       — % pixels diff allowed (default 0.5)
- *   SCREENSHOT_USER_EMAIL  — login (default jessica.murphy@circleoflifealf.com)
+ *   SCREENSHOT_USER_EMAIL  — login (required, no default)
  *   BASE_URL               — app origin (default http://127.0.0.1:3000)
  */
 import fs from "node:fs";
@@ -48,7 +48,12 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const password = process.env.PHASE1_DEMO_PASSWORD ?? "HavenDemo2026!";
-const email = process.env.SCREENSHOT_USER_EMAIL ?? "jessica.murphy@circleoflifealf.com";
+const email = process.env.SCREENSHOT_USER_EMAIL;
+if (!email) {
+  console.error("[visual-regression] SCREENSHOT_USER_EMAIL is required.");
+  console.error("[visual-regression] The old default (jessica.murphy@circleoflifealf.com) was a fictitious persona retired 2026-09-16; there is no account behind it any more.");
+  process.exit(2);
+}
 const baselineDir = path.resolve(ROOT, "docs/ui-audit/screenshots");
 const diffDir = path.join(baselineDir, "diff");
 const update = process.argv.includes("--update");

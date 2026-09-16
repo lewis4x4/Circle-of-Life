@@ -46,13 +46,40 @@ function loadEnvFile(filePath) {
   }
 }
 
-const ROUTE_ROLES = [
-  { route: "/admin/command", role: "facility_admin", email: "jessica.murphy@circleoflifealf.com" },
-  { route: "/caregiver", role: "caregiver", email: "maria.garcia@circleoflifealf.com" },
-  { route: "/family", role: "family", email: "linda.chen@circleoflifealf.com" },
-  { route: "/med-tech", role: "med_tech", email: "medtech@circleoflifealf.com" },
-  { route: "/dietary", role: "dietary", email: "dietary@circleoflifealf.com" },
+// Retired 2026-09-16: the hardcoded @circleoflifealf.com personas that used to sit here were fictitious accounts and no longer exist. Supply real accounts via the env var below.
+// HOMEWOOD_A11Y_ACCOUNTS is JSON: {"facility_admin":"...","caregiver":"...",...}
+const ROUTE_ROLE_PAIRS = [
+  { route: "/admin/command", role: "facility_admin" },
+  { route: "/caregiver", role: "caregiver" },
+  { route: "/family", role: "family" },
+  { route: "/med-tech", role: "med_tech" },
+  { route: "/dietary", role: "dietary" },
 ];
+
+function readRouteRoles() {
+  const raw = process.env.HOMEWOOD_A11Y_ACCOUNTS;
+  if (!raw) {
+    console.error("[a11y-baseline] HOMEWOOD_A11Y_ACCOUNTS is required.");
+    console.error(`[a11y-baseline] Provide JSON mapping each of ${ROUTE_ROLE_PAIRS.map((r) => r.role).join(", ")} to a real account email.`);
+    console.error("[a11y-baseline] The former hardcoded @circleoflifealf.com defaults were fictitious personas retired 2026-09-16.");
+    process.exit(2);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    console.error(`[a11y-baseline] HOMEWOOD_A11Y_ACCOUNTS is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(2);
+  }
+  const missing = ROUTE_ROLE_PAIRS.filter((r) => !parsed[r.role]).map((r) => r.role);
+  if (missing.length > 0) {
+    console.error(`[a11y-baseline] HOMEWOOD_A11Y_ACCOUNTS is missing: ${missing.join(", ")}`);
+    process.exit(2);
+  }
+  return ROUTE_ROLE_PAIRS.map((r) => ({ ...r, email: parsed[r.role] }));
+}
+
+const ROUTE_ROLES = readRouteRoles();
 
 async function signInAndGetToken(supabaseUrl, anonKey, email, password) {
   const c = createClient(supabaseUrl, anonKey, { auth: { autoRefreshToken: false, persistSession: false } });

@@ -45,12 +45,28 @@ if (!url || !anonKey) {
   process.exit(1);
 }
 
-const pilotEmails = [
-  "milton.smith@circleoflifealf.com",
-  "jessica.murphy@circleoflifealf.com",
-  "maria.garcia@circleoflifealf.com",
-  "linda.chen@circleoflifealf.com",
-];
+// Retired 2026-09-16: the hardcoded @circleoflifealf.com personas that used to
+// sit here were fictitious accounts and no longer exist. DEMO_AUTH_EMAILS is a
+// comma-separated list of real account emails to diagnose.
+const pilotEmails = (process.env.DEMO_AUTH_EMAILS ?? "")
+  .split(",")
+  .map((entry) => entry.trim())
+  .filter(Boolean);
+
+if (pilotEmails.length === 0) {
+  console.error(
+    JSON.stringify(
+      {
+        ok: false,
+        error:
+          "DEMO_AUTH_EMAILS is required (comma-separated). The former hardcoded @circleoflifealf.com defaults were fictitious personas retired 2026-09-16.",
+      },
+      null,
+      2,
+    ),
+  );
+  process.exit(2);
+}
 
 const legacyEmails = [
   "milton@circleoflife.demo",

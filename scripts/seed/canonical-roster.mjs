@@ -1,155 +1,46 @@
 /**
- * Canonical demo-auth roster.
+ * Canonical demo-auth roster — now deliberately EMPTY.
  *
- * Source of truth for which seeded accounts MUST authenticate against the
- * pilot Supabase project with the canonical password. The repair script
- * (`repair-demo-auth.mjs`) reads this list and enforces it idempotently;
- * the verify script (`verify-auth-fixtures.mjs`) reads it and gates CI on
- * every-account-passes.
+ * Every account this roster used to name was a fictitious `@circleoflifealf.com`
+ * persona (Milton Smith, Jessica Murphy, Sarah Williams, Maria Garcia, David
+ * Martinez and the rest). They were retired from the pilot project on
+ * 2026-09-16: all facility grants revoked, all profiles soft-deleted, all
+ * `auth.users` rows banned, and the eleven with no immutable `audit_log`
+ * history deleted outright. The four that signed April incidents and referral
+ * leads — `medtech@`, `maria.garcia@`, `milton.smith@`, `admin@` — survive only
+ * as banned, zero-grant tombstones so `audit_log` keeps a resolvable actor.
+ * `audit_log.user_id -> auth.users` is `ON DELETE NO ACTION` and the table is
+ * immutable by design, so those four cannot be removed without destroying
+ * audit history.
  *
- * Add an account here only when an audit phase (or live workflow) actually
- * needs to authenticate as that role. The CI gate fails the build the
- * moment any account in this list stops authenticating — so don't include
- * legacy / deprecated / never-used accounts. They sit in `auth.users` but
- * stay out of the gate.
+ * The list MUST stay empty unless the accounts it names really exist. This is
+ * not a passive record: `repair-demo-auth.mjs` calls `auth.admin.createUser`
+ * with each entry's fixed UUID, so re-adding a retired persona here silently
+ * RESURRECTS it in the pilot project — recreating the very duplicate-identity
+ * findings the Data Health panel exists to surface (COL-438). `marcus.bell@`
+ * was in this list for months while having no `auth.users` row at all; the
+ * repair script would have created him on its next run.
  *
- * Source: `supabase/migrations/166_rebuild_demo_auth_with_triggers.sql`
- * plus subsequent role-specific seeds (170 med_tech, 175 dietary).
+ * If a future audit phase needs to authenticate as a role, add a real,
+ * intentionally-provisioned account — not a persona — and say in this comment
+ * who owns it.
  *
- * Three accounts in this roster were drifted at D0a discovery — `admin@`,
- * `james.thompson@`, `robert.sullivan@` failed `signInWithPassword` against
- * `HavenDemo2026!`. The Phase A ad-hoc service-role repair that fixed
- * `milton.smith` was never applied to those three. The repair script
- * codifies the repair so this can't drift silently again.
- *
- * Note on `marcus.bell@`: migration 175 attempts to seed him, but the
- * live pilot project does NOT have a corresponding row in `auth.users` —
- * the migration may have rolled back partially. The repair script creates
- * him idempotently via the service-role admin API.
+ * Historical context for the accounts that used to live here:
+ * `supabase/migrations/166_rebuild_demo_auth_with_triggers.sql` plus the
+ * role-specific seeds (170 med_tech, 175 dietary). Those migrations are
+ * applied history and are deliberately left untouched.
  */
 
 /** @typedef {{ id: string; email: string; appRole: string; fullName: string; shell: string }} CanonicalAccount */
 
 /**
- * IDs and full names are observed from the live pilot project after D0a's
- * investigation — NOT inferred from migration 166's `a0000000-…-NN`
- * pattern. The initial roster guess assumed `frontdesk@` was at slot 15
- * and `housekeeper@` was at slot 13 based on the migration order, but the
- * live state has `housekeeper@` at slot 15 (Rosa Alvarez, role
- * `housekeeper`) and `frontdesk@` at a random UUID assigned during a
- * later seed pass (Jessica Lawson, role `admin_assistant`). Slot 13 does
- * not exist. The corrected roster below mirrors the live state — verified
- * via `auth.admin.listUsers()` after the D0a probe.
+ * Empty by design — see the file header. Consumers (`repair-demo-auth.mjs`,
+ * `verify-auth-fixtures.mjs`, `tests/homewood-launch/_helpers.ts`) all iterate
+ * this array, so an empty roster makes them no-ops rather than breaking them.
  *
  * @type {readonly CanonicalAccount[]}
  */
-export const CANONICAL_ROSTER = Object.freeze([
-  {
-    id: "a0000000-0000-0000-0000-000000000001",
-    email: "milton.smith@circleoflifealf.com",
-    appRole: "owner",
-    fullName: "Milton Smith",
-    shell: "/admin",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000002",
-    email: "jessica.murphy@circleoflifealf.com",
-    appRole: "facility_admin",
-    fullName: "Jessica Murphy",
-    shell: "/admin",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000003",
-    email: "sarah.williams@circleoflifealf.com",
-    appRole: "nurse",
-    fullName: "Sarah Williams",
-    shell: "/admin",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000004",
-    email: "maria.garcia@circleoflifealf.com",
-    appRole: "caregiver",
-    fullName: "Maria Garcia",
-    shell: "/caregiver",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000005",
-    email: "james.thompson@circleoflifealf.com",
-    appRole: "caregiver",
-    fullName: "James Thompson",
-    shell: "/caregiver",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000007",
-    email: "linda.chen@circleoflifealf.com",
-    appRole: "family",
-    fullName: "Linda Chen",
-    shell: "/family",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000008",
-    email: "admin@circleoflifealf.com",
-    appRole: "owner",
-    fullName: "David Martinez",
-    shell: "/admin",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000009",
-    email: "dietary@circleoflifealf.com",
-    appRole: "dietary",
-    fullName: "Patricia Nguyen",
-    shell: "/dietary",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000010",
-    email: "maintenance@circleoflifealf.com",
-    appRole: "maintenance_role",
-    fullName: "Carlos Rivera",
-    shell: "/admin",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000011",
-    email: "broker@circleoflifealf.com",
-    appRole: "broker",
-    fullName: "Angela Brooks",
-    shell: "/admin",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000012",
-    email: "medtech@circleoflifealf.com",
-    appRole: "med_tech",
-    fullName: "Maria Ochoa",
-    shell: "/med-tech",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000014",
-    email: "coordinator@circleoflifealf.com",
-    appRole: "coordinator",
-    fullName: "Natalie Foster",
-    shell: "/admin",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000015",
-    email: "housekeeper@circleoflifealf.com",
-    appRole: "housekeeper",
-    fullName: "Rosa Alvarez",
-    shell: "/caregiver",
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000016",
-    email: "marcus.bell@circleoflifealf.com",
-    appRole: "dietary",
-    fullName: "Marcus Bell",
-    shell: "/dietary",
-  },
-  {
-    id: "0d8a23fd-fb20-4da1-afdd-e59ad305acb3",
-    email: "frontdesk@circleoflifealf.com",
-    appRole: "admin_assistant",
-    fullName: "Jessica Lawson",
-    shell: "/admin",
-  },
-]);
+export const CANONICAL_ROSTER = Object.freeze([]);
 
 /**
  * The canonical password every account in the roster must authenticate

@@ -50,15 +50,34 @@ function requireEnv(...names) {
   return null;
 }
 
-const CANONICAL_ACCOUNTS = {
-  owner: "milton.smith@circleoflifealf.com",
-  facility_admin: "jessica.murphy@circleoflifealf.com",
-  nurse: "sarah.williams@circleoflifealf.com",
-  caregiver: "maria.garcia@circleoflifealf.com",
-  med_tech: "medtech@circleoflifealf.com",
-  family: "linda.chen@circleoflifealf.com",
-  dietary: "dietary@circleoflifealf.com",
-};
+// Retired 2026-09-16: the hardcoded @circleoflifealf.com personas that used to sit here were fictitious accounts and no longer exist. Supply real accounts via the env var below.
+// HOMEWOOD_RBAC_ACCOUNTS is JSON: {"owner":"...","facility_admin":"...",...}
+const RBAC_ROLES = ["owner", "facility_admin", "nurse", "caregiver", "med_tech", "family", "dietary"];
+
+function readCanonicalAccounts() {
+  const raw = process.env.HOMEWOOD_RBAC_ACCOUNTS;
+  if (!raw) {
+    console.error("[rbac] HOMEWOOD_RBAC_ACCOUNTS is required.");
+    console.error(`[rbac] Provide JSON mapping each of ${RBAC_ROLES.join(", ")} to a real account email.`);
+    console.error("[rbac] The former hardcoded @circleoflifealf.com defaults were fictitious personas retired 2026-09-16.");
+    process.exit(2);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    console.error(`[rbac] HOMEWOOD_RBAC_ACCOUNTS is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(2);
+  }
+  const missing = RBAC_ROLES.filter((role) => !parsed[role]);
+  if (missing.length > 0) {
+    console.error(`[rbac] HOMEWOOD_RBAC_ACCOUNTS is missing: ${missing.join(", ")}`);
+    process.exit(2);
+  }
+  return parsed;
+}
+
+const CANONICAL_ACCOUNTS = readCanonicalAccounts();
 
 // Cells: ✓ allowed, ✗ blocked, △ allowed-with-restriction (treated as ✓ for status).
 const MATRIX = [

@@ -11,21 +11,28 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABAS
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 /**
- * Canonical Homewood test accounts. One per role we need to exercise.
- * Mirrors the canonical-roster.mjs accounts that authenticate cleanly in
- * Sprint 2's verify run.
+ * Homewood test accounts, one per role we need to exercise.
+ *
+ * These used to be the fictitious `@circleoflifealf.com` personas from
+ * `canonical-roster.mjs`. Every one of them was retired from the pilot project
+ * on 2026-09-16, so there is no default any more: supply real accounts via
+ * `HOMEWOOD_LAUNCH_ACCOUNTS`, a JSON object keyed by role. Tests that need an
+ * account skip with a clear message when it is absent rather than signing in as
+ * somebody unexpected.
  */
-export const HOMEWOOD_ACCOUNTS = {
-  owner: "milton.smith@circleoflifealf.com",
-  facility_admin: "jessica.murphy@circleoflifealf.com",
-  caregiver: "maria.garcia@circleoflifealf.com",
-  med_tech: "medtech@circleoflifealf.com",
-  family: "linda.chen@circleoflifealf.com",
-  nurse: "sarah.williams@circleoflifealf.com",
-  dietary: "dietary@circleoflifealf.com",
-} as const;
+export type Role = "owner" | "facility_admin" | "caregiver" | "med_tech" | "family" | "nurse" | "dietary";
 
-export type Role = keyof typeof HOMEWOOD_ACCOUNTS;
+function readHomewoodAccounts(): Partial<Record<Role, string>> {
+  const raw = process.env.HOMEWOOD_LAUNCH_ACCOUNTS;
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as Partial<Record<Role, string>>;
+  } catch {
+    throw new Error("HOMEWOOD_LAUNCH_ACCOUNTS is not valid JSON — expected an object keyed by role.");
+  }
+}
+
+export const HOMEWOOD_ACCOUNTS: Partial<Record<Role, string>> = readHomewoodAccounts();
 
 export function adminClient(): SupabaseClient {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
@@ -44,6 +51,13 @@ export function adminClient(): SupabaseClient {
  */
 export async function signIn(page: Page, role: Role): Promise<void> {
   const email = HOMEWOOD_ACCOUNTS[role];
+  if (!email) {
+    test.skip(
+      true,
+      `No account configured for role '${role}'. Set HOMEWOOD_LAUNCH_ACCOUNTS — the old @circleoflifealf.com personas were retired 2026-09-16.`,
+    );
+    return;
+  }
   await page.goto("/login");
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(PASSWORD);

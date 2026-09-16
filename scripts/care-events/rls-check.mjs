@@ -31,12 +31,9 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const PASSWORD = process.env.CARE_EVENT_RLS_PASSWORD ?? "HavenDemo2026!";
 const FACILITY_ID = process.env.CARE_EVENT_RLS_FACILITY_ID ?? "00000000-0000-0000-0002-000000000003";
 
-const DEFAULT_ACCOUNTS = {
-  caregiver: "maria.garcia@circleoflifealf.com",
-  family: "linda.chen@circleoflifealf.com",
-  other_facility: "medtech@circleoflifealf.com",
-  facility_admin: "jessica.murphy@circleoflifealf.com",
-};
+// Retired 2026-09-16: the hardcoded @circleoflifealf.com personas that used to sit here were fictitious accounts and no longer exist. Supply real accounts via the env var below.
+// There is no default account map any more; CARE_EVENT_RLS_ACCOUNTS is required.
+const REQUIRED_ACCOUNT_ROLES = ["caregiver", "family", "other_facility", "facility_admin"];
 
 const SIGN_IN_ATTEMPTS = 3;
 const SIGN_IN_PAUSE_MS = 5_000;
@@ -52,7 +49,12 @@ if (!SUPABASE_URL || !ANON_KEY || !SERVICE_ROLE_KEY) {
 
 function readAccounts() {
   const raw = process.env.CARE_EVENT_RLS_ACCOUNTS;
-  if (!raw) return DEFAULT_ACCOUNTS;
+  if (!raw) {
+    fail(
+      `CARE_EVENT_RLS_ACCOUNTS is required — JSON mapping ${REQUIRED_ACCOUNT_ROLES.join(", ")} to real account emails. ` +
+        "The former hardcoded @circleoflifealf.com defaults were fictitious personas retired 2026-09-16.",
+    );
+  }
   let parsed;
   try {
     parsed = JSON.parse(raw);

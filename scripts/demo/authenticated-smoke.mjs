@@ -20,30 +20,60 @@ import { chromium } from "playwright";
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const password = process.env.PHASE1_DEMO_PASSWORD ?? "HavenDemo2026!";
 
+// Retired 2026-09-16: the hardcoded @circleoflifealf.com personas that used to
+// sit here were fictitious accounts and no longer exist.
+// DEMO_SMOKE_ACCOUNTS is JSON: {"owner":"...","facility_admin":"...","caregiver":"...","family":"..."}
+const SMOKE_ROLES = ["owner", "facility_admin", "caregiver", "family"];
+
+function readSmokeAccounts() {
+  const raw = process.env.DEMO_SMOKE_ACCOUNTS;
+  if (!raw) {
+    console.error("[auth-smoke] DEMO_SMOKE_ACCOUNTS is required.");
+    console.error(`[auth-smoke] Provide JSON mapping each of ${SMOKE_ROLES.join(", ")} to a real account email.`);
+    console.error("[auth-smoke] The former hardcoded @circleoflifealf.com defaults were fictitious personas retired 2026-09-16.");
+    process.exit(2);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    console.error(`[auth-smoke] DEMO_SMOKE_ACCOUNTS is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(2);
+  }
+  const missing = SMOKE_ROLES.filter((role) => !parsed[role]);
+  if (missing.length > 0) {
+    console.error(`[auth-smoke] DEMO_SMOKE_ACCOUNTS is missing: ${missing.join(", ")}`);
+    process.exit(2);
+  }
+  return parsed;
+}
+
+const SMOKE_ACCOUNTS = readSmokeAccounts();
+
 const PILOT_USERS = [
   {
-    email: "milton.smith@circleoflifealf.com",
+    email: SMOKE_ACCOUNTS.owner,
     role: "owner",
     shell: "/admin",
     probe: "/admin/residents",
     crossShellDenial: [{ from: "/caregiver", expectPathPrefix: "/admin" }],
   },
   {
-    email: "jessica.murphy@circleoflifealf.com",
+    email: SMOKE_ACCOUNTS.facility_admin,
     role: "facility_admin",
     shell: "/admin",
     probe: "/admin/residents",
     crossShellDenial: [{ from: "/caregiver", expectPathPrefix: "/admin" }],
   },
   {
-    email: "maria.garcia@circleoflifealf.com",
+    email: SMOKE_ACCOUNTS.caregiver,
     role: "caregiver",
     shell: "/caregiver",
     probe: "/caregiver",
     crossShellDenial: [{ from: "/admin/residents", expectPathPrefix: "/caregiver" }],
   },
   {
-    email: "linda.chen@circleoflifealf.com",
+    email: SMOKE_ACCOUNTS.family,
     role: "family",
     shell: "/family",
     probe: "/family",

@@ -23,7 +23,12 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const password = process.env.PHASE1_DEMO_PASSWORD ?? "HavenDemo2026!";
-const email = process.env.SCREENSHOT_USER_EMAIL ?? "jessica.murphy@circleoflifealf.com";
+const email = process.env.SCREENSHOT_USER_EMAIL;
+if (!email) {
+  console.error("[print-smoke] SCREENSHOT_USER_EMAIL is required.");
+  console.error("[print-smoke] The old default (jessica.murphy@circleoflifealf.com) was a fictitious persona retired 2026-09-16; there is no account behind it any more.");
+  process.exit(2);
+}
 const planId = process.env.PRINT_SMOKE_PLAN_ID;
 const expectText = process.env.PRINT_SMOKE_EXPECT;
 const outPath = process.env.PRINT_SMOKE_OUT ?? path.join("test-results", "print-smoke", "care-plan.pdf");
