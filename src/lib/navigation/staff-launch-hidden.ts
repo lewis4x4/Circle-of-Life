@@ -29,7 +29,7 @@ export const STAFF_LAUNCH_HIDDEN_NAV: readonly StaffLaunchHiddenNavItem[] = [
     menu: "Pipeline",
     label: "Medication reconciliation",
     href: "/admin/discharge",
-    note: "Hold med rec until staff are ready for that workflow.",
+    note: "Hold med rec until staff are ready for that workflow. Recording a discharge no longer depends on this route — that action lives on the resident record (COL-418), so hiding this does not strand a bed as occupied.",
   },
   {
     key: "med-tech",

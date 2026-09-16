@@ -17,6 +17,7 @@ import {
 import { ResidentDetailTabStrip, type ResidentDetailHrefConfig } from "@/components/residents/ResidentDetailTabStrip";
 import { ResidentPresenceControl } from "@/components/residents/ResidentPresenceControl";
 import { HoldDeclineReturnButton } from "@/components/residents/HoldDeclineReturnButton";
+import { RecordDischargeAction } from "@/components/residents/RecordDischargeAction";
 import { ResidentIntakeLinks } from "@/components/resident-intake";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -496,6 +497,10 @@ export function ResidentDetailOverviewClient({
               <>
                 <ResidentPresenceControl residentId={detail.id} status={detail.status} onChanged={onAfterLog} />
                 <HoldDeclineReturnButton residentId={detail.id} status={detail.status} onDone={onAfterLog} />
+                {/* Ending a residency is a lifecycle change, so it is its own
+                    confirmed action rather than an option in the presence
+                    picker. It is also the event that frees the bed (COL-418). */}
+                <RecordDischargeAction residentId={detail.id} residentName={detail.fullName} onDone={onAfterLog} />
               </>
             ) : (
               <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
