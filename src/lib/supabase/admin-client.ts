@@ -66,27 +66,34 @@ export async function adminInviteUser(
     throw new Error(`Auth invite error: ${error.message}`);
   }
 
+  // Always inspect the invite result. GoTrue can answer without an `error` and still
+  // hand back no user; the old code fell through to `data.user.id` and died with a raw
+  // TypeError that surfaced as a generic 500, which is how a non-invite came to look
+  // like a sent invite (COL-362).
+  const invitedUserId = data?.user?.id;
+  if (!invitedUserId) {
+    throw new Error("Auth invite error: invite returned no user; treat the invite as not sent");
+  }
+
   // inviteUserByEmail only writes user_metadata. Mirror the role + org into
   // app_metadata so `getAppRoleFromClaims` (which only trusts app_metadata)
   // can route the user correctly on first sign-in.
-  if (data.user?.id) {
-    const { error: metaError } = await supabase.auth.admin.updateUserById(data.user.id, {
-      app_metadata: {
-        app_role: options.app_role,
-        organization_id: options.organization_id,
-      },
-    });
+  const { error: metaError } = await supabase.auth.admin.updateUserById(invitedUserId, {
+    app_metadata: {
+      app_role: options.app_role,
+      organization_id: options.organization_id,
+    },
+  });
 
-    if (metaError) {
-      // The invite already went out. If the metadata write fails, we'd produce
-      // the same bug we're fixing — surface clearly so the admin can react.
-      throw new Error(`Invite sent but app_metadata write failed: ${metaError.message}`);
-    }
+  if (metaError) {
+    // The invite already went out. If the metadata write fails, we'd produce
+    // the same bug we're fixing — surface clearly so the admin can react.
+    throw new Error(`Invite sent but app_metadata write failed: ${metaError.message}`);
   }
 
   return {
-    id: data.user.id,
-    email: data.user.email ?? email,
+    id: invitedUserId,
+    email: data.user?.email ?? email,
     app_role: options.app_role,
     organization_id: options.organization_id,
   };
@@ -249,6 +256,9 @@ export async function adminCreateUser(
 
   if (error) {
     throw new Error(`Auth create error: ${error.message}`);
+  }
+  if (!data?.user?.id) {
+    throw new Error("Auth create error: create returned no user");
   }
 
   await adminSetMustChangePassword(data.user.id, true);

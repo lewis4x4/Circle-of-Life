@@ -75,6 +75,22 @@ export const createUserSchema = z
         path: ["facilities"],
       });
     }
+
+    // The same facility twice used to reach a bare INSERT and trip idx_ufa_unique
+    // mid-statement. Reject it here so the admin fixes the payload rather than
+    // discovering it as a 500 (COL-362).
+    const seen = new Set<string>();
+    for (const facility of data.facilities) {
+      if (seen.has(facility.facility_id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Each facility may only be listed once",
+          path: ["facilities"],
+        });
+        break;
+      }
+      seen.add(facility.facility_id);
+    }
   })
   .strict();
 

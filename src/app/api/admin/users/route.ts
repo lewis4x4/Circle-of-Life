@@ -12,14 +12,19 @@ import {
 import { canManageUser } from "@/lib/rbac";
 import type { Database } from "@/types/database";
 import { listUsersQuerySchema, createUserSchema } from "@/lib/validation/user-management";
-import { adminGetAuthSnapshotsByIds } from "@/lib/supabase/admin-client";
-import { ensureUserFacilityAccessGrants } from "@/lib/admin/ensure-user-facility-access";
+import { adminGetAuthSnapshotsByIds, adminHardDeleteUser } from "@/lib/supabase/admin-client";
+import {
+  ensureUserFacilityAccessGrants,
+  rollbackUserFacilityAccessGrants,
+  type FacilityAccessGrantResult,
+} from "@/lib/admin/ensure-user-facility-access";
 import {
   provisionAuthUserForAdminCreate,
   UserCreateProvisionError,
 } from "@/lib/admin/user-create-provision";
 import { mergeMustChangePasswordSetting } from "@/lib/auth/must-change-password";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
+import { logError } from "@/lib/observability/logger";
 
 type UserProfileRow = Pick<
   Database["public"]["Tables"]["user_profiles"]["Row"],
@@ -300,6 +305,7 @@ export async function POST(request: NextRequest) {
   let temporaryPassword: string | undefined;
   let invitationSent = false;
   let provisionMethod: string | undefined;
+  let authUserCreatedHere = false;
   try {
     const provisioned = await provisionAuthUserForAdminCreate({
       email: data.email,
@@ -311,12 +317,74 @@ export async function POST(request: NextRequest) {
     invitationSent = provisioned.invitation_sent;
     provisionMethod = provisioned.provision_method;
     temporaryPassword = provisioned.temporary_password;
+    authUserCreatedHere = provisioned.auth_user_created;
   } catch (err) {
     if (err instanceof UserCreateProvisionError) {
       return NextResponse.json({ error: err.message, code: err.code }, { status: err.status });
     }
     const message = err instanceof Error ? err.message : "Auth API failure";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  /**
+   * Undo everything this request wrote, in reverse order. COL-362: the create path is
+   * three sequential writes across two systems and cannot be one transaction, so a
+   * failure after the first write used to leave a half-created user that the 409
+   * email check then made un-retryable. Rollback is deliberately narrow — it removes
+   * the Auth user only when this request created it.
+   */
+  async function rollbackCreate(applied: FacilityAccessGrantResult[]): Promise<string[]> {
+    const residue: string[] = [];
+
+    const { error: grantErr } = await rollbackUserFacilityAccessGrants(admin, applied);
+    if (grantErr) {
+      residue.push(`facility access (${grantErr})`);
+    }
+
+    const { error: profileErr } = await admin.from("user_profiles").delete().eq("id", authUserId);
+    if (profileErr) {
+      residue.push(`user profile (${profileErr.message})`);
+    }
+
+    if (authUserCreatedHere) {
+      try {
+        await adminHardDeleteUser(authUserId);
+      } catch (err) {
+        residue.push(`auth user (${err instanceof Error ? err.message : "unknown"})`);
+      }
+    }
+
+    return residue;
+  }
+
+  function rollbackFailureResponse(reason: string, residue: string[]) {
+    if (residue.length > 0) {
+      logError("admin.users.create_rollback_incomplete", new Error(reason), {
+        action: "create_user_rollback",
+        targetUserId: authUserId,
+        residue,
+      });
+      return NextResponse.json(
+        {
+          error:
+            "User creation failed and could not be fully rolled back. Open this user in User Management before retrying.",
+          rollback: "partial",
+          user_id: authUserId,
+          details: reason,
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error:
+          "User creation failed and was rolled back. Nothing was saved — you can correct the details and try again.",
+        rollback: "complete",
+        details: reason,
+      },
+      { status: 500 },
+    );
   }
 
   const profileInsert: UserProfileInsert = {
@@ -339,7 +407,9 @@ export async function POST(request: NextRequest) {
     .select()
     .single();
   if (insertErr) {
-    return NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
+    // No grants were written yet, but the Auth user may have been created above.
+    const residue = await rollbackCreate([]);
+    return rollbackFailureResponse(`Failed to create profile: ${insertErr.message}`, residue);
   }
 
   const accessRows = data.facilities.map((f) => ({
@@ -349,18 +419,10 @@ export async function POST(request: NextRequest) {
     is_primary: f.is_primary,
     granted_by: actor.id,
   }));
-  const { error: accessErr } = await ensureUserFacilityAccessGrants(admin, accessRows);
+  const { error: accessErr, applied } = await ensureUserFacilityAccessGrants(admin, accessRows);
   if (accessErr) {
-    return NextResponse.json(
-      {
-        error:
-          "User profile was created, but facility access could not be assigned. Open this user in User Management to fix facility access.",
-        profile_created: true,
-        user_id: authUserId,
-        details: accessErr,
-      },
-      { status: 500 },
-    );
+    const residue = await rollbackCreate(applied);
+    return rollbackFailureResponse(`Failed to assign facility access: ${accessErr}`, residue);
   }
 
   // Audit
