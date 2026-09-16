@@ -68,6 +68,7 @@ For frontend stack, route naming, and Phase 1 UI scope locks, use `FRONTEND-CONT
 | 2 | `03-resident-profile.md` | Resident Profile & Care Planning | 3-4 | residents, care_plans, care_plan_items, assessments, resident_photos, resident_contacts, resident_documents, assessment_templates (Katz ADL, Morse Fall, Braden, PHQ-9) |
 | 3 | `04-daily-operations.md` | Daily Operations & Logging | 5-6 | daily_logs, adl_logs, resident_medications, emar_records, behavioral_logs, condition_changes, shift_handoffs, activities, activity_sessions, activity_attendance |
 | 4 | `07-incident-reporting.md` | Incident & Risk Management | 7-8 | incidents, incident_followups, incident_photos, incident_sequences |
+| 4A | `07A-something-happened-capture.md` | Something Happened capture (Module 7 rewrite) | 07A | care_events, care_event_deliveries, incident_followup_protocols, care_event_escalation_policies |
 | 5 | `11-staff-management.md` | Staff Management & Scheduling | 9-10 | staff, staff_certifications, schedules, shift_assignments, time_records, shift_swap_requests, staffing_ratio_snapshots |
 | 6 | `16-billing.md` | Resident Billing & Collections | 11-12 | rate_schedules, resident_payers, invoices, invoice_line_items, payments, collection_activities, invoice_sequences |
 
@@ -566,6 +567,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 5 | Discharge & Transition | 4 | `05-discharge-transition.md` — ✅ Core (`079`–`080`); export / lifecycle hardening remains in Completion Track C |
 | 6 | Medication Management | 1 (in 04) + 2 (adv) + 3.5 patch | Basic in `04`; `06-medication-management.md` — ✅; Phase 3.5 `062` |
 | 7 | Incident & Risk Management | 1 + 3.5 patch | `07-incident-reporting.md` — ✅; Phase 3.5 `058` |
+| 7A | Something Happened capture | 7 rewrite | `07A-something-happened-capture.md` — ✅ Core (`400`–`403`); engine contract `07A-level-engine-contract.md` |
 | 8 | Autonomous Compliance Engine | 2 + 3.5 patch | `08-compliance-engine.md` — ✅; Phase 3.5 `064` |
 | 9 | Infection Control & Health Monitoring | 2 + 3.5 patch | `09-infection-control.md` — ✅; Phase 3.5 `063` |
 | 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` — ✅ Core (`081`–`082`) |
