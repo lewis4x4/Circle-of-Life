@@ -62,12 +62,12 @@ export interface CeoGrowthFunnelChartProps {
 }
 
 // ── CHART COLORS — resolved from globals.css --chart-* tokens ──
-// chart-1=205 27% 54%, chart-2=92 25% 49%, chart-3=32 58% 60%,
+// chart-1=205 27% 54%, chart-2=92 25% 49%, chart-3=32 60% 50%,
 // chart-4=8 48% 54%, chart-5=204 26% 54%
 const CHART_COLORS = [
   "hsl(205, 27%, 54%)",
   "hsl(92, 25%, 49%)",
-  "hsl(32, 58%, 60%)",
+  "hsl(32, 60%, 50%)",
   "hsl(8, 48%, 54%)",
   "hsl(204, 26%, 54%)",
 ];

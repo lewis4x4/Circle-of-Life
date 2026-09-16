@@ -164,7 +164,7 @@
   --destructive: 8 56% 48%;
   --destructive-foreground: 0 0% 100%;
   --success: 88 25% 38%;
-  --warning: 30 60% 45%;
+  --warning: 30 70% 36%;
   --info: 204 26% 45%;
   --border: 30 8% 82%;
   --input: 30 8% 82%;
@@ -182,7 +182,7 @@
   /* Charts — deepened for AA contrast on warm paper */
   --chart-1: 205 27% 42%;
   --chart-2: 88 25% 38%;
-  --chart-3: 30 60% 45%;
+  --chart-3: 30 70% 36%;
   --chart-4: 8 56% 48%;
   --chart-5: 204 26% 45%;
 
@@ -216,7 +216,7 @@
   --emar-held: #6E4FD1;
   --emar-unavailable: #BA503F;
   --compliance-good: #5F7A4A;
-  --compliance-warning: #B7762F;
+  --compliance-warning: #9C5C1C;
   --compliance-critical: #BA503F;
 
   /* Quiet Operator extension tokens — light-mode equivalents. Same semantic
@@ -282,7 +282,7 @@
   --destructive: 8 56% 48%;
   --destructive-foreground: 0 0% 100%;
   --success: 88 25% 38%;
-  --warning: 30 60% 45%;
+  --warning: 30 70% 36%;
   --info: 204 26% 45%;
   --border: 30 8% 82%;
   --input: 30 8% 82%;
@@ -296,7 +296,7 @@
 
   --chart-1: 205 27% 42%;
   --chart-2: 88 25% 38%;
-  --chart-3: 30 60% 45%;
+  --chart-3: 30 70% 36%;
   --chart-4: 8 56% 48%;
   --chart-5: 204 26% 45%;
 
@@ -326,7 +326,7 @@
   --emar-held: #6E4FD1;
   --emar-unavailable: #BA503F;
   --compliance-good: #5F7A4A;
-  --compliance-warning: #B7762F;
+  --compliance-warning: #9C5C1C;
   --compliance-critical: #BA503F;
 
   --surface: rgba(255, 252, 247, 0.7);
@@ -375,7 +375,7 @@
   --destructive: 8 48% 54%;
   --destructive-foreground: 42 35% 94%;
   --success: 92 25% 49%;
-  --warning: 32 58% 60%;
+  --warning: 32 60% 50%;
   --info: 204 26% 54%;
   --border: 36 6% 14%;
   --input: 36 6% 14%;
@@ -390,7 +390,7 @@
 
   --chart-1: 205 27% 54%;
   --chart-2: 92 25% 49%;
-  --chart-3: 32 58% 60%;
+  --chart-3: 32 60% 50%;
   --chart-4: 8 48% 54%;
   --chart-5: 204 26% 54%;
 
@@ -421,7 +421,7 @@
   --emar-held: #a78bfa;
   --emar-unavailable: #C26152;
   --compliance-good: #7A9B5E;
-  --compliance-warning: #D49B5C;
+  --compliance-warning: #CC8533;
   --compliance-critical: #C26152;
 
   /* Extension tokens — dark-mode (inverted alphas, near-black surfaces) */
