@@ -29,6 +29,7 @@
 | `grace-tts` | yes | `POST { "text" }` — text-to-speech for Grace narration. Auth: user JWT. Secrets: **`OPENAI_API_KEY`**. |
 | `grace-redteam-nightly` | no | `POST` — nightly red-team safety evaluation of Grace flows. Auth: **`x-cron-secret`** = **`GRACE_REDTEAM_SECRET`**. |
 | `officer-catalog` | no | `POST` `{ "op": "catalog" }` or `{ "op": "execute", ... }` — Front Office capability federation target (`front-office-capability-v1`, target `haven`). Auth: **`x-fo-key-id` / `x-fo-sent-at` / `x-fo-nonce` / `x-fo-signature`** HMAC-SHA256 over the raw body, verified before parsing; then `public.officer_catalog` / `public.officer_execute` (service_role-only doors into schema `officer`, migration **`339`**). Aggregate-only organization-wide reads (`occupied_beds`, `licensed_capacity`, `open_ar_balance`, `billed_revenue_mtd`, `incidents_last_30_days`, `staff_certifications_expiring_30_days`, each with `data.by_facility`) plus the synthetic `command_ping`. Secret named by `officer.gateway_keys.secret_env` (**`OFFICER_GATEWAY_HMAC_FRONT_OFFICE_V1`**). Ships with the key disabled. See `docs/specs/OFFICER-CAPABILITY-CATALOG.md`. |
+| `care-event-dispatcher` | no | `POST` (empty body) - cron every minute. Drains **`care_event_deliveries`** rows with `status = 'queued'` and `send_after <= now()` (up to 200 per run, oldest first). Auth: **`x-cron-secret`** = `CARE_EVENT_DISPATCHER_SECRET`. Channel rules: `in_app` marks `sent` (the `exec_alerts` row already exists); `push` calls **`dispatch-push`** with `x-dispatch-secret` and marks `sent`, `skipped/no_subscription`, or `failed`; `sms` and `voice` call Twilio (Messages and Calls APIs) only when `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, and `CARE_EVENT_SMS_ENABLED=true` are all set, otherwise `skipped/channel_not_enabled`; missing phone is `skipped/no_phone`. Rows whose parent `care_events.status = 'acknowledged'` are `skipped/acknowledged` and nothing is sent. Message bodies carry only first initial, last name, room, tile word, level word, and the deep link `CARE_EVENT_APP_BASE_URL` + `/admin/care-events/<id>`. Returns `{ processed, sent, skipped, failed }`. Spec `docs/specs/07A-something-happened-capture.md` section 6.2. |
 
 ## Hosted Weekly Stand Up
 
@@ -107,6 +108,11 @@ Do **not** send `facility_id` and `organization_id` together.
 - `FACILITY_EXPIRATION_SCANNER_SECRET` — required for `facility-expiration-scanner` (header `x-cron-secret`).
 - `GRACE_REDTEAM_SECRET` — required for `grace-redteam-nightly` (header `x-cron-secret`).
 - `OFFICER_GATEWAY_HMAC_FRONT_OFFICE_V1` — HMAC secret (at least 32 bytes) for `officer-catalog` key `front_office_v1`; the database stores only this NAME. Set from a file, never from a shell argument; see `docs/specs/OFFICER-CAPABILITY-CATALOG.md`.
+- `CARE_EVENT_DISPATCHER_SECRET` - required for `care-event-dispatcher` (header `x-cron-secret`). Rotate if leaked.
+- `CARE_EVENT_SMS_ENABLED` - set to the literal `true` to allow `care-event-dispatcher` to send SMS and voice through Twilio. Leave unset until the Twilio BAA is signed (spec 07A decision D5); rows stay `skipped/channel_not_enabled` meanwhile.
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` - Twilio credentials and sending number for `care-event-dispatcher` SMS and voice. All three plus `CARE_EVENT_SMS_ENABLED=true` are required or the channel is off. (`risk-nightly-scorer` reads the older `TWILIO_SMS_FROM` name; set both if both functions send.)
+- `CARE_EVENT_APP_BASE_URL` - configuration, not a secret. Optional origin such as the production site URL prefixed to the care event deep link in push and SMS bodies. Unset means the link is the bare `/admin/care-events/<id>` path.
+- `care-event-dispatcher` also reuses `DISPATCH_PUSH_SECRET` (above) when calling `dispatch-push`; without it push rows are `skipped/channel_not_enabled`.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
 
