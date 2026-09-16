@@ -98,3 +98,96 @@ export async function fetchCensusRecord(
     billableDays: row.billable_days,
   }));
 }
+
+type VisitorDbRow = {
+  id: string;
+  visitor_name: string;
+  visitor_phone: string | null;
+  visitor_type: string;
+  visiting_type: string | null;
+  visiting_resident_id: string | null;
+  visiting_resident_name: string | null;
+  signed_in_at: string;
+  signed_in_by_name: string | null;
+  signed_out_at: string | null;
+  signed_out_by_name: string | null;
+  sign_out_method: string | null;
+  voided_at: string | null;
+  void_reason: string | null;
+  left_open: boolean;
+};
+
+export async function fetchVisitorLog(
+  supabase: Client,
+  args: {
+    organizationId: string;
+    facilityId: string;
+    from: string;
+    to: string;
+    includeVoided: boolean;
+  },
+): Promise<import("@/lib/registers/visitor-log").VisitorLogRow[]> {
+  const { data, error } = await supabase.rpc("visitor_log" as never, {
+    p_organization_id: args.organizationId,
+    p_facility_id: args.facilityId,
+    p_from: args.from,
+    p_to: args.to,
+    p_include_voided: args.includeVoided,
+  } as never);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as unknown as VisitorDbRow[]).map((row) => ({
+    id: row.id,
+    visitorName: row.visitor_name,
+    visitorPhone: row.visitor_phone,
+    visitorType: row.visitor_type,
+    visitingType: row.visiting_type,
+    visitingResidentId: row.visiting_resident_id,
+    visitingResidentName: row.visiting_resident_name,
+    signedInAt: row.signed_in_at,
+    signedInByName: row.signed_in_by_name,
+    signedOutAt: row.signed_out_at,
+    signedOutByName: row.signed_out_by_name,
+    signOutMethod: row.sign_out_method,
+    voidedAt: row.voided_at,
+    voidReason: row.void_reason,
+    leftOpen: row.left_open,
+  }));
+}
+
+export async function signOutVisitor(supabase: Client, entryId: string): Promise<void> {
+  const { error } = await supabase.rpc("visitor_sign_out" as never, { p_entry_id: entryId } as never);
+  if (error) throw new Error(error.message);
+}
+
+export async function signOutEveryone(supabase: Client, facilityId: string): Promise<number> {
+  const { data, error } = await supabase.rpc("visitor_sign_out_all_open" as never, {
+    p_facility_id: facilityId,
+  } as never);
+  if (error) throw new Error(error.message);
+  return typeof data === "number" ? data : 0;
+}
+
+export async function voidVisitorEntry(
+  supabase: Client,
+  entryId: string,
+  reason: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("visitor_void" as never, {
+    p_entry_id: entryId,
+    p_reason: reason,
+  } as never);
+  if (error) throw new Error(error.message);
+}
+
+export async function recordSurveyPackPrint(
+  supabase: Client,
+  args: { facilityId: string; sections: string[]; from: string; to: string },
+): Promise<void> {
+  const { error } = await supabase.rpc("survey_print_pack_record" as never, {
+    p_facility_id: args.facilityId,
+    p_sections: args.sections,
+    p_from: args.from,
+    p_to: args.to,
+  } as never);
+  if (error) throw new Error(error.message);
+}
