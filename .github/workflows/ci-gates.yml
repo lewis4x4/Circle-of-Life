@@ -66,19 +66,23 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
           PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
 
-      - name: Homewood launch auth verify
-        # Authenticates every user with active user_facility_access at the
-        # Homewood Lodge ALF facility. Same dormant pattern as the seed
-        # verify above — gated on `vars.HAVEN_UI_GATES_ENABLED`. Requires
-        # `HOMEWOOD_LAUNCH_PASSWORD` repo secret to run.
+      - name: CI account auth verify
+        # Authenticates the named CI accounts in HOMEWOOD_LAUNCH_ACCOUNTS and
+        # checks each resolves to the role it claims. It no longer enumerates
+        # Homewood's grants: those are real staff with their own passwords, so
+        # that check could only pass by holding their credentials or by putting
+        # test identities on the live launch facility (COL-443). Same dormant
+        # pattern as the seed verify above — gated on `vars.HAVEN_UI_GATES_ENABLED`.
         if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run homewood:verify-auth
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+          # COL-443: no service-role key. The gate verifies the named CI
+          # accounts below, each of which proves its own role by signing in,
+          # so nothing here needs to enumerate users or bypass RLS.
+          HOMEWOOD_LAUNCH_ACCOUNTS: ${{ secrets.HOMEWOOD_LAUNCH_ACCOUNTS }}
           HOMEWOOD_LAUNCH_PASSWORD: ${{ secrets.HOMEWOOD_LAUNCH_PASSWORD }}
-          HOMEWOOD_FACILITY_ID: ${{ vars.HOMEWOOD_FACILITY_ID }}
 
       - name: Segment gates (security, lint, migrations, build, stress)
         # Pre-launch: dormant. The build is verified by the Netlify deploy
