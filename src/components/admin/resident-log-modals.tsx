@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Brain, Stethoscope, FileText, CheckCircle2, Loader2 } from "lucide-react";
 
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
@@ -21,7 +21,208 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { FormLabel } from "@/components/ui/form-label";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+
+// ============================================================================
+// SHARED QUICK-ENTRY DIALOG PIECES
+// ----------------------------------------------------------------------------
+// All three resident quick-entry dialogs (behavior, condition, general note)
+// render on the Haven semantic tokens supplied by `DialogContent` (`bg-card`,
+// `text-card-foreground`) and the shared form primitives. No dialog carries
+// its own decorative palette; status colors are reserved for validation
+// errors and the saved confirmation.
+// ============================================================================
+
+/** Keeps the taller forms inside the viewport and scrollable on short screens. */
+const QUICK_ENTRY_CONTENT_CLASS = "max-h-[calc(100dvh-1rem)] overflow-y-auto sm:max-h-[90vh]";
+
+/**
+ * Disabled primary actions stay legible: a muted fill with muted-foreground
+ * text instead of the primitive's 40% opacity, which drops the white label on
+ * the muted-blue fill below readable contrast.
+ */
+const READABLE_DISABLED_CLASS =
+  "disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100";
+
+/**
+ * Returns focus to the action that opened the dialog. Radix restores focus on
+ * unmount, but with the exit animation the content's focus scope re-runs and
+ * focus ends on <body>; capturing the opener ourselves makes the return
+ * deterministic for keyboard users.
+ */
+function useReturnFocusToOpener() {
+  const openerRef = useRef<HTMLElement | null>(null);
+  const onOpenAutoFocus = useCallback(() => {
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  }, []);
+  const onCloseAutoFocus = useCallback((event: Event) => {
+    const opener = openerRef.current;
+    if (opener && opener.isConnected) {
+      event.preventDefault();
+      opener.focus();
+    }
+  }, []);
+  return { onOpenAutoFocus, onCloseAutoFocus };
+}
+
+function Field({
+  id,
+  label,
+  required,
+  helper,
+  className,
+  children,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  helper?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      <FormLabel htmlFor={id} required={required}>
+        {label}
+      </FormLabel>
+      {children}
+      {helper ? <p className="text-sm text-muted-foreground">{helper}</p> : null}
+    </div>
+  );
+}
+
+function CheckboxField({
+  id,
+  label,
+  checked,
+  onCheckedChange,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <Label htmlFor={id} className="cursor-pointer text-sm font-medium text-foreground">
+      <input
+        id={id}
+        type="checkbox"
+        className="size-4 shrink-0 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        checked={checked}
+        onChange={(e) => onCheckedChange(e.target.checked)}
+      />
+      {label}
+    </Label>
+  );
+}
+
+function SaveErrorNotice({ message }: { message: string }) {
+  return (
+    <div
+      role="alert"
+      className="rounded-[var(--radius)] border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+    >
+      {message}
+    </div>
+  );
+}
+
+function ContextLoading() {
+  return (
+    <div className="flex items-center justify-center py-8" aria-live="polite">
+      <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+      <span className="sr-only">Loading facility context</span>
+    </div>
+  );
+}
+
+function SavedState({
+  title,
+  againLabel,
+  onAgain,
+  onDone,
+}: {
+  title: string;
+  againLabel: string;
+  onAgain: () => void;
+  onDone: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 py-6" role="status">
+      <div className="flex size-14 items-center justify-center rounded-full border border-success/40 bg-success/10">
+        <CheckCircle2 className="size-7 text-success" aria-hidden />
+      </div>
+      <p className="text-base font-semibold text-foreground">{title}</p>
+      <DialogFooter className="w-full gap-2 sm:space-x-0">
+        <Button type="button" variant="outline" onClick={onDone} className="sm:flex-1">
+          Done
+        </Button>
+        <Button type="button" onClick={onAgain} className="sm:flex-1">
+          {againLabel}
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+function ContextErrorDialog({
+  open,
+  onOpenChange,
+  error,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  error: string;
+}) {
+  const focusReturn = useReturnFocusToOpener();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md" {...focusReturn}>
+        <DialogHeader className="pr-8">
+          <DialogTitle>Entry unavailable</DialogTitle>
+          <DialogDescription>This entry could not be opened for the working facility.</DialogDescription>
+        </DialogHeader>
+        <SaveErrorNotice message={error} />
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RecentEntries({ heading, children }: { heading: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3 border-t border-border pt-4">
+      <p className="text-xs font-semibold text-muted-foreground">{heading}</p>
+      <ul className="space-y-2">{children}</ul>
+    </div>
+  );
+}
+
+const RECENT_ENTRY_CLASS = "rounded-[var(--radius)] border border-border bg-muted/30 p-3 text-sm";
+
+function formatEntryStamp(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 // ============================================================================
 // BEHAVIOR LOG MODAL
@@ -37,6 +238,9 @@ const BEHAVIOR_TYPES: { value: string; label: string }[] = [
   { value: "sundowning", label: "Sundowning" },
   { value: "other", label: "Other" },
 ];
+
+/** Radix Select items cannot carry an empty-string value; this stands in for "not recorded". */
+const INTERVENTION_NOT_RECORDED = "not_recorded";
 
 type BehaviorRow = Pick<
   Database["public"]["Tables"]["behavioral_logs"]["Row"],
@@ -57,6 +261,8 @@ export function BehaviorLogModal({
   onSuccess?: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const ids = useId();
+  const focusReturn = useReturnFocusToOpener();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -199,222 +405,193 @@ export function BehaviorLogModal({
   }
 
   if (error && !ctx) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md border-zinc-800 bg-zinc-950 text-zinc-100">
-          <DialogHeader>
-            <DialogTitle className="text-rose-400">Error</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-zinc-300">{error}</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
+    return <ContextErrorDialog open={open} onOpenChange={onOpenChange} error={error} />;
   }
+
+  const canSubmit = Boolean(ctx) && !submitting && behavior.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-primary-900/50 text-zinc-100">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg text-primary-200 font-semibold">
-            <Brain className="h-5 w-5 text-primary-400" />
-            Log Behavior Event
+      <DialogContent className={QUICK_ENTRY_CONTENT_CLASS} data-testid="behavior-log-dialog" {...focusReturn}>
+        <DialogHeader className="pr-8">
+          <DialogTitle className="flex items-center gap-2">
+            <Brain className="size-5 text-muted-foreground" aria-hidden />
+            Log behavior
           </DialogTitle>
-          <DialogDescription className="text-primary-200/70">
-            Document observable behaviors for <span className="text-primary-100 font-medium">{residentName}</span>
+          <DialogDescription>
+            Document an observed behavior for <span className="font-medium text-foreground">{residentName}</span>.
+            The entry is attributed to you on the current shift.
           </DialogDescription>
         </DialogHeader>
 
         {success ? (
-          <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40">
-              <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-            </div>
-            <p className="text-lg text-emerald-300 font-semibold">Behavior logged successfully</p>
-            <div className="flex gap-3 w-full">
-              <Button
-                type="button"
-                onClick={resetForm}
-                className="flex-1 bg-primary-600 text-white hover:bg-primary-500"
-              >
-                Log Another
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleResetAndClose}
-                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-              >
-                Done
-              </Button>
-            </div>
-          </div>
+          <SavedState
+            title="Behavior entry saved"
+            againLabel="Log another"
+            onAgain={resetForm}
+            onDone={handleResetAndClose}
+          />
         ) : (
-          <div className="space-y-4 py-2">
-            {error && (
-              <div className="rounded-lg border border-rose-900/50 bg-rose-950/30 px-4 py-2 text-sm text-rose-200">
-                {error}
-              </div>
-            )}
+          <div className="space-y-4">
+            {error && <SaveErrorNotice message={error} />}
 
             {ctx ? (
-              <div className="space-y-4 rounded-xl border border-primary-900/35 bg-black/25 p-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-primary-200/80">Behavior type</Label>
-                    <select
-                      className="flex h-11 w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-ring"
-                      value={behaviorType}
-                      onChange={(e) => setBehaviorType(e.target.value)}
-                    >
-                      {BEHAVIOR_TYPES.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-primary-200/80">Duration (minutes)</Label>
-                    <input
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field id={`${ids}-behavior-type`} label="Behavior type">
+                    <Select value={behaviorType} onValueChange={setBehaviorType}>
+                      <SelectTrigger id={`${ids}-behavior-type`} className="h-9 bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BEHAVIOR_TYPES.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field id={`${ids}-duration`} label="Duration (minutes)">
+                    <Input
+                      id={`${ids}-duration`}
                       type="number"
                       min={0}
-                      placeholder="Optional"
-                      className="flex h-11 w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-ring"
+                      inputMode="numeric"
                       value={durationMinutes}
                       onChange={(e) => setDurationMinutes(e.target.value)}
                     />
-                  </div>
+                  </Field>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-primary-200/80">What was observed <span className="text-rose-400">*</span></Label>
-                  <textarea
+
+                <Field id={`${ids}-behavior`} label="What was observed" required>
+                  <Textarea
+                    id={`${ids}-behavior`}
                     rows={3}
                     required
-                    placeholder="Objective description of the behavior..."
-                    className="w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
+                    placeholder="Objective description of the behavior"
                     value={behavior}
                     onChange={(e) => setBehavior(e.target.value)}
                   />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-primary-200/80">Antecedent (optional)</Label>
-                    <textarea
+                </Field>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field id={`${ids}-antecedent`} label="Antecedent (optional)">
+                    <Textarea
+                      id={`${ids}-antecedent`}
                       rows={2}
-                      placeholder="What happened before..."
-                      className="w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
+                      className="min-h-[56px]"
+                      placeholder="What happened before"
                       value={antecedent}
                       onChange={(e) => setAntecedent(e.target.value)}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-primary-200/80">Consequence / outcome (optional)</Label>
-                    <textarea
+                  </Field>
+                  <Field id={`${ids}-consequence`} label="Consequence / outcome (optional)">
+                    <Textarea
+                      id={`${ids}-consequence`}
                       rows={2}
-                      placeholder="What happened after..."
-                      className="w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
+                      className="min-h-[56px]"
+                      placeholder="What happened after"
                       value={consequence}
                       onChange={(e) => setConsequence(e.target.value)}
                     />
-                  </div>
+                  </Field>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-primary-200/80">Interventions used (comma-separated)</Label>
-                  <input
+
+                <Field
+                  id={`${ids}-interventions`}
+                  label="Interventions used"
+                  helper="Separate several interventions with commas, for example redirection, music, 1:1 sitter."
+                >
+                  <Input
+                    id={`${ids}-interventions`}
                     type="text"
-                    placeholder="e.g. redirection, music, 1:1 sitter"
-                    className="flex h-11 w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
                     value={interventionsText}
                     onChange={(e) => setInterventionsText(e.target.value)}
                   />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-primary-200/80">Intervention effective?</Label>
-                    <select
-                      className="flex h-11 w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-ring"
-                      value={interventionEffective}
-                      onChange={(e) => setInterventionEffective(e.target.value as "" | "yes" | "no")}
+                </Field>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field id={`${ids}-effective`} label="Intervention effective?">
+                    <Select
+                      value={interventionEffective === "" ? INTERVENTION_NOT_RECORDED : interventionEffective}
+                      onValueChange={(v) =>
+                        setInterventionEffective(v === INTERVENTION_NOT_RECORDED ? "" : (v as "yes" | "no"))
+                      }
                     >
-                      <option value="">Not recorded</option>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-primary-200/80">Additional notes</Label>
-                    <textarea
-                      rows={1}
-                      className="w-full rounded-lg border border-primary-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-ring"
+                      <SelectTrigger id={`${ids}-effective`} className="h-9 bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={INTERVENTION_NOT_RECORDED}>Not recorded</SelectItem>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field id={`${ids}-notes`} label="Additional notes">
+                    <Input
+                      id={`${ids}-notes`}
+                      type="text"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                     />
-                  </div>
+                  </Field>
                 </div>
-                <label className="flex items-center gap-2 text-xs text-primary-100/90 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-primary-800 bg-zinc-950"
-                    checked={injuryOccurred}
-                    onChange={(e) => setInjuryOccurred(e.target.checked)}
-                  />
-                  Injury occurred
-                </label>
+
+                <CheckboxField
+                  id={`${ids}-injury`}
+                  label="Injury occurred"
+                  checked={injuryOccurred}
+                  onCheckedChange={setInjuryOccurred}
+                />
                 {injuryOccurred && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                    <Label className="text-xs text-rose-300/80">Injury details</Label>
-                    <textarea
+                  <Field id={`${ids}-injury-details`} label="Injury details">
+                    <Textarea
+                      id={`${ids}-injury-details`}
                       rows={2}
-                      placeholder="Describe the injury..."
-                      className="w-full rounded-lg border border-rose-900/50 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-rose-500/50"
+                      className="min-h-[56px]"
+                      placeholder="Describe the injury"
                       value={injuryDetails}
                       onChange={(e) => setInjuryDetails(e.target.value)}
                     />
-                  </div>
+                  </Field>
                 )}
-                <Button
-                  type="button"
-                  disabled={submitting || !behavior.trim()}
-                  className="h-12 w-full text-white hover: hover: disabled:opacity-50 shadow-lg shadow-[var(--shadow-card)] font-medium"
-                  onClick={() => void submitBehavior()}
-                >
-                  {submitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Brain className="mr-2 h-5 w-5" />}
-                  Log Behavior Event
-                </Button>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary-400" />
-              </div>
+              <ContextLoading />
             )}
 
-            {rows.length > 0 && !success && (
-              <div className="space-y-3 border-t border-primary-900/30 pt-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-primary-200/50">Recent entries</p>
-                <ul className="space-y-2">
-                  {rows.map((row) => (
-                    <li key={row.id} className="rounded-lg border border-primary-900/30 bg-black/20 p-3 text-sm">
-                      <p className="font-medium capitalize text-primary-100">
-                        {BEHAVIOR_TYPES.find((b) => b.value === row.behavior_type)?.label ?? row.behavior_type}
-                      </p>
-                      <p className="mt-1 text-zinc-300">{row.behavior}</p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        {new Date(row.occurred_at).toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}{" "}
-                        · {row.shift}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {rows.length > 0 && (
+              <RecentEntries heading="Recent behavior entries">
+                {rows.map((row) => (
+                  <li key={row.id} className={RECENT_ENTRY_CLASS}>
+                    <p className="font-medium text-foreground">
+                      {BEHAVIOR_TYPES.find((b) => b.value === row.behavior_type)?.label ?? row.behavior_type}
+                    </p>
+                    <p className="mt-1 text-foreground">{row.behavior}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatEntryStamp(row.occurred_at)} · {row.shift}
+                    </p>
+                  </li>
+                ))}
+              </RecentEntries>
             )}
+
+            <DialogFooter className="gap-2 border-t border-border pt-4 sm:space-x-0">
+              <Button type="button" variant="outline" onClick={handleResetAndClose}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={!canSubmit}
+                className={READABLE_DISABLED_CLASS}
+                onClick={() => void submitBehavior()}
+              >
+                {submitting ? <Loader2 className="animate-spin" aria-hidden /> : <Brain aria-hidden />}
+                Save behavior entry
+              </Button>
+            </DialogFooter>
           </div>
         )}
       </DialogContent>
@@ -464,6 +641,8 @@ export function ConditionLogModal({
   onSuccess?: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const ids = useId();
+  const focusReturn = useReturnFocusToOpener();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -577,161 +756,124 @@ export function ConditionLogModal({
   }
 
   if (error && !ctx) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md border-zinc-800 bg-zinc-950 text-zinc-100">
-          <DialogHeader>
-            <DialogTitle className="text-rose-400">Error</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-zinc-300">{error}</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
+    return <ContextErrorDialog open={open} onOpenChange={onOpenChange} error={error} />;
   }
+
+  const canSubmit = Boolean(ctx) && !submitting && description.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-rose-900/50 text-zinc-100">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg text-rose-200 font-semibold">
-            <Stethoscope className="h-5 w-5 text-rose-400" />
-            Log Condition Change
+      <DialogContent className={QUICK_ENTRY_CONTENT_CLASS} data-testid="condition-log-dialog" {...focusReturn}>
+        <DialogHeader className="pr-8">
+          <DialogTitle className="flex items-center gap-2">
+            <Stethoscope className="size-5 text-muted-foreground" aria-hidden />
+            Log condition
           </DialogTitle>
-          <DialogDescription className="text-rose-200/70">
-            Report new or worsening symptoms for <span className="text-rose-100 font-medium">{residentName}</span>. For emergencies, use your facility escalation protocol.
+          <DialogDescription>
+            Report new or worsening symptoms for <span className="font-medium text-foreground">{residentName}</span>.
+            For emergencies, use your facility escalation protocol.
           </DialogDescription>
         </DialogHeader>
 
         {success ? (
-          <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40">
-              <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-            </div>
-            <p className="text-lg text-emerald-300 font-semibold">Condition report submitted</p>
-            <div className="flex gap-3 w-full">
-              <Button
-                type="button"
-                onClick={resetForm}
-                className="flex-1 bg-rose-700 text-white hover:bg-rose-600"
-              >
-                Log Another
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleResetAndClose}
-                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-              >
-                Done
-              </Button>
-            </div>
-          </div>
+          <SavedState
+            title="Condition report submitted"
+            againLabel="Log another"
+            onAgain={resetForm}
+            onDone={handleResetAndClose}
+          />
         ) : (
-          <div className="space-y-4 py-2">
-            {error && (
-              <div className="rounded-lg border border-rose-900/50 bg-rose-950/30 px-4 py-2 text-sm text-rose-200">
-                {error}
-              </div>
-            )}
+          <div className="space-y-4">
+            {error && <SaveErrorNotice message={error} />}
 
             {ctx ? (
-              <div className="space-y-4 rounded-xl border border-rose-900/35 bg-black/25 p-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-rose-200/80">Category</Label>
-                    <select
-                      className="flex h-11 w-full rounded-lg border border-rose-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-rose-500/50"
-                      value={changeType}
-                      onChange={(e) => setChangeType(e.target.value)}
-                    >
-                      {CHANGE_TYPES.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-rose-200/80">Severity</Label>
-                    <select
-                      className="flex h-11 w-full rounded-lg border border-rose-900/50 bg-zinc-950 px-3 text-sm text-zinc-100 focus:ring-2 focus:ring-rose-500/50"
-                      value={severity}
-                      onChange={(e) => setSeverity(e.target.value)}
-                    >
-                      {SEVERITIES.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field id={`${ids}-category`} label="Category">
+                    <Select value={changeType} onValueChange={setChangeType}>
+                      <SelectTrigger id={`${ids}-category`} className="h-9 bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CHANGE_TYPES.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field id={`${ids}-severity`} label="Severity">
+                    <Select value={severity} onValueChange={setSeverity}>
+                      <SelectTrigger id={`${ids}-severity`} className="h-9 bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SEVERITIES.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-rose-200/80">Description <span className="text-rose-400">*</span></Label>
-                  <textarea
+
+                <Field id={`${ids}-description`} label="Description" required>
+                  <Textarea
+                    id={`${ids}-description`}
                     rows={4}
                     required
-                    placeholder="Objective findings, vitals if taken, what changed and when…"
-                    className="w-full rounded-lg border border-rose-900/50 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-rose-500/50"
+                    placeholder="Objective findings, vitals if taken, what changed and when"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
-                </div>
-                <label className="flex items-center gap-2 text-xs text-rose-100/90 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-rose-800 bg-zinc-950"
-                    checked={nurseNotified}
-                    onChange={(e) => setNurseNotified(e.target.checked)}
-                  />
-                  Nurse has been notified (timestamps recorded)
-                </label>
-                <Button
-                  type="button"
-                  disabled={submitting || !description.trim()}
-                  className="h-12 w-full text-white hover: hover: disabled:opacity-50 shadow-lg shadow-rose-500/20 font-medium"
-                  onClick={() => void submitReport()}
-                >
-                  {submitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Stethoscope className="mr-2 h-5 w-5" />}
-                  Submit Condition Report
-                </Button>
+                </Field>
+
+                <CheckboxField
+                  id={`${ids}-nurse-notified`}
+                  label="Nurse has been notified (time and reporter are recorded)"
+                  checked={nurseNotified}
+                  onCheckedChange={setNurseNotified}
+                />
               </div>
             ) : (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-rose-400" />
-              </div>
+              <ContextLoading />
             )}
 
-            {rows.length > 0 && !success && (
-              <div className="space-y-3 border-t border-rose-900/30 pt-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-rose-200/50">Recent reports</p>
-                <ul className="space-y-2">
-                  {rows.map((row) => (
-                    <li key={row.id} className="rounded-lg border border-rose-900/30 bg-black/20 p-3 text-sm">
-                      <p className="font-medium text-rose-100">
-                        {CHANGE_TYPES.find((c) => c.value === row.change_type)?.label ?? row.change_type}
-                        <span className="font-normal text-zinc-500"> · </span>
-                        <span className="capitalize text-zinc-300">{row.severity}</span>
-                      </p>
-                      <p className="mt-1 text-zinc-200">{row.description}</p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        {new Date(row.reported_at).toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}{" "}
-                        · {row.shift}
-                        {row.nurse_notified && <span className="text-emerald-400 ml-2">· nurse notified</span>}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {rows.length > 0 && (
+              <RecentEntries heading="Recent condition reports">
+                {rows.map((row) => (
+                  <li key={row.id} className={RECENT_ENTRY_CLASS}>
+                    <p className="font-medium text-foreground">
+                      {CHANGE_TYPES.find((c) => c.value === row.change_type)?.label ?? row.change_type}
+                      <span className="font-normal text-muted-foreground"> · </span>
+                      <span className="font-normal capitalize text-muted-foreground">{row.severity}</span>
+                    </p>
+                    <p className="mt-1 text-foreground">{row.description}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatEntryStamp(row.reported_at)} · {row.shift}
+                      {row.nurse_notified && <span> · nurse notified</span>}
+                    </p>
+                  </li>
+                ))}
+              </RecentEntries>
             )}
+
+            <DialogFooter className="gap-2 border-t border-border pt-4 sm:space-x-0">
+              <Button type="button" variant="outline" onClick={handleResetAndClose}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={!canSubmit}
+                className={READABLE_DISABLED_CLASS}
+                onClick={() => void submitReport()}
+              >
+                {submitting ? <Loader2 className="animate-spin" aria-hidden /> : <Stethoscope aria-hidden />}
+                Submit condition report
+              </Button>
+            </DialogFooter>
           </div>
         )}
       </DialogContent>
@@ -768,6 +910,8 @@ export function GeneralNoteModal({
   onSuccess?: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const ids = useId();
+  const focusReturn = useReturnFocusToOpener();
   const [savingNote, setSavingNote] = useState(false);
   const [savingVitals, setSavingVitals] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -968,174 +1112,150 @@ export function GeneralNoteModal({
   }
 
   if (error && !ctx) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md border-zinc-800 bg-zinc-950 text-zinc-100">
-          <DialogHeader>
-            <DialogTitle className="text-rose-400">Error</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-zinc-300">{error}</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
+    return <ContextErrorDialog open={open} onOpenChange={onOpenChange} error={error} />;
   }
+
+  const canSaveNote = Boolean(ctx) && !savingNote && noteDraft.trim().length > 0;
+  const hasVitals = Boolean(temp.trim() || bpSys.trim() || bpDia.trim() || pulse.trim());
+  const canSaveVitals = Boolean(ctx) && !savingVitals && hasVitals;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-teal-900/50 text-zinc-100">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg text-teal-200 font-semibold">
-            <FileText className="h-5 w-5 text-teal-400" />
-            Shift Log
+      <DialogContent className={QUICK_ENTRY_CONTENT_CLASS} data-testid="general-note-dialog" {...focusReturn}>
+        <DialogHeader className="pr-8">
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="size-5 text-muted-foreground" aria-hidden />
+            General note
           </DialogTitle>
-          <DialogDescription className="text-teal-200/70">
-            Add narrative notes and vitals for <span className="text-teal-100 font-medium">{residentName}</span>
+          <DialogDescription>
+            Add a note to today&apos;s daily log for <span className="font-medium text-foreground">{residentName}</span>
             {ctx ? (
               <>
                 {" "}
-                · today ({zonedYmd(new Date(), ctx.timeZone)}) · shift{" "}
-                <span className="text-teal-100">{currentShiftForTimezone(ctx.timeZone)}</span>
+                · {zonedYmd(new Date(), ctx.timeZone)} · {currentShiftForTimezone(ctx.timeZone)} shift
               </>
             ) : null}
+            . Vitals are optional and save separately below.
           </DialogDescription>
         </DialogHeader>
 
         {success ? (
-          <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40">
-              <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-            </div>
-            <p className="text-lg text-emerald-300 font-semibold">Saved successfully</p>
-            <div className="flex gap-3 w-full">
-              <Button
-                type="button"
-                onClick={resetForm}
-                className="flex-1 bg-teal-600 text-white hover:bg-teal-500"
-              >
-                Add Another
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleResetAndClose}
-                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-              >
-                Done
-              </Button>
-            </div>
-          </div>
+          <SavedState
+            title="Saved to the daily log"
+            againLabel="Add another"
+            onAgain={resetForm}
+            onDone={handleResetAndClose}
+          />
         ) : (
-          <div className="space-y-4 py-2">
-            {error && (
-              <div className="rounded-lg border border-rose-900/50 bg-rose-950/30 px-4 py-2 text-sm text-rose-200">
-                {error}
-              </div>
-            )}
+          <div className="space-y-4">
+            {error && <SaveErrorNotice message={error} />}
 
             {ctx ? (
-              <div className="space-y-4 rounded-xl border border-teal-900/35 bg-black/25 p-4">
-                <div className="space-y-2">
-                  <Label className="text-xs text-teal-200/80">Add shift note</Label>
-                  <textarea
-                    rows={3}
-                    placeholder="Objective, brief narrative for this pass…"
-                    className="w-full rounded-lg border border-teal-900/50 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-teal-500/50"
-                    value={noteDraft}
-                    onChange={(e) => setNoteDraft(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    disabled={savingNote || !noteDraft.trim()}
-                    className="h-10 w-full bg-teal-600 text-white hover:bg-teal-500 disabled:opacity-50"
-                    onClick={() => void appendShiftNote()}
-                  >
-                    {savingNote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                    Save to daily log
-                  </Button>
-                </div>
+              <div className="space-y-5">
+                <section aria-label="Shift note" className="space-y-3">
+                  <Field id={`${ids}-note`} label="Shift note">
+                    <Textarea
+                      id={`${ids}-note`}
+                      rows={3}
+                      placeholder="Objective, brief narrative for this pass"
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                    />
+                  </Field>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      disabled={!canSaveNote}
+                      className={READABLE_DISABLED_CLASS}
+                      onClick={() => void appendShiftNote()}
+                    >
+                      {savingNote ? <Loader2 className="animate-spin" aria-hidden /> : <FileText aria-hidden />}
+                      Save note to daily log
+                    </Button>
+                  </div>
+                </section>
 
-                <div className="space-y-3 border-t border-teal-900/30 pt-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-teal-200/50">Vitals (optional)</p>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <div>
-                      <Label className="text-[10px] text-teal-200/80">Temp °F</Label>
-                      <input
-                        className="mt-0.5 w-full rounded-lg border border-teal-900/50 bg-zinc-950 px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500/50"
+                <section aria-labelledby={`${ids}-vitals-heading`} className="space-y-3 border-t border-border pt-4">
+                  <div className="space-y-1">
+                    <h3 id={`${ids}-vitals-heading`} className="text-sm font-semibold text-foreground">
+                      Vitals (optional)
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Saved to the same shift log as a separate step. Saving vitals also runs the alert check.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Field id={`${ids}-temp`} label="Temp °F">
+                      <Input
+                        id={`${ids}-temp`}
                         inputMode="decimal"
                         value={temp}
                         onChange={(e) => setTemp(e.target.value)}
-                        placeholder="—"
                       />
-                    </div>
-                    <div>
-                      <Label className="text-[10px] text-teal-200/80">BP sys</Label>
-                      <input
-                        className="mt-0.5 w-full rounded-lg border border-teal-900/50 bg-zinc-950 px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500/50"
+                    </Field>
+                    <Field id={`${ids}-bp-sys`} label="BP systolic">
+                      <Input
+                        id={`${ids}-bp-sys`}
                         inputMode="numeric"
                         value={bpSys}
                         onChange={(e) => setBpSys(e.target.value)}
-                        placeholder="—"
                       />
-                    </div>
-                    <div>
-                      <Label className="text-[10px] text-teal-200/80">BP dia</Label>
-                      <input
-                        className="mt-0.5 w-full rounded-lg border border-teal-900/50 bg-zinc-950 px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500/50"
+                    </Field>
+                    <Field id={`${ids}-bp-dia`} label="BP diastolic">
+                      <Input
+                        id={`${ids}-bp-dia`}
                         inputMode="numeric"
                         value={bpDia}
                         onChange={(e) => setBpDia(e.target.value)}
-                        placeholder="—"
                       />
-                    </div>
-                    <div>
-                      <Label className="text-[10px] text-teal-200/80">Pulse</Label>
-                      <input
-                        className="mt-0.5 w-full rounded-lg border border-teal-900/50 bg-zinc-950 px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500/50"
+                    </Field>
+                    <Field id={`${ids}-pulse`} label="Pulse">
+                      <Input
+                        id={`${ids}-pulse`}
                         inputMode="numeric"
                         value={pulse}
                         onChange={(e) => setPulse(e.target.value)}
-                        placeholder="—"
                       />
-                    </div>
+                    </Field>
                   </div>
-                  <Button
-                    type="button"
-                    disabled={savingVitals || (!temp.trim() && !bpSys.trim() && !bpDia.trim() && !pulse.trim())}
-                    variant="outline"
-                    className="h-9 w-full border-teal-700/50 text-teal-200 hover:bg-teal-950/50"
-                    onClick={() => void saveVitals()}
-                  >
-                    {savingVitals ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Save vitals & check alerts
-                  </Button>
-                </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!canSaveVitals}
+                      className={READABLE_DISABLED_CLASS}
+                      onClick={() => void saveVitals()}
+                    >
+                      {savingVitals ? <Loader2 className="animate-spin" aria-hidden /> : null}
+                      Save vitals & check alerts
+                    </Button>
+                  </div>
+                </section>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-teal-400" />
-              </div>
+              <ContextLoading />
             )}
 
-            {!success && dailyHistory.length > 0 && (
-              <div className="space-y-3 border-t border-teal-900/30 pt-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-teal-200/50">Recent daily notes</p>
-                <ul className="space-y-2">
-                  {dailyHistory.slice(0, 3).map((row) => (
-                    <li key={row.id} className="rounded-lg border border-teal-900/30 bg-black/20 p-3 text-sm">
-                      <p className="text-xs text-zinc-500">
-                        {row.log_date} · {row.shift}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap text-zinc-200">
-                        {formatResidentDailyNotesDisplay(row.general_notes)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {dailyHistory.length > 0 && (
+              <RecentEntries heading="Recent daily notes">
+                {dailyHistory.slice(0, 3).map((row) => (
+                  <li key={row.id} className={RECENT_ENTRY_CLASS}>
+                    <p className="text-xs text-muted-foreground">
+                      {row.log_date} · {row.shift}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-foreground">
+                      {formatResidentDailyNotesDisplay(row.general_notes)}
+                    </p>
+                  </li>
+                ))}
+              </RecentEntries>
             )}
+
+            <DialogFooter className="border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={handleResetAndClose}>
+                Close
+              </Button>
+            </DialogFooter>
           </div>
         )}
       </DialogContent>
