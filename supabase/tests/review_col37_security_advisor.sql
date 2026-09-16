@@ -162,9 +162,10 @@ END $$;
 --    in user can execute must carry a ruling in its comment -- the literal
 --    'COL-37 ruling:' followed by why the grant is correct, or why the definer
 --    is required. The array below is the backlog that has not been ruled on
---    yet: 44 of the 53 the 2026-09-15 advisor run found. It only ever shrinks.
---    A function that is neither ruled nor listed fails here, which is the point
---    -- a new feature cannot add definer RPC surface without a ruling.
+--    yet: 29 left after 399 took the referral family, of the 53 the 2026-09-15
+--    advisor run found. It only ever shrinks. A function that is neither ruled
+--    nor listed fails here, which is the point -- a new feature cannot add
+--    definer RPC surface without a ruling.
 DO $$
 DECLARE
   v_pending text[] := ARRAY[
@@ -189,21 +190,6 @@ DECLARE
     'payroll_export_snapshot',
     'prepare_resident_record_intake',
     'prepare_resident_record_intake_source',
-    'referral_duplicate_candidates',
-    'referral_episode_capture',
-    'referral_episode_command',
-    'referral_episode_downstream_review',
-    'referral_episode_history_read',
-    'referral_episode_initial_revision',
-    'referral_episode_model_read',
-    'referral_lead_create',
-    'referral_lead_create_from_hl7',
-    'referral_lead_update',
-    'referral_leads_authorized_export',
-    'referral_leads_authorized_read',
-    'referral_source_create',
-    'referral_triage_authorized_read',
-    'referral_triage_submit',
     'refresh_payroll_time_records',
     'resident_record_intake_command',
     'resident_record_intake_match_candidates',
@@ -249,9 +235,10 @@ BEGIN
   END IF;
 END $$;
 
--- 8. The four functions 393 found to be incidental definers stay invokers.
---    Section 7 cannot catch a revert on its own -- their comments already carry
---    a ruling, so flipping SECURITY DEFINER back on would read as ruled.
+-- 8. Every function a COL-391 pass found to be an incidental definer stays an
+--    invoker. Section 7 cannot catch a revert on its own -- their comments
+--    already carry a ruling, so flipping SECURITY DEFINER back on would read as
+--    ruled.
 DO $$
 DECLARE v_reverted text;
 BEGIN
@@ -262,13 +249,18 @@ BEGIN
   WHERE n.nspname = 'public'
     AND p.prosecdef
     AND p.proname = ANY (ARRAY[
+      -- 397: their bodies restate the exec_nlq_sessions policies.
       'rename_nlq_thread',
       'set_nlq_thread_pinned',
       'set_nlq_thread_archived',
-      'search_nlq_threads'
+      'search_nlq_threads',
+      -- 399: referral_sources is granted to authenticated and its insert policy
+      -- restates the function's guard; the export wrapper touches no table.
+      'referral_source_create',
+      'referral_leads_authorized_export'
     ]);
   IF v_reverted IS NOT NULL THEN
-    RAISE EXCEPTION 'COL-391: % went back to SECURITY DEFINER. 393 ruled these incidental -- their bodies restate the exec_nlq_sessions policies, so caller authority reaches the same rows. If that stopped being true, say so in the comment and in this assertion rather than reverting quietly.', v_reverted;
+    RAISE EXCEPTION 'COL-391: % went back to SECURITY DEFINER. A pass ruled these incidental because caller authority reaches exactly the same rows. If that stopped being true, say so in the comment and in this assertion rather than reverting quietly.', v_reverted;
   END IF;
 END $$;
 

@@ -176,16 +176,103 @@ fourteen unruled functions, so section 7 discriminates.
 
 ---
 
+# COL-391 — per-function rulings, pass 2 (referral)
+
+Migration 399, 2026-09-15. Fifteen ruled: thirteen keep definer rights, two do
+not. The ratio runs the other way from pass 1, and the reason is on purpose.
+
+## Why this family is almost all category 1
+
+Migration 379 (COL-328 / REF-01) made the referral module RPC-only and said so
+in its header: *"denies direct reads of sensitive lead columns, and exposes the
+minimum RPC doors needed by the existing referral UI."* Measured on production:
+
+| Table | What `authenticated` holds |
+|---|---|
+| `referral_leads` | column-level SELECT on 48 columns — and **no** INSERT/UPDATE/DELETE, and no SELECT on `phone`, `email`, `notes`, `date_of_birth`, `external_reference`, `closure_note`, `competitor_chosen`, `satisfaction_rating` |
+| `referral_triage_inbox` | nothing — `REVOKE ALL … FROM PUBLIC, anon, authenticated` (379) |
+| `referral_episode_events` | nothing (380) |
+| `referral_people`, `referral_opportunities`, `referral_contacts`, `referral_person_contacts`, `referral_contact_permissions`, `referral_facility_considerations` | nothing (380) |
+| `referral_sources` | `SELECT, INSERT, UPDATE` |
+
+Those tables still carry RLS policies keyed on `haven.referral_capability()`.
+The policies are the second lock, standing behind a grant that was deliberately
+withheld — worth knowing before reading a policy as evidence that a role can
+reach a table.
+
+The boundary that matters here is a **column** grant, and that is the one thing
+row-level security cannot express: RLS chooses rows, not columns. So the
+sensitive-field split these RPCs implement — returning `phone`/`email`/`notes`
+only when the caller holds `clinical_read` and the lead is `clinical_precheck` —
+is definer work by construction. Several functions additionally call `haven`
+helpers that `authenticated` deliberately cannot execute
+(`lock_referral_episode`, `activate_referral_command`, `referral_request_lock`,
+`write_referral_episode_event`, `lock_referral_actor_authority`,
+`referral_downstream_snapshot`, `referral_empty_revision`), so they would fail at
+their first statement as invokers.
+
+Every one of the fifteen checks the caller itself through
+`haven.referral_capability()` before it touches anything —
+`referral_episode_command` does it six times, once per command group, rather
+than once at the door.
+
+## The two that are not
+
+| Function | Ruling |
+|---|---|
+| `referral_source_create` | **SECURITY INVOKER.** `referral_sources` is the one referral table 379 left granted, and `referral_sources_insert` restates the function's own guard (organization, `source_manage`, facility access). The function is *stricter* — it demands `has_facility_access(p_facility_id)` even when the row lands org-wide with `facility_id NULL` — so every call it admits, the policy admits. `RETURNING id` is covered by `referral_sources_select`, and the `BEFORE` trigger `haven.guard_referral_source_authority()` re-asserts everything on the row and stamps `created_by` either way. Net effect: one more lock, same admitted set. |
+| `referral_leads_authorized_export` | **SECURITY INVOKER.** It reads no table at all — checks `lead_export`, validates the page bounds, and returns what `referral_leads_authorized_read` gives it. `authenticated` may execute both. The definer bit was doing nothing. |
+
+Proven on staging against a synthetic owner actor, rolled back: both create paths
+(org-wide and facility-scoped) take and the guard trigger stamps
+`organization_id` and `created_by`; the export returns and still refuses a
+5000-row page with `22023`; the definer-required neighbours
+(`referral_triage_authorized_read`, `referral_triage_submit`,
+`referral_episode_initial_revision`) are unaffected; and after demoting the same
+actor to `caregiver`, both invoker functions refuse with `42501`. Script:
+`col391-referral-evidence.sql` in this directory.
+
+## One narrow case worth naming
+
+`referral_episode_initial_revision()` takes no arguments, reads nothing and
+returns a constant — 64 zeroes, the sentinel revision an episode carries before
+its first event. It looks like the definition of a pointless definer. It is not:
+it wraps `haven.referral_empty_revision()`, which `authenticated` cannot execute,
+so as an invoker it would raise permission denied. This is exactly the
+invoker-wrapper case `COL-18-BASELINE.md` warns against revoking on sight, and it
+is why the ruling is per function rather than per lint line.
+
+## Counts (production)
+
+| | before 399 | after 399 |
+|---|---|---|
+| `authenticated_security_definer_function_executable` | 49 | **47** |
+| carrying a recorded ruling | 5 | **18** |
+| switched to invoker by a COL-391 pass (cumulative) | 4 | **6** |
+| still to rule on | 44 | **29** |
+
+## Applied
+
+| Where | 399 | Probe |
+|---|---|---|
+| Staging `iwcnajanvjvynolltflw` | applied, ledger row `399` | pass |
+| Production `manfqmasfqppukpobpld` | applied, ledger row `399` | pass |
+
+Negative control: before 399 the probe failed on production by naming all
+fifteen referral functions with their argument lists, so section 7 discriminates.
+
+---
+
 ## Left open
 
-- **44 `authenticated`-executable SECURITY DEFINER functions.** Referral
-  commands, resident record intake, finance and payroll, corporate deliverables,
-  employee file, system alerts, compliance. Each needs a per-function ruling on
-  whether the definer is doing authorization work the caller's RLS could not.
-  `docs/facility-operations/COL-18-BASELINE.md` warns against revoking invoker
-  wrappers blindly, and it is right. Not a batch edit. The probe's pending list
-  is the backlog; take a family per pass and delete its names from the array in
-  the same change.
+- **29 `authenticated`-executable SECURITY DEFINER functions.** Resident record
+  intake (7), finance and payroll (6), corporate deliverables (3), employee file
+  (3), system alerts (3), compliance/observation/misc (5), actor/shell (2). Each
+  needs a per-function ruling on whether the definer is doing authorization work
+  the caller's RLS could not. `docs/facility-operations/COL-18-BASELINE.md` warns
+  against revoking invoker wrappers blindly, and it is right. Not a batch edit.
+  The probe's pending list is the backlog; take a family per pass and delete its
+  names from the array in the same change.
 - **`vector`, `pg_trgm`, `btree_gist` in `public`.** Moving them changes
   unqualified operator and index-opclass resolution across the schema, and this
   repo already has a hosted-extension failure mode (`migrations:check:hosted`,
