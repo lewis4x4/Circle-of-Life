@@ -107,7 +107,9 @@ async function main() {
 
   if (process.env.PG_VERIFY_NATIVE_SOCKET) { nativeVerification(process.env.PG_VERIFY_NATIVE_SOCKET); return; }
 
-  const info = docker(["info"], { stdio: "pipe", timeout: 10000 });
+  // A loaded Docker daemon can take 30 s to answer `docker info`; a short probe
+  // then reports "Docker not available" and SKIPs a replay that could have run.
+  const info = docker(["info"], { stdio: "pipe", timeout: 60000 });
   if (info.status !== 0) {
     if (requireDocker) {
       console.error("[migrations:verify:pg] FAIL: Docker required but not available");
