@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Printer } from "lucide-react";
 
 import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
@@ -186,6 +187,28 @@ export function AdminCareEventPageClient({ careEventId }: { careEventId: string 
           <VideoSection {...sectionProps} />
           <LowerLevelSection {...sectionProps} />
           <CloseSection {...sectionProps} />
+        </div>
+      </RecordDetailSection>
+
+      <RecordDetailSection
+        title="Print"
+        description="The incident form in the binder's layout, and the sheet that goes to the physician by fax."
+      >
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/admin/care-events/${careEventId}/print/incident-form`}
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Printer className="size-4" aria-hidden />
+            Print incident form
+          </Link>
+          <Link
+            href={`/admin/care-events/${careEventId}/print/physician-sheet`}
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Printer className="size-4" aria-hidden />
+            Print physician sheet
+          </Link>
         </div>
       </RecordDetailSection>
 
