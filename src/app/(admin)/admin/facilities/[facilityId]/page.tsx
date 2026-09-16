@@ -89,6 +89,10 @@ const ThresholdsTab = dynamic(
   () => import("@/components/admin/facilities/tabs/ThresholdsTab").then((m) => m.ThresholdsTab),
   { loading: TabBodyLoading },
 );
+const TimeclockTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/TimeclockTab").then((m) => m.TimeclockTab),
+  { loading: TabBodyLoading },
+);
 const TimelineTab = dynamic(
   () => import("@/components/admin/facilities/tabs/TimelineTab").then((m) => m.TimelineTab),
   { loading: TabBodyLoading },
@@ -256,6 +260,8 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
         return <StaffingTab facilityId={facilityId} facility={facility} staffKpis={staffKpis} />;
       case "communication":
         return <CommunicationTab facilityId={facilityId} communicationApi={communicationSettingsApi} />;
+      case "timeclock":
+        return <TimeclockTab facilityId={facilityId} />;
       case "thresholds":
         return (
           <ThresholdsTab

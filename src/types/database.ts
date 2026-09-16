@@ -14,6 +14,318 @@ export type Database = {
   }
   public: {
     Tables: {
+      time_punch_corrections: {
+        Row: {
+          correction_type: string
+          corrected_at: string
+          corrected_by: string
+          corrected_punched_at: string | null
+          exception_key: string | null
+          facility_id: string
+          id: string
+          note: string | null
+          organization_id: string
+          punch_type: string | null
+          reason: string
+          staff_id: string
+          target_correction_id: string | null
+          target_punch_id: string | null
+        }
+        Insert: {
+          correction_type: string
+          corrected_at?: string
+          corrected_by: string
+          corrected_punched_at?: string | null
+          exception_key?: string | null
+          facility_id: string
+          id?: string
+          note?: string | null
+          organization_id: string
+          punch_type?: string | null
+          reason: string
+          staff_id: string
+          target_correction_id?: string | null
+          target_punch_id?: string | null
+        }
+        Update: {
+          correction_type?: string
+          corrected_at?: string
+          corrected_by?: string
+          corrected_punched_at?: string | null
+          exception_key?: string | null
+          facility_id?: string
+          id?: string
+          note?: string | null
+          organization_id?: string
+          punch_type?: string | null
+          reason?: string
+          staff_id?: string
+          target_correction_id?: string | null
+          target_punch_id?: string | null
+        }
+        Relationships: []
+      }
+      time_punches: {
+        Row: {
+          captured_offline: boolean
+          client_punch_id: string
+          created_at: string
+          device_id: string | null
+          device_time: string | null
+          facility_id: string
+          flags: string[]
+          id: string
+          organization_id: string
+          punch_type: string
+          punched_at: string
+          staff_id: string
+        }
+        Insert: {
+          captured_offline?: boolean
+          client_punch_id: string
+          created_at?: string
+          device_id?: string | null
+          device_time?: string | null
+          facility_id: string
+          flags?: string[]
+          id?: string
+          organization_id: string
+          punch_type: string
+          punched_at: string
+          staff_id: string
+        }
+        Update: {
+          captured_offline?: boolean
+          client_punch_id?: string
+          created_at?: string
+          device_id?: string | null
+          device_time?: string | null
+          facility_id?: string
+          flags?: string[]
+          id?: string
+          organization_id?: string
+          punch_type?: string
+          punched_at?: string
+          staff_id?: string
+        }
+        Relationships: []
+      }
+      timeclock_credentials: {
+        Row: {
+          badge_lookup_hmac: string | null
+          badge_set_at: string | null
+          employee_number: string
+          failed_attempts: number
+          locked_until: string | null
+          organization_id: string
+          pin_hash: string
+          pin_set_at: string
+          pin_set_by: string
+          staff_id: string
+        }
+        Insert: {
+          badge_lookup_hmac?: string | null
+          badge_set_at?: string | null
+          employee_number: string
+          failed_attempts?: number
+          locked_until?: string | null
+          organization_id: string
+          pin_hash: string
+          pin_set_at?: string
+          pin_set_by: string
+          staff_id: string
+        }
+        Update: {
+          badge_lookup_hmac?: string | null
+          badge_set_at?: string | null
+          employee_number?: string
+          failed_attempts?: number
+          locked_until?: string | null
+          organization_id?: string
+          pin_hash?: string
+          pin_set_at?: string
+          pin_set_by?: string
+          staff_id?: string
+        }
+        Relationships: []
+      }
+      timeclock_devices: {
+        Row: {
+          enrolled_at: string
+          enrolled_by: string
+          facility_id: string
+          failure_count: number
+          failure_window_started_at: string | null
+          id: string
+          label: string
+          last_seen_at: string | null
+          organization_id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          throttled_until: string | null
+          token_hash: string
+        }
+        Insert: {
+          enrolled_at?: string
+          enrolled_by: string
+          facility_id: string
+          failure_count?: number
+          failure_window_started_at?: string | null
+          id?: string
+          label: string
+          last_seen_at?: string | null
+          organization_id: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          throttled_until?: string | null
+          token_hash: string
+        }
+        Update: {
+          enrolled_at?: string
+          enrolled_by?: string
+          facility_id?: string
+          failure_count?: number
+          failure_window_started_at?: string | null
+          id?: string
+          label?: string
+          last_seen_at?: string | null
+          organization_id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          throttled_until?: string | null
+          token_hash?: string
+        }
+        Relationships: []
+      }
+      timeclock_enrollment_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          facility_id: string
+          id: string
+          organization_id: string
+          used_at: string | null
+          used_by_device_id: string | null
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          created_by: string
+          expires_at: string
+          facility_id: string
+          id?: string
+          organization_id: string
+          used_at?: string | null
+          used_by_device_id?: string | null
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          used_at?: string | null
+          used_by_device_id?: string | null
+        }
+        Relationships: []
+      }
+      timeclock_facility_settings: {
+        Row: {
+          facility_id: string
+          id: string
+          organization_id: string
+          timeclock_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          facility_id: string
+          id?: string
+          organization_id: string
+          timeclock_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          timeclock_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      timeclock_organization_settings: {
+        Row: {
+          id: string
+          organization_id: string
+          timeclock_pay_period: string | null
+          timeclock_pay_period_anchor: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          timeclock_pay_period?: string | null
+          timeclock_pay_period_anchor?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          timeclock_pay_period?: string | null
+          timeclock_pay_period_anchor?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      timeclock_sync_rejections: {
+        Row: {
+          client_punch_id: string
+          created_at: string
+          device_id: string
+          device_time: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          punch_type: string
+          reason: string
+          staff_id: string | null
+        }
+        Insert: {
+          client_punch_id: string
+          created_at?: string
+          device_id: string
+          device_time?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          punch_type: string
+          reason: string
+          staff_id?: string | null
+        }
+        Update: {
+          client_punch_id?: string
+          created_at?: string
+          device_id?: string
+          device_time?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          punch_type?: string
+          reason?: string
+          staff_id?: string | null
+        }
+        Relationships: []
+      }
       activities: {
         Row: {
           created_at: string
@@ -16667,6 +16979,46 @@ export type Database = {
       close_staff_check_session: {
         Args: { p_session_id: string }
         Returns: Database["public"]["Tables"]["staff_check_sessions"]["Row"]
+      }
+      timeclock_enroll_device: {
+        Args: { p_code: string; p_label: string }
+        Returns: Json
+      }
+      timeclock_identify: {
+        Args: { p_device_token: string; p_identifier: string; p_badge_lookup_hmac: string | null; p_pin: string }
+        Returns: Json
+      }
+      timeclock_record_punch: {
+        Args: { p_device_token: string; p_identifier: string; p_badge_lookup_hmac: string | null; p_pin: string; p_punch_type: string; p_device_time: string; p_client_punch_id: string; p_captured_offline: boolean }
+        Returns: Json
+      }
+      timeclock_create_enrollment_code: {
+        Args: { p_facility_id: string }
+        Returns: Json
+      }
+      timeclock_revoke_device: {
+        Args: { p_device_id: string }
+        Returns: undefined
+      }
+      timeclock_list_devices: {
+        Args: { p_facility_id: string }
+        Returns: Json
+      }
+      timeclock_credential_status: {
+        Args: { p_staff_id: string }
+        Returns: Json
+      }
+      timeclock_set_credentials: {
+        Args: { p_staff_id: string; p_mode: string; p_employee_number: string | null; p_pin: string | null; p_badge_lookup_hmac: string | null }
+        Returns: Json
+      }
+      timeclock_unlock_credential: {
+        Args: { p_staff_id: string }
+        Returns: Json
+      }
+      timeclock_employee_numbers: {
+        Args: { p_staff_ids: string[] }
+        Returns: Json
       }
       acknowledge_care_event: {
         Args: { p_care_event_id: string }
