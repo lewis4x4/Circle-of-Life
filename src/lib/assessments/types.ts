@@ -1,8 +1,22 @@
+/**
+ * One answer option inside an assessment item. `definition` is the
+ * instrument's own supporting criteria for that option, when the seeded
+ * template carries it. The UI renders it verbatim and never substitutes
+ * wording of its own; templates without definitions show labels only.
+ */
+export interface AssessmentTemplateOption {
+  value: number;
+  label: string;
+  definition?: string | null;
+}
+
 /** Shape of each item in assessment_templates.items jsonb */
 export interface AssessmentTemplateItem {
   key: string;
   label: string;
-  options: { value: number; label: string }[];
+  /** Instrument instructions for this item, when the seeded template carries them. */
+  instructions?: string | null;
+  options: AssessmentTemplateOption[];
 }
 
 /** Shape of assessment_templates.risk_thresholds jsonb — key is the risk level name, value is [min, max] inclusive */
