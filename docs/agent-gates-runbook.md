@@ -19,7 +19,7 @@ Duplicated in `docs/mission-statement.md`, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`,
 | `npm run migrations:check` | Validates `supabase/migrations/*.sql` naming and `001..N` sequence |
 | `npm run migrations:verify:pg` | Replays migrations on throwaway Postgres 16 (Docker + auth stub) |
 | `npm run migrations:verify:remote` | Probes linked Supabase for critical columns/tables (migrations 250–288); requires `.env.local` service role |
-| `npm run lint` | ESLint on `src/` |
+| `npm run lint` | ESLint on `src/` (`--max-warnings 0`). Historic `react-hooks/*` compiler-rule debt is baselined in `eslint-suppressions.json` (ESLint bulk suppressions) so the gate fails only on new violations; `npx eslint src --prune-suppressions` after paying some down. |
 | `npm run a11y:routes` | Playwright + axe (`BASE_URL` / `AXE_ROUTES`; app must be up) |
 | `npm run build` | Migrations check + `next build` |
 | `npm run build:web` | Same as root build today; use `apps/web` later if you split packages |
@@ -37,7 +37,7 @@ npm run segment:gates -- --segment "your-segment-id" [--ui] [--no-chaos] [--no-a
 - **`--no-chaos`** — skips `stress:test`.
 - **`--no-a11y`** — with `--ui`, skips axe (design still runs).
 - **`--design-advisory`** — design failures become **advisory** (non-blocking); axe remains required when `--ui` unless `--no-a11y`.
-- **`--advisory-check "<check-id>"`** — repeatable. Downgrades a failing named check to **advisory** for that run only. Default behavior remains strict; CI should not use this. Current local debt example: `--advisory-check "qa.eslint"`.
+- **`--advisory-check "<check-id>"`** — repeatable. Downgrades a failing named check to **advisory** for that run only. Default behavior remains strict; CI should not use this. (`qa.eslint` no longer needs it — the lint debt is baselined, see `npm run lint` above.)
 
 Checks stream prefixed output live. Quiet commands emit a 30-second `still running` heartbeat so long builds and migration replays do not look hung.
 

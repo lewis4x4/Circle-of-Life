@@ -77,6 +77,25 @@ const eslintConfig = defineConfig([
       "ui-v2/no-direct-primitive-import": "error",
     },
   },
+  {
+    // React Compiler is not enabled in this app. `incompatible-library` only
+    // warns that React Hook Form's `watch()` could not be auto-memoized by the
+    // compiler; with no compiler there is nothing to act on, and warnings fail
+    // `--max-warnings 0`. Revisit when the compiler is switched on.
+    rules: {
+      "react-hooks/incompatible-library": "off",
+    },
+  },
 ]);
+
+// Pre-existing React Compiler-rule violations (react-hooks/set-state-in-effect
+// and friends, ~420 on 2026-09-15) are recorded in `eslint-suppressions.json`
+// (ESLint bulk suppressions). Lint fails only on NEW violations. After fixing
+// some, run `npx eslint src --prune-suppressions` so the ratchet only tightens;
+// never `--suppress-all` again without a review of what it would hide.
+// `npm run lint` passes `--pass-on-unpruned-suppressions` because the compiler
+// rules report slightly fewer findings on the CI runner than on a Mac checkout
+// (2026-09-16: CI failed only on "suppressions left that do not occur"), and a
+// suppression that is no longer needed is not a defect.
 
 export default eslintConfig;

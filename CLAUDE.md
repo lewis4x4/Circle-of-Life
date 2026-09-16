@@ -37,7 +37,7 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 |--------|---------|
 | `npm run dev` | Next dev server (Turbopack) |
 | `npm run build` | Runs `migrations:check` + `migrations:check:hosted` + `check:admin-shell` + `check:memory-care` then `next build` |
-| `npm run lint` | ESLint `src/` with `--max-warnings 0`, then `lint:constitution` |
+| `npm run lint` | ESLint `src/` with `--max-warnings 0`, then `lint:constitution`. Pre-existing React Compiler-rule debt is baselined in `eslint-suppressions.json`; lint fails only on new violations. After fixing old ones run `npx eslint src --prune-suppressions` and commit the smaller file. Never re-run `--suppress-all`. CI (`finance-integration.yml` → `segment:gates -- --segment HFA-CI`) runs this same lint. |
 | `npm run typecheck` | `tsc --noEmit -p tsconfig.typecheck.json` |
 | `npm run test` | Vitest (happy-dom, includes `src/**/*.test.{ts,tsx}`) |
 | `npm run test:watch` | Vitest watch |

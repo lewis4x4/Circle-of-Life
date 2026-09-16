@@ -128,7 +128,9 @@ export function DataTable<T>({
 
   const tableData = useMemo(() => rows, [rows]);
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table v8 returns non-memoizable functions; safe here because we don't memoize across the table boundary.
+  // TanStack Table v8 returns non-memoizable functions; safe here because we
+  // don't memoize across the table boundary. (`react-hooks/incompatible-library`
+  // is off repo-wide — no React Compiler — so no disable directive is needed.)
   const table = useReactTable<DataTableRow<T>>({
     data: tableData,
     columns: tableColumns,
