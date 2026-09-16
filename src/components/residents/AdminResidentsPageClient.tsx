@@ -297,6 +297,16 @@ export function AdminResidentsPageClient({
     }
   }, [selectedFacilityId, initialFacilityId]);
 
+  // The server renders the roster for the facility named by the scope cookie;
+  // the header selector reads browser storage. Pages that write the selector
+  // without the cookie (Stand Up, working-facility pickers) leave the two
+  // apart, and the shell only rewrites the cookie — it does not refresh. Every
+  // sibling hub reloads on mount when the store disagrees with the server's
+  // scope; the roster must too, or it shows one facility's census under
+  // another facility's name.
+  useEffect(() => {
+    void loadResidents();
+  }, [loadResidents]);
 
 
   useEffect(() => {
