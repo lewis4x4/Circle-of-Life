@@ -53,7 +53,15 @@ export type AggregateWorkspace = {
     overtime_minutes?: number | null;
     overtime_issue?: boolean;
     field_dispositions?: Record<string, string> | null;
+    roster_confirmations?: Record<string, RosterConfirmation> | null;
   }>;
+};
+
+/** COL-351 roster source, recorded by haven.stand_up_save. Counts and tokens only. */
+export type RosterConfirmation = {
+  source?: unknown;
+  override_reason?: unknown;
+  roster_as_of?: unknown;
 };
 
 export type SourcePayload = {
@@ -171,6 +179,98 @@ function explicitTimestamp(value: unknown, label: string): Date {
     throw new PublisherError(`Invalid ${label}`);
   }
   return stamp;
+}
+
+/**
+ * Roster source transport, spec section 12. Published only when every report in
+ * the payload carries stored confirmations, so a Haven that does not record
+ * them stays a legacy payload. Counts and tokens only: no resident identifier
+ * ever reaches this row set.
+ */
+const ROSTER_SOURCE_VERSION = 1;
+const ROSTER_KEYS = [
+  "current_total_census",
+  "hospital_and_rehab_total",
+] as const;
+const ROSTER_SOURCE_CODES: Record<string, number> = {
+  roster_confirmed: 1,
+  entered_no_roster: 2,
+  overridden: 3,
+};
+const OVERRIDE_REASON_CODES: Record<string, number> = {
+  roster_not_current: 1,
+  change_not_entered: 2,
+  different_definition: 3,
+  other: 4,
+};
+
+function rosterMap(
+  value: unknown,
+  values: Record<string, number | null>,
+): Record<string, RosterConfirmation> | null | undefined {
+  if (value === undefined || value === null) return value;
+  if (!isObject(value)) {
+    throw new PublisherError("Unexpected source roster confirmations");
+  }
+  for (const [key, entry] of Object.entries(value)) {
+    if (
+      !(ROSTER_KEYS as readonly string[]).includes(key) || !isObject(entry)
+    ) {
+      throw new PublisherError("Unexpected source roster confirmations");
+    }
+    const source = (entry as RosterConfirmation).source;
+    const reason = (entry as RosterConfirmation).override_reason ?? null;
+    if (
+      typeof source !== "string" ||
+      !Object.hasOwn(ROSTER_SOURCE_CODES, source) ||
+      values[key] === null || values[key] === undefined
+    ) {
+      throw new PublisherError("Unexpected source roster confirmations");
+    }
+    if (
+      (source === "overridden") !== (reason !== null) ||
+      (reason !== null &&
+        (typeof reason !== "string" ||
+          !Object.hasOwn(OVERRIDE_REASON_CODES, reason)))
+    ) {
+      throw new PublisherError("Unexpected source roster confirmations");
+    }
+  }
+  return value as Record<string, RosterConfirmation>;
+}
+
+/** Source, override reason and roster as-of rows for one reported facility. */
+function rosterRows(
+  prefix: string,
+  report: AggregateWorkspace["reports"][number],
+): SourcePayload["rows"] {
+  const confirmations = rosterMap(report.roster_confirmations, report.values) ??
+    {};
+  const rows: SourcePayload["rows"] = [];
+  let asOf: number | null = null;
+  for (const key of ROSTER_KEYS) {
+    const entry = confirmations[key];
+    if (entry === undefined) continue;
+    rows.push({
+      metric: `${prefix}_${key}_source`,
+      value: ROSTER_SOURCE_CODES[entry.source as string],
+    });
+    if (entry.source === "overridden") {
+      rows.push({
+        metric: `${prefix}_${key}_override_reason`,
+        value: OVERRIDE_REASON_CODES[entry.override_reason as string],
+      });
+    }
+    if (entry.roster_as_of && asOf === null) {
+      asOf = Math.floor(
+        explicitTimestamp(entry.roster_as_of, "roster as-of").getTime() / 1000,
+      );
+    }
+  }
+  if (asOf !== null) {
+    rows.push({ metric: `${prefix}_roster_as_of_epoch`, value: asOf });
+  }
+  return rows;
 }
 
 function dispositionMap(
@@ -332,6 +432,7 @@ export function buildSourcePayload(
     }
     rawReport.values = exactMetricValues(rawReport.values);
     dispositionMap(rawReport.field_dispositions);
+    rosterMap(rawReport.roster_confirmations, rawReport.values);
     byFacility.set(rawReport.facility_id, rawReport);
   }
 
@@ -344,6 +445,18 @@ export function buildSourcePayload(
     report.field_dispositions !== null
   );
   if (versioned) rows.push({ metric: "field_state_version", value: 1 });
+  // Roster rows follow the same rule: every report must carry stored
+  // confirmations, otherwise the payload stays legacy for this section.
+  const rosterVersioned = reports.every((report) =>
+    report.roster_confirmations !== undefined &&
+    report.roster_confirmations !== null
+  );
+  if (rosterVersioned) {
+    rows.push({
+      metric: "roster_source_version",
+      value: ROSTER_SOURCE_VERSION,
+    });
+  }
   const observedAt = new Date(now);
   if (!Number.isFinite(observedAt.getTime())) {
     throw new PublisherError("Invalid observation time");
@@ -460,6 +573,7 @@ export function buildSourcePayload(
           });
         }
       }
+      if (rosterVersioned) rows.push(...rosterRows(prefix, report));
     }
   }
 
