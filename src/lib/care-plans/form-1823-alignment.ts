@@ -186,22 +186,40 @@ export const ALIGNMENT_STATE_LABELS: Record<AlignmentState, string> = {
   no_plan: "No active plan",
 };
 
-/** Florida asks for a new 1823 every three years or on significant change. */
+/**
+ * FAC 59A-36.006: a resident must have a face-to-face medical examination at
+ * least every 3 years after the initial assessment, or after a significant
+ * change, whichever comes first. This is the statutory ceiling on the exam's
+ * age. The record's own `expiration_date` is a separate, facility-set rule
+ * (COL defaults it to exam + 365 days) and is reported as its own state.
+ */
 export const FORM_1823_MAX_AGE_YEARS = 3;
 
-export function form1823AgeState(examDate: string | null, expirationDate: string | null, today: string): "current" | "expired" | "unknown" {
+/**
+ * - `expired`: the record's own expiration date has passed (facility rule).
+ * - `over_age`: the exam is older than the three-year statutory ceiling.
+ * - `unknown`: no exam date recorded, so age cannot be judged.
+ * - `current`: neither rule is breached.
+ * A record can breach both; the facility's own date wins because it is the
+ * rule staff set deliberately for this resident.
+ */
+export type Form1823AgeState = "current" | "expired" | "over_age" | "unknown";
+
+export function form1823AgeState(examDate: string | null, expirationDate: string | null, today: string): Form1823AgeState {
   if (expirationDate && expirationDate < today) return "expired";
   if (!examDate) return "unknown";
   const [y, m, d] = examDate.split("-").map(Number);
   if (!y || !m || !d) return "unknown";
   const limit = new Date(Date.UTC(y + FORM_1823_MAX_AGE_YEARS, m - 1, d)).toISOString().slice(0, 10);
-  return limit < today ? "expired" : "current";
+  return limit < today ? "over_age" : "current";
 }
 
+/** One line for a roster cell: the exam date, then which rule (if any) it breaches. */
 export function formatForm1823AgeLabel(examDate: string | null, expirationDate: string | null, today: string): string {
   const state = form1823AgeState(examDate, expirationDate, today);
   const exam = formatCarePlanDateOnly(examDate);
-  if (state === "expired") return `Exam ${exam} — older than ${FORM_1823_MAX_AGE_YEARS} years or expired`;
-  if (state === "unknown") return "Exam date not posted";
+  if (state === "expired") return `Exam ${exam} · expired ${formatCarePlanDateOnly(expirationDate)}`;
+  if (state === "over_age") return `Exam ${exam} · older than ${FORM_1823_MAX_AGE_YEARS} years`;
+  if (state === "unknown") return "Exam date not recorded";
   return `Exam ${exam}`;
 }
