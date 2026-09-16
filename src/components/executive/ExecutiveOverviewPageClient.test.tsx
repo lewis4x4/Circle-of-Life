@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ExecutiveOverviewPageClient, EXECUTIVE_OVERVIEW_LOADING_MESSAGE } from "./ExecutiveOverviewPageClient";
 import { EMPTY_PRESENCE_CENSUS } from "@/lib/executive/presence-census";
@@ -353,6 +353,15 @@ describe("ExecutiveOverviewPageClient evidence claims", () => {
     authMock.appRole = "owner";
     authMock.organizationId = "org-1";
     supabaseMock.loadError = null;
+    // These fixtures are dated relative to a fixed "today": the component reads
+    // the wall clock through facilityTodayIsoDate(), so "3 days ago" becomes
+    // "4 days ago" the next morning and the suite goes red on a date rollover
+    // rather than on a change to the code. Pin the day the fixtures describe.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date("2026-09-15T16:00:00.000Z")); // noon in America/New_York
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("never claims nothing needs attention when measures are unreported", () => {
