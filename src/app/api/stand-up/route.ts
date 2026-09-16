@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { standUpCommand } from '@/lib/stand-up/server';
 
 export const runtime = 'nodejs';
-const ACTIONS = new Set(['workspace', 'save', 'export', 'revisions', 'preview_recovery', 'commit_recovery', 'stage_import', 'commit_import', 'reverse_import']);
+const ACTIONS = new Set(['workspace', 'save', 'export', 'revisions', 'preview_recovery', 'commit_recovery', 'stage_import', 'commit_import', 'reverse_import', 'set_entry_window']);
 
 function trustedOrigin(origin: string, request: Request): boolean {
   // Netlify can expose an internal URL to the handler. Use deployment-owned
@@ -31,8 +31,12 @@ export async function POST(request: Request) {
     return NextResponse.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Stand Up operation failed.';
-    const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
-    const status = message === 'Authentication required' ? 401 : code === '42501' ? 403 : /version|conflict/i.test(message) ? 409 : 400;
-    return NextResponse.json({ error: message }, { status, headers: { 'Cache-Control': 'private, no-store' } });
+    const detail = (error ?? {}) as { code?: unknown; hint?: unknown };
+    const code = typeof detail.code === 'string' ? detail.code : undefined;
+    // A refusal the caller has to branch on carries its own code beside the
+    // sentence: the entry window is not open yet (P0409), not a stale version.
+    const refusal = typeof detail.hint === 'string' && detail.hint ? detail.hint : undefined;
+    const status = message === 'Authentication required' ? 401 : code === '42501' ? 403 : code === 'P0409' || /version|conflict/i.test(message) ? 409 : 400;
+    return NextResponse.json(refusal ? { error: message, code: refusal } : { error: message }, { status, headers: { 'Cache-Control': 'private, no-store' } });
   }
 }

@@ -50,4 +50,19 @@ describe('Stand Up caller API', () => {
     mocks.command.mockRejectedValueOnce(new Error('Report version changed'));
     expect((await POST(request({ action: 'save', payload: {} }))).status).toBe(409);
   });
+  it('refuses a save before the entry window opens with its own code, not a version conflict', async () => {
+    mocks.command.mockRejectedValueOnce(Object.assign(new Error('This report opens Sunday, September 20 at 12:00 AM Eastern'), { code: 'P0409', hint: 'stand_up_entry_not_open' }));
+    const refused = await POST(request({ action: 'save', payload: { week_start: '2026-09-28' } }));
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toEqual({ error: 'This report opens Sunday, September 20 at 12:00 AM Eastern', code: 'stand_up_entry_not_open' });
+    // A denial is still a denial; the window never softens authorization.
+    mocks.command.mockRejectedValueOnce(Object.assign(new Error('Stand Up access denied'), { code: '42501' }));
+    expect((await POST(request({ action: 'save', payload: {} }))).status).toBe(403);
+  });
+  it('allows the entry window setting as a named command and nothing else new', async () => {
+    mocks.command.mockResolvedValueOnce({ facility_id: 'f', entry_open_lead_minutes: 3405 });
+    expect((await POST(request({ action: 'set_entry_window', payload: { facility_id: 'f', entry_open_lead_minutes: 3405 } }))).status).toBe(200);
+    expect(mocks.command).toHaveBeenCalledWith('set_entry_window', { facility_id: 'f', entry_open_lead_minutes: 3405 });
+    expect((await POST(request({ action: 'set_entry_defaults', payload: {} }))).status).toBe(400);
+  });
 });
