@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { derivedValues, emptyValues, reportingWeek, validateValues, deadlinePassed, shiftDay, staffingPeriod, reportState, metricDisplay, reportOvertimeMinutes, reportDeadlineState, fieldState, fieldDisplay, overtimeNeedsReview, easternStamp, periodRange, sectionPeriodLabel, metricSection, sectionMetrics, METRIC_KEYS, SECTIONS, FIELD_STATE_TEXT, FIELD_STATE_CODES, FIELD_STATE_VERSION, getStandUpEntryWindow, standUpEntryOpensAt, standUpOpenWeek, isEntryOpenLeadMinutes, entryOpenLeadMinutes, entryOpenLabel, entryOpensStamp, entryWindowLine, easternInstant, STAND_UP_DEFAULT_ENTRY_OPEN_LEAD_MINUTES, STAND_UP_ENTRY_OPEN_LEAD_MIN, STAND_UP_ENTRY_OPEN_LEAD_MAX, STAND_UP_ENTRY_OPEN_CHOICES, type StandUpReport } from './model'
+import { derivedValues, emptyValues, reportingWeek, validateValues, deadlinePassed, shiftDay, staffingPeriod, reportState, metricDisplay, reportOvertimeMinutes, reportDeadlineState, reportHasFigures, fieldState, fieldDisplay, overtimeNeedsReview, easternStamp, periodRange, sectionPeriodLabel, metricSection, sectionMetrics, METRIC_KEYS, SECTIONS, FIELD_STATE_TEXT, FIELD_STATE_CODES, FIELD_STATE_VERSION, getStandUpEntryWindow, standUpEntryOpensAt, standUpOpenWeek, isEntryOpenLeadMinutes, entryOpenLeadMinutes, entryOpenLabel, entryOpensStamp, entryWindowLine, easternInstant, STAND_UP_DEFAULT_ENTRY_OPEN_LEAD_MINUTES, STAND_UP_ENTRY_OPEN_LEAD_MIN, STAND_UP_ENTRY_OPEN_LEAD_MAX, STAND_UP_ENTRY_OPEN_CHOICES, type StandUpReport } from './model'
 describe('Stand Up reporting contract', () => {
  it('opens upcoming Monday on Eastern Sunday, including DST transition', () => {
   expect(reportingWeek(new Date('2026-09-13T04:00:00Z'))).toBe('2026-09-14')
@@ -119,12 +119,34 @@ describe('Stand Up presentation semantics', () => {
   expect(staffingPeriod('2027-01-04')).toBe('December 28, 2026–January 3, 2027')
  })
  it('keeps imported, submitted and resubmission states distinct from completeness', () => {
-  const report = { values: emptyValues(), status: 'draft', entry_origin: 'imported' } as StandUpReport
+  const report = { values: { ...emptyValues(), current_total_census: 34 }, status: 'draft', entry_origin: 'imported' } as StandUpReport
   expect(reportState()).toBe('Not started')
   expect(reportState(report)).toBe('Imported, awaiting review')
   expect(reportState({ ...report, status: 'ready' })).toBe('Submitted')
   expect(reportState({ ...report, last_submitted_at: '2026-09-14T12:30:00Z' })).toBe('Changes awaiting resubmission')
-  expect(reportState({ ...report, entry_origin: 'initialized' })).toBe('Not started')
+  expect(reportState({ ...report, entry_origin: 'initialized' })).toBe('Draft')
+ })
+ /** COL-298 / NAV-008. A week nobody entered anything for is not work in progress. */
+ it('reads a report with nothing in it as Not started whatever row exists behind it', () => {
+  const empty = { id: 'r', values: emptyValues(), status: 'draft', updated_at: '2026-09-13T04:00:00Z' } as StandUpReport
+  expect(reportHasFigures(undefined)).toBe(false)
+  expect(reportHasFigures(empty)).toBe(false)
+  expect(reportState(empty)).toBe('Not started')
+  // The legacy shapes an empty row can carry: no origin at all, or an import.
+  expect(reportState({ ...empty, entry_origin: undefined })).toBe('Not started')
+  expect(reportState({ ...empty, entry_origin: 'imported' })).toBe('Not started')
+  expect(reportState({ ...empty, entry_origin: 'initialized' })).toBe('Not started')
+  // One figure is a Draft, and the sticky bar counts it honestly.
+  const partial = { ...empty, entry_origin: 'manual', values: { ...emptyValues(), callouts_last_week: 0 } } as StandUpReport
+  expect(reportHasFigures(partial)).toBe(true)
+  expect(reportState(partial)).toBe('Draft')
+  expect(derivedValues(partial.values).completed_fields).toBe(1)
+  // An unreadable overtime notation is evidence, so the report is not untouched
+  // even though nothing counts as provided yet.
+  const held = { ...empty, values: { ...emptyValues(), overtime_reported: 15.65 } } as StandUpReport
+  expect(reportHasFigures(held)).toBe(true)
+  expect(reportState(held)).toBe('Draft')
+  expect(derivedValues(held.values).completed_fields).toBe(0)
  })
  it('formats HH.MM as a duration and refuses inconsistent or invalid projections', () => {
   expect(metricDisplay('overtime_reported', 17.15)).toBe('17h 15m')

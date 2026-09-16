@@ -115,7 +115,10 @@ export function StandUpEditor(props: Props) {
       const receipt = await standUpRequest<StandUpReport>('save', attempt.payload);
       if (!mounted.current) return false;
       if (receipt.facility_id !== facility.id || receipt.week_start !== week) throw new Error('The save receipt did not match this facility and meeting. Refresh reports before continuing.');
-      savedRef.current = receipt; setSaved(receipt); pending.current = null; onSaved(receipt);
+      // COL-298: a save that carried no figures reserves nothing, so there is no
+      // report to hold on to. The next save starts from version 0 again.
+      const stored = receipt.not_started ? undefined : receipt;
+      savedRef.current = stored; setSaved(stored); pending.current = null; onSaved(receipt);
       const unchanged = generation.current === attempt.generation;
       dirtyRef.current = !unchanged; setDirty(!unchanged); setPhase('saved');
       if (unchanged) { draftRef.current = fieldsFor(receipt.values); setDraft(draftRef.current); }

@@ -80,7 +80,9 @@ function StandUpSession({ userId }: { userId: string }) {
     if (!mounted.current) return;
     // An earlier refresh cannot overwrite a later confirmed save receipt.
     loadGeneration.current++;
-    setWorkspace(current => current ? { ...current, reports: [...current.reports.filter(report => !(report.facility_id === saved.facility_id && report.week_start === saved.week_start)), saved] } : current);
+    // COL-298: a not-started receipt means no report exists for that facility
+    // and Monday, so the overview drops the row rather than showing an empty Draft.
+    setWorkspace(current => current ? { ...current, reports: [...current.reports.filter(report => !(report.facility_id === saved.facility_id && report.week_start === saved.week_start)), ...(saved.not_started ? [] : [saved])] } : current);
   }, []);
   const deny = useCallback(() => { loadGeneration.current++; setWorkspace(null); setError('Your access changed. Refresh reports to check your current facility assignments.'); }, []);
   const changeWeek = (next: string) => { if (guard.current()) setWeek(next); };

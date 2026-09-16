@@ -42,7 +42,7 @@ export const sectionMetrics = (section: SectionKey) => METRICS.filter(metric => 
 export const metricSection = (key: MetricKey): StandUpSection => SECTIONS.find(section => section.key === METRICS.find(metric => metric.key === key)!.section)!
 export const METRIC_KEYS: MetricKey[] = METRICS.map(metric => metric.key)
 export type StandUpValues = Record<MetricKey, number | null>
-export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; field_dispositions?: Record<string, string> }
+export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; /** COL-298: the save carried no figures, so no report row exists. */ not_started?: boolean; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; field_dispositions?: Record<string, string> }
 /** Shared vocabulary: docs/specs/26-stand-up-field-state-vocabulary.md. One token per metric per report. */
 export const FIELD_STATES = ['provided', 'not_provided', 'held_unit_unconfirmed', 'needs_duration_review', 'source_held', 'no_report'] as const
 export type FieldState = typeof FIELD_STATES[number]
@@ -218,8 +218,22 @@ export function overtimeNeedsReview(report: StandUpReport | undefined): boolean 
   if (!report) return false
   return !!report.overtime_issue || !validOvertime(report.values.overtime_reported)
 }
+/**
+ * Whether any of the sixteen figures has been entered. A held or unreadable
+ * overtime notation still counts as something entered, even though it is not a
+ * countable provided figure: evidence exists, so the report is not untouched.
+ */
+export function reportHasFigures(report: StandUpReport | undefined): boolean {
+  return !!report && METRIC_KEYS.some(key => report.values[key] !== null)
+}
+/**
+ * COL-298: a report with nothing in it is nothing, whatever row happens to
+ * exist behind it. A week opened and abandoned before this fix left a real row
+ * with sixteen blanks; it reads as never started rather than as a Draft, and it
+ * is not counted as work in progress anywhere.
+ */
 function notStarted(report: StandUpReport | undefined): boolean {
-  return !report || (report.entry_origin === 'initialized' && derivedValues(report.values).completed_fields === 0)
+  return !reportHasFigures(report)
 }
 export function fieldState(report: StandUpReport | undefined, key: MetricKey): FieldState {
   if (notStarted(report)) return 'no_report'

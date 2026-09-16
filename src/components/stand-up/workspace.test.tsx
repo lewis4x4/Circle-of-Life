@@ -428,6 +428,54 @@ describe('Stand Up report meaning', () => {
     expect(panel.getByText('Submission').nextElementSibling).toHaveTextContent('Original submission time unavailable.');
   });
 });
+/** COL-298 / NAV-008: a week nobody entered anything for is never reserved. */
+describe('Stand Up empty draft reserves nothing', () => {
+  it('sends no save when the form is opened, read and left', async () => {
+    vi.useFakeTimers();
+    const view = render(<StandUpWorkspace />);
+    await act(async () => { await Promise.resolve(); });
+    fireEvent.change(screen.getByLabelText('Reporting facility'), { target: { value: 'a' } });
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByLabelText('Current census')).toBeInTheDocument();
+    // Long past the autosave debounce, and then away from the page entirely.
+    await act(async () => { vi.advanceTimersByTime(10000); });
+    act(() => { expect(allowRouteLeave('/admin/executive')).toBe(true); });
+    view.unmount();
+    expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+  });
+  it('holds no report after a save that carried nothing, and starts the next one from version 0', async () => {
+    await start(); await choose();
+    changeCensus('20'); changeCensus('');
+    mocks.request.mockResolvedValueOnce({ ...report({ id: null as unknown as string, version: 0, revision_id: null as unknown as string, updated_at: null as unknown as string }), not_started: true });
+    save(); await screen.findByText('No saved report yet');
+    expect(mocks.request.mock.calls.at(-1)?.[1]).toMatchObject({ expected_version: 0, values: emptyValues() });
+    expect(screen.getByText('Not started')).toBeInTheDocument();
+    // The next real figure still opens the report at version 0, not version 1.
+    changeCensus('21');
+    mocks.request.mockResolvedValueOnce(report({ values: { ...emptyValues(), current_total_census: 21 } }));
+    save(); await screen.findByText(/Saved Sep 14/);
+    expect(mocks.request.mock.calls.at(-1)?.[1]).toMatchObject({ expected_version: 0 });
+    expect(screen.getByText('Draft')).toBeInTheDocument();
+    expect(screen.getByText('1/16 provided · not yet reviewed')).toBeInTheDocument();
+  });
+  it('reads a legacy empty draft row as Not started and lets the next administrator save over it', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ entry_origin: 'initialized' })] });
+    await start();
+    const row = screen.getByRole('row', { name: /Homewood/ });
+    expect(row).toHaveTextContent('Not started');
+    expect(row).toHaveTextContent('0/16 provided');
+    expect(row).toHaveTextContent('No report');
+    await choose();
+    expect(screen.getByText('Not started')).toBeInTheDocument();
+    expect(screen.getByText('Not submitted in Haven.')).toBeInTheDocument();
+    // The row is not a lock: the version it holds is carried into the next save.
+    changeCensus('27');
+    mocks.request.mockResolvedValueOnce(report({ version: 2, values: { ...emptyValues(), current_total_census: 27 } }));
+    save(); await screen.findByText(/Saved Sep 14/);
+    expect(mocks.request.mock.calls.at(-1)?.[1]).toMatchObject({ expected_version: 1, values: { ...emptyValues(), current_total_census: 27 } });
+    expect(screen.getByText('Draft')).toBeInTheDocument();
+  });
+});
 describe('Friendly spreadsheet recovery', () => {
   it('requires a deliberate blank confirmation for spreadsheet clears and sends corrected dollars as cents', async () => {
     const values = { ...emptyValues(), monthly_rent_roll_cents: 100000, current_total_census: 20 };
