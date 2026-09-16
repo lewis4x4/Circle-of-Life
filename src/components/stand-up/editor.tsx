@@ -4,8 +4,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { registerRouteLeaveGuard, supportsRouteLeaveProtection, standUpHasDocumentEntry, useRouteTransitionPending, isRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { METRICS, SECTIONS, dateLabel, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
-import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionEvidence } from '@/lib/stand-up/report-presentation';
+import { METRICS, SECTIONS, dateLabel, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
+import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionChecklist, submissionEvidence } from '@/lib/stand-up/report-presentation';
+import { REPORTING_QUALIFICATION, UNRESOLVED_DEFINITIONS, pendingDefinition } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
 import { EntryQuestions, SectionNav, entryValues, fieldsFor, type EntryFields } from './entry-fields';
 import { StandUpHistory } from './history';
@@ -175,7 +176,9 @@ export function StandUpEditor(props: Props) {
     {!browserProtected && <p role="alert" className="rounded border border-border p-3 text-sm">To enter figures safely, open Haven in an up-to-date Chrome, Edge, Firefox, or Safari browser. Haven could not establish a protected document entry in this browser. Saved reports remain available.</p>}
     {/* Status, submission evidence and last save are three different facts and
         stay on three lines. The provenance an administrator needs to judge these
-        figures is here, at the top, not only in the action bar at the bottom. */}
+        figures is here, at the top, not only in the action bar at the bottom.
+        Reporting timings that are not needed while entering a figure sit one
+        disclosure down rather than filling the first screen. */}
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="font-medium"><span>{status.state}</span>{status.qualifier && <span> · {status.qualifier}</span>}</p>
@@ -185,6 +188,15 @@ export function StandUpEditor(props: Props) {
       </div>
       {prior && <Button variant="ghost" onClick={() => setHistory(value => !value)} aria-expanded={history}>Report history</Button>}
     </div>
+    <details className="text-sm">
+      <summary className="cursor-pointer rounded text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Reporting periods and timings</summary>
+      <ul className="mt-2 space-y-1 border-l-2 border-border pl-3 text-sm text-muted-foreground">
+        <li>Staffing and payroll covers {staffingPeriod(week)}.</li>
+        <li>Complete by 8:45 a.m. Eastern; the management call is at 9:15 a.m.</li>
+        {!historical && <li>The next Monday report opens on Sunday, {dateLabel(shiftDay(currentWeek, 6))}.</li>}
+        {prior && <li>Previous figures come from the report for {dateLabel(prior.week_start)}{prior.week_start !== shiftDay(week, -7) ? ', because the previous calendar week is missing' : ''}, and are not copied into this one.</li>}
+      </ul>
+    </details>
     {saved?.entry_origin === 'imported' && !saved.last_submitted_at && <p className="border-l-2 border-border pl-3 text-sm">These figures came from a historical import, not from entry in Haven. Check every section before submitting; filled fields do not mean administrator review is complete.</p>}
     {overtimeError && <p role="alert" className="rounded border border-destructive p-3">{overtimeError.message}</p>}
     {!online && <p role="status" className="rounded border border-border p-3 text-sm">Haven is offline. Keep this page open to retain unsaved entries. The shared Google workbook is your outage fallback while Drive is available.</p>}
@@ -192,9 +204,13 @@ export function StandUpEditor(props: Props) {
     {history && <StandUpHistory reports={props.reports} facilityId={facility.id} facilityName={facility.name} />}
     {review && values ? <section aria-label="Review report" className="space-y-4 rounded border border-border p-5">
       <h3 ref={reviewHeading} tabIndex={-1} className="text-lg font-semibold outline-none">Review {facility.name} · {dateLabel(week)}</h3><p className="text-sm text-muted-foreground">Check the destination, period and all sixteen figures. Submission confirms your review; payroll verification is separate.</p>
-      {/* Last save and submission evidence are two facts; they stay on two lines here as they do at the top. */}
       <p className="text-sm text-muted-foreground">{lastSaveLine(saved, props.userId)}</p>
-      <p className="text-sm text-muted-foreground">{submissionEvidence(saved)}</p>
+      {/* Four separate facts. Populated figures are not a review, a review is
+          not a settled counting rule, and none of them is a submission. */}
+      <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[max-content_1fr]">
+        {submissionChecklist({ report: saved, dirty, provided: complete?.completed_fields ?? null, total: METRICS.length, unresolved: UNRESOLVED_DEFINITIONS.length }).map(row =>
+          <div key={row.term} className="contents"><dt className="font-medium">{row.term}</dt><dd className="text-muted-foreground">{row.detail}</dd></div>)}
+      </dl>
       {missing.length > 0 && <p role="alert">Still needed: {missing.map(metric => metric.label).join(', ')}.</p>}
       {dirty && <p role="status" className="text-sm">Unsaved changes on this page are included when you submit.</p>}
       {/* Values stay grouped under the period they describe, so a forecast is
@@ -209,7 +225,20 @@ export function StandUpEditor(props: Props) {
       {!staffingClosed && <p className="text-sm">Sunday preparation stays a draft until the Monday–Sunday payroll period has closed.</p>}
       <div className="flex flex-wrap gap-3"><Button variant="outline" onClick={() => setReview(false)}>Back to figures</Button><Button className="h-auto min-h-10 whitespace-normal text-left" disabled={routePending || !online || phase === 'saving' || advancedBusy || complete?.completed_fields !== 16 || !staffingClosed} onClick={() => void save('ready')}>Submit {facility.name} for {dateLabel(week)}</Button></div>
     </section> : <form noValidate id="stand-up-entry" className="space-y-5" onSubmit={event => { event.preventDefault(); void save('draft'); }}>
-      <p className="text-sm text-muted-foreground">Leave a figure blank if it is not yet known. Enter 0 when there are none.{prior ? ` Previous figures come from the report for ${dateLabel(prior.week_start)}${prior.week_start !== shiftDay(week, -7) ? ', because the previous calendar week is missing' : ''}, and are not copied into this one.` : ''}</p>
+      <p className="text-sm text-muted-foreground">Leave a figure blank if it is not yet known. Enter 0 when there are none.</p>
+      {/* The company's unresolved counting rules are one qualification on the
+          whole report, named once with every figure it touches, rather than a
+          reporting question repeated under each input. */}
+      {UNRESOLVED_DEFINITIONS.length > 0 && <details className="rounded border border-border p-3 text-sm">
+        <summary className="cursor-pointer rounded font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Counting rules not settled · {UNRESOLVED_DEFINITIONS.length} of the sixteen figures</summary>
+        <p className="mt-2 text-sm text-muted-foreground">{REPORTING_QUALIFICATION}</p>
+        <dl className="mt-3 space-y-2 border-l-2 border-border pl-3 text-xs">
+          {UNRESOLVED_DEFINITIONS.map(key => <div key={key}>
+            <dt className="font-medium">{METRICS.find(metric => metric.key === key)!.label}</dt>
+            <dd className="text-muted-foreground">{pendingDefinition(key)}</dd>
+          </div>)}
+        </dl>
+      </details>}
       <SectionNav />
       <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} open={!historical} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError} />
       {historical && correction && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
@@ -218,7 +247,9 @@ export function StandUpEditor(props: Props) {
       {error && <div role="alert" className="rounded border border-destructive p-3 text-sm">{error}</div>}
       {/* Workflow only: where the save stands, what is still missing, and the
           two actions. Derived figures live beside the fields they come from. */}
-      <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><p className="font-semibold">{facility.name} · {dateLabel(week)}</p><p role="status" id="stand-up-save-state" className="mt-1 text-sm">{routePending ? 'Opening page — editing paused' : saveText}</p><p className="mt-1 text-xs text-muted-foreground">{complete?.completed_fields ?? '—'}/16 provided</p></div>
+      <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><p className="font-semibold">{facility.name} · {dateLabel(week)}</p><p role="status" id="stand-up-save-state" className="mt-1 text-sm">{routePending ? 'Opening page — editing paused' : saveText}</p>{/* Provided counts populated figures. It is not a review, so the bar that
+            stays on screen says so rather than letting 16/16 read as approved. */}
+        <p className="mt-1 text-xs text-muted-foreground">{complete?.completed_fields ?? '—'}/16 provided{(complete?.completed_fields ?? 0) > 0 && status.state !== 'Submitted' ? ' · not yet reviewed' : ''}</p></div>
         {!review && <div className="flex flex-wrap gap-2"><Button type="submit" form="stand-up-entry" variant="outline" aria-describedby="stand-up-save-state" disabled={routePending || !online || !editable || phase === 'saving' || advancedBusy || conflict || (!dirty && !pending.current)}>{phase === 'failed' ? 'Retry save' : 'Save draft'}</Button><Button ref={reviewButton} aria-describedby="stand-up-save-state" disabled={routePending || !editable || !online || phase === 'saving' || advancedBusy || conflict || !!pending.current} onClick={() => { if (validationMessage) { setError(validationMessage); return; } setReview(true); }}>Review and submit</Button></div>}
       </div>
       {(dirty || conflict) && <Button variant="ghost" disabled={routePending || phase === 'saving' || advancedBusy || !!pending.current} onClick={discard}>{conflict ? 'Discard my edits and load saved figures' : 'Discard unsaved changes'}</Button>}

@@ -45,8 +45,27 @@ export function lastSaveLine(report: StandUpReport | undefined, viewerId: string
   return actor ? `Last saved by ${actor} on ${easternStamp(report.updated_at)}.` : `Last saved ${easternStamp(report.updated_at)}.`
 }
 
-/** Recorded observation time for the current-snapshot sections, when there is one. */
+/** The time Haven recorded the current-snapshot figures, when there is one. */
 export const snapshotAsOf = (report?: StandUpReport): string | null => report?.source_as_of ?? null
+
+/**
+ * What the review step has to keep apart. Every figure being populated is not
+ * an administrator's review, an administrator's review is not a settled
+ * counting rule, and none of the three is a submission. Each is stated on its
+ * own row so the decision to submit is made against four separate facts.
+ */
+export function submissionChecklist(input: {
+  report?: StandUpReport; dirty?: boolean; provided: number | null; total: number; unresolved: number
+}): { term: string; detail: string }[] {
+  const { report, dirty = false, provided, total, unresolved } = input
+  const state = reportStatus(report, dirty).state
+  return [
+    { term: 'Figures provided', detail: provided === null ? 'Not countable while a figure needs correction' : provided === total ? `All ${total}` : `${provided} of ${total} — all ${total} are needed to submit` },
+    { term: 'Administrator review', detail: state === 'Submitted' ? 'Confirmed by the last submission' : 'Not confirmed yet — submitting confirms yours' },
+    { term: 'Unresolved definitions', detail: unresolved === 0 ? 'None' : `${unresolved} figures — Circle of Life has not settled how they are counted, so they stay provisional` },
+    { term: 'Submission', detail: submissionEvidence(report) },
+  ]
+}
 
 /** Figures that differ from the previous report, for the review step. */
 export function changesFromPrevious(values: StandUpValues, previous: StandUpReport | undefined): string[] {

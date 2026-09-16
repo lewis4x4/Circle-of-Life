@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { METRIC_KEYS, SECTIONS, dollars, emptyValues, metricDisplay, fieldDisplay, sectionMetrics, sectionPeriodLabel, FIELD_STATE_TEXT, type DerivedFigures, type MetricKey, type SectionKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
-import { SECTION_NOTES, fieldHelp } from '@/lib/stand-up/field-definitions';
+import { DERIVED_NOTES, SECTION_NOTES, fieldHelp, pendingDefinition, sectionUnresolvedCount } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes, overtimeMinuteParts, overtimePartsToLegacy } from '@/lib/stand-up/duration';
 
 export type EntryFields = Record<MetricKey, string> & { overtime_hours: string; overtime_minutes: string };
@@ -32,6 +32,35 @@ export function SectionNav() {
 const SECTION_SCROLL = 'scroll-mt-20';
 const INPUT_SCROLL = 'scroll-mb-48';
 
+/**
+ * A field shows its label, its input and its previous figure. The definition —
+ * and the counting rule where the company has not settled one — sits in one
+ * disclosure per section, so an administrator entering a figure reads a label
+ * rather than a paragraph, and can still reach the meaning without leaving the
+ * page.
+ */
+function SectionDefinitions({ section }: { section: SectionKey }) {
+  const unresolved = sectionUnresolvedCount(section);
+  const derived = DERIVED_NOTES[section];
+  return <details className="text-xs">
+    {/* Keep the browser's disclosure marker: `inline-block` would replace
+        `display: list-item` and leave the row looking like ordinary text. */}
+    <summary className="cursor-pointer rounded font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+      What these figures count{unresolved > 0 ? ` · ${unresolved} not settled` : ''}
+    </summary>
+    <dl className="mt-2 space-y-2 border-l-2 border-border pl-3">
+      {sectionMetrics(section).map(metric => {
+        const pending = pendingDefinition(metric.key);
+        return <div key={metric.key}>
+          <dt className="font-medium">{metric.label}</dt>
+          <dd className="text-muted-foreground">{fieldHelp(metric.key)}{pending ? ` Not settled: ${pending}` : ''}</dd>
+        </div>;
+      })}
+      {derived && <div><dt className="font-medium">{derived.term}</dt><dd className="text-muted-foreground">{derived.detail}</dd></div>}
+    </dl>
+  </details>;
+}
+
 export function EntryQuestions({ fields, onChange, disabled, readOnly = false, week, open = false, prior, asOf, derived, overtimeError }: {
   fields: EntryFields; onChange: (key: keyof EntryFields, value: string) => void; disabled: boolean; readOnly?: boolean;
   week: string; open?: boolean; prior?: StandUpReport; asOf?: string | null; derived: DerivedFigures | null; overtimeError?: OvertimeError;
@@ -45,24 +74,25 @@ export function EntryQuestions({ fields, onChange, disabled, readOnly = false, w
     return <fieldset id={sectionDomId(section.key)} tabIndex={-1} disabled={disabled} key={section.key} className={`space-y-3 border-t border-border pt-5 outline-none ${SECTION_SCROLL}`}>
       <legend className="float-left flex w-full items-baseline gap-3"><span className="text-xs text-muted-foreground" aria-hidden="true">0{index + 1}</span><span className="font-semibold">{section.label}</span></legend>
       <p className="clear-both text-sm font-medium">{sectionPeriodLabel(section, week, asOf, open)}</p>
-      {section.period === 'expected' && <p className="text-xs text-muted-foreground">Enter what you expect. Any previous figure shown is what was forecast last week, not what happened.</p>}
+      {section.period === 'expected' && <p className="text-xs text-muted-foreground">Enter what you expect, not what has already happened.</p>}
       {SECTION_NOTES[section.key] && <p className="text-xs text-muted-foreground">{SECTION_NOTES[section.key]}</p>}
       <div className={`grid gap-x-5 gap-y-4 pt-1 ${metrics.length > 2 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
-        {metrics.map(metric => metric.key === 'overtime_reported' ? <div key={metric.key} className="space-y-2">
+        {metrics.map(metric => metric.key === 'overtime_reported' ? <div key={metric.key} className="space-y-1.5">
           <p id="overtime-label" className="text-sm font-medium">Overtime last week</p><div role="group" aria-labelledby="overtime-label" className="grid max-w-sm grid-cols-2 gap-3">
             <label htmlFor="overtime_hours" className="text-xs text-muted-foreground">Hours<Input id="overtime_hours" aria-label="Overtime hours" aria-invalid={overtimeError ? true : undefined} aria-describedby={overtimeError?.id} readOnly={readOnly} type="number" min="0" step="1" inputMode="numeric" value={fields.overtime_hours} onChange={e => onChange('overtime_hours', e.target.value)} className={`mt-1 tabular-nums ${INPUT_SCROLL}`} /></label>
             <label htmlFor="overtime_minutes" className="text-xs text-muted-foreground">Minutes<Input id="overtime_minutes" aria-label="Overtime minutes" aria-invalid={overtimeError ? true : undefined} aria-describedby={overtimeError?.id} readOnly={readOnly} type="number" min="0" max="59" step="1" inputMode="numeric" value={fields.overtime_minutes} onChange={e => onChange('overtime_minutes', e.target.value)} className={`mt-1 tabular-nums ${INPUT_SCROLL}`} /></label>
-          </div>{overtimeError && <p id={overtimeError.id} className="text-sm text-muted-foreground">{overtimeError.message}</p>}<p className="text-xs text-muted-foreground">{fieldHelp(metric.key)} For example: 17 hours, 15 minutes.</p>{reference(metric.key, section.period)}
+          </div>{overtimeError && <p id={overtimeError.id} className="text-sm text-muted-foreground">{overtimeError.message}</p>}{reference(metric.key, section.period)}
         </div> : <label key={metric.key} htmlFor={metric.key} className="space-y-1.5 text-sm"><span className="block font-medium">{metric.label}{metric.key === 'monthly_rent_roll_cents' ? ' ($)' : ''}</span>
           <Input id={metric.key} aria-label={`${metric.label}${metric.key === 'monthly_rent_roll_cents' ? ' ($)' : ''}`} readOnly={readOnly} type="number" min="0" step={metric.key === 'monthly_rent_roll_cents' ? '0.01' : '1'} inputMode={metric.key === 'monthly_rent_roll_cents' ? 'decimal' : 'numeric'} value={fields[metric.key]} onChange={e => onChange(metric.key, e.target.value)} className={`h-10 tabular-nums ${INPUT_SCROLL}`} />
           {metric.key === 'monthly_rent_roll_cents' && fields[metric.key] && Number.isFinite(Number(fields[metric.key])) && <span className="block text-xs text-muted-foreground">{metricDisplay(metric.key, Math.round(Number(fields[metric.key]) * 100))} per month</span>}
-          <span className="block text-xs text-muted-foreground">{fieldHelp(metric.key)}</span>
           {reference(metric.key, section.period)}
         </label>)}
       </div>
-      {/* Derived figures sit with the fields they come from, with their calculation named. */}
-      {section.key === 'census' && <p className="text-xs text-muted-foreground">Average rent: {dollars(derived?.average_rent_cents ?? null)} · monthly rent roll ÷ current census, not a checked resident-level average.</p>}
-      {section.key === 'beds' && <p className="text-xs text-muted-foreground">Total open beds: {derived?.total_beds_open ?? FIELD_STATE_TEXT.not_provided} · adds the four figures above.</p>}
+      {/* A derived figure sits with the fields it comes from, named for what it
+          actually is; its calculation is one line down, in the definitions. */}
+      {section.key === 'census' && <p className="text-xs text-muted-foreground">{DERIVED_NOTES.census!.term}: {dollars(derived?.average_rent_cents ?? null)}</p>}
+      {section.key === 'beds' && <p className="text-xs text-muted-foreground">Total open beds: {derived?.total_beds_open ?? FIELD_STATE_TEXT.not_provided}</p>}
+      <SectionDefinitions section={section.key} />
     </fieldset>;
   })}</div>;
 }
