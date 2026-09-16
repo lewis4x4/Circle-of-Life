@@ -163,6 +163,8 @@ export function AdminResidentDetailShell({
     formatResidentOverviewGenderLabel(detail.gender),
     `Room ${detail.roomLabel}`,
     detail.unitName || NO_UNIT_COPY,
+    // The global scope may say "All facilities"; the resident's own facility is stated here.
+    detail.facilityName || "Facility not recorded",
     `Admitted ${detail.admissionLabel}`,
   ].join(" · ");
 

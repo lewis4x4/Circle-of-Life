@@ -52,6 +52,7 @@ function residentDetail(gender: string | null): ResidentOverviewDetail {
     ageYears: 82,
     gender,
     roomLabel: "101 A",
+    facilityName: "Homewood Lodge",
     admissionLabel: "Aug 1, 2026",
     rawStatus: "active",
     status: "active",
@@ -102,7 +103,7 @@ describe("AdminResidentDetailShell", () => {
     );
 
     expect(screen.getByTestId("resident-subtitle")).toHaveTextContent(
-      "Age 82 · No gender posted · Room 101 A · No unit on file · Admitted Aug 1, 2026",
+      "Age 82 · No gender posted · Room 101 A · No unit on file · Homewood Lodge · Admitted Aug 1, 2026",
     );
   });
 });
