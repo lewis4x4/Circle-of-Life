@@ -19,6 +19,8 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 
+import { CareEventAttachments } from "@/components/care-events/CareEventAttachments";
+
 import { CareEventCard } from "./CareEventCard";
 import { CareEventDeliveryLedger } from "./CareEventDeliveryLedger";
 import { CareEventWitnesses } from "./CareEventWitnesses";
@@ -185,6 +187,20 @@ export function AdminCareEventPageClient({ careEventId }: { careEventId: string 
           <LowerLevelSection {...sectionProps} />
           <CloseSection {...sectionProps} />
         </div>
+      </RecordDetailSection>
+
+      <RecordDetailSection
+        title="Files"
+        description="The photograph, the scanned incident form, the orders the physician faxed back."
+      >
+        <CareEventAttachments
+          supabase={supabase}
+          careEventId={careEventId}
+          organizationId={card.organizationId}
+          facilityId={card.facilityId}
+          timeZone={card.timeZone}
+          canUpload={!locked}
+        />
       </RecordDetailSection>
 
       <RecordDetailSection

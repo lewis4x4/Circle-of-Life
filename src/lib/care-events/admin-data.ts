@@ -224,6 +224,7 @@ export type CareEventAdminCard = {
   acknowledgedByName: string | null;
   closedAt: string | null;
   facilityId: string;
+  organizationId: string;
   timeZone: string;
   resident: { id: string; name: string; roomLabel: string } | null;
   reporter: { id: string; fullName: string | null; firstName: string | null; phone: string | null };
@@ -366,6 +367,7 @@ function toCard(
     acknowledgedByName: parts.acknowledgedByName,
     closedAt: row.closed_at,
     facilityId: row.facility_id,
+    organizationId: row.organization_id,
     timeZone: parts.timeZone,
     resident: parts.resident,
     reporter: parts.reporter,
