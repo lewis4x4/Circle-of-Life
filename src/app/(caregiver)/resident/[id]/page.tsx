@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertTriangle, CalendarClock, Check, Droplets, HeartPulse, Loader2, Pill, Plus, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, Droplets, HeartPulse, History, Loader2, Pill, Plus, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fetchCaregiverResidentProfile,
@@ -223,6 +223,11 @@ export default function CaregiverResidentQuickProfilePage() {
               href={`/caregiver/report?resident=${residentId}&kind=condition_change`}
               icon={<Droplets className="h-5 w-5 text-teal-400" />}
               label="Condition"
+            />
+            <ActionLink
+              href={`/caregiver/resident/${residentId}/timeline`}
+              icon={<History className="h-5 w-5 text-foreground" />}
+              label="Timeline"
             />
          </div>
       </div>

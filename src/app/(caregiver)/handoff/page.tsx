@@ -4,7 +4,9 @@ import { ShiftHandoffBoard } from "@/components/caregiver/ShiftHandoffBoard";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ClipboardList, Loader2, MessageSquare } from "lucide-react";
 
-import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { ShiftEventsSummary } from "@/components/care-events/timeline/ShiftEventsSummary";
+import { loadCaregiverFacilityContext, type CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { autoSummaryCareEventLines } from "@/lib/caregiver/handoff-summary";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ export default function CaregiverHandoffPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<HandoffRow[]>([]);
   const [nameById, setNameById] = useState<Map<string, string>>(new Map());
+  const [facilityCtx, setFacilityCtx] = useState<CaregiverFacilityContext | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +54,7 @@ export default function CaregiverHandoffPage() {
         return;
       }
       const { facilityId } = resolved.ctx;
+      setFacilityCtx(resolved.ctx);
 
       const hq = await supabase
         .from("shift_handoffs")
@@ -141,6 +145,7 @@ export default function CaregiverHandoffPage() {
         </div>
       </div>
 
+      {facilityCtx ? <ShiftEventsSummary facilityId={facilityCtx.facilityId} timeZone={facilityCtx.timeZone} /> : null}
       <ShiftHandoffBoard />
       {rows.length === 0 ? (
         <div className="p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center">
@@ -222,7 +227,8 @@ export default function CaregiverHandoffPage() {
 
 function autoSummaryLines(summary: unknown): string[] {
   if (summary == null || typeof summary !== "object" || Array.isArray(summary)) return [];
-  const out: string[] = [];
+  // Spec 07A section 6.3: a care_events summary carries printable lines, one per event, grouped by level word.
+  const out: string[] = autoSummaryCareEventLines(summary);
   for (const [k, v] of Object.entries(summary as Record<string, unknown>)) {
     if (typeof v === "string" && v.trim()) {
       out.push(`${humanizeKey(k)}: ${v.trim()}`);
