@@ -90,7 +90,7 @@ What is already right and must stay right: the bucket is private, the read, inse
 
 ### 3.5 Owner decisions D1 to D7
 
-None of the seven decisions in spec 07A section 8 is recorded in the repository or in Linear. They exist only as the spec's own table. Every one is filed in this run and every one is a runbook precondition or a note against it.
+None of the seven decisions in spec 07A section 8 was recorded in the repository or in Linear; they existed only as the spec's own table. All seven are now filed: D1 COL-456, D2 COL-457, D3 COL-458, D4 COL-459, D5 COL-460, D6 COL-461, D7 COL-462. D1, D2 and D5 are go-live preconditions in the runbook; the other four have defaults that are what runs today, and the taxonomy packet prints whatever the configuration says.
 
 ## 4. Findings outside this run's gap items
 
