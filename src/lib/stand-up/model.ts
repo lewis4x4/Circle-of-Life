@@ -1,4 +1,5 @@
 import { legacyOvertimeToMinutes, formatOvertimeMinutes } from './duration'
+import type { RosterConfirmations } from './roster-census'
 
 /**
  * Three different time frames share this one report, so every section declares
@@ -42,7 +43,7 @@ export const sectionMetrics = (section: SectionKey) => METRICS.filter(metric => 
 export const metricSection = (key: MetricKey): StandUpSection => SECTIONS.find(section => section.key === METRICS.find(metric => metric.key === key)!.section)!
 export const METRIC_KEYS: MetricKey[] = METRICS.map(metric => metric.key)
 export type StandUpValues = Record<MetricKey, number | null>
-export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; field_dispositions?: Record<string, string> }
+export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; field_dispositions?: Record<string, string>; roster_confirmations?: RosterConfirmations }
 /** Shared vocabulary: docs/specs/26-stand-up-field-state-vocabulary.md. One token per metric per report. */
 export const FIELD_STATES = ['provided', 'not_provided', 'held_unit_unconfirmed', 'needs_duration_review', 'source_held', 'no_report'] as const
 export type FieldState = typeof FIELD_STATES[number]

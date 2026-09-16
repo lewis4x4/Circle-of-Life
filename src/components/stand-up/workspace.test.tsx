@@ -5,9 +5,10 @@ import { emptyValues, type StandUpReport } from '@/lib/stand-up/model';
 import { useFacilityStore } from '@/hooks/useFacilityStore';
 import { allowRouteLeave } from '@/components/layout/navigation-pending';
 import { StandUpRequestError } from './transport';
-const mocks = vi.hoisted(() => ({ request: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'org_admin' } }));
+const mocks = vi.hoisted(() => ({ request: vi.fn(), outOfHouse: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'org_admin' } }));
 vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => mocks.auth }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
+vi.mock('@/lib/residents/out-of-house', async importOriginal => ({ ...(await importOriginal<typeof import('@/lib/residents/out-of-house')>()), fetchOutOfHouse: mocks.outOfHouse }));
 const workspace = { facilities: [{ id: 'a', name: 'Homewood' }, { id: 'b', name: 'Oakridge' }], reports: [] as StandUpReport[], current_week: '2026-09-14', can_import: false, server_now: '2026-09-14T12:30:00Z' };
 const report = (patch: Partial<StandUpReport> = {}): StandUpReport => ({ id: 'r', facility_id: 'a', week_start: '2026-09-14', version: 1, revision_id: 'rev1', values: emptyValues(), status: 'draft', updated_at: '2026-09-14T12:31:00Z', ...patch });
 function deferred<T>() { let resolve!: (value: T) => void; let reject!: (value: unknown) => void; const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; }
@@ -19,6 +20,7 @@ afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 beforeEach(() => {
   mocks.auth.user = { id: 'u' }; mocks.auth.loading = false; mocks.auth.appRole = 'org_admin';
   mocks.request.mockReset(); mocks.request.mockImplementation(async action => { if (action === 'workspace') return workspace; throw new Error('Unexpected operation'); });
+  mocks.outOfHouse.mockReset(); mocks.outOfHouse.mockResolvedValue([]);
   useFacilityStore.setState({ selectedFacilityId: null, availableFacilities: workspace.facilities, facilitiesCacheUserId: 'u' });
   Object.defineProperty(window, 'navigation', { configurable: true, value: new EventTarget() });
   Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
@@ -464,5 +466,128 @@ describe('Friendly spreadsheet recovery', () => {
     mocks.request.mockResolvedValueOnce(report({ values, version: 2 })); mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ values, version: 2 })], pending_recoveries: [] });
     fireEvent.click(screen.getByRole('button', { name: 'Save reviewed choices for Homewood' })); await screen.findByText('Reviewed spreadsheet changes saved.');
     expect(mocks.request).toHaveBeenCalledWith('commit_recovery', expect.objectContaining({ resolutions: { current_total_census: 20, monthly_rent_roll_cents: 100000 }, confirm_clears: false }));
+  });
+});
+
+describe('Stand Up census and hospital from the roster (COL-351)', () => {
+  const roster = { facility_id: 'a', in_house_count: 32, hospital_hold_count: 1, loa_count: 1, roster_census_count: 34, resident_count_in_haven: 40, roster_as_of: '2026-09-14T11:14:00Z' };
+  const noRoster = { facility_id: 'b', in_house_count: 0, hospital_hold_count: 0, loa_count: 0, roster_census_count: 0, resident_count_in_haven: 0, roster_as_of: null };
+  const outOfHouse = [
+    { id: 'res-c', name: 'Test Resident C', room: '104-A', status: 'hospital' as const, label: 'Bed Hold — Hospital', since: '2026-09-12T09:00:00Z' },
+    { id: 'res-b', name: 'Test Resident B', room: '102-B', status: 'loa' as const, label: 'On leave / vacation', since: '2026-09-10T14:00:00Z' },
+  ];
+  const confirmed = (patch: Record<string, unknown> = {}) => ({ source: 'roster_confirmed' as const, suggested: 34, confirmed: 34, override_reason: null, roster_as_of: roster.roster_as_of, confirmed_at: '2026-09-14T12:00:00Z', ...patch });
+  function withRoster(data: Record<string, typeof roster | typeof noRoster> = { a: roster, b: noRoster }, saved?: (payload: Record<string, unknown>) => StandUpReport) {
+    mocks.request.mockImplementation(async (action, payload) => {
+      if (action === 'workspace') return workspace;
+      if (action === 'roster') return data[(payload as { facility_id: string }).facility_id];
+      if (action === 'save' && saved) return saved(payload as Record<string, unknown>);
+      throw new Error('Unexpected operation');
+    });
+  }
+  it('suggests the census with its components and the roster as-of, and Use roster saves roster_confirmed', async () => {
+    withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed() } }));
+    await start(); await choose();
+    expect(await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)')).toBeInTheDocument();
+    expect(screen.getByText('Roster: 1 at hospital')).toBeInTheDocument();
+    expect(screen.getAllByText('Roster last changed Sep 14, 7:14 a.m.')).toHaveLength(2);
+    expect(screen.getByLabelText('Current census')).toHaveValue(null);
+    fireEvent.click(screen.getByRole('button', { name: 'Use roster for Current census' }));
+    expect(screen.getByLabelText('Current census')).toHaveValue(34);
+    expect(screen.queryByLabelText('Why is this different?')).not.toBeInTheDocument();
+    save(); await screen.findByText(/Saved Sep 14/);
+    const saved = mocks.request.mock.calls.find(call => call[0] === 'save')?.[1] as { values: StandUpReport['values']; roster: Record<string, unknown> };
+    expect(saved.values.current_total_census).toBe(34);
+    expect(saved.roster).toEqual({ current_total_census: {}, hospital_and_rehab_total: {} });
+    expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').length).toBeGreaterThanOrEqual(2);
+  });
+  it('blocks a differing figure until a reason is chosen, then saves it as overridden', async () => {
+    withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'roster_not_current' }) } }));
+    await start(); await choose(); await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)');
+    vi.useFakeTimers();
+    changeCensus('35');
+    const select = screen.getByLabelText('Why is this different?');
+    expect(select).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('Current census')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('Current census')).toHaveAttribute('aria-describedby', 'current_total_census-roster-issue');
+    expect(screen.getByText('Current census differs from the roster (34). Choose why it is different, or use the roster figure.')).toBeInTheDocument();
+    await act(async () => { vi.advanceTimersByTime(1500); });
+    expect(mocks.request.mock.calls.filter(call => call[0] === 'save')).toHaveLength(0);
+    save(); await act(async () => { await Promise.resolve(); });
+    expect(mocks.request.mock.calls.filter(call => call[0] === 'save')).toHaveLength(0);
+    expect(screen.getByRole('alert')).toHaveTextContent('Current census differs from the roster (34)');
+    fireEvent.change(select, { target: { value: 'roster_not_current' } });
+    expect(select).not.toHaveAttribute('aria-invalid');
+    save(); await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    const saved = mocks.request.mock.calls.find(call => call[0] === 'save')?.[1] as { roster: Record<string, unknown> };
+    expect(saved.roster).toEqual({ current_total_census: { override_reason: 'roster_not_current' }, hospital_and_rehab_total: {} });
+  });
+  it('shows the no-roster line for a facility without residents and still lets the figure be typed and saved', async () => {
+    withRoster(undefined, payload => report({ facility_id: 'b', values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed({ source: 'entered_no_roster', suggested: null, confirmed: 12, roster_as_of: null }) } }));
+    await start(); await choose('b');
+    expect((await screen.findAllByText('No roster in Haven for this facility')).length).toBe(2);
+    expect(screen.queryByRole('button', { name: /Use roster/ })).not.toBeInTheDocument();
+    changeCensus('12'); expect(screen.queryByLabelText('Why is this different?')).not.toBeInTheDocument();
+    save(); await screen.findByText(/Saved Sep 14/);
+    const saved = mocks.request.mock.calls.find(call => call[0] === 'save')?.[1] as { facility_id: string; roster: Record<string, unknown> };
+    expect(saved).toMatchObject({ facility_id: 'b', roster: { current_total_census: {}, hospital_and_rehab_total: {} } });
+  });
+  it('removes the editable surface when the roster read says the grant is gone', async () => {
+    mocks.request.mockImplementation(async action => { if (action === 'workspace') return workspace; if (action === 'roster') throw new StandUpRequestError('Stand Up access denied', 403); throw new Error('Unexpected operation'); });
+    await start(); await choose();
+    await screen.findByText(/Your access changed/); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+  });
+  it('keeps the field as it is today when the roster cannot be read', async () => {
+    withRoster({ a: roster }, payload => report({ values: payload.values as StandUpReport['values'] }));
+    mocks.request.mockImplementation(async (action, payload) => { if (action === 'workspace') return workspace; if (action === 'roster') throw new Error('Roster read timed out'); if (action === 'save') return report({ values: (payload as { values: StandUpReport['values'] }).values }); throw new Error('Unexpected operation'); });
+    await start(); await choose();
+    expect((await screen.findAllByText('Roster unavailable: Roster read timed out')).length).toBe(2);
+    changeCensus('9'); save(); await screen.findByText(/Saved Sep 14/);
+    expect(mocks.request.mock.calls.find(call => call[0] === 'save')?.[1]).not.toHaveProperty('roster');
+  });
+  it('lists who is out of house for the chosen facility only, and never sends a name with the report', async () => {
+    mocks.outOfHouse.mockImplementation(async (facilityId: string) => facilityId === 'a' ? outOfHouse : []);
+    withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'] }));
+    await start();
+    expect(screen.queryByText(/Out of house/)).not.toBeInTheDocument();
+    await choose();
+    const summary = await screen.findByText('Out of house (2)');
+    expect(mocks.outOfHouse).toHaveBeenCalledWith('a');
+    fireEvent.click(summary);
+    const rows = within(screen.getByRole('table', { name: 'Residents out of house, hospital first' })).getAllByRole('row').slice(1);
+    expect(rows[0]).toHaveTextContent('Test Resident C'); expect(rows[0]).toHaveTextContent('104-A'); expect(rows[0]).toHaveTextContent('Bed Hold — Hospital'); expect(rows[0]).toHaveTextContent('Sep 12');
+    expect(rows[1]).toHaveTextContent('Test Resident B'); expect(rows[1]).toHaveTextContent('On leave / vacation');
+    expect(screen.getByRole('link', { name: 'Open record for Test Resident C' })).toHaveAttribute('href', '/admin/residents/res-c');
+    fireEvent.click(screen.getByRole('button', { name: 'Use roster for Current census' })); save(); await screen.findByText(/Saved Sep 14/);
+    const wire = JSON.stringify(mocks.request.mock.calls.filter(call => call[0] !== 'workspace').map(call => call[1]));
+    expect(wire).not.toMatch(/Test Resident|res-c|res-b|104-A|first_name|last_name/);
+    fireEvent.change(screen.getByLabelText('Reporting facility'), { target: { value: 'b' } });
+    await screen.findByRole('heading', { name: 'Oakridge' });
+    expect(await screen.findByText('Out of house (0)')).toBeInTheDocument();
+    expect(screen.queryByText('Test Resident C')).not.toBeInTheDocument();
+  });
+  it('shows a past report as it was recorded and never asks the roster again for it', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ id: 'old', week_start: '2026-09-07', values: { ...emptyValues(), current_total_census: 35 }, roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'roster_not_current' }) } })] });
+    withRoster();
+    await start(); await choose();
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
+    expect(screen.getByText('Roster suggested 34 · override: Roster not updated yet')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Use roster/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Out of house/)).not.toBeInTheDocument();
+    expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').every(call => (call[1] as { facility_id: string }).facility_id === 'a')).toBe(true);
+    const rosterCalls = mocks.request.mock.calls.filter(call => call[0] === 'roster').length;
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-14' } });
+    await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)');
+    expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').length).toBe(rosterCalls + 1);
+  });
+  it('marks an override on the all-facilities overview and says nothing for a confirmed figure', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [
+      report({ values: { ...emptyValues(), current_total_census: 35 }, roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'change_not_entered' }) } }),
+      report({ id: 'r2', facility_id: 'b', values: { ...emptyValues(), current_total_census: 12 }, roster_confirmations: { current_total_census: confirmed({ confirmed: 12, suggested: 12 }) } }),
+    ] });
+    await start();
+    const rows = screen.getAllByRole('row').slice(1);
+    expect(rows[0]).toHaveTextContent('35 · override: Admission or discharge not entered in Haven');
+    expect(rows[1]).toHaveTextContent('12'); expect(rows[1]).not.toHaveTextContent('override');
   });
 });
