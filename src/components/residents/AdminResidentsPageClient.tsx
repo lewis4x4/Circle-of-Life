@@ -736,6 +736,17 @@ export function AdminResidentsPageClient({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* The roster's claim to be right is a closed board check (COL-361). */}
+          <Link
+            href="/admin/residents/board-check"
+            title="Walk the building with the physical census board and reconcile it against this roster, bed by bed."
+            className={cn(
+              buttonVariants({ variant: "outline", size: "default" }),
+              "h-9 px-3 text-[12px] font-medium",
+            )}
+          >
+            Board check
+          </Link>
           <Link
             href="/pipeline/admissions/new"
             title="Start a new admission case in the pipeline — the intake form checks for an existing resident or inquiry before creating one."
