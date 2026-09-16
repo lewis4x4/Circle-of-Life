@@ -462,7 +462,9 @@ BEGIN
       target_phone text
     ) ON COMMIT DROP;
   END IF;
-  DELETE FROM care_event_targets_tmp;
+  -- TRUNCATE, not a bare DELETE: Supabase preloads safeupdate for the API roles,
+  -- which refuses DELETE without WHERE even inside a definer function.
+  TRUNCATE care_event_targets_tmp;
 
   IF v_policy.target_kind = 'route' THEN
     SELECT nr.id, nr.name, nr.staff_role_targets, nr.user_targets
