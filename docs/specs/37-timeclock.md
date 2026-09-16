@@ -5,7 +5,7 @@ Haven takes over time and attendance at Homewood Lodge from the wall uPunch FN10
 Mission alignment: pass. The ledger is append only, every manager change carries a reason on record, and nothing here decides pay; the ADP gate (COL-357) stays open.
 
 **Linear:** COL-352 (this module), COL-357 (ADP submission, owns the payroll gate), COL-355 (access revocation on termination), COL-349 (offboard), COL-363 (staff profile edit surface).
-**Migration:** `406_timeclock.sql`. **Database probe:** `supabase/tests/review_timeclock.sql`.
+**Migration:** `404_timeclock.sql` on this branch (renumbered to the next free slot at merge if 404 is taken by a concurrent branch). **Database probe:** `supabase/tests/review_timeclock.sql`.
 **Routes:** `/kiosk/timeclock` (no session), `/admin/timeclock`, `/admin/timeclock/[staffId]`, `/admin/timeclock/compare`, staff profile `Timeclock access` section, facility settings `Timeclock` tab.
 
 ---
@@ -47,7 +47,7 @@ Mission alignment: pass. The ledger is append only, every manager change carries
 
 ---
 
-## 3. Data model (migration 406)
+## 3. Data model (timeclock migration)
 
 All tables: RLS enabled, `organization_id` first in every policy, then `facility_id IN (SELECT haven.accessible_facility_ids())`. Manager roles are `('owner','org_admin','facility_admin')`.
 
