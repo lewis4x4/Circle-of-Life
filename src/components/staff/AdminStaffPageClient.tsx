@@ -284,15 +284,28 @@ export function AdminStaffPageClient({
             Roster from staff, certifications, and upcoming shift assignments.
           </p>
         </div>
-        <Link
-          href="/admin/staff/new"
-          className={cn(
-            buttonVariants({ size: "default" }),
-            "h-9 px-3 text-[12px] font-medium",
-          )}
-        >
-          New staff member
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* The roster's claim to be the staff is a closed staff check (COL-361). */}
+          <Link
+            href="/admin/staff/staff-check"
+            title="Resolve every identity with access to this facility: keep, deactivate, or duplicate of someone already here."
+            className={cn(
+              buttonVariants({ variant: "outline", size: "default" }),
+              "h-9 px-3 text-[12px] font-medium",
+            )}
+          >
+            Staff check
+          </Link>
+          <Link
+            href="/admin/staff/new"
+            className={cn(
+              buttonVariants({ size: "default" }),
+              "h-9 px-3 text-[12px] font-medium",
+            )}
+          >
+            New staff member
+          </Link>
+        </div>
       </div>
 
       {/* KPI strip — uses the shared StatCard primitive. Attention chrome
