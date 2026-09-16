@@ -142,9 +142,9 @@ Out of scope, and **no follow on issue is filed**. The run brief said to file on
 
 | # | Question | Owner | Reference |
 |---|---|---|---|
-| 1 | Which columns does the Homewood paper admission and discharge log carry that Haven does not capture? Haven has admission source, discharge reason and discharge destination on the resident row; the paper log may carry responsible party, payer at admission, or a physician. No vocabulary or column is added for these until the paper log is read. | Jessica Murphy | Homewood paper admission and discharge log |
-| 2 | Room and bed at the time of an event. Haven has no bed assignment history, so the register prints the current assignment and a discharged resident shows none. Deciding this means deciding whether to record bed assignment history, which is a schema change outside this module. | Jessica Murphy | §2, `room_as_of` |
-| 3 | Discharge reason and destination for a resident who was readmitted. `residents` holds one set of discharge columns, so a readmission overwrites the prior discharge's reason and destination. The register shows them only on the most recent discharge or death row and leaves older ones blank rather than showing the wrong reason. | Jessica Murphy | §4.1 |
+| 1 | (COL-451) Which columns does the Homewood paper admission and discharge log carry that Haven does not capture? Haven has admission source, discharge reason and discharge destination on the resident row; the paper log may carry responsible party, payer at admission, or a physician. No vocabulary or column is added for these until the paper log is read. | Jessica Murphy | Homewood paper admission and discharge log |
+| 2 | (COL-451) Room and bed at the time of an event. Haven has no bed assignment history, so the register prints the current assignment and a discharged resident shows none. Deciding this means deciding whether to record bed assignment history, which is a schema change outside this module. | Jessica Murphy | §2, `room_as_of` |
+| 3 | (COL-451) Discharge reason and destination for a resident who was readmitted. `residents` holds one set of discharge columns, so a readmission overwrites the prior discharge's reason and destination. The register shows them only on the most recent discharge or death row and leaves older ones blank rather than showing the wrong reason. | Jessica Murphy | §4.1 |
 | 4 | Visitor log retention period. No retention rule is applied by this module. | Michelle Norris | |
 | 5 | Do surveyors sign the visitor log? `surveyor_regulator` exists as a type; whether a surveyor is asked to sign in is a facility practice decision. | Michelle Norris | §5 |
 | 6 | Paper binder retirement sign off. Binders stay until Michelle compares a print pack against the binder for the same range and approves. | Michelle Norris | `docs/homewood/admission-discharge-visitor-runbook.md` |
@@ -153,5 +153,6 @@ Out of scope, and **no follow on issue is filed**. The run brief said to file on
 
 ## 9. Follow ons
 
-- Visitor self service kiosk on enrolled tablets, related to COL-352 (device enrollment).
-- Admission source and discharge destination capture, open decision for Jessica Murphy (TBD 1 and 3).
+- **COL-450** Visitor self service kiosk on enrolled tablets. Blocked by COL-352 merging; the kiosk reuses its device enrollment.
+- **COL-451** Decision: admission source and discharge destination on the register. Open decision for Jessica Murphy, covering TBD 1, 2 and 3.
+- No Stand Up suggestion issue was filed. See §7 for why.
