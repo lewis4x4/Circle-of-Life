@@ -4,7 +4,12 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  ASSESSMENT_INSTRUMENT_HELD_ERROR,
   ASSESSMENT_SCHEDULE_BASIS_COPY,
+  formatHeldInstrumentSaveError,
+  heldInstrumentReason,
+  isHeldInstrumentSaveError,
+  isInstrumentHeld,
   computeCompletedResult,
   computeEntryProgress,
   computeProvisionalResult,
@@ -302,5 +307,39 @@ describe("copy", () => {
     const copy = formatDuplicateWarning("Braden Scale", "2026-09-16", "Sample Resident");
     expect(copy).toContain("Braden Scale dated 2026-09-16 is already on record for Sample Resident");
     expect(copy).toContain("does not replace");
+  });
+});
+
+describe("held instruments (COL-430)", () => {
+  const available = { held_reason: null };
+  const held = { held_reason: "PHQ-9 on hold until safety follow-up is added" };
+
+  it("treats null, undefined and blank as available", () => {
+    expect(isInstrumentHeld(available)).toBe(false);
+    expect(isInstrumentHeld({})).toBe(false);
+    expect(isInstrumentHeld({ held_reason: "   " })).toBe(false);
+    expect(heldInstrumentReason(available)).toBeNull();
+  });
+
+  it("treats any real reason as held and returns it trimmed", () => {
+    expect(isInstrumentHeld(held)).toBe(true);
+    expect(heldInstrumentReason(held)).toBe("PHQ-9 on hold until safety follow-up is added");
+    expect(heldInstrumentReason({ held_reason: "  on hold  " })).toBe("on hold");
+  });
+
+  it("recognises the database sentinel in a save error", () => {
+    expect(isHeldInstrumentSaveError(ASSESSMENT_INSTRUMENT_HELD_ERROR)).toBe(true);
+    // PostgREST wraps the message; matching must survive that.
+    expect(isHeldInstrumentSaveError('new row violates: assessment_instrument_held')).toBe(true);
+    expect(isHeldInstrumentSaveError("connection lost")).toBe(false);
+    expect(isHeldInstrumentSaveError(null)).toBe(false);
+  });
+
+  it("names the instrument and says nothing was recorded", () => {
+    expect(formatHeldInstrumentSaveError("PHQ-9")).toBe("PHQ-9 is on hold and was not recorded.");
+  });
+
+  it("keeps the seeded instruments available in the fixtures", () => {
+    for (const t of Object.values(seeded)) expect(isInstrumentHeld(t)).toBe(false);
   });
 });

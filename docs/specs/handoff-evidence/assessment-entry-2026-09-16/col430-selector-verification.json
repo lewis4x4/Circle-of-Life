@@ -1,0 +1,63 @@
+{
+  "base": "http://127.0.0.1:3178",
+  "resident": "c0000003-0000-0000-0000-000000000002",
+  "ranAt": "2026-09-16T18:15:02.744Z",
+  "results": [
+    {
+      "step": "held: PHQ-9 present exactly once as a disabled row",
+      "ok": true
+    },
+    {
+      "step": "held: shows the database hold reason",
+      "ok": true,
+      "detail": "PHQ-9 Patient Health Questionnaire | PHQ-9 on hold until safety follow-up is added"
+    },
+    {
+      "step": "held: no button for PHQ-9",
+      "ok": true
+    },
+    {
+      "step": "held: no link for PHQ-9",
+      "ok": true
+    },
+    {
+      "step": "held: no radio for PHQ-9",
+      "ok": true
+    },
+    {
+      "step": "held: clicking the held row does not open a form",
+      "ok": true
+    },
+    {
+      "step": "unheld: three instruments still offered",
+      "ok": true
+    },
+    {
+      "step": "unheld: Braden opens normally",
+      "ok": true,
+      "detail": "0 of 6 sections completed Complete all required items to calculate the result."
+    },
+    {
+      "step": "race: Braden held at the database while the form is open",
+      "ok": true
+    },
+    {
+      "step": "race: operator sees the hold wording, not the database sentinel",
+      "ok": true,
+      "detail": "The assessment was not recorded. Your answers are kept. Braden Scale for Predicting Pressure Sore Risk is on hold and was not recorded."
+    },
+    {
+      "step": "race: answers are still on screen",
+      "ok": true
+    },
+    {
+      "step": "race: nothing was recorded",
+      "ok": true,
+      "detail": "braden rows for this resident: 0"
+    },
+    {
+      "step": "cleanup: Braden released",
+      "ok": true
+    }
+  ]
+}

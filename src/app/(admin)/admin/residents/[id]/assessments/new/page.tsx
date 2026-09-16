@@ -25,8 +25,12 @@ import {
   formatScoreOfMax,
   formatScoreRange,
   formatSectionsCompleted,
+  formatHeldInstrumentSaveError,
   formatSectionsRemaining,
   formatSwitchInstrumentWarning,
+  heldInstrumentReason,
+  isHeldInstrumentSaveError,
+  isInstrumentHeld,
   sectionAnchorId,
 } from "@/lib/assessments/assessment-entry-model";
 import {
@@ -193,6 +197,11 @@ export default function AssessmentEntryPage() {
   }, [load]);
 
   function selectInstrument(type: string) {
+    // A held instrument renders no control, so this is defence in depth: a
+    // stale list or a replayed click must not open a form the save path will
+    // refuse anyway.
+    const target = templates.find((t) => t.assessment_type === type);
+    if (target && isInstrumentHeld(target)) return;
     setSelectedType(type);
     form.setValue("assessmentType", type);
     form.setValue("scores", {});
@@ -295,7 +304,12 @@ export default function AssessmentEntryPage() {
       });
       setDownstreamPending(false);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to record assessment");
+      const raw = err instanceof Error ? err.message : "Failed to record assessment";
+      setSaveError(
+        isHeldInstrumentSaveError(raw)
+          ? formatHeldInstrumentSaveError(selectedTemplate.name)
+          : raw,
+      );
     } finally {
       setSaving(false);
     }
@@ -408,29 +422,50 @@ export default function AssessmentEntryPage() {
           {!loading && !loadError && templates.length > 0 && (
             <>
               <div className="grid gap-3 sm:grid-cols-2">
-                {templates.map((t) => (
-                  <button
-                    key={t.assessment_type}
-                    type="button"
-                    onClick={() => selectInstrument(t.assessment_type)}
-                    className="rounded-[8px] border border-border bg-card px-4 py-4 text-left transition-colors duration-[var(--motion-duration-micro)] hover:border-primary/30 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <div className="font-medium text-foreground">{t.name}</div>
-                    {t.description && (
-                      <div className="mt-1 text-sm text-muted-foreground">{t.description}</div>
-                    )}
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      <span className="tabular-nums">
-                        {formatScoreRange(t.score_range_min, t.score_range_max)}
-                      </span>
-                      {" · "}
-                      <span className="tabular-nums">
-                        {formatScheduleInterval(t.default_frequency_days)}
-                      </span>{" "}
-                      <span>({ASSESSMENT_SCHEDULE_BASIS_COPY})</span>
-                    </div>
-                  </button>
-                ))}
+                {templates.map((t) => {
+                  const heldReason = heldInstrumentReason(t);
+
+                  // A held instrument stays listed so staff can see it exists
+                  // and why it is unavailable, but it is plain text: no
+                  // button, no radio, no link, nothing selectable. The
+                  // database refuses the insert regardless (COL-430).
+                  if (heldReason) {
+                    return (
+                      <div
+                        key={t.assessment_type}
+                        aria-disabled="true"
+                        className="rounded-[8px] border border-dashed border-border bg-muted/40 px-4 py-4 text-left"
+                      >
+                        <div className="font-medium text-muted-foreground">{t.name}</div>
+                        <div className="mt-1 text-sm text-muted-foreground">{heldReason}</div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={t.assessment_type}
+                      type="button"
+                      onClick={() => selectInstrument(t.assessment_type)}
+                      className="rounded-[8px] border border-border bg-card px-4 py-4 text-left transition-colors duration-[var(--motion-duration-micro)] hover:border-primary/30 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <div className="font-medium text-foreground">{t.name}</div>
+                      {t.description && (
+                        <div className="mt-1 text-sm text-muted-foreground">{t.description}</div>
+                      )}
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        <span className="tabular-nums">
+                          {formatScoreRange(t.score_range_min, t.score_range_max)}
+                        </span>
+                        {" · "}
+                        <span className="tabular-nums">
+                          {formatScheduleInterval(t.default_frequency_days)}
+                        </span>{" "}
+                        <span>({ASSESSMENT_SCHEDULE_BASIS_COPY})</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
               <p className="text-xs text-muted-foreground">
                 Intervals are Haven defaults used to set the next due date. They are not

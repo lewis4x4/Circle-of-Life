@@ -83,9 +83,39 @@ type Harness = {
   updates: Array<{ table: string; payload: unknown }>;
   failInsertWith: string | null;
   sameDayCount: number;
+  includeHeldPhq9: boolean;
 };
 
-const harness: Harness = { inserts: [], updates: [], failInsertWith: null, sameDayCount: 0 };
+const phq9HeldTemplate = {
+  id: "88888888-8888-8888-8888-888888888888",
+  assessment_type: "phq9",
+  name: "PHQ-9",
+  description: "Depression screening tool",
+  score_range_min: 0,
+  score_range_max: 3,
+  risk_thresholds: { minimal: [0, 1], severe: [2, 3] },
+  items: [
+    {
+      key: "interest",
+      label: "Little interest or pleasure in doing things",
+      options: [
+        { value: 0, label: "Not at all" },
+        { value: 1, label: "Several days" },
+      ],
+    },
+  ],
+  default_frequency_days: 180,
+  required_role: ["owner"],
+  held_reason: "PHQ-9 on hold until safety follow-up is added",
+};
+
+const harness: Harness = {
+  inserts: [],
+  updates: [],
+  failInsertWith: null,
+  sameDayCount: 0,
+  includeHeldPhq9: false,
+};
 
 function resolveQuery(table: string, ops: Op[]) {
   const has = (m: string) => ops.some((o) => o.method === m);
@@ -100,7 +130,12 @@ function resolveQuery(table: string, ops: Op[]) {
     return { data: { id: ANONYMOUS_RESIDENT_ID }, error: null };
   }
   if (table === "assessment_templates") {
-    return { data: [katzTemplate, bradenTemplate], error: null };
+    return {
+      data: harness.includeHeldPhq9
+        ? [katzTemplate, bradenTemplate, phq9HeldTemplate]
+        : [katzTemplate, bradenTemplate],
+      error: null,
+    };
   }
   if (table === "assessments" && has("insert")) {
     const payload = ops.find((o) => o.method === "insert")?.args[0];
@@ -175,6 +210,7 @@ beforeEach(() => {
   harness.updates = [];
   harness.failInsertWith = null;
   harness.sameDayCount = 0;
+  harness.includeHeldPhq9 = false;
 });
 
 afterEach(() => {
@@ -409,6 +445,62 @@ describe("AssessmentEntryPage review and record", () => {
       expect(screen.getByText(/already on record for Sample Resident/)).toBeInTheDocument(),
     );
     expect(screen.getByRole("button", { name: "Record anyway" })).toBeInTheDocument();
+    expect(harness.inserts).toHaveLength(0);
+  });
+});
+
+describe("AssessmentEntryPage held instrument (COL-430)", () => {
+  it("lists a held instrument once as disabled text with nothing selectable", async () => {
+    harness.includeHeldPhq9 = true;
+    render(<AssessmentEntryPage />);
+    await screen.findByRole("button", { name: /Katz ADL Index/i });
+
+    // Named once, with the hold reason, and not as a control.
+    expect(screen.getByText("PHQ-9")).toBeInTheDocument();
+    expect(screen.getAllByText("PHQ-9")).toHaveLength(1);
+    expect(screen.getByText("PHQ-9 on hold until safety follow-up is added")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /PHQ-9/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /PHQ-9/ })).toBeNull();
+    expect(screen.queryByRole("radio", { name: /PHQ-9/ })).toBeNull();
+
+    const held = screen.getByText("PHQ-9").closest("[aria-disabled]");
+    expect(held).not.toBeNull();
+    expect(held).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("keeps the unheld instruments selectable alongside it", async () => {
+    harness.includeHeldPhq9 = true;
+    render(<AssessmentEntryPage />);
+
+    const braden = await screen.findByRole("button", { name: /Braden Scale/i });
+    expect(braden).toBeEnabled();
+    fireEvent.click(braden);
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /Braden Scale/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("0 of 2 sections completed");
+  });
+
+  it("shows the hold message and keeps the answers when the database refuses the save", async () => {
+    // The instrument was held after this picker loaded, so the form opened.
+    harness.failInsertWith = "assessment_instrument_held";
+    render(<AssessmentEntryPage />);
+    await pickInstrument(/Katz ADL Index/i);
+    answer("Bathing", "Dependent");
+    answer("Dressing", "Independent");
+    fireEvent.click(screen.getByRole("button", { name: "Review assessment" }));
+    await screen.findByRole("heading", { level: 2, name: "Review Katz ADL Index" });
+    fireEvent.click(screen.getByRole("button", { name: "Record assessment" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Katz ADL Index is on hold and was not recorded.");
+    // The raw database sentinel never reaches the operator.
+    expect(alert).not.toHaveTextContent("assessment_instrument_held");
+
+    // Answers are still on screen and nothing was recorded.
+    const table = screen.getByRole("table", { name: /Answers for Katz ADL Index/i });
+    expect(within(table).getByText("Dependent")).toBeInTheDocument();
+    expect(within(table).getByText("Independent")).toBeInTheDocument();
     expect(harness.inserts).toHaveLength(0);
   });
 });

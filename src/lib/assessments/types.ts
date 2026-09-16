@@ -34,6 +34,13 @@ export interface AssessmentTemplate {
   items: AssessmentTemplateItem[];
   default_frequency_days: number;
   required_role: string[];
+  /**
+   * COL-430. Set by migration 410 when an instrument is held. A held
+   * instrument cannot be started or recorded: the database refuses the
+   * insert, and the picker shows this text as a disabled line. NULL or
+   * absent means available.
+   */
+  held_reason?: string | null;
 }
 
 /** Scores collected from the form — keys are item keys, values are numeric option values */

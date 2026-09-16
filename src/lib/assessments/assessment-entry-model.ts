@@ -31,6 +31,14 @@ export const ASSESSMENT_COMPLETE_TO_CALCULATE_COPY =
   "Complete all required items to calculate the result.";
 export const ASSESSMENT_SCORE_RANGE_UNSET_COPY = "Score range not set";
 
+/**
+ * The message the database raises when an instrument is held (COL-430,
+ * migration 410: `haven.reject_held_assessment_instrument`). The save path
+ * matches on it so a held instrument reads as a hold rather than as a
+ * failure the operator could retry their way out of.
+ */
+export const ASSESSMENT_INSTRUMENT_HELD_ERROR = "assessment_instrument_held";
+
 export interface SectionProgress {
   key: string;
   label: string;
@@ -209,6 +217,34 @@ export function formatRiskLevel(riskLevel: string): string {
 
 export function formatPoints(value: number): string {
   return value === 1 ? "1 point" : `${value} points`;
+}
+
+/** True when the instrument is held and cannot be started or recorded. */
+export function isInstrumentHeld(
+  template: Pick<AssessmentTemplate, "held_reason">,
+): boolean {
+  return typeof template.held_reason === "string" && template.held_reason.trim() !== "";
+}
+
+/** The hold text to show in the picker, or null when the instrument is available. */
+export function heldInstrumentReason(
+  template: Pick<AssessmentTemplate, "held_reason">,
+): string | null {
+  return isInstrumentHeld(template) ? (template.held_reason as string).trim() : null;
+}
+
+/** True when a save failed because the database is holding the instrument. */
+export function isHeldInstrumentSaveError(message: string | null | undefined): boolean {
+  return typeof message === "string" && message.includes(ASSESSMENT_INSTRUMENT_HELD_ERROR);
+}
+
+/**
+ * Operator wording for a refused save. Names the instrument and says plainly
+ * that nothing was recorded, so the answers still on screen are not mistaken
+ * for a saved result.
+ */
+export function formatHeldInstrumentSaveError(instrumentName: string): string {
+  return `${instrumentName} is on hold and was not recorded.`;
 }
 
 export function sectionAnchorId(itemKey: string): string {
