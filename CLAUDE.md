@@ -103,6 +103,18 @@ insert into supabase_migrations.schema_migrations (version, name)
 values ('NNN', 'name') on conflict (version) do nothing;
 ```
 
+**`name` is the filename stem with the number stripped.** `411_facility_identity_health_scope_comment.sql` is recorded as `('411', 'facility_identity_health_scope_comment')` — never `('411', '411_facility_identity_health_scope_comment')` and never under a timestamp version if you can avoid it. `check-migration-ledger.mjs` parses each file as `<version>_<name>.sql` and matches on version first, then name; a name carrying its own number prefix matches neither key, so the migration silently reads as *unapplied* and the next person re-runs applied DDL. The Supabase MCP `apply_migration` tool writes whatever `name` you hand it under a generated timestamp version, which makes this easy to get wrong — prefer `execute_sql` for the DDL plus an explicit ledger insert.
+
+**Verify the link before you apply anything.** `supabase/.temp/project-ref` in the shared checkout follows whatever was last rehearsed and is changed by other sessions without warning — it has been observed flipping between production and Haven HFO Staging within a single afternoon. `supabase db query --linked` will cheerfully run production DDL against staging, or the reverse. Either work in your own worktree and `supabase link --project-ref <ref>` it explicitly, or assert the ref before every apply:
+
+```bash
+test "$(cat supabase/.temp/project-ref)" = "<expected-ref>" || { echo "WRONG LINK"; exit 1; }
+```
+
+Production is `manfqmasfqppukpobpld`; Haven HFO Staging is `iwcnajanvjvynolltflw`. `migrations:verify:ledger` does *not* read the link — it resolves the ref itself — so its output is trustworthy even when the link is not.
+
+**Not every migration is atomic.** Most wrap themselves in `BEGIN; … COMMIT;`, but some do not (`410_assessment_instrument_hold.sql` has only a plpgsql `BEGIN` inside a function body). A non-atomic file that fails halfway leaves the earlier statements applied, so re-running it dies on `42701 column … already exists` while the rest of it is genuinely missing. Before re-running a failed apply, check the objects one at a time rather than trusting the first error.
+
 Migrations applied outside the CLI land under a timestamp version rather than `NNN`, which is why 384, 385 and 387 are recorded as `20260914203602`, `20260914203613` and `20260915182400`. Read the ledger by name, not by `max(version)` — text ordering puts `2026…` below `383`.
 
 **Never schema-qualify an extension function with `public.`.** On a hosted Supabase project pgcrypto lives in `extensions`, so `public.gen_random_uuid()` is `42883: function does not exist` — which is how migration 380 failed hosted after replaying clean locally. Use the bare name (what the other ~128 migrations do; inside `SET search_path = ''` use `pg_catalog.` for built-ins like `gen_random_uuid`, or resolve the schema dynamically with `%I` the way `093` onward do for `crypt`/`gen_salt`). `scripts/pg-verify-stub.sql` now installs pgcrypto into `extensions` so the local replay reproduces this instead of hiding it, and `npm run migrations:check:hosted` fails the build on a `public.`-qualified extension call without needing a database at all.
