@@ -1162,6 +1162,344 @@ export type Database = {
           },
         ]
       }
+      care_event_deliveries: {
+        Row: {
+          acknowledged_at: string | null
+          care_event_id: string
+          channel: string
+          created_at: string
+          error_message: string | null
+          escalation_step: number
+          facility_id: string
+          id: string
+          organization_id: string
+          provider_message_id: string | null
+          send_after: string
+          sent_at: string | null
+          skip_reason: string | null
+          status: string
+          target_phone: string | null
+          target_role: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          care_event_id: string
+          channel: string
+          created_at?: string
+          error_message?: string | null
+          escalation_step?: number
+          facility_id: string
+          id?: string
+          organization_id: string
+          provider_message_id?: string | null
+          send_after?: string
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          target_phone?: string | null
+          target_role?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          care_event_id?: string
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          escalation_step?: number
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          provider_message_id?: string | null
+          send_after?: string
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          target_phone?: string | null
+          target_role?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_event_deliveries_care_event_id_fkey"
+            columns: ["care_event_id"]
+            isOneToOne: false
+            referencedRelation: "care_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_event_deliveries_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_event_deliveries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_event_deliveries_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_event_escalation_policies: {
+        Row: {
+          ack_within_minutes: number | null
+          after_minutes: number
+          channels: string[]
+          facility_id: string | null
+          id: string
+          is_active: boolean
+          level: Database["public"]["Enums"]["incident_severity"]
+          notification_route_id: string | null
+          organization_id: string
+          repeat_every_minutes: number | null
+          step: number
+          target_kind: string
+        }
+        Insert: {
+          ack_within_minutes?: number | null
+          after_minutes: number
+          channels: string[]
+          facility_id?: string | null
+          id?: string
+          is_active?: boolean
+          level: Database["public"]["Enums"]["incident_severity"]
+          notification_route_id?: string | null
+          organization_id: string
+          repeat_every_minutes?: number | null
+          step: number
+          target_kind?: string
+        }
+        Update: {
+          ack_within_minutes?: number | null
+          after_minutes?: number
+          channels?: string[]
+          facility_id?: string | null
+          id?: string
+          is_active?: boolean
+          level?: Database["public"]["Enums"]["incident_severity"]
+          notification_route_id?: string | null
+          organization_id?: string
+          repeat_every_minutes?: number | null
+          step?: number
+          target_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_event_escalation_policies_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_event_escalation_policies_notification_route_id_fkey"
+            columns: ["notification_route_id"]
+            isOneToOne: false
+            referencedRelation: "notification_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_event_escalation_policies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_events: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          answers: Json
+          behavioral_log_id: string | null
+          captured_offline: boolean
+          category: Database["public"]["Enums"]["incident_category"]
+          client_event_id: string
+          closed_at: string | null
+          closed_by: string | null
+          condition_change_id: string | null
+          created_at: string
+          deleted_at: string | null
+          derived_level: Database["public"]["Enums"]["incident_severity"]
+          discovered_at: string
+          facility_id: string
+          final_level: Database["public"]["Enums"]["incident_severity"]
+          flags: Json
+          id: string
+          incident_id: string | null
+          kind: string
+          level_bumped_by_reporter: boolean
+          level_change_reason: string | null
+          level_changed_at: string | null
+          level_changed_by: string | null
+          location_code: string | null
+          note: string | null
+          occurred_at: string
+          organization_id: string
+          reported_by: string
+          resident_id: string | null
+          sentence: string
+          shift: Database["public"]["Enums"]["shift_type"]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          answers?: Json
+          behavioral_log_id?: string | null
+          captured_offline?: boolean
+          category: Database["public"]["Enums"]["incident_category"]
+          client_event_id: string
+          closed_at?: string | null
+          closed_by?: string | null
+          condition_change_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          derived_level: Database["public"]["Enums"]["incident_severity"]
+          discovered_at?: string
+          facility_id: string
+          final_level: Database["public"]["Enums"]["incident_severity"]
+          flags?: Json
+          id?: string
+          incident_id?: string | null
+          kind: string
+          level_bumped_by_reporter?: boolean
+          level_change_reason?: string | null
+          level_changed_at?: string | null
+          level_changed_by?: string | null
+          location_code?: string | null
+          note?: string | null
+          occurred_at: string
+          organization_id: string
+          reported_by: string
+          resident_id?: string | null
+          sentence: string
+          shift: Database["public"]["Enums"]["shift_type"]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          answers?: Json
+          behavioral_log_id?: string | null
+          captured_offline?: boolean
+          category?: Database["public"]["Enums"]["incident_category"]
+          client_event_id?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          condition_change_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          derived_level?: Database["public"]["Enums"]["incident_severity"]
+          discovered_at?: string
+          facility_id?: string
+          final_level?: Database["public"]["Enums"]["incident_severity"]
+          flags?: Json
+          id?: string
+          incident_id?: string | null
+          kind?: string
+          level_bumped_by_reporter?: boolean
+          level_change_reason?: string | null
+          level_changed_at?: string | null
+          level_changed_by?: string | null
+          location_code?: string | null
+          note?: string | null
+          occurred_at?: string
+          organization_id?: string
+          reported_by?: string
+          resident_id?: string | null
+          sentence?: string
+          shift?: Database["public"]["Enums"]["shift_type"]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_events_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_behavioral_log_id_fkey"
+            columns: ["behavioral_log_id"]
+            isOneToOne: false
+            referencedRelation: "behavioral_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_condition_change_id_fkey"
+            columns: ["condition_change_id"]
+            isOneToOne: false
+            referencedRelation: "condition_changes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_level_changed_by_fkey"
+            columns: ["level_changed_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_events_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_plan_acknowledgements: {
         Row: {
           acknowledged_at: string
@@ -5229,6 +5567,75 @@ export type Database = {
           },
         ]
       }
+      incident_followup_protocols: {
+        Row: {
+          assign_to_role: string
+          created_at: string
+          deleted_at: string | null
+          description: string
+          due_offset_minutes: number
+          facility_id: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          min_level: Database["public"]["Enums"]["incident_severity"]
+          organization_id: string
+          repeat_every_minutes: number | null
+          repeat_until_minutes: number | null
+          requires_flag: string | null
+          task_type: string
+        }
+        Insert: {
+          assign_to_role: string
+          created_at?: string
+          deleted_at?: string | null
+          description: string
+          due_offset_minutes: number
+          facility_id?: string | null
+          id?: string
+          is_active?: boolean
+          kind: string
+          min_level: Database["public"]["Enums"]["incident_severity"]
+          organization_id: string
+          repeat_every_minutes?: number | null
+          repeat_until_minutes?: number | null
+          requires_flag?: string | null
+          task_type?: string
+        }
+        Update: {
+          assign_to_role?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          due_offset_minutes?: number
+          facility_id?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          min_level?: Database["public"]["Enums"]["incident_severity"]
+          organization_id?: string
+          repeat_every_minutes?: number | null
+          repeat_until_minutes?: number | null
+          requires_flag?: string | null
+          task_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_followup_protocols_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_followup_protocols_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incident_followups: {
         Row: {
           assigned_to: string | null
@@ -7612,6 +8019,7 @@ export type Database = {
           severity_min: Database["public"]["Enums"]["incident_severity"]
           staff_role_targets: Database["public"]["Enums"]["staff_role"][] | null
           updated_at: string
+          user_targets: string[] | null
         }
         Insert: {
           channels?: string[]
@@ -7627,6 +8035,7 @@ export type Database = {
             | Database["public"]["Enums"]["staff_role"][]
             | null
           updated_at?: string
+          user_targets?: string[] | null
         }
         Update: {
           channels?: string[]
@@ -7642,6 +8051,7 @@ export type Database = {
             | Database["public"]["Enums"]["staff_role"][]
             | null
           updated_at?: string
+          user_targets?: string[] | null
         }
         Relationships: [
           {
@@ -16013,8 +16423,78 @@ export type Database = {
           },
         ]
       }
+      v_incident_reports_log: {
+        Row: {
+          bruise: boolean | null
+          care_event_id: string | null
+          category: Database["public"]["Enums"]["incident_category"] | null
+          contributing_factors: string | null
+          cut_laceration_puncture: boolean | null
+          facility_id: string | null
+          fall: boolean | null
+          incident_id: string | null
+          incident_number: string | null
+          log_date: string | null
+          non_apparent: boolean | null
+          occurred_at: string | null
+          organization_id: string | null
+          other: boolean | null
+          resident: string | null
+          room: string | null
+          scrapes_or_burn: boolean | null
+          severity: Database["public"]["Enums"]["incident_severity"] | null
+          shift: Database["public"]["Enums"]["shift_type"] | null
+        }
+        Relationships: []
+      }
+      v_resident_timeline: {
+        Row: {
+          care_event_id: string | null
+          detail: string | null
+          facility_id: string | null
+          incident_id: string | null
+          kind: string | null
+          level: Database["public"]["Enums"]["incident_severity"] | null
+          occurred_at: string | null
+          organization_id: string | null
+          resident_id: string | null
+          source: string | null
+          source_id: string | null
+          status: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      acknowledge_care_event: {
+        Args: { p_care_event_id: string }
+        Returns: undefined
+      }
+      append_care_event_note: {
+        Args: { p_care_event_id: string; p_note: string | null; p_photo_path: string | null }
+        Returns: Json
+      }
+      care_event_close_gate: {
+        Args: { p_care_event_id: string }
+        Returns: Json
+      }
+      care_event_derive: {
+        Args: { p_kind: string; p_answers: Json; p_context: Json }
+        Returns: Json
+      }
+      care_event_escalation_tick: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      complete_care_event_admin_section: {
+        Args: { p_care_event_id: string; p_section: Json }
+        Returns: Json
+      }
+      submit_care_event: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
       finance_batch_snapshot: { Args: { p_batch: string }; Returns: Json };
       finance_review_queue: { Args: { p_entity: string; p_facility?: string | null; p_kind?: string; p_after_created_at?: string | null; p_after_id?: string | null; p_limit?: number }; Returns: Json };
       resident_money_snapshot: { Args: { p_organization_id: string; p_facility_id?: string | null }; Returns: Json };

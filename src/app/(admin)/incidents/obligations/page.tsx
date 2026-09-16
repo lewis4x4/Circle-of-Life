@@ -15,8 +15,13 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { formatIncidentOccurredAt } from "@/lib/incidents/incidents-display-copy";
-import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
+import { formatIncidentOccurredAt, formatLevelWord } from "@/lib/incidents/incidents-display-copy";
+import {
+  buildIncidentOpenObligations,
+  type ObligationCareEvent,
+  type ObligationDelivery,
+  type ObligationRoute,
+} from "@/lib/incidents/workflow-obligations";
 import { cn } from "@/lib/utils";
 
 type QueueFilter = "all" | "notifications" | "regulatory" | "rca" | "care_plan";
@@ -48,6 +53,7 @@ type IncidentRow = {
 type IncidentMini = {
   id: string;
   incident_number: string;
+  facility_id: string;
   resident_id: string | null;
   severity: string;
   status: string;
@@ -68,6 +74,18 @@ type IncidentMini = {
 type ResidentMini = { id: string; first_name: string | null; last_name: string | null };
 type IncidentRcaMini = { incident_id: string; investigation_status: string };
 type FollowupMini = { incident_id: string };
+type RouteMini = ObligationRoute & { facility_id: string | null };
+
+/**
+ * The facility's active alert routes: facility-scoped rows when it has any,
+ * otherwise the organization-wide rows (facility_id null), the same choice
+ * the incident detail page makes.
+ */
+function routesForFacility(routes: readonly RouteMini[], facilityId: string): ObligationRoute[] {
+  const own = routes.filter((route) => route.facility_id === facilityId);
+  const chosen = own.length > 0 ? own : routes.filter((route) => route.facility_id === null);
+  return chosen.map((route) => ({ name: route.name, severity_min: route.severity_min }));
+}
 
 export default function AdminIncidentObligationsPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -91,7 +109,7 @@ export default function AdminIncidentObligationsPage() {
       let incidentsQuery = supabase
         .from("incidents")
         .select(
-          "id, incident_number, resident_id, severity, status, occurred_at, nurse_notified, administrator_notified, owner_notified, physician_notified, family_notified, ahca_reportable, ahca_reported, insurance_reportable, insurance_reported, care_plan_updated, resolved_at",
+          "id, incident_number, facility_id, resident_id, severity, status, occurred_at, nurse_notified, administrator_notified, owner_notified, physician_notified, family_notified, ahca_reportable, ahca_reported, insurance_reportable, insurance_reported, care_plan_updated, resolved_at",
         )
         .is("deleted_at", null)
         .order("occurred_at", { ascending: false })
@@ -112,8 +130,9 @@ export default function AdminIncidentObligationsPage() {
 
       const incidentIds = incidents.map((row) => row.id);
       const residentIds = [...new Set(incidents.map((row) => row.resident_id).filter(Boolean))] as string[];
+      const facilityIds = [...new Set(incidents.map((row) => row.facility_id).filter(Boolean))];
 
-      const [residentsResult, rcaResult, followupsResult] = await Promise.all([
+      const [residentsResult, rcaResult, followupsResult, careEventsResult, routesResult] = await Promise.all([
         residentIds.length > 0
           ? supabase.from("residents").select("id, first_name, last_name").in("id", residentIds)
           : Promise.resolve({ data: [], error: null }),
@@ -128,11 +147,70 @@ export default function AdminIncidentObligationsPage() {
               .is("deleted_at", null)
               .is("completed_at", null)
           : Promise.resolve({ data: [], error: null }),
+        incidentIds.length > 0
+          ? supabase
+              .from("care_events")
+              .select("id, incident_id, status, created_at, acknowledged_at, acknowledged_by, final_level")
+              .in("incident_id", incidentIds)
+              .is("deleted_at", null)
+          : Promise.resolve({ data: [], error: null }),
+        // Active alert routes for these facilities plus the organization-wide rows.
+        facilityIds.length > 0
+          ? supabase
+              .from("notification_routes")
+              .select("name, severity_min, facility_id")
+              .eq("is_active", true)
+              .is("deleted_at", null)
+              .or(`facility_id.in.(${facilityIds.join(",")}),facility_id.is.null`)
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (residentsResult.error) throw residentsResult.error;
       if (rcaResult.error) throw rcaResult.error;
       if (followupsResult.error) throw followupsResult.error;
+      if (careEventsResult.error) throw careEventsResult.error;
+      if (routesResult.error) throw routesResult.error;
+
+      // The delivery ledger for the care events behind these incidents, so the
+      // acknowledgment line is a query over what was actually sent (spec 07A §6.3).
+      const careEventIds = (careEventsResult.data ?? []).map((row) => row.id);
+      const deliveriesResult =
+        careEventIds.length > 0
+          ? await supabase
+              .from("care_event_deliveries")
+              .select("care_event_id, target_user_id, channel, status, escalation_step, send_after, sent_at, acknowledged_at")
+              .in("care_event_id", careEventIds)
+          : { data: [], error: null };
+      if (deliveriesResult.error) throw deliveriesResult.error;
+      const deliveriesByCareEventId = new Map<string, ObligationDelivery[]>();
+      for (const row of deliveriesResult.data ?? []) {
+        const list = deliveriesByCareEventId.get(row.care_event_id) ?? [];
+        list.push({
+          target_user_id: row.target_user_id,
+          channel: row.channel,
+          status: row.status,
+          escalation_step: row.escalation_step,
+          send_after: row.send_after,
+          sent_at: row.sent_at,
+          acknowledged_at: row.acknowledged_at,
+        });
+        deliveriesByCareEventId.set(row.care_event_id, list);
+      }
+      const routes = (routesResult.data ?? []) as RouteMini[];
+
+      const careEventByIncidentId = new Map<string, ObligationCareEvent>();
+      for (const row of careEventsResult.data ?? []) {
+        if (row.incident_id && !careEventByIncidentId.has(row.incident_id)) {
+          careEventByIncidentId.set(row.incident_id, {
+            id: row.id,
+            status: row.status,
+            created_at: row.created_at,
+            acknowledged_at: row.acknowledged_at,
+            acknowledged_by: row.acknowledged_by,
+            final_level: row.final_level,
+          });
+        }
+      }
 
       const residentById = new Map(((residentsResult.data ?? []) as ResidentMini[]).map((row) => [row.id, row]));
       const rcaByIncidentId = new Map(
@@ -149,7 +227,13 @@ export default function AdminIncidentObligationsPage() {
           const residentName = resident
             ? `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Resident"
             : "Resident";
-          const openObligations = buildIncidentOpenObligations(row);
+          const careEvent = careEventByIncidentId.get(row.id) ?? null;
+          const openObligations = buildIncidentOpenObligations({
+            incident: row,
+            routes: routesForFacility(routes, row.facility_id),
+            deliveries: careEvent ? (deliveriesByCareEventId.get(careEvent.id) ?? []) : [],
+            careEvent,
+          });
           const openFollowups = openFollowupCountByIncident.get(row.id) ?? 0;
           const rootCausePending =
             row.severity === "level_3" || row.severity === "level_4" || openFollowups > 0
@@ -389,7 +473,7 @@ export default function AdminIncidentObligationsPage() {
           {severityFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-                Severity filter: {severityFilter.replace("level_", "L")}
+                Level filter: {formatLevelWord(severityFilter)}
               </Badge>
               {scopeFilter !== "all" ? (
                 <Badge variant="outline" className="border-info/30 bg-info/10 text-info">
@@ -437,7 +521,7 @@ export default function AdminIncidentObligationsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline" className="bg-muted text-muted-foreground border border-border">
-                        {row.severity.replace("level_", "L")}
+                        {formatLevelWord(row.severity)}
                       </Badge>
                       {row.missingNotificationActions.length > 0 ? (
                         <Badge variant="outline" className="bg-info/10 text-info border border-info/30">

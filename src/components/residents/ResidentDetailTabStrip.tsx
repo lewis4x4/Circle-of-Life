@@ -4,7 +4,14 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-export type ResidentDetailTabId = "overview" | "assessments" | "care-plan" | "medications" | "vitals" | "billing";
+export type ResidentDetailTabId =
+  | "overview"
+  | "assessments"
+  | "care-plan"
+  | "medications"
+  | "vitals"
+  | "timeline"
+  | "billing";
 
 export type ResidentDetailHrefConfig = {
   rosterHref: string;
@@ -14,6 +21,7 @@ export type ResidentDetailHrefConfig = {
   carePlanHref: string;
   medicationsHref: string;
   vitalsHref: string;
+  timelineHref: string;
   billingHref: string;
 };
 
@@ -29,6 +37,7 @@ export function ResidentDetailTabStrip(props: {
     { id: "care-plan", label: "Care plan", href: hrefs.carePlanHref },
     { id: "medications", label: "Medications", href: hrefs.medicationsHref },
     { id: "vitals", label: "Vitals", href: hrefs.vitalsHref },
+    { id: "timeline", label: "Timeline", href: hrefs.timelineHref },
     { id: "billing", label: "Billing", href: hrefs.billingHref },
   ];
 

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertTriangle, CalendarClock, Check, Droplets, HeartPulse, Loader2, Pill, Plus, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, Droplets, HeartPulse, History, Loader2, Pill, Plus, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fetchCaregiverResidentProfile,
@@ -186,6 +186,15 @@ export default function CaregiverResidentQuickProfilePage() {
          </div>
       )}
 
+      {/* ─── SOMETHING HAPPENED (spec 07A: one door, three taps) ─────────────── */}
+      <Link
+        href={`/caregiver/report?resident=${residentId}`}
+        className="flex min-h-16 w-full items-center justify-center gap-3 rounded-lg bg-primary px-5 text-lg font-semibold text-primary-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 motion-reduce:transition-none"
+      >
+        <AlertTriangle className="size-6" aria-hidden />
+        Something happened
+      </Link>
+
       {/* ─── ACTION GRID ───────────────────────────────────────────────────────── */}
       <div className="p-8 rounded-lg border border-white/5 bg-white/[0.02] relative overflow-visible z-10 w-full transition-all text-zinc-100">
          <h4 className="text-xl font-semibold text-white tracking-wide mb-6">Shift Actions</h4>
@@ -206,14 +215,19 @@ export default function CaregiverResidentQuickProfilePage() {
               label="Shift Log"
             />
             <ActionLink
-              href={`/caregiver/resident/${residentId}/behavior`}
+              href={`/caregiver/report?resident=${residentId}&kind=behavior`}
               icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
               label="Behavior"
             />
             <ActionLink
-              href={`/caregiver/resident/${residentId}/condition-change`}
+              href={`/caregiver/report?resident=${residentId}&kind=condition_change`}
               icon={<Droplets className="h-5 w-5 text-teal-400" />}
               label="Condition"
+            />
+            <ActionLink
+              href={`/caregiver/resident/${residentId}/timeline`}
+              icon={<History className="h-5 w-5 text-foreground" />}
+              label="Timeline"
             />
          </div>
       </div>

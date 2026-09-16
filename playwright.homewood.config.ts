@@ -40,5 +40,19 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      // Spec 07A section 9 item 3: the three-tap capture on a phone viewport.
+      // Runs on Chromium (the only browser installed on the gate hosts) with the
+      // iPhone 13 screen, scale factor, touch, and user agent.
+      name: "care-events",
+      testDir: "./tests/care-events",
+      timeout: 120_000,
+      use: {
+        ...devices["iPhone 13"],
+        browserName: "chromium",
+        actionTimeout: 30_000,
+        navigationTimeout: 60_000,
+      },
+    },
   ],
 });

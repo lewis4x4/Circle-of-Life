@@ -1,0 +1,3003 @@
+[
+  {
+    "id": "fall_not_hurt_witnessed_full_context",
+    "kind": "fall",
+    "answers": {
+      "hurt": "not_hurt",
+      "head": "no",
+      "witnessed": "yes",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "10:05 PM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the resident room at 10:05 PM. Witnessed. Not hurt. Did not hit head. Not going out."
+    }
+  },
+  {
+    "id": "fall_not_hurt_unwitnessed",
+    "kind": "fall",
+    "answers": {
+      "hurt": "not_hurt",
+      "head": "no",
+      "witnessed": "no",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "6:40 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the hallway at 6:40 AM. Not witnessed. Not hurt. Did not hit head. Not going out."
+    }
+  },
+  {
+    "id": "fall_a_little_head_no_contract_example",
+    "kind": "fall",
+    "answers": {
+      "hurt": "a_little",
+      "head": "no",
+      "witnessed": "no",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "10:05 PM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the resident room at 10:05 PM. Not witnessed. Hurt a little. Did not hit head. Not going out. First aid given."
+    }
+  },
+  {
+    "id": "fall_badly_going_out",
+    "kind": "fall",
+    "answers": {
+      "hurt": "badly",
+      "head": "no",
+      "witnessed": "yes",
+      "going_out": "yes"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "10:05 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the resident room at 10:05 PM. Witnessed. Hurt badly. Did not hit head. Going out to the ER or 911 called. Emergency care requested."
+    }
+  },
+  {
+    "id": "fall_head_yes_not_hurt",
+    "kind": "fall",
+    "answers": {
+      "hurt": "not_hurt",
+      "head": "yes",
+      "witnessed": "yes",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Bathroom",
+      "time_label": "2:15 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": true,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the bathroom at 2:15 PM. Witnessed. Not hurt. Hit head. Not going out."
+    }
+  },
+  {
+    "id": "fall_head_not_sure_a_little",
+    "kind": "fall",
+    "answers": {
+      "hurt": "a_little",
+      "head": "not_sure",
+      "witnessed": "no",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Dining Room",
+      "time_label": "12:30 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": true,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the dining room at 12:30 PM. Not witnessed. Hurt a little. Not sure if head was hit. Not going out. First aid given."
+    }
+  },
+  {
+    "id": "fall_going_out_not_hurt",
+    "kind": "fall",
+    "answers": {
+      "hurt": "not_hurt",
+      "head": "no",
+      "witnessed": "yes",
+      "going_out": "yes"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "9:00 AM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the common area at 9:00 AM. Witnessed. Not hurt. Did not hit head. Going out to the ER or 911 called."
+    }
+  },
+  {
+    "id": "fall_badly_head_yes_worried_clamps_at_4",
+    "kind": "fall",
+    "answers": {
+      "hurt": "badly",
+      "head": "yes",
+      "witnessed": "no",
+      "going_out": "yes",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "11:45 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": true,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the resident room at 11:45 PM. Not witnessed. Hurt badly. Hit head. Going out to the ER or 911 called. Emergency care requested."
+    }
+  },
+  {
+    "id": "fall_a_little_worried_bumps_to_3",
+    "kind": "fall",
+    "answers": {
+      "hurt": "a_little",
+      "head": "no",
+      "witnessed": "yes",
+      "going_out": "no",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "3:20 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 2,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the hallway at 3:20 PM. Witnessed. Hurt a little. Did not hit head. Not going out. First aid given."
+    }
+  },
+  {
+    "id": "fall_active_watch_raises_to_3",
+    "kind": "fall",
+    "answers": {
+      "hurt": "not_hurt",
+      "head": "no",
+      "witnessed": "yes",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "4:10 AM",
+      "active_watch": true
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the resident room at 4:10 AM. Witnessed. Not hurt. Did not hit head. Not going out."
+    }
+  },
+  {
+    "id": "fall_active_watch_and_worried_to_4",
+    "kind": "fall",
+    "answers": {
+      "hurt": "not_hurt",
+      "head": "no",
+      "witnessed": "no",
+      "going_out": "no",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "4:10 AM",
+      "active_watch": true
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 3,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the resident room at 4:10 AM. Not witnessed. Not hurt. Did not hit head. Not going out."
+    }
+  },
+  {
+    "id": "fall_head_yes_active_watch_clamps_at_4",
+    "kind": "fall",
+    "answers": {
+      "hurt": "a_little",
+      "head": "yes",
+      "witnessed": "yes",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Bathroom",
+      "time_label": "7:55 PM",
+      "active_watch": true
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": true,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the bathroom at 7:55 PM. Witnessed. Hurt a little. Hit head. Not going out. First aid given."
+    }
+  },
+  {
+    "id": "fall_no_answers_no_context",
+    "kind": "fall",
+    "answers": {},
+    "context": {},
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor."
+    }
+  },
+  {
+    "id": "fall_only_hurt_answered_location_only",
+    "kind": "fall",
+    "answers": {
+      "hurt": "a_little"
+    },
+    "context": {
+      "location_label": "Outside Patio"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the outside patio. Hurt a little. First aid given."
+    }
+  },
+  {
+    "id": "fall_time_only_head_not_sure",
+    "kind": "fall",
+    "answers": {
+      "head": "not_sure"
+    },
+    "context": {
+      "time_label": "1:00 AM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": true,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor at 1:00 AM. Not sure if head was hit."
+    }
+  },
+  {
+    "id": "fall_active_watch_false_does_not_raise",
+    "kind": "fall",
+    "answers": {
+      "hurt": "not_hurt",
+      "head": "no",
+      "witnessed": "yes",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "4:10 AM",
+      "active_watch": false,
+      "elopement_risk": true,
+      "prior_unexplained_bruise_30d": true
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "fall_without_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the resident room at 4:10 AM. Witnessed. Not hurt. Did not hit head. Not going out."
+    }
+  },
+  {
+    "id": "injury_bruise_cause_known_first_aid_photo",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "bruise"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "yes"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "8:00 AM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": true,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the resident room at 8:00 AM. Seen: bruise. First aid was enough. Cause known."
+    }
+  },
+  {
+    "id": "injury_bruise_cause_unknown",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "bruise"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "8:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "unexplained_bruise",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the resident room at 8:00 AM. Seen: bruise. First aid was enough. Cause unknown."
+    }
+  },
+  {
+    "id": "injury_bruise_cause_unknown_prior_bruise_30d",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "bruise"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "8:00 AM",
+      "prior_unexplained_bruise_30d": true
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "unexplained_bruise",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the resident room at 8:00 AM. Seen: bruise. First aid was enough. Cause unknown."
+    }
+  },
+  {
+    "id": "injury_prior_bruise_without_bruise_seen_no_raise",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "skin_tear"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "no"
+    },
+    "context": {
+      "location_label": "Bathroom",
+      "time_label": "9:30 AM",
+      "prior_unexplained_bruise_30d": true
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the bathroom at 9:30 AM. Seen: skin tear or cut. First aid was enough. Cause unknown."
+    }
+  },
+  {
+    "id": "injury_prior_bruise_cause_known_no_raise",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "bruise"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "yes"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "5:00 PM",
+      "prior_unexplained_bruise_30d": true
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": true,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the hallway at 5:00 PM. Seen: bruise. First aid was enough. Cause known."
+    }
+  },
+  {
+    "id": "injury_skin_tear_more_than_first_aid",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "skin_tear"
+      ],
+      "care": "more_than_first_aid",
+      "cause_known": "yes"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "6:15 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the resident room at 6:15 PM. Seen: skin tear or cut. Needs more than first aid. Cause known."
+    }
+  },
+  {
+    "id": "injury_burn_more_than_first_aid_unknown_worried_to_4",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "burn"
+      ],
+      "care": "more_than_first_aid",
+      "cause_known": "no",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Dining Room",
+      "time_label": "12:10 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 3,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the dining room at 12:10 PM. Seen: burn. Needs more than first aid. Cause unknown."
+    }
+  },
+  {
+    "id": "injury_swelling_pain_first_aid_known",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "swelling_pain"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "yes"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "3:00 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": true,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the common area at 3:00 PM. Seen: swelling or pain. First aid was enough. Cause known."
+    }
+  },
+  {
+    "id": "injury_other_only_first_aid_known_no_context",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "other"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "yes"
+    },
+    "context": {},
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": true,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found. Seen: other. First aid was enough. Cause known."
+    }
+  },
+  {
+    "id": "injury_other_only_cause_unknown",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "other"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "7:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the resident room at 7:00 AM. Seen: other. First aid was enough. Cause unknown."
+    }
+  },
+  {
+    "id": "injury_empty_seen_first_aid_known",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [],
+      "care": "first_aid_enough",
+      "cause_known": "yes"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "7:00 AM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": true,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the resident room at 7:00 AM. First aid was enough. Cause known."
+    }
+  },
+  {
+    "id": "injury_multi_seen_bruise_skin_tear_swelling_unknown",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "bruise",
+        "skin_tear",
+        "swelling_pain"
+      ],
+      "care": "more_than_first_aid",
+      "cause_known": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "9:45 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "unexplained_bruise",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the resident room at 9:45 PM. Seen: bruise, skin tear or cut, swelling or pain. Needs more than first aid. Cause unknown."
+    }
+  },
+  {
+    "id": "injury_worried_bump_on_level_1_clears_photo_prompt",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "bruise"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "yes",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "10:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 1,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the hallway at 10:00 AM. Seen: bruise. First aid was enough. Cause known."
+    }
+  },
+  {
+    "id": "injury_no_answers_no_context",
+    "kind": "injury_found",
+    "answers": {},
+    "context": {},
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": true,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found."
+    }
+  },
+  {
+    "id": "injury_seen_listed_in_display_order",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "other",
+        "bruise"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "yes"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "2:00 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": true,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the resident room at 2:00 PM. Seen: bruise, other. First aid was enough. Cause known."
+    }
+  },
+  {
+    "id": "injury_burn_first_aid_unknown_cause_not_bruise",
+    "kind": "injury_found",
+    "answers": {
+      "seen": [
+        "burn"
+      ],
+      "care": "first_aid_enough",
+      "cause_known": "no"
+    },
+    "context": {
+      "location_label": "Bathroom",
+      "time_label": "11:20 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "skin_integrity",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Injury found in the bathroom at 11:20 AM. Seen: burn. First aid was enough. Cause unknown."
+    }
+  },
+  {
+    "id": "condition_one_sign_today",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "confused"
+      ],
+      "onset": "today"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "6:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the resident room at 6:00 AM. Signs: more confused than usual. Came on today."
+    }
+  },
+  {
+    "id": "condition_two_signs_over_days",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "weak_dizzy",
+        "not_eating_drinking"
+      ],
+      "onset": "over_days"
+    },
+    "context": {
+      "location_label": "Dining Room",
+      "time_label": "12:00 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the dining room at 12:00 PM. Signs: weak or dizzy, not eating or drinking. Getting worse over days."
+    }
+  },
+  {
+    "id": "condition_chest_pain_alone",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "chest_pain"
+      ],
+      "onset": "today"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "3:30 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the resident room at 3:30 PM. Signs: chest pain. Came on today."
+    }
+  },
+  {
+    "id": "condition_stroke_signs_with_others",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "confused",
+        "stroke_signs",
+        "weak_dizzy"
+      ],
+      "onset": "today"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "8:20 AM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the hallway at 8:20 AM. Signs: more confused than usual, weak or dizzy, face droop, slurred speech, or one weak side. Came on today."
+    }
+  },
+  {
+    "id": "condition_empty_signs",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [],
+      "onset": "today"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "6:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the resident room at 6:00 AM. Came on today."
+    }
+  },
+  {
+    "id": "condition_short_of_breath_worried_clamps_at_4",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "short_of_breath"
+      ],
+      "onset": "over_days",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "11:00 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the resident room at 11:00 PM. Signs: short of breath. Getting worse over days."
+    }
+  },
+  {
+    "id": "condition_wont_wake_no_onset_no_context",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "wont_wake"
+      ]
+    },
+    "context": {},
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves. Signs: will not wake up or very hard to wake."
+    }
+  },
+  {
+    "id": "condition_active_watch_one_sign_to_3",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "fever_chills"
+      ],
+      "onset": "today"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "7:30 PM",
+      "active_watch": true
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the resident room at 7:30 PM. Signs: fever or chills. Came on today."
+    }
+  },
+  {
+    "id": "condition_active_watch_two_signs_to_4",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "vomiting_diarrhea",
+        "pain"
+      ],
+      "onset": "today"
+    },
+    "context": {
+      "location_label": "Bathroom",
+      "time_label": "1:15 AM",
+      "active_watch": true
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the bathroom at 1:15 AM. Signs: vomiting or diarrhea, pain. Came on today."
+    }
+  },
+  {
+    "id": "condition_one_sign_worried_to_3",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "pain"
+      ],
+      "onset": "over_days",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "2:45 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 2,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the resident room at 2:45 PM. Signs: pain. Getting worse over days."
+    }
+  },
+  {
+    "id": "condition_no_answers_no_context",
+    "kind": "condition_change",
+    "answers": {},
+    "context": {},
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves."
+    }
+  },
+  {
+    "id": "condition_three_signs_worried_to_4",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "confused",
+        "fever_chills",
+        "not_eating_drinking"
+      ],
+      "onset": "over_days",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "9:00 AM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 3,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the resident room at 9:00 AM. Signs: more confused than usual, fever or chills, not eating or drinking. Getting worse over days."
+    }
+  },
+  {
+    "id": "condition_signs_listed_in_display_order",
+    "kind": "condition_change",
+    "answers": {
+      "signs": [
+        "pain",
+        "confused"
+      ],
+      "onset": "today"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "5:15 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Not themselves in the common area at 5:15 PM. Signs: more confused than usual, pain. Came on today."
+    }
+  },
+  {
+    "id": "behavior_yelling_no_one_over",
+    "kind": "behavior",
+    "answers": {
+      "what": "yelling",
+      "touched": "no_one",
+      "over": "yes"
+    },
+    "context": {
+      "location_label": "Dining Room",
+      "time_label": "5:30 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the dining room at 5:30 PM. Yelling or cursing. No one touched or hurt. It is over."
+    }
+  },
+  {
+    "id": "behavior_refusing_care_still_going",
+    "kind": "behavior",
+    "answers": {
+      "what": "refusing_care",
+      "touched": "no_one",
+      "over": "still_going"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "8:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the resident room at 8:00 AM. Refusing care. No one touched or hurt. Still going."
+    }
+  },
+  {
+    "id": "behavior_hitting_staff_over",
+    "kind": "behavior",
+    "answers": {
+      "what": "hitting",
+      "touched": "staff",
+      "over": "yes"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "7:00 PM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "behavioral_resident_to_staff",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the hallway at 7:00 PM. Hitting, pushing, or grabbing. Staff touched or hurt. It is over."
+    }
+  },
+  {
+    "id": "behavior_sexual_another_resident",
+    "kind": "behavior",
+    "answers": {
+      "what": "sexual",
+      "touched": "another_resident",
+      "over": "yes"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "3:00 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "behavioral_resident_to_resident",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the common area at 3:00 PM. Sexual behavior. Another resident touched or hurt. It is over."
+    }
+  },
+  {
+    "id": "behavior_crying_withdrawn_no_one_over",
+    "kind": "behavior",
+    "answers": {
+      "what": "crying_withdrawn",
+      "touched": "no_one",
+      "over": "yes"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "9:15 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the resident room at 9:15 PM. Crying or withdrawn. No one touched or hurt. It is over."
+    }
+  },
+  {
+    "id": "behavior_self_harm_no_one_still_going",
+    "kind": "behavior",
+    "answers": {
+      "what": "self_harm",
+      "touched": "no_one",
+      "over": "still_going"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "11:30 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "behavioral_self_harm",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the resident room at 11:30 PM. Hurting themselves. No one touched or hurt. Still going."
+    }
+  },
+  {
+    "id": "behavior_self_harm_another_resident_self_harm_category_wins",
+    "kind": "behavior",
+    "answers": {
+      "what": "self_harm",
+      "touched": "another_resident",
+      "over": "yes"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "4:00 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "behavioral_self_harm",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the hallway at 4:00 PM. Hurting themselves. Another resident touched or hurt. It is over."
+    }
+  },
+  {
+    "id": "behavior_hitting_another_resident_worried_to_4_no_ahca",
+    "kind": "behavior",
+    "answers": {
+      "what": "hitting",
+      "touched": "another_resident",
+      "over": "still_going",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Dining Room",
+      "time_label": "12:15 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 3,
+      "category": "behavioral_resident_to_resident",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the dining room at 12:15 PM. Hitting, pushing, or grabbing. Another resident touched or hurt. Still going."
+    }
+  },
+  {
+    "id": "behavior_yelling_worried_to_2_no_context",
+    "kind": "behavior",
+    "answers": {
+      "what": "yelling",
+      "touched": "no_one",
+      "over": "yes",
+      "worried": true
+    },
+    "context": {},
+    "expect": {
+      "level": 2,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior. Yelling or cursing. No one touched or hurt. It is over."
+    }
+  },
+  {
+    "id": "behavior_staff_still_going_worried_to_3",
+    "kind": "behavior",
+    "answers": {
+      "what": "hitting",
+      "touched": "staff",
+      "over": "still_going",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "6:45 AM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 2,
+      "category": "behavioral_resident_to_staff",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the resident room at 6:45 AM. Hitting, pushing, or grabbing. Staff touched or hurt. Still going."
+    }
+  },
+  {
+    "id": "behavior_no_answers_no_context",
+    "kind": "behavior",
+    "answers": {},
+    "context": {},
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior."
+    }
+  },
+  {
+    "id": "behavior_sexual_no_one_over_stays_1",
+    "kind": "behavior",
+    "answers": {
+      "what": "sexual",
+      "touched": "no_one",
+      "over": "yes"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "2:30 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Behavior in the common area at 2:30 PM. Sexual behavior. No one touched or hurt. It is over."
+    }
+  },
+  {
+    "id": "wandering_found_inside_not_hurt",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_inside",
+      "hurt": "no"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "2:00 AM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the hallway at 2:00 AM. Found inside. Not hurt."
+    }
+  },
+  {
+    "id": "wandering_found_grounds_not_hurt",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_grounds",
+      "hurt": "no"
+    },
+    "context": {
+      "location_label": "Outside Patio",
+      "time_label": "3:00 PM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the outside patio at 3:00 PM. Found outside on the grounds. Not hurt."
+    }
+  },
+  {
+    "id": "wandering_found_off_property_not_hurt_time_only",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_off_property",
+      "hurt": "no"
+    },
+    "context": {
+      "time_label": "4:30 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "elopement",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering at 4:30 PM. Found off the property. Not hurt."
+    }
+  },
+  {
+    "id": "wandering_not_found_hurt_unanswered_no_context",
+    "kind": "wandering",
+    "answers": {
+      "where": "not_found"
+    },
+    "context": {},
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "elopement",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering. Not found yet."
+    }
+  },
+  {
+    "id": "wandering_found_grounds_hurt_raises_to_3",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_grounds",
+      "hurt": "yes"
+    },
+    "context": {
+      "location_label": "Outside Patio",
+      "time_label": "3:00 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the outside patio at 3:00 PM. Found outside on the grounds. Hurt."
+    }
+  },
+  {
+    "id": "wandering_found_inside_hurt_raises_to_2",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_inside",
+      "hurt": "yes"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "10:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the common area at 10:00 AM. Found inside. Hurt."
+    }
+  },
+  {
+    "id": "wandering_elopement_risk_found_inside_to_2",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_inside",
+      "hurt": "no"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "2:00 AM",
+      "elopement_risk": true
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the hallway at 2:00 AM. Found inside. Not hurt."
+    }
+  },
+  {
+    "id": "wandering_elopement_risk_off_property_to_4",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_off_property",
+      "hurt": "no"
+    },
+    "context": {
+      "location_label": "Outside Patio",
+      "time_label": "5:00 PM",
+      "elopement_risk": true
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "elopement",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the outside patio at 5:00 PM. Found off the property. Not hurt."
+    }
+  },
+  {
+    "id": "wandering_elopement_risk_hurt_grounds_to_4",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_grounds",
+      "hurt": "yes"
+    },
+    "context": {
+      "location_label": "Outside Patio",
+      "time_label": "6:00 PM",
+      "elopement_risk": true
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the outside patio at 6:00 PM. Found outside on the grounds. Hurt."
+    }
+  },
+  {
+    "id": "wandering_found_inside_worried_to_2",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_inside",
+      "hurt": "no",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "1:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 1,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the resident room at 1:00 AM. Found inside. Not hurt."
+    }
+  },
+  {
+    "id": "wandering_not_found_worried_clamps_at_4",
+    "kind": "wandering",
+    "answers": {
+      "where": "not_found",
+      "hurt": "no",
+      "worried": true
+    },
+    "context": {},
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "elopement",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering. Not found yet. Not hurt."
+    }
+  },
+  {
+    "id": "wandering_off_property_worried_to_4",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_off_property",
+      "hurt": "no",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "9:00 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 3,
+      "category": "elopement",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the hallway at 9:00 PM. Found off the property. Not hurt."
+    }
+  },
+  {
+    "id": "wandering_hurt_only_where_unanswered",
+    "kind": "wandering",
+    "answers": {
+      "hurt": "yes"
+    },
+    "context": {
+      "location_label": "Hallway"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the hallway. Hurt."
+    }
+  },
+  {
+    "id": "wandering_no_answers_no_context",
+    "kind": "wandering",
+    "answers": {},
+    "context": {},
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "wandering",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering."
+    }
+  },
+  {
+    "id": "medication_refused_no_reaction_emar",
+    "kind": "medication",
+    "answers": {
+      "what": "refused",
+      "reaction": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "8:00 AM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "medication_refusal",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": true
+      },
+      "sentence": "Medicine in the resident room at 8:00 AM. Refused. No reaction."
+    }
+  },
+  {
+    "id": "medication_missed_late_no_reaction",
+    "kind": "medication",
+    "answers": {
+      "what": "missed_late",
+      "reaction": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "9:00 PM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine in the resident room at 9:00 PM. Missed or late. No reaction."
+    }
+  },
+  {
+    "id": "medication_wrong_no_reaction",
+    "kind": "medication",
+    "answers": {
+      "what": "wrong",
+      "reaction": "no"
+    },
+    "context": {
+      "location_label": "Dining Room",
+      "time_label": "12:00 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine in the dining room at 12:00 PM. Wrong medicine, dose, time, or person. No reaction."
+    }
+  },
+  {
+    "id": "medication_not_theirs_no_reaction",
+    "kind": "medication",
+    "answers": {
+      "what": "not_theirs",
+      "reaction": "no"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "2:00 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine in the common area at 2:00 PM. Took something not theirs. No reaction."
+    }
+  },
+  {
+    "id": "medication_wrong_with_reaction_no_911_line",
+    "kind": "medication",
+    "answers": {
+      "what": "wrong",
+      "reaction": "yes"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "4:00 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine in the resident room at 4:00 PM. Wrong medicine, dose, time, or person. Reaction or feeling bad."
+    }
+  },
+  {
+    "id": "medication_refused_with_reaction_keeps_emar",
+    "kind": "medication",
+    "answers": {
+      "what": "refused",
+      "reaction": "yes"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "8:00 AM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "medication_refusal",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": true
+      },
+      "sentence": "Medicine in the resident room at 8:00 AM. Refused. Reaction or feeling bad."
+    }
+  },
+  {
+    "id": "medication_refused_worried_to_2_no_context",
+    "kind": "medication",
+    "answers": {
+      "what": "refused",
+      "reaction": "no",
+      "worried": true
+    },
+    "context": {},
+    "expect": {
+      "level": 2,
+      "derived_level": 1,
+      "category": "medication_refusal",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": true
+      },
+      "sentence": "Medicine. Refused. No reaction."
+    }
+  },
+  {
+    "id": "medication_missed_late_worried_to_3",
+    "kind": "medication",
+    "answers": {
+      "what": "missed_late",
+      "reaction": "no",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "7:00 AM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 2,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine in the hallway at 7:00 AM. Missed or late. No reaction."
+    }
+  },
+  {
+    "id": "medication_no_answers_no_context",
+    "kind": "medication",
+    "answers": {},
+    "context": {},
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine."
+    }
+  },
+  {
+    "id": "medication_wrong_no_reaction_worried_to_4_not_ahca",
+    "kind": "medication",
+    "answers": {
+      "what": "wrong",
+      "reaction": "no",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "6:00 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 3,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine in the resident room at 6:00 PM. Wrong medicine, dose, time, or person. No reaction."
+    }
+  },
+  {
+    "id": "family_upset",
+    "kind": "family_complaint",
+    "answers": {
+      "what": "family_upset"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "6:00 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Family or complaint in the common area at 6:00 PM. Family upset or complaint."
+    }
+  },
+  {
+    "id": "family_visitor_problem",
+    "kind": "family_complaint",
+    "answers": {
+      "what": "visitor_problem"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "3:00 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Family or complaint in the hallway at 3:00 PM. Visitor problem."
+    }
+  },
+  {
+    "id": "family_resident_complaint_grievance_clock",
+    "kind": "family_complaint",
+    "answers": {
+      "what": "resident_complaint"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "10:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": true,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Family or complaint in the resident room at 10:00 AM. Resident complaint about care."
+    }
+  },
+  {
+    "id": "family_mistreated_abuse_allegation",
+    "kind": "family_complaint",
+    "answers": {
+      "what": "mistreated"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "11:00 AM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 3,
+      "category": "abuse_allegation",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": true,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Family or complaint in the resident room at 11:00 AM. Someone may have been mistreated."
+    }
+  },
+  {
+    "id": "family_mistreated_worried_to_4_no_911_line",
+    "kind": "family_complaint",
+    "answers": {
+      "what": "mistreated",
+      "worried": true
+    },
+    "context": {},
+    "expect": {
+      "level": 4,
+      "derived_level": 3,
+      "category": "abuse_allegation",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": true,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Family or complaint. Someone may have been mistreated."
+    }
+  },
+  {
+    "id": "family_resident_complaint_worried_to_3",
+    "kind": "family_complaint",
+    "answers": {
+      "what": "resident_complaint",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Dining Room",
+      "time_label": "1:00 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 2,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": true,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Family or complaint in the dining room at 1:00 PM. Resident complaint about care."
+    }
+  },
+  {
+    "id": "family_no_answers_no_context",
+    "kind": "family_complaint",
+    "answers": {},
+    "context": {},
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Family or complaint."
+    }
+  },
+  {
+    "id": "family_upset_worried_to_2",
+    "kind": "family_complaint",
+    "answers": {
+      "what": "family_upset",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "7:30 PM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Family or complaint in the common area at 7:30 PM. Family upset or complaint."
+    }
+  },
+  {
+    "id": "environment_water_leak_no_danger",
+    "kind": "environment",
+    "answers": {
+      "what": "water_leak",
+      "danger": "no"
+    },
+    "context": {
+      "location_label": "Bathroom",
+      "time_label": "5:00 AM"
+    },
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "environmental_flood",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the bathroom at 5:00 AM. Water leak or flood. No one in danger."
+    }
+  },
+  {
+    "id": "environment_smoke_fire_no_danger_still_4",
+    "kind": "environment",
+    "answers": {
+      "what": "smoke_fire",
+      "danger": "no"
+    },
+    "context": {
+      "location_label": "Kitchen",
+      "time_label": "6:30 AM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "environmental_fire",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the kitchen at 6:30 AM. Smoke, fire, or alarm. No one in danger."
+    }
+  },
+  {
+    "id": "environment_power_out_no_danger_no_context",
+    "kind": "environment",
+    "answers": {
+      "what": "power_out",
+      "danger": "no"
+    },
+    "context": {},
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "environmental_power",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building. Power out. No one in danger."
+    }
+  },
+  {
+    "id": "environment_broken_equipment",
+    "kind": "environment",
+    "answers": {
+      "what": "broken_equipment",
+      "danger": "no"
+    },
+    "context": {
+      "location_label": "Dining Room",
+      "time_label": "12:00 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "property_damage",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the dining room at 12:00 PM. Broken equipment. No one in danger."
+    }
+  },
+  {
+    "id": "environment_missing_damaged",
+    "kind": "environment",
+    "answers": {
+      "what": "missing_damaged",
+      "danger": "no"
+    },
+    "context": {
+      "location_label": "Resident Room",
+      "time_label": "3:00 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "property_loss",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the resident room at 3:00 PM. Something missing or damaged. No one in danger."
+    }
+  },
+  {
+    "id": "environment_other_no_danger",
+    "kind": "environment",
+    "answers": {
+      "what": "other",
+      "danger": "no"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "4:00 PM"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the hallway at 4:00 PM. Other. No one in danger."
+    }
+  },
+  {
+    "id": "environment_other_with_danger_to_4",
+    "kind": "environment",
+    "answers": {
+      "what": "other",
+      "danger": "yes"
+    },
+    "context": {
+      "location_label": "Common Area",
+      "time_label": "8:00 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the common area at 8:00 PM. Other. Someone in danger."
+    }
+  },
+  {
+    "id": "environment_water_leak_danger_worried_clamps_at_4",
+    "kind": "environment",
+    "answers": {
+      "what": "water_leak",
+      "danger": "yes",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Bathroom",
+      "time_label": "5:00 AM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "environmental_flood",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the bathroom at 5:00 AM. Water leak or flood. Someone in danger."
+    }
+  },
+  {
+    "id": "environment_broken_equipment_worried_to_2_no_context",
+    "kind": "environment",
+    "answers": {
+      "what": "broken_equipment",
+      "danger": "no",
+      "worried": true
+    },
+    "context": {},
+    "expect": {
+      "level": 2,
+      "derived_level": 1,
+      "category": "property_damage",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building. Broken equipment. No one in danger."
+    }
+  },
+  {
+    "id": "environment_power_out_worried_to_3",
+    "kind": "environment",
+    "answers": {
+      "what": "power_out",
+      "danger": "no",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "9:00 PM"
+    },
+    "expect": {
+      "level": 3,
+      "derived_level": 2,
+      "category": "environmental_power",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the hallway at 9:00 PM. Power out. No one in danger."
+    }
+  },
+  {
+    "id": "environment_no_answers_location_only",
+    "kind": "environment",
+    "answers": {},
+    "context": {
+      "location_label": "Parking Lot"
+    },
+    "expect": {
+      "level": 1,
+      "derived_level": 1,
+      "category": "other",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the parking lot."
+    }
+  },
+  {
+    "id": "environment_smoke_fire_worried_clamps_at_4",
+    "kind": "environment",
+    "answers": {
+      "what": "smoke_fire",
+      "danger": "yes",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Kitchen",
+      "time_label": "6:30 AM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "environmental_fire",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building in the kitchen at 6:30 AM. Smoke, fire, or alarm. Someone in danger."
+    }
+  },
+  {
+    "id": "wandering_off_property_hurt_worried_clamps_at_4_not_ahca",
+    "kind": "wandering",
+    "answers": {
+      "where": "found_off_property",
+      "hurt": "yes",
+      "worried": true
+    },
+    "context": {
+      "location_label": "Parking Lot",
+      "time_label": "9:40 PM"
+    },
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "elopement",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Wandering in the parking lot at 9:40 PM. Found off the property. Hurt."
+    }
+  },
+  {
+    "id": "environment_smoke_fire_no_danger_level_4_not_ahca_no_context",
+    "kind": "environment",
+    "answers": {
+      "what": "smoke_fire",
+      "danger": "no"
+    },
+    "context": {},
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "environmental_fire",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": true,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Building. Smoke, fire, or alarm. No one in danger."
+    }
+  },
+  {
+    "id": "medication_wrong_reaction_yes_level_4_ahca_no_context",
+    "kind": "medication",
+    "answers": {
+      "what": "wrong",
+      "reaction": "yes"
+    },
+    "context": {},
+    "expect": {
+      "level": 4,
+      "derived_level": 4,
+      "category": "medication_error",
+      "flags": {
+        "ahca_reportable": true,
+        "insurance_reportable": true,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Medicine. Wrong medicine, dose, time, or person. Reaction or feeling bad."
+    }
+  },
+  {
+    "id": "fall_unknown_hurt_value_counts_as_injury_no_hurt_fragment",
+    "kind": "fall",
+    "answers": {
+      "hurt": "somewhat",
+      "head": "no",
+      "witnessed": "yes",
+      "going_out": "no"
+    },
+    "context": {
+      "location_label": "Hallway",
+      "time_label": "2:15 PM"
+    },
+    "unknown_answer_keys": [
+      "hurt"
+    ],
+    "expect": {
+      "level": 2,
+      "derived_level": 2,
+      "category": "fall_with_injury",
+      "flags": {
+        "ahca_reportable": false,
+        "insurance_reportable": false,
+        "dcf_report_required": false,
+        "grievance_clock": false,
+        "neuro_checks": false,
+        "call_911_prompt": false,
+        "photo_prompt": false,
+        "emar_reminder": false
+      },
+      "sentence": "Found on the floor in the hallway at 2:15 PM. Witnessed. Did not hit head. Not going out."
+    }
+  }
+]

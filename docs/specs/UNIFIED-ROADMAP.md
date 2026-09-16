@@ -32,6 +32,7 @@
 | **D** | Phase 6 completion pass + Enhanced backlog | Core D1–D10 + Enhanced D12–D84 shipped; D85+ optional per owner priority | [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md), [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
 | **E** | Cross-cutting sweep + next strategic DDL (Resident Assurance 25, Reporting 26, OCE 27, Grace memory 27/28, Executive Standup pack, Facility Admin Portal, KB) | Large portions shipped through migration `288`; see per-spec status | [TRACK-E-CROSS-CUTTING-SWEEP.md](./TRACK-E-CROSS-CUTTING-SWEEP.md), [KB-NEXT-ROADMAP.md](./KB-NEXT-ROADMAP.md), [24-executive-standup-pack-roadmap.md](./24-executive-standup-pack-roadmap.md) |
 | **F** | **Employee Workspace & Office Suite** (this document, §2) | **BUILT except F4-1** — eFax still needs an owner vendor pick; F5-1 live Drive bytes need OAuth | [TRACK-F-BUILD-HANDOFF.md](./TRACK-F-BUILD-HANDOFF.md) |
+| **G** | Something Happened capture (Module 07A: one door, three taps, level engine, routing ledger, Administrator second screen) | Built on branch `blewis/care-events-three-tap`; migrations `400`–`403`; owner decisions D1 to D7 open in the spec §8 | [07A-something-happened-capture.md](./07A-something-happened-capture.md) |
 
 ### Standing gates that apply to everything below
 

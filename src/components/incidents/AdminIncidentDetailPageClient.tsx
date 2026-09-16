@@ -48,7 +48,11 @@ import {
   formatIncidentDetailInjurySeverity,
   formatIncidentDetailTimestamp,
 } from "@/lib/incidents/incident-detail-display-copy";
-import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
+import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
+import { buildIncidentAcknowledgmentLine, buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
+import { formatCorrectiveActionNotes } from "@/lib/care-events/admin-copy";
+import { toObligationDelivery } from "@/lib/care-events/admin-data";
+import { IncidentCareEventNotifications } from "@/components/incidents/IncidentCareEventNotifications";
 
 export type AdminIncidentDetailPageClientProps = {
   initialDetail?: IncidentDetailView | null;
@@ -198,7 +202,30 @@ export function AdminIncidentDetailPageClient({
     detail;
   const watchInstances = detail.watchInstances;
   const assuranceEscalations = detail.assuranceEscalations;
-  const openObligations = buildIncidentOpenObligations(incident);
+  const careEvent = detail.careEvent;
+  const obligationInput = {
+    incident,
+    routes: detail.routes,
+    deliveries: (careEvent?.deliveries ?? []).map(toObligationDelivery),
+    careEvent: careEvent
+      ? {
+          id: careEvent.id,
+          status: careEvent.status,
+          created_at: careEvent.createdAt,
+          acknowledged_at: careEvent.acknowledgedAt,
+          acknowledged_by: careEvent.acknowledgedBy,
+          final_level: careEvent.finalLevel,
+          admin: {
+            familyLater: careEvent.admin.familyLater,
+            physicianLater: careEvent.admin.physicianLater,
+            ahcaReportable: careEvent.admin.ahcaReportable,
+          },
+        }
+      : null,
+    timeZone: careEvent?.timeZone,
+  };
+  const openObligations = buildIncidentOpenObligations(obligationInput);
+  const acknowledgmentLine = buildIncidentAcknowledgmentLine(obligationInput);
   const workflowSummary = buildIncidentWorkflowSummary(incident, rcaInvestigation, followups, openObligations);
 
   async function assignFollowupToMe(followupId: string) {
@@ -643,6 +670,74 @@ export function AdminIncidentDetailPageClient({
         ) : null}
 
         <RecordDetailSection className="lg:col-span-2" title="Notifications &amp; regulatory">
+          {careEvent ? (
+            <IncidentCareEventNotifications
+              incident={incident}
+              careEvent={careEvent}
+              acknowledgmentLine={acknowledgmentLine}
+              openObligations={openObligations}
+              actions={
+                <>
+                {incident.ahca_reportable && !incident.ahca_reported ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          ahca_reported: true,
+                          ahca_reported_at: new Date().toISOString(),
+                        },
+                        "AHCA reporting recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "AHCA reporting recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark AHCA reported"}
+                  </Button>
+                ) : null}
+                {incident.insurance_reportable && !incident.insurance_reported ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          insurance_reported: true,
+                          insurance_reported_at: new Date().toISOString(),
+                        },
+                        "Insurance reporting recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Insurance reporting recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark insurance reported"}
+                  </Button>
+                ) : null}
+                {!incident.care_plan_updated ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={incidentActionLoading !== null}
+                    onClick={() =>
+                      void updateIncidentWorkflow(
+                        {
+                          care_plan_updated: true,
+                        },
+                        "Care plan update recorded.",
+                      )
+                    }
+                  >
+                    {incidentActionLoading === "Care plan update recorded." ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark care plan updated"}
+                  </Button>
+                ) : null}
+                </>
+              }
+            />
+          ) : (
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <NotifyPill active={incident.nurse_notified} label="Nurse" />
@@ -835,6 +930,7 @@ export function AdminIncidentDetailPageClient({
               </div>
             </div>
           </div>
+          )}
         </RecordDetailSection>
 
         {(incident.resolved_at || incident.resolution_notes) && (
@@ -844,7 +940,7 @@ export function AdminIncidentDetailPageClient({
               {incident.resolution_notes ? (
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Notes</p>
-                  <p className="mt-1 text-foreground">{incident.resolution_notes}</p>
+                  <p className="mt-1 text-foreground">{formatCorrectiveActionNotes(incident.resolution_notes)}</p>
                 </div>
               ) : null}
               {incident.care_plan_update_notes ? (
@@ -1099,10 +1195,10 @@ function CategoryBadge({ category }: { category: IncidentCategoryUi }) {
 
 function SeverityBadge({ severity }: { severity: IncidentSeverityUi }) {
   const map: Record<IncidentSeverityUi, { label: string; className: string }> = {
-    level_1: { label: "L1", className: "bg-muted text-muted-foreground" },
-    level_2: { label: "L2", className: "border-warning/20 bg-warning/10 text-warning" },
-    level_3: { label: "L3", className: "border-warning/20 bg-warning/10 text-warning" },
-    level_4: { label: "L4", className: "border-destructive/20 bg-destructive/10 text-destructive" },
+    level_1: { label: formatLevelWord(1), className: "bg-muted text-muted-foreground" },
+    level_2: { label: formatLevelWord(2), className: "border-info/20 bg-info/10 text-info" },
+    level_3: { label: formatLevelWord(3), className: "border-warning/20 bg-warning/10 text-warning" },
+    level_4: { label: formatLevelWord(4), className: "border-destructive/20 bg-destructive/10 text-destructive" },
   };
   return <Badge variant="outline" className={map[severity].className}>{map[severity].label}</Badge>;
 }

@@ -4,10 +4,21 @@ import { ShiftHandoffBoard } from "@/components/caregiver/ShiftHandoffBoard";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ClipboardList, Loader2, MessageSquare } from "lucide-react";
 
-import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { ShiftEventsSummary } from "@/components/care-events/timeline/ShiftEventsSummary";
+import { zonedYmd } from "@/lib/caregiver/emar-queue";
+import { loadCaregiverFacilityContext, type CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import {
+  HANDOFF_RECORDED_COPY,
+  autoSummaryCareEventLines,
+  currentShiftWindowFor,
+  nextShift,
+  recordShiftHandoff,
+} from "@/lib/caregiver/handoff-summary";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
@@ -31,6 +42,9 @@ export default function CaregiverHandoffPage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<HandoffRow[]>([]);
   const [nameById, setNameById] = useState<Map<string, string>>(new Map());
+  const [facilityCtx, setFacilityCtx] = useState<CaregiverFacilityContext | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [recordResult, setRecordResult] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +65,7 @@ export default function CaregiverHandoffPage() {
         return;
       }
       const { facilityId } = resolved.ctx;
+      setFacilityCtx(resolved.ctx);
 
       const hq = await supabase
         .from("shift_handoffs")
@@ -93,6 +108,45 @@ export default function CaregiverHandoffPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /**
+   * Write this shift's handoff: the outgoing shift is the one on the floor now,
+   * the incoming shift follows it (day, evening, night, day), handoff_date is
+   * the date the outgoing window started in the facility zone (today, except a
+   * night recorded after midnight files under yesterday), and auto_summary
+   * carries every care event from that window grouped by level word (spec 07A §6.3).
+   */
+  const recordHandoff = useCallback(async () => {
+    if (!facilityCtx || recording) return;
+    setRecording(true);
+    setRecordResult(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sign in again to record the handoff.");
+      const now = new Date();
+      const { shift, date } = currentShiftWindowFor(facilityCtx.timeZone, now);
+      await recordShiftHandoff(supabase, {
+        facilityId: facilityCtx.facilityId,
+        organizationId: facilityCtx.organizationId,
+        timeZone: facilityCtx.timeZone,
+        outgoingShift: shift,
+        incomingShift: nextShift(shift),
+        handoffDate: zonedYmd(now, facilityCtx.timeZone),
+        shiftDate: date,
+        outgoingStaffId: user.id,
+        outgoingNotes: null,
+        now,
+      });
+      setRecordResult({ kind: "success", text: HANDOFF_RECORDED_COPY });
+      await load();
+    } catch (e) {
+      setRecordResult({ kind: "error", text: formatLiveDataLoadError(e, "The handoff could not be recorded. Try again.") });
+    } finally {
+      setRecording(false);
+    }
+  }, [facilityCtx, load, recording, supabase]);
 
   if (configError) {
     return (
@@ -141,6 +195,32 @@ export default function CaregiverHandoffPage() {
         </div>
       </div>
 
+      {facilityCtx ? (
+        <div className="space-y-3">
+          <ShiftEventsSummary facilityId={facilityCtx.facilityId} timeZone={facilityCtx.timeZone} />
+          <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
+            <Button
+              type="button"
+              className="min-h-14 w-full sm:w-auto"
+              disabled={recording}
+              aria-busy={recording}
+              onClick={() => void recordHandoff()}
+            >
+              {recording ? "Recording handoff…" : "Record handoff"}
+            </Button>
+            {recordResult?.kind === "success" ? (
+              <p role="status" aria-live="polite" className="text-sm text-foreground">
+                {recordResult.text}
+              </p>
+            ) : null}
+            {recordResult?.kind === "error" ? (
+              <p role="alert" className="text-sm text-destructive">
+                {recordResult.text}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <ShiftHandoffBoard />
       {rows.length === 0 ? (
         <div className="p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center">
@@ -222,7 +302,8 @@ export default function CaregiverHandoffPage() {
 
 function autoSummaryLines(summary: unknown): string[] {
   if (summary == null || typeof summary !== "object" || Array.isArray(summary)) return [];
-  const out: string[] = [];
+  // Spec 07A section 6.3: a care_events summary carries printable lines, one per event, grouped by level word.
+  const out: string[] = autoSummaryCareEventLines(summary);
   for (const [k, v] of Object.entries(summary as Record<string, unknown>)) {
     if (typeof v === "string" && v.trim()) {
       out.push(`${humanizeKey(k)}: ${v.trim()}`);

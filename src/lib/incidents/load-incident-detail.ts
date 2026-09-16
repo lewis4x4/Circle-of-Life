@@ -1,6 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  fetchCareEventDeliveries,
+  parseAdminAnswers,
+  parseCareEventStatus,
+  parseFlags,
+  type CareEventAdminAnswers,
+  type CareEventAdminStatus,
+  type CareEventDeliveryLine,
+} from "@/lib/care-events/admin-data";
+import type { CareEventFlags } from "@/lib/care-events/level-engine";
 import { formatIncidentDetailTimestamp } from "@/lib/incidents/incident-detail-display-copy";
+import type { ObligationRoute } from "@/lib/incidents/workflow-obligations";
 import {
   classifyFollowupEscalation,
   type FollowupEscalationLevel,
@@ -96,8 +107,26 @@ export type IncidentAssuranceEscalation = {
   task_due_at: string;
 };
 
+/** The care event behind the incident, when the three-tap flow created it. */
+export type IncidentDetailCareEvent = {
+  id: string;
+  status: CareEventAdminStatus;
+  createdAt: string;
+  acknowledgedAt: string | null;
+  acknowledgedBy: string | null;
+  acknowledgedByName: string | null;
+  finalLevel: string;
+  flags: CareEventFlags;
+  admin: CareEventAdminAnswers;
+  deliveries: CareEventDeliveryLine[];
+  timeZone: string;
+};
+
 export type IncidentDetailView = {
   incident: SupabaseIncidentDetail;
+  careEvent: IncidentDetailCareEvent | null;
+  /** Active notification routes for the facility (or the organization default). */
+  routes: ObligationRoute[];
   residentName: string | null;
   reporterName: string;
   categoryUi: IncidentCategoryUi;
@@ -436,8 +465,15 @@ export async function loadIncidentDetail(
     eventsByWatch.set(row.watch_instance_id, list);
   }
 
+  const [careEvent, routes] = await Promise.all([
+    loadIncidentCareEvent(supabase, incident.id, incident.facility_id),
+    loadFacilityRoutes(supabase, incident.facility_id),
+  ]);
+
   return {
     incident,
+    careEvent,
+    routes,
     residentName,
     reporterName,
     categoryUi: mapDbCategoryToUi(incident.category),
@@ -468,4 +504,62 @@ export async function loadIncidentDetail(
       task_due_at: taskById.get(row.task_id)?.due_at ?? row.triggered_at,
     })),
   };
+}
+
+const DEFAULT_TIME_ZONE = "America/New_York";
+
+async function loadIncidentCareEvent(
+  supabase: SupabaseClient<Database>,
+  incidentId: string,
+  facilityId: string,
+): Promise<IncidentDetailCareEvent | null> {
+  const result = await supabase
+    .from("care_events")
+    .select("id, status, created_at, acknowledged_at, acknowledged_by, final_level, flags, answers")
+    .eq("incident_id", incidentId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  const row = result.data;
+  if (!row) return null;
+
+  const [deliveries, facility, acknowledger] = await Promise.all([
+    fetchCareEventDeliveries(supabase, row.id),
+    supabase.from("facilities").select("id, timezone").eq("id", facilityId).maybeSingle(),
+    row.acknowledged_by
+      ? supabase.from("user_profiles").select("id, full_name").eq("id", row.acknowledged_by).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  if (facility.error) throw facility.error;
+  if (acknowledger.error) throw acknowledger.error;
+
+  return {
+    id: row.id,
+    status: parseCareEventStatus(row.status),
+    createdAt: row.created_at,
+    acknowledgedAt: row.acknowledged_at,
+    acknowledgedBy: row.acknowledged_by,
+    acknowledgedByName: acknowledger.data?.full_name?.trim() || null,
+    finalLevel: row.final_level,
+    flags: parseFlags(row.flags),
+    admin: parseAdminAnswers(row.answers),
+    deliveries,
+    timeZone: facility.data?.timezone || DEFAULT_TIME_ZONE,
+  };
+}
+
+async function loadFacilityRoutes(supabase: SupabaseClient<Database>, facilityId: string): Promise<ObligationRoute[]> {
+  const result = await supabase
+    .from("notification_routes")
+    .select("name, severity_min, facility_id")
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .or(`facility_id.eq.${facilityId},facility_id.is.null`);
+  if (result.error) throw result.error;
+  const rows = result.data ?? [];
+  const facilityRows = rows.filter((row) => row.facility_id === facilityId);
+  const chosen = facilityRows.length > 0 ? facilityRows : rows;
+  return chosen.map((row) => ({ name: row.name, severity_min: row.severity_min }));
 }

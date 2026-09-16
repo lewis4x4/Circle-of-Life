@@ -15,6 +15,7 @@ describe("resident detail navigation", () => {
       carePlanHref: "/admin/residents/resident-123/care-plan",
       medicationsHref: "/admin/residents/resident-123/medications",
       vitalsHref: "/admin/residents/resident-123/vitals",
+      timelineHref: "/admin/residents/resident-123/timeline",
       billingHref: "/admin/residents/resident-123/billing",
     });
   });
@@ -25,6 +26,7 @@ describe("resident detail navigation", () => {
     ["care-plan", "care-plan"],
     ["medications", "medications"],
     ["vitals", "vitals"],
+    ["timeline", "timeline"],
     ["billing", "billing"],
     ["unknown", "overview"],
   ] as const)("maps the %s route segment to the %s tab", (segment, tab) => {

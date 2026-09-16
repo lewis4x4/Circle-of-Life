@@ -14,6 +14,7 @@ export function adminResidentDetailHrefs(residentId: string): ResidentDetailHref
     carePlanHref: `${residentRootHref}/care-plan`,
     medicationsHref: `${residentRootHref}/medications`,
     vitalsHref: `${residentRootHref}/vitals`,
+    timelineHref: `${residentRootHref}/timeline`,
     billingHref: `${residentRootHref}/billing`,
   };
 }
@@ -26,6 +27,7 @@ export function residentDetailTabFromSegment(
     case "care-plan":
     case "medications":
     case "vitals":
+    case "timeline":
     case "billing":
       return segment;
     default:

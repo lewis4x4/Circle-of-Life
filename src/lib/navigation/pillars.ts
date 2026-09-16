@@ -208,7 +208,8 @@ export const AUXILIARY_ROUTES: PillarItem[] = [
   { key: "pilot-feedback", href: "/admin/feedback", label: "Pilot feedback", icon: MessageSquare },
 ];
 
-export const REPORT_INCIDENT_HREF = "/admin/incidents/new";
+/** Spec 07A: every "Report incident" door opens the three-tap caregiver flow. */
+export const REPORT_INCIDENT_HREF = "/caregiver/report";
 
 /**
  * Returns the pillar that owns the current path, or `null` for routes

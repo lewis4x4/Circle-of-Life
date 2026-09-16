@@ -19,6 +19,12 @@ import {
 } from "@/design-system/components/record-detail";
 import { formatDischargeDetailTimestamp } from "@/lib/discharge/discharge-detail-display-copy";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import {
+  DISCHARGE_REASONS,
+  officialDischargePatch,
+  officialDischargeReceipt,
+  type DischargeReason,
+} from "@/lib/residents/official-discharge";
 
 type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] & {
   residents: {
@@ -36,21 +42,6 @@ const HOSPICE_OPTIONS: Array<Database["public"]["Enums"]["hospice_status"]> = [
   "pending",
   "active",
   "ended",
-];
-
-const DISCHARGE_REASONS: Array<Database["public"]["Enums"]["discharge_reason"]> = [
-  "resident_voluntary",
-  "facility_with_cause",
-  "facility_immediate",
-  "medicaid_relocation",
-  "higher_level_of_care",
-  "hospital_permanent",
-  "another_alf",
-  "home",
-  "death",
-  "non_payment",
-  "behavioral",
-  "other",
 ];
 
 function formatStatus(s: string) {
@@ -194,24 +185,21 @@ export default function AdminDischargeDetailPage() {
       setActionError("Choose the official discharge date (belongings removed).");
       return;
     }
-    const successMessage = "Official discharge recorded — resident is no longer billable.";
+    const successMessage = officialDischargeReceipt(officialDischargeReason);
     setActionLoading(successMessage);
     setActionError(null);
     setActionMessage(null);
     try {
-      const status: Database["public"]["Enums"]["resident_status"] =
-        officialDischargeReason === "death" ? "deceased" : "discharged";
       const { error: updateError } = await supabase
         .from("residents")
-        .update({
-          status,
-          discharge_date: officialDischargeDate,
-          discharge_reason: officialDischargeReason,
-          discharge_destination: officialDischargeDestination.trim() || null,
-          bed_id: null,
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id ?? null,
-        })
+        .update(
+          officialDischargePatch({
+            reason: officialDischargeReason,
+            date: officialDischargeDate,
+            destination: officialDischargeDestination,
+            actorId: user?.id ?? null,
+          }) as never,
+        )
         .eq("id", row.resident_id);
       if (updateError) throw updateError;
       setActionMessage(successMessage);
@@ -505,7 +493,7 @@ export default function AdminDischargeDetailPage() {
                       value={officialDischargeReason}
                       onChange={(event) =>
                         setOfficialDischargeReason(
-                          event.target.value as Database["public"]["Enums"]["discharge_reason"],
+                          event.target.value as DischargeReason,
                         )
                       }
                       className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -534,8 +522,7 @@ export default function AdminDischargeDetailPage() {
                   disabled={!!actionLoading || !officialDischargeDate}
                   onClick={() => void completeOfficialDischarge()}
                 >
-                  {actionLoading ===
-                  "Official discharge recorded — resident is no longer billable." ? (
+                  {actionLoading === officialDischargeReceipt(officialDischargeReason) ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     "Complete official discharge"

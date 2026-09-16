@@ -32,8 +32,8 @@ jobs:
         # tampered body, malformed headers, refusal-recording gate).
         run: |
           cd supabase/functions
-          deno check officer-catalog/index.ts officer-catalog-handler.test.ts officer-catalog/signature.test.ts
-          deno test --allow-env --allow-net=example.invalid officer-catalog-handler.test.ts officer-catalog/signature.test.ts
+          deno check officer-catalog/index.ts officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/index.ts
+          deno test --allow-env --allow-net=example.invalid officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/
 
       - name: Stand Up regression contracts
         run: |

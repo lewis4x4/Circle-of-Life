@@ -38,6 +38,52 @@ const eslintConfig = defineConfig([
     "scripts/**",
   ]),
   {
+    // Baseline: eslint-plugin-react-hooks 7 (via eslint-config-next 16) added
+    // the React Compiler rules, which flag 420 pre-existing patterns across
+    // 242 files (mostly `useEffect(() => { void load(); }, [load])`). They are
+    // switched off here for the legacy surface so `npm run lint` reflects new
+    // work, and re-enabled below for the 07A care-events code, which passes
+    // them. Remove entries from this block as the legacy surfaces are migrated.
+    files: ["src/**/*.{ts,tsx,js,jsx}"],
+    // These two carry their own justified per-rule disables; keep the rules
+    // live there so those directives stay in use.
+    ignores: ["src/design-system/components/DataTable/DataTable.tsx", "src/hooks/useHeldRoleHomeChrome.ts"],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/incompatible-library": "off",
+      "react-hooks/static-components": "off",
+    },
+  },
+  {
+    // Spec 07A surfaces keep the React Compiler rules as errors.
+    files: [
+      "src/components/care-events/**/*.{ts,tsx}",
+      "src/components/incidents/IncidentsTodayStrip.tsx",
+      "src/components/incidents/IncidentCareEventNotifications.tsx",
+      "src/lib/care-events/**/*.{ts,tsx}",
+      "src/lib/offline/**/*.{ts,tsx}",
+      "src/app/api/care-events/**/*.{ts,tsx}",
+      "src/app/(caregiver)/caregiver/report/**/*.{ts,tsx}",
+      "src/app/(caregiver)/caregiver/resident/[id]/timeline/**/*.{ts,tsx}",
+      "src/app/(admin)/admin/care-events/**/*.{ts,tsx}",
+      "src/app/(admin)/admin/residents/[id]/timeline/**/*.{ts,tsx}",
+      "src/app/(admin)/incidents/reports-log/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "react-hooks/set-state-in-effect": "error",
+      "react-hooks/preserve-manual-memoization": "error",
+      "react-hooks/purity": "error",
+      "react-hooks/immutability": "error",
+      "react-hooks/refs": "error",
+      "react-hooks/incompatible-library": "error",
+      "react-hooks/static-components": "error",
+    },
+  },
+  {
     files: [
       "src/design-system/components/**/*.{ts,tsx}",
       "src/design-system/templates/**/*.{ts,tsx}",

@@ -27,6 +27,7 @@ import {
   isFollowupEscalated,
   type FollowupEscalationLevel,
 } from "@/lib/incidents/followup-escalation";
+import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 
 type FollowupRow = {
   id: string;
@@ -512,7 +513,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
           {severityFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-                Severity filter: {severityFilter.replace("level_", "L")}
+                Level filter: {formatLevelWord(severityFilter)}
               </Badge>
               {scopeFilter !== "all" ? (
                 <Badge variant="outline" className="border-info/30 bg-info/10 text-info">
