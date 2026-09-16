@@ -275,6 +275,7 @@ export function AdminResidentsPageClient({
   const [error, setError] = useState<string | null>(initialError);
 
   const skipNextLoadRef = useRef(initialError == null);
+  const loadSequenceRef = useRef(0);
 
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [acuity, setAcuity] = useState(DEFAULT_FILTERS.acuity);
@@ -334,12 +335,16 @@ export function AdminResidentsPageClient({
     }
     skipNextLoadRef.current = false;
 
+    // Reads overlap when the facility store hydrates just after the mount
+    // load starts; only the most recent read may write state, or an earlier
+    // unscoped read lands last and blanks the facility figures (observed
+    // 2026-09-15: "Licensed beds not on file" under Homewood Lodge).
+    const sequence = ++loadSequenceRef.current;
     setIsLoading(true);
     setError(null);
 
     try {
       const liveRows = await fetchResidentsFromSupabase(selectedFacilityId);
-      setRows(liveRows);
       const { fetchResidentRosterMetrics } = await import("@/lib/residents/resident-roster-metrics");
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
@@ -348,13 +353,16 @@ export function AdminResidentsPageClient({
         liveRows.map((row) => row.id),
         supabase,
       );
+      if (sequence !== loadSequenceRef.current) return;
+      setRows(liveRows);
       setMetrics(nextMetrics);
     } catch (err) {
+      if (sequence !== loadSequenceRef.current) return;
       setRows([]);
       setMetrics(null);
       setError(formatLiveDataLoadError(err, "Resident roster is unavailable right now."));
     } finally {
-      setIsLoading(false);
+      if (sequence === loadSequenceRef.current) setIsLoading(false);
     }
   }, [selectedFacilityId, initialFacilityId]);
 

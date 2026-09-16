@@ -7,6 +7,7 @@ import { FileStack, Loader2, RefreshCcw } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 import { humanizeToken } from "./ui-labels";
 
@@ -121,7 +122,9 @@ export function ResidentIntakeLinks({ admissionCaseId = null, residentId = null,
           ))}
         </ul>
       )}
-      <Link href={createHref} className={buttonVariants({ variant: compact ? "ghost" : "outline", size: "sm" })}>Upload another packet</Link>
+      <Link href={createHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), compact && "w-full justify-center")}>
+        {state === "empty" ? "Upload admission documents" : "Upload another packet"}
+      </Link>
     </div>
   );
 }

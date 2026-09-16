@@ -35,6 +35,8 @@ import {
   loadResidentOverviewDetail,
   type ResidentOverviewDetail,
 } from "@/lib/residents/resident-detail-overview-load";
+import { acuityDisplay } from "@/lib/residents/resident-acuity-display";
+import { RESIDENT_NO_UNIT_COPY as NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
 import {
   isPresenceStatus,
@@ -155,7 +157,14 @@ export function AdminResidentDetailShell({
     );
   }
 
-  const subtitle = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${formatResidentOverviewGenderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
+  const acuity = acuityDisplay(detail.acuityLevel);
+  const subtitle = [
+    detail.ageYears != null ? `Age ${detail.ageYears}` : "Age not recorded",
+    formatResidentOverviewGenderLabel(detail.gender),
+    `Room ${detail.roomLabel}`,
+    detail.unitName || NO_UNIT_COPY,
+    `Admitted ${detail.admissionLabel}`,
+  ].join(" · ");
 
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-4 pt-2">
@@ -164,38 +173,45 @@ export function AdminResidentDetailShell({
         subtitle={subtitle}
         backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
         statusChips={
-          !isPresenceStatus(detail.rawStatus) ? (
-            <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
-          ) : detail.status !== "active" ? (
-            <StatusPill tone={presenceTone(detail.status)}>
-              {presenceLabel(detail.status)}
-            </StatusPill>
-          ) : null
+          <>
+            {!isPresenceStatus(detail.rawStatus) ? (
+              <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
+            ) : (
+              <StatusPill tone={presenceTone(detail.status)}>{presenceLabel(detail.status)}</StatusPill>
+            )}
+            {acuity.tone === "gap" ? (
+              <span className="text-[13px] text-muted-foreground">{acuity.label}</span>
+            ) : (
+              <StatusPill tone={acuity.tone} className="normal-case tracking-tight">
+                {acuity.label}
+              </StatusPill>
+            )}
+          </>
         }
         actions={
           <div className="flex shrink-0 flex-col items-end gap-2 md:flex-row md:items-start">
-            <div className="flex flex-row flex-wrap justify-end gap-2">
+            <div className="grid w-[calc(100vw-2rem)] grid-cols-3 items-center gap-2 md:flex md:w-auto md:flex-row md:flex-wrap">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => setBehaviorModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
               >
                 <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => setConditionModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
               >
                 <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => setGeneralNoteModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
               >
                 <FileText className="mr-1.5 size-4" aria-hidden /> General note
               </Button>
