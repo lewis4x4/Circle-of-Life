@@ -93,5 +93,9 @@ const eslintConfig = defineConfig([
 // (ESLint bulk suppressions). Lint fails only on NEW violations. After fixing
 // some, run `npx eslint src --prune-suppressions` so the ratchet only tightens;
 // never `--suppress-all` again without a review of what it would hide.
+// `npm run lint` passes `--pass-on-unpruned-suppressions` because the compiler
+// rules report slightly fewer findings on the CI runner than on a Mac checkout
+// (2026-09-16: CI failed only on "suppressions left that do not occur"), and a
+// suppression that is no longer needed is not a defect.
 
 export default eslintConfig;

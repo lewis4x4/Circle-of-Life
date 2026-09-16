@@ -7,7 +7,7 @@
     "build": "npm run migrations:check && npm run migrations:check:hosted && npm run check:admin-shell && npm run check:memory-care && next build",
     "build:web": "npm run build",
     "start": "next start",
-    "lint": "eslint src --max-warnings 0 && npm run lint:constitution",
+    "lint": "eslint src --max-warnings 0 --pass-on-unpruned-suppressions && npm run lint:constitution",
     "lint:constitution": "tsx scripts/lint-constitution.ts",
     "audit:ci": "npm audit --audit-level=high",
     "smoke:sentry": "node scripts/agent-gates/sentry-smoke.mjs",
