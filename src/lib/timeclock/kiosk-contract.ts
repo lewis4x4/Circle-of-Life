@@ -1,0 +1,163 @@
+/**
+ * Timeclock kiosk contract (COL-352, spec 37 §5). Shared by the session-less
+ * kiosk page, its route handlers and the offline queue. Client-safe: no Node
+ * imports, no secrets, no copy that reveals which half of a credential failed.
+ */
+
+export const PUNCH_TYPES = ["in", "out", "meal_start", "meal_end"] as const;
+export type PunchType = (typeof PUNCH_TYPES)[number];
+
+export function isPunchType(value: unknown): value is PunchType {
+  return typeof value === "string" && (PUNCH_TYPES as readonly string[]).includes(value);
+}
+
+export const KIOSK_DEVICE_HEADER = "x-timeclock-device";
+
+export const KIOSK_ENROLL_ENDPOINT = "/api/kiosk/timeclock/enroll";
+export const KIOSK_IDENTIFY_ENDPOINT = "/api/kiosk/timeclock/identify";
+export const KIOSK_PUNCH_ENDPOINT = "/api/kiosk/timeclock/punch";
+
+/** Error codes the kiosk API returns. Staff-facing copy never distinguishes badge from PIN. */
+export type KioskErrorCode =
+  | "device_unknown"
+  | "device_throttled"
+  | "facility_off"
+  | "not_recognized"
+  | "locked"
+  | "invalid_next_type"
+  | "code_invalid"
+  | "rejected_offline"
+  | "invalid_input"
+  | "unavailable";
+
+export type KioskStaffState = "out" | "in" | "meal";
+
+export type KioskIdentifyResponse = {
+  first_name: string;
+  state: KioskStaffState;
+  next_actions: PunchType[];
+  today_worked_minutes: number;
+};
+
+export type KioskPunchRequest = {
+  identifier: string;
+  pin: string;
+  punch_type: PunchType;
+  device_time: string;
+  client_punch_id: string;
+  captured_offline: boolean;
+};
+
+export type KioskPunchReceipt = {
+  punch_id: string;
+  replayed: boolean;
+  first_name: string;
+  punch_type: PunchType;
+  punched_at: string;
+  flags: string[];
+  state: KioskStaffState;
+  next_actions: PunchType[];
+  today_worked_minutes: number;
+};
+
+export type KioskEnrollResponse = {
+  device_id: string;
+  token: string;
+  facility_id: string;
+  facility_name: string;
+};
+
+export type KioskErrorResponse = { error: KioskErrorCode };
+
+/** HTTP status for each database error code (spec 37 §4.1). */
+export const KIOSK_ERROR_STATUS: Record<KioskErrorCode, number> = {
+  device_unknown: 401,
+  device_throttled: 429,
+  facility_off: 403,
+  not_recognized: 401,
+  locked: 423,
+  invalid_next_type: 409,
+  code_invalid: 401,
+  rejected_offline: 422,
+  invalid_input: 400,
+  unavailable: 503,
+};
+
+/**
+ * Database codes that must not reach the tablet as themselves: a terminated or
+ * unassigned person gets the same words as a wrong PIN.
+ */
+export function publicKioskErrorCode(dbCode: string): KioskErrorCode {
+  switch (dbCode) {
+    case "device_unknown":
+    case "device_throttled":
+    case "facility_off":
+    case "locked":
+    case "invalid_next_type":
+    case "code_invalid":
+    case "invalid_input":
+    case "rejected_offline":
+    case "unavailable":
+      return dbCode;
+    default:
+      return "not_recognized";
+  }
+}
+
+export const KIOSK_COPY = {
+  enrollHeading: "Set up this tablet",
+  enrollHint: "Ask an administrator for a one time enrollment code. It expires 15 minutes after it is created.",
+  enrollCodeLabel: "Enrollment code",
+  enrollButton: "Enroll",
+  enrollLabelLabel: "Tablet name",
+  identifierLabel: "Badge or employee number",
+  pinLabel: "PIN",
+  continueButton: "Continue",
+  actionLabels: {
+    in: "Clock in",
+    out: "Clock out",
+    meal_start: "Start meal",
+    meal_end: "End meal",
+  } satisfies Record<PunchType, string>,
+  confirmedLabels: {
+    in: "Clocked in",
+    out: "Clocked out",
+    meal_start: "Meal started",
+    meal_end: "Meal ended",
+  } satisfies Record<PunchType, string>,
+  offlineSaved: "Saved on this tablet. Will send when online.",
+  offlineBanner: "Offline. Punches are saved on this tablet and sent when the network returns.",
+  errors: {
+    not_recognized: "Badge or PIN not recognized",
+    locked: "Locked for 15 minutes. See your administrator.",
+    device_unknown: "This tablet is not set up for timeclock.",
+    facility_off: "Timeclock is off for this facility.",
+    device_throttled: "Try again in a few minutes.",
+    invalid_next_type: "That action is not available right now. Try again.",
+    code_invalid: "That code did not work. Ask for a new one.",
+    rejected_offline: "Badge or PIN not recognized",
+    invalid_input: "Something was missing. Try again.",
+    unavailable: "Timeclock is temporarily unavailable. Your punch will be saved on this tablet.",
+  } satisfies Record<KioskErrorCode, string>,
+  idleReset: "Cleared after 30 seconds without input.",
+} as const;
+
+/** `4 h 12 min` for the receipt. Integer minutes in, no rounding. */
+export function formatWorkedMinutes(minutes: number): string {
+  const total = Math.max(0, Math.floor(minutes));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m} min`;
+  return `${h} h ${m} min`;
+}
+
+/** `7:02 a.m.` in the facility time zone. */
+export function formatKioskTime(iso: string | Date, timeZone = "America/New_York"): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  const parts = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone }).formatToParts(date);
+  const hour = parts.find((p) => p.type === "hour")?.value ?? "";
+  const minute = parts.find((p) => p.type === "minute")?.value ?? "";
+  const period = (parts.find((p) => p.type === "dayPeriod")?.value ?? "").toLowerCase();
+  const suffix = period === "pm" ? "p.m." : "a.m.";
+  return `${hour}:${minute} ${suffix}`;
+}
