@@ -143,3 +143,56 @@ If the publisher is updated before the Front Office migration, the ingest endpoi
 8. Metric definitions absent from both UIs.
 9. Whether management sees the raw held value in Front Desk (this version assumes yes) and whether owners see the roster empty state (this version assumes yes).
 10. Who prepares the editable backup for an internet outage and where it lives.
+
+## 12. Roster source (COL-351)
+
+Haven suggests the census and hospital figures from the resident roster and the administrator confirms or overrides them. Each save of the open reporting period records, per figure, what the roster suggested, what was saved, and the source token below. `field_state_version` stays 1; this section adds names and never changes the meaning of an existing one.
+
+### 12.1 Source token
+
+One per confirmed figure, decided by the Haven server at save time, never by the client.
+
+| Token | Code | Display text | Meaning |
+|---|---|---|---|
+| `roster_confirmed` | 1 | none | The saved figure equals the roster suggestion at the moment of the save |
+| `entered_no_roster` | 2 | none | Haven holds no residents for the facility, so there was no suggestion; the figure was typed |
+| `overridden` | 3 | `override: {reason text}` | The saved figure differs from the roster suggestion and the administrator chose a reason |
+
+A figure saved blank records no source. A report saved without a roster confirmation (historical corrections, the hosted connector, imports, recovery) records no source and publishes no roster rows. A historical report shows the confirmation recorded at the time; the suggestion is never recomputed for a past meeting.
+
+### 12.2 Override reason
+
+A fixed list; free text is never accepted because it invites resident names.
+
+| Token | Code | Display text |
+|---|---|---|
+| `roster_not_current` | 1 | Roster not updated yet |
+| `change_not_entered` | 2 | Admission or discharge not entered in Haven |
+| `different_definition` | 3 | Workbook counts census differently |
+| `other` | 4 | Other |
+
+### 12.3 Roster suggestion
+
+Census suggestion = residents whose current status is `active`, `hospital_hold` or `loa`, shown with its components (`34 = 32 in house + 1 hospital + 1 leave`). Hospital suggestion = residents whose current status is `hospital_hold`, a point in time, matching the definition of "Residents at hospital or rehab" as Monday morning. Roster as-of = the latest status change recorded for the facility. TBD (owner, Jessica Murphy): confirmation that hospital and leave residents count toward the workbook census, and that rehab stays are recorded as `hospital_hold`.
+
+### 12.4 Transport encoding and `roster_source_version`
+
+- Global row `roster_source_version`, integer, value `1`. Published only when every report in the payload comes from a Haven that records roster confirmations (the report carries `roster_confirmations`, even when empty). Absent on a legacy payload.
+- Per-facility rows for the two roster figures, `{facility}_current_total_census_source` and `{facility}_hospital_and_rehab_total_source`, integer code 1 to 3 from section 12.1. Published only when that figure carries a recorded confirmation.
+- Per-facility rows `{facility}_current_total_census_override_reason` and `{facility}_hospital_and_rehab_total_override_reason`, integer code 1 to 4 from section 12.2. Published only with source code 3.
+- Per-facility row `{facility}_roster_as_of_epoch`, integer seconds, the roster as-of recorded with the confirmation. Absent when no confirmation carried one.
+- Both datasets, `standup_weekly` and `standup_weekly_history`, gain these names in their allowed metric lists. History validation accepts them as optional.
+- Every existing name keeps its meaning. No name is removed. `field_state_version` is unchanged.
+
+Validation (whole snapshot withheld on failure): a source code outside 1 to 3; a reason code outside 1 to 4; a reason row without source code 3, or source code 3 without a reason row; a source row for an unreported facility; a source row for a figure whose value row is absent. A payload without `roster_source_version` is legacy for this section: any roster rows it carries are ignored.
+
+### 12.5 Display
+
+Front Desk meeting table and facility detail, and the Haven all-facilities overview, show a small neutral suffix on the census figure only when its source is `overridden`: `34 · override: Roster not updated yet`. Nothing is shown for `roster_confirmed` or `entered_no_roster`. No resident name, room or id ever enters these rows; the roster itself is visible only inside the facility's own Haven screen.
+
+### 12.6 Deployment order
+
+1. Front Office: apply the allowlist and validator migration, deploy the application. It renders payloads with and without the roster rows.
+2. Haven: apply the roster census migration, deploy the application, then update the publisher runtime. The publisher starts sending roster rows on its next poll.
+
+If the publisher is updated first, the ingest endpoint refuses the batch because of the unknown metric names, exactly as in section 10, and accepts it on the next poll after the Front Office migration.
