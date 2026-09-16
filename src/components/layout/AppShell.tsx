@@ -374,12 +374,16 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       return;
     }
     if (facilitiesLoading || facilitiesLoadFailed) return;
-    syncSelectedFacilityCookie(safeSelectedFacilityId);
+    // Same reconciliation as AdminShell: when the cookie the server renders
+    // from actually moves to the selector's facility, refresh so server-
+    // rendered pages stop showing the previous facility under the new label.
+    if (syncSelectedFacilityCookie(safeSelectedFacilityId)) router.refresh();
   }, [
     authLoading,
     currentUserId,
     facilitiesLoadFailed,
     facilitiesLoading,
+    router,
     safeSelectedFacilityId,
   ]);
 

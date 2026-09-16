@@ -319,12 +319,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       return;
     }
     if (facilitiesLoading || facilitiesLoadFailed) return;
-    syncSelectedFacilityCookie(safeSelectedFacilityId);
+    // The store is the selector's truth; the cookie is the server's. Pages
+    // that set the store without the cookie (Stand Up, working-facility
+    // pickers) leave server-rendered pages on the previous facility under the
+    // new label. When reconciling actually moves the server's scope, refresh
+    // so every cookie-bootstrapped page re-renders for the facility shown.
+    // `syncSelectedFacilityCookie` is false once the two agree, so this
+    // cannot loop.
+    if (syncSelectedFacilityCookie(safeSelectedFacilityId)) router.refresh();
   }, [
     authLoading,
     currentUserId,
     facilitiesLoadFailed,
     facilitiesLoading,
+    router,
     safeSelectedFacilityId,
   ]);
 
