@@ -24,6 +24,13 @@ export type FacilityDataHealth = {
   last_staff_check_closed_at: string | null;
 };
 
+/**
+ * Why the panel has no counts. COL-442: `forbidden` is the database refusing a
+ * facility the caller holds no grant to, and it is a different sentence from a
+ * transient failure -- neither of which may read as "this facility is clean".
+ */
+export type FacilityDataHealthError = "forbidden" | "unavailable";
+
 export type DataHealthCount = {
   key: string;
   label: string;

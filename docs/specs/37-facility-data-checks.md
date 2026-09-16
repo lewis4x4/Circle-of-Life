@@ -58,11 +58,13 @@ Four tables in `public`, all with `organization_id` denormalized for RLS, all ap
 
 At most one open session per facility per check type, enforced by a partial unique index where `closed_at IS NULL`.
 
-Indexes: `(session_id, bed_id, recorded_at desc)` and `(session_id, subject_user_profile_id, subject_staff_id, recorded_at desc)` so the latest-result lookup is a single index scan.
+Indexes: `(session_id, bed_id, sequence desc)` and `(session_id, subject_user_profile_id, subject_staff_id, sequence desc)` so the latest-result lookup is a single index scan. The sort key is `sequence`, not `recorded_at`: two marks written in one transaction share `now()`, and "the newest row wins" would otherwise fall back to comparing random uuids.
 
 ## Read model
 
-Three `security invoker` functions plus two `security definer` close functions, all `SET search_path = public`.
+Two `security invoker` read functions (`board_check_state`, `staff_check_state`) plus five `security definer` functions, all `SET search_path = public`: the two close functions, and three readers in `haven` that exist only to cross an RLS line the panel cannot do its job behind — `haven.facility_identity_health`, `haven.facility_stand_up_census` and `haven.staff_check_subject_profiles`. Each carries a COL-37 ruling comment naming what it re-checks. `public.facility_data_health` is `security invoker` but is `plpgsql` rather than `sql`, so it can refuse a caller with no grant instead of answering.
+
+`haven.staff_check_subject_profiles` is the one to understand. `user_profiles` RLS only shows a `facility_admin` a profile that holds an **unrevoked** grant to a facility they can reach — so an offboard that revokes the grant and leaves the login alive puts the profile out of reach, and that is precisely the half-finished offboard a staff check exists to find. Reading the profile half through RLS made the screen report the identity as resolved while the definer close function, recounting RLS-free, refused to close the walk (COL-437).
 
 ### `public.board_check_state(p_session_id uuid)`
 
@@ -124,9 +126,17 @@ Counts only, each with a link to the list that explains it:
 7. Duplicate identity candidates, by the three rules above.
 8. Last closed Board Check and Staff Check dates, or `Never`.
 
+A caller with no grant to the facility is refused with `42501`, not answered. Every count here is gated by a facility CTE that empties out for such a caller, and the outer statement has no `FROM` — so the function used to return one row of zeros, and "you cannot see this facility" rendered as "this facility is clean" (COL-442). The panel now says which of the two happened and claims nothing about the data either way.
+
+**Open (COL-438):** counts 6 and 7 are organization-wide, not facility-scoped — `active_profiles_with_no_grant` has no facility to scope to by construction, and the duplicate rule joins on `organization_id`. A change made only at facility B moves facility A's panel. Item 6 above says "in the organization" and item 7 says "inside one organization", so the counts match the spec and the panel's framing does not. Whether to relabel them as organization-wide or scope them to the facility is a product decision and is not yet made.
+
 ## Closure rules
 
-A session closes only through its close function. There are no UPDATE or DELETE policies on any of the four tables, and a BEFORE UPDATE OR DELETE trigger raises `42501` on the two result tables, so a result cannot be edited even by a table owner path. The session tables allow UPDATE only through the definer close function, which is `REVOKE`d from `PUBLIC` and granted to `authenticated`.
+A session closes only through its close function. There are no UPDATE or DELETE policies on any of the four tables, and `UPDATE`, `DELETE` and `TRUNCATE` are explicitly `REVOKE`d from `anon`, `authenticated` and `service_role` — hosted Supabase grants all of them on every new `public` table by default privilege, and `service_role` bypasses RLS, so the grant layer is the only layer it answers to.
+
+Both result tables carry a `BEFORE UPDATE OR DELETE` trigger that raises `42501` flatly, so a mark cannot be edited even on a table owner path. The session tables cannot take a flat refusal, because closing one *is* an `UPDATE`; their trigger instead allows only the `closed_at`/`closed_by` `NULL` → non-`NULL` transition with every other column unchanged, refuses `DELETE`, refuses a reopen or a re-stamp, and re-checks the zero-open-items precondition itself. That last part is what stops any owner-level path from stamping `closed_at` on a walk with unmarked beds and manufacturing evidence of a reconciliation that never happened (COL-439).
+
+Both close functions carry the caller's organization, role and facility-grant test inside the session lookup, so "this session is not yours" and "this session does not exist" are the same `42501` (COL-441).
 
 A closed Board Check session with zero open items is the evidence that Haven's roster matched the board at that time. It is not a claim about any later moment.
 

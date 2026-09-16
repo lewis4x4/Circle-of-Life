@@ -17,16 +17,28 @@ CREATE OR REPLACE FUNCTION auth.uid () RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT nullif(auth.jwt()->>'sub','')::uuid
 $$;
 
--- No UPDATE or DELETE reaches these tables from a signed-in session, by grant,
--- before RLS is even consulted.
-DO $$ BEGIN
-  IF has_table_privilege('authenticated','public.board_check_results','UPDATE')
-    OR has_table_privilege('authenticated','public.board_check_results','DELETE')
-    OR has_table_privilege('authenticated','public.staff_check_results','UPDATE')
-    OR has_table_privilege('authenticated','public.staff_check_results','DELETE')
-    OR has_table_privilege('authenticated','public.board_check_sessions','UPDATE')
-    OR has_table_privilege('authenticated','public.staff_check_sessions','UPDATE') THEN
-    RAISE EXCEPTION 'facility check tables are writable after insert';
+-- No UPDATE, DELETE or TRUNCATE reaches these tables from any Supabase role, by
+-- grant, before RLS is even consulted.
+--
+-- COL-440: the earlier version of this assertion named `authenticated` only and
+-- was true on this replay for the wrong reason -- vanilla Postgres has none of
+-- Supabase's default privileges, and hosted grants ALL on every new public
+-- table to anon, authenticated and service_role. Migration 407's
+-- GRANT SELECT, INSERT neither narrowed nor revoked that, so the claim was
+-- false on production. The explicit REVOKE in migration 409 is what makes this
+-- true in both places, and `service_role` is the role that matters: it bypasses
+-- RLS, so the grant layer is the only layer it is subject to.
+DO $$ DECLARE writable text; BEGIN
+  SELECT string_agg(format('%s can %s %s', r.role_name, p.priv, t.tbl), ', ' ORDER BY r.role_name, t.tbl, p.priv)
+    INTO writable
+    FROM (VALUES ('anon'), ('authenticated'), ('service_role')) AS r (role_name)
+    CROSS JOIN (VALUES
+      ('public.board_check_sessions'), ('public.board_check_results'),
+      ('public.staff_check_sessions'), ('public.staff_check_results')) AS t (tbl)
+    CROSS JOIN (VALUES ('UPDATE'), ('DELETE'), ('TRUNCATE')) AS p (priv)
+    WHERE has_table_privilege(r.role_name, t.tbl, p.priv);
+  IF writable IS NOT NULL THEN
+    RAISE EXCEPTION 'facility check tables are writable after insert: %', writable;
   END IF;
 END $$;
 
@@ -266,6 +278,34 @@ DO $$ DECLARE refused boolean := FALSE; BEGIN
   IF NOT refused THEN RAISE EXCEPTION 'the table owner could delete a board check result'; END IF;
 END $$;
 
+-- COL-439. The sessions tables cannot take a flat refusal, because closing a
+-- walk is an UPDATE. What the trigger refuses is everything that is not a
+-- close: no delete, no reopen, no re-stamp, no rewrite of any other column.
+-- These run on the owner path, which is where service_role would otherwise
+-- reach past RLS with the grants hosted Supabase hands out by default.
+DO $$ DECLARE refused boolean := FALSE; BEGIN
+  BEGIN DELETE FROM board_check_sessions WHERE id=(SELECT session_board FROM fx);
+  EXCEPTION WHEN insufficient_privilege THEN refused := TRUE; END;
+  IF NOT refused THEN RAISE EXCEPTION 'the table owner could delete a closed board check session'; END IF;
+END $$;
+DO $$ DECLARE refused boolean := FALSE; BEGIN
+  BEGIN UPDATE board_check_sessions SET closed_at=NULL, closed_by=NULL WHERE id=(SELECT session_board FROM fx);
+  EXCEPTION WHEN insufficient_privilege THEN refused := TRUE; END;
+  IF NOT refused THEN RAISE EXCEPTION 'the table owner could reopen a closed board check session'; END IF;
+END $$;
+DO $$ DECLARE refused boolean := FALSE; BEGIN
+  -- now() is the transaction timestamp and the close above used it, so move the
+  -- stamp to make this a real rewrite rather than a no-op.
+  BEGIN UPDATE board_check_sessions SET closed_at=now() - interval '1 day' WHERE id=(SELECT session_board FROM fx);
+  EXCEPTION WHEN insufficient_privilege THEN refused := TRUE; END;
+  IF NOT refused THEN RAISE EXCEPTION 'the table owner could re-stamp a closed board check session'; END IF;
+END $$;
+DO $$ DECLARE refused boolean := FALSE; BEGIN
+  BEGIN UPDATE board_check_sessions SET started_at=now() - interval '1 day' WHERE id=(SELECT session_board FROM fx);
+  EXCEPTION WHEN insufficient_privilege THEN refused := TRUE; END;
+  IF NOT refused THEN RAISE EXCEPTION 'the table owner could rewrite a board check session started_at'; END IF;
+END $$;
+
 -- A closed walk does not block the next one, but two open walks are rejected.
 SET LOCAL ROLE authenticated;
 INSERT INTO board_check_sessions (organization_id, facility_id, started_by)
@@ -277,6 +317,20 @@ DO $$ DECLARE refused boolean := FALSE; BEGIN
   EXCEPTION WHEN unique_violation THEN refused := TRUE; END;
   IF NOT refused THEN RAISE EXCEPTION 'a second open board check session was allowed'; END IF;
 END $$;
+RESET ROLE;
+
+-- COL-439, the other half: the close precondition belongs to the table, not
+-- only to close_board_check_session(). The walk just opened has six unmarked
+-- beds, so stamping closed_at on it from the owner path would manufacture
+-- evidence of a reconciliation that never happened.
+DO $$ DECLARE refused boolean := FALSE; BEGIN
+  BEGIN
+    UPDATE board_check_sessions SET closed_at=now(), closed_by=(SELECT admin_user FROM fx)
+      WHERE facility_id=(SELECT fac FROM fx) AND closed_at IS NULL;
+  EXCEPTION WHEN insufficient_privilege THEN refused := TRUE; END;
+  IF NOT refused THEN RAISE EXCEPTION 'the table owner closed a board check that still had unmarked beds'; END IF;
+END $$;
+SET LOCAL ROLE authenticated;
 
 -- ===========================================================================
 -- Staff Check
@@ -340,6 +394,26 @@ DO $$ BEGIN
     RAISE EXCEPTION 'a half-finished offboard closed the fix'; END IF;
 END $$;
 RESET ROLE;
+
+-- COL-437. Revoking the facility grant is the first thing an offboard does, and
+-- it takes the profile out of a facility_admin's RLS reach while the login is
+-- still live. That is exactly the state a staff check exists to find, so the
+-- read model has to survive it: the screen and the definer close function must
+-- agree that the fix is still open. Before migration 409 the profile dropped
+-- out of the read model here, the screen reported the identity resolved and
+-- enabled Close, and the close function then refused against a screen with
+-- nothing open -- an unclosable session with no way to diagnose it.
+UPDATE user_facility_access SET revoked_at=now() WHERE user_id=(SELECT shared_auth_user FROM fx);
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN
+  IF NOT (SELECT bool_and(fix_open) FROM staff_check_state((SELECT session_staff FROM fx))
+      WHERE subject_staff_id IN (SELECT staff_shared_1 FROM fx UNION ALL SELECT staff_shared_2 FROM fx)) THEN
+    RAISE EXCEPTION 'a revoked facility grant hid the half-finished offboard from the staff check'; END IF;
+  -- And the screen agrees with the recount the close function will do.
+  IF (SELECT count(*) FILTER (WHERE fix_open) FROM staff_check_state((SELECT session_staff FROM fx))) = 0 THEN
+    RAISE EXCEPTION 'staff_check_state reported nothing open while the close function still sees a fix'; END IF;
+END $$;
+RESET ROLE;
 -- Now the other half, exactly what restrict_user_access_review does.
 UPDATE user_profiles SET is_active=FALSE WHERE id=(SELECT shared_auth_user FROM fx);
 UPDATE user_facility_access SET revoked_at=now() WHERE user_id=(SELECT shared_auth_user FROM fx);
@@ -392,6 +466,14 @@ DO $$ DECLARE refused boolean := FALSE; BEGIN
   EXCEPTION WHEN insufficient_privilege THEN refused := TRUE;
            WHEN sqlstate '42704' THEN refused := TRUE; END;
   IF NOT refused THEN RAISE EXCEPTION 'a user without the facility grant closed another facility check'; END IF;
+END $$;
+-- COL-442. Data Health refuses rather than answering with a row of zeros. An
+-- all-clear panel for a facility the caller was never scoped to is the failure
+-- mode that would hide the next COL-406.
+DO $$ DECLARE refused boolean := FALSE; BEGIN
+  BEGIN PERFORM * FROM facility_data_health((SELECT fac FROM fx));
+  EXCEPTION WHEN insufficient_privilege THEN refused := TRUE; END;
+  IF NOT refused THEN RAISE EXCEPTION 'facility_data_health answered a caller with no grant to the facility'; END IF;
 END $$;
 RESET ROLE;
 

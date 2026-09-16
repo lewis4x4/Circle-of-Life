@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import type { FacilityDataHealth } from "@/lib/facility-checks/data-health";
+import type { FacilityDataHealth, FacilityDataHealthError } from "@/lib/facility-checks/data-health";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -10,14 +10,28 @@ import { createClient } from "@/lib/supabase/client";
  * `security invoker` for the bed and resident numbers and delegates the three
  * identity counts to a definer reader that does its own grant check, so a
  * caller never sees more here than they are entitled to.
+ *
+ * COL-442: a caller with no grant to the facility is refused with `42501`
+ * rather than answered with a row of zeros, and the two are told apart here.
+ * An all-clear panel for a facility the operator was never scoped to is the
+ * failure mode that would have hidden COL-406.
  */
+function isForbidden(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "42501";
+}
+
 export function useFacilityDataHealth(
   facilityId: string,
   enabled = true,
-): { data: FacilityDataHealth | null; loading: boolean; error: string | null; refetch: () => Promise<void> } {
+): {
+  data: FacilityDataHealth | null;
+  loading: boolean;
+  error: FacilityDataHealthError | null;
+  refetch: () => Promise<void>;
+} {
   const [data, setData] = useState<FacilityDataHealth | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FacilityDataHealthError | null>(null);
 
   const refetch = useCallback(async () => {
     if (!enabled || !facilityId) {
@@ -34,9 +48,9 @@ export function useFacilityDataHealth(
       });
       if (queryError) throw queryError;
       setData((rows?.[0] as FacilityDataHealth | undefined) ?? null);
-    } catch {
+    } catch (caught) {
       // The panel says so in its own words; the raw message stays in the client.
-      setError("unavailable");
+      setError(isForbidden(caught) ? "forbidden" : "unavailable");
       setData(null);
     } finally {
       setLoading(false);
