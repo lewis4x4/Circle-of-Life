@@ -69,23 +69,26 @@ export function rosterOpenBedsLoadedFootnote(metrics: ResidentRosterMetrics): st
   return `${metrics.occupiedResidents} in census · ${metrics.licensedBeds} licensed beds`;
 }
 
-/** Summary line under the KPI strip — makes loaded vs empty facility metrics obvious. */
+/**
+ * Line under the summary strip — only speaks when a facility figure is missing.
+ * "Loaded" confirms retrieval, not completeness, so a fully loaded strip says nothing.
+ */
 export function residentRosterKpiStripHelperLine(
   facilityId: string | null,
   openBedsLoaded: boolean,
   careReviewsLoaded: boolean,
-): string {
+): string | null {
   const serverKpiTotal = 2;
   const loadedCount = (openBedsLoaded ? 1 : 0) + (careReviewsLoaded ? 1 : 0);
 
   if (!residentRosterFacilityScopeReady(facilityId)) {
-    return "Select a facility in the header — capacity and review tiles load per site.";
+    return "Select a facility in the header — capacity and care plan figures load per site.";
   }
   if (loadedCount >= serverKpiTotal) {
-    return "Capacity and review schedule loaded for the selected facility.";
+    return null;
   }
   if (loadedCount === 0) {
-    return "Empty tiles name what is still missing — nothing is broken.";
+    return "Capacity and care plan figures did not load — the empty cells name what is missing.";
   }
-  return `${loadedCount} of ${serverKpiTotal} facility metrics loaded — empty tiles name what is still missing.`;
+  return `${loadedCount} of ${serverKpiTotal} facility figures loaded — the empty cell names what is missing.`;
 }

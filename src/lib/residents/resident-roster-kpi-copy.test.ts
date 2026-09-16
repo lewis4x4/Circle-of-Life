@@ -17,6 +17,7 @@ function metrics(partial: Partial<ResidentRosterMetrics>): ResidentRosterMetrics
     occupiedResidents: 0,
     openBeds: null,
     carePlanReviewsDueWeek: null,
+    carePlanCoverage: null,
     ...partial,
   };
 }
@@ -107,25 +108,23 @@ describe("rosterOpenBedsLoadedFootnote", () => {
 describe("residentRosterKpiStripHelperLine", () => {
   it("prompts for header facility scope when none is selected", () => {
     expect(residentRosterKpiStripHelperLine(null, false, false)).toBe(
-      "Select a facility in the header — capacity and review tiles load per site.",
+      "Select a facility in the header — capacity and care plan figures load per site.",
     );
   });
 
-  it("celebrates a fully loaded facility metric strip", () => {
-    expect(residentRosterKpiStripHelperLine(FACILITY_ID, true, true)).toBe(
-      "Capacity and review schedule loaded for the selected facility.",
-    );
+  it("says nothing when every facility figure loaded — loaded is not the same as complete", () => {
+    expect(residentRosterKpiStripHelperLine(FACILITY_ID, true, true)).toBeNull();
   });
 
-  it("reassures when every facility metric tile is empty", () => {
+  it("names the gap when no facility figure loaded", () => {
     expect(residentRosterKpiStripHelperLine(FACILITY_ID, false, false)).toBe(
-      "Empty tiles name what is still missing — nothing is broken.",
+      "Capacity and care plan figures did not load — the empty cells name what is missing.",
     );
   });
 
-  it("counts partial facility metric loads", () => {
+  it("counts partial facility figure loads", () => {
     expect(residentRosterKpiStripHelperLine(FACILITY_ID, true, false)).toBe(
-      "1 of 2 facility metrics loaded — empty tiles name what is still missing.",
+      "1 of 2 facility figures loaded — the empty cell names what is missing.",
     );
   });
 });
