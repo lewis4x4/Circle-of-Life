@@ -43,6 +43,7 @@
     "demo:standup-pdf-smoke": "node scripts/demo/standup-pdf-smoke.mjs",
     "backfill:standup-csv": "node scripts/import-executive-standup-csv.mjs",
     "grace:evals": "tsx scripts/grace-safe-mode-evals.ts",
+    "check:compliance-doc": "deno run --env-file=.env.local --allow-env --allow-net --allow-read --allow-run scripts/check-compliance-doc.ts",
     "obsidian:validate": "node scripts/obsidian/validate-vault.mjs",
     "obsidian:compile": "node scripts/obsidian/compile-vault.mjs",
     "obsidian:publish": "node scripts/obsidian/publish-vault.mjs",

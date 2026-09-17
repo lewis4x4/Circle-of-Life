@@ -35,6 +35,18 @@ jobs:
           deno check officer-catalog/index.ts officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/index.ts
           deno test --allow-env --allow-net=example.invalid officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/
 
+      - name: Compliance document triage routing
+        # Not gated behind HAVEN_UI_GATES_ENABLED. These cover what Haven tells
+        # an insurance agent: that a confirmed missing HUD 232 party blocks, that
+        # an uncertain reading goes to a person instead, and that generic
+        # mortgagee wording is caught on evidence of property insurance and not
+        # only on documents calling themselves endorsements.
+        # Fixed answers, no network, no keys.
+        run: |
+          cd supabase/functions
+          deno check compliance-doc-check/index.ts compliance-doc-check/handler.ts _shared/compliance-doc-questions.ts
+          deno test --allow-env compliance-doc-check-handler.test.ts
+
       - name: Stand Up regression contracts
         run: |
           python3 -B -m unittest discover -s scripts/stand-up -p 'test_*.py'
