@@ -44,6 +44,7 @@
     "backfill:standup-csv": "node scripts/import-executive-standup-csv.mjs",
     "grace:evals": "tsx scripts/grace-safe-mode-evals.ts",
     "eval:router-intent": "deno run --env-file=.env.local --allow-env --allow-net --allow-read scripts/eval-router-intent.ts",
+    "eval:kb-rerank": "deno run --env-file=.env.local --allow-env --allow-net --allow-read scripts/eval-kb-rerank.ts",
     "obsidian:validate": "node scripts/obsidian/validate-vault.mjs",
     "obsidian:compile": "node scripts/obsidian/compile-vault.mjs",
     "obsidian:publish": "node scripts/obsidian/publish-vault.mjs",

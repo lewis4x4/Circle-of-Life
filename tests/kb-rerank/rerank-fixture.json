@@ -1,0 +1,118 @@
+{
+  "notes": [
+    "Fixture for scripts/eval-kb-rerank.ts. Synthetic, PHI-free: every passage is",
+    "facility policy or Florida ALF regulation, no resident data.",
+    "",
+    "Candidates are listed in simulated RRF order — the order a retriever would",
+    "hand the reranker — so position 0 is what you get with no rerank at all.",
+    "The correct passage is deliberately never first.",
+    "",
+    "Distractors are on-topic and wrong, not off-topic: each mentions the subject",
+    "without supplying the specific provision asked for. A set of clean archetypes",
+    "cannot tell a good reranker from a bad one.",
+    "",
+    "One label was corrected after the first run. The staffing query originally read",
+    "'minimum staffing at night', which the awake-overnight rule answers better than",
+    "the weekly-hours rule it was labelled against — the reranker was right and the",
+    "fixture was wrong. The query was reworded so the label is unambiguous. No",
+    "threshold or prompt was changed to fit the result."
+  ],
+  "cases": [
+    {
+      "query": "How quickly does a medication error have to be reported?",
+      "correct_id": "med-err-window",
+      "candidates": [
+        { "id": "med-err-general", "source_title": "Medication Management Policy", "excerpt": "All medication errors must be reported. Staff are reminded that a culture of safety depends on errors being disclosed rather than concealed, and no disciplinary action follows from good-faith reporting." },
+        { "id": "med-err-form", "source_title": "Medication Management Policy", "excerpt": "Medication errors are recorded on the Medication Error Report form, which is retained in the facility's quality assurance file and reviewed at the quarterly QA meeting." },
+        { "id": "med-err-window", "source_title": "Medication Management Policy", "excerpt": "The nurse or med-tech discovering a medication error shall notify the administrator and the resident's health care provider within 24 hours of discovery, and shall document the notification in the resident's record at the time it is made." },
+        { "id": "med-err-training", "source_title": "Medication Training Handbook", "excerpt": "Unlicensed staff assisting with self-administration complete four hours of initial medication training and two hours annually thereafter, delivered by Baya or an equivalent approved provider." },
+        { "id": "med-err-toc", "source_title": "Medication Management Policy", "excerpt": "Section 4: Medication Errors. 4.1 Definitions. 4.2 Discovery and Notification. 4.3 Documentation. 4.4 Quality Assurance Review." },
+        { "id": "incident-window", "source_title": "Incident Reporting Policy", "excerpt": "Adverse incidents as defined in section 429.23 are reported to the Agency within 1 business day of the incident, with the full report following within 15 days." }
+      ]
+    },
+    {
+      "query": "Who is allowed to sign the Form 1823?",
+      "correct_id": "1823-signatory",
+      "candidates": [
+        { "id": "1823-purpose", "source_title": "Admissions Procedure", "excerpt": "The AHCA Form 1823 Resident Health Assessment is the legal entry point for admission and must be on file before a resident takes occupancy." },
+        { "id": "1823-age", "source_title": "Admissions Procedure", "excerpt": "A Form 1823 completed more than 90 days before admission is not acceptable and must be repeated before the resident moves in." },
+        { "id": "1823-signatory", "source_title": "Admissions Procedure", "excerpt": "The health assessment must be completed and signed by a licensed physician, a physician assistant, or an advanced practice registered nurse licensed under chapter 464. A registered nurse may not sign in their place." },
+        { "id": "1823-storage", "source_title": "Records Retention Policy", "excerpt": "Completed 1823s are filed in the resident's clinical record and retained for five years following discharge." },
+        { "id": "1823-toc", "source_title": "Admissions Procedure", "excerpt": "Appendix B: Forms referenced in this procedure — Form 1823, Form 1823A, DCF Form 2506, SSA-787." },
+        { "id": "1823-copy", "source_title": "Admissions Procedure", "excerpt": "A copy of the signed assessment is provided to the resident or the resident's representative on request at no charge." }
+      ]
+    },
+    {
+      "query": "How many staff hours per week does a 52 bed facility have to provide?",
+      "correct_id": "staffing-hours",
+      "candidates": [
+        { "id": "staffing-awake", "source_title": "FAC 59A-36.010 Staffing Standards", "excerpt": "A facility with 17 or more residents shall have at least one staff member awake at all hours of the night." },
+        { "id": "staffing-admin", "source_title": "FAC 59A-36.010 Staffing Standards", "excerpt": "The administrator shall be available to the facility 24 hours a day and shall designate in writing a staff member to act in their absence." },
+        { "id": "staffing-hours", "source_title": "FAC 59A-36.010 Staffing Standards", "excerpt": "Facilities with 51 to 75 residents shall provide a minimum of 297 staff hours per week. These are direct care hours and do not include the administrator, food service, or housekeeping personnel." },
+        { "id": "staffing-training", "source_title": "FAC 59A-36.011 Staff Training", "excerpt": "All direct care staff complete the core training curriculum within 30 days of employment and are certified by the facility administrator." },
+        { "id": "staffing-ratio-myth", "source_title": "Operations Handbook", "excerpt": "Circle of Life staffs above the statutory minimum wherever census and acuity allow; the minimum is a floor, not a target." },
+        { "id": "staffing-toc", "source_title": "FAC 59A-36.010 Staffing Standards", "excerpt": "(1) Staffing standards. (2) Minimum staffing hours. (3) Awake staff. (4) Administrator availability. (5) Staff records." }
+      ]
+    },
+    {
+      "query": "Do we have to notify anyone when a resident elopes and comes back unharmed?",
+      "correct_id": "elopement-report",
+      "candidates": [
+        { "id": "elopement-prevent", "source_title": "Elopement Prevention Policy", "excerpt": "Residents assessed at risk of elopement are identified on admission and reassessed quarterly, and the risk is noted in the service plan." },
+        { "id": "elopement-drill", "source_title": "Elopement Prevention Policy", "excerpt": "The facility conducts an elopement drill at least annually and documents staff participation." },
+        { "id": "elopement-search", "source_title": "Elopement Prevention Policy", "excerpt": "On discovering a resident is missing, staff initiate an immediate search of the building and grounds and notify the administrator." },
+        { "id": "elopement-report", "source_title": "Adverse Incident Reporting", "excerpt": "Elopement is a reportable adverse incident whether or not the resident was injured and whether or not the resident returned voluntarily. The 1-business-day report to the Agency is required in every case." },
+        { "id": "elopement-family", "source_title": "Elopement Prevention Policy", "excerpt": "The resident's representative is contacted as soon as practicable after a resident is found." },
+        { "id": "incident-injury", "source_title": "Adverse Incident Reporting", "excerpt": "An incident resulting in death, brain damage, spinal damage, or a fracture requires notification within 1 business day." }
+      ]
+    },
+    {
+      "query": "How long do we keep an employee's file after they leave?",
+      "correct_id": "employee-retention",
+      "candidates": [
+        { "id": "employee-contents", "source_title": "Personnel Records Policy", "excerpt": "Each employee file contains the application, level 2 background screening results, job description, training records, and annual evaluations." },
+        { "id": "resident-retention", "source_title": "Records Retention Policy", "excerpt": "Resident clinical records are retained for five years following discharge or death." },
+        { "id": "employee-access", "source_title": "Personnel Records Policy", "excerpt": "Employees may review their own personnel file on request, in the presence of the administrator or designee." },
+        { "id": "employee-retention", "source_title": "Personnel Records Policy", "excerpt": "Personnel records are retained for two years following separation of employment, after which they are destroyed by shredding and the destruction logged." },
+        { "id": "employee-screening", "source_title": "Personnel Records Policy", "excerpt": "Background screening is repeated every five years for all staff with direct resident contact." },
+        { "id": "records-toc", "source_title": "Records Retention Policy", "excerpt": "Contents: resident records, personnel records, financial records, incident files, quality assurance files." }
+      ]
+    },
+    {
+      "query": "Can an ALF resident keep and take their own medication?",
+      "correct_id": "self-admin",
+      "candidates": [
+        { "id": "med-storage", "source_title": "Medication Management Policy", "excerpt": "Centrally stored medications are kept in a locked cabinet accessible only to staff authorized to assist with self-administration." },
+        { "id": "med-assist", "source_title": "Medication Management Policy", "excerpt": "Assistance with self-administration includes reading the label aloud, opening the container, and steadying the resident's hand, but does not include placing the medication in the resident's mouth." },
+        { "id": "self-admin", "source_title": "FAC 59A-36.006 Medication Practices", "excerpt": "A resident who is capable of self-administration may keep their own medication in their own room, provided it is stored so that other residents cannot access it. No physician order is required for a resident to self-administer." },
+        { "id": "med-order", "source_title": "Medication Management Policy", "excerpt": "Medications administered by a licensed nurse require a current order from the resident's health care provider." },
+        { "id": "med-records", "source_title": "Medication Management Policy", "excerpt": "A medication observation record is maintained for each resident receiving assistance with self-administration." },
+        { "id": "med-toc", "source_title": "FAC 59A-36.006 Medication Practices", "excerpt": "(1) Definitions. (2) Self-administration. (3) Assistance with self-administration. (4) Administration. (5) Storage and disposal." }
+      ]
+    },
+    {
+      "query": "What temperature does the walk-in cooler need to be kept at?",
+      "correct_id": "cooler-temp",
+      "candidates": [
+        { "id": "food-training", "source_title": "Food Service Policy", "excerpt": "At least one person responsible for food service holds a current food handler certification." },
+        { "id": "food-menu", "source_title": "Food Service Policy", "excerpt": "Menus are planned by a registered dietitian and posted where residents can read them, one week in advance." },
+        { "id": "cooler-log", "source_title": "Food Service Policy", "excerpt": "Refrigeration temperatures are logged twice daily by dietary staff and the log is reviewed weekly by the dietary manager." },
+        { "id": "cooler-temp", "source_title": "Food Service Policy", "excerpt": "Refrigerated storage is maintained at 41 degrees Fahrenheit or below. Freezer storage is maintained at 0 degrees Fahrenheit or below. A unit found out of range is emptied and the contents assessed for discard." },
+        { "id": "food-hot", "source_title": "Food Service Policy", "excerpt": "Hot foods are held at 135 degrees Fahrenheit or above until served." },
+        { "id": "food-toc", "source_title": "Food Service Policy", "excerpt": "Section 6: Storage. 6.1 Dry storage. 6.2 Refrigerated storage. 6.3 Freezer storage. 6.4 Temperature logs." }
+      ]
+    },
+    {
+      "query": "How much notice before we can discharge someone for nonpayment?",
+      "correct_id": "discharge-notice",
+      "candidates": [
+        { "id": "discharge-reasons", "source_title": "Discharge Policy", "excerpt": "A resident may be discharged when the facility can no longer meet the resident's needs, for nonpayment, or when the resident's continued residence poses a danger to themselves or others." },
+        { "id": "discharge-notice", "source_title": "Discharge Policy", "excerpt": "The facility provides the resident and the resident's representative 45 days written notice of discharge. The notice states the reason and the resident's right to contest it through the long-term care ombudsman." },
+        { "id": "discharge-emergency", "source_title": "Discharge Policy", "excerpt": "Where a resident poses an immediate danger, discharge may occur on shorter notice, with the reason documented and the ombudsman notified the same day." },
+        { "id": "discharge-refund", "source_title": "Resident Agreement", "excerpt": "Prepaid amounts covering the period after discharge are refunded within 45 days of the resident vacating the unit." },
+        { "id": "discharge-plan", "source_title": "Discharge Policy", "excerpt": "The administrator assists the resident in locating an appropriate alternative placement before the discharge date." },
+        { "id": "billing-late", "source_title": "Billing Policy", "excerpt": "Accounts 30 days past due receive a written reminder; accounts 60 days past due are referred to the administrator." }
+      ]
+    }
+  ]
+}
