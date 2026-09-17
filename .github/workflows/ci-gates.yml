@@ -35,6 +35,17 @@ jobs:
           deno check officer-catalog/index.ts officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/index.ts
           deno test --allow-env --allow-net=example.invalid officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/
 
+      - name: Router intent classifier contracts
+        # Same reasoning as above: not gated behind HAVEN_UI_GATES_ENABLED. These
+        # cover the engine fallback (a TypeSafe outage must not take the router
+        # down) and the rule that a clinical_record question is never relabelled
+        # `mixed`, which is what index.ts reads to set the audit PHI class.
+        # Fully mocked fetch — no network, no keys.
+        run: |
+          cd supabase/functions
+          deno check _shared/router-intent.ts _shared/router-intent-typesafe.ts _shared/typesafe-client.ts
+          deno test --allow-env _shared/router-intent-typesafe.test.ts
+
       - name: Stand Up regression contracts
         run: |
           python3 -B -m unittest discover -s scripts/stand-up -p 'test_*.py'

@@ -1,11 +1,21 @@
 import { CurrentActorError } from "./current-actor.ts";
+import { classifyIntentWithTypeSafe } from "./router-intent-typesafe.ts";
+import { TypeSafeError } from "./typesafe-client.ts";
 
 /**
- * router-intent — Claude-Haiku intent classifier for haven-ai-router (KB-NEXT-01).
+ * router-intent — intent classifier for haven-ai-router (KB-NEXT-01).
  *
  * Classifies an operator's question into one of the router's intent classes so
  * the dispatch layer can pick the right backend (KPI lookup, fact-pack
  * directory, KB retrieval, audit_log scan, etc.).
+ *
+ * Two engines answer the same contract, chosen by `ROUTER_INTENT_ENGINE`:
+ *   - "anthropic" (default) — Claude Haiku, prompt-and-parse. Documented below.
+ *   - "typesafe"            — TypeSafe System One typed judgments, in
+ *                             `router-intent-typesafe.ts`. Falls back to the
+ *                             Anthropic path if TypeSafe is unreachable or
+ *                             unconfigured, so turning it on cannot take the
+ *                             router offline.
  *
  * Design constraints:
  * - Latency budget ≤ 5s (AbortSignal.timeout). Most calls land in 200–400ms.
@@ -183,6 +193,75 @@ export class IntentCache {
 /** Module-level singleton cache shared by every router invocation in this worker. */
 export const intentCache = new IntentCache();
 
+export type IntentEngine = "anthropic" | "typesafe";
+
+export type ClassifyIntentOptions = {
+  surfaceContext?: string;
+  userRole?: string;
+  revalidate?: () => Promise<void>;
+  fetcher?: typeof fetch;
+  /** Overrides `ROUTER_INTENT_ENGINE`. The eval harness sets this per run. */
+  engine?: IntentEngine;
+  /** Structured diagnostics. Never receives the question text. */
+  onEvent?: (event: Record<string, unknown>) => void;
+};
+
+/** `ROUTER_INTENT_ENGINE`, defaulting to the Anthropic path. */
+export function resolveIntentEngine(explicit?: IntentEngine): IntentEngine {
+  if (explicit) return explicit;
+  return Deno.env.get("ROUTER_INTENT_ENGINE") === "typesafe" ? "typesafe" : "anthropic";
+}
+
+/**
+ * Classify a question with whichever engine is configured.
+ *
+ * The TypeSafe path degrades to the Anthropic path rather than to a synthetic
+ * answer: an unreachable classifier is an operational fact worth seeing in the
+ * logs, and a silent `mixed` is indistinguishable from a real one.
+ */
+export async function classifyIntent(
+  question: string,
+  opts: ClassifyIntentOptions = {},
+): Promise<IntentClassification> {
+  const engine = resolveIntentEngine(opts.engine);
+  if (engine !== "typesafe") {
+    return await classifyIntentWithAnthropic(question, opts);
+  }
+
+  const apiKey = Deno.env.get("TYPESAFE_API_KEY");
+  if (!apiKey) {
+    opts.onEvent?.({ event: "intent_engine_fallback", reason: "typesafe_key_missing" });
+    return await classifyIntentWithAnthropic(question, opts);
+  }
+
+  const trimmed = question.trim();
+  if (!trimmed) {
+    return { intent: "refuse", confidence: 1, reasoning: "empty_question" };
+  }
+
+  try {
+    await opts.revalidate?.();
+    const classification = await classifyIntentWithTypeSafe(trimmed, {
+      apiKey,
+      surfaceContext: opts.surfaceContext,
+      userRole: opts.userRole,
+      timeoutMs: CLASSIFIER_TIMEOUT_MS,
+      fetcher: opts.fetcher,
+      onUsage: (usage) => opts.onEvent?.({ event: "typesafe_usage", ...usage }),
+    });
+    opts.onEvent?.({ event: "intent_engine_used", engine: "typesafe" });
+    return classification;
+  } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
+    opts.onEvent?.({
+      event: "intent_engine_fallback",
+      reason: err instanceof TypeSafeError ? err.kind : "typesafe_unknown_error",
+      status: err instanceof TypeSafeError ? err.status ?? null : null,
+    });
+    return await classifyIntentWithAnthropic(question, opts);
+  }
+}
+
 /**
  * Classify a question. Calls Claude Haiku via the Anthropic Messages API.
  *
@@ -190,7 +269,7 @@ export const intentCache = new IntentCache();
  * decline than to mis-route). On API/timeout failure → 'mixed' with low
  * confidence (lets the dispatcher fan out instead of guessing wrong).
  */
-export async function classifyIntent(
+export async function classifyIntentWithAnthropic(
   question: string,
   opts: {
     surfaceContext?: string;
