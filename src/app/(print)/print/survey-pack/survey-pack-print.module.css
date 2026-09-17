@@ -1,0 +1,133 @@
+/*
+ * The survey print pack.
+ *
+ * The (print) route group has no app shell, so there is no navigation to hide:
+ * what is on screen is what comes out of the printer. These rules are about
+ * paper behaviour - repeating headers, rows that do not split across a page
+ * break, and a footer that says who printed it and when.
+ */
+
+.sheet {
+  background: #fff;
+  color: #000;
+  margin: 0 auto;
+  max-width: 8.5in;
+  padding: 0.5in;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.sectionMeta {
+  font-size: 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.table {
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  width: 100%;
+}
+
+.table th,
+.table td {
+  border: 1px solid #000;
+  padding: 3px 5px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  font-weight: 600;
+}
+
+.empty {
+  font-size: 0.75rem;
+}
+
+.footer {
+  border-top: 1px solid #000;
+  font-size: 0.6875rem;
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+}
+
+.controls {
+  margin: 0 auto;
+  max-width: 8.5in;
+  padding: 1rem 0.5in 0;
+}
+
+@media print {
+  @page {
+    margin: 0.6in;
+  }
+
+  .sheet {
+    max-width: none;
+    padding: 0;
+  }
+
+  /* No chrome on paper: the controls are for the person at the screen. */
+  .controls,
+  .noPrint {
+    display: none !important;
+  }
+
+  /* Column headings repeat on every page a table spills onto. */
+  .table thead {
+    display: table-header-group;
+  }
+
+  .table tbody tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* A section title never ends a page on its own. */
+  .sectionTitle,
+  .sectionMeta {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .section {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .section:first-of-type {
+    break-before: auto;
+    page-break-before: auto;
+  }
+
+  /*
+   * The stamp repeats on every page a section spills onto: a tfoot is the one
+   * thing browsers actually repeat per page, unlike a positioned element.
+   */
+  .table tfoot {
+    display: table-footer-group;
+  }
+}
+
+/*
+ * Page N of M comes from the print engine's page counters. Chrome does not
+ * render @page margin boxes, so there the numbers come from the browser's own
+ * "Headers and footers" print option instead; the runbook says to leave it on.
+ * Engines that do support Paged Media (print-to-PDF services, Firefox) get the
+ * numbering below. Either way the page count is counted, never guessed.
+ */
+@page {
+  @bottom-center {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: system-ui, sans-serif;
+    font-size: 9pt;
+  }
+}

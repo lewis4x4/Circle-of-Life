@@ -21,6 +21,15 @@ export type UserCreateProvisionResult = {
   invitation_sent: boolean;
   provision_method: UserCreateProvisionMethod;
   temporary_password?: string;
+  /** Deadline for the forced change that accompanies a temporary password. */
+  temporary_password_expires_at?: string | null;
+  /**
+   * True only when this request brought the Auth user into existence. Rollback deletes
+   * the Auth user only in that case — Charlene's Auth row predated the create request
+   * that failed, and deleting it would have destroyed an account nobody asked us to
+   * remove (COL-362).
+   */
+  auth_user_created: boolean;
 };
 
 export class UserCreateProvisionError extends Error {
@@ -52,6 +61,7 @@ export async function provisionAuthUserForAdminCreate(input: {
         userId: invited.id,
         invitation_sent: true,
         provision_method: "invite_email",
+        auth_user_created: true,
       };
     }
 
@@ -65,6 +75,8 @@ export async function provisionAuthUserForAdminCreate(input: {
       invitation_sent: false,
       provision_method: "temporary_password",
       temporary_password: created.temporary_password,
+      temporary_password_expires_at: created.expires_at,
+      auth_user_created: true,
     };
   }
 
@@ -77,23 +89,29 @@ export async function provisionAuthUserForAdminCreate(input: {
   const hasSignedIn = Boolean(existing.last_sign_in_at);
 
   if (!input.send_invite) {
-    const { temporary_password } = await adminSetUserSignInReadyWithTemporaryPassword(existing.id);
+    const { temporary_password, expires_at } =
+      await adminSetUserSignInReadyWithTemporaryPassword(existing.id);
     return {
       userId: existing.id,
       invitation_sent: false,
       provision_method: "temporary_password",
       temporary_password,
+      temporary_password_expires_at: expires_at,
+      auth_user_created: false,
     };
   }
 
   // send_invite: never claim an invite was sent unless we actually dispatched email.
   if (!emailConfirmed || !hasSignedIn) {
-    const { temporary_password } = await adminSetUserSignInReadyWithTemporaryPassword(existing.id);
+    const { temporary_password, expires_at } =
+      await adminSetUserSignInReadyWithTemporaryPassword(existing.id);
     return {
       userId: existing.id,
       invitation_sent: false,
       provision_method: "temporary_password",
       temporary_password,
+      temporary_password_expires_at: expires_at,
+      auth_user_created: false,
     };
   }
 
@@ -102,5 +120,6 @@ export async function provisionAuthUserForAdminCreate(input: {
     userId: existing.id,
     invitation_sent: true,
     provision_method: "password_reset_email",
+    auth_user_created: false,
   };
 }

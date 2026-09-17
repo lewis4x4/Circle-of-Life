@@ -17,7 +17,6 @@ import {
 import { createClient, withSupabaseAuthLockRetry } from "@/lib/supabase/client";
 import { startupMark } from "@/lib/observability/startup-performance";
 import type { Database } from "@/types/database";
-import { MustChangePasswordGate } from "@/components/auth/MustChangePasswordGate";
 
 export type HavenAuthContextValue = {
   user: User | null;
@@ -209,7 +208,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <HavenAuthContext.Provider value={value}>
-      <MustChangePasswordGate>{children}</MustChangePasswordGate>
+      {children}
     </HavenAuthContext.Provider>
   );
 }

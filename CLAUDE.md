@@ -83,7 +83,7 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 7. **Denormalized `organization_id` + `facility_id`** on most tables for RLS performance.
 
 ### Migrations
-- Sequential `supabase/migrations/NNN_*.sql`. Check `docs/Autonomous.md` and the latest file in `supabase/migrations/` for the next free number; `migrations:check` enforces ordering.
+- Sequential `supabase/migrations/NNN_*.sql`. **Get the next number from `npm run migrations:next`, not from the last file in the directory.** The directory answers a question about the past; the contest is about the future, and two branches cut an hour apart both see the same highest number. `migrations:next` also counts numbers claimed by open pull requests. `npm run migrations:check:claims` gates the same thing in CI, and `migrations:check` still enforces ordering once everything has merged.
 - After touching migrations: `npm run migrations:verify:pg` (Docker replay).
 - **Is it actually applied?** `npm run migrations:verify:ledger` names every migration on your branch that production has not run, and `-- --staging` does the same for Haven HFO Staging. It compares by version and then by name — never `max(version)` — and only ever SELECTs. `.github/workflows/migration-drift.yml` runs it twice a day so merged-but-unapplied surfaces the same day rather than during an unrelated audit.
 
@@ -102,6 +102,18 @@ That sends the exact file through the Management API — no database password, n
 insert into supabase_migrations.schema_migrations (version, name)
 values ('NNN', 'name') on conflict (version) do nothing;
 ```
+
+**`name` is the filename stem with the number stripped.** `411_facility_identity_health_scope_comment.sql` is recorded as `('411', 'facility_identity_health_scope_comment')` — never `('411', '411_facility_identity_health_scope_comment')` and never under a timestamp version if you can avoid it. `check-migration-ledger.mjs` parses each file as `<version>_<name>.sql` and matches on version first, then name; a name carrying its own number prefix matches neither key, so the migration silently reads as *unapplied* and the next person re-runs applied DDL. The Supabase MCP `apply_migration` tool writes whatever `name` you hand it under a generated timestamp version, which makes this easy to get wrong — prefer `execute_sql` for the DDL plus an explicit ledger insert.
+
+**Verify the link before you apply anything.** `supabase/.temp/project-ref` in the shared checkout follows whatever was last rehearsed and is changed by other sessions without warning — it has been observed flipping between production and Haven HFO Staging within a single afternoon. `supabase db query --linked` will cheerfully run production DDL against staging, or the reverse. Either work in your own worktree and `supabase link --project-ref <ref>` it explicitly, or assert the ref before every apply:
+
+```bash
+test "$(cat supabase/.temp/project-ref)" = "<expected-ref>" || { echo "WRONG LINK"; exit 1; }
+```
+
+Production is `manfqmasfqppukpobpld`; Haven HFO Staging is `iwcnajanvjvynolltflw`. `migrations:verify:ledger` does *not* read the link — it resolves the ref itself — so its output is trustworthy even when the link is not.
+
+**Not every migration is atomic.** Most wrap themselves in `BEGIN; … COMMIT;`, but some do not (`410_assessment_instrument_hold.sql` has only a plpgsql `BEGIN` inside a function body). A non-atomic file that fails halfway leaves the earlier statements applied, so re-running it dies on `42701 column … already exists` while the rest of it is genuinely missing. Before re-running a failed apply, check the objects one at a time rather than trusting the first error.
 
 Migrations applied outside the CLI land under a timestamp version rather than `NNN`, which is why 384, 385 and 387 are recorded as `20260914203602`, `20260914203613` and `20260915182400`. Read the ledger by name, not by `max(version)` — text ordering puts `2026…` below `383`.
 

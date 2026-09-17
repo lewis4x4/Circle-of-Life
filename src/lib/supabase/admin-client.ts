@@ -6,6 +6,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { adminSetMustChangePassword } from "@/lib/supabase/must-change-password-admin";
+import { generateSecurePassword } from "@/lib/auth/temporary-password";
 import type { Database } from "@/types/database";
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -35,12 +36,23 @@ type AuthAdminSnapshot = {
 
 // ── Helpers ───────────────────────────────────────────────────────
 
-/** Generate a secure random password for initial account creation. */
-function generateSecurePassword(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-  const array = new Uint8Array(20);
-  crypto.getRandomValues(array);
-  return Array.from(array, (b) => chars[b % chars.length]).join("");
+// Generator lives in @/lib/auth/temporary-password so it can be unit-tested for
+// uniformity and character-class coverage without a Supabase client in scope.
+
+/**
+ * Remove an Auth user that this call created but could not finish setting up.
+ *
+ * Best effort by design: the caller is already on its way to reporting a failure, and a
+ * cleanup that throws would replace a useful error with a confusing one. A cleanup that
+ * fails leaves an orphan, which is what the caller was going to report anyway.
+ */
+async function discardPartiallyProvisionedAuthUser(userId: string): Promise<void> {
+  try {
+    const supabase = createServiceRoleClient();
+    await supabase.auth.admin.deleteUser(userId);
+  } catch {
+    // Swallowed on purpose — see above.
+  }
 }
 
 // ── Admin API wrappers ────────────────────────────────────────────
@@ -66,27 +78,36 @@ export async function adminInviteUser(
     throw new Error(`Auth invite error: ${error.message}`);
   }
 
+  // Always inspect the invite result. GoTrue can answer without an `error` and still
+  // hand back no user; the old code fell through to `data.user.id` and died with a raw
+  // TypeError that surfaced as a generic 500, which is how a non-invite came to look
+  // like a sent invite (COL-362).
+  const invitedUserId = data?.user?.id;
+  if (!invitedUserId) {
+    throw new Error("Auth invite error: invite returned no user; treat the invite as not sent");
+  }
+
   // inviteUserByEmail only writes user_metadata. Mirror the role + org into
   // app_metadata so `getAppRoleFromClaims` (which only trusts app_metadata)
   // can route the user correctly on first sign-in.
-  if (data.user?.id) {
-    const { error: metaError } = await supabase.auth.admin.updateUserById(data.user.id, {
-      app_metadata: {
-        app_role: options.app_role,
-        organization_id: options.organization_id,
-      },
-    });
+  const { error: metaError } = await supabase.auth.admin.updateUserById(invitedUserId, {
+    app_metadata: {
+      app_role: options.app_role,
+      organization_id: options.organization_id,
+    },
+  });
 
-    if (metaError) {
-      // The invite already went out. If the metadata write fails, we'd produce
-      // the same bug we're fixing — surface clearly so the admin can react.
-      throw new Error(`Invite sent but app_metadata write failed: ${metaError.message}`);
-    }
+  if (metaError) {
+    // The invite already went out, and the Auth user exists. Leaving it behind is how
+    // the orphan population got created in the first place, so remove what this call
+    // made before reporting the failure (COL-362).
+    await discardPartiallyProvisionedAuthUser(invitedUserId);
+    throw new Error(`Invite sent but app_metadata write failed: ${metaError.message}`);
   }
 
   return {
-    id: data.user.id,
-    email: data.user.email ?? email,
+    id: invitedUserId,
+    email: data.user?.email ?? email,
     app_role: options.app_role,
     organization_id: options.organization_id,
   };
@@ -185,7 +206,7 @@ export async function adminGetAuthSnapshotsByIds(
  */
 export async function adminSetUserSignInReadyWithTemporaryPassword(
   userId: string,
-): Promise<{ temporary_password: string }> {
+): Promise<{ temporary_password: string; expires_at: string | null }> {
   const supabase = createServiceRoleClient();
   const password = generateSecurePassword();
 
@@ -198,9 +219,9 @@ export async function adminSetUserSignInReadyWithTemporaryPassword(
     throw new Error(`Auth sign-in ready update error: ${error.message}`);
   }
 
-  await adminSetMustChangePassword(userId, true);
+  const { expires_at } = await adminSetMustChangePassword(userId, true);
 
-  return { temporary_password: password };
+  return { temporary_password: password, expires_at };
 }
 
 function createPasswordResetAnonClient() {
@@ -232,7 +253,7 @@ export async function adminSendPasswordResetEmail(email: string): Promise<void> 
 export async function adminCreateUser(
   email: string,
   options: { app_role: string; organization_id: string; email_confirm?: boolean },
-): Promise<{ user: AdminUserResult; temporary_password: string }> {
+): Promise<{ user: AdminUserResult; temporary_password: string; expires_at: string | null }> {
   const supabase = createServiceRoleClient();
   const password = generateSecurePassword();
 
@@ -250,8 +271,19 @@ export async function adminCreateUser(
   if (error) {
     throw new Error(`Auth create error: ${error.message}`);
   }
+  if (!data?.user?.id) {
+    throw new Error("Auth create error: create returned no user");
+  }
 
-  await adminSetMustChangePassword(data.user.id, true);
+  let expires_at: string | null;
+  try {
+    ({ expires_at } = await adminSetMustChangePassword(data.user.id, true));
+  } catch (err) {
+    // Same reasoning as the invite path: the Auth user exists but is unusable, and the
+    // caller's rollback has not started yet. Do not leave it behind (COL-362).
+    await discardPartiallyProvisionedAuthUser(data.user.id);
+    throw err;
+  }
 
   return {
     user: {
@@ -261,6 +293,7 @@ export async function adminCreateUser(
       organization_id: options.organization_id,
     },
     temporary_password: password,
+    expires_at,
   };
 }
 

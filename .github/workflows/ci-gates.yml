@@ -35,6 +35,18 @@ jobs:
           deno check officer-catalog/index.ts officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/index.ts
           deno test --allow-env --allow-net=example.invalid officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/
 
+      - name: Compliance document triage routing
+        # Not gated behind HAVEN_UI_GATES_ENABLED. These cover what Haven tells
+        # an insurance agent: that a confirmed missing HUD 232 party blocks, that
+        # an uncertain reading goes to a person instead, and that generic
+        # mortgagee wording is caught on evidence of property insurance and not
+        # only on documents calling themselves endorsements.
+        # Fixed answers, no network, no keys.
+        run: |
+          cd supabase/functions
+          deno check compliance-doc-check/index.ts compliance-doc-check/handler.ts _shared/compliance-doc-questions.ts
+          deno test --allow-env compliance-doc-check-handler.test.ts
+
       - name: Stand Up regression contracts
         run: |
           python3 -B -m unittest discover -s scripts/stand-up -p 'test_*.py'
@@ -46,6 +58,18 @@ jobs:
         # hosted, yet it passed review and passed the local replay (COL-370).
         # Static, no credentials, sub-second.
         run: npm run migrations:check:hosted
+
+      - name: Migration number is not already claimed
+        # `migrations:check` only sees one working tree, so it catches a
+        # duplicate number after both branches have merged — which is how main
+        # spent twenty minutes failing its own sequence check on 2026-09-16,
+        # when COL-353 (#579) and COL-465 (#583) both took 412 eight minutes
+        # apart. This one looks sideways at open pull requests instead, so the
+        # collision surfaces on the branch that can still cheaply renumber.
+        # Read-only; needs the token to list open PRs.
+        run: npm run migrations:check:claims
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Stand Up database authorization and recovery replay
         run: npm run migrations:verify:pg
@@ -66,19 +90,23 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
           PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
 
-      - name: Homewood launch auth verify
-        # Authenticates every user with active user_facility_access at the
-        # Homewood Lodge ALF facility. Same dormant pattern as the seed
-        # verify above — gated on `vars.HAVEN_UI_GATES_ENABLED`. Requires
-        # `HOMEWOOD_LAUNCH_PASSWORD` repo secret to run.
+      - name: CI account auth verify
+        # Authenticates the named CI accounts in HOMEWOOD_LAUNCH_ACCOUNTS and
+        # checks each resolves to the role it claims. It no longer enumerates
+        # Homewood's grants: those are real staff with their own passwords, so
+        # that check could only pass by holding their credentials or by putting
+        # test identities on the live launch facility (COL-443). Same dormant
+        # pattern as the seed verify above — gated on `vars.HAVEN_UI_GATES_ENABLED`.
         if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run homewood:verify-auth
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+          # COL-443: no service-role key. The gate verifies the named CI
+          # accounts below, each of which proves its own role by signing in,
+          # so nothing here needs to enumerate users or bypass RLS.
+          HOMEWOOD_LAUNCH_ACCOUNTS: ${{ secrets.HOMEWOOD_LAUNCH_ACCOUNTS }}
           HOMEWOOD_LAUNCH_PASSWORD: ${{ secrets.HOMEWOOD_LAUNCH_PASSWORD }}
-          HOMEWOOD_FACILITY_ID: ${{ vars.HOMEWOOD_FACILITY_ID }}
 
       - name: Segment gates (security, lint, migrations, build, stress)
         # Pre-launch: dormant. The build is verified by the Netlify deploy

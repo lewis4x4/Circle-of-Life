@@ -1,25 +1,44 @@
 #!/usr/bin/env node
 /**
- * Homewood Lodge ALF — auth verification (Sprint 2 of Homewood Go-Live).
+ * CI gate auth verification.
  *
- * Read-only. For every user with an active `user_facility_access` grant at
- * the Homewood facility, attempt sign-in with `HOMEWOOD_LAUNCH_PASSWORD`.
- * Confirm the session resolves to the expected `app_role`. If `BASE_URL` is
- * set, additionally fetch the role's canonical landing route with the
- * authenticated cookie and expect a 200.
+ * Read-only. Signs in as each account in the CI account map and confirms the
+ * session resolves to the expected `app_role`. If `BASE_URL` is set, also
+ * fetches that role's canonical landing route with the authenticated token and
+ * expects a non-4xx.
  *
- * Writes `docs/homewood/AUTH_VERIFICATION.md` with per-role + per-account
- * pass/fail. Redacts passwords. Exits non-zero if any account fails.
+ * ## Why this no longer enumerates a facility (COL-443)
+ *
+ * It used to read every active `user_facility_access` grant at Homewood Lodge
+ * and try to sign each one in with `HOMEWOOD_LAUNCH_PASSWORD`. That was right
+ * when every Homewood grantee was a seeded persona sharing one demo password.
+ * It stopped being right the moment real staff were onboarded: Homewood's
+ * grants are now Brian, Charlene Elmore, Darren Webb, Michelle Norris, Jessica
+ * Murphy and Milton Smith — real people with their own passwords. The gate
+ * would have failed on all of them, and the only ways to make it pass were to
+ * hand CI their credentials or to grant CI accounts access to the live launch
+ * facility. Both are worse than the gate.
+ *
+ * So the gate verifies a named list of accounts that exist to be verified, and
+ * nothing else. It asserts a property of the CI fixtures — "these logins work
+ * and carry the role they claim" — not a property of a facility's roster.
+ *
+ * ## Why there is no service-role key here
+ *
+ * Enumerating users required `SUPABASE_SERVICE_ROLE_KEY`. Verifying a known
+ * list does not: each account proves its own role by signing in. That removes
+ * an RLS-bypassing production key from a CI job, which is worth more than the
+ * orphan-grant check it used to perform. Roster integrity belongs in the Data
+ * Health panel (COL-361), which is where an operator will actually see it.
  *
  * Required env:
  *   NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)
- *   NEXT_PUBLIC_SUPABASE_ANON_KEY
- *   SUPABASE_SERVICE_ROLE_KEY  (to enumerate accounts)
- *   HOMEWOOD_LAUNCH_PASSWORD   (fails loudly if missing — by design)
+ *   NEXT_PUBLIC_SUPABASE_ANON_KEY (or SUPABASE_ANON_KEY)
+ *   HOMEWOOD_LAUNCH_ACCOUNTS   JSON object of role -> email
+ *   HOMEWOOD_LAUNCH_PASSWORD   (or PHASE1_DEMO_PASSWORD)
  *
  * Optional env:
- *   HOMEWOOD_FACILITY_ID       (defaults to 00000000-0000-0000-0002-000000000003)
- *   BASE_URL                   (e.g. http://127.0.0.1:4310 — enables route-fetch)
+ *   BASE_URL                   e.g. http://127.0.0.1:4310 — enables route fetch
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -29,7 +48,6 @@ import { createClient } from "@supabase/supabase-js";
 
 const ROOT = process.cwd();
 const REPORT_PATH = path.join(ROOT, "docs", "homewood", "AUTH_VERIFICATION.md");
-const DEFAULT_HOMEWOOD_FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 
 const ROLE_LANDING_ROUTES = {
   owner: "/admin/command",
@@ -78,72 +96,51 @@ function safeMessage(err) {
   return err.message || err.code || JSON.stringify(err);
 }
 
-function todayIso() {
-  return new Date().toISOString();
+function readAccountMap() {
+  const raw = requireEnv("HOMEWOOD_LAUNCH_ACCOUNTS");
+  if (!raw) {
+    console.error("[verify-auth] FAIL: HOMEWOOD_LAUNCH_ACCOUNTS not set.");
+    console.error("[verify-auth] Expected JSON mapping role -> email, e.g. {\"owner\":\"ci-owner@haven-ci.test\"}.");
+    console.error("[verify-auth] This gate verifies named CI accounts only — never a facility's real roster.");
+    process.exit(2);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    console.error(`[verify-auth] FAIL: HOMEWOOD_LAUNCH_ACCOUNTS is not valid JSON: ${safeMessage(error)}`);
+    process.exit(2);
+  }
+  const entries = Object.entries(parsed).filter(([, email]) => typeof email === "string" && email.trim());
+  if (entries.length === 0) {
+    console.error("[verify-auth] FAIL: HOMEWOOD_LAUNCH_ACCOUNTS is empty — nothing to verify.");
+    process.exit(2);
+  }
+  return entries.map(([role, email]) => ({ role, email: email.trim() }));
 }
 
 async function main() {
   loadEnvFile(path.join(ROOT, ".env.local"));
 
-  const password = requireEnv("HOMEWOOD_LAUNCH_PASSWORD");
+  const password = requireEnv("HOMEWOOD_LAUNCH_PASSWORD", "PHASE1_DEMO_PASSWORD");
   if (!password) {
-    console.error("[homewood:verify-auth] FAIL: HOMEWOOD_LAUNCH_PASSWORD not set. Configure repo secret or local .env to verify Homewood accounts.");
+    console.error("[verify-auth] FAIL: HOMEWOOD_LAUNCH_PASSWORD not set. The shared CI password lives in 1Password under 'Haven CI gates'.");
     process.exit(2);
   }
 
   const url = requireEnv("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL");
   const anonKey = requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
-  const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !anonKey || !serviceRoleKey) {
-    console.error("[homewood:verify-auth] FAIL: SUPABASE_URL/ANON/SERVICE keys missing.");
+  if (!url || !anonKey) {
+    console.error("[verify-auth] FAIL: Supabase URL/anon key missing.");
     process.exit(2);
   }
 
-  const facilityId = process.env.HOMEWOOD_FACILITY_ID?.trim() || DEFAULT_HOMEWOOD_FACILITY_ID;
+  const accounts = readAccountMap();
   const baseUrl = process.env.BASE_URL?.replace(/\/$/, "") || null;
   const supabaseHost = new URL(url).host;
 
-  const admin = createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+  console.log(`[verify-auth] verifying ${accounts.length} CI account(s) against ${supabaseHost}`);
 
-  // 1) Enumerate Homewood-scoped users via user_facility_access.
-  const { data: grants, error: gerr } = await admin
-    .from("user_facility_access")
-    .select("user_id")
-    .eq("facility_id", facilityId)
-    .is("revoked_at", null);
-  if (gerr) {
-    console.error(`[homewood:verify-auth] FAIL listing user_facility_access: ${safeMessage(gerr)}`);
-    process.exit(1);
-  }
-  const userIds = [...new Set((grants ?? []).map((g) => g.user_id))];
-  console.log(`[homewood:verify-auth] Homewood user_facility_access grants: ${userIds.length}`);
-
-  if (userIds.length === 0) {
-    console.warn("[homewood:verify-auth] WARNING: no Homewood-scoped users found. The auth check has nothing to verify.");
-  }
-
-  // 2) Look up each user's auth record (email + app_role).
-  const { data: authUsersData, error: lerr } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  if (lerr) {
-    console.error(`[homewood:verify-auth] FAIL listing auth users: ${safeMessage(lerr)}`);
-    process.exit(1);
-  }
-  const userMap = new Map();
-  for (const u of authUsersData?.users ?? []) userMap.set(u.id, u);
-
-  const accounts = userIds
-    .map((id) => userMap.get(id))
-    .filter(Boolean)
-    .map((u) => ({
-      id: u.id,
-      email: u.email ?? "(no email)",
-      expectedRole: u.app_metadata?.app_role ?? "(none)",
-      fullName: u.user_metadata?.full_name ?? null,
-    }));
-
-  console.log(`[homewood:verify-auth] auth.users matches for grants: ${accounts.length}/${userIds.length}`);
-
-  // 3) For each account, attempt sign-in + role check (+ optional route fetch).
   const results = [];
   for (const account of accounts) {
     const result = {
@@ -151,7 +148,7 @@ async function main() {
       signedIn: false,
       roleMatch: false,
       actualRole: null,
-      landingRoute: ROLE_LANDING_ROUTES[account.expectedRole] ?? null,
+      landingRoute: ROLE_LANDING_ROUTES[account.role] ?? null,
       routeStatus: null,
       reason: null,
     };
@@ -164,17 +161,17 @@ async function main() {
     if (sErr) {
       result.reason = `signInWithPassword: ${safeMessage(sErr)}`;
       results.push(result);
-      console.error(`  FAIL ${account.expectedRole.padEnd(16)} ${account.email}: ${result.reason}`);
+      console.error(`  FAIL ${account.role.padEnd(16)} ${account.email}: ${result.reason}`);
       continue;
     }
     result.signedIn = true;
     result.actualRole = signIn.user?.app_metadata?.app_role ?? "(none)";
-    result.roleMatch = result.actualRole === account.expectedRole;
+    result.roleMatch = result.actualRole === account.role;
 
     if (!result.roleMatch) {
-      result.reason = `role mismatch (expected '${account.expectedRole}', got '${result.actualRole}')`;
+      result.reason = `role mismatch (expected '${account.role}', got '${result.actualRole}')`;
       results.push(result);
-      console.error(`  FAIL ${account.expectedRole.padEnd(16)} ${account.email}: ${result.reason}`);
+      console.error(`  FAIL ${account.role.padEnd(16)} ${account.email}: ${result.reason}`);
       await client.auth.signOut().catch(() => {});
       continue;
     }
@@ -189,7 +186,7 @@ async function main() {
         result.routeStatus = res.status;
         if (res.status >= 400) {
           result.reason = `landing route ${result.landingRoute} returned ${res.status}`;
-          console.error(`  FAIL ${account.expectedRole.padEnd(16)} ${account.email}: ${result.reason}`);
+          console.error(`  FAIL ${account.role.padEnd(16)} ${account.email}: ${result.reason}`);
           results.push(result);
           await client.auth.signOut().catch(() => {});
           continue;
@@ -197,7 +194,7 @@ async function main() {
       } catch (err) {
         result.routeStatus = "fetch_error";
         result.reason = `landing route fetch failed: ${safeMessage(err)}`;
-        console.error(`  FAIL ${account.expectedRole.padEnd(16)} ${account.email}: ${result.reason}`);
+        console.error(`  FAIL ${account.role.padEnd(16)} ${account.email}: ${result.reason}`);
         results.push(result);
         await client.auth.signOut().catch(() => {});
         continue;
@@ -205,92 +202,55 @@ async function main() {
     }
 
     results.push(result);
-    console.log(`  OK   ${account.expectedRole.padEnd(16)} ${account.email}${result.routeStatus ? ` (${result.landingRoute} → ${result.routeStatus})` : ""}`);
+    console.log(`  OK   ${account.role.padEnd(16)} ${account.email}${result.routeStatus ? ` (${result.landingRoute} → ${result.routeStatus})` : ""}`);
     await client.auth.signOut().catch(() => {});
   }
 
-  // 4) Account for grants that don't have a matching auth.users row.
-  const missingAuth = userIds.filter((id) => !userMap.has(id));
-  for (const id of missingAuth) {
-    results.push({
-      id,
-      email: "(no auth.users row)",
-      expectedRole: "(unknown)",
-      fullName: null,
-      signedIn: false,
-      roleMatch: false,
-      actualRole: null,
-      landingRoute: null,
-      routeStatus: null,
-      reason: "user_facility_access references a user_id that does not exist in auth.users",
-    });
-    console.error(`  FAIL <orphan-grant>      user_id=${id}: no auth.users row`);
-  }
+  const passed = results.filter(
+    (r) => r.signedIn && r.roleMatch && (!r.landingRoute || !baseUrl || (typeof r.routeStatus === "number" && r.routeStatus < 400)),
+  );
 
-  const passed = results.filter((r) => r.signedIn && r.roleMatch && (!r.landingRoute || !baseUrl || (typeof r.routeStatus === "number" && r.routeStatus < 400)));
-  const expected = results.length;
-
-  // 5) Build per-role summary.
-  const roleBuckets = new Map();
-  for (const r of results) {
-    const list = roleBuckets.get(r.expectedRole) ?? [];
-    list.push(r);
-    roleBuckets.set(r.expectedRole, list);
-  }
-
-  const generatedAt = todayIso();
   const lines = [];
-  lines.push(`# Homewood Lodge ALF — Auth Verification`);
+  lines.push("# CI gate — auth verification");
   lines.push("");
-  lines.push(`_Generated: \`${generatedAt}\` against \`${supabaseHost}\` (facility \`${facilityId}\`)._`);
+  lines.push(`_Generated: \`${new Date().toISOString()}\` against \`${supabaseHost}\`._`);
   lines.push("");
-  lines.push(`Re-run with \`npm run homewood:verify-auth\`. Set \`BASE_URL=http://127.0.0.1:4310\` (or your deploy) to additionally fetch each role's landing route.`);
+  lines.push("This gate verifies the **named CI accounts** in `HOMEWOOD_LAUNCH_ACCOUNTS` and nothing else.");
+  lines.push("It deliberately does not enumerate a facility's grants: Homewood Lodge's grantees are real");
+  lines.push("staff with their own passwords, and a gate that tried to sign them in could only pass by");
+  lines.push("holding their credentials or by putting test identities on the live launch facility (COL-443).");
   lines.push("");
-  lines.push(`## Top-line`);
+  lines.push("Roster integrity is the Data Health panel's job (COL-361), not this script's.");
   lines.push("");
-  lines.push(`- Homewood \`user_facility_access\` grants: **${userIds.length}**`);
-  lines.push(`- Accounts with matching \`auth.users\` row: **${accounts.length}**`);
-  lines.push(`- Orphan grants (user_id without auth row): **${missingAuth.length}**`);
-  lines.push(`- Accounts that authenticate with the configured password and resolve to the expected role: **${passed.length} / ${expected}**`);
+  lines.push(`Re-run with \`npm run homewood:verify-auth\`. Set \`BASE_URL\` to additionally fetch each role's landing route.`);
+  lines.push("");
+  lines.push("## Top-line");
+  lines.push("");
+  lines.push(`- CI accounts verified: **${passed.length} / ${results.length}**`);
   lines.push(`- Route-fetch mode: ${baseUrl ? "**enabled** (BASE_URL set)" : "skipped (set BASE_URL to enable)"}`);
   lines.push("");
-  lines.push(`## Per-role summary`);
-  lines.push("");
-  lines.push("| Role | Accounts | Passed | Failed |");
-  lines.push("|---|---:|---:|---:|");
-  for (const [role, list] of [...roleBuckets.entries()].sort()) {
-    const pass = list.filter((r) => r.signedIn && r.roleMatch && (!r.landingRoute || !baseUrl || (typeof r.routeStatus === "number" && r.routeStatus < 400))).length;
-    lines.push(`| ${role} | ${list.length} | ${pass} | ${list.length - pass} |`);
-  }
-  lines.push("");
-  lines.push(`## Per-account detail`);
+  lines.push("## Per-account detail");
   lines.push("");
   lines.push("| Email | Expected role | Signed in | Role OK | Landing route | Route status | Reason |");
   lines.push("|---|---|---|---|---|---|---|");
   for (const r of results) {
     lines.push(
-      `| ${r.email} | ${r.expectedRole} | ${r.signedIn ? "✅" : "❌"} | ${r.roleMatch ? "✅" : "❌"} | ${r.landingRoute ?? "—"} | ${r.routeStatus ?? "—"} | ${(r.reason ?? "").replace(/\|/g, "\\|")} |`,
+      `| ${r.email} | ${r.role} | ${r.signedIn ? "✅" : "❌"} | ${r.roleMatch ? "✅" : "❌"} | ${r.landingRoute ?? "—"} | ${r.routeStatus ?? "—"} | ${(r.reason ?? "").replace(/\|/g, "\\|")} |`,
     );
   }
   lines.push("");
-  lines.push(`_Passwords are never logged or written. Sign-in attempts use \`HOMEWOOD_LAUNCH_PASSWORD\` from the environment._`);
+  lines.push("_Passwords are never logged or written. The shared CI password lives in 1Password under \"Haven CI gates\"._");
   lines.push("");
 
   mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
   writeFileSync(REPORT_PATH, `${lines.join("\n")}\n`);
-  console.log(`[homewood:verify-auth] report written: ${path.relative(ROOT, REPORT_PATH)}`);
-  console.log(`[homewood:verify-auth] result: ${passed.length}/${expected} accounts passed`);
+  console.log(`[verify-auth] report written: ${path.relative(ROOT, REPORT_PATH)}`);
+  console.log(`[verify-auth] result: ${passed.length}/${results.length} accounts passed`);
 
-  if (passed.length !== expected || expected === 0) {
-    if (expected === 0) {
-      console.error("[homewood:verify-auth] FAIL: no Homewood accounts present to verify.");
-    }
-    process.exit(1);
-  }
-  process.exit(0);
+  process.exit(passed.length === results.length ? 0 : 1);
 }
 
 main().catch((err) => {
-  console.error("[homewood:verify-auth] FATAL:", safeMessage(err));
+  console.error("[verify-auth] FATAL:", safeMessage(err));
   process.exit(1);
 });

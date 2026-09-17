@@ -10,10 +10,13 @@
 -- care-event-dispatcher):
 --
 --   select vault.create_secret('<the project anon key>', 'care_event_dispatcher_anon_key');
---   select vault.create_secret('<the CARE_EVENT_DISPATCHER_CRON_SECRET value>', 'care_event_dispatcher_cron_secret');
+--   select vault.create_secret('<the CARE_EVENT_DISPATCHER_SECRET value>', 'care_event_dispatcher_cron_secret');
 --
 -- The dispatcher Edge Function verifies the x-cron-secret header against its
--- CARE_EVENT_DISPATCHER_CRON_SECRET environment variable. Replace
+-- CARE_EVENT_DISPATCHER_SECRET environment variable (the name the function
+-- reads and the one in SECRETS-MANIFEST.md). The Vault entry below is named
+-- care_event_dispatcher_cron_secret because that is what the job body reads;
+-- its value must be the same string as that Edge Function secret. Replace
 -- <project-ref> with the project reference (the subdomain of the project URL).
 --
 -- Both jobs are idempotent: an existing job with the same name is unscheduled

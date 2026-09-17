@@ -102,6 +102,10 @@ import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLaunch
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { resolveExecutiveCommandNav } from "@/lib/auth/executive-nav-access";
 import { useHeldRoleHomeChrome } from "@/hooks/useHeldRoleHomeChrome";
+import {
+  FACILITY_SCOPE_LOCKED_REASON,
+  isFacilityScopeLockedPath,
+} from "@/lib/navigation/executive-facility-scope";
 import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { filterStaffLaunchHiddenItems } from "@/lib/navigation/staff-launch-hidden";
 import { cn } from "@/lib/utils";
@@ -200,6 +204,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
   const { shellRoleLabel, brandAriaLabel, heldLead } = useHeldRoleHomeChrome(authLoading, appRole);
   const suppressSurveyVisitChrome = useMemo(() => shouldSuppressSurveyVisitChrome(pathname), [pathname]);
+  const facilityScopeLocked = useMemo(() => isFacilityScopeLockedPath(pathname), [pathname]);
   const [signingOut, setSigningOut] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -650,20 +655,25 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         data-testid="admin-facility-filter-trigger"
+        disabled={facilityScopeLocked}
+        title={facilityScopeLocked ? FACILITY_SCOPE_LOCKED_REASON : undefined}
         aria-label={
-          facilitiesLoadFailed
-            ? "Facility filter — failed to load list, open for retry"
-            : facilityControlLoading
-              ? "Facility filter — loading"
-              : `Facility filter — ${
-                  safeSelectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"
-                }`
+          facilityScopeLocked
+            ? FACILITY_SCOPE_LOCKED_REASON
+            : facilitiesLoadFailed
+              ? "Facility filter — failed to load list, open for retry"
+              : facilityControlLoading
+                ? "Facility filter — loading"
+                : `Facility filter — ${
+                    safeSelectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"
+                  }`
         }
         className={cn(
           WORKSPACE_WELL,
           "mx-2 my-2 flex min-h-9 items-center gap-2 rounded-md px-2.5",
           "text-[13px] font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "disabled:cursor-not-allowed disabled:opacity-60",
         )}
       >
         <Building2 className="size-4 shrink-0 opacity-90" aria-hidden />
@@ -673,7 +683,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <span
             className="flex-1 min-w-0 max-w-[min(28rem,calc(100vw-12rem))] truncate text-left"
             title={
-              !facilityControlLoading && safeSelectedFacilityId !== null && currentFacility?.name
+              !facilityScopeLocked &&
+              !facilityControlLoading &&
+              safeSelectedFacilityId !== null &&
+              currentFacility?.name
                 ? currentFacility.name
                 : undefined
             }

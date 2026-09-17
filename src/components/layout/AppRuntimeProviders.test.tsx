@@ -23,6 +23,24 @@ vi.mock("@/components/ui/sonner", () => ({
     toasterMock(props),
 }));
 
+// The forced-change gate reads the Supabase session; give it a signed-out one so
+// this test stays about provider wiring (COL-362).
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
+    },
+  }),
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin",
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
 describe("AppRuntimeProviders", () => {
   it("renders children and runtime providers with expected props", () => {
     render(

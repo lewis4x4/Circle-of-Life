@@ -13,6 +13,8 @@ type ShellActor = {
   organization_id: string;
   app_role: string;
   auth_claim_version: number;
+  /** Exposed by migration 387 from user_profiles.settings. */
+  must_change_password?: boolean;
 };
 
 export async function updateSession(request: NextRequest): Promise<SessionUpdateResult> {
@@ -58,6 +60,7 @@ export async function updateSession(request: NextRequest): Promise<SessionUpdate
             app_role: actor.app_role,
             organization_id: actor.organization_id,
             auth_claim_version: actor.auth_claim_version,
+            must_change_password: actor.must_change_password === true,
           },
         };
       } else if (actorError?.code === "HAVEN_AUTHORIZATION_STALE" || (!actorError && currentActor === null)) {

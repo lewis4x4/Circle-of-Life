@@ -14,7 +14,7 @@
  * Note: recharts tick.fill and stroke props accept only resolved CSS color
  * strings (SVG attribute, not style prop). Values below are resolved from
  * globals.css tokens: --muted-foreground=40 6% 55%, --border=36 6% 14%,
- * --warning=32 58% 60%, --destructive=8 48% 54%, --success=92 25% 49%.
+ * --warning=32 60% 50%, --destructive=8 48% 54%, --success=92 25% 49%.
  *
  * MAINTENANCE: If globals.css --warning, --destructive, --success,
  * --muted-foreground, or --border are retuned, update RISK_COLORS and the
@@ -68,12 +68,12 @@ export interface CeoRiskIndexChartProps {
 // These match the --warning, --destructive, --success, --border, --muted-foreground values.
 const RISK_COLORS: Record<string, string> = {
   rose: "hsl(8, 48%, 54%)",       // --destructive
-  amber: "hsl(32, 58%, 60%)",      // --warning
+  amber: "hsl(32, 60%, 50%)",      // --warning
   emerald: "hsl(92, 25%, 49%)",    // --success
 };
 const AXIS_TICK_COLOR = "hsl(40, 6%, 55%)";  // --muted-foreground
 const GRID_STROKE_COLOR = "hsl(36, 6%, 14%)"; // --border
-const REF_LINE_COLOR = "hsl(32, 58%, 60%)";   // --warning
+const REF_LINE_COLOR = "hsl(32, 60%, 50%)";   // --warning
 const REF_AREA_COLOR = "hsl(8, 48%, 54%)";    // --destructive
 
 function chartFacilityName(payload: unknown): string | null {

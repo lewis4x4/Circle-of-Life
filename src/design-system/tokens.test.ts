@@ -25,7 +25,7 @@ describe("UI-V2 tokens", () => {
             "neutral": "#928E85",
             "regulatory": "rgb(139 92 246)",
             "success": "#7A9B5E",
-            "warning": "#D49B5C",
+            "warning": "#CC8533",
           },
           "text": {
             "inverse": "#1A0F08",

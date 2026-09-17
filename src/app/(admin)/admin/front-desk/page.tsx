@@ -1,21 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, LogOut, PackageCheck, PhoneIncoming, Plus, Users } from "lucide-react";
+import { Loader2, PackageCheck, PhoneIncoming, Plus, Users } from "lucide-react";
 
 import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { VisitorLogClient } from "@/components/registers/VisitorLogClient";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   PACKAGE_TYPES,
-  VISITOR_TYPES,
   packageTypeLabel,
   residentName,
-  visitorTypeLabel,
   type CallDirection,
   type FamilyCallEntryRow,
   type PackageEntryRow,
@@ -23,9 +22,8 @@ import {
   type QueryError,
   type QueryResult,
   type ResidentMini,
-  type VisitorEntryRow,
-  type VisitorType,
 } from "@/lib/office/front-desk";
+import { VISITABLE_RESIDENT_STATUSES, type VisitorSignInDraft } from "@/lib/registers/visitor-log";
 import { fetchActorContext } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -54,22 +52,14 @@ export default function AdminFrontDeskPage() {
 
   const [tab, setTab] = useState<Tab>("visitors");
   const [residents, setResidents] = useState<ResidentMini[]>([]);
-  const [visitors, setVisitors] = useState<VisitorEntryRow[]>([]);
+  const [onSiteCount, setOnSiteCount] = useState(0);
+  const [organizationId, setOrganizationId] = useState("");
   const [packages, setPackages] = useState<PackageEntryRow[]>([]);
   const [calls, setCalls] = useState<FamilyCallEntryRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  // Visitor form
-  const [vName, setVName] = useState("");
-  const [vType, setVType] = useState<VisitorType>("family");
-  const [vResident, setVResident] = useState("");
-  const [vPurpose, setVPurpose] = useState("");
-  const [vSymptoms, setVSymptoms] = useState(false);
-  const [vTemp, setVTemp] = useState("");
-  const [savingVisitor, setSavingVisitor] = useState(false);
 
   // Package form
   const [pRecipient, setPRecipient] = useState("");
@@ -90,7 +80,6 @@ export default function AdminFrontDeskPage() {
 
   const load = useCallback(async () => {
     if (!facilityReady) {
-      setVisitors([]);
       setPackages([]);
       setCalls([]);
       setResidents([]);
@@ -103,19 +92,10 @@ export default function AdminFrontDeskPage() {
       const fid = selectedFacilityId as string;
       const residentsQ = supabase
         .from("residents")
-        .select("id, first_name, last_name")
+        .select("id, first_name, last_name, status")
         .eq("facility_id", fid)
         .is("deleted_at", null)
         .order("last_name");
-      const visitorsQ = supabase
-        .from("visitor_log_entries" as never)
-        .select(
-          "id, visitor_name, visitor_type, resident_id, purpose, checked_in_at, checked_out_at, screening_passed, temperature_f, symptoms_reported, screening_notes",
-        )
-        .eq("facility_id", fid)
-        .is("deleted_at", null)
-        .order("checked_in_at", { ascending: false })
-        .limit(100);
       const packagesQ = supabase
         .from("package_log_entries" as never)
         .select(
@@ -135,16 +115,15 @@ export default function AdminFrontDeskPage() {
         .order("call_at", { ascending: false })
         .limit(100);
 
-      const [rRes, vRes, pRes, cRes] = await Promise.all([
+      const [rRes, pRes, cRes] = await Promise.all([
         residentsQ as unknown as Promise<QueryResult<ResidentMini>>,
-        visitorsQ as unknown as Promise<QueryResult<VisitorEntryRow>>,
         packagesQ as unknown as Promise<QueryResult<PackageEntryRow>>,
         callsQ as unknown as Promise<QueryResult<FamilyCallEntryRow>>,
       ]);
-      const err: QueryError | null = rRes.error ?? vRes.error ?? pRes.error ?? cRes.error;
+      const err: QueryError | null = rRes.error ?? pRes.error ?? cRes.error;
       if (err) throw new Error(err.message);
       setResidents(rRes.data ?? []);
-      setVisitors(vRes.data ?? []);
+      setOrganizationId((await fetchActorContext(supabase))?.organizationId ?? "");
       setPackages(pRes.data ?? []);
       setCalls(cRes.data ?? []);
     } catch (err) {
@@ -158,60 +137,32 @@ export default function AdminFrontDeskPage() {
     void load();
   }, [load]);
 
-  const checkInVisitor = useCallback(async () => {
-    if (!facilityReady || !vName.trim()) return;
-    setSavingVisitor(true);
-    setNotice(null);
-    try {
+  /**
+   * Signing a visitor in is the one write this page still makes directly. Sign
+   * out, void and end of day go through the definer functions in migration 412
+   * (COL-353): migration 294 let a client rewrite a visitor's name or arrival
+   * time after the fact, and that UPDATE policy is gone.
+   */
+  const signInVisitor = useCallback(
+    async (draft: VisitorSignInDraft) => {
+      if (!facilityReady) return;
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
-      const temp = vTemp.trim() ? Number(vTemp) : null;
       const { error } = await supabase.from("visitor_log_entries" as never).insert({
         organization_id: actor.organizationId,
         facility_id: selectedFacilityId as string,
-        visitor_name: vName.trim(),
-        visitor_type: vType,
-        resident_id: vResident || null,
-        purpose: vPurpose.trim() || null,
-        symptoms_reported: vSymptoms,
-        temperature_f: temp,
-        screening_passed: vSymptoms ? false : true,
+        visitor_name: draft.name.trim(),
+        visitor_phone: draft.phone.trim() || null,
+        visitor_type: draft.visitorType,
+        visiting_type: draft.visitingType,
+        resident_id: draft.visitingType === "resident" ? draft.residentId : null,
+        signed_in_by: actor.userId,
         created_by: actor.userId,
         updated_by: actor.userId,
       } as never);
       if (error) throw new Error(error.message);
-      setVName("");
-      setVResident("");
-      setVPurpose("");
-      setVSymptoms(false);
-      setVTemp("");
-      await load();
-    } catch (err) {
-      setNotice(err instanceof Error ? err.message : "Failed to check in visitor.");
-    } finally {
-      setSavingVisitor(false);
-    }
-  }, [supabase, facilityReady, selectedFacilityId, vName, vType, vResident, vPurpose, vSymptoms, vTemp, load]);
-
-  const checkOutVisitor = useCallback(
-    async (id: string) => {
-      setBusyId(id);
-      setNotice(null);
-      try {
-        const actor = await fetchActorContext(supabase);
-        const { error } = await supabase
-          .from("visitor_log_entries" as never)
-          .update({ checked_out_at: new Date().toISOString(), updated_by: actor?.userId } as never)
-          .eq("id", id);
-        if (error) throw new Error(error.message);
-        await load();
-      } catch (err) {
-        setNotice(err instanceof Error ? err.message : "Failed to check out visitor.");
-      } finally {
-        setBusyId(null);
-      }
     },
-    [supabase, load],
+    [supabase, facilityReady, selectedFacilityId],
   );
 
   const logPackage = useCallback(async () => {
@@ -305,9 +256,14 @@ export default function AdminFrontDeskPage() {
     }
   }, [supabase, facilityReady, selectedFacilityId, cResident, cCaller, cRelationship, cDirection, cSummary, cFollowUp, load]);
 
-  const onSiteCount = useMemo(
-    () => visitors.filter((v) => !v.checked_out_at).length,
-    [visitors],
+  const visitableResidents = useMemo(
+    () =>
+      residents
+        .filter((r) => VISITABLE_RESIDENT_STATUSES.includes(
+          (r as ResidentMini & { status?: string }).status as (typeof VISITABLE_RESIDENT_STATUSES)[number],
+        ))
+        .map((r) => ({ id: r.id, firstName: r.first_name, lastName: r.last_name })),
+    [residents],
   );
   const pendingPackages = useMemo(
     () => packages.filter((p) => !p.delivered_at).length,
@@ -331,8 +287,11 @@ export default function AdminFrontDeskPage() {
           </p>
         </header>
 
+        {/* text-foreground, not text-warning below: warning text on a warning
+            wash fails AA contrast, and the caregiver pages already set this
+            pattern for the same banner. */}
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
+          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-foreground">
             Select a facility first — front desk logs are per-facility.
           </p>
         ) : null}
@@ -376,65 +335,13 @@ export default function AdminFrontDeskPage() {
         ) : null}
 
         {facilityReady && !isLoading && !loadError && tab === "visitors" ? (
-          <section className="space-y-3">
-            <div className="grid gap-2 rounded-[var(--radius)] border border-border bg-card p-4 lg:grid-cols-3">
-              <input type="text" value={vName} onChange={(e) => setVName(e.target.value)} placeholder="Visitor name" aria-label="Visitor name" className={inputCls} />
-              <select value={vType} onChange={(e) => setVType(e.target.value as VisitorType)} aria-label="Visitor type" className={inputCls}>
-                {VISITOR_TYPES.map((v) => (
-                  <option key={v.id} value={v.id}>{v.label}</option>
-                ))}
-              </select>
-              <select value={vResident} onChange={(e) => setVResident(e.target.value)} aria-label="Visiting resident" className={inputCls}>
-                <option value="">Visiting (optional)…</option>
-                {residents.map((r) => (
-                  <option key={r.id} value={r.id}>{r.last_name}, {r.first_name}</option>
-                ))}
-              </select>
-              <input type="text" value={vPurpose} onChange={(e) => setVPurpose(e.target.value)} placeholder="Purpose (optional)" aria-label="Purpose" className={cn(inputCls, "lg:col-span-2")} />
-              <input type="number" step="0.1" value={vTemp} onChange={(e) => setVTemp(e.target.value)} placeholder="Temp °F (optional)" aria-label="Temperature" className={inputCls} />
-              <label className="flex items-center gap-2 text-sm text-foreground lg:col-span-2">
-                <input type="checkbox" checked={vSymptoms} onChange={(e) => setVSymptoms(e.target.checked)} />
-                Visitor reports symptoms (fails screening)
-              </label>
-              <Button type="button" disabled={savingVisitor || !vName.trim()} onClick={() => void checkInVisitor()} className="gap-2">
-                {savingVisitor ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
-                Check in
-              </Button>
-            </div>
-
-            {visitors.length === 0 ? (
-              <p className="text-sm text-muted-foreground pl-2">No visitors logged yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {visitors.map((v) => (
-                  <li key={v.id} className="flex flex-col gap-2 px-[13px] py-2 rounded-[9px] border border-border bg-card lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                      <span className="font-semibold text-foreground truncate">
-                        {v.visitor_name}
-                        {residentName(v.resident_id, residents) ? ` → ${residentName(v.resident_id, residents)}` : ""}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {visitorTypeLabel(v.visitor_type)} · in {ET_FMT.format(new Date(v.checked_in_at))} ET
-                        {v.checked_out_at ? ` · out ${ET_FMT.format(new Date(v.checked_out_at))} ET` : ""}
-                        {v.temperature_f != null ? ` · ${v.temperature_f}°F` : ""}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {v.symptoms_reported ? <StatusPill tone="danger">screening flag</StatusPill> : <StatusPill tone="success">cleared</StatusPill>}
-                      {v.checked_out_at ? (
-                        <StatusPill tone="muted">checked out</StatusPill>
-                      ) : (
-                        <Button type="button" variant="outline" size="sm" className="gap-2" disabled={busyId === v.id} onClick={() => void checkOutVisitor(v.id)}>
-                          <LogOut className="h-4 w-4" aria-hidden />
-                          Check out
-                        </Button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <VisitorLogClient
+            organizationId={organizationId}
+            facilityId={facilityReady ? (selectedFacilityId as string) : null}
+            residents={visitableResidents}
+            onSignIn={signInVisitor}
+            onOpenCountChange={setOnSiteCount}
+          />
         ) : null}
 
         {facilityReady && !isLoading && !loadError && tab === "packages" ? (
