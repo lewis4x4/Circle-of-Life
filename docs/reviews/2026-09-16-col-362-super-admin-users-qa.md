@@ -73,31 +73,87 @@ this branch. `ACTUAL (branch)` is filled in after the fixes land.
 
 | # | Case | Expected | ACTUAL (main) | ACTUAL (branch) |
 |---|---|---|---|---|
-| 1 | Create, new email, `send_invite=true` | Invite dispatched; `invitation_sent=true`, `provision_method=invite_email` | PASS | |
-| 2 | Create, new email, `send_invite=false` | Temp password returned once; `must_change_password` set in settings + app_metadata | PASS | |
-| 3 | Create, Auth user exists and has never signed in, `send_invite=true` (Charlene) | No silent skip — temp password issued, `email_confirm`, `invitation_sent=false` | PASS | |
-| 4 | Create, Auth user exists, confirmed and previously signed in, `send_invite=true` | Password-reset email dispatched; `invitation_sent=true`, `provision_method=password_reset_email` | PASS | |
-| 5 | Create where target already holds an **active** grant for that facility | Repeat grant is a no-op; 201, no 23505 | PASS | |
-| 6 | Create where target holds a **revoked** grant for that facility | Grant reactivated (`revoked_at` cleared, `granted_at` refreshed); 201 | PASS | |
-| 7 | Create with the same `facility_id` twice in `facilities[]` | Rejected at validation with a field error; never reaches the DB | **FAIL** — `createUserSchema` has no uniqueness rule; both entries pass and are replayed sequentially | |
-| 8 | Profile insert fails after an Auth user was **created in this request** | Auth user deleted; no orphan; 500 | **FAIL** — `route.ts:341-343` returns 500 and leaves the Auth user orphaned | |
-| 9 | Grant write fails after profile insert | Profile **and** any grants written in this request rolled back; no half-created user | **FAIL** — `route.ts:353-364` returns 500 with `profile_created: true`; half-created user persists and retry is blocked by the 409 | |
-| 10 | Profile insert fails for a **pre-existing** Auth user | Auth user **not** deleted (cleanup only for users created in that request) | **FAIL (vacuous)** — no cleanup exists at all, so nothing is wrongly deleted, but the guarantee is unimplemented | |
-| 11 | Invite API errors, or returns a null user | Surfaced as a failure; never reported as sent | **PARTIAL** — an `error` throws (`admin-client.ts:65-67`), but a null `data.user` throws a raw `TypeError` at `:88` and is reported as a generic 500 | |
-| 12 | Temp-password generator | Uniform over the alphabet; guaranteed character-class coverage; never logged | **FAIL** — `admin-client.ts:39-44` is modulo-biased (61-char alphabet, `b % 61`, 256 mod 61 = 12 → first 12 chars 25% over-represented); no class guarantee | |
-| 13 | Temp-password / forced-change expiry boundary | At and after the expiry instant the temp credential is refused; strictly before it is accepted | **FAIL** — no expiry concept exists | |
-| 14 | Forced change enforced on every route group and every non-exempt API | Redirect on all route groups; 403 from non-exempt API routes | **FAIL** — `MustChangePasswordGate` is mounted only inside `HavenAuthProvider` (`haven-auth-context.tsx:212`), which `(med-tech)`, `(dietary)`, `(family)`, `(onboarding)` do not mount; no API enforcement at all | |
-| 15 | Rate limiting and authorization on the credential endpoints | Repeated attempts throttled; non-super-admin denied on create and reset | **FAIL (rate limit)** — no throttle on `/api/account/change-password` (which calls `signInWithPassword` with attacker-supplied `current_password`, a password oracle) or on reset-password. **PASS (authz)** — create is `owner`/`org_admin`/`facility_admin`, reset is `owner`/`org_admin`, plus `canManageUser` / `canActorManageTarget` | |
+| 1 | Create, new email, `send_invite=true` | Invite dispatched; `invitation_sent=true`, `provision_method=invite_email` | PASS | PASS |
+| 2 | Create, new email, `send_invite=false` | Temp password returned once; `must_change_password` set in settings + app_metadata | PASS | PASS |
+| 3 | Create, Auth user exists and has never signed in, `send_invite=true` (Charlene) | No silent skip — temp password issued, `email_confirm`, `invitation_sent=false` | PASS | PASS |
+| 4 | Create, Auth user exists, confirmed and previously signed in, `send_invite=true` | Password-reset email dispatched; `invitation_sent=true`, `provision_method=password_reset_email` | PASS | PASS |
+| 5 | Create where target already holds an **active** grant for that facility | Repeat grant is a no-op; 201, no 23505 | PASS | PASS — now a true no-op: zero writes issued |
+| 6 | Create where target holds a **revoked** grant for that facility | Grant reactivated (`revoked_at` cleared, `granted_at` refreshed); 201 | PASS | PASS |
+| 7 | Create with the same `facility_id` twice in `facilities[]` | Rejected at validation with a field error; never reaches the DB | **FAIL** | PASS — 422 before provisioning is called |
+| 8 | Profile insert fails after an Auth user was **created in this request** | Auth user deleted; no orphan; 500 | **FAIL** | PASS — `rollback: "complete"`, `adminHardDeleteUser` called |
+| 9 | Grant write fails after profile insert | Profile **and** any grants written in this request rolled back; no half-created user | **FAIL** | PASS — profile deleted, grants undone, `profile_created` no longer returned |
+| 10 | Profile insert fails for a **pre-existing** Auth user | Auth user **not** deleted (cleanup only for users created in that request) | **FAIL (vacuous)** | PASS — `auth_user_created:false` suppresses the delete; verified on staging |
+| 11 | Invite API errors, or returns a null user | Surfaced as a failure; never reported as sent | **PARTIAL** | PASS — null user and null envelope both throw a named error |
+| 12 | Temp-password generator | Uniform over the alphabet; guaranteed character-class coverage; never logged | **FAIL** | PASS — rejection sampling, head/tail skew < 5% over 4000 samples; all four classes guaranteed |
+| 13 | Temp-password / forced-change expiry boundary | At and after the expiry instant the temp credential is refused; strictly before it is accepted | **FAIL** | PASS — 72h TTL, inclusive boundary, missing deadline reads as expired |
+| 14 | Forced change enforced on every route group and every non-exempt API | Redirect on all route groups; 403 from non-exempt API routes | **FAIL** | PASS — `src/proxy.ts` redirects (15 paths across all 7 groups); `requireCurrentApiActor` returns 403 `password_change_required` |
+| 15 | Rate limiting and authorization on the credential endpoints | Repeated attempts throttled; non-super-admin denied on create and reset | **FAIL (rate limit)** / PASS (authz) | PASS — 5/15min on change-password (refunded on success), 10/15min per admin on reset; authz unchanged |
 
-**Baseline tally on `main`: 6 of 15 PASS, 1 PARTIAL, 8 FAIL.**
+**Baseline on `main`: 6 of 15 PASS, 1 PARTIAL, 8 FAIL.**
+**On this branch: 15 of 15 PASS.**
 
-Rows 1–6 are exactly what #528 set out to fix, and they hold. Every remaining row is an
-enabler #528 left open.
+Rows 1–6 are exactly what #528 set out to fix, and they held. Every remaining row was an
+enabler #528 left open, and each is now closed by a test that fails without the fix.
 
 ---
 
-## 4. Findings filed separately
+## 4. Staging smoke — 2026-09-16, Haven HFO Staging (`iwcnajanvjvynolltflw`)
+
+Staging carries migration 387, `haven_current_shell_actor` exposes the flag, and
+`idx_ufa_unique` is the partial index the failure depended on. Starting counts: 56
+profiles, 58 Auth users.
+
+Charlene's exact pre-state was reconstructed — an Auth user invited 28 days earlier and
+never accepted, holding an **active** grant on a facility, with no profile — and both the
+old and new grant paths were replayed against it.
+
+| Step | Result |
+|---|---|
+| Pre-state built | 1 Auth user, 0 profiles, 1 active grant |
+| **Pre-#528 bare `INSERT`** | **`23505 duplicate key value violates unique constraint "idx_ufa_unique"`** — the 2026-09-15 failure reproduced verbatim |
+| Post-fix grant sequence | `no-op on existing row 39d01aaf-…` — lookup found the matching active grant, issued no write |
+| Profile created | `must_change_password: true`, `must_change_password_expires_at: 2026-09-20T00:13:10.309Z`; the expression migration 387's RPC evaluates returns `true` |
+| Rollback replay | Profile deleted; **Auth user retained**; the 28-day-old grant untouched (`granted_at` still `2026-08-20 00:12:41`) |
+| Offboarded | 0 Auth rows, 0 profile rows, 0 grant rows. Counts back to 56 / 58. |
+
+**What this smoke did not cover.** The HTTP-layer behaviour — the proxy redirect, the
+API 403, and both rate limits — was not driven through a browser session on staging: the
+Supabase CLI on this machine is authenticated to a different account than the one holding
+the Haven projects, so no staging service-role or super-admin credential was reachable.
+Those three are covered by unit tests that call the real route handlers and the real
+`proxy()` export, not mocks of them. A browser pass on staging is still worth doing
+before the forced-change flag is used in anger.
+
+**Production was read only.** Counts re-checked after all work: 19 profiles, 36 Auth
+users, 17 without a profile, 1 profile without active access, 0 duplicate pairs, 0
+must-change flags — identical to the baseline in §2.
+
+---
+
+## 5. Gates
+
+| Gate | Result |
+|---|---|
+| `npm run lint` | exit 0 (ESLint `--max-warnings 0` + constitution lint, 30 files) |
+| `npm run typecheck` | exit 0 |
+| `npx vitest run` | exit 0 — **777 files, 5935 passed**, 2 skipped |
+| `npm run migrations:check` | PASS — 414 migrations, sequence 001..411 |
+| `npm run migrations:check:hosted` | PASS — no `public.`-qualified extension calls |
+| `npm run migrations:verify:pg` | PASS — 414 migration files, 74 SQL probes, level parity (105 cases). Replayed on a throwaway **native** PostgreSQL 17 cluster, torn down after; no Docker. |
+| `npm run build` | exit 0 |
+| `npm run check:secrets` | PASS |
+| `npm run secrets:gitleaks` | PASS — 2256 commits, no leaks |
+| Client bundle sweep | clean across 686 chunks — no service-role key value or identifier, no `service_role` literal, no temp-password alphabet, no `generateSecurePassword`, no `adminSetMustChangePassword` |
+
+No migration was added: the expiry rides in the existing `user_profiles.settings` jsonb
+and Auth `app_metadata`, both already exposed by migration 387.
+
+---
+
+## 6. Findings filed separately
 
 - 17 Auth users with no `user_profiles` row in production (15 from the 2026-08-19 bulk
   invite). Not touched by this branch — needs an owner decision on invite-or-purge.
 - `thomas.sikes@icloud.com` (owner) holds zero `user_facility_access` rows.
+- A browser-driven staging pass over the forced-change redirect and the two rate limits,
+  once a staging credential is available to this workflow.
