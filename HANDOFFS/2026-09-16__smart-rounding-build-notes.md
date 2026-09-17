@@ -380,22 +380,35 @@ constraint is the floor, not the ceiling.
 
 | Part | File | Spec number |
 |---|---|---|
-| 1 | `412_col_observation_cadence_2026_09_16.sql` | `404` |
-| 2 | `413_observation_chip_vocabulary.sql` | `405` |
-| 3 | `414_resident_monitoring_orders.sql` | `406` |
-| 4 | `415_observation_escalation_policy.sql` | `407` |
-| review fix | `416_observation_compliance_occupancy.sql` | n/a (C3) |
-| review fix | `417_escalation_completed_task_guard.sql` | n/a (C1) |
-| 5 | `418_resident_watchlist_signals.sql` | `408` |
-| 7 | `419_cadence_config_versioning.sql` | `409` |
-| 7 | `420_cadence_config_rpcs.sql` | `410` |
+| 1 | `414_col_observation_cadence_2026_09_16.sql` | `404` |
+| 2 | `415_observation_chip_vocabulary.sql` | `405` |
+| 3 | `416_resident_monitoring_orders.sql` | `406` |
+| 4 | `417_observation_escalation_policy.sql` | `407` |
+| review fix | `418_observation_compliance_occupancy.sql` | n/a (C3) |
+| review fix | `419_escalation_completed_task_guard.sql` | n/a (C1) |
+| 5 | next free at the time it is written | `408` |
+| 7 | next two free | `409`, `410` |
 
-**Numbers are allocated when a migration is written, not reserved in advance.**
-`migrations:check` requires a contiguous sequence from `001`, so a number held for an
-unbuilt part becomes a gap the moment anything later lands, and the build fails. The review
-fixes took `416` and `417` because they were written first; Parts 5 and 7 moved down.
-Re-check `origin/main` immediately before any push regardless: numbers are not reserved
-across branches either.
+**Numbers are allocated when a migration is written, never reserved in advance, and the
+whole stack has already moved twice.** This module started at `412`; `origin/main` then
+merged its own `412` and `413` while this branch was open, so everything shifted to
+`414`-`419`.
+
+Use the tooling that arrived with that merge, not the directory listing:
+
+- `npm run migrations:next` gives the next free number **counting numbers claimed by open
+  pull requests**, which the directory cannot see
+- `npm run migrations:check:claims` reports collisions with open PRs
+
+**The two checks currently disagree and you need to know why.** `migrations:next` says
+`416`, because open PRs #580 and #581 claim `414` and `415`. But `migrations:check`
+requires a contiguous sequence from `001`, and `npm run build` gates on it while it does
+**not** gate on claims. Taking `416` leaves a gap at `414`-`415` and fails the build today;
+taking `414` keeps the build green and races those two PRs.
+
+This branch holds `414`-`419` deliberately. Whoever merges second renumbers, which is what
+the claims tool itself advises. **Re-run both checks immediately before any push**, and
+expect to renumber again.
 
 Each file wraps itself in `BEGIN; ... COMMIT;` unless it contains a statement that cannot
 run inside a transaction, and is idempotent enough to replay (`CREATE TABLE IF NOT EXISTS`,
