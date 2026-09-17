@@ -45,11 +45,34 @@ export function mergeMustChangePasswordSetting(
   return base;
 }
 
+/**
+ * Does this actor owe a password change? Reads the claim mirror in `app_metadata`,
+ * which the proxy fills from `haven_current_shell_actor` (migration 387) and the
+ * client reads straight off the session.
+ */
+export function hasPendingPasswordChange(user: {
+  app_metadata?: Record<string, unknown>;
+} | null): boolean {
+  return user?.app_metadata?.[MUST_CHANGE_PASSWORD_SETTINGS_KEY] === true;
+}
+
 export const CHANGE_PASSWORD_ALLOWED_PATH_PREFIXES = [
   "/change-password",
   "/login",
   "/reset-password",
 ] as const;
+
+/**
+ * API paths a user owing a password change may still call. Deliberately tiny: the
+ * account endpoints needed to complete or abandon the change, and nothing else.
+ */
+export const CHANGE_PASSWORD_EXEMPT_API_SCOPES = [
+  "account.change-password",
+  "auth.sign-out",
+] as const;
+
+export type ChangePasswordExemptApiScope =
+  (typeof CHANGE_PASSWORD_EXEMPT_API_SCOPES)[number];
 
 export function isChangePasswordExemptPath(pathname: string | null): boolean {
   if (!pathname) {
