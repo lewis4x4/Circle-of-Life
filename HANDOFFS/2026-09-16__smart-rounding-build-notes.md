@@ -401,6 +401,37 @@ or that object has no regression cover at all.
 - A `WITH CHECK` failure **raises** `42501`; a `USING` failure filters silently to
   `UPDATE 0`. Assert the right one.
 
+**D23. The spec's diagnosis of defects 5 and 6 is wrong. Part 6 must not "fix scoping" and
+call them closed.**
+
+Three tabs on the deployed module fail with "Could not load X. Confirm facility scope and
+retry." That string is a generic catch, not a diagnosis, and the spec attributes them to
+facility scoping (defect 1). They are three distinct query bugs, each confirmed against the
+replayed schema:
+
+- **Watches** embeds `residents(first_name, last_name, preferred_name, room_number)`.
+  **`residents.room_number` does not exist.** PostgREST answers `42703` and the whole query
+  fails. That tab has never been able to load.
+- **Plans** carries the identical `room_number` embed and fails the same way. Its KPI tiles
+  render zeros because they come from a different query that succeeds.
+- **Integrity** embeds a bare `staff(first_name, last_name, preferred_name)`.
+  `resident_observation_integrity_flags` has **two** foreign keys to `staff`
+  (`staff_id` and `assigned_to_staff_id`), so the embed is ambiguous and PostgREST answers
+  `PGRST201`. Disambiguate it as `staff:staff_id(...)`, the way the same query already
+  disambiguates `assigned_staff:assigned_to_staff_id(...)` one line below.
+
+**Room lives on `rooms.room_number`**, reached `residents.bed_id` to `beds.room_id` to
+`rooms`. Part 5's `v_watchlist_facility` already resolves it that way; copy that, do not
+reintroduce the column that does not exist.
+
+Watches and Plans are both removed by Part 6, so their bugs die with them. **Integrity
+survives the collapse to five tabs and must actually be fixed**, not inherited.
+
+**The wider lesson for Part 6:** a generic error string hid three unrelated defects for
+long enough that a spec was written attributing all of them to a fourth cause. Error copy
+that names what the operator can do is right; error copy that replaces the diagnosis is how
+this happened. Log the underlying PostgREST code.
+
 **D9. American spelling. No em dashes** in code comments, UI copy, or documentation.
 
 ---
@@ -483,6 +514,13 @@ Chip codes: `meal_intake` = `ate_well`, `ate_some`, `refused_meal`, `ate_in_room
 `no_meal_this_window`. `mood_state` = `pleasant`, `quiet`, `grouchy`, `agitated`,
 `confused`, `tearful`. `med_response` = `took_meds`, `refused_meds`,
 `no_meds_this_window`.
+
+**Correction.** An earlier version of this section listed `night_restlessness` among the
+chip-containment signals. It is not one and cannot be: `chip_selections` carries only those
+three groups. `night_restlessness` reads `resident_observation_logs.resident_state` at the
+`overnight` window against the settled states (`resting_in_bed`, `sleeping`), which is where
+that vocabulary actually lives. Chip containment covers `med_refusal_trend`,
+`behavior_change` and `meal_refusal_trend` only.
 
 **`composed_summary text NOT NULL`** on the same table, with a `BEFORE INSERT` trigger
 (`tr_resident_observation_logs_compose_summary`) that composes one from the row when the

@@ -13,7 +13,7 @@
     "smoke:sentry": "node scripts/agent-gates/sentry-smoke.mjs",
     "smoke:ui-v2-issues": "node scripts/agent-gates/ui-v2-issue-acceptance.mjs",
     "test": "vitest run && node scripts/care-events/verify-level-parity.mjs",
-    "test:edge": "deno test --quiet --config supabase/functions/deno.json supabase/functions/observation-escalation-engine/",
+    "test:edge": "deno test --quiet --config supabase/functions/deno.json supabase/functions/observation-escalation-engine/ supabase/functions/watchlist-signal-engine/",
     "test:watch": "vitest",
     "test:ui-v2": "vitest run src/design-system src/lib",
     "check:admin-shell": "node scripts/check-admin-shell-routes.mjs",

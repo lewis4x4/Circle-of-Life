@@ -6,7 +6,7 @@ import {
 import {
   SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
   type SafetyBoardFacilityScope,
-} from "@/lib/rounding/safety-board-display-copy";
+} from "@/lib/rounding/rounding-facility-scope-copy";
 
 export {
   EXECUTIVE_NO_ORGANIZATION_ON_PROFILE_COPY as INSIGHTS_BOARD_NO_ORGANIZATION_ON_PROFILE_COPY,

@@ -1,0 +1,47 @@
+-- Smart Rounding scheduled ticks, spec 25A section 9.
+--
+-- The repository holds no cron.schedule statement in any migration, and this
+-- file is deliberately not one either: a schedule that arrives with a migration
+-- starts firing against whichever project the migration lands on, including a
+-- staging rehearsal. Run these against the hosted project by hand, after the
+-- function is deployed and its secret is set, and never from a build.
+--
+-- Each part appends its own block. Nothing here is applied by any gate.
+--
+-- Before running any of it, confirm which project the CLI is linked to.
+-- Production and Haven HFO Staging are different buildings' worth of alerts.
+
+-- ---------------------------------------------------------------------------
+-- Part 5: watchlist-signal-engine
+--
+-- Evaluates every enabled Watchlist rule at every building in the organization,
+-- and queues the Acute push for anything newly in the Acute band.
+--
+-- Once an hour is the right cadence for this and not more often: every rule in
+-- the table measures over days, so a five minute tick would re-read the same
+-- spans twelve times an hour to reach the same answer, and the Acute push is
+-- stamped once per signal anyway. It is also idempotent, so a missed tick costs
+-- nothing but the delay.
+--
+-- Fill in the organization id, the function URL and the secret before running.
+-- The secret is the value of the WATCHLIST_SIGNAL_SECRET function secret; do
+-- not paste it into a migration, a commit or a ticket.
+-- ---------------------------------------------------------------------------
+-- select cron.schedule(
+--   'watchlist-signal-engine-hourly',
+--   '7 * * * *',
+--   $$
+--   select net.http_post(
+--     url     := '<project-functions-url>/watchlist-signal-engine',
+--     headers := jsonb_build_object(
+--                  'Content-Type',  'application/json',
+--                  'x-cron-secret', '<WATCHLIST_SIGNAL_SECRET>'),
+--     body    := jsonb_build_object('organization_id', '<organization-id>')
+--   );
+--   $$
+-- );
+
+-- To take it back off:
+-- select cron.unschedule('watchlist-signal-engine-hourly');
+
+-- To run one building once, without a schedule, add "facility_id" to the body.

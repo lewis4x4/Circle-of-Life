@@ -55,7 +55,7 @@ export const FACILITY_ROUTES = {
   watches: "/admin/rounding/watches",
   escalations: "/admin/rounding/escalations",
   integrity: "/admin/rounding/integrity",
-  safety: "/admin/rounding/safety",
+  safety: "/admin/rounding/watchlist",
   insurance: "/admin/insurance",
 } as const;
 

@@ -66,7 +66,7 @@ function NurseDashboardScope({ selectedFacilityId }: { selectedFacilityId: strin
         <StatCard title="Active Watches" value={brief.residentAssurance.activeWatches} icon={ShieldCheck} urgency="normal" subLabel="Residents under active watch" href="/admin/rounding/watches" />
         <StatCard title="Open Escalations" value={brief.residentAssurance.openEscalations} icon={AlertTriangle} urgency={brief.residentAssurance.openEscalations > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.openEscalations > 0 ? "Requires supervisor review" : "No active escalations"} href="/admin/rounding/escalations" />
         <StatCard title="Integrity Flags" value={brief.residentAssurance.openIntegrityFlags} icon={FileWarning} urgency={brief.residentAssurance.openIntegrityFlags > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.openIntegrityFlags > 0 ? "Late-entry review pending" : "Documentation lane clear"} href="/admin/rounding/integrity" />
-        <StatCard title="Critical Safety" value={brief.residentAssurance.criticalSafetyResidents} icon={Zap} urgency={brief.residentAssurance.criticalSafetyResidents > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.criticalSafetyResidents > 0 ? "Immediate attention needed" : "No critical safety scores"} href="/admin/rounding/safety" />
+        <StatCard title="Critical Safety" value={brief.residentAssurance.criticalSafetyResidents} icon={Zap} urgency={brief.residentAssurance.criticalSafetyResidents > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.criticalSafetyResidents > 0 ? "Immediate attention needed" : "No critical safety scores"} href="/admin/rounding/watchlist" />
       </div>
 
       {/* Quick Actions */}

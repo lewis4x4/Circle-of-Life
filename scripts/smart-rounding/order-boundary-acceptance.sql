@@ -21,6 +21,11 @@
 --   5. public.observation_compliance_for_range still reads honestly across all
 --      of it: every resident day expects the same projected windows whatever the
 --      orders did, and nothing is double counted
+--   6. a window's shift_key cannot be typed wrong, a legitimate shift rename
+--      still works, and a window whose shift has been retired reads as a named
+--      configuration defect rather than as a silent miss forever (M5)
+--   7. an order in a terminal status stops being in force, so it cannot go on
+--      reading as a resident's live expectation source (M7)
 --
 -- Run it against any database that has every migration applied:
 --
@@ -716,6 +721,373 @@ BEGIN
 
   INSERT INTO su_result (check_name, detail)
     VALUES ('case 5, compliance stays honest', format('every one of %s residents expects %s windows on %s, %s rows total, 0 no_cadence, none inflated by an order', v_residents, v_projected, v_date, v_rows));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 8. M5. A window's shift_key is a reference, not a string.
+--
+--    facility_cadence_windows.shift_key had a regex CHECK and nothing else, so
+--    `night` mistyped as `nights` took the window out of generation and left it
+--    in the compliance expectation: a permanent silent miss for every resident
+--    every day, with no task, no ladder, no alert, and a compliance number
+--    counting it against the building forever.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_facility CONSTANT uuid := '50990000-0000-4000-8000-000000000003';
+  v_window uuid;
+  v_override uuid;
+  v_shift text;
+  v_before integer;
+  v_after integer;
+  v_rejected integer := 0;
+BEGIN
+  SELECT
+    id,
+    shift_key INTO v_window,
+    v_shift
+  FROM
+    public.facility_cadence_windows
+  WHERE
+    facility_id = v_facility
+  ORDER BY
+    sort_order
+  LIMIT 1;
+
+  BEGIN
+    UPDATE
+      public.facility_cadence_windows
+    SET
+      shift_key = v_shift || 's'
+    WHERE
+      id = v_window;
+  EXCEPTION
+    WHEN foreign_key_violation THEN
+      v_rejected := v_rejected + 1;
+  END;
+
+  SELECT
+    id INTO v_override
+  FROM
+    public.facility_escalation_rung_shift_overrides
+  WHERE
+    facility_id = v_facility
+  LIMIT 1;
+
+  IF v_override IS NOT NULL THEN
+    BEGIN
+      UPDATE
+        public.facility_escalation_rung_shift_overrides
+      SET
+        shift_key = shift_key || 's'
+      WHERE
+        id = v_override;
+    EXCEPTION
+      WHEN foreign_key_violation THEN
+        v_rejected := v_rejected + 1;
+    END;
+  ELSE
+    v_rejected := v_rejected + 1;
+  END IF;
+
+  PERFORM
+    pg_temp.su_assert (v_rejected = 2, format('%s of 2 shift_key typos were rejected. A key that matches no shift takes the window out of generation and leaves it in the compliance expectation forever.', v_rejected));
+
+  -- A rename is a real operation the settings surface needs, so the foreign key
+  -- cascades rather than forbidding it.
+  SELECT
+    count(*) INTO v_before
+  FROM
+    public.facility_cadence_windows
+  WHERE
+    facility_id = v_facility
+    AND shift_key = v_shift;
+
+  UPDATE
+    public.facility_shift_definitions
+  SET
+    shift_key = v_shift || '_renamed'
+  WHERE
+    facility_id = v_facility
+    AND shift_key = v_shift;
+
+  SELECT
+    count(*) INTO v_after
+  FROM
+    public.facility_cadence_windows
+  WHERE
+    facility_id = v_facility
+    AND shift_key = v_shift || '_renamed';
+
+  PERFORM
+    pg_temp.su_assert (v_before > 0
+      AND v_after = v_before, format('renaming a shift moved %s of %s window(s) with it. A foreign key that makes a legitimate rename impossible is not an improvement on no foreign key.', v_after, v_before));
+
+  -- Put it back so the rest of the script sees the shift model it started with.
+  UPDATE
+    public.facility_shift_definitions
+  SET
+    shift_key = v_shift
+  WHERE
+    facility_id = v_facility
+    AND shift_key = v_shift || '_renamed';
+
+  -- And a shift that still owns windows cannot be hard deleted out from under
+  -- them.
+  BEGIN
+    DELETE FROM public.facility_shift_definitions
+    WHERE facility_id = v_facility
+      AND shift_key = v_shift;
+    PERFORM
+      pg_temp.su_assert (FALSE, 'a shift definition that still owns cadence windows was hard deleted, leaving every one of them pointing at nothing');
+  EXCEPTION
+    WHEN foreign_key_violation THEN
+      NULL;
+  END;
+
+  INSERT INTO su_result (check_name, detail)
+    VALUES ('case 6, shift_key is a reference', format('2 of 2 typos rejected, a rename carried %s window(s) with it, a hard delete refused', v_before));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9. M5, continued. A retired shift is named, not lost.
+--
+--    The foreign key makes an unmatched key impossible. It does not stop a shift
+--    being deactivated or soft deleted, and public.facility_shift_window_at then
+--    refuses to resolve it while
+--    public.facility_observation_windows_for_version keeps projecting its
+--    windows. The compliance read now says so.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_facility CONSTANT uuid := '50990000-0000-4000-8000-000000000003';
+  v_date date;
+  v_shift text;
+  v_orphaned integer;
+  v_expected_orphans integer;
+  v_still_expected integer;
+  v_nothing_will_happen integer;
+  v_generator_sees integer;
+BEGIN
+  SELECT
+    (now() AT TIME ZONE 'America/New_York')::date INTO v_date;
+
+  -- Retire the shift that owns the fewest of today's windows, so the assertion
+  -- below is about a subset rather than about everything.
+  SELECT
+    w.shift_key INTO v_shift
+  FROM
+    public.facility_observation_windows_for_date (v_facility, v_date) w
+  GROUP BY
+    w.shift_key
+  ORDER BY
+    count(*),
+    w.shift_key
+  LIMIT 1;
+
+  SELECT
+    count(*) INTO v_expected_orphans
+  FROM
+    public.facility_observation_windows_for_date (v_facility, v_date) w
+  WHERE
+    w.shift_key = v_shift;
+
+  UPDATE
+    public.facility_shift_definitions
+  SET
+    active = FALSE
+  WHERE
+    facility_id = v_facility
+    AND shift_key = v_shift;
+
+  -- The generator's own read drops them silently. That is the defect, restated
+  -- here so the assertion below is clearly about the other half of it.
+  SELECT
+    count(*) INTO v_generator_sees
+  FROM
+    public.facility_next_shift_observation_windows (v_facility, now()) w
+  WHERE
+    w.shift_key = v_shift;
+
+  -- Every window on the retired shift that has no task and no covering order
+  -- must be named. Those that do have one rank above orphaned_shift on purpose:
+  -- a task on the board is workable and an order means the resident is being
+  -- looked at more often, and in neither case is the operator's problem the
+  -- shift.
+  SELECT
+    count(*) FILTER (WHERE c.expectation_source = 'orphaned_shift'),
+    count(*),
+    count(*) FILTER (WHERE c.task_id IS NULL
+      AND c.covered_by_monitoring_order_id IS NULL) INTO v_orphaned,
+    v_still_expected,
+    v_nothing_will_happen
+  FROM
+    public.observation_compliance_for_range (v_facility, v_date, v_date) c
+  WHERE
+    c.shift_key = v_shift;
+
+  PERFORM
+    pg_temp.su_assert (v_still_expected > 0, 'retiring a shift silently removed its windows from the compliance expectation; the expectation is the thing that must not move');
+  PERFORM
+    pg_temp.su_assert (v_nothing_will_happen > 0, 'the fixture left no window on the retired shift without a task or an order, so this assertion would pass on an unfixed build');
+  PERFORM
+    pg_temp.su_assert (v_orphaned = v_nothing_will_happen, format('%s of the %s expected window(s) on the retired shift that carry no task and no covering order read as a named configuration defect. The rest read as ordinary missed checks, and the building is marked down forever for windows nothing will ever generate.', v_orphaned, v_nothing_will_happen));
+  PERFORM
+    pg_temp.su_assert (v_generator_sees = 0, 'the generator still sees a retired shift, so this fixture is not reproducing the defect');
+
+  UPDATE
+    public.facility_shift_definitions
+  SET
+    active = TRUE
+  WHERE
+    facility_id = v_facility
+    AND shift_key = v_shift;
+
+  INSERT INTO su_result (check_name, detail)
+    VALUES ('case 6b, a retired shift is named', format('shift %s retired: the generator projects 0 of its windows; of the %s expected rows on that shift, all %s that carry no task and no covering order read as orphaned_shift rather than as missed checks', v_shift, v_still_expected, v_orphaned));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 10. M7. An order in a terminal status stops being in force.
+--
+--     `completed` is a legal status nothing in the module writes and the update
+--     policy lets a facility_admin write. The compliance read keyed on
+--     timestamps alone, so an open ended order marked completed had no end date
+--     and no cancellation, never closed, generated a fresh coverage day every
+--     day forever, and went on reading as that resident's live expectation
+--     source long after it had stopped.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := '50990000-0000-4000-8000-000000000001';
+  v_entity CONSTANT uuid := '50990000-0000-4000-8000-000000000002';
+  v_facility CONSTANT uuid := '50990000-0000-4000-8000-000000000003';
+  v_admin CONSTANT uuid := '50990000-0000-4000-8000-000000000004';
+  v_resident CONSTANT uuid := '50990000-0000-4000-8000-0dd000000006';
+  v_order uuid;
+  v_future date;
+  v_covered_before integer;
+  v_covered_after integer;
+  v_closed timestamptz;
+  v_refused boolean := FALSE;
+  v_terminal text;
+BEGIN
+  SELECT
+    ((now() + interval '2 days') AT TIME ZONE 'America/New_York')::date INTO v_future;
+
+  -- An open ended order. Review date rather than end date, which is the shape
+  -- the table insists on and the shape the defect needed.
+  INSERT INTO public.resident_monitoring_orders (organization_id, entity_id, facility_id, resident_id, interval_minutes, starts_at, ends_at, review_due_at, ordered_by_type, ordered_by_name, order_received_as, reason_category, reason_note, entered_by, status)
+    VALUES (v_org, v_entity, v_facility, v_resident, 60, now() - interval '1 hour', NULL, now() + interval '5 days', 'facility_nurse', 'Ordering party', 'verbal', 'change_in_condition', 'Open ended order, later marked completed by hand.', v_admin, 'active')
+  RETURNING
+    id INTO v_order;
+
+  SELECT
+    count(*) INTO v_covered_before
+  FROM
+    public.observation_compliance_for_range (v_facility, v_future, v_future) c
+  WHERE
+    c.resident_id = v_resident
+    AND c.expectation_source = 'monitoring_order';
+  PERFORM
+    pg_temp.su_assert (v_covered_before > 0, 'an active open ended order should be this resident''s expectation source two days out; the fixture is not reproducing the defect');
+
+  -- What a facility administrator can do through the update policy today.
+  UPDATE
+    public.resident_monitoring_orders
+  SET
+    status = 'completed'
+  WHERE
+    id = v_order;
+
+  SELECT
+    closed_at INTO v_closed
+  FROM
+    public.resident_monitoring_orders
+  WHERE
+    id = v_order;
+  PERFORM
+    pg_temp.su_assert (v_closed IS NOT NULL, 'an order moved into a terminal status carries no closing instant, so nothing can tell when it stopped');
+
+  SELECT
+    count(*) INTO v_covered_after
+  FROM
+    public.observation_compliance_for_range (v_facility, v_future, v_future) c
+  WHERE
+    c.resident_id = v_resident
+    AND c.expectation_source = 'monitoring_order';
+  PERFORM
+    pg_temp.su_assert (v_covered_after = 0, format('%s window(s) two days out still read as covered by an order whose status is completed. It has no end date and no cancellation, so on the timestamps alone it never closes and goes on generating a fresh coverage day every day forever.', v_covered_after));
+
+  -- And the resident is still expected to be looked at: closing the order
+  -- changes what satisfies the day, never what the day expects.
+  PERFORM
+    pg_temp.su_assert ((
+      SELECT
+        count(*)
+      FROM public.observation_compliance_for_range (v_facility, v_future, v_future) c
+      WHERE
+        c.resident_id = v_resident) > 0, 'closing the order removed the resident''s day from the compliance read entirely');
+
+  -- The hole cannot be reopened by hand, on any terminal status. A writer who
+  -- tries to null the closing instant does not get refused, they get it stamped
+  -- back: the trigger is a BEFORE trigger, so it runs ahead of the CHECK and
+  -- corrects the row rather than rejecting the statement. That is the stronger
+  -- of the two outcomes, because it means no writer anywhere has to remember.
+  -- The CHECK behind it is the backstop for the day somebody drops the trigger.
+  FOREACH v_terminal IN ARRAY ARRAY['completed', 'expired', 'cancelled'] LOOP
+    UPDATE
+      public.resident_monitoring_orders
+    SET
+      status = v_terminal,
+      closed_at = NULL,
+      cancelled_by = CASE WHEN v_terminal = 'cancelled' THEN
+        v_admin
+      END,
+      cancelled_at = CASE WHEN v_terminal = 'cancelled' THEN
+        now()
+      END,
+      cancel_reason = CASE WHEN v_terminal = 'cancelled' THEN
+        'Synthetic terminal status probe'
+      END
+    WHERE
+      id = v_order;
+
+    SELECT
+      closed_at INTO v_closed
+    FROM
+      public.resident_monitoring_orders
+    WHERE
+      id = v_order;
+    PERFORM
+      pg_temp.su_assert (v_closed IS NOT NULL, format('an order was left as %s with no closing instant. That is the state that never closes and goes on reading as a live expectation source forever.', v_terminal));
+    PERFORM
+      pg_temp.su_assert (haven.monitoring_order_in_force_until (v_terminal, NULL, NULL, v_closed) < 'infinity'::timestamptz, format('an order in status %s still reads as in force until infinity', v_terminal));
+  END LOOP;
+
+  -- And the CHECK really is there behind the trigger.
+  v_refused := FALSE;
+  BEGIN
+    ALTER TABLE public.resident_monitoring_orders DISABLE TRIGGER tr_resident_monitoring_orders_closure;
+    UPDATE
+      public.resident_monitoring_orders
+    SET
+      closed_at = NULL
+    WHERE
+      id = v_order;
+  EXCEPTION
+    WHEN check_violation THEN
+      v_refused := TRUE;
+  END;
+  ALTER TABLE public.resident_monitoring_orders ENABLE TRIGGER tr_resident_monitoring_orders_closure;
+  PERFORM
+    pg_temp.su_assert (v_refused, 'with the closure trigger disabled, a terminal order accepted a null closing instant. The CHECK constraint behind the trigger is missing.');
+
+  INSERT INTO su_result (check_name, detail)
+    VALUES ('case 7, a terminal order stops', format('an open ended order read as the expectation source for %s window(s) two days out; marking it completed stamped a closing instant and took it to 0; completed, expired and cancelled each get the instant stamped back if a writer nulls it, and the CHECK refuses it with the trigger disabled', v_covered_before));
 END
 $$;
 

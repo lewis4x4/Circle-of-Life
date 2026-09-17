@@ -675,17 +675,39 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
--- 7. The bridge exists and is idle, which is the correct state at this branch
---    point: nothing inserts into resident_watch_instances yet.
+-- 7. The care event bridge, exercised by inserting a watch instance directly,
+--    because nothing else writes that table yet.
+--
+--    M11. The bridge used to INSERT straight into resident_monitoring_orders and
+--    skip every side effect the create command performs: no order tasks until
+--    the next generator tick, nobody notified, and the resident's standard
+--    cadence still running underneath, which doubles the board and runs the
+--    standard tasks to overdue on the ladder for checks the order replaced. It
+--    also attributed the order to whichever organization administrator sorted
+--    first by created_at and hardcoded a generic nurse as the ordering party.
+--
+--    Both entry points now go through haven.place_monitoring_order, so a bridged
+--    order is indistinguishable in effect from one a nurse entered, and the
+--    ordering party is whoever the watch instance names and nobody otherwise.
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
   v_org CONSTANT uuid := '5c3f0000-0000-4000-8000-000000000001';
   v_facility CONSTANT uuid := '5c3f0000-0000-4000-8000-000000000003';
+  v_admin CONSTANT uuid := '5c3f0000-0000-4000-8000-000000000007';
   v_resident uuid := gen_random_uuid();
+  v_named_resident uuid := gen_random_uuid();
+  v_version uuid := '5c3f0000-0000-4000-8000-00000000000a';
   v_watch uuid;
+  v_named_watch uuid;
   v_orders integer;
   v_second integer;
+  v_order_id uuid;
+  v_order_tasks integer;
+  v_notifications integer;
+  v_excused integer;
+  v_name text;
+  v_entered uuid;
 BEGIN
   PERFORM
     pg_temp.mo_assert (EXISTS (
@@ -699,6 +721,29 @@ BEGIN
 
   INSERT INTO public.residents (id, facility_id, organization_id, first_name, last_name, status, gender)
     VALUES (v_resident, v_facility, v_org, 'Bridged', 'Synthetic', 'active', 'prefer_not_to_say');
+
+  -- Standard windows already on the board for this resident, so the test can
+  -- prove a bridged order takes the ones it covers off.
+  INSERT INTO public.resident_observation_tasks (organization_id, facility_id, resident_id, cadence_version_id, window_key, service_date, scheduled_for, due_at, grace_ends_at, status)
+  SELECT
+    v_org,
+    v_facility,
+    v_resident,
+    v_version,
+    w.window_key,
+    ((now() + interval '36 hours') AT TIME ZONE 'America/New_York')::date,
+    w.window_opens_at_utc,
+    w.due_at_utc,
+    w.window_closes_at_utc,
+    'upcoming'
+  FROM
+    public.facility_observation_windows_for_date (v_facility, ((now() + interval '36 hours') AT TIME ZONE 'America/New_York')::date) w;
+
+  -- No session, so nothing but the watch instance itself can name anybody. This
+  -- is the shape a care event trigger fires in.
+  PERFORM
+    set_config('request.jwt.claims', '{}', TRUE);
+
   INSERT INTO public.resident_watch_instances (organization_id, facility_id, resident_id, triggered_by_type, starts_at, status)
     VALUES (v_org, v_facility, v_resident, 'fall_event', now(), 'active')
   RETURNING
@@ -711,11 +756,85 @@ BEGIN
   WHERE
     source_watch_instance_id = v_watch
     AND reason_category = 'post_fall'
-    AND ordered_by_type = 'facility_nurse'
+    AND ordered_by_type = 'care_event'
     AND order_received_as = 'written_order'
     AND status = 'active';
   PERFORM
     pg_temp.mo_assert (v_orders = 1, 'the bridge should have created exactly one order from the watch instance, got ' || v_orders);
+
+  SELECT
+    id,
+    ordered_by_name,
+    entered_by INTO v_order_id,
+    v_name,
+    v_entered
+  FROM
+    public.resident_monitoring_orders
+  WHERE
+    source_watch_instance_id = v_watch;
+
+  -- This watch instance names nobody, so the order names nobody. An
+  -- unattributed order is better than a misattributed one.
+  PERFORM
+    pg_temp.mo_assert (v_name IS NULL, format('the bridge invented an ordering party: %s. The watch instance named no one.', v_name));
+  PERFORM
+    pg_temp.mo_assert (v_entered IS NULL, format('with no session and no approver, the bridge still attributed the order to user %s, who never saw it. The old fallback picked whichever organization administrator sorted first by created_at.', v_entered));
+
+  -- Every side effect the create command performs, performed here too.
+  SELECT
+    count(*) INTO v_order_tasks
+  FROM
+    public.resident_observation_tasks
+  WHERE
+    monitoring_order_id = v_order_id;
+  PERFORM
+    pg_temp.mo_assert (v_order_tasks > 0, 'a bridged order wrote no order tasks. The resident would have nothing on the board until the next generator tick.');
+
+  SELECT
+    count(*) INTO v_notifications
+  FROM
+    public.resident_monitoring_order_notifications
+  WHERE
+    monitoring_order_id = v_order_id;
+  PERFORM
+    pg_temp.mo_assert (v_notifications > 0, 'a bridged order queued no notification. Nobody is told a resident went onto elevated observation.');
+
+  SELECT
+    count(*) INTO v_excused
+  FROM
+    public.resident_observation_tasks
+  WHERE
+    resident_id = v_resident
+    AND window_key IS NOT NULL
+    AND status = 'excused';
+  PERFORM
+    pg_temp.mo_assert (v_excused > 0, 'a bridged order left the resident''s standard cadence running underneath it. Both boards would be worked, and the standard tasks run to overdue on the escalation ladder for checks the order replaced.');
+
+  -- And where the watch instance does name somebody, the order says so.
+  INSERT INTO public.residents (id, facility_id, organization_id, first_name, last_name, status, gender)
+    VALUES (v_named_resident, v_facility, v_org, 'Attributed', 'Synthetic', 'active', 'prefer_not_to_say');
+  INSERT INTO public.resident_watch_instances (organization_id, facility_id, resident_id, triggered_by_type, starts_at, status, approved_by)
+    VALUES (v_org, v_facility, v_named_resident, 'skin_event', now(), 'active', v_admin)
+  RETURNING
+    id INTO v_named_watch;
+
+  SELECT
+    ordered_by_name,
+    entered_by INTO v_name,
+    v_entered
+  FROM
+    public.resident_monitoring_orders
+  WHERE
+    source_watch_instance_id = v_named_watch;
+  PERFORM
+    pg_temp.mo_assert (v_name = (
+        SELECT
+          full_name
+        FROM public.user_profiles
+        WHERE
+          id = v_admin), format('a watch instance approved by a named person produced ordered_by_name %s', COALESCE(v_name, 'null')));
+  PERFORM
+    pg_temp.mo_assert (v_entered = v_admin, 'the approver of the watch instance should be the one the order is entered by');
 
   -- A second watch instance for the same resident must not create a second
   -- active order.
@@ -733,7 +852,7 @@ BEGIN
     pg_temp.mo_assert (v_second = 1, 'one active order per resident, got ' || v_second);
 
   INSERT INTO mo_result (check_name, detail)
-    VALUES ('watch bridge', 'a watch instance creates one facility_nurse order with the reason derived from its source; a second instance for the same resident creates none');
+    VALUES ('watch bridge', format('a watch instance creates one care_event order with the reason derived from its source, %s order task(s), %s queued notification(s) and %s excused standard window(s); it names nobody when the source named nobody and names the approver when it did; a second instance for the same resident creates none', v_order_tasks, v_notifications, v_excused));
 END
 $$;
 

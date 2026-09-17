@@ -10,7 +10,7 @@ import {
   resolveInsightsBoardOrganizationGapMessage,
   INSIGHTS_BOARD_NO_ORGANIZATION_ON_PROFILE_COPY,
 } from "./insights-board-page-state";
-import { SAFETY_BOARD_NO_FACILITY_SCOPE_COPY } from "./safety-board-display-copy";
+import { SAFETY_BOARD_NO_FACILITY_SCOPE_COPY } from "./rounding-facility-scope-copy";
 
 describe("deriveInsightsBoardState", () => {
   it("requires facility scope before any load state", () => {

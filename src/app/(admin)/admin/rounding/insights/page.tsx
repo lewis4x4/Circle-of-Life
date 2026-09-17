@@ -43,7 +43,7 @@ import {
   formatInsightsBoardNoInsightsEmptyTitle,
   resolveSafetyBoardFacilityScope,
   SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
-} from "@/lib/rounding/safety-board-display-copy";
+} from "@/lib/rounding/rounding-facility-scope-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";

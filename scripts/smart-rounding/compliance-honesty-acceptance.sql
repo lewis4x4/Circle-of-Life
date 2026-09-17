@@ -712,6 +712,121 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 7b. M8. A closed day does not change when a resident record is retired.
+--
+-- The occupancy source and the resolved join both filtered residents on
+-- deleted_at, so soft deleting a resident took their whole observation history
+-- out of this function. A past date that had already been closed and reported
+-- recomputed to a smaller number. Note the direction: the recorded misses
+-- disappear, the satisfied windows disappear with them, and the ratio moves up.
+-- An error that always flatters the facility is the worst kind in this module.
+--
+-- Read as the owner, which is how a report, an export and the nightly job read
+-- it. The residents SELECT policy carries its own deleted_at filter, so a signed
+-- in caller loses the occupancy-only days regardless; what must survive for them
+-- is every day that carries real task rows, and that is asserted below too.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_facility CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000003';
+  v_resident CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000004';
+  v_day date;
+  v_expected_before integer;
+  v_satisfied_before integer;
+  v_expected_after integer;
+  v_satisfied_after integer;
+  v_tasks integer;
+  v_evidenced integer;
+BEGIN
+  -- A past day that was already reported on, with real task rows behind it so
+  -- the assertion is about a closed record rather than about a projection.
+  v_day := ((now() - interval '3 days') AT TIME ZONE 'America/New_York')::date;
+
+  INSERT INTO public.resident_observation_tasks (organization_id, facility_id, resident_id, cadence_version_id, window_key, service_date, scheduled_for, due_at, grace_ends_at, status)
+  SELECT
+    'c0de0000-0000-4000-8000-000000000001',
+    v_facility,
+    v_resident,
+    w.cadence_version_id,
+    w.window_key,
+    v_day,
+    w.window_opens_at_utc,
+    w.due_at_utc,
+    w.window_closes_at_utc,
+    'missed'
+  FROM
+    public.facility_observation_windows_for_date (v_facility, v_day) w
+  ON CONFLICT
+    DO NOTHING;
+
+  SELECT
+    count(*) INTO v_tasks
+  FROM
+    public.resident_observation_tasks
+  WHERE
+    resident_id = v_resident
+    AND service_date = v_day;
+  PERFORM
+    pg_temp.ch_assert (v_tasks > 0, 'the fixture needs a closed day with real task rows');
+
+  SELECT
+    count(*),
+    count(*) FILTER (WHERE satisfied) INTO v_expected_before,
+    v_satisfied_before
+  FROM
+    public.observation_compliance_for_range (v_facility, v_day, v_day)
+  WHERE
+    resident_id = v_resident;
+  PERFORM
+    pg_temp.ch_assert (v_expected_before > 0, 'the fixture resident has no expectation on the closed day');
+
+  -- An ordinary record retirement, nothing to do with compliance.
+  UPDATE
+    public.residents
+  SET
+    deleted_at = now()
+  WHERE
+    id = v_resident;
+
+  SELECT
+    count(*),
+    count(*) FILTER (WHERE satisfied) INTO v_expected_after,
+    v_satisfied_after
+  FROM
+    public.observation_compliance_for_range (v_facility, v_day, v_day)
+  WHERE
+    resident_id = v_resident;
+
+  PERFORM
+    pg_temp.ch_assert (v_expected_after = v_expected_before, format('retiring a resident record changed a closed day from %s expected windows to %s. Those are recorded misses on a day that was already reported, and they went missing in the direction that flatters the building.', v_expected_before, v_expected_after));
+  PERFORM
+    pg_temp.ch_assert (v_satisfied_after = v_satisfied_before, format('retiring a resident record changed a closed day from %s satisfied windows to %s', v_satisfied_before, v_satisfied_after));
+
+  -- The half that has to survive row level security as well: the day is carried
+  -- by its own task rows, which are scoped by facility and not by resident.
+  SELECT
+    count(*) INTO v_evidenced
+  FROM
+    public.observation_compliance_for_range (v_facility, v_day, v_day)
+  WHERE
+    resident_id = v_resident
+    AND task_id IS NOT NULL;
+  PERFORM
+    pg_temp.ch_assert (v_evidenced = v_tasks, format('%s of %s task rows on the closed day are still matched to their window after the retirement', v_evidenced, v_tasks));
+
+  UPDATE
+    public.residents
+  SET
+    deleted_at = NULL
+  WHERE
+    id = v_resident;
+
+  INSERT INTO ch_result (check_name, detail)
+    VALUES ('M8: a closed day does not change', format('on %s the resident reads %s/%s before the record is retired and %s/%s after, with all %s task rows still matched', v_day, v_satisfied_before, v_expected_before, v_satisfied_after, v_expected_after, v_evidenced));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
 -- 8. The contract refuses an impossible question rather than answering it with
 --    silence, which is the same rule the rest of this file enforces.
 -- ---------------------------------------------------------------------------

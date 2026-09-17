@@ -13337,18 +13337,19 @@ export type Database = {
           cancel_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
+          closed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           document_path: string | null
           ends_at: string | null
-          entered_by: string
+          entered_by: string | null
           entity_id: string | null
           facility_id: string
           id: string
           interval_minutes: number
           order_received_as: string
-          ordered_by_name: string
+          ordered_by_name: string | null
           ordered_by_type: string
           organization_id: string
           reason_category: string
@@ -13365,18 +13366,19 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           document_path?: string | null
           ends_at?: string | null
-          entered_by: string
+          entered_by?: string | null
           entity_id?: string | null
           facility_id: string
           id?: string
           interval_minutes: number
           order_received_as: string
-          ordered_by_name: string
+          ordered_by_name?: string | null
           ordered_by_type: string
           organization_id: string
           reason_category: string
@@ -13393,18 +13395,19 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           document_path?: string | null
           ends_at?: string | null
-          entered_by?: string
+          entered_by?: string | null
           entity_id?: string | null
           facility_id?: string
           id?: string
           interval_minutes?: number
           order_received_as?: string
-          ordered_by_name?: string
+          ordered_by_name?: string | null
           ordered_by_type?: string
           organization_id?: string
           reason_category?: string
@@ -17563,7 +17566,411 @@ export type Database = {
         ]
       }
     }
+      watchlist_band_rules: {
+        Row: {
+          band_key: string
+          band_label: string
+          band_rank: number
+          counts_data_quality: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          enabled: boolean
+          facility_id: string | null
+          id: string
+          jurisdiction: string | null
+          min_open_days: number | null
+          min_open_signal_count: number
+          min_severity_weight: number
+          organization_id: string
+          rule_key: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          band_key: string
+          band_label: string
+          band_rank: number
+          counts_data_quality?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          facility_id?: string | null
+          id?: string
+          jurisdiction?: string | null
+          min_open_days?: number | null
+          min_open_signal_count?: number
+          min_severity_weight?: number
+          organization_id: string
+          rule_key: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          band_key?: string
+          band_label?: string
+          band_rank?: number
+          counts_data_quality?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          facility_id?: string | null
+          id?: string
+          jurisdiction?: string | null
+          min_open_days?: number | null
+          min_open_signal_count?: number
+          min_severity_weight?: number
+          organization_id?: string
+          rule_key?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      watchlist_signal_dispositions: {
+        Row: {
+          acted_at: string
+          acted_by: string | null
+          acted_by_role: string | null
+          actor_kind: string
+          created_at: string
+          facility_id: string
+          from_status: string | null
+          id: string
+          ledger_seq: number
+          note: string | null
+          organization_id: string
+          resident_id: string
+          signal_instance_id: string
+          signal_key: string
+          to_status: string
+        }
+        Insert: {
+          acted_at?: string
+          acted_by?: string | null
+          acted_by_role?: string | null
+          actor_kind: string
+          created_at?: string
+          facility_id: string
+          from_status?: string | null
+          id?: string
+          ledger_seq?: number
+          note?: string | null
+          organization_id: string
+          resident_id: string
+          signal_instance_id: string
+          signal_key: string
+          to_status: string
+        }
+        Update: {
+          acted_at?: string
+          acted_by?: string | null
+          acted_by_role?: string | null
+          actor_kind?: string
+          created_at?: string
+          facility_id?: string
+          from_status?: string | null
+          id?: string
+          ledger_seq?: number
+          note?: string | null
+          organization_id?: string
+          resident_id?: string
+          signal_instance_id?: string
+          signal_key?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
+      watchlist_signal_instances: {
+        Row: {
+          acute_notified_at: string | null
+          cleared_at: string | null
+          cleared_reason: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          disposition_note: string | null
+          entity_id: string | null
+          evidence: Json
+          facility_id: string
+          first_detected_at: string
+          id: string
+          last_evaluated_at: string
+          observed_count: number
+          organization_id: string
+          owner_user_id: string | null
+          resident_id: string
+          severity_class: string
+          severity_weight: number
+          signal_key: string
+          signal_rule_id: string
+          source_kind: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          acute_notified_at?: string | null
+          cleared_at?: string | null
+          cleared_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          disposition_note?: string | null
+          entity_id?: string | null
+          evidence?: Json
+          facility_id: string
+          first_detected_at?: string
+          id?: string
+          last_evaluated_at?: string
+          observed_count?: number
+          organization_id: string
+          owner_user_id?: string | null
+          resident_id: string
+          severity_class: string
+          severity_weight: number
+          signal_key: string
+          signal_rule_id: string
+          source_kind: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          acute_notified_at?: string | null
+          cleared_at?: string | null
+          cleared_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          disposition_note?: string | null
+          entity_id?: string | null
+          evidence?: Json
+          facility_id?: string
+          first_detected_at?: string
+          id?: string
+          last_evaluated_at?: string
+          observed_count?: number
+          organization_id?: string
+          owner_user_id?: string | null
+          resident_id?: string
+          severity_class?: string
+          severity_weight?: number
+          signal_key?: string
+          signal_rule_id?: string
+          source_kind?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      watchlist_signal_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          facility_id: string
+          id: string
+          notification_route_id: string | null
+          organization_id: string
+          send_after: string
+          sent_at: string | null
+          signal_instance_id: string
+          skip_reason: string | null
+          status: string
+          target_phone: string | null
+          target_role: string
+          target_user_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          facility_id: string
+          id?: string
+          notification_route_id?: string | null
+          organization_id: string
+          send_after?: string
+          sent_at?: string | null
+          signal_instance_id: string
+          skip_reason?: string | null
+          status: string
+          target_phone?: string | null
+          target_role: string
+          target_user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          facility_id?: string
+          id?: string
+          notification_route_id?: string | null
+          organization_id?: string
+          send_after?: string
+          sent_at?: string | null
+          signal_instance_id?: string
+          skip_reason?: string | null
+          status?: string
+          target_phone?: string | null
+          target_role?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      watchlist_signal_rules: {
+        Row: {
+          baseline_days: number | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string
+          enabled: boolean
+          facility_id: string | null
+          id: string
+          jurisdiction: string | null
+          label: string
+          lookback_days: number
+          organization_id: string
+          secondary_lookback_days: number | null
+          secondary_threshold_percent: number | null
+          severity_class: string
+          severity_weight: number
+          signal_key: string
+          sort_order: number
+          source_filter: Json
+          source_kind: string
+          threshold_count: number
+          threshold_percent: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          baseline_days?: number | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description: string
+          enabled?: boolean
+          facility_id?: string | null
+          id?: string
+          jurisdiction?: string | null
+          label: string
+          lookback_days: number
+          organization_id: string
+          secondary_lookback_days?: number | null
+          secondary_threshold_percent?: number | null
+          severity_class: string
+          severity_weight: number
+          signal_key: string
+          sort_order?: number
+          source_filter?: Json
+          source_kind: string
+          threshold_count: number
+          threshold_percent?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          baseline_days?: number | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string
+          enabled?: boolean
+          facility_id?: string | null
+          id?: string
+          jurisdiction?: string | null
+          label?: string
+          lookback_days?: number
+          organization_id?: string
+          secondary_lookback_days?: number | null
+          secondary_threshold_percent?: number | null
+          severity_class?: string
+          severity_weight?: number
+          signal_key?: string
+          sort_order?: number
+          source_filter?: Json
+          source_kind?: string
+          threshold_count?: number
+          threshold_percent?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
     Views: {
+      v_facility_risk_index: {
+        Row: {
+          census: number | null
+          critical_signal_count: number | null
+          data_quality_signal_count: number | null
+          elevated_signal_count: number | null
+          facility_id: string | null
+          informational_signal_count: number | null
+          open_signal_count: number | null
+          organization_id: string | null
+          residents_with_open_signals: number | null
+          risk_index: number | null
+          service_date: string | null
+        }
+        Relationships: []
+      }
+      v_watchlist_facility: {
+        Row: {
+          band_key: string | null
+          band_label: string | null
+          band_rank: number | null
+          days_open: number | null
+          disposition_note: string | null
+          evidence: Json | null
+          facility_id: string | null
+          facility_name: string | null
+          first_detected_at: string | null
+          last_evaluated_at: string | null
+          observed_count: number | null
+          open_signal_count: number | null
+          organization_id: string | null
+          owner_name: string | null
+          owner_user_id: string | null
+          resident_first_name: string | null
+          resident_id: string | null
+          resident_last_name: string | null
+          resident_preferred_name: string | null
+          room_number: string | null
+          severity_class: string | null
+          signal_description: string | null
+          signal_instance_id: string | null
+          signal_key: string | null
+          signal_label: string | null
+          source_kind: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
+      v_watchlist_portfolio: {
+        Row: {
+          acute_resident_count: number | null
+          data_quality_signal_count: number | null
+          facility_id: string | null
+          facility_name: string | null
+          open_acute_signal_count: number | null
+          open_signal_count: number | null
+          organization_id: string | null
+          residents_on_watchlist: number | null
+          risk_index_latest: number | null
+          risk_index_prior_avg: number | null
+          risk_index_recent_avg: number | null
+          trend_direction: string | null
+          worst_band_key: string | null
+          worst_band_label: string | null
+          worst_band_rank: number | null
+        }
+        Relationships: []
+      }
       ar_aging_facility_daily: {
         Row: {
           balance_due_cents: number | null

@@ -27,6 +27,18 @@ BEGIN
 END
 $$;
 
+-- A note on how the source matching below is written.
+--
+-- Every one of these tests uses strpos, never LIKE. Underscore is a single
+-- character wildcard in LIKE, and every identifier in this module has one, so
+-- `prosrc LIKE '%orphaned_shift%'` matches the words "orphaned shift" in a
+-- comment and passes against a body that no longer contains the code. That is
+-- exactly what happened while this file was being written: the assertion held
+-- green against a deliberately broken build. A check that reads like protection
+-- and is not is worse than no check, which is the COL-391 lesson in
+-- review_col37_security_advisor.sql. strpos is an exact substring search and has
+-- no wildcards at all.
+
 -- ---------------------------------------------------------------------------
 -- 1. public.observation_compliance_for_range runs on the caller's authority.
 --
@@ -64,7 +76,7 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
--- 2. anon holds nothing on any of the module's eleven tables.
+-- 2. anon holds nothing on any of the module's sixteen tables.
 --
 -- anon is the publishable key. Every one of these tables carries either
 -- resident clinical instructions, the ladder that decides who gets woken up, or
@@ -72,7 +84,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_tables CONSTANT text[] := ARRAY['facility_shift_definitions', 'facility_cadence_versions', 'facility_cadence_windows', 'resident_monitoring_orders', 'resident_monitoring_order_events', 'resident_monitoring_order_notifications', 'facility_escalation_versions', 'facility_escalation_rungs', 'facility_escalation_rung_shift_overrides', 'observation_escalation_dispatches', 'observation_escalation_deliveries'];
+  c_tables CONSTANT text[] := ARRAY['facility_shift_definitions', 'facility_cadence_versions', 'facility_cadence_windows', 'resident_monitoring_orders', 'resident_monitoring_order_events', 'resident_monitoring_order_notifications', 'facility_escalation_versions', 'facility_escalation_rungs', 'facility_escalation_rung_shift_overrides', 'observation_escalation_dispatches', 'observation_escalation_deliveries', 'watchlist_signal_rules', 'watchlist_band_rules', 'watchlist_signal_instances', 'watchlist_signal_dispositions', 'watchlist_signal_notifications'];
   v_table text;
   v_anon text;
   v_rls boolean;
@@ -116,7 +128,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_service_only CONSTANT text[] := ARRAY['public.record_cadence_observation_tasks(jsonb)', 'public.generate_monitoring_order_tasks(uuid,timestamptz)', 'public.record_observation_escalation_rung(uuid,text,timestamptz)', 'public.expire_monitoring_orders()', 'public.advance_observation_task_lapse(uuid,uuid,timestamptz)', 'public.ensure_facility_observation_defaults(uuid)', 'public.fn_facilities_seed_observation_defaults()', 'public.resolve_observation_task_assignees(uuid,date,text,uuid[])', 'public.record_observation_staffing_gap(uuid,text,date)', 'public.observation_windows_under_monitoring_order(uuid,timestamptz)', 'public.reinstate_standard_observation_windows(uuid,timestamptz)', 'haven.observation_escalation_recipients(uuid,uuid,uuid,uuid)', 'haven.notify_monitoring_order_created(uuid)'];
+  c_service_only CONSTANT text[] := ARRAY['public.record_cadence_observation_tasks(jsonb)', 'public.generate_monitoring_order_tasks(uuid,timestamptz)', 'public.record_observation_escalation_rung(uuid,text,timestamptz)', 'public.expire_monitoring_orders()', 'public.advance_observation_task_lapse(uuid,uuid,timestamptz)', 'public.ensure_facility_observation_defaults(uuid)', 'public.fn_facilities_seed_observation_defaults()', 'public.resolve_observation_task_assignees(uuid,date,text,uuid[])', 'public.record_observation_staffing_gap(uuid,text,date)', 'public.observation_windows_under_monitoring_order(uuid,timestamptz)', 'public.reinstate_standard_observation_windows(uuid,timestamptz)', 'haven.observation_escalation_recipients(uuid,uuid,uuid,uuid)', 'haven.notify_monitoring_order_created(uuid)', 'public.evaluate_watchlist_signals(uuid,timestamptz)', 'haven.notify_watchlist_acute(uuid,timestamptz)'];
   v_fn text;
   v_role text;
 BEGIN
@@ -140,7 +152,7 @@ $$;
 -- a blanket revoke sweep cannot quietly take the product's own write paths out.
 DO $$
 DECLARE
-  c_caller_facing CONSTANT text[] := ARRAY['public.create_monitoring_order(uuid,integer,text,text,text,text,text,timestamptz,timestamptz,timestamptz,text)', 'public.cancel_monitoring_order(uuid,text)', 'public.submit_observation(uuid,jsonb,text,text,text,text,text,text[],timestamptz,text,uuid,boolean,uuid,text,uuid,integer)'];
+  c_caller_facing CONSTANT text[] := ARRAY['public.create_monitoring_order(uuid,integer,text,text,text,text,text,timestamptz,timestamptz,timestamptz,text)', 'public.cancel_monitoring_order(uuid,text)', 'public.submit_observation(uuid,jsonb,text,text,text,text,text,text[],timestamptz,text,uuid,boolean,uuid,text,uuid,integer)', 'public.disposition_watchlist_signal(uuid,text,text)', 'public.watchlist_rules_for_facility(uuid)', 'public.watchlist_band_for_resident(uuid)'];
   v_fn text;
 BEGIN
   FOREACH v_fn IN ARRAY c_caller_facing LOOP
@@ -163,7 +175,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_module CONSTANT text[] := ARRAY['facility_cadence_in_force', 'facility_observation_windows_for_version', 'facility_observation_windows_for_date', 'facility_shift_window_at', 'facility_next_shift_window', 'facility_next_shift_observation_windows', 'record_cadence_observation_tasks', 'can_record_observation', 'can_cancel_monitoring_order', 'observation_grace_formula', 'monitoring_order_grace_minutes', 'generate_monitoring_order_tasks', 'notify_monitoring_order_created', 'create_monitoring_order', 'cancel_monitoring_order', 'expire_monitoring_orders', 'record_monitoring_order_event', 'monitoring_order_reason_from_watch_source', 'monitoring_order_bridge_defaults', 'bridge_watch_instance_to_monitoring_order', 'monitoring_order_interval_options', 'submit_observation', 'observation_quick_status_label', 'observation_vocab_label', 'compose_observation_summary', 'haven_compose_observation_summary', 'facility_escalation_in_force', 'observation_grace_minutes', 'observation_task_window_close', 'observation_escalation_rungs_at', 'observation_escalations_due', 'observation_escalation_recipients', 'record_observation_escalation_rung', 'advance_observation_task_lapse', 'send_test_escalation', 'observation_compliance_for_range', 'ensure_facility_observation_defaults', 'fn_facilities_seed_observation_defaults', 'assert_monitoring_order_facility_matches_resident', 'resolve_observation_task_assignees', 'record_observation_staffing_gap', 'monitoring_order_covers_window', 'facility_observation_windows_in_span', 'observation_windows_under_monitoring_order', 'reinstate_standard_observation_windows'];
+  c_module CONSTANT text[] := ARRAY['facility_cadence_in_force', 'facility_observation_windows_for_version', 'facility_observation_windows_for_date', 'facility_shift_window_at', 'facility_next_shift_window', 'facility_next_shift_observation_windows', 'record_cadence_observation_tasks', 'can_record_observation', 'can_cancel_monitoring_order', 'observation_grace_formula', 'monitoring_order_grace_minutes', 'generate_monitoring_order_tasks', 'notify_monitoring_order_created', 'create_monitoring_order', 'cancel_monitoring_order', 'expire_monitoring_orders', 'record_monitoring_order_event', 'monitoring_order_reason_from_watch_source', 'monitoring_order_bridge_defaults', 'bridge_watch_instance_to_monitoring_order', 'monitoring_order_interval_options', 'submit_observation', 'observation_quick_status_label', 'observation_vocab_label', 'compose_observation_summary', 'haven_compose_observation_summary', 'facility_escalation_in_force', 'observation_grace_minutes', 'observation_task_window_close', 'observation_escalation_rungs_at', 'observation_escalations_due', 'observation_escalation_recipients', 'record_observation_escalation_rung', 'advance_observation_task_lapse', 'send_test_escalation', 'observation_compliance_for_range', 'ensure_facility_observation_defaults', 'fn_facilities_seed_observation_defaults', 'assert_monitoring_order_facility_matches_resident', 'resolve_observation_task_assignees', 'record_observation_staffing_gap', 'monitoring_order_covers_window', 'facility_observation_windows_in_span', 'observation_windows_under_monitoring_order', 'reinstate_standard_observation_windows', 'monitoring_order_in_force_until', 'stamp_monitoring_order_closed_at', 'can_disposition_watchlist_signal', 'watchlist_rules_for_facility', 'watchlist_band_for_resident', 'evaluate_watchlist_signals', 'notify_watchlist_acute', 'disposition_watchlist_signal', 'record_watchlist_disposition'];
   v_bad text;
   v_found integer;
 BEGIN
@@ -200,15 +212,17 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
--- 5. The three append only ledgers have no UPDATE and no DELETE policy.
+-- 5. The four append only ledgers have no UPDATE and no DELETE policy.
 --
 -- resident_monitoring_order_events is the record of what a clinical order said
 -- and when it changed. The two escalation ledgers are the record of what fired
--- and who was told. A row that can be edited afterwards is not evidence.
+-- and who was told. watchlist_signal_dispositions is the survey artifact: the
+-- facility identified the risk on a date, a named person reviewed it, this is
+-- what was done. A row that can be edited afterwards is not evidence.
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_ledgers CONSTANT text[] := ARRAY['resident_monitoring_order_events', 'observation_escalation_dispatches', 'observation_escalation_deliveries'];
+  c_ledgers CONSTANT text[] := ARRAY['resident_monitoring_order_events', 'observation_escalation_dispatches', 'observation_escalation_deliveries', 'watchlist_signal_dispositions'];
   v_table text;
   v_policies text;
   v_grants text;
@@ -261,7 +275,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_policies CONSTANT text[] := ARRAY['facility_shift_definitions.facility_shift_definitions_update', 'facility_cadence_versions.facility_cadence_versions_update', 'facility_cadence_windows.facility_cadence_windows_update', 'resident_monitoring_orders.resident_monitoring_orders_update', 'facility_escalation_versions.facility_escalation_versions_update', 'facility_escalation_rungs.facility_escalation_rungs_update', 'facility_escalation_rung_shift_overrides.facility_escalation_rung_shift_overrides_update'];
+  c_policies CONSTANT text[] := ARRAY['facility_shift_definitions.facility_shift_definitions_update', 'facility_cadence_versions.facility_cadence_versions_update', 'facility_cadence_windows.facility_cadence_windows_update', 'resident_monitoring_orders.resident_monitoring_orders_update', 'facility_escalation_versions.facility_escalation_versions_update', 'facility_escalation_rungs.facility_escalation_rungs_update', 'facility_escalation_rung_shift_overrides.facility_escalation_rung_shift_overrides_update', 'watchlist_signal_rules.watchlist_signal_rules_update', 'watchlist_band_rules.watchlist_band_rules_update'];
   v_entry text;
   v_table text;
   v_policy text;
@@ -288,13 +302,13 @@ BEGIN
     PERFORM
       pg_temp.sr_assert (v_using IS NOT NULL, format('the UPDATE policy %s on public.%s is gone.', v_policy, v_table));
     PERFORM
-      pg_temp.sr_assert (v_using LIKE '%accessible_facility_ids%', format('%s on public.%s lost the facility predicate from USING.', v_policy, v_table));
+      pg_temp.sr_assert (strpos(v_using, 'accessible_facility_ids') > 0, format('%s on public.%s lost the facility predicate from USING.', v_policy, v_table));
     PERFORM
       pg_temp.sr_assert (v_check IS NOT NULL, format('%s on public.%s has no WITH CHECK clause at all, so its USING clause is reused and any row it can read it can write anywhere.', v_policy, v_table));
     PERFORM
-      pg_temp.sr_assert (v_check LIKE '%accessible_facility_ids%', format('%s on public.%s dropped the facility predicate from WITH CHECK. A caller can read a row inside their scope and write it into a facility outside it.', v_policy, v_table));
+      pg_temp.sr_assert (strpos(v_check, 'accessible_facility_ids') > 0, format('%s on public.%s dropped the facility predicate from WITH CHECK. A caller can read a row inside their scope and write it into a facility outside it.', v_policy, v_table));
     PERFORM
-      pg_temp.sr_assert (v_check LIKE '%organization_id%', format('%s on public.%s dropped the organization predicate from WITH CHECK.', v_policy, v_table));
+      pg_temp.sr_assert (strpos(v_check, 'organization_id') > 0, format('%s on public.%s dropped the organization predicate from WITH CHECK.', v_policy, v_table));
   END LOOP;
 END
 $$;
@@ -337,13 +351,13 @@ BEGIN
       AND pol.polname = v_policy;
 
     PERFORM
-      pg_temp.sr_assert (v_using LIKE '%' || v_parent || '%'
-        AND v_using LIKE '%draft%'
-        AND v_using LIKE '%pending_approval%', format('%s on public.%s no longer requires its parent version be draft or pending_approval in USING. The version in force became editable in place.', v_policy, v_table));
+      pg_temp.sr_assert (strpos(v_using, v_parent) > 0
+        AND strpos(v_using, 'draft') > 0
+        AND strpos(v_using, 'pending_approval') > 0, format('%s on public.%s no longer requires its parent version be draft or pending_approval in USING. The version in force became editable in place.', v_policy, v_table));
     PERFORM
-      pg_temp.sr_assert (v_check LIKE '%' || v_parent || '%'
-        AND v_check LIKE '%draft%'
-        AND v_check LIKE '%pending_approval%', format('%s on public.%s no longer requires its parent version be draft or pending_approval in WITH CHECK, so a row can be reattached from a draft to the version in force.', v_policy, v_table));
+      pg_temp.sr_assert (strpos(v_check, v_parent) > 0
+        AND strpos(v_check, 'draft') > 0
+        AND strpos(v_check, 'pending_approval') > 0, format('%s on public.%s no longer requires its parent version be draft or pending_approval in WITH CHECK, so a row can be reattached from a draft to the version in force.', v_policy, v_table));
   END LOOP;
 END
 $$;
@@ -402,7 +416,7 @@ BEGIN
   PERFORM
     pg_temp.sr_assert (v_src NOT LIKE '%NEW.status IS NOT DISTINCT FROM OLD.status THEN%RETURN NEW%', 'haven.record_monitoring_order_event returns early when only the status is unchanged again. Every non status field on an active clinical order then changes with no history row.');
   PERFORM
-    pg_temp.sr_assert (v_src LIKE '%interval_minutes%', 'haven.record_monitoring_order_event no longer names interval_minutes among the fields it records. That column is how often a resident is looked at.');
+    pg_temp.sr_assert (strpos(v_src, 'interval_minutes') > 0, 'haven.record_monitoring_order_event no longer names interval_minutes among the fields it records. That column is how often a resident is looked at.');
 
   PERFORM
     pg_temp.sr_assert (EXISTS (
@@ -436,16 +450,20 @@ BEGIN
   PERFORM
     pg_temp.sr_assert (to_regprocedure('haven.monitoring_order_covers_window(timestamptz,timestamptz,timestamptz,timestamptz)') IS NOT NULL, 'haven.monitoring_order_covers_window is gone. It is the single definition of when an order owns a standard window, and three callers read it.');
 
+  -- The excuse lives in haven.place_monitoring_order, the internal both entry
+  -- points delegate to. Migration 423 moved it there; before that it was inline
+  -- in create_monitoring_order, which is why this assertion names the internal
+  -- and section 9f separately holds the delegation in place.
   SELECT
     p.prosrc INTO v_src
   FROM
     pg_catalog.pg_proc p
     JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
   WHERE
-    n.nspname = 'public'
-    AND p.proname = 'create_monitoring_order';
+    n.nspname = 'haven'
+    AND p.proname = 'place_monitoring_order';
   PERFORM
-    pg_temp.sr_assert (v_src LIKE '%monitoring_order_covers_window%', 'public.create_monitoring_order no longer excuses on the window overlap test. Its 416 predicate was due_at > starts_at with no upper bound, so an order ending at midday excused that evening and that night as well and nothing ever put them back.');
+    pg_temp.sr_assert (strpos(v_src, 'monitoring_order_covers_window') > 0, 'placing a Monitoring Order no longer excuses on the window overlap test. The 416 predicate was due_at > starts_at with no upper bound, so an order ending at midday excused that evening and that night as well and nothing ever put them back.');
 
   SELECT
     p.prosrc INTO v_src
@@ -456,7 +474,7 @@ BEGIN
     n.nspname = 'public'
     AND p.proname = 'observation_windows_under_monitoring_order';
   PERFORM
-    pg_temp.sr_assert (v_src LIKE '%monitoring_order_covers_window%', 'public.observation_windows_under_monitoring_order stopped using the shared overlap test, so the generator and the create command can now disagree about which windows an order owns.');
+    pg_temp.sr_assert (strpos(v_src, 'monitoring_order_covers_window') > 0, 'public.observation_windows_under_monitoring_order stopped using the shared overlap test, so the generator and the create command can now disagree about which windows an order owns.');
 
   FOR v_src IN
   SELECT
@@ -468,8 +486,287 @@ BEGIN
     n.nspname = 'public'
     AND p.proname IN ('cancel_monitoring_order', 'expire_monitoring_orders') LOOP
       PERFORM
-        pg_temp.sr_assert (v_src LIKE '%reinstate_standard_observation_windows%', 'cancelling or expiring a Monitoring Order no longer reinstates the standard cadence. A resident coming off an order is somebody who just fell or just came back from hospital, and without this they have no observation task at all until the next generator tick.');
+        pg_temp.sr_assert (strpos(v_src, 'reinstate_standard_observation_windows') > 0, 'cancelling or expiring a Monitoring Order no longer reinstates the standard cadence. A resident coming off an order is somebody who just fell or just came back from hospital, and without this they have no observation task at all until the next generator tick.');
     END LOOP;
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9c. M5. A window's shift_key is a reference, not a string.
+--
+-- facility_cadence_windows.shift_key carried a regex CHECK and nothing tying it
+-- to a shift. `night` mistyped as `nights` took the window out of generation,
+-- because public.facility_next_shift_observation_windows filters on the key, and
+-- left it in the compliance expectation, because
+-- public.facility_observation_windows_for_version joins no shift table. The
+-- window becomes a permanent silent miss for every resident every day: no task,
+-- so no ladder and no alert, and a compliance number counting it against the
+-- building forever.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  c_referencing CONSTANT text[] := ARRAY['facility_cadence_windows', 'facility_escalation_rung_shift_overrides'];
+  v_table text;
+  v_def text;
+  v_unique boolean;
+BEGIN
+  -- The parent side. Unconditional, because a partial unique index cannot back a
+  -- foreign key, and because soft deleting a shift and creating a second one on
+  -- the same key would silently re-point every window and override at it.
+  SELECT
+    EXISTS (
+      SELECT
+        1
+      FROM
+        pg_catalog.pg_constraint con
+      WHERE
+        con.conrelid = 'public.facility_shift_definitions'::regclass
+        AND con.contype = 'u'
+        AND pg_catalog.pg_get_constraintdef(con.oid) = 'UNIQUE (facility_id, shift_key)') INTO v_unique;
+  PERFORM
+    pg_temp.sr_assert (v_unique, 'public.facility_shift_definitions lost its unconditional UNIQUE (facility_id, shift_key). Nothing can reference a shift key without it, and two rows on one key silently re-point every window that names it.');
+
+  FOREACH v_table IN ARRAY c_referencing LOOP
+    SELECT
+      pg_catalog.pg_get_constraintdef(con.oid) INTO v_def
+    FROM
+      pg_catalog.pg_constraint con
+    WHERE
+      con.conrelid = ('public.' || v_table)::regclass
+      AND con.contype = 'f'
+      AND con.confrelid = 'public.facility_shift_definitions'::regclass;
+
+    PERFORM
+      pg_temp.sr_assert (v_def IS NOT NULL, format('public.%s.shift_key no longer references public.facility_shift_definitions. A one character typo then takes the row out of generation and leaves it in the compliance expectation forever.', v_table));
+    PERFORM
+      pg_temp.sr_assert (strpos(v_def, '(facility_id, shift_key)') > 0, format('the shift reference on public.%s is not the composite (facility_id, shift_key): %s. A key alone is not unique across buildings.', v_table, v_def));
+    PERFORM
+      pg_temp.sr_assert (strpos(v_def, 'ON UPDATE CASCADE') > 0, format('the shift reference on public.%s lost ON UPDATE CASCADE, so renaming a shift is now impossible rather than propagated. A rename is a real operation the settings surface needs.', v_table));
+    PERFORM
+      pg_temp.sr_assert (strpos(v_def, 'ON DELETE RESTRICT') > 0, format('the shift reference on public.%s no longer restricts delete, so a shift can be removed out from under the rows that name it.', v_table));
+  END LOOP;
+
+  -- The residual hole the foreign key cannot close: a shift that is deactivated
+  -- or soft deleted still leaves its windows projecting while the generator
+  -- refuses to resolve them. The compliance read names those rows.
+  SELECT
+    p.prosrc INTO v_def
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname = 'observation_compliance_for_range';
+  PERFORM
+    pg_temp.sr_assert (strpos(v_def, '''orphaned_shift''') > 0, 'public.observation_compliance_for_range no longer names a window whose shift has been retired. Those windows generate nothing and escalate nothing, and without the name they read as ordinary missed checks and mark the building down forever.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9d. M7. An order in a terminal status stops being in force.
+--
+-- resident_monitoring_orders.status admits `completed`, nothing in the module
+-- writes it, and the update policy lets a facility_admin write it directly. The
+-- compliance read bounded the coverage day range and the covering order lateral
+-- on timestamps alone, so an open ended order marked completed had no end date
+-- and no cancellation, never closed, generated a fresh coverage day every day
+-- forever, and went on reading as that resident's live expectation source long
+-- after it had stopped. `expired` had the same hole.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_src text;
+  v_check text;
+BEGIN
+  PERFORM
+    pg_temp.sr_assert (EXISTS (
+        SELECT
+          1
+        FROM
+          information_schema.columns c
+        WHERE
+          c.table_schema = 'public'
+          AND c.table_name = 'resident_monitoring_orders'
+          AND c.column_name = 'closed_at'), 'public.resident_monitoring_orders.closed_at is gone. Nothing then records when an order in a terminal status stopped being in force.');
+
+  SELECT
+    pg_catalog.pg_get_constraintdef(con.oid) INTO v_check
+  FROM
+    pg_catalog.pg_constraint con
+  WHERE
+    con.conrelid = 'public.resident_monitoring_orders'::regclass
+    AND con.conname = 'resident_monitoring_orders_terminal_is_closed';
+  PERFORM
+    pg_temp.sr_assert (v_check IS NOT NULL, 'the CHECK that a terminal Monitoring Order carries a closing instant is gone, so an order can sit in a terminal status and never close.');
+
+  PERFORM
+    pg_temp.sr_assert (EXISTS (
+        SELECT
+          1
+        FROM
+          pg_catalog.pg_trigger t
+        WHERE
+          t.tgrelid = 'public.resident_monitoring_orders'::regclass
+          AND t.tgname = 'tr_resident_monitoring_orders_closure'
+          AND NOT t.tgisinternal), 'tr_resident_monitoring_orders_closure is gone. The closing instant then has to be remembered by every writer, and the one writer that forgets produces an order that reads as live forever.');
+
+  PERFORM
+    pg_temp.sr_assert (to_regprocedure('haven.monitoring_order_in_force_until(text,timestamptz,timestamptz,timestamptz)') IS NOT NULL, 'haven.monitoring_order_in_force_until is gone. It is the single definition of when an order stopped, read by both halves of the compliance read.');
+
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname = 'observation_compliance_for_range';
+
+  PERFORM
+    pg_temp.sr_assert ((length(v_src) - length(replace(v_src, 'monitoring_order_in_force_until', ''))) / length('monitoring_order_in_force_until') >= 2, 'public.observation_compliance_for_range reads haven.monitoring_order_in_force_until fewer than twice. Both the coverage day range and the covering order lateral have to read status, not only timestamps; fixing one leaves the other generating a fresh coverage day every day forever.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'COALESCE(o.cancelled_at, o.ends_at, now())') = 0, 'public.observation_compliance_for_range bounds the coverage day range on timestamps again. An order in a terminal status with no end date falls through to now() and never closes.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'COALESCE(o.cancelled_at, o.ends_at, ''infinity''::timestamptz)') = 0, 'public.observation_compliance_for_range bounds the covering order lateral on timestamps again. An order in a terminal status with no end date reads as in force until infinity.');
+
+  -- The suppression reads are correct only because they filter on status. If
+  -- that filter goes, a completed order starts suppressing standard windows.
+  FOR v_src IN
+  SELECT
+    p.prosrc
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname IN ('observation_windows_under_monitoring_order', 'reinstate_standard_observation_windows') LOOP
+      PERFORM
+        pg_temp.sr_assert (strpos(v_src, 'o.status = ''active''') > 0, 'a Monitoring Order suppression read stopped filtering on status = active. An order in a terminal status would then go on taking standard windows off the board.');
+    END LOOP;
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9e. M8. A closed day does not change when a resident record is retired.
+--
+-- The occupancy source and the resolved join both filtered public.residents on
+-- deleted_at, so an ordinary record retirement took a resident's whole
+-- observation history out of the compliance contract and a past date that had
+-- already been closed and reported recomputed to a smaller number. The recorded
+-- misses went first and the satisfied windows went with them, so the ratio moved
+-- up: an error that always flatters the facility.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_src text;
+BEGIN
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname = 'observation_compliance_for_range';
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'JOIN public.residents res') = 0, 'public.observation_compliance_for_range joins public.residents again in its resolved CTE. That join supplied no column; it was a visibility filter, and the residents SELECT policy carries its own deleted_at test, so a retired record erases days that carry real task rows.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'r.deleted_at IS NULL') = 0, 'public.observation_compliance_for_range filters residents on deleted_at again in its occupancy source. Retiring a record then rewrites closed reports, and always in the direction that flatters the building.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9f. M11. Both ways of placing a Monitoring Order do the same thing.
+--
+-- The care event bridge used to INSERT straight into the table and skip every
+-- side effect the create command performs: no order tasks until the next
+-- generator tick, nobody notified, and the resident's standard cadence still
+-- running underneath. It also attributed the order to whichever organization
+-- administrator sorted first by created_at and hardcoded a generic nurse as the
+-- ordering party.
+--
+-- The shared internal takes its actor as an argument rather than reading the
+-- session, because a trigger firing under a care event write has none. That
+-- makes its grant posture the whole of its safety: it performs no authorization,
+-- so nothing that can be called from a request may reach it. Same posture as
+-- haven.complete_rounding_task_core.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  c_internal CONSTANT text := 'haven.place_monitoring_order(uuid,integer,text,text,text,text,text,timestamptz,timestamptz,timestamptz,text,uuid,uuid)';
+  v_role text;
+  v_src text;
+  v_check text;
+BEGIN
+  PERFORM
+    pg_temp.sr_assert (to_regprocedure(c_internal) IS NOT NULL, 'haven.place_monitoring_order is gone. It is the single internal behind both ways of placing a Monitoring Order, and without it the two entry points drift apart again.');
+
+  FOREACH v_role IN ARRAY ARRAY['anon', 'authenticated', 'service_role'] LOOP
+    PERFORM
+      pg_temp.sr_assert (NOT pg_catalog.has_function_privilege (v_role, c_internal, 'EXECUTE'), format('%s can execute haven.place_monitoring_order. It takes the acting user as an argument and performs no authorization of its own, so any role that can call it can record a clinical order under somebody else''s name.', v_role));
+  END LOOP;
+
+  FOR v_src IN
+  SELECT
+    p.prosrc
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE (n.nspname = 'public'
+    AND p.proname = 'create_monitoring_order')
+    OR (n.nspname = 'haven'
+      AND p.proname = 'bridge_watch_instance_to_monitoring_order') LOOP
+      PERFORM
+        pg_temp.sr_assert (strpos(v_src, 'place_monitoring_order') > 0, 'one of the two Monitoring Order entry points stopped going through haven.place_monitoring_order. Whichever one it is now skips excusing the standard windows, writing the order tasks and notifying the administrator.');
+    END LOOP;
+
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'haven'
+    AND p.proname = 'bridge_watch_instance_to_monitoring_order';
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'INSERT INTO public.resident_monitoring_orders') = 0, 'the care event bridge writes the order table directly again, which is how it came to skip every side effect of the create command.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'Facility nurse on duty') = 0, 'the care event bridge hardcodes an ordering party again. A watch instance that names nobody must produce an order that names nobody.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'app_role IN (''owner'', ''org_admin'')') = 0, 'the care event bridge picks an organization administrator to attribute the order to again. An order attributed to somebody who never saw it is worse than one attributed to nobody.');
+
+  -- And the table lets it say nobody.
+  PERFORM
+    pg_temp.sr_assert ((
+      SELECT
+        c.is_nullable
+      FROM information_schema.columns c
+      WHERE
+        c.table_schema = 'public'
+        AND c.table_name = 'resident_monitoring_orders'
+        AND c.column_name = 'entered_by') = 'YES', 'public.resident_monitoring_orders.entered_by is NOT NULL again, so a system placed order has to be blamed on somebody.');
+
+  SELECT
+    pg_catalog.pg_get_constraintdef(con.oid) INTO v_check
+  FROM
+    pg_catalog.pg_constraint con
+  WHERE
+    con.conrelid = 'public.resident_monitoring_orders'::regclass
+    AND con.conname = 'resident_monitoring_orders_ordered_by_type_check';
+  PERFORM
+    pg_temp.sr_assert (strpos(v_check, 'care_event') > 0, 'ordered_by_type no longer admits care_event, so a bridged order has to claim a clinical party its source never named.');
+
+  PERFORM
+    pg_temp.sr_assert (EXISTS (
+        SELECT
+          1
+        FROM
+          pg_catalog.pg_constraint con
+        WHERE
+          con.conrelid = 'public.resident_monitoring_orders'::regclass
+          AND con.conname = 'resident_monitoring_orders_party_named_unless_care_event'), 'the CHECK that only a care_event order may leave the ordering party unnamed is gone. An operator entered order with no party is a different defect from an honest system one.');
 END
 $$;
 
@@ -977,7 +1274,7 @@ BEGIN
   PERFORM
     pg_temp.sr_assert (v_row.changed_fields @> '[{"field":"interval_minutes","from":60,"to":30}]'::jsonb, format('the history row does not name the interval change with its before and after values; changed_fields is %s.', v_row.changed_fields::text));
   PERFORM
-    pg_temp.sr_assert (v_row.changed_fields::text LIKE '%reason_note%', 'the history row does not name the clinical reason change.');
+    pg_temp.sr_assert (strpos(v_row.changed_fields::text, 'reason_note') > 0, 'the history row does not name the clinical reason change.');
   PERFORM
     pg_temp.sr_assert (v_row.from_status = 'active'
       AND v_row.to_status = 'active', 'a field change row should carry the unchanged status on both sides rather than inventing a transition.');
@@ -1084,6 +1381,139 @@ BEGIN
           public.resident_observation_logs
         WHERE
           task_id = v_assigned), 'a caregiver holding the primary assignment row could not complete their own task. The assignment path the generator now writes through does not work.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 11. The Watchlist surface reads on the caller's authority, and carries no
+--     resident level number.
+--
+-- Three views replace the resident safety score. As definer-rights views any
+-- one of them would answer for every building in the database whatever the
+-- reader could reach, which is the same defect the compliance read is guarded
+-- against in section 1. And the number that made the old surface indefensible
+-- must not come back under another name: severity_weight, summed per resident,
+-- is exactly the composite spec section 7.1 removed, so it appears on no view
+-- that carries a resident_id.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  c_views CONSTANT text[] := ARRAY['v_watchlist_facility', 'v_watchlist_portfolio', 'v_facility_risk_index'];
+  v_view text;
+  v_options text[];
+  v_anon text;
+  v_leak text;
+BEGIN
+  FOREACH v_view IN ARRAY c_views LOOP
+    SELECT
+      c.reloptions INTO v_options
+    FROM
+      pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+    WHERE
+      n.nspname = 'public'
+      AND c.relname = v_view
+      AND c.relkind = 'v';
+    PERFORM
+      pg_temp.sr_assert (v_options IS NOT NULL OR EXISTS (
+          SELECT
+            1
+          FROM
+            pg_catalog.pg_class c2
+            JOIN pg_catalog.pg_namespace n2 ON n2.oid = c2.relnamespace
+          WHERE
+            n2.nspname = 'public'
+            AND c2.relname = v_view), format('public.%s is gone; the 25A Watchlist declared it.', v_view));
+    PERFORM
+      pg_temp.sr_assert ('security_invoker=true' = ANY (COALESCE(v_options, ARRAY[]::text[])), format('public.%s lost security_invoker. A definer rights view answers for every building in the database whatever the reader can reach.', v_view));
+
+    SELECT
+      string_agg(DISTINCT g.privilege_type, ',' ORDER BY g.privilege_type) INTO v_anon
+    FROM
+      information_schema.role_table_grants g
+    WHERE
+      g.table_schema = 'public'
+      AND g.table_name = v_view
+      AND g.grantee = 'anon';
+    PERFORM
+      pg_temp.sr_assert (v_anon IS NULL, format('anon holds %s on public.%s. That is the publishable key reading the Watchlist.', v_anon, v_view));
+
+    PERFORM
+      pg_temp.sr_assert (pg_catalog.has_table_privilege ('authenticated', format('public.%s', v_view), 'SELECT'), format('authenticated lost SELECT on public.%s; the Watchlist reads through it.', v_view));
+  END LOOP;
+
+  SELECT
+    string_agg(format('%s.%s', c.table_name, c.column_name), ', ' ORDER BY c.table_name, c.column_name) INTO v_leak
+  FROM
+    information_schema.columns c
+  WHERE
+    c.table_schema = 'public'
+    AND c.table_name = ANY (c_views)
+    AND (c.column_name = 'severity_weight'
+      OR c.column_name ~ '(score|percent|rating|points|grade|composite|tier)')
+    AND EXISTS (
+      SELECT
+        1
+      FROM
+        information_schema.columns peer
+      WHERE
+        peer.table_schema = c.table_schema
+        AND peer.table_name = c.table_name
+        AND peer.column_name = 'resident_id');
+  PERFORM
+    pg_temp.sr_assert (v_leak IS NULL, format('a resident level Watchlist view exposes %s. Spec 25A decision D5: no score, no percentage and no index on a resident row.', v_leak));
+
+  PERFORM
+    pg_temp.sr_assert (NOT EXISTS (
+        SELECT
+          1
+        FROM
+          information_schema.columns
+        WHERE
+          table_schema = 'public'
+          AND table_name = 'v_facility_risk_index'
+          AND column_name = 'resident_id'), 'public.v_facility_risk_index grew a resident_id. The facility composite is allowed to exist only because it is facility level.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 12. Nothing signed in writes a Watchlist signal instance directly.
+--
+-- authenticated holds SELECT and no more, and the table carries no INSERT and
+-- no UPDATE policy. Both are needed: a grant with no policy refuses, but a
+-- policy added later to a table that still holds the grant would open the
+-- evaluator's output to hand editing, and a hand edited signal has no evidence
+-- behind it.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_grants text;
+  v_policies text;
+BEGIN
+  SELECT
+    string_agg(DISTINCT g.privilege_type, ',' ORDER BY g.privilege_type) INTO v_grants
+  FROM
+    information_schema.role_table_grants g
+  WHERE
+    g.table_schema = 'public'
+    AND g.table_name = 'watchlist_signal_instances'
+    AND g.grantee = 'authenticated'
+    AND g.privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE');
+  PERFORM
+    pg_temp.sr_assert (v_grants IS NULL, format('authenticated holds %s on public.watchlist_signal_instances. The evaluator and public.disposition_watchlist_signal are the only writers.', v_grants));
+
+  SELECT
+    string_agg(pol.polname || ' (' || pol.polcmd::text || ')', ', ' ORDER BY pol.polname) INTO v_policies
+  FROM
+    pg_catalog.pg_policy pol
+    JOIN pg_catalog.pg_class c ON c.oid = pol.polrelid
+    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+  WHERE
+    n.nspname = 'public'
+    AND c.relname = 'watchlist_signal_instances'
+    AND pol.polcmd::text IN ('a', 'w', 'd', '*');
+  PERFORM
+    pg_temp.sr_assert (v_policies IS NULL, format('public.watchlist_signal_instances gained a write policy: %s.', v_policies));
 END
 $$;
 

@@ -804,7 +804,7 @@ export function AdminDashboardPageClient({
               title="Safety Scores"
               value={assurance.criticalSafetyResidents}
               icon={HeartPulse}
-              href="/admin/rounding/safety"
+              href="/admin/rounding/watchlist"
               urgency={assurance.criticalSafetyResidents > 0 ? "critical" : assurance.highOrCriticalSafetyResidents > 0 ? "high" : "normal"}
               subLabel={`${assurance.highOrCriticalSafetyResidents} high or critical residents`}
             />
