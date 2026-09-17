@@ -12867,6 +12867,7 @@ export type Database = {
           facility_id: string
           grace_ends_at: string
           id: string
+          monitoring_order_id: string | null
           notes: string | null
           organization_id: string
           plan_id: string | null
@@ -12897,6 +12898,7 @@ export type Database = {
           facility_id: string
           grace_ends_at: string
           id?: string
+          monitoring_order_id?: string | null
           notes?: string | null
           organization_id: string
           plan_id?: string | null
@@ -12927,6 +12929,7 @@ export type Database = {
           facility_id?: string
           grace_ends_at?: string
           id?: string
+          monitoring_order_id?: string | null
           notes?: string | null
           organization_id?: string
           plan_id?: string | null
@@ -13019,6 +13022,231 @@ export type Database = {
             columns: ["watch_instance_id"]
             isOneToOne: false
             referencedRelation: "resident_watch_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_monitoring_orders: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          document_path: string | null
+          ends_at: string | null
+          entered_by: string
+          entity_id: string | null
+          facility_id: string
+          id: string
+          interval_minutes: number
+          order_received_as: string
+          ordered_by_name: string
+          ordered_by_type: string
+          organization_id: string
+          reason_category: string
+          reason_note: string
+          resident_id: string
+          review_due_at: string | null
+          source_watch_instance_id: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_path?: string | null
+          ends_at?: string | null
+          entered_by: string
+          entity_id?: string | null
+          facility_id: string
+          id?: string
+          interval_minutes: number
+          order_received_as: string
+          ordered_by_name: string
+          ordered_by_type: string
+          organization_id: string
+          reason_category: string
+          reason_note: string
+          resident_id: string
+          review_due_at?: string | null
+          source_watch_instance_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_path?: string | null
+          ends_at?: string | null
+          entered_by?: string
+          entity_id?: string | null
+          facility_id?: string
+          id?: string
+          interval_minutes?: number
+          order_received_as?: string
+          ordered_by_name?: string
+          ordered_by_type?: string
+          organization_id?: string
+          reason_category?: string
+          reason_note?: string
+          resident_id?: string
+          review_due_at?: string | null
+          source_watch_instance_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_monitoring_orders_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_orders_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_orders_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_orders_source_watch_instance_id_fkey"
+            columns: ["source_watch_instance_id"]
+            isOneToOne: false
+            referencedRelation: "resident_watch_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_monitoring_order_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          facility_id: string
+          from_status: string | null
+          id: string
+          monitoring_order_id: string
+          note: string | null
+          occurred_at: string
+          organization_id: string
+          resident_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          facility_id: string
+          from_status?: string | null
+          id?: string
+          monitoring_order_id: string
+          note?: string | null
+          occurred_at?: string
+          organization_id: string
+          resident_id: string
+          to_status: string
+        }
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "resident_monitoring_order_events_monitoring_order_id_fkey"
+            columns: ["monitoring_order_id"]
+            isOneToOne: false
+            referencedRelation: "resident_monitoring_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_order_events_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_monitoring_order_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          facility_id: string
+          id: string
+          monitoring_order_id: string
+          notification_route_id: string | null
+          organization_id: string
+          send_after: string
+          sent_at: string | null
+          skip_reason: string | null
+          status: string
+          target_phone: string | null
+          target_role: string
+          target_user_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          facility_id: string
+          id?: string
+          monitoring_order_id: string
+          notification_route_id?: string | null
+          organization_id: string
+          send_after?: string
+          sent_at?: string | null
+          skip_reason?: string | null
+          status: string
+          target_phone?: string | null
+          target_role: string
+          target_user_id?: string | null
+        }
+        Update: {
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_monitoring_order_notifications_monitoring_order_id_fkey"
+            columns: ["monitoring_order_id"]
+            isOneToOne: false
+            referencedRelation: "resident_monitoring_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_order_notifications_notification_route_id_fkey"
+            columns: ["notification_route_id"]
+            isOneToOne: false
+            referencedRelation: "notification_routes"
             referencedColumns: ["id"]
           },
         ]
@@ -17026,6 +17254,34 @@ export type Database = {
       }
     }
     Views: {
+      v_resident_observation_compliance: {
+        Row: {
+          absorbed: boolean | null
+          cadence_version_id: string | null
+          cadence_version_matches_projection: boolean | null
+          covered_by_monitoring_order_id: string | null
+          due_at_utc: string | null
+          expectation_source: string | null
+          facility_id: string | null
+          organization_id: string | null
+          projected_cadence_version_id: string | null
+          resident_id: string | null
+          satisfied: boolean | null
+          satisfied_at: string | null
+          satisfied_by_log_id: string | null
+          satisfied_by_monitoring_order_id: string | null
+          service_date: string | null
+          shift_key: string | null
+          stamped_cadence_version_id: string | null
+          task_id: string | null
+          task_status: string | null
+          window_closes_at_utc: string | null
+          window_key: string | null
+          window_label: string | null
+          window_opens_at_utc: string | null
+        }
+        Relationships: []
+      }
       ar_aging_facility_daily: {
         Row: {
           balance_due_cents: number | null
@@ -17194,6 +17450,46 @@ export type Database = {
           window_closes_at_utc: string
           starts_shift: boolean
         }[]
+      }
+      monitoring_order_grace_minutes: {
+        Args: { p_interval_minutes: number }
+        Returns: number
+      }
+      monitoring_order_interval_options: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          preset_minutes: number[]
+          min_minutes: number
+          max_minutes: number
+        }[]
+      }
+      create_monitoring_order: {
+        Args: {
+          p_resident_id: string
+          p_interval_minutes: number
+          p_ordered_by_type: string
+          p_ordered_by_name: string
+          p_order_received_as: string
+          p_reason_category: string
+          p_reason_note: string
+          p_starts_at?: string | null
+          p_ends_at?: string | null
+          p_review_due_at?: string | null
+          p_document_path?: string | null
+        }
+        Returns: string
+      }
+      cancel_monitoring_order: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: string
+      }
+      expire_monitoring_orders: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      generate_monitoring_order_tasks: {
+        Args: { p_facility_id?: string | null; p_through?: string | null }
+        Returns: number
       }
       record_cadence_observation_tasks: {
         Args: { p_rows: Json }

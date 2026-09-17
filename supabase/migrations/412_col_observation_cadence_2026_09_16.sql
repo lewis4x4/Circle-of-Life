@@ -507,7 +507,13 @@ $func$;
 COMMENT ON FUNCTION public.facility_cadence_in_force (uuid, timestamptz) IS
   'The cadence version in force at an instant, including a superseded version when the instant is in the past. Returns null when the facility has no cadence. COL-37 ruling: switch to invoker -- cadence configuration is facility policy, not a privileged read. The facilities SELECT policy and the cadence tables'' own SELECT policies already return exactly the facilities the caller is granted, so invoker rights give a caregiver the times in force on their own building and nothing else. The generator runs as service_role, which bypasses RLS and needs no definer rights.';
 
-CREATE OR REPLACE FUNCTION public.facility_observation_windows_for_date (p_facility_id uuid, p_service_date date)
+-- The version explicit primitive. A caller that already knows which cadence
+-- version applies -- because a task row is stamped with it -- passes it in and
+-- gets exactly that version's windows. Resolving the version from the date
+-- instead would answer with whatever is in force at local midnight, which is a
+-- different version on the day a change activates mid shift, and that is the
+-- one day a compliance read most needs to agree with the tasks it is scoring.
+CREATE OR REPLACE FUNCTION public.facility_observation_windows_for_version (p_facility_id uuid, p_cadence_version_id uuid, p_service_date date)
   RETURNS TABLE (
     cadence_version_id uuid,
     window_key text,
@@ -530,13 +536,6 @@ CREATE OR REPLACE FUNCTION public.facility_observation_windows_for_date (p_facil
       f.id = p_facility_id
       AND f.deleted_at IS NULL
 ),
-in_force AS (
-  SELECT
-    public.facility_cadence_in_force (fac.id, (p_service_date::timestamp AT TIME ZONE fac.timezone)) AS version_id,
-    fac.timezone
-  FROM
-    facility fac
-),
 resolved AS (
   SELECT
     w.cadence_version_id AS version_id,
@@ -547,10 +546,11 @@ resolved AS (
     w.due_at_local,
     w.grace_before_minutes,
     w.grace_after_minutes,
-    ((p_service_date + w.due_at_local) AT TIME ZONE fk.timezone) AS due_utc
+    ((p_service_date + w.due_at_local) AT TIME ZONE fac.timezone) AS due_utc
   FROM
-    in_force fk
-    JOIN public.facility_cadence_windows w ON w.cadence_version_id = fk.version_id
+    facility fac
+    JOIN public.facility_cadence_windows w ON w.cadence_version_id = p_cadence_version_id
+      AND w.facility_id = fac.id
   WHERE
     w.deleted_at IS NULL
     AND w.enabled
@@ -568,6 +568,40 @@ FROM
 ORDER BY
   r.sort_order,
   r.due_at_local;
+$func$;
+
+COMMENT ON FUNCTION public.facility_observation_windows_for_version (uuid, uuid, date) IS
+  'The windows one named cadence version defines for a facility local service date, converted against facilities.timezone. The single place window arithmetic lives. public.facility_observation_windows_for_date resolves a version and calls this; a compliance read that holds a stamped version calls it directly so it scores tasks against the version that generated them. COL-37 ruling: switch to invoker -- cadence configuration is facility policy, not a privileged read, and the cadence tables own SELECT policies already scope the caller.';
+
+-- The resolving wrapper. Same arithmetic, one entry point up: work out which
+-- version applies on that date, then hand off.
+CREATE OR REPLACE FUNCTION public.facility_observation_windows_for_date (p_facility_id uuid, p_service_date date)
+  RETURNS TABLE (
+    cadence_version_id uuid,
+    window_key text,
+    label text,
+    shift_key text,
+    due_at_utc timestamptz,
+    window_opens_at_utc timestamptz,
+    window_closes_at_utc timestamptz)
+  LANGUAGE sql
+  STABLE
+  SET search_path = public, pg_catalog
+  AS $func$
+  SELECT
+    w.cadence_version_id,
+    w.window_key,
+    w.label,
+    w.shift_key,
+    w.due_at_utc,
+    w.window_opens_at_utc,
+    w.window_closes_at_utc
+  FROM
+    public.facilities fac
+    CROSS JOIN LATERAL public.facility_observation_windows_for_version (fac.id, public.facility_cadence_in_force (fac.id, (p_service_date::timestamp AT TIME ZONE fac.timezone)), p_service_date) w
+  WHERE
+    fac.id = p_facility_id
+    AND fac.deleted_at IS NULL;
 $func$;
 
 COMMENT ON FUNCTION public.facility_observation_windows_for_date (uuid, date) IS
@@ -802,6 +836,9 @@ COMMENT ON FUNCTION public.record_cadence_observation_tasks (jsonb) IS
 -- ---------------------------------------------------------------------------
 REVOKE ALL ON FUNCTION public.facility_cadence_in_force (uuid, timestamptz) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.facility_cadence_in_force (uuid, timestamptz) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.facility_observation_windows_for_version (uuid, uuid, date) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.facility_observation_windows_for_version (uuid, uuid, date) TO authenticated, service_role;
 
 REVOKE ALL ON FUNCTION public.facility_observation_windows_for_date (uuid, date) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.facility_observation_windows_for_date (uuid, date) TO authenticated, service_role;

@@ -14,6 +14,10 @@
  * Every task is stamped with the cadence version that produced it, so a later
  * cadence change cannot rewrite a past compliance number.
  *
+ * Residents under an active Monitoring Order are skipped for the standard
+ * windows and get their order tasks from `generate_monitoring_order_tasks` in
+ * the same tick, so one cron entry covers both kinds.
+ *
  * POST body: `{ "organization_id": uuid, "facility_id"?: uuid }`
  * Auth: `x-cron-secret` must equal env `OBSERVATION_TASK_GENERATOR_SECRET`.
  */
@@ -40,6 +44,9 @@ const STOOD_DOWN_REASON = "Resident is no longer active at this facility";
 
 /** PostgREST codes for a relation that does not exist in the schema cache. */
 const MISSING_RELATION_CODES = new Set(["42P01", "PGRST205"]);
+
+/** PostgREST codes for a function that does not exist in the schema cache. */
+const MISSING_FUNCTION_CODES = new Set(["42883", "PGRST202"]);
 
 interface FacilityRow {
   id: string;
@@ -243,6 +250,7 @@ Deno.serve(async (req) => {
   }
 
   let tasksGenerated = 0;
+  let orderTasksGenerated = 0;
   let tasksStoodDown = 0;
   let facilitiesWithCadence = 0;
   let monitoringOrdersTableMissing = false;
@@ -276,6 +284,23 @@ Deno.serve(async (req) => {
 
       const monitored = await residentsUnderMonitoringOrder(admin, facility.id, atIso);
       monitoringOrdersTableMissing = monitoringOrdersTableMissing || monitored.tableMissing;
+
+      // Residents under an order are skipped for the standard windows, so this
+      // is the tick that writes what they are actually due. It runs before the
+      // early return below, because a facility whose whole roster is under
+      // orders still has order tasks to write. The horizon and the interval
+      // scaled grace live in the SQL function, not here, for the same reason
+      // the cadence windows do: this file carries no time and no grace value.
+      const { data: orderTasks, error: orderErr } = await admin.rpc("generate_monitoring_order_tasks", {
+        p_facility_id: facility.id,
+        p_through: null,
+      });
+      if (orderErr) {
+        if (!MISSING_FUNCTION_CODES.has(orderErr.code)) throw orderErr;
+        monitoringOrdersTableMissing = true;
+      } else {
+        orderTasksGenerated += typeof orderTasks === "number" ? orderTasks : 0;
+      }
 
       const residentIds = [...activeResidentIds].filter((id) => !monitored.residentIds.has(id));
       if (residentIds.length === 0) continue;
@@ -335,6 +360,7 @@ Deno.serve(async (req) => {
     facilities: facilities.length,
     facilities_with_cadence: facilitiesWithCadence,
     tasks_generated: tasksGenerated,
+    order_tasks_generated: orderTasksGenerated,
     tasks_stood_down: tasksStoodDown,
     monitoring_orders_table_missing: monitoringOrdersTableMissing,
   });
@@ -345,6 +371,7 @@ Deno.serve(async (req) => {
       organization_id: orgId,
       facilities: facilities.length,
       tasks_generated: tasksGenerated,
+      order_tasks_generated: orderTasksGenerated,
       tasks_stood_down: tasksStoodDown,
     },
     200,

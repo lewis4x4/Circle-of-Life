@@ -392,6 +392,52 @@ orchestrator.
 from every role. A backfill must disable and re-enable it in the same transaction, as `413`
 does.
 
+## 4b. The compliance read, and the task kind contract
+
+**Every compliance number in this module comes from
+`public.v_resident_observation_compliance`.** Do not count `resident_observation_tasks`.
+
+Grain: one row per `(resident_id, service_date, window_key)`, where the window is a
+**projected** standard window occurrence. A resident on a 30 minute Monitoring Order has no
+standard task rows at all and still produces six rows a day, which is the point.
+
+```sql
+SELECT count(*) AS expected, count(*) FILTER (WHERE satisfied) AS satisfied
+FROM public.v_resident_observation_compliance
+WHERE facility_id = $1 AND service_date = $2;
+```
+
+Useful columns beyond those: `absorbed` (an order check satisfied a standard window),
+`expectation_source` (`monitoring_order` | `standard_task` | `projected_only`),
+`covered_by_monitoring_order_id`, `satisfied_by_log_id`, `cadence_version_id`,
+`cadence_version_matches_projection`.
+
+**Task kinds.** Read these, never infer them:
+
+| kind | `monitoring_order_id` | `window_key` | `plan_rule_id` |
+|---|---|---|---|
+| order task | set | null | null |
+| cadence task | null | set | null |
+| legacy plan task | null | null | set |
+
+`window_key` is deliberately null on order tasks: a reserved key would put them in Part 1's
+`(resident_id, window_key, service_date)` index and collide the moment an order started
+inside a standard window. `service_date` **is** stamped on order tasks.
+
+**The window projector has two entry points, one body.**
+`facility_observation_windows_for_version(facility, version, date)` is the primitive; pass
+it a version you already hold, such as a task stamp.
+`facility_observation_windows_for_date(facility, date)` resolves the version in force at
+local midnight and calls the primitive. **A compliance read must use the version explicit
+form**, because on the day a cadence change activates mid shift the two answer differently,
+and that is the one day the read most needs to agree with the tasks it is scoring.
+
+**The interval scaled grace rule has one definition:**
+`public.monitoring_order_grace_minutes(interval_minutes)`, reading its divisor and bounds
+from `haven.observation_grace_formula()`. Part 4 uses it for the standard cadence too.
+Part 7 replaces the formula function's body with a read from a facility row; no caller
+changes.
+
 ## 5. Part ledger
 
 Filled in by the orchestrator as parts land.
@@ -400,9 +446,20 @@ Filled in by the orchestrator as parts land.
 |---|---|---|---|
 | 1 | Cadence and task generation | **done** | `412` + generator rewrite |
 | 2 | Chip capture and composed narrative | **done** | `413` + capture surface |
-| 3 | Monitoring Orders | pending | |
+| 3 | Monitoring Orders | **done** | `414` + compliance view + bridge |
 | 4 | Escalation policy and engine | pending | |
 | 5 | Watchlist | pending | |
 | 6 | Module shell and the nine defects | pending | |
 | 7 | Cadence and Escalation Settings | pending | |
 | 8 | Verification | pending | |
+
+## 6. Open items carried by the orchestrator
+
+- **One non-reproducible test failure.** A full `npm run test` reported `1 failed | 5881
+  passed` once during Part 3 integration. Three consecutive full runs immediately after
+  were clean at `5882 passed`. The failing test was not identified because the run output
+  was truncated. Capture full vitest output to a file on every run from here so a
+  recurrence is identifiable. Do not report the suite as reliably green until this either
+  recurs and is fixed or goes a sustained number of runs without appearing.
+- **No hosted verification.** See decision D17.
+- **Acceptance 1 resident count unconfirmed.** See decision D15.
