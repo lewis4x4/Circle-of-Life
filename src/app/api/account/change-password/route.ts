@@ -10,6 +10,14 @@ import {
   TEMPORARY_PASSWORD_EXPIRES_AT_KEY,
   isTemporaryPasswordExpired,
 } from "@/lib/auth/temporary-password";
+import {
+  checkFailureRateLimit,
+  clearFailureRateLimit,
+  recordFailureRateLimit,
+} from "@/lib/security/in-memory-failure-rate-limit";
+
+/** Five wrong current-password guesses per user per 15 minutes. */
+const CHANGE_PASSWORD_RATE_LIMIT = { maxFailures: 5, windowMs: 15 * 60 * 1000 };
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -68,12 +76,27 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // This endpoint verifies `current_password` by signing in with it, which makes it a
+  // password oracle for anyone holding a session. Cap the failures (COL-362).
+  const limiterKey = `account.change-password:${user.id}`;
+  const limit = checkFailureRateLimit(limiterKey, CHANGE_PASSWORD_RATE_LIMIT);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      {
+        error: "Too many incorrect attempts. Try again shortly.",
+        code: "rate_limited",
+      },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const verifyClient = createPasswordVerifyClient();
   const { error: signInError } = await verifyClient.auth.signInWithPassword({
     email: user.email,
     password: current_password,
   });
   if (signInError) {
+    recordFailureRateLimit(limiterKey, CHANGE_PASSWORD_RATE_LIMIT);
     return NextResponse.json({ error: "Current password is incorrect" }, { status: 403 });
   }
 
@@ -88,6 +111,9 @@ export async function POST(request: NextRequest) {
     const message = err instanceof Error ? err.message : "Could not clear password policy flag";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+
+  // A successful change clears the budget — the user proved they hold the credential.
+  clearFailureRateLimit(limiterKey);
 
   return NextResponse.json({ ok: true });
 }
