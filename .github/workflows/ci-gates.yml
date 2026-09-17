@@ -59,6 +59,18 @@ jobs:
         # Static, no credentials, sub-second.
         run: npm run migrations:check:hosted
 
+      - name: Migration number is not already claimed
+        # `migrations:check` only sees one working tree, so it catches a
+        # duplicate number after both branches have merged — which is how main
+        # spent twenty minutes failing its own sequence check on 2026-09-16,
+        # when COL-353 (#579) and COL-465 (#583) both took 412 eight minutes
+        # apart. This one looks sideways at open pull requests instead, so the
+        # collision surfaces on the branch that can still cheaply renumber.
+        # Read-only; needs the token to list open PRs.
+        run: npm run migrations:check:claims
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Stand Up database authorization and recovery replay
         run: npm run migrations:verify:pg
         env:

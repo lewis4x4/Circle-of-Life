@@ -23,6 +23,8 @@
     "seed:repair": "node scripts/seed/repair-demo-auth.mjs",
     "seed:verify": "node scripts/seed/verify-auth-fixtures.mjs",
     "migrations:check": "node scripts/check-migration-order.mjs",
+    "migrations:check:claims": "node scripts/check-migration-claims.mjs",
+    "migrations:next": "node scripts/check-migration-claims.mjs --next",
     "migrations:check:hosted": "node scripts/check-hosted-sql.mjs",
     "migrations:verify:pg": "node scripts/pg-verify-migrations.mjs",
     "migrations:verify:ledger": "node scripts/check-migration-ledger.mjs",
