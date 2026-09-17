@@ -18,6 +18,12 @@
  * windows and get their order tasks from `generate_monitoring_order_tasks` in
  * the same tick, so one cron entry covers both kinds.
  *
+ * The response is a per facility outcome, not a total. A facility that threw,
+ * and a facility that has no cadence in force and therefore generated nothing,
+ * are both reported by id and both make `ok` false with a non 200 status. A run
+ * that silently logged a per facility exception and still answered `ok: true`
+ * told a cron monitor that a building which generated zero tasks was healthy.
+ *
  * POST body: `{ "organization_id": uuid, "facility_id"?: uuid }`
  * Auth: `x-cron-secret` must equal env `OBSERVATION_TASK_GENERATOR_SECRET`.
  */
@@ -245,8 +251,27 @@ Deno.serve(async (req) => {
 
   const facilities = (facilityData ?? []) as FacilityRow[];
   if (facilities.length === 0) {
+    // Nothing was asked for and nothing failed. An organization with no
+    // facilities is a real, quiet answer; a facility that produced nothing is
+    // not, and is reported below.
     t.log({ event: "no_facilities", outcome: "success" });
-    return jsonResponse({ ok: true, organization_id: orgId, tasks_generated: 0 }, 200, origin);
+    return jsonResponse(
+      {
+        ok: true,
+        organization_id: orgId,
+        facilities_attempted: 0,
+        facilities_succeeded: 0,
+        facilities_failed: 0,
+        facilities_without_cadence: 0,
+        failed_facility_ids: [],
+        facility_ids_without_cadence: [],
+        tasks_generated: 0,
+        order_tasks_generated: 0,
+        tasks_stood_down: 0,
+      },
+      200,
+      origin,
+    );
   }
 
   let tasksGenerated = 0;
@@ -254,6 +279,8 @@ Deno.serve(async (req) => {
   let tasksStoodDown = 0;
   let facilitiesWithCadence = 0;
   let monitoringOrdersTableMissing = false;
+  const failedFacilityIds: string[] = [];
+  const facilityIdsWithoutCadence: string[] = [];
 
   for (const facility of facilities) {
     try {
@@ -265,7 +292,12 @@ Deno.serve(async (req) => {
 
       const windows = (windowData ?? []) as CadenceWindowRow[];
       if (windows.length === 0) {
-        t.log({ event: "facility_has_no_cadence", outcome: "success", facility_id: facility.id });
+        // Not a success. A building with no cadence version in force generates
+        // nothing, escalates nothing, and reads as a quiet facility. It is
+        // reported by id so a monitor can name the building rather than
+        // noticing a total that looks plausible.
+        facilityIdsWithoutCadence.push(facility.id);
+        t.log({ event: "facility_has_no_cadence", outcome: "error", facility_id: facility.id });
         continue;
       }
       facilitiesWithCadence += 1;
@@ -344,6 +376,7 @@ Deno.serve(async (req) => {
       tasksGenerated += typeof inserted === "number" ? inserted : 0;
     } catch (caught) {
       const error = caught as PostgrestError;
+      failedFacilityIds.push(facility.id);
       t.log({
         event: "facility_generation_error",
         outcome: "error",
@@ -354,10 +387,19 @@ Deno.serve(async (req) => {
     }
   }
 
+  const facilitiesAttempted = facilities.length;
+  const facilitiesFailed = failedFacilityIds.length;
+  const facilitiesWithoutCadence = facilityIdsWithoutCadence.length;
+  const facilitiesSucceeded = facilitiesAttempted - facilitiesFailed - facilitiesWithoutCadence;
+  const allFacilitiesProduced = facilitiesFailed === 0 && facilitiesWithoutCadence === 0;
+
   t.log({
     event: "complete",
-    outcome: "success",
-    facilities: facilities.length,
+    outcome: allFacilitiesProduced ? "success" : "error",
+    facilities: facilitiesAttempted,
+    facilities_succeeded: facilitiesSucceeded,
+    facilities_failed: facilitiesFailed,
+    facilities_without_cadence: facilitiesWithoutCadence,
     facilities_with_cadence: facilitiesWithCadence,
     tasks_generated: tasksGenerated,
     order_tasks_generated: orderTasksGenerated,
@@ -367,14 +409,21 @@ Deno.serve(async (req) => {
 
   return jsonResponse(
     {
-      ok: true,
+      ok: allFacilitiesProduced,
       organization_id: orgId,
-      facilities: facilities.length,
+      facilities_attempted: facilitiesAttempted,
+      facilities_succeeded: facilitiesSucceeded,
+      facilities_failed: facilitiesFailed,
+      facilities_without_cadence: facilitiesWithoutCadence,
+      failed_facility_ids: failedFacilityIds,
+      facility_ids_without_cadence: facilityIdsWithoutCadence,
       tasks_generated: tasksGenerated,
       order_tasks_generated: orderTasksGenerated,
       tasks_stood_down: tasksStoodDown,
     },
-    200,
+    // 207 rather than 500: some buildings did generate, and a monitor that
+    // retries a 500 would regenerate for them. `ok` is the field to alert on.
+    allFacilitiesProduced ? 200 : 207,
     origin,
   );
 });

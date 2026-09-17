@@ -603,6 +603,172 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 4a. A task completed inside the engine's read-write gap is not escalated on.
+--
+-- public.observation_escalations_due correctly excludes a completed task, but
+-- the engine reads up to five hundred due rows in one call and then fires them
+-- one round trip at a time, so seconds to minutes separate the read from the
+-- fire. A caregiver who finishes the check in that gap used to get a full
+-- escalation written against them: a dispatch row, an escalation row, queued
+-- deliveries, and at the terminal rung a critical exec_alerts row that texts an
+-- administrator about a resident who was seen on time.
+--
+-- The gap is reproduced exactly: the due read is taken first and asserted to
+-- return the rung, the task status is then moved to a terminal value, and only
+-- then is the rung fired. Moving the status directly is the honest simulation
+-- of the completion command having committed in between; the completion
+-- commands themselves are SYS-001 locked and are not called or modified here.
+--
+-- Every terminal status is walked, not only the happy one, and both a tier rung
+-- and the terminal rung are fired at each, because the terminal rung is the one
+-- that reaches an owner.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000001';
+  v_entity CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000002';
+  v_facility CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000003';
+  v_resident CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000004';
+  v_aide_staff CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000007';
+  v_cadence CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000009';
+  v_statuses CONSTANT text[] := ARRAY['completed_on_time', 'completed_late', 'excused', 'missed'];
+  v_status text;
+  v_offset integer;
+  v_service_date date;
+  v_window record;
+  v_task uuid;
+  v_close timestamptz;
+  v_fired jsonb;
+  v_due integer;
+  v_count integer;
+  v_alerts_before integer;
+  v_alerts_after integer;
+  v_checked integer := 0;
+BEGIN
+  SELECT
+    count(*) INTO v_alerts_before
+  FROM
+    public.exec_alerts
+  WHERE
+    facility_id = v_facility;
+
+  v_offset := 3;
+  FOREACH v_status IN ARRAY v_statuses LOOP
+    v_service_date := ((now() - make_interval(days => v_offset)) AT TIME ZONE 'America/New_York')::date;
+    v_offset := v_offset + 1;
+
+    SELECT
+      w.* INTO v_window
+    FROM
+      public.facility_observation_windows_for_version (v_facility, v_cadence, v_service_date) w
+    WHERE
+      w.window_key = 'afternoon';
+    PERFORM
+      pg_temp.esc_assert (v_window.window_key IS NOT NULL, 'the afternoon window did not project for the fixture facility');
+
+    INSERT INTO public.resident_observation_tasks (organization_id, entity_id, facility_id, resident_id, cadence_version_id, window_key, service_date, assigned_staff_id, scheduled_for, due_at, grace_ends_at, status)
+      VALUES (v_org, v_entity, v_facility, v_resident, v_cadence, 'afternoon', v_service_date, v_aide_staff, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'overdue')
+    RETURNING
+      id INTO v_task;
+
+    v_close := public.observation_task_window_close (v_task);
+
+    -- The engine's read. Both rungs are due and the task is in the queue it is
+    -- about to walk.
+    SELECT
+      count(*) INTO v_due
+    FROM
+      public.observation_escalations_due (v_org, v_facility, v_close + interval '90 minutes', 500) d
+    WHERE
+      d.task_id = v_task
+      AND d.rung_key IN ('tier_1', 'tier_3');
+    PERFORM
+      pg_temp.esc_assert (v_due = 2, format('the due read should have queued tier_1 and tier_3 for the %s fixture, got %s', v_status, v_due));
+
+    -- The gap. A caregiver completes the check while the engine is working
+    -- through the rest of the queue.
+    UPDATE
+      public.resident_observation_tasks
+    SET
+      status = v_status::public.resident_observation_task_status
+    WHERE
+      id = v_task;
+
+    -- The fire, against a queue row that is now stale.
+    v_fired := public.record_observation_escalation_rung (v_task, 'tier_1', v_close + interval '30 minutes');
+    PERFORM
+      pg_temp.esc_assert ((v_fired ->> 'fired')::boolean IS FALSE, format('tier_1 fired against a %s task: %s', v_status, v_fired::text));
+    PERFORM
+      pg_temp.esc_assert (v_fired ->> 'reason' = 'task_completed', format('tier_1 answered %s rather than task_completed for a %s task', v_fired ->> 'reason', v_status));
+
+    v_fired := public.record_observation_escalation_rung (v_task, 'tier_3', v_close + interval '90 minutes');
+    PERFORM
+      pg_temp.esc_assert ((v_fired ->> 'fired')::boolean IS FALSE, format('the terminal rung fired against a %s task: %s', v_status, v_fired::text));
+    PERFORM
+      pg_temp.esc_assert (v_fired ->> 'reason' = 'task_completed', format('the terminal rung answered %s rather than task_completed for a %s task', v_fired ->> 'reason', v_status));
+
+    -- Nothing was written. Not a dispatch, not an escalation, not a delivery.
+    SELECT
+      count(*) INTO v_count
+    FROM
+      public.observation_escalation_dispatches
+    WHERE
+      task_id = v_task;
+    PERFORM
+      pg_temp.esc_assert (v_count = 0, format('%s dispatch row(s) were written against a %s task', v_count, v_status));
+
+    SELECT
+      count(*) INTO v_count
+    FROM
+      public.resident_observation_escalations
+    WHERE
+      task_id = v_task;
+    PERFORM
+      pg_temp.esc_assert (v_count = 0, format('%s escalation row(s) were written against a %s task', v_count, v_status));
+
+    SELECT
+      count(*) INTO v_count
+    FROM
+      public.observation_escalation_deliveries dl
+      JOIN public.observation_escalation_dispatches d ON d.id = dl.dispatch_id
+    WHERE
+      d.task_id = v_task;
+    PERFORM
+      pg_temp.esc_assert (v_count = 0, format('%s delivery row(s) were queued against a %s task', v_count, v_status));
+
+    -- And the task itself was not moved, which is the only part that was
+    -- already guarded before this fix.
+    SELECT
+      count(*) INTO v_count
+    FROM
+      public.resident_observation_tasks
+    WHERE
+      id = v_task
+      AND status::text = v_status;
+    PERFORM
+      pg_temp.esc_assert (v_count = 1, format('the refused rung moved a %s task off its status', v_status));
+
+    v_checked := v_checked + 1;
+  END LOOP;
+
+  -- The terminal rung is the one that raises a critical exec alert, so this is
+  -- the assertion that proves an administrator was not texted about a resident
+  -- who was checked on time.
+  SELECT
+    count(*) INTO v_alerts_after
+  FROM
+    public.exec_alerts
+  WHERE
+    facility_id = v_facility;
+  PERFORM
+    pg_temp.esc_assert (v_alerts_after = v_alerts_before, format('exec_alerts rows for the facility moved from %s to %s while firing rungs at completed tasks', v_alerts_before, v_alerts_after));
+
+  INSERT INTO esc_result (check_name, detail)
+    VALUES ('completed inside the read-write gap', format('%s terminal statuses walked; the due read queued tier_1 and tier_3 each time and both answered task_completed after the task was completed -- 0 dispatches, 0 escalations, 0 deliveries, exec_alerts held at %s', v_checked, v_alerts_after));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
 -- 5. The night shift override changes channels and not the offset.
 --
 -- Spec 6.9. A tier 1 push at 02:00 every night gets the channel muted inside a

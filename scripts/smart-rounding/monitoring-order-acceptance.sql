@@ -465,10 +465,9 @@ WHERE
     v_satisfied,
     v_absorbed
   FROM
-    public.v_resident_observation_compliance
+    public.observation_compliance_for_range (v_facility, v_service_date, v_service_date)
   WHERE
-    resident_id = v_resident
-    AND service_date = v_service_date;
+    resident_id = v_resident;
 
   PERFORM
     pg_temp.mo_assert (v_expected = 6, 'the ordered resident should still be expected on six windows, got ' || v_expected);
@@ -485,21 +484,19 @@ WHERE
         SELECT
           1
         FROM
-          public.v_resident_observation_compliance
+          public.observation_compliance_for_range (v_facility, v_service_date, v_service_date)
         WHERE
           resident_id = v_resident
-          AND service_date = v_service_date
           AND expectation_source <> 'monitoring_order'), 'every projected window for a resident under an order must name the order as its source');
   PERFORM
     pg_temp.mo_assert (NOT EXISTS (
         SELECT
           1
         FROM
-          public.v_resident_observation_compliance c
+          public.observation_compliance_for_range (v_facility, v_service_date, v_service_date) c
           JOIN public.resident_observation_tasks t ON t.id = c.task_id
         WHERE
           c.resident_id = v_resident
-          AND c.service_date = v_service_date
           AND t.status <> 'excused'), 'no live standard task row may exist behind a satisfied window while an order is in force');
 
   -- The control resident is on the standard cadence, has tasks, and has done
@@ -524,10 +521,9 @@ WHERE
     count(*) FILTER (WHERE satisfied) INTO v_control_expected,
     v_control_satisfied
   FROM
-    public.v_resident_observation_compliance
+    public.observation_compliance_for_range (v_facility, v_service_date, v_service_date)
   WHERE
-    resident_id = v_control
-    AND service_date = v_service_date;
+    resident_id = v_control;
   PERFORM
     pg_temp.mo_assert (v_control_expected = 6, 'the control resident should be expected on six windows, got ' || v_control_expected);
   PERFORM

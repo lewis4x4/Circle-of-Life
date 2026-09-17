@@ -17560,34 +17560,6 @@ export type Database = {
       }
     }
     Views: {
-      v_resident_observation_compliance: {
-        Row: {
-          absorbed: boolean | null
-          cadence_version_id: string | null
-          cadence_version_matches_projection: boolean | null
-          covered_by_monitoring_order_id: string | null
-          due_at_utc: string | null
-          expectation_source: string | null
-          facility_id: string | null
-          organization_id: string | null
-          projected_cadence_version_id: string | null
-          resident_id: string | null
-          satisfied: boolean | null
-          satisfied_at: string | null
-          satisfied_by_log_id: string | null
-          satisfied_by_monitoring_order_id: string | null
-          service_date: string | null
-          shift_key: string | null
-          stamped_cadence_version_id: string | null
-          task_id: string | null
-          task_status: string | null
-          window_closes_at_utc: string | null
-          window_key: string | null
-          window_label: string | null
-          window_opens_at_utc: string | null
-        }
-        Relationships: []
-      }
       ar_aging_facility_daily: {
         Row: {
           balance_due_cents: number | null
@@ -17760,6 +17732,48 @@ export type Database = {
       monitoring_order_grace_minutes: {
         Args: { p_interval_minutes: number }
         Returns: number
+      }
+      /**
+       * The compliance contract for the observation module, replacing the
+       * v_resident_observation_compliance view. One row per resident per
+       * facility local service date per projected standard window, plus one
+       * row with a null `window_key` for a resident day that projects nothing.
+       * `p_facility_id` null means every facility the caller can reach.
+       * Expected is the row count; satisfied is the count where `satisfied`.
+       * Never count resident_observation_tasks to get either number.
+       */
+      observation_compliance_for_range: {
+        Args: { p_facility_id: string | null; p_from: string; p_to: string }
+        Returns: {
+          organization_id: string
+          facility_id: string
+          resident_id: string
+          service_date: string
+          window_key: string | null
+          window_label: string | null
+          shift_key: string | null
+          cadence_version_id: string | null
+          stamped_cadence_version_id: string | null
+          projected_cadence_version_id: string | null
+          cadence_version_matches_projection: boolean | null
+          no_cadence_in_force: boolean
+          due_at_utc: string | null
+          window_opens_at_utc: string | null
+          window_closes_at_utc: string | null
+          task_id: string | null
+          task_status: string | null
+          covered_by_monitoring_order_id: string | null
+          satisfied_by_log_id: string | null
+          satisfied_at: string | null
+          satisfied_by_monitoring_order_id: string | null
+          satisfied: boolean
+          absorbed: boolean
+          expectation_source: "standard_task" | "monitoring_order" | "projected_only" | "no_cadence"
+        }[]
+      }
+      ensure_facility_observation_defaults: {
+        Args: { p_facility_id: string }
+        Returns: Json
       }
       monitoring_order_interval_options: {
         Args: Record<PropertyKey, never>

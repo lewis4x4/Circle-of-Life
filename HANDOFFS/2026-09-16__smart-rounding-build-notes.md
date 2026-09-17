@@ -384,9 +384,18 @@ constraint is the floor, not the ceiling.
 | 2 | `413_observation_chip_vocabulary.sql` | `405` |
 | 3 | `414_resident_monitoring_orders.sql` | `406` |
 | 4 | `415_observation_escalation_policy.sql` | `407` |
-| 5 | `416_resident_watchlist_signals.sql` | `408` |
-| 7 | `417_cadence_config_versioning.sql` | `409` |
-| 7 | `418_cadence_config_rpcs.sql` | `410` |
+| review fix | `416_observation_compliance_occupancy.sql` | n/a (C3) |
+| review fix | `417_escalation_completed_task_guard.sql` | n/a (C1) |
+| 5 | `418_resident_watchlist_signals.sql` | `408` |
+| 7 | `419_cadence_config_versioning.sql` | `409` |
+| 7 | `420_cadence_config_rpcs.sql` | `410` |
+
+**Numbers are allocated when a migration is written, not reserved in advance.**
+`migrations:check` requires a contiguous sequence from `001`, so a number held for an
+unbuilt part becomes a gap the moment anything later lands, and the build fails. The review
+fixes took `416` and `417` because they were written first; Parts 5 and 7 moved down.
+Re-check `origin/main` immediately before any push regardless: numbers are not reserved
+across branches either.
 
 Each file wraps itself in `BEGIN; ... COMMIT;` unless it contains a statement that cannot
 run inside a transaction, and is idempotent enough to replay (`CREATE TABLE IF NOT EXISTS`,
@@ -451,22 +460,162 @@ does.
 ## 4b. The compliance read, and the task kind contract
 
 **Every compliance number in this module comes from
-`public.v_resident_observation_compliance`.** Do not count `resident_observation_tasks`.
+`public.observation_compliance_for_range`.** Do not count
+`resident_observation_tasks`. The `v_resident_observation_compliance` view is
+**gone**, dropped by migration `419`. A view cannot generate a date spine, and
+that was the defect: a resident day with no task rows and no Monitoring Order
+contributed no rows at all, so `expected` was zero, and a dashboard read zero
+over zero as a hundred percent or as "no data". Three routes reached that state
+and all three are now defects you can see.
 
-Grain: one row per `(resident_id, service_date, window_key)`, where the window is a
-**projected** standard window occurrence. A resident on a 30 minute Monitoring Order has no
-standard task rows at all and still produces six rows a day, which is the point.
+### The signature
 
 ```sql
-SELECT count(*) AS expected, count(*) FILTER (WHERE satisfied) AS satisfied
-FROM public.v_resident_observation_compliance
-WHERE facility_id = $1 AND service_date = $2;
+public.observation_compliance_for_range(
+  p_facility_id uuid,   -- null means every facility the caller can reach
+  p_from        date,   -- inclusive, facility local service date
+  p_to          date    -- inclusive; pass the same date twice for one day
+) RETURNS SETOF record
 ```
 
-Useful columns beyond those: `absorbed` (an order check satisfied a standard window),
-`expectation_source` (`monitoring_order` | `standard_task` | `projected_only`),
-`covered_by_monitoring_order_id`, `satisfied_by_log_id`, `cadence_version_id`,
-`cadence_version_matches_projection`.
+A reversed range and a range longer than 366 days both **raise**. A compliance
+read may not answer an impossible question with silence.
+
+Invoker rights, not `SECURITY DEFINER`. Row level security on `residents`,
+`facilities`, the task tables, the log tables and `resident_status_history`
+applies to the caller, so a reader sees exactly the facilities they can reach.
+
+### The grain
+
+One row per `(resident_id, service_date, window_key)`, where the window is a
+**projected** standard window occurrence, **plus exactly one row per
+`(resident_id, service_date)` with a null `window_key`** when that resident day
+projects no window at all.
+
+```
+expected  = count(*)
+satisfied = count(*) FILTER (WHERE satisfied)
+```
+
+A resident on a 30 minute Monitoring Order has no standard task rows at all and
+still produces six rows a day, which is absorption. A resident whose facility
+generated nothing has no task rows either, and now produces six **unsatisfied**
+rows rather than none.
+
+### Where the resident days come from
+
+Three sources, unioned. Occupancy is the floor, not the filter.
+
+1. **Occupancy.** `generate_series(p_from, p_to)` crossed with the residents who
+   were in the building on that date: `admission_date <= date`,
+   `discharge_date IS NULL OR discharge_date >= date`, `deleted_at IS NULL`,
+   status not `inquiry` and not `pending_admission`. This is the source the view
+   lacked and the only one that can speak about a day nothing was written for.
+2. Days that carry standard cadence task rows.
+3. Days covered by a Monitoring Order.
+
+`resident_status_history` (migration `217`) is read, but **only to subtract days,
+never to supply them**, because `217` installs its capture trigger without
+backfilling and every resident admitted before it ran has no history row until
+their status next changes. Driving occupancy from that table would silently drop
+those residents, which is the identical failure this function exists to fix.
+Used subtractively its gaps can only leave a day expected, which is the
+direction that shows a defect. Where history does exist it removes the days a
+resident was on `hospital_hold`, `loa`, `discharged`, `deceased` or not yet
+admitted, probed at facility local **noon**, so a resident in hospital does not
+read as six missed checks a day.
+
+One further exclusion: a resident whose status is `discharged` or `deceased`
+with no `discharge_date` and no history row has an unknown occupancy end and is
+left out of the occupancy source rather than expected forever. Their real task
+rows still bring their real days in through source two.
+
+### The projection is `LEFT JOIN LATERAL`, never `CROSS JOIN`
+
+A resident day for which no cadence version resolves, or whose version defines
+no enabled window, yields **exactly one row** with `window_key` null,
+`satisfied` false and `expectation_source = 'no_cadence'`. It reads as a defect,
+never as silence. The `CROSS JOIN` in `414` deleted that row, which is how a
+Monitoring Order running 09-10 to 09-20 produced compliance rows only from 09-16
+onward: version 1's `effective_from` is 09-16, and six days of hourly checks on
+a resident who had just fallen were silently absent from the record.
+
+### The columns
+
+| column | note |
+|---|---|
+| `organization_id`, `facility_id`, `resident_id`, `service_date` | the resident day |
+| `window_key`, `window_label`, `shift_key` | null on a `no_cadence` row |
+| `cadence_version_id` | the version resolved for the day; null when none is in force |
+| `stamped_cadence_version_id` | the version the day's tasks carry, null when there are none |
+| `projected_cadence_version_id` | the version the projection answered from |
+| `cadence_version_matches_projection` | true by construction; **null** on a `no_cadence` row, because there is no projection to agree with |
+| `no_cadence_in_force` | true when no version resolved at all. False on a `no_cadence` row means a version was in force and projected nothing |
+| `due_at_utc`, `window_opens_at_utc`, `window_closes_at_utc` | null on a `no_cadence` row |
+| `task_id`, `task_status` | the standard task behind the window, when one exists |
+| `covered_by_monitoring_order_id` | an order was in force over this window |
+| `satisfied_by_log_id`, `satisfied_at`, `satisfied_by_monitoring_order_id` | what met the window |
+| `satisfied` | boolean, never null. Always false on a `no_cadence` row |
+| `absorbed` | an order check satisfied a standard window |
+| `expectation_source` | `standard_task` \| `monitoring_order` \| `projected_only` \| `no_cadence` |
+
+### The caller shape
+
+```sql
+SELECT count(*)                                              AS expected,
+       count(*) FILTER (WHERE satisfied)                     AS satisfied,
+       count(*) FILTER (WHERE expectation_source = 'no_cadence') AS unconfigured
+FROM public.observation_compliance_for_range($1, $2, $3);
+```
+
+From TypeScript it is an RPC, not a table read:
+
+```ts
+const { data } = await supabase.rpc("observation_compliance_for_range", {
+  p_facility_id: facilityId,   // or null for every facility in reach
+  p_from: serviceDate,
+  p_to: serviceDate,
+});
+```
+
+`unconfigured` is not decoration. A surface that shows `satisfied / expected`
+and hides the `no_cadence` count has reintroduced the defect at the UI layer:
+those rows are unsatisfied expectations whose cause is a configuration gap, not
+a missed check, and they must be named differently and never rounded away.
+
+### A new facility inherits
+
+`public.ensure_facility_observation_defaults(p_facility_id uuid)` gives one
+building the observation configuration its organization is already running: the
+shift model, an active cadence version with its windows, and an active
+escalation version with its rungs and shift overrides, copied from the
+organization's oldest active cadence version and that facility's escalation
+policy. It is idempotent and it never opens a version inside a timeline a
+facility already owns. An `AFTER INSERT` trigger on `public.facilities` calls
+it, so a sixth building inherits automatically, and the trigger cannot fail a
+facility insert.
+
+It **inherits** rather than restating the `412` and `415` seed values, so every
+observation time, grace value and escalation offset in the module still lives in
+exactly one place and a building added next year starts on the policy the
+organization is running rather than the one it stopped running. The `412` and
+`415` seeds are deliberately **not** refactored to call it: they run before it
+exists in a replay from `001`.
+
+When the organization has nothing to inherit from, which is the first facility
+of a brand new organization, the command returns `seeded: false` with a reason,
+the trigger records an open `exec_alerts` row, and every resident day at that
+building reads as `no_cadence`. Nothing is guessed from another tenant's rows.
+
+### The generator reports per facility
+
+`supabase/functions/observation-task-generator` no longer answers `ok: true`
+when a building produced nothing. The response carries
+`facilities_attempted`, `facilities_succeeded`, `facilities_failed`,
+`facilities_without_cadence`, `failed_facility_ids` and
+`facility_ids_without_cadence`, and answers `ok: false` with HTTP 207 when
+either failure count is above zero. A facility with no cadence in force is a
+failure, not a quiet success.
 
 **Task kinds.** Read these, never infer them:
 
@@ -476,23 +625,25 @@ Useful columns beyond those: `absorbed` (an order check satisfied a standard win
 | cadence task | null | set | null |
 | legacy plan task | null | null | set |
 
-`window_key` is deliberately null on order tasks: a reserved key would put them in Part 1's
-`(resident_id, window_key, service_date)` index and collide the moment an order started
-inside a standard window. `service_date` **is** stamped on order tasks.
+`window_key` is deliberately null on order tasks: a reserved key would put them
+in Part 1's `(resident_id, window_key, service_date)` index and collide the
+moment an order started inside a standard window. `service_date` **is** stamped
+on order tasks.
 
 **The window projector has two entry points, one body.**
-`facility_observation_windows_for_version(facility, version, date)` is the primitive; pass
-it a version you already hold, such as a task stamp.
-`facility_observation_windows_for_date(facility, date)` resolves the version in force at
-local midnight and calls the primitive. **A compliance read must use the version explicit
-form**, because on the day a cadence change activates mid shift the two answer differently,
-and that is the one day the read most needs to agree with the tasks it is scoring.
+`facility_observation_windows_for_version(facility, version, date)` is the
+primitive; pass it a version you already hold, such as a task stamp.
+`facility_observation_windows_for_date(facility, date)` resolves the version in
+force at local midnight and calls the primitive. **A compliance read must use
+the version explicit form**, because on the day a cadence change activates mid
+shift the two answer differently, and that is the one day the read most needs to
+agree with the tasks it is scoring.
 
 **The interval scaled grace rule has one definition:**
-`public.monitoring_order_grace_minutes(interval_minutes)`, reading its divisor and bounds
-from `haven.observation_grace_formula()`. Part 4 uses it for the standard cadence too.
-Part 7 replaces the formula function's body with a read from a facility row; no caller
-changes.
+`public.monitoring_order_grace_minutes(interval_minutes)`, reading its divisor
+and bounds from `haven.observation_grace_formula()`. Part 4 uses it for the
+standard cadence too. Part 7 replaces the formula function's body with a read
+from a facility row; no caller changes.
 
 ## 4c. Escalation policy, and how Edge Function tests actually run
 
@@ -519,6 +670,18 @@ null. An escalation count is `count(*) from resident_observation_escalations`.
 `public.observation_task_window_close(task_id)` is the single resolver: window grace for a
 cadence task, interval scaled grace for an order task, both through
 `public.monitoring_order_grace_minutes`.
+
+**A rung never fires against a task that was completed while the engine was
+walking its queue.** `observation_escalations_due` returns up to 500 rows in one
+read and the engine fires them one round trip at a time, so seconds to minutes
+separate the read from the call. Migration `420` makes
+`record_observation_escalation_rung` re-select the task `FOR UPDATE` and return
+`{"fired": false, "reason": "task_completed"}` before any dispatch, escalation,
+delivery or alert write when the status is terminal
+(`completed_on_time`, `completed_late`, `excused`, `missed`, `reassigned`, which
+is exactly the set the due read excludes, so the two cannot drift). The
+idempotency answer is checked first and still wins: an already dispatched rung
+answers `already_fired` whatever the task did afterwards.
 
 **Edge Function tests need `npm run test:edge`.** `vitest.config.ts` includes only
 `src/**/*.test.ts`, so **26 test files under `supabase/functions/` were never executed by
