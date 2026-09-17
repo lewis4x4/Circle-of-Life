@@ -179,9 +179,28 @@ if (wantNext) {
   process.exit(0);
 }
 
+// Reachability is settled before anything else, and in CI it is fatal.
+//
+// A check that silently does not run is worse than no check: the step goes
+// green, everyone reads that as "no collision", and the first anyone hears of
+// it is main failing its own sequence gate. Locally an unreachable API is a
+// warning, because a developer on a plane should not be stopped. In CI the
+// token is always present, so failing to reach the API means the gate is
+// broken rather than the network — say so loudly. `--no-remote` is the escape
+// hatch if the API is ever down long enough to matter.
+if (!noRemote && !openClaims) {
+  const message =
+    "could not reach the GitHub API (gh missing or unauthenticated) — open PRs were NOT checked";
+  if (process.env.GITHUB_ACTIONS === "true") {
+    fail(`${message}. In CI this is a broken gate, not a network hiccup.`);
+  }
+  log(`${message}.`);
+}
+
 const added = migrationsAddedHere(baseRef);
 if (added.length === 0) {
   log(`no new migrations against ${baseRef} — nothing to claim.`);
+  if (openClaims) log(`(${openClaims.size} number(s) claimed by other open PRs were read fine.)`);
   process.exit(0);
 }
 
@@ -210,10 +229,6 @@ if (problems.length > 0) {
   fail(
     `${problems.length} migration number collision(s). Run \`npm run migrations:next\` for a free number.`,
   );
-}
-
-if (!openClaims && !noRemote) {
-  log("could not reach the GitHub API (gh missing or unauthenticated) — open PRs were NOT checked.");
 }
 
 const names = added.map((m) => m.file).join(", ");
