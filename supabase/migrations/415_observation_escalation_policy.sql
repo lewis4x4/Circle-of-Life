@@ -61,6 +61,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_facility_escalation_versions_one_active
   ON public.facility_escalation_versions (facility_id)
   WHERE status = 'active' AND deleted_at IS NULL;
 
+-- Same timeline invariant as the cadence versions, enforced the same way and
+-- for the same reason: an escalation report for a past date must recompute
+-- against the ladder that was actually in force. Draft, pending and scheduled
+-- versions sit outside the constraint because the active version is open ended
+-- until it is superseded; activation closes the outgoing effective_to and opens
+-- the incoming one in one transaction or the transaction aborts.
+ALTER TABLE public.facility_escalation_versions
+  DROP CONSTRAINT IF EXISTS facility_escalation_versions_no_overlap;
+
+ALTER TABLE public.facility_escalation_versions
+  ADD CONSTRAINT facility_escalation_versions_no_overlap
+  EXCLUDE USING gist (
+    facility_id WITH =,
+    tstzrange (effective_from, effective_to, '[)') WITH &&
+  ) WHERE (status IN ('active', 'superseded') AND deleted_at IS NULL);
+
 CREATE INDEX IF NOT EXISTS idx_facility_escalation_versions_facility_effective
   ON public.facility_escalation_versions (facility_id, effective_from DESC)
   WHERE deleted_at IS NULL;

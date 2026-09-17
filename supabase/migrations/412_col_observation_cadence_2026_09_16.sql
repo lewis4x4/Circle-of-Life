@@ -27,6 +27,10 @@
 
 BEGIN;
 
+-- Migration 131 already installs this; named again so the exclusion constraint
+-- below does not depend on reading that file to know why it works.
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
 -- ---------------------------------------------------------------------------
 -- Shift definitions
 -- ---------------------------------------------------------------------------
@@ -95,6 +99,32 @@ CREATE TABLE IF NOT EXISTS public.facility_cadence_versions (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_facility_cadence_versions_one_active
   ON public.facility_cadence_versions (facility_id)
   WHERE status = 'active' AND deleted_at IS NULL;
+
+-- The timeline invariant, enforced by the database rather than by whichever
+-- command happens to write.
+--
+-- facility_cadence_in_force resolves ORDER BY effective_from DESC LIMIT 1, so
+-- two versions covering the same instant do not error, they answer. They answer
+-- deterministically and wrongly, and the wrong answer is a past compliance
+-- report recomputing against a cadence that was never in force, which is the
+-- single failure this whole versioning scheme exists to prevent. A rule that
+-- important does not belong in an activation function that has to remember it.
+--
+-- Draft, pending and scheduled versions are outside the constraint: the active
+-- version is open ended until the moment it is superseded, so a version
+-- scheduled for next week necessarily overlaps it until activation closes it.
+-- Activation must therefore close the outgoing version's effective_to and open
+-- the incoming one in the same transaction. Doing it in the wrong order now
+-- aborts the transaction instead of corrupting the timeline.
+ALTER TABLE public.facility_cadence_versions
+  DROP CONSTRAINT IF EXISTS facility_cadence_versions_no_overlap;
+
+ALTER TABLE public.facility_cadence_versions
+  ADD CONSTRAINT facility_cadence_versions_no_overlap
+  EXCLUDE USING gist (
+    facility_id WITH =,
+    tstzrange (effective_from, effective_to, '[)') WITH &&
+  ) WHERE (status IN ('active', 'superseded') AND deleted_at IS NULL);
 
 CREATE INDEX IF NOT EXISTS idx_facility_cadence_versions_facility_effective
   ON public.facility_cadence_versions (facility_id, effective_from DESC)

@@ -12639,6 +12639,312 @@ export type Database = {
           },
         ]
       }
+      facility_escalation_rung_shift_overrides: {
+        Row: {
+          channels: string[] | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          escalation_rung_id: string
+          escalation_version_id: string
+          facility_id: string
+          id: string
+          offset_minutes: number | null
+          organization_id: string
+          shift_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          channels?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          escalation_rung_id: string
+          escalation_version_id: string
+          facility_id: string
+          id?: string
+          offset_minutes?: number | null
+          organization_id: string
+          shift_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          channels?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          escalation_rung_id?: string
+          escalation_version_id?: string
+          facility_id?: string
+          id?: string
+          offset_minutes?: number | null
+          organization_id?: string
+          shift_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      facility_escalation_rungs: {
+        Row: {
+          assigned_staff_only: boolean
+          channels: string[]
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          enabled: boolean
+          escalation_version_id: string
+          facility_id: string
+          id: string
+          include_assigned_staff: boolean
+          is_terminal: boolean
+          label: string
+          offset_minutes: number
+          organization_id: string
+          protocol_text: string | null
+          rung_key: string
+          sort_order: number
+          target_staff_roles: Database["public"]["Enums"]["staff_role"][]
+          updated_at: string
+          updated_by: string | null
+          use_standing_alert_routes: boolean
+        }
+        Insert: {
+          assigned_staff_only?: boolean
+          channels: string[]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          escalation_version_id: string
+          facility_id: string
+          id?: string
+          include_assigned_staff?: boolean
+          is_terminal?: boolean
+          label: string
+          offset_minutes: number
+          organization_id: string
+          protocol_text?: string | null
+          rung_key: string
+          sort_order?: number
+          target_staff_roles?: Database["public"]["Enums"]["staff_role"][]
+          updated_at?: string
+          updated_by?: string | null
+          use_standing_alert_routes?: boolean
+        }
+        Update: {
+          assigned_staff_only?: boolean
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          escalation_version_id?: string
+          facility_id?: string
+          id?: string
+          include_assigned_staff?: boolean
+          is_terminal?: boolean
+          label?: string
+          offset_minutes?: number
+          organization_id?: string
+          protocol_text?: string | null
+          rung_key?: string
+          sort_order?: number
+          target_staff_roles?: Database["public"]["Enums"]["staff_role"][]
+          updated_at?: string
+          updated_by?: string | null
+          use_standing_alert_routes?: boolean
+        }
+        Relationships: []
+      }
+      facility_escalation_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          change_reason: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_from: string
+          effective_to: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          source_template_id: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          change_reason: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from: string
+          effective_to?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          source_template_id?: string | null
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          change_reason?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          source_template_id?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: []
+      }
+      observation_escalation_deliveries: {
+        Row: {
+          channel: string
+          created_at: string
+          dispatch_id: string | null
+          error_message: string | null
+          facility_id: string
+          id: string
+          is_test: boolean
+          message_body: string | null
+          notification_route_id: string | null
+          organization_id: string
+          provider_message_id: string | null
+          rung_key: string
+          send_after: string
+          sent_at: string | null
+          skip_reason: string | null
+          status: string
+          target_phone: string | null
+          target_role: string
+          target_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          dispatch_id?: string | null
+          error_message?: string | null
+          facility_id: string
+          id?: string
+          is_test?: boolean
+          message_body?: string | null
+          notification_route_id?: string | null
+          organization_id: string
+          provider_message_id?: string | null
+          rung_key: string
+          send_after?: string
+          sent_at?: string | null
+          skip_reason?: string | null
+          status: string
+          target_phone?: string | null
+          target_role: string
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          dispatch_id?: string | null
+          error_message?: string | null
+          facility_id?: string
+          id?: string
+          is_test?: boolean
+          message_body?: string | null
+          notification_route_id?: string | null
+          organization_id?: string
+          provider_message_id?: string | null
+          rung_key?: string
+          send_after?: string
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          target_phone?: string | null
+          target_role?: string
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      observation_escalation_dispatches: {
+        Row: {
+          channels: string[]
+          created_at: string
+          entity_id: string | null
+          escalation_id: string | null
+          escalation_rung_id: string
+          escalation_version_id: string
+          facility_id: string
+          fired_at: string
+          id: string
+          is_terminal: boolean
+          organization_id: string
+          recipients_resolved: number
+          resident_id: string
+          rung_key: string
+          shift_key: string | null
+          task_id: string
+          window_closes_at: string
+        }
+        Insert: {
+          channels: string[]
+          created_at?: string
+          entity_id?: string | null
+          escalation_id?: string | null
+          escalation_rung_id: string
+          escalation_version_id: string
+          facility_id: string
+          fired_at?: string
+          id?: string
+          is_terminal?: boolean
+          organization_id: string
+          recipients_resolved?: number
+          resident_id: string
+          rung_key: string
+          shift_key?: string | null
+          task_id: string
+          window_closes_at: string
+        }
+        Update: {
+          channels?: string[]
+          created_at?: string
+          entity_id?: string | null
+          escalation_id?: string | null
+          escalation_rung_id?: string
+          escalation_version_id?: string
+          facility_id?: string
+          fired_at?: string
+          id?: string
+          is_terminal?: boolean
+          organization_id?: string
+          recipients_resolved?: number
+          resident_id?: string
+          rung_key?: string
+          shift_key?: string | null
+          task_id?: string
+          window_closes_at?: string
+        }
+        Relationships: []
+      }
       facility_shift_definitions: {
         Row: {
           active: boolean

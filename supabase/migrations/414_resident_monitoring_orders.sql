@@ -469,6 +469,16 @@ COMMENT ON COLUMN public.resident_observation_tasks.monitoring_order_id IS
 
 -- Idempotency for order tasks, the analogue of idx_obs_tasks_window_occurrence.
 -- A second generator tick inserts nothing.
+-- The compliance view asks, once per projected window, whether this resident has
+-- any log inside that span. The logs table indexes resident_id with entered_at,
+-- which is when the row was keyed, not observed_at, which is when the caregiver
+-- was in the room. Absorption compares against observed_at, so it gets the
+-- resident from the existing index and then filters. This is the module's
+-- hottest read; give it the column it actually orders by.
+CREATE INDEX IF NOT EXISTS idx_obs_logs_resident_observed
+  ON public.resident_observation_logs (resident_id, observed_at)
+  WHERE deleted_at IS NULL;
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_obs_tasks_order_occurrence
   ON public.resident_observation_tasks (monitoring_order_id, due_at)
   WHERE deleted_at IS NULL AND monitoring_order_id IS NOT NULL;
