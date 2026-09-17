@@ -19,6 +19,8 @@ function fixture(errorTable?: string) {
       eq: (column: string, value: string) => { filters.push([table, column, value]); return query; },
       is: (column: string, value: null) => { if (column === "facility_id") aggregate = true; filters.push([table, column, value]); return query; },
       not: () => query, order: () => query, limit: () => query,
+      gte: (column: string, value: string) => { filters.push([table, column, value]); return query; },
+      lte: (column: string, value: string) => { filters.push([table, column, value]); return query; },
       then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => {
         starts.push(table);
         const data = table === "facilities" ? [{ id: "f1", name: "Fixture facility", total_licensed_beds: 2 }]
@@ -47,12 +49,15 @@ describe("executive startup reads", () => {
     const start = Date.now();
     const pending = loadExecutiveOverview(client, "org", { strict: true });
     await vi.advanceTimersByTimeAsync(0);
+    // The run record is read up front because the resident-day window is
+    // anchored on the day the run covers; the bed census and that window then
+    // wait on it rather than re-reading the facility list.
     expect(starts).toEqual([
       "facilities",
+      "exec_kpi_snapshots",
       "exec_metric_snapshots",
       "exec_metric_snapshots",
       "exec_alerts",
-      "exec_kpi_snapshots",
     ]);
     expect(mocks.heat).toHaveBeenCalledWith(client, "org");
     expect(mocks.trend).toHaveBeenCalledWith(client, "org", 7);
@@ -69,6 +74,11 @@ describe("executive startup reads", () => {
     // No run row in the fixture: the page must be told nothing was recorded
     // rather than reading the tiles as current.
     expect(data.snapshot).toEqual({ kind: "never_recorded" });
+    // The daily census is read once the facility list and the run date are in,
+    // and an empty table is reported as nothing measured — not as zero
+    // resident-days served.
+    expect(from.mock.calls.filter(([table]) => table === "census_daily_log")).toHaveLength(1);
+    expect(data.residentDayWindow).toMatchObject({ measuredDays: 0, residentDays: 0, facilityCount: 1 });
     expect(data.metricChanges).toEqual({});
     for (const table of ["facilities", "exec_metric_snapshots", "exec_alerts"]) {
       expect(filters).toContainEqual([table, "organization_id", "org"]);

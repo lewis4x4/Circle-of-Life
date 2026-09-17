@@ -167,74 +167,156 @@ export function metricRecordedLine(freshness: MetricFreshness): string | null {
 }
 
 export type IncidentRateBasis = {
-  /** Resident-days the rate was divided by, when the run recorded a census. */
+  /** Resident-days the rate was divided by, when one could be established. */
   residentDays: number | null;
   /** True when the figure may be displayed as a rate. */
   usable: boolean;
   /**
-   * True when the resident-days were projected from a single day's census
-   * rather than counted day by day across the window.
+   * True while any day of the window is still projected from a single day's
+   * census rather than counted. It goes false only once every day in the window
+   * has a recorded census from every facility in scope.
    */
   estimated: boolean;
+  /** Days of the window whose census was recorded by every facility in scope. */
+  measuredDays: number;
+  /** Days the window spans. */
+  windowDays: number;
   /** Short qualifier shown beside the figure. */
   line: string;
   /** The arithmetic and its limits, for a disclosure beside the figure. */
   detail: string;
 };
 
+/**
+ * Resident-days that were counted rather than projected, as summarised by
+ * `src/lib/executive/resident-days.ts` from `census_daily_log`.
+ *
+ * Declared here, where the denominator is interpreted, so the evidence module
+ * does not have to depend on the module that reads the table.
+ */
+export type MeasuredResidentDays = {
+  /** Days every facility in scope recorded a census for. */
+  measuredDays: number;
+  /** Days the window spans. */
+  windowDays: number;
+  /** Resident-days summed over the measured days only. */
+  residentDays: number;
+  startDate: string;
+  endDate: string;
+};
+
 const NO_DENOMINATOR_LINE =
   "No resident-day count is recorded with this figure, so the rate cannot be read.";
 
+const NO_RESIDENTS_LINE =
+  "No residents in census over the window — there is no denominator, so no rate.";
+
+function unusableBasis(line: string, windowDays: number, measuredDays: number, residentDays: number | null): IncidentRateBasis {
+  return {
+    residentDays,
+    usable: false,
+    estimated: false,
+    measuredDays,
+    windowDays,
+    line,
+    detail: line,
+  };
+}
+
 /**
- * A rate with no denominator is not zero. This returns the denominator the run
- * used, or says plainly that there isn't one.
+ * A rate with no denominator is not zero. This returns the denominator behind
+ * the figure, and says how much of it was counted rather than assumed.
  *
- * The run stores one census count — residents in census on the day it executed —
- * and multiplies it by the window length. That projects a single day across
- * thirty; it does not measure the resident-days actually served, because no
- * daily census history is recorded. Everything derived from it is labelled an
- * estimate rather than presented as an established rate.
+ * Three outcomes, kept apart because they mean different things to a reader:
+ *
+ *   * every day of the window has a recorded census from every facility in
+ *     scope — the resident-days were served, not estimated, and the qualifier
+ *     drops;
+ *   * some days are recorded — those are added up and only the remaining days
+ *     are projected from the run's census, which is closer than projecting all
+ *     thirty but is still an estimate and still says so;
+ *   * none are recorded — the original projection, labelled as one.
+ *
+ * "Estimated" comes off for the portfolio only when nothing in the denominator
+ * is assumed. A day one facility missed keeps it on.
  */
-export function incidentRateBasis(state: ExecutiveSnapshotState): IncidentRateBasis {
+export function incidentRateBasis(
+  state: ExecutiveSnapshotState,
+  measured?: MeasuredResidentDays | null,
+): IncidentRateBasis {
+  const windowDays = measured?.windowDays ?? INCIDENT_RATE_WINDOW_DAYS;
+  const measuredDays = Math.min(measured?.measuredDays ?? 0, windowDays);
+  const measuredResidentDays = measured?.residentDays ?? 0;
+
   if (state.kind !== "recorded") {
+    return unusableBasis(NO_DENOMINATOR_LINE, windowDays, 0, null);
+  }
+
+  // Fully counted: the run's own one-day census is not consulted at all.
+  if (measured && measuredDays >= windowDays && windowDays > 0) {
+    if (measuredResidentDays <= 0) {
+      // A counted zero, not a missing one — nobody was in census on any of
+      // these days, so there is still no rate to show.
+      return unusableBasis(NO_RESIDENTS_LINE, windowDays, measuredDays, 0);
+    }
     return {
-      residentDays: null,
-      usable: false,
+      residentDays: measuredResidentDays,
+      usable: true,
       estimated: false,
-      line: NO_DENOMINATOR_LINE,
-      detail: NO_DENOMINATOR_LINE,
+      measuredDays,
+      windowDays,
+      line: `Incidents in the trailing ${windowDays} days per 1,000 resident-days.`,
+      detail:
+        `${measuredResidentDays.toLocaleString()} resident-days is the daily census recorded at ` +
+        `every facility in scope, added up across all ${windowDays} days from ${measured.startDate} ` +
+        `through ${measured.endDate}. No day in the window is projected.`,
     };
   }
 
   const residents = state.evidence.occupiedResidents;
   if (residents == null) {
-    return {
-      residentDays: null,
-      usable: false,
-      estimated: false,
-      line: NO_DENOMINATOR_LINE,
-      detail: NO_DENOMINATOR_LINE,
-    };
+    // Nothing to project the unrecorded days from, so no denominator can be
+    // established for them — and a partial one would understate the exposure.
+    return unusableBasis(NO_DENOMINATOR_LINE, windowDays, measuredDays, null);
   }
-  if (residents <= 0) {
+
+  const projectedDays = Math.max(0, windowDays - measuredDays);
+  const projectedResidentDays = residents * projectedDays;
+  const residentDays = measuredResidentDays + projectedResidentDays;
+  if (residentDays <= 0) {
+    return unusableBasis(NO_RESIDENTS_LINE, windowDays, measuredDays, 0);
+  }
+
+  const line = `Estimated · incidents in the trailing ${windowDays} days per 1,000 resident-days.`;
+  const dayWord = projectedDays === 1 ? "day" : "days";
+
+  if (measured && measuredDays > 0) {
     return {
-      residentDays: 0,
-      usable: false,
-      estimated: false,
-      line: "No residents in census over the window — there is no denominator, so no rate.",
-      detail: "No residents in census over the window — there is no denominator, so no rate.",
+      residentDays,
+      usable: true,
+      estimated: true,
+      measuredDays,
+      windowDays,
+      line,
+      detail:
+        `${residentDays.toLocaleString()} resident-days is ${measuredResidentDays.toLocaleString()} ` +
+        `counted from the daily census on ${measuredDays} of the ${windowDays} days, plus ` +
+        `${projectedResidentDays.toLocaleString()} projected from ${residents} residents in census on ` +
+        `${state.evidence.snapshotDate} for the ${projectedDays} ${dayWord} no census is recorded for. ` +
+        `It stays an estimate until every day in the window is recorded at every facility in scope.`,
     };
   }
 
-  const residentDays = residents * INCIDENT_RATE_WINDOW_DAYS;
   return {
     residentDays,
     usable: true,
     estimated: true,
-    line: `Estimated · incidents in the trailing ${INCIDENT_RATE_WINDOW_DAYS} days per 1,000 resident-days.`,
+    measuredDays,
+    windowDays,
+    line,
     detail:
       `${residentDays.toLocaleString()} resident-days is ${residents} residents in census on ` +
-      `${state.evidence.snapshotDate} × ${INCIDENT_RATE_WINDOW_DAYS} days. Daily census across the ` +
+      `${state.evidence.snapshotDate} × ${windowDays} days. Daily census across the ` +
       `window is not recorded, so this projects one day's census over the window rather than ` +
       `counting the resident-days actually served.`,
   };
