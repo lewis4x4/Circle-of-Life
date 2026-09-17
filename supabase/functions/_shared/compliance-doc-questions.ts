@@ -22,7 +22,7 @@
 import type { SystemOneQuestion } from "./typesafe-client.ts";
 
 /** Bump when any wording or threshold below changes. Recorded on every row. */
-export const QUESTIONS_VERSION = "compliance-doc-check-v1";
+export const QUESTIONS_VERSION = "compliance-doc-check-v2";
 
 export const COMPLIANCE_QUESTIONS: Record<string, SystemOneQuestion> = {
   doc_type: {
@@ -138,9 +138,21 @@ export const COMPLIANCE_QUESTIONS: Record<string, SystemOneQuestion> = {
 };
 
 /**
- * Thresholds are judgment calls, not measurements. They were set before the
- * first calibration run against known-good and known-generic documents; expect
- * to move them once that run exists, and bump QUESTIONS_VERSION when you do.
+ * Measured against nine real Circle of Life documents on 2026-09-16 — the
+ * 2026-27 Rising Oaks and Oakridge property certificates, their additional
+ * remarks schedules, the Rising Oaks flood evidence, three liability and bond
+ * certificates, and the 2022 Grande Cypress evidence of property insurance.
+ *
+ * The mortgagee bands are calibrated. The three HUD 232 parties read 78–99% on
+ * documents that carry the wording and 2–15% on documents that do not; 0.65 and
+ * 0.35 sit in an empty gap, not near a cluster. The 2022 Grande Cypress evidence
+ * blocks with all three missing, which is the document this was built to catch.
+ *
+ * `sendReadyScore` is NOT calibrated and is currently unreachable: the best real
+ * document scored 2.24, and readiness does not separate good from bad anyway —
+ * the blocked Grande Cypress document scored 2.07, above two compliant ones.
+ * The flags carry the discrimination; readiness only orders a queue. Whether an
+ * unsigned ACORD 28 counts as deliverable is Brian's call, not a tuning job.
  */
 export const COMPLIANCE_THRESHOLDS = {
   /** At or above this, a required mortgagee party is treated as present. */
@@ -157,8 +169,18 @@ export const COMPLIANCE_THRESHOLDS = {
   facilityConfidence: 0.55,
   /** Above this, treat the document as a draft rather than an issued document. */
   isDraft: 0.7,
-  /** Below this, the carrier and policy number are treated as unresolved. */
-  carrierIdentified: 0.5,
+  /**
+   * Below this, the carrier and policy number are treated as unresolved.
+   *
+   * Was 0.5, which a valid document nearly failed: the Oakridge property
+   * certificate reads 0.51, one point above blocking itself, and the range
+   * across good documents is 0.51–0.98. A wrongly blocked certificate sends an
+   * agent chasing a defect that is not there. Still unsettled in the other
+   * direction — no document with a genuinely missing carrier has been run, so
+   * put the Grande Cypress VACP000948 case through before trusting this to
+   * catch one.
+   */
+  carrierIdentified: 0.4,
   /** Readiness at or above this, with no flags, is send-ready. */
   sendReadyScore: 2.5,
 } as const;

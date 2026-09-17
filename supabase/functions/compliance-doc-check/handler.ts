@@ -78,7 +78,16 @@ export type ComplianceTriage = {
   questions_version: string;
 };
 
-/** Document kinds whose job is to carry mortgagee wording. */
+/**
+ * Document kinds whose job is to carry mortgagee wording.
+ *
+ * `flood` is deliberately absent, and that is an open question rather than a
+ * settled one: the Rising Oaks flood evidence names Berkadia at 0.95 but reads
+ * 0.02 on the HUD party and 0.09 on ISAOA/ATIMA. If HUD 232 requires the dual
+ * interest on flood coverage in a special flood hazard area — an insurance
+ * question, not a code question — adding "flood" here is the whole change, and
+ * that document starts blocking.
+ */
 const MORTGAGEE_BEARING = new Set(["evidence_of_property_insurance", "mortgagee_endorsement"]);
 
 type PartyVerdict = "present" | "absent" | "uncertain";
