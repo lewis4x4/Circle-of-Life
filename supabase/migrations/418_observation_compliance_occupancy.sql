@@ -2,7 +2,7 @@
 -- with no generated tasks reads as a defect instead of disappearing.
 --
 -- Spec: docs/specs/25A-smart-rounding-cadence-and-watchlist.md sections 4.3 and 5.
--- Replaces public.v_resident_observation_compliance from migration 414.
+-- Replaces public.v_resident_observation_compliance from migration 416.
 --
 -- The defect, demonstrated rather than theorized.
 -- ------------------------------------------------------------------
@@ -75,7 +75,7 @@ BEGIN;
 --
 -- Where the resident days come from, three sources unioned
 --   1. occupancy. A date spine crossed with the residents who were in the
---      building on that date. This is the source migration 414 lacked and the
+--      building on that date. This is the source migration 416 lacked and the
 --      only one that can speak about a day nothing was written for.
 --   2. days that carry standard cadence task rows.
 --   3. days covered by a Monitoring Order.

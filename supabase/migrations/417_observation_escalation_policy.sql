@@ -9,7 +9,7 @@
 -- a recipient or a channel; it reads this configuration and writes what the
 -- configuration told it to write.
 --
--- The structure mirrors the cadence configuration in migration 412 statement
+-- The structure mirrors the cadence configuration in migration 414 statement
 -- for statement, on purpose: same version table shape, same one active version
 -- per facility partial index, same propose and approve split in the insert
 -- policy, same invoker rights on the read helpers. Somebody who has read one
@@ -22,7 +22,7 @@
 -- escalation count.
 --
 -- The grace rule is not restated here. public.monitoring_order_grace_minutes
--- from migration 414 is the single definition, reading its divisor and bounds
+-- from migration 416 is the single definition, reading its divisor and bounds
 -- from haven.observation_grace_formula, and the standard cadence falls out of
 -- the same formula at 240 minute spacing. This file adds a module neutral name
 -- that delegates to it and no second copy of the arithmetic.
@@ -736,7 +736,7 @@ $func$;
 COMMENT ON FUNCTION public.facility_escalation_in_force (uuid, timestamptz) IS
   'The escalation policy version in force at an instant, including a superseded version when the instant is in the past. Mirrors public.facility_cadence_in_force. Invoker rights: escalation policy is facility policy, not a privileged read, and the policy tables own SELECT policies already scope the caller. The engine runs as service_role, which bypasses RLS and needs no definer rights.';
 
--- The grace rule already exists exactly once, in migration 414. This is a
+-- The grace rule already exists exactly once, in migration 416. This is a
 -- module neutral name for it, not a second copy: the escalation work reads
 -- grace for a standard cadence interval as well as for an order interval, and
 -- calling a function named for Monitoring Orders to do it would read as if

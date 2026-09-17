@@ -2,7 +2,7 @@
 -- while the engine was walking its queue.
 --
 -- Spec: docs/specs/25A-smart-rounding-cadence-and-watchlist.md section 5.
--- Fixes the read-write gap in migration 415's
+-- Fixes the read-write gap in migration 417's
 -- public.record_observation_escalation_rung.
 --
 -- The defect, demonstrated rather than theorized.

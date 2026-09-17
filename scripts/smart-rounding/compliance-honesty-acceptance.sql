@@ -99,7 +99,7 @@ BEGIN
     v.created_at
   LIMIT 1;
   PERFORM
-    pg_temp.ch_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 412 is missing');
+    pg_temp.ch_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 414 is missing');
 
   SELECT
     v.id INTO v_source_escalation
@@ -111,7 +111,7 @@ BEGIN
     AND v.deleted_at IS NULL
   LIMIT 1;
   PERFORM
-    pg_temp.ch_assert (v_source_escalation IS NOT NULL, 'the seeded escalation version from migration 415 is missing');
+    pg_temp.ch_assert (v_source_escalation IS NOT NULL, 'the seeded escalation version from migration 417 is missing');
 
   INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order)
   SELECT
@@ -293,7 +293,7 @@ $$;
 --
 -- The demonstrated case: a resident admitted before the cadence version's
 -- effective_from. Both the resolver and the projector return nothing, and
--- because migration 414 projected through a CROSS JOIN LATERAL the entire
+-- because migration 416 projected through a CROSS JOIN LATERAL the entire
 -- resident day was deleted from the answer rather than read as
 -- expected-and-unsatisfied. Every one of those days now yields exactly one row
 -- that says so.
