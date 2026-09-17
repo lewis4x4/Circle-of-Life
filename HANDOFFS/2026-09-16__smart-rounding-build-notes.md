@@ -438,6 +438,40 @@ from `haven.observation_grace_formula()`. Part 4 uses it for the standard cadenc
 Part 7 replaces the formula function's body with a read from a facility row; no caller
 changes.
 
+## 4c. Escalation policy, and how Edge Function tests actually run
+
+**Policy is versioned exactly like cadence.** `facility_escalation_versions` +
+`facility_escalation_rungs` + `facility_escalation_rung_shift_overrides`. Seeded version 1
+is active at every facility: `nudge` -15, `tier_1` +30, `tier_2` +60, `tier_3` +90 terminal,
+all measured from `window_close`. Night overrides change **channels only**, never offsets.
+
+`resident_observation_escalations` gains `escalation_version_id` and `rung_key`, backfilled
+to version 1. The old Edge Function wrote `observation_task_id` and `severity_weight`,
+neither of which ever existed; that drift is gone rather than accommodated.
+
+**Two rung columns beyond the spec's list**, because spec 5.1 says tier 1 is "assigned staff
+**plus** administrator" and tier 2 is "administrator **plus** standing alert audience", and
+a single `assigned_staff_only` boolean cannot express either: `include_assigned_staff` and
+`use_standing_alert_routes`, with CHECKs enforcing that `assigned_staff_only` implies
+`include_assigned_staff` and that no rung reaches nobody.
+
+**The nudge is not an escalation and must never be counted as one.** Every rung writes
+`observation_escalation_dispatches` (one row per `(task_id, rung_key)`, the idempotency
+anchor); only tiers write `resident_observation_escalations`. The nudge's `escalation_id` is
+null. An escalation count is `count(*) from resident_observation_escalations`.
+
+`public.observation_task_window_close(task_id)` is the single resolver: window grace for a
+cadence task, interval scaled grace for an order task, both through
+`public.monitoring_order_grace_minutes`.
+
+**Edge Function tests need `npm run test:edge`.** `vitest.config.ts` includes only
+`src/**/*.test.ts`, so **26 test files under `supabase/functions/` were never executed by
+any gate** and were documentation rather than verification. Part 4's two are Deno tests
+(`https://deno.land/std/assert`), so vitest was never going to run them; the runner is
+`deno test`. `npm run test:edge` now runs this module's, and a part that adds an Edge
+Function test must extend that script's path list. **The other 24 files remain unexecuted**
+and are recorded as a finding below rather than folded into this build.
+
 ## 5. Part ledger
 
 Filled in by the orchestrator as parts land.
@@ -447,7 +481,7 @@ Filled in by the orchestrator as parts land.
 | 1 | Cadence and task generation | **done** | `412` + generator rewrite |
 | 2 | Chip capture and composed narrative | **done** | `413` + capture surface |
 | 3 | Monitoring Orders | **done** | `414` + compliance view + bridge |
-| 4 | Escalation policy and engine | pending | |
+| 4 | Escalation policy and engine | **done** | `415` + engine rewrite |
 | 5 | Watchlist | pending | |
 | 6 | Module shell and the nine defects | pending | |
 | 7 | Cadence and Escalation Settings | pending | |
@@ -463,3 +497,16 @@ Filled in by the orchestrator as parts land.
   recurs and is fixed or goes a sustained number of runs without appearing.
 - **No hosted verification.** See decision D17.
 - **Acceptance 1 resident count unconfirmed.** See decision D15.
+- **24 pre-existing Edge Function test files are executed by no gate.** Inventory:
+  `_shared/` (5), `boldsign-send-contract-handler`, `care-event-dispatcher` (2),
+  `exec-kpi-snapshot` (2), `export-audit-log`, `facility-launch-promote` (3),
+  `grace-provider-errors`, `haven-ai-router`, `ingest` (2), `knowledge-agent`,
+  `officer-catalog` (2), `stand-up-google`, `stand-up-history-publisher`,
+  `stand-up-publisher`. They are outside this build's scope and may not all run under a
+  single runner, but every one of them currently reads as passing test coverage that has
+  never run. Worth a dedicated piece of work.
+- **Channel names are literals in the engine on purpose.** `in_app`, `push` and `sms`
+  appear in `observation-escalation-engine` as a discriminated union, because the code that
+  sends an SMS has to name SMS. Which channels a rung uses is data; how a channel is
+  delivered is code. The acceptance 19 scanner in D16 must distinguish the two rather than
+  flag the transport.
