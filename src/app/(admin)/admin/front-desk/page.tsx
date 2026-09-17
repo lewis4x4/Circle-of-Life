@@ -287,8 +287,11 @@ export default function AdminFrontDeskPage() {
           </p>
         </header>
 
+        {/* text-foreground, not text-warning below: warning text on a warning
+            wash fails AA contrast, and the caregiver pages already set this
+            pattern for the same banner. */}
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
+          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-foreground">
             Select a facility first — front desk logs are per-facility.
           </p>
         ) : null}
