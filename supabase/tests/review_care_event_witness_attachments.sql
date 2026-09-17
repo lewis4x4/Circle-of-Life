@@ -1,7 +1,7 @@
 -- COL-354 witness statements and attachments: native scratch-only probe.
 -- Synthetic staff and residents only ("Probe Caregiver A" ...). Rolls back.
 --
--- Covers migration 412 against spec 07A section 5 and the COL-354 decisions:
+-- Covers migration 414 against spec 07A section 5 and the COL-354 decisions:
 -- a Level 2 event creates one task per on-shift staff member except the
 -- reporter; a Level 1 creates none; another facility's staff get nothing;
 -- each of the three choices completes; a second completion is refused; an

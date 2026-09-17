@@ -58,7 +58,7 @@ D3, D4, D6 and D7 do not block go live: each has a default, each default is what
 
 **Purpose.** Get real events into Haven while paper is still the record.
 
-1. Apply migration 412 to Haven HFO Staging. Verify, then apply to production and ledger it. Do not re-run 400 afterwards: its `ON CONFLICT (id) DO UPDATE` on the bucket row would put the old 15 MB limit and the images-only MIME list back.
+1. Apply migration 414 to Haven HFO Staging. Verify, then apply to production and ledger it. Do not re-run 400 afterwards: its `ON CONFLICT (id) DO UPDATE` on the bucket row would put the old 15 MB limit and the images-only MIME list back.
 2. Confirm the two cron schedules and the dispatcher secret name (P4, P5).
 3. Walk one synthetic event end to end on staging: a Level 2 fall, a witness statement tapped by a second signed-in staff member, one photo and one PDF attached, the incident form and the physician sheet printed. Confirm a delivery row reached `sent` rather than sitting `queued`.
 4. Turn the flow on for the building.
