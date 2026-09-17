@@ -83,7 +83,7 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 7. **Denormalized `organization_id` + `facility_id`** on most tables for RLS performance.
 
 ### Migrations
-- Sequential `supabase/migrations/NNN_*.sql`. Check `docs/Autonomous.md` and the latest file in `supabase/migrations/` for the next free number; `migrations:check` enforces ordering.
+- Sequential `supabase/migrations/NNN_*.sql`. **Get the next number from `npm run migrations:next`, not from the last file in the directory.** The directory answers a question about the past; the contest is about the future, and two branches cut an hour apart both see the same highest number. `migrations:next` also counts numbers claimed by open pull requests. `npm run migrations:check:claims` gates the same thing in CI, and `migrations:check` still enforces ordering once everything has merged.
 - After touching migrations: `npm run migrations:verify:pg` (Docker replay).
 - **Is it actually applied?** `npm run migrations:verify:ledger` names every migration on your branch that production has not run, and `-- --staging` does the same for Haven HFO Staging. It compares by version and then by name — never `max(version)` — and only ever SELECTs. `.github/workflows/migration-drift.yml` runs it twice a day so merged-but-unapplied surfaces the same day rather than during an unrelated audit.
 
