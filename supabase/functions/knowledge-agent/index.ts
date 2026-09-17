@@ -7,7 +7,7 @@ import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { pickRedacted, redactString, redactValue } from "../_shared/redact-pii.ts";
 import { isOrgRateLimited, isRateLimited } from "../_shared/rate-limit.ts";
-import { rerankWithCohere } from "../_shared/cohere-rerank.ts";
+import { rerankEvidence } from "../_shared/kb-rerank.ts";
 import {
   decideGraceSafeMode,
   formatCountOnlyCensusAnswer,
@@ -2557,11 +2557,19 @@ async function executeTool(
         return !runtimeContext.suppressedDocumentIds.has(row.document_id);
       });
 
-      // KB-NEXT-05: Cohere reranker as the final pass over the (over-fetched)
-      // RRF candidates. Falls back to RRF order when COHERE_API_KEY isn't set
-      // or the API errors out, so this stays safe to deploy without the key.
+      // KB-NEXT-05: reranker as the final pass over the (over-fetched) RRF
+      // candidates. Falls back to RRF order when no engine is configured or
+      // the API errors out, so this stays safe to deploy without any key.
+      //
+      // `phiSuspected` is deliberately NOT passed: the router's intent
+      // classification does not reach this call site, and a local heuristic
+      // over `query` would be exactly the de-identification-by-guesswork that
+      // COL-466 rules out. Wiring the classification through to here is a
+      // prerequisite for KB_RERANK_ENGINE=typesafe in production, because the
+      // query is operator free text and can name a resident even on a policy
+      // question. Cohere is unaffected — it already receives this same query.
       await ctx.revalidate();
-      const reranked = await rerankWithCohere(query, filteredRows, {
+      const reranked = await rerankEvidence(query, filteredRows, {
         topN: matchCount,
         onWarn: (msg, meta) => {
           // Whitelist + deep-redact meta before it lands in the log line.

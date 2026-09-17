@@ -46,6 +46,15 @@ jobs:
           deno check _shared/router-intent.ts _shared/router-intent-typesafe.ts _shared/typesafe-client.ts
           deno test --allow-env _shared/router-intent-typesafe.test.ts
 
+      - name: KB reranker contracts
+        # Covers the engine fallback chain (typesafe -> cohere -> RRF order),
+        # the rule that a partially-scored rerank is abandoned rather than
+        # shipped, and that phiSuspected sends nothing at all. Mocked fetch.
+        run: |
+          cd supabase/functions
+          deno check _shared/kb-rerank.ts _shared/typesafe-rerank.ts _shared/cohere-rerank.ts
+          deno test --allow-env _shared/typesafe-rerank.test.ts
+
       - name: Stand Up regression contracts
         run: |
           python3 -B -m unittest discover -s scripts/stand-up -p 'test_*.py'
