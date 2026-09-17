@@ -35,6 +35,12 @@ CREATE TABLE IF NOT EXISTS public.facility_shift_definitions (
   organization_id uuid NOT NULL REFERENCES public.organizations (id),
   facility_id uuid NOT NULL REFERENCES public.facilities (id),
   shift_key text NOT NULL CHECK (shift_key ~ '^[a-z0-9_]+$'),
+  -- The roster still speaks the fixed shift_type enum. shift_key is editable
+  -- configuration and may be renamed; shift_assignments.shift_type is not and
+  -- cannot. Joining a renamed key straight onto the enum matches nothing and
+  -- fails silently, which reads as "nobody was assigned" rather than as an
+  -- error, so the mapping is stored rather than inferred from the key.
+  roster_shift_type public.shift_type NOT NULL,
   label text NOT NULL CHECK (char_length(label) BETWEEN 1 AND 60),
   starts_at_local time NOT NULL,
   ends_at_local time NOT NULL,
@@ -57,6 +63,8 @@ CREATE INDEX IF NOT EXISTS idx_facility_shift_definitions_facility_order
 
 COMMENT ON TABLE public.facility_shift_definitions IS
   'Per facility shift model for the observation module. Two 12 hour shifts at every facility; the count, keys, labels and local times are all editable configuration.';
+COMMENT ON COLUMN public.facility_shift_definitions.roster_shift_type IS
+  'Which shift_type value on shift_assignments this shift corresponds to. shift_key is renameable configuration; the roster enum is not. Assignment lookup joins through this column so renaming a shift cannot silently orphan every assignment.';
 COMMENT ON COLUMN public.facility_shift_definitions.ends_at_local IS
   'Local end time. When it is at or before starts_at_local the shift crosses midnight and runs to the same clock time on the next day.';
 
@@ -320,15 +328,16 @@ WITH col_facility AS (
     f.organization_id = '00000000-0000-0000-0000-000000000001'
     AND f.deleted_at IS NULL
 ),
-shift_seed (shift_key, label, starts_at_local, ends_at_local, sort_order) AS (
-  VALUES ('day', 'Day', '06:00'::time, '18:00'::time, 0),
-    ('night', 'Night', '18:00'::time, '06:00'::time, 1)
+shift_seed (shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order) AS (
+  VALUES ('day', 'day'::public.shift_type, 'Day', '06:00'::time, '18:00'::time, 0),
+    ('night', 'night'::public.shift_type, 'Night', '18:00'::time, '06:00'::time, 1)
 )
-INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, label, starts_at_local, ends_at_local, sort_order, active)
+INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order, active)
 SELECT
   cf.organization_id,
   cf.id,
   ss.shift_key,
+  ss.roster_shift_type,
   ss.label,
   ss.starts_at_local,
   ss.ends_at_local,
@@ -567,6 +576,7 @@ COMMENT ON FUNCTION public.facility_observation_windows_for_date (uuid, date) IS
 CREATE OR REPLACE FUNCTION public.facility_shift_window_at (p_facility_id uuid, p_at timestamptz)
   RETURNS TABLE (
     shift_key text,
+    roster_shift_type public.shift_type,
     shift_service_date date,
     starts_at_utc timestamptz,
     ends_at_utc timestamptz)
@@ -594,6 +604,7 @@ local_now AS (
 candidate AS (
   SELECT
     s.shift_key AS key,
+    s.roster_shift_type AS roster_type,
     d.day AS service_day,
     (d.day + s.starts_at_local) AS local_start,
     (d.day + s.starts_at_local) + CASE WHEN s.ends_at_local > s.starts_at_local THEN
@@ -612,6 +623,7 @@ candidate AS (
 )
 SELECT
   c.key,
+  c.roster_type,
   c.service_day,
   (c.local_start AT TIME ZONE ln.timezone),
   (c.local_end AT TIME ZONE ln.timezone)
@@ -632,6 +644,7 @@ COMMENT ON FUNCTION public.facility_shift_window_at (uuid, timestamptz) IS
 CREATE OR REPLACE FUNCTION public.facility_next_shift_window (p_facility_id uuid, p_at timestamptz)
   RETURNS TABLE (
     shift_key text,
+    roster_shift_type public.shift_type,
     shift_service_date date,
     starts_at_utc timestamptz,
     ends_at_utc timestamptz)
@@ -641,6 +654,7 @@ CREATE OR REPLACE FUNCTION public.facility_next_shift_window (p_facility_id uuid
   AS $func$
   SELECT
     nxt.shift_key,
+    nxt.roster_shift_type,
     nxt.shift_service_date,
     nxt.starts_at_utc,
     nxt.ends_at_utc
@@ -658,6 +672,7 @@ CREATE OR REPLACE FUNCTION public.facility_next_shift_observation_windows (p_fac
     window_key text,
     label text,
     shift_key text,
+    roster_shift_type public.shift_type,
     shift_service_date date,
     service_date date,
     due_at_utc timestamptz,
@@ -681,6 +696,7 @@ CREATE OR REPLACE FUNCTION public.facility_next_shift_observation_windows (p_fac
 nxt AS (
   SELECT
     n.shift_key AS key,
+    n.roster_shift_type AS roster_type,
     n.shift_service_date AS service_day,
     n.starts_at_utc,
     n.ends_at_utc
@@ -700,6 +716,7 @@ SELECT
   w.window_key,
   w.label,
   w.shift_key,
+  n.roster_type,
   n.service_day,
   sd.local_date,
   w.due_at_utc,

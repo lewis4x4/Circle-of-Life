@@ -238,6 +238,84 @@ member, written as its own `WHEN` branch rather than left to NULL propagation th
 only authorization change in the module; every other line of both locked bodies is the
 approved text.
 
+**D13. Absorption is expectation-derived, never row-derived.** Spec section 4.3 says an
+order check inside a standard window's span marks that window satisfied, and the same
+section says the standard windows stop generating while an order is active. Both are true,
+which means **there is no task row to mark**. Any implementation that reads
+`resident_observation_tasks` to compute absorption is structurally wrong and will report a
+resident on 30 minute checks as missing six windows a day.
+
+The compliance read for a resident and a service date must:
+
+1. resolve the cadence version in force for that date, from the task stamp where tasks
+   exist and from `facility_cadence_in_force` where they do not
+2. project the windows that version defines for that date, through
+   `facility_observation_windows_for_date`
+3. mark a projected window satisfied when **any** log for that resident falls inside its
+   span, whether the log came from a standard task or an order task
+4. count expected as the projected count, never as the task count
+
+This makes every compliance number in the module expectation-derived. Part 3 owns the view.
+Parts 5, 6, 7 and 8 read it and must not re-derive compliance by counting task rows.
+
+**D14. The version-in-force invariant is the thing most likely to be silently wrong.**
+`facility_cadence_in_force` resolves by `status IN ('active','superseded')` ordered by
+`effective_from DESC`, which is only correct if supersession always closes the prior
+version's `effective_to` at exactly the instant the new one opens. Part 7's
+`activate_cadence_version` owns that invariant. It must:
+
+- set the prior version's `effective_to` to the new version's `effective_from` in the same
+  transaction that flips status, so the timeline has no gap and no overlap
+- refuse to activate a version whose `effective_from` is earlier than the prior version's
+  `effective_from`
+- never touch `effective_from` on a version that has generated a task
+
+Part 8 tests the invariant at four points, not one: two adjacent versions, a scheduled
+version that activates in the middle of a report period, a rollback, and a template applied
+to three facilities. Acceptance 16 as written tests one.
+
+**D15. Acceptance item 1 is derived, never hardcoded.** The spec asserts 33 active
+residents at Homewood and therefore 198 tasks, but the same spec reports three different
+resident counts in defect 1 (200 listed, 25 on the form, 33 in production), and this build
+has no way to confirm any of them. The test asserts
+`generated = count(active residents) * count(enabled windows in the version in force)` and
+prints both factors. Report the measured numbers. Do not tune a fixture until it reads 198.
+
+**D16. The acceptance item 19 grep is defined here, before anyone can tune it green.**
+"No literal `15`, `30`, `60`, `90`" across all of `src/` is not a runnable check: those
+integers appear in Tailwind classes, timeouts, slices, and HTTP codes in thousands of
+lines. Part 8 ships `scripts/smart-rounding/config-literals.mjs` which:
+
+- scans only the rounding module, the settings surface, and the four Edge Functions in this
+  scope, by explicit path list, with no per-line suppression mechanism
+- flags time-of-day literals (`\b(0?[0-9]|1[0-9]|2[0-3]):[0-5][0-9]\b`) anywhere in scope
+- flags the offsets and grace values only where they sit next to a minute, hour, grace,
+  offset, window, escalation, or shift identifier, so it catches
+  `graceMinutes = 60` and ignores `slice(0, 60)`
+- flags `'day'`, `'night'`, `'evening'` string literals outside a type declaration
+- exempts `*.test.ts`, `*.test.tsx`, fixtures, and `supabase/migrations/`, and lists every
+  exemption it applied in its output
+
+Its output goes in the transcript whether it is clean or not. A finding is either fixed or
+recorded as a deliberate exception with a reason, never suppressed silently.
+
+**D17. Nothing in this build has touched a real database, and the report must say so.**
+Every green check is a replay against a scratch cluster with `scripts/pg-verify-stub.sql`
+standing in for Supabase auth. RLS under real JWT claims, Supabase default privileges, and
+the PostgREST schema cache are **not** exercised, and a prior Haven finding is that
+`has_table_privilege(...) = false` assertions are replay-only artifacts that read the other
+way on hosted. Part 8's RLS check therefore takes a target flag and ships runnable against
+Haven HFO Staging, but this run does not apply a migration to any hosted project and does
+not claim hosted verification. The exact commands go in the completion report as a parked
+item for the owner.
+
+**D18. `segment:gates` runs per part.** `AGENTS.md` and `CODEX.md` both make a PASS
+artifact under `test-results/agent-gates/` the definition of done for a segment, and
+process authority outranks the spec. Run
+`SKIP_PG_VERIFY=1 npm run segment:gates -- --segment "25A-part-N" --no-chaos` after
+integrating each part, with the native replay run separately as its own evidence. Add
+`--ui` on the parts that change routes or visuals.
+
 **D9. American spelling. No em dashes** in code comments, UI copy, or documentation.
 
 ---

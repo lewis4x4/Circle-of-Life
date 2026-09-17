@@ -52,6 +52,7 @@ interface CadenceWindowRow {
   window_key: string;
   label: string;
   shift_key: string;
+  roster_shift_type: string;
   shift_service_date: string;
   service_date: string;
   due_at_utc: string;
@@ -112,7 +113,11 @@ async function residentsUnderMonitoringOrder(
 }
 
 /**
- * Shift assignments for the shift the windows belong to. Generating one shift
+ * Shift assignments for the shift the windows belong to. The lookup matches
+ * `roster_shift_type`, not `shift_key`: the key is renameable configuration and
+ * `shift_assignments.shift_type` is a fixed enum, so joining the two directly
+ * would return nothing the moment an administrator renamed a shift, and would
+ * read as "nobody was assigned" rather than as an error. Generating one shift
  * ahead means these are always the incoming shift's rows, which is what a shift
  * change window needs: the check is owned by the staff whose shift begins at
  * that time, not by the shift going off duty. Where no incoming row covers a
@@ -123,7 +128,7 @@ async function assignmentsByResident(
   organizationId: string,
   facilityId: string,
   shiftServiceDate: string,
-  shiftKey: string,
+  rosterShiftType: string,
 ): Promise<Map<string, ShiftAssignmentRow>> {
   const { data, error } = await admin
     .from("shift_assignments")
@@ -131,7 +136,7 @@ async function assignmentsByResident(
     .eq("organization_id", organizationId)
     .eq("facility_id", facilityId)
     .eq("shift_date", shiftServiceDate)
-    .eq("shift_type", shiftKey)
+    .eq("shift_type", rosterShiftType)
     .in("status", ["assigned", "confirmed"])
     .is("deleted_at", null);
 
@@ -281,7 +286,7 @@ Deno.serve(async (req) => {
         facility.organization_id,
         facility.id,
         firstWindow.shift_service_date,
-        firstWindow.shift_key,
+        firstWindow.roster_shift_type,
       );
 
       const rows: TaskRow[] = [];
