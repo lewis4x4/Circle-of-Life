@@ -14,11 +14,14 @@
  * accuracy difference means anything.
  *
  * Usage:
- *   TYPESAFE_API_KEY=... ANTHROPIC_API_KEY=... \
- *     deno run --allow-env --allow-net --allow-read scripts/eval-router-intent.ts
+ *   npm run eval:router-intent                      # both engines
+ *   npm run eval:router-intent -- --engine typesafe # one engine
  *
- *   # one engine only
- *   deno run ... scripts/eval-router-intent.ts --engine typesafe
+ * Keys: TYPESAFE_API_KEY and ANTHROPIC_API_KEY. Deno does not read `.env.local`
+ * on its own the way Next does — nothing here is bundled by Next — so the npm
+ * script passes `--env-file=.env.local` explicitly. A missing file only warns,
+ * so exporting the keys in the shell works just as well. An engine whose key is
+ * absent is skipped rather than reported as a failure.
  *
  * Exit code: 0 when every engine run clears ROUTER_EVAL_TARGET (default 0.85).
  *
