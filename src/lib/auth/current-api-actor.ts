@@ -4,6 +4,7 @@ import { logError } from "@/lib/observability/logger";
 import { ALL_APP_ROLES, type AppRole } from "@/lib/rbac";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createClient } from "@/lib/supabase/server";
+import { readMustChangePasswordFromSettings } from "@/lib/auth/must-change-password";
 
 type CurrentProfileRow = {
   id: string;
@@ -11,6 +12,7 @@ type CurrentProfileRow = {
   app_role: AppRole | null;
   email: string | null;
   full_name: string | null;
+  settings: unknown;
 };
 
 export type CurrentApiActor = {
@@ -45,7 +47,7 @@ async function resolveCurrentProfile(
 ): Promise<{ profile: CurrentProfileRow } | { response: NextResponse }> {
   const { data: profile, error: profileError } = await supabase
     .from("user_profiles")
-    .select("id, organization_id, app_role, email, full_name")
+    .select("id, organization_id, app_role, email, full_name, settings")
     .eq("id", userId)
     .eq("is_active", true)
     .is("deleted_at", null)
@@ -77,6 +79,32 @@ async function resolveCurrentProfile(
   return { profile: current };
 }
 
+/**
+ * A user owing a password change may not act through the API. Enforced here, on the
+ * shared actor resolver, so it applies to every route that derives an actor from the
+ * session rather than to whichever routes someone remembered to annotate (COL-362).
+ *
+ * Pass `allowPendingPasswordChange` only for the endpoints that let the user complete
+ * or abandon the change.
+ */
+function enforcePendingPasswordChange(
+  profile: CurrentProfileRow,
+  allowPendingPasswordChange?: boolean,
+): { response: NextResponse } | null {
+  if (allowPendingPasswordChange) return null;
+  if (!readMustChangePasswordFromSettings(profile.settings)) return null;
+
+  return {
+    response: NextResponse.json(
+      {
+        error: "You must change your temporary password before continuing.",
+        code: "password_change_required",
+      },
+      { status: 403 },
+    ),
+  };
+}
+
 function enforceAllowedRole(
   profile: CurrentProfileRow,
   allowedRoles?: readonly AppRole[],
@@ -101,6 +129,8 @@ function enforceAllowedRole(
 export async function requireCurrentApiActor(options?: {
   allowedRoles?: readonly AppRole[];
   scope?: string;
+  /** Only for endpoints that exist to resolve the forced change itself. */
+  allowPendingPasswordChange?: boolean;
 }): Promise<CurrentApiActorResult> {
   const scope = options?.scope ?? "api.current-actor";
 
@@ -128,6 +158,8 @@ export async function requireCurrentApiActor(options?: {
   const profileResult = await resolveCurrentProfile(supabase, user.id, scope);
   if ("response" in profileResult) return profileResult;
   const current = profileResult.profile;
+  const pending = enforcePendingPasswordChange(current, options?.allowPendingPasswordChange);
+  if (pending) return pending;
   const denied = enforceAllowedRole(current, options?.allowedRoles);
   if (denied) return denied;
 
@@ -162,7 +194,11 @@ export async function requireCurrentApiActor(options?: {
  */
 export async function revalidateCurrentApiActor(
   actor: CurrentApiActor,
-  options?: { allowedRoles?: readonly AppRole[]; scope?: string },
+  options?: {
+    allowedRoles?: readonly AppRole[];
+    scope?: string;
+    allowPendingPasswordChange?: boolean;
+  },
 ): Promise<CurrentApiActorResult> {
   const scope = options?.scope ?? "api.current-actor.revalidate";
   const {
@@ -178,6 +214,8 @@ export async function revalidateCurrentApiActor(
   const profileResult = await resolveCurrentProfile(actor.client, actor.id, scope);
   if ("response" in profileResult) return profileResult;
   const current = profileResult.profile;
+  const pending = enforcePendingPasswordChange(current, options?.allowPendingPasswordChange);
+  if (pending) return pending;
   const denied = enforceAllowedRole(current, options?.allowedRoles);
   if (denied) return denied;
 

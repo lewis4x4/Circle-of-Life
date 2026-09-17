@@ -12,7 +12,15 @@ import { resetUserPasswordSchema } from "@/lib/validation/user-management";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 import { logError } from "@/lib/observability/logger";
 import { canActorManageTarget } from "@/lib/rbac";
+import {
+  checkFailureRateLimit,
+  recordFailureRateLimit,
+} from "@/lib/security/in-memory-failure-rate-limit";
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Ten resets per admin per 15 minutes — well above real use, far below a sweep. */
+const RESET_PASSWORD_RATE_LIMIT = { maxFailures: 10, windowMs: 15 * 60 * 1000 };
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -50,6 +58,19 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   }
   const { mode } = parsed.data;
 
+  // Each reset mints a live credential or sends mail to a staff member. Cap the churn
+  // per admin so a compromised admin session cannot cycle the whole roster, and so a
+  // stuck UI cannot spam a user's inbox (COL-362).
+  const limiterKey = `admin.reset-password:${actor.id}`;
+  const limit = checkFailureRateLimit(limiterKey, RESET_PASSWORD_RATE_LIMIT);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many password resets. Try again shortly.", code: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
+  recordFailureRateLimit(limiterKey, RESET_PASSWORD_RATE_LIMIT);
+
   // Find target
   const { data: target, error: targetErr } = await admin
     .from("user_profiles")
@@ -71,6 +92,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   }
 
   let temporaryPassword: string | undefined;
+  let temporaryPasswordExpiry: string | null = null;
   let auditWritten = false;
 
   try {
@@ -86,8 +108,10 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
       await adminSendPasswordResetEmail(target.email);
     } else {
-      const { temporary_password } = await adminSetUserSignInReadyWithTemporaryPassword(targetUserId);
+      const { temporary_password, expires_at } =
+        await adminSetUserSignInReadyWithTemporaryPassword(targetUserId);
       temporaryPassword = temporary_password;
+      temporaryPasswordExpiry = expires_at;
     }
   } catch (err) {
     logError("admin.users.reset_password", err, {
@@ -114,6 +138,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
       ok: true,
       mode,
       temporary_password: temporaryPassword,
+      temporary_password_expires_at: temporaryPasswordExpiry,
     });
   }
 

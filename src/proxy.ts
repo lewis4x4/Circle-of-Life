@@ -5,6 +5,10 @@ import { dietaryShellAccessRedirect, isDietaryShellPath } from "@/lib/auth/dieta
 import { familyShellAccessRedirect, isFamilyShellPath } from "@/lib/auth/family-shell";
 import { isMedTechShellPath, medTechShellAccessRedirect } from "@/lib/auth/med-tech-shell";
 import { isOnboardingShellPath, onboardingShellAccessRedirect } from "@/lib/auth/onboarding-shell";
+import {
+  hasPendingPasswordChange,
+  isChangePasswordExemptPath,
+} from "@/lib/auth/must-change-password";
 import { resolveUiV2AdminRewritePath } from "@/lib/flags";
 import { updateSession } from "@/lib/supabase/middleware";
 
@@ -41,6 +45,19 @@ export async function proxy(request: NextRequest) {
     });
     mergeSetCookieHeaders(response, retry);
     return retry;
+  }
+
+  // A pending forced password change outranks every shell's own role routing, and it
+  // is checked here rather than per-shell so no route group can be added without it.
+  // Client-side gating alone left (med-tech), (dietary), (family) and (onboarding)
+  // unguarded, because they never mounted the provider the gate lived in (COL-362).
+  if (user && hasPendingPasswordChange(user) && !isChangePasswordExemptPath(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/change-password";
+    url.search = "";
+    const redirect = NextResponse.redirect(url);
+    mergeSetCookieHeaders(response, redirect);
+    return redirect;
   }
 
   if (isAdminShellPath(pathname)) {
@@ -125,6 +142,6 @@ export async function proxy(request: NextRequest) {
  */
 export const config = {
   matcher: [
-    "/((?!.*\\.(?:css|js|mjs|json|txt|map|ico|png|jpg|jpeg|svg|woff2?|ttf)$)(?:admin|clinical|billing|finance|pipeline|risk|insurance|vendors|residents|resident|staffing|staff|incidents|incident-draft|schedules|time-records|payroll|certifications|training|transportation|reputation|assessments|care-plans|family-messages|family|executive|search|reports|caregiver|clock|followups|handoff|me|meds|prn-followup|tasks|dietary|med-tech|onboarding)(?:$|/).*)",
+    "/((?!.*\\.(?:css|js|mjs|json|txt|map|ico|png|jpg|jpeg|svg|woff2?|ttf)$)(?:admin|clinical|billing|finance|pipeline|risk|insurance|vendors|residents|resident|staffing|staff|incidents|incident-draft|schedules|time-records|payroll|certifications|training|transportation|reputation|assessments|care-plans|family-messages|family|executive|search|reports|caregiver|clock|followups|handoff|me|meds|print|prn-followup|tasks|dietary|med-tech|onboarding)(?:$|/).*)",
   ],
 };
