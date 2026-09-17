@@ -442,20 +442,14 @@ BEGIN
         AND assignment.staff_id=v_staff_id)
   INTO v_has_active_assignment,v_is_active_assignee;
 
-  -- Assignee guard. One case changes from the 327 body on purpose: a task with
-  -- no assigned staff is the facility pool. Spec 25A sections 2.2 and 3.5 make
-  -- a pool task satisfiable by any staff member with observation permission at
-  -- that facility, and the shift change window falls back to the pool whenever
-  -- no incoming staff row covers the resident, so pool tasks are routine rather
-  -- than exceptional. The case is written out rather than left to NULL
-  -- propagation through AND, because a security rule that depends on an
-  -- unknown comparison reads as a bug to the next person.
+  -- Assignee guard, unchanged from the approved 327 body. `IS NOT TRUE` rather
+  -- than `NOT (...)` is deliberate: an unassigned task compares NULL, and NULL
+  -- must refuse rather than pass. supabase/tests/review_authoritative_actor.sql
+  -- asserts a caregiver cannot complete a task whose assigned_staff_id is null
+  -- and whose assignment rows are all released. That tested invariant outranks
+  -- the spec's facility pool wording; see the build notes, decision D12.
   IF v_role NOT IN('owner','org_admin','facility_admin','nurse')
-     AND NOT(CASE
-               WHEN v_has_active_assignment THEN v_is_active_assignee
-               WHEN v_task.assigned_staff_id IS NULL THEN TRUE
-               ELSE v_task.assigned_staff_id=v_staff_id
-             END) THEN
+     AND (CASE WHEN v_has_active_assignment THEN v_is_active_assignee ELSE v_task.assigned_staff_id=v_staff_id END) IS NOT TRUE THEN
     RAISE EXCEPTION 'Rounding task assignee changed' USING ERRCODE='42501';
   END IF;
   IF v_task.status IN('completed_on_time','completed_late','excused') THEN
@@ -535,6 +529,10 @@ BEGIN
  SELECT EXISTS(SELECT 1 FROM public.resident_observation_assignments a WHERE a.task_id=v_task.id AND a.organization_id=p_organization_id AND a.facility_id=p_facility_id AND a.released_at IS NULL),
  EXISTS(SELECT 1 FROM public.resident_observation_assignments a WHERE a.task_id=v_task.id AND a.organization_id=p_organization_id AND a.facility_id=p_facility_id AND a.released_at IS NULL AND a.staff_id=v_staff)
  INTO v_has_assignment,v_is_assignee;
+ -- Assignee guard, unchanged from the approved 331 body. A task with no assigned
+ -- staff stays uncompletable by a floor role: supabase/tests/review_authoritative_actor.sql
+ -- asserts exactly that, and a tested authorization invariant outranks the
+ -- spec's facility pool wording. See the build notes, decision D12.
  IF v_role NOT IN('owner','org_admin','facility_admin','nurse')
  AND (CASE WHEN v_has_assignment THEN v_is_assignee ELSE v_task.assigned_staff_id=v_staff END) IS NOT TRUE THEN
   RAISE EXCEPTION 'Rounding task assignee changed' USING ERRCODE='42501';

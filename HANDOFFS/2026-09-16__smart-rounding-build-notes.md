@@ -231,12 +231,39 @@ Plantation helper be deprecated. Part 6 removes the operator entry point that ca
 `src/lib/rounding/apply-col-discovery-observation-plan.ts`), which is what takes it out of
 the product.
 
-**D12. The facility pool is explicit in the assignee guard.** `haven.complete_rounding_task_core`
-now treats a task with `assigned_staff_id IS NULL` as satisfiable by any permitted staff
-member, written as its own `WHEN` branch rather than left to NULL propagation through
-`AND`. Spec sections 2.2 and 3.5 require it and Part 1 made pool tasks routine. This is the
-only authorization change in the module; every other line of both locked bodies is the
-approved text.
+**D12 (CORRECTED). The facility pool must be solved by assignment, never by
+authorization. There is no pool branch in either locked completion body.**
+
+The earlier version of this decision was wrong and is reversed. `supabase/tests/
+review_authoritative_actor.sql` nulls `assigned_staff_id`, releases every assignment row,
+and asserts that a caregiver is **refused**. That is a deliberate, tested SYS-001
+authorization invariant, and a tested security invariant outranks the spec's wording. Both
+`haven.complete_rounding_task_core` and `public.complete_rounding_task_review` now match
+their approved 327 and 333 text exactly, differing only by the two disclosed column
+additions each.
+
+**The conflict, recorded.** Spec 25A sections 2.2 and 3.5 say an unassigned shift change
+task goes to the facility pool and is "satisfiable by any staff member with observation
+permission at that facility." The security model says an unassigned task is completable by
+nobody below `nurse`. Both cannot hold.
+
+**The resulting functional gap, which is real and currently open.** The generator leaves a
+shift change task unassigned whenever no incoming `shift_assignments` row covers the
+resident. Those tasks are right now completable by nobody below `nurse`, so the 06:00 check
+that spec section 2.2 calls the entire point of the shift change window can sit unworkable
+on the board.
+
+**The correct fix is assignment, not a looser guard.** `resident_observation_assignments`
+already exists with `assignment_type` of `primary`, `reassignment` and `rescue`, and the
+guard passes for any staff member holding a live assignment row. A pool task should
+therefore either receive assignment rows for the on duty staff at generation, or offer an
+explicit claim step that writes a `rescue` row before completion. Either satisfies the
+spec's intent and the security invariant at once, and leaves an audit trail naming who took
+the check, which a bare authorization bypass does not.
+
+**Owner decision required before this is built.** Auto-assign every on duty staff member,
+or require a claim. Until then the generator's pool fallback is a known gap, not a working
+path. Do not close it by widening the assignee guard.
 
 **D13. Absorption is expectation-derived, never row-derived.** Spec section 4.3 says an
 order check inside a standard window's span marks that window satisfied, and the same
