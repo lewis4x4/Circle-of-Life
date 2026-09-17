@@ -111,7 +111,16 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
           PARTITION BY c.resident_id, (c.event_type IN ('discharge', 'death'))
           ORDER BY c.effective_from DESC)
         ELSE NULL
-      END AS ending_rank
+      END AS ending_rank,
+      -- residents.admission_source is single valued in exactly the same way,
+      -- so it gets the same guard: a January admission must not print the
+      -- source of a May readmission onto a page a regulator is reading.
+      CASE WHEN c.event_type IN ('admission', 'readmission')
+        THEN row_number() OVER (
+          PARTITION BY c.resident_id, (c.event_type IN ('admission', 'readmission'))
+          ORDER BY c.effective_from DESC)
+        ELSE NULL
+      END AS starting_rank
     FROM classified c
     WHERE c.event_type IS NOT NULL
   )
@@ -127,7 +136,7 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
     'current'::text,
     r.prev_status,
     r.status,
-    CASE WHEN r.event_type IN ('admission', 'readmission') THEN res.admission_source END,
+    CASE WHEN r.starting_rank = 1 THEN res.admission_source END,
     CASE WHEN r.ending_rank = 1 THEN res.discharge_reason END,
     CASE WHEN r.ending_rank = 1 THEN res.discharge_destination END,
     r.created_by,
@@ -197,6 +206,13 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
   FROM day_status ds
   JOIN public.residents res ON res.id = ds.resident_id AND res.deleted_at IS NULL
   GROUP BY ds.resident_id, res.first_name, res.last_name, date_trunc('month', ds.day)
+  -- A residency that ended keeps its final `discharged` row open forever (one
+  -- open interval per resident, enforced by idx_resident_status_history_current_unique),
+  -- so without this every resident ever discharged would appear in every month
+  -- of the range with two zeroes beside their name. A census page handed to a
+  -- surveyor lists the people who were here.
+  HAVING count(DISTINCT ds.day) FILTER (WHERE ds.status = 'active') > 0
+      OR count(DISTINCT ds.day) FILTER (WHERE haven.resident_status_is_billable(ds.status)) > 0
   ORDER BY date_trunc('month', ds.day), res.last_name, res.first_name
 $$;
 COMMENT ON FUNCTION public.census_record_monthly(uuid,uuid,date,date) IS
@@ -228,9 +244,20 @@ ALTER TABLE public.visitor_log_entries
   CHECK (visitor_type IN ('family', 'vendor', 'contractor', 'medical', 'official', 'other',
                           'family_friend', 'healthcare_provider', 'vendor_contractor', 'surveyor_regulator'));
 
+-- NOT VALID: these two are the only new checks that judge data migration 294
+-- already wrote. 294 had no length bound on visitor_name and let any facility
+-- staff member update checked_out_at from the client, so one long pasted name
+-- or one out-of-order correction would abort this whole migration -- taking the
+-- register and census functions with it -- and only against real data. New rows
+-- are constrained either way; the VALIDATE below reports on the old ones.
 ALTER TABLE public.visitor_log_entries
   ADD CONSTRAINT visitor_log_entries_name_length_check
-    CHECK (char_length(btrim(visitor_name)) BETWEEN 1 AND 120),
+    CHECK (char_length(btrim(visitor_name)) BETWEEN 1 AND 120) NOT VALID;
+ALTER TABLE public.visitor_log_entries
+  ADD CONSTRAINT visitor_log_entries_sign_out_order_check
+    CHECK (checked_out_at IS NULL OR checked_out_at >= checked_in_at) NOT VALID;
+
+ALTER TABLE public.visitor_log_entries
   ADD CONSTRAINT visitor_log_entries_phone_check
     CHECK (visitor_phone IS NULL OR visitor_phone ~ '^[0-9()+\-. ]{7,20}$'),
   ADD CONSTRAINT visitor_log_entries_visiting_type_check
@@ -243,9 +270,13 @@ ALTER TABLE public.visitor_log_entries
   ADD CONSTRAINT visitor_log_entries_void_reason_check
     CHECK (void_reason IS NULL OR void_reason IN ('entered_in_error', 'duplicate', 'wrong_facility')),
   ADD CONSTRAINT visitor_log_entries_void_complete_check
-    CHECK ((voided_at IS NULL) = (voided_by IS NULL) AND (voided_at IS NULL) = (void_reason IS NULL)),
-  ADD CONSTRAINT visitor_log_entries_sign_out_order_check
-    CHECK (checked_out_at IS NULL OR checked_out_at >= checked_in_at);
+    CHECK ((voided_at IS NULL) = (voided_by IS NULL) AND (voided_at IS NULL) = (void_reason IS NULL));
+
+-- Clean data validates here and the constraints become ordinary ones. Dirty
+-- data raises, and the fix is to correct the named rows and re-run these two
+-- statements -- not to drop the constraint.
+ALTER TABLE public.visitor_log_entries VALIDATE CONSTRAINT visitor_log_entries_name_length_check;
+ALTER TABLE public.visitor_log_entries VALIDATE CONSTRAINT visitor_log_entries_sign_out_order_check;
 
 CREATE INDEX IF NOT EXISTS visitor_log_entries_open_idx
   ON public.visitor_log_entries (facility_id, checked_in_at)
@@ -364,7 +395,7 @@ $$;
 
 CREATE FUNCTION public.visitor_sign_out_all_open(p_facility_id uuid)
 RETURNS integer LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public AS $$
-DECLARE n integer; e public.visitor_log_entries;
+DECLARE n integer := 0; e public.visitor_log_entries;
 BEGIN
   IF NOT haven.has_facility_access(p_facility_id) OR haven.app_role() = 'family' THEN
     RAISE EXCEPTION 'Not authorized for this facility' USING ERRCODE = '42501';
@@ -378,10 +409,13 @@ BEGIN
        AND deleted_at IS NULL
     RETURNING *
   LOOP
+    -- Counted here, not with GET DIAGNOSTICS ROW_COUNT. After this loop
+    -- ROW_COUNT describes the last statement run inside the body -- the audit
+    -- insert, always one row -- so the count was 1 for any non-empty building.
+    n := n + 1;
     PERFORM haven.visitor_audit(e, 'visitor_signed_out_bulk_end_of_day');
   END LOOP;
-  GET DIAGNOSTICS n = ROW_COUNT;
-  RETURN coalesce(n, 0);
+  RETURN n;
 END;
 $$;
 
@@ -462,11 +496,63 @@ COMMENT ON FUNCTION public.visitor_sign_out_all_open(uuid) IS
 COMMENT ON FUNCTION public.visitor_void(uuid,text) IS
   'Voids a wrong visitor entry with a coded reason, leaving it visible. COL-37 ruling: definer required -- the correction path has to write columns the client cannot, and voiding rather than deleting is what keeps the mistake on the record. Facility grant asserted, reason checked against the coded set, second void refused. Keep it definer.';
 
+-- Who is in the building right now is not a date range question. The log below
+-- is filtered to a chosen range; this is not, because a visitor who signed in
+-- at 19:00 yesterday and never signed out is still in the building at 08:00
+-- today, and is exactly the row the 04:00 left_open exception exists to raise.
+-- It is also the scope visitor_sign_out_all_open acts on, so the count in the
+-- confirmation matches the number of people it closes.
+CREATE FUNCTION public.visitor_log_open(p_organization_id uuid, p_facility_id uuid)
+RETURNS TABLE (
+  id uuid,
+  visitor_name text,
+  visitor_phone text,
+  visitor_type text,
+  visiting_type text,
+  visiting_resident_id uuid,
+  visiting_resident_name text,
+  signed_in_at timestamptz,
+  signed_in_by_name text,
+  signed_out_at timestamptz,
+  signed_out_by_name text,
+  sign_out_method text,
+  voided_at timestamptz,
+  void_reason text,
+  left_open boolean
+)
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
+  SELECT
+    v.id, v.visitor_name, v.visitor_phone, v.visitor_type, v.visiting_type,
+    v.resident_id,
+    CASE WHEN v.resident_id IS NULL THEN NULL ELSE btrim(res.first_name || ' ' || res.last_name) END,
+    v.checked_in_at,
+    si.full_name,
+    v.checked_out_at,
+    so.full_name,
+    v.sign_out_method,
+    v.voided_at,
+    v.void_reason,
+    v.checked_in_at < haven.visitor_left_open_threshold(now())
+  FROM public.visitor_log_entries v
+  LEFT JOIN public.residents res ON res.id = v.resident_id AND res.deleted_at IS NULL
+  LEFT JOIN public.user_profiles si ON si.id = coalesce(v.signed_in_by, v.created_by)
+  LEFT JOIN public.user_profiles so ON so.id = v.signed_out_by
+  WHERE v.organization_id = p_organization_id
+    AND v.facility_id = p_facility_id
+    AND v.deleted_at IS NULL
+    AND v.checked_out_at IS NULL
+    AND v.voided_at IS NULL
+  ORDER BY v.checked_in_at
+$$;
+COMMENT ON FUNCTION public.visitor_log_open(uuid,uuid) IS
+  'COL-353: every visitor signed in and not signed out at this facility, oldest first, whatever day they arrived. left_open marks anyone still here from before the most recent 04:00 America/New_York. Nothing is ever closed automatically.';
+
 REVOKE ALL ON FUNCTION
   public.visitor_sign_out(uuid),
   public.visitor_sign_out_all_open(uuid),
   public.visitor_void(uuid,text),
   public.visitor_log(uuid,uuid,timestamptz,timestamptz,boolean),
+  public.visitor_log_open(uuid,uuid),
   haven.visitor_left_open_threshold(timestamptz),
   haven.visitor_entry_for_update(uuid),
   haven.visitor_audit(public.visitor_log_entries,text)
@@ -476,6 +562,7 @@ GRANT EXECUTE ON FUNCTION
   public.visitor_sign_out_all_open(uuid),
   public.visitor_void(uuid,text),
   public.visitor_log(uuid,uuid,timestamptz,timestamptz,boolean),
+  public.visitor_log_open(uuid,uuid),
   haven.visitor_left_open_threshold(timestamptz)
   TO authenticated;
 
@@ -527,6 +614,7 @@ NOTIFY pgrst, 'reload schema';
 COMMIT;
 
 -- Rollback: DROP FUNCTION public.survey_print_pack_record(uuid,text[],date,date),
+-- public.visitor_log_open(uuid,uuid),
 -- public.visitor_log(uuid,uuid,timestamptz,timestamptz,boolean), public.visitor_void(uuid,text),
 -- public.visitor_sign_out_all_open(uuid), public.visitor_sign_out(uuid),
 -- haven.visitor_audit(public.visitor_log_entries,text), haven.visitor_entry_for_update(uuid),

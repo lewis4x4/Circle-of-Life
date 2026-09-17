@@ -20,6 +20,7 @@ import {
   easternDayEndIso,
   easternDayStartIso,
   formatRegisterEventTime,
+  isCompleteDateInput,
 } from "@/lib/registers/register-display-copy";
 
 type Props = {
@@ -57,6 +58,13 @@ export function RegisterClient({
   const load = useCallback(
     async (next: { from: string; to: string; includeHolds: boolean }) => {
       if (!facilityId) return;
+      // Clearing a date field fires onChange with "". Asking the database about
+      // an empty range throws, and the operator reads "could not be loaded"
+      // when the truth is that they are mid-edit.
+      if (!isCompleteDateInput(next.from) || !isCompleteDateInput(next.to)) {
+        setError("Choose a start and end date for the register.");
+        return;
+      }
       try {
         const supabase = createClient();
         const fetched = await fetchRegister(supabase, {

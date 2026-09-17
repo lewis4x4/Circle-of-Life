@@ -15,6 +15,7 @@ import {
   easternDayStartIso,
   formatCensusMonth,
   formatElapsedSince,
+  isCompleteDateInput,
   monthsAgoEastern,
 } from "@/lib/registers/register-display-copy";
 
@@ -130,6 +131,20 @@ describe("six month default", () => {
 
   it("is the same day six months earlier when that day exists", () => {
     expect(monthsAgoEastern(6, new Date("2026-09-16T16:00:00Z"))).toBe("2026-03-16");
+  });
+});
+
+describe("a half typed date", () => {
+  it("is not a range to ask the database about", () => {
+    expect(isCompleteDateInput("")).toBe(false);
+    expect(isCompleteDateInput("2026-0")).toBe(false);
+    expect(isCompleteDateInput("2026-13-01")).toBe(false);
+    expect(isCompleteDateInput("2026-02-30")).toBe(false);
+  });
+
+  it("accepts a complete one", () => {
+    expect(isCompleteDateInput("2026-03-16")).toBe(true);
+    expect(isCompleteDateInput("2026-02-29")).toBe(false);
   });
 });
 

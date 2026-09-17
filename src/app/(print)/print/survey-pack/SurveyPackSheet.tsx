@@ -64,15 +64,22 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
   const [pack, setPack] = useState<Pack | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const started = useRef(false);
   const printedAt = useRef(new Date());
 
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    let cancelled = false;
+  // One build per distinct request, held in a ref rather than behind a "have I
+  // started" boolean. React runs an effect, cleans it up and runs it again in
+  // development; a boolean guard would skip the second run while the first
+  // run's cleanup had already disowned its own results, leaving the sheet on
+  // its spinner forever. Re-subscribing to the same promise fixes that and
+  // keeps the audit write to exactly one per request.
+  const requestKey = `${facilityId}|${request.from}|${request.to}|${request.sections.join(",")}|${request.includeHolds ? 1 : 0}`;
+  const buildKey = useRef<string | null>(null);
+  const buildRun = useRef<Promise<{ pack: Pack | null; error: string | null }> | null>(null);
 
-    async function build() {
+  useEffect(() => {
+    let active = true;
+
+    async function build(): Promise<{ pack: Pack | null; error: string | null }> {
       const supabase = createClient();
       try {
         await recordSurveyPackPrint(supabase, {
@@ -82,11 +89,7 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
           to: request.to,
         });
       } catch {
-        if (!cancelled) {
-          setError(SURVEY_PACK_AUDIT_FAILURE_COPY);
-          setLoading(false);
-        }
-        return;
+        return { pack: null, error: SURVEY_PACK_AUDIT_FAILURE_COPY };
       }
 
       try {
@@ -120,19 +123,33 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
               })
             : Promise.resolve([] as VisitorLogRow[]),
         ]);
-        if (!cancelled) setPack({ register, census, visitors });
+        return { pack: { register, census, visitors }, error: null };
       } catch {
-        if (!cancelled) setError("The pack could not be built.");
-      } finally {
-        if (!cancelled) setLoading(false);
+        return { pack: null, error: "The pack could not be built." };
       }
     }
 
-    void build();
+    if (buildKey.current !== requestKey) {
+      buildKey.current = requestKey;
+      buildRun.current = build();
+      // A different range is a different pack: never show the last one's rows
+      // under this one's heading.
+      setPack(null);
+      setError(null);
+      setLoading(true);
+    }
+
+    void buildRun.current?.then((result) => {
+      if (!active) return;
+      setPack(result.pack);
+      setError(result.error);
+      setLoading(false);
+    });
+
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [facilityId, organizationId, request]);
+  }, [facilityId, organizationId, request, requestKey]);
 
   if (loading) {
     return (

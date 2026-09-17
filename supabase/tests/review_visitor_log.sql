@@ -23,6 +23,7 @@ DO $$ BEGIN
      OR has_function_privilege('anon','public.visitor_sign_out_all_open(uuid)','EXECUTE')
      OR has_function_privilege('anon','public.visitor_void(uuid,text)','EXECUTE')
      OR has_function_privilege('anon','public.visitor_log(uuid,uuid,timestamptz,timestamptz,boolean)','EXECUTE')
+     OR has_function_privilege('anon','public.visitor_log_open(uuid,uuid)','EXECUTE')
      OR has_function_privilege('anon','public.survey_print_pack_record(uuid,text[],date,date)','EXECUTE') THEN
     RAISE EXCEPTION 'anon can execute a visitor or print pack function'; END IF;
 END $$;
@@ -180,6 +181,91 @@ DO $$ DECLARE f record; e public.visitor_log_entries; BEGIN
 END $$;
 
 -- ---------------------------------------------------------------------------
+-- Sign out everyone, with more than one person in the building. A single open
+-- visitor cannot tell a real count from a count that is always 1.
+-- ---------------------------------------------------------------------------
+SELECT pg_temp.be(clerk, clerk_session) FROM vis;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; n int; BEGIN
+  SELECT * INTO f FROM vis;
+  INSERT INTO public.visitor_log_entries(organization_id,facility_id,visitor_name,visitor_type,visiting_type,signed_in_by)
+    VALUES(f.org,f.fac,'Test Visitor Six','family_friend','facility',f.clerk),
+          (f.org,f.fac,'Test Visitor Seven','family_friend','facility',f.clerk),
+          (f.org,f.fac,'Test Visitor Eight','vendor_contractor','staff',f.clerk);
+  n := public.visitor_sign_out_all_open(f.fac);
+  IF n <> 3 THEN RAISE EXCEPTION 'sign out everyone reported % of 3 visitors', n; END IF;
+END $$;
+RESET ROLE;
+DO $$ DECLARE f record; open_left int; audited int; BEGIN
+  SELECT * INTO f FROM vis;
+  SELECT count(*) INTO open_left FROM public.visitor_log_entries
+    WHERE facility_id=f.fac AND checked_out_at IS NULL AND voided_at IS NULL;
+  IF open_left <> 0 THEN RAISE EXCEPTION '% visitors were left in the building', open_left; END IF;
+  SELECT count(*) INTO audited FROM public.audit_log
+    WHERE table_name='visitor_log_entries' AND new_data->>'event'='visitor_signed_out_bulk_end_of_day';
+  IF audited <> 4 THEN RAISE EXCEPTION 'bulk sign out wrote % audit rows, want 4', audited; END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- In the building now ignores the log's date range. Somebody who signed in
+-- last night and never signed out is still here this morning, and is the row
+-- the 04:00 exception exists to raise.
+-- ---------------------------------------------------------------------------
+SELECT pg_temp.be(clerk, clerk_session) FROM vis;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; n int; flagged int; BEGIN
+  SELECT * INTO f FROM vis;
+  INSERT INTO public.visitor_log_entries(organization_id,facility_id,visitor_name,visitor_type,visiting_type,signed_in_by,checked_in_at)
+    -- Three days back, not "18 hours ago": the latter is still today when the
+    -- probe runs in the evening, and a fixture that depends on the wall clock
+    -- is a probe that passes or fails by time of day.
+    VALUES(f.org,f.fac,'Test Visitor Overnight','family_friend','facility',f.clerk, now() - interval '3 days');
+  -- The log for today alone does not contain last night's arrival ...
+  SELECT count(*) INTO n FROM public.visitor_log(f.org,f.fac,
+    date_trunc('day', now() AT TIME ZONE 'America/New_York') AT TIME ZONE 'America/New_York',
+    now() + interval '1 minute', false) WHERE visitor_name='Test Visitor Overnight';
+  IF n <> 0 THEN RAISE EXCEPTION 'fixture wrong: the overnight arrival is inside today'; END IF;
+  -- ... but the building does, and it is flagged.
+  SELECT count(*) INTO n FROM public.visitor_log_open(f.org,f.fac) WHERE visitor_name='Test Visitor Overnight';
+  IF n <> 1 THEN RAISE EXCEPTION 'someone still in the building overnight fell off the in-the-building list'; END IF;
+  SELECT count(*) INTO flagged FROM public.visitor_log_open(f.org,f.fac)
+    WHERE visitor_name='Test Visitor Overnight' AND left_open;
+  IF flagged <> 1 THEN RAISE EXCEPTION 'an overnight visitor was not flagged as still signed in'; END IF;
+END $$;
+RESET ROLE;
+
+-- Voided and signed out rows are not in the building.
+DO $$ DECLARE f record; n int; BEGIN
+  SELECT * INTO f FROM vis;
+  SELECT count(*) INTO n FROM public.visitor_log_open(f.org,f.fac)
+    WHERE visitor_name IN ('Test Visitor One','Test Visitor Three');
+  IF n <> 0 THEN RAISE EXCEPTION 'a signed out or voided visitor is still listed as in the building'; END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- Sign out everyone, with more than one person in the building. A single open
+-- visitor cannot tell a real count from a count that is always 1.
+-- ---------------------------------------------------------------------------
+SELECT pg_temp.be(clerk, clerk_session) FROM vis;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; n int; expected int; BEGIN
+  SELECT * INTO f FROM vis;
+  INSERT INTO public.visitor_log_entries(organization_id,facility_id,visitor_name,visitor_type,visiting_type,signed_in_by)
+    VALUES(f.org,f.fac,'Test Visitor Six','family_friend','facility',f.clerk),
+          (f.org,f.fac,'Test Visitor Seven','family_friend','facility',f.clerk),
+          (f.org,f.fac,'Test Visitor Eight','vendor_contractor','staff',f.clerk);
+  SELECT count(*) INTO expected FROM public.visitor_log_open(f.org,f.fac);
+  IF expected < 3 THEN RAISE EXCEPTION 'fixture wrong: only % open', expected; END IF;
+  -- The number the confirmation shows and the number actually closed are the
+  -- same number, which is what makes the confirmation worth reading.
+  n := public.visitor_sign_out_all_open(f.fac);
+  IF n <> expected THEN RAISE EXCEPTION 'sign out everyone reported % of % visitors', n, expected; END IF;
+  IF (SELECT count(*) FROM public.visitor_log_open(f.org,f.fac)) <> 0 THEN
+    RAISE EXCEPTION 'visitors were left in the building'; END IF;
+END $$;
+RESET ROLE;
+
+-- ---------------------------------------------------------------------------
 -- A user granted a different facility sees nothing and can call nothing.
 -- ---------------------------------------------------------------------------
 SELECT pg_temp.be(outsider, outsider_session) FROM vis;
@@ -188,6 +274,8 @@ DO $$ DECLARE f record; n int; target uuid; BEGIN
   SELECT * INTO f FROM vis;
   SELECT count(*) INTO n FROM public.visitor_log(f.org,f.fac,'2000-01-01Z','2100-01-01Z',true);
   IF n <> 0 THEN RAISE EXCEPTION 'a user without the facility grant read % visitor rows', n; END IF;
+  SELECT count(*) INTO n FROM public.visitor_log_open(f.org,f.fac);
+  IF n <> 0 THEN RAISE EXCEPTION 'a user without the facility grant saw % people in the building', n; END IF;
   BEGIN
     PERFORM public.visitor_sign_out_all_open(f.fac);
     RAISE EXCEPTION 'a user without the facility grant signed out a building they cannot see';
@@ -236,12 +324,21 @@ DO $$ DECLARE f record; row_data jsonb; n int; BEGIN
 END $$;
 
 -- Voided entries stay readable so a correction can be seen, and stay hidden by default.
-DO $$ DECLARE f record; shown int; hidden int; BEGIN
+DO $$ DECLARE f record; shown int; hidden int; voided_rows int; BEGIN
   SELECT * INTO f FROM vis;
   SELECT count(*) INTO hidden FROM public.visitor_log(f.org,f.fac,'2000-01-01Z','2100-01-01Z',false);
   SELECT count(*) INTO shown  FROM public.visitor_log(f.org,f.fac,'2000-01-01Z','2100-01-01Z',true);
-  IF hidden <> 2 THEN RAISE EXCEPTION 'the default visitor log showed % rows, want 2 unvoided', hidden; END IF;
-  IF shown <> 3 THEN RAISE EXCEPTION 'the voided entry disappeared instead of staying on the record: % rows', shown; END IF;
+  SELECT count(*) INTO voided_rows FROM public.visitor_log_entries
+    WHERE facility_id=f.fac AND voided_at IS NOT NULL AND deleted_at IS NULL;
+  -- Counted against the table rather than a literal, so adding a fixture above
+  -- does not quietly turn this into a different assertion.
+  IF voided_rows < 1 THEN RAISE EXCEPTION 'fixture wrong: nothing was voided'; END IF;
+  IF shown - hidden <> voided_rows THEN
+    RAISE EXCEPTION 'including voided changed the row count by % , want %', shown - hidden, voided_rows; END IF;
+  IF hidden <> shown - voided_rows THEN
+    RAISE EXCEPTION 'the default log is not exactly the unvoided rows'; END IF;
+  IF shown <> (SELECT count(*) FROM public.visitor_log_entries WHERE facility_id=f.fac AND deleted_at IS NULL) THEN
+    RAISE EXCEPTION 'a voided entry disappeared instead of staying on the record'; END IF;
 END $$;
 
 ROLLBACK;

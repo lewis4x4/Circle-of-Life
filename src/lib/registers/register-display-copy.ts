@@ -83,6 +83,18 @@ function easternOffsetMs(at: Date): number {
   return sign * (Number(match[2]) * 60 + Number(match[3])) * 60 * 1000;
 }
 
+/**
+ * A date input is empty or half typed as often as it is complete, and Date
+ * happily rolls February 30 forward into March rather than refusing it, so the
+ * parsed value is round tripped back to text and compared.
+ */
+export function isCompleteDateInput(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.toISOString().slice(0, 10) === value;
+}
+
 /** The instant an Eastern calendar day begins. */
 export function easternDayStartIso(date: string): string {
   const guess = new Date(`${date}T00:00:00Z`);

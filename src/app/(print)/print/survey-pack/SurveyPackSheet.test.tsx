@@ -1,5 +1,6 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import axe from "axe-core";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SurveyPackSheet } from "./SurveyPackSheet";
@@ -157,6 +158,28 @@ describe("the sheet", () => {
     const button = await screen.findByRole("button", { name: "Print" });
     const controls = button.closest("div");
     expect(controls?.className).toMatch(/controls/);
+  });
+});
+
+describe("the development double render", () => {
+  it("still renders the pack, and still records the print exactly once", async () => {
+    // React mounts, unmounts and remounts every effect in development. A
+    // "have I started" boolean would skip the second run after the first run's
+    // cleanup had already disowned its results, and the sheet would sit on its
+    // spinner forever with a surveyor waiting at the desk.
+    render(
+      <StrictMode>
+        <SurveyPackSheet
+          organizationId="org-1"
+          facilityId="fac-1"
+          facilityName="Homewood Lodge"
+          printedByName="Review clerk"
+        />
+      </StrictMode>,
+    );
+    expect(await screen.findByText("Admission and discharge register")).toBeTruthy();
+    const recorded = mocks.rpc.mock.calls.filter(([name]) => name === "survey_print_pack_record");
+    expect(recorded).toHaveLength(1);
   });
 });
 

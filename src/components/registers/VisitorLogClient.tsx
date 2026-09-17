@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import {
+  fetchOpenVisitors,
   fetchVisitorLog,
   signOutEveryone,
   signOutVisitor,
@@ -35,6 +36,7 @@ import {
   formatElapsedSince,
   formatRegisterEventDate,
   formatRegisterEventTime,
+  isCompleteDateInput,
 } from "@/lib/registers/register-display-copy";
 
 export type VisitableResident = { id: string; firstName: string; lastName: string };
@@ -67,6 +69,7 @@ export function VisitorLogClient({
   onOpenCountChange,
 }: Props) {
   const [rows, setRows] = useState<VisitorLogRow[]>([]);
+  const [openNow, setOpenNow] = useState<VisitorLogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -83,21 +86,32 @@ export function VisitorLogClient({
   const load = useCallback(async () => {
     if (!facilityId || !organizationId) {
       setRows([]);
+      setOpenNow([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
       const supabase = createClient();
-      setRows(
-        await fetchVisitorLog(supabase, {
-          organizationId,
-          facilityId,
-          from: easternDayStartIso(from),
-          to: easternDayEndIso(to),
-          includeVoided: true,
-        }),
-      );
+      // Two questions, deliberately separate. Who is in the building is not a
+      // date range question: somebody who signed in at 19:00 yesterday and
+      // never signed out is still here this morning, and is exactly the person
+      // the 04:00 exception is for. It is also the scope the end of day action
+      // acts on, so the count in the confirmation is the count it closes.
+      const [open, ranged] = await Promise.all([
+        fetchOpenVisitors(supabase, { organizationId, facilityId }),
+        isCompleteDateInput(from) && isCompleteDateInput(to)
+          ? fetchVisitorLog(supabase, {
+              organizationId,
+              facilityId,
+              from: easternDayStartIso(from),
+              to: easternDayEndIso(to),
+              includeVoided: true,
+            })
+          : Promise.resolve([] as VisitorLogRow[]),
+      ]);
+      setOpenNow(inTheBuildingNow(open));
+      setRows(ranged);
       setError(null);
     } catch {
       setError("The visitor log could not be loaded.");
@@ -109,8 +123,6 @@ export function VisitorLogClient({
   useEffect(() => {
     void load();
   }, [load]);
-
-  const openNow = useMemo(() => inTheBuildingNow(rows), [rows]);
 
   useEffect(() => {
     onOpenCountChange?.(openNow.length);

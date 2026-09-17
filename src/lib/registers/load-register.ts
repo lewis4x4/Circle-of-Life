@@ -191,3 +191,36 @@ export async function recordSurveyPackPrint(
   } as never);
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Everyone signed in and not signed out at this facility, whatever day they
+ * arrived. Deliberately not the ranged `fetchVisitorLog`: the building does not
+ * empty at midnight.
+ */
+export async function fetchOpenVisitors(
+  supabase: Client,
+  args: { organizationId: string; facilityId: string },
+): Promise<import("@/lib/registers/visitor-log").VisitorLogRow[]> {
+  const { data, error } = await supabase.rpc("visitor_log_open" as never, {
+    p_organization_id: args.organizationId,
+    p_facility_id: args.facilityId,
+  } as never);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as unknown as VisitorDbRow[]).map((row) => ({
+    id: row.id,
+    visitorName: row.visitor_name,
+    visitorPhone: row.visitor_phone,
+    visitorType: row.visitor_type,
+    visitingType: row.visiting_type,
+    visitingResidentId: row.visiting_resident_id,
+    visitingResidentName: row.visiting_resident_name,
+    signedInAt: row.signed_in_at,
+    signedInByName: row.signed_in_by_name,
+    signedOutAt: row.signed_out_at,
+    signedOutByName: row.signed_out_by_name,
+    signOutMethod: row.sign_out_method,
+    voidedAt: row.voided_at,
+    voidReason: row.void_reason,
+    leftOpen: row.left_open,
+  }));
+}

@@ -37,7 +37,15 @@ const RESIDENTS = [
 beforeEach(() => {
   mocks.rpc.mockReset();
   mocks.confirm.mockReset();
-  mocks.rpc.mockResolvedValue({ data: [dbRow()], error: null });
+  // visitor_log_open and visitor_log are separate questions now; both answer
+  // with the same fixture unless a test says otherwise.
+  mocks.rpc.mockImplementation((name: string) =>
+    Promise.resolve(
+      name === "visitor_log_open" || name === "visitor_log"
+        ? { data: [dbRow()], error: null }
+        : { data: null, error: null },
+    ),
+  );
   vi.stubGlobal("confirm", mocks.confirm);
   mocks.confirm.mockReturnValue(true);
 });
@@ -65,14 +73,30 @@ describe("in the building now", () => {
   });
 
   it("shows a left open entry as neutral text rather than closing it", async () => {
-    mocks.rpc.mockResolvedValue({
-      data: [dbRow({ left_open: true, signed_in_at: "2026-06-09T02:00:00Z" })],
-      error: null,
-    });
+    mocks.rpc.mockImplementation((name: string) =>
+      Promise.resolve(
+        name === "visitor_log_open"
+          ? { data: [dbRow({ left_open: true, signed_in_at: "2026-06-09T02:00:00Z" })], error: null }
+          : { data: [], error: null },
+      ),
+    );
     renderLog();
     expect(await screen.findByText(/Still signed in from/)).toBeTruthy();
     // Nothing was signed out on the way past.
     expect(mocks.rpc).not.toHaveBeenCalledWith("visitor_sign_out", expect.anything());
+  });
+});
+
+describe("who is in the building", () => {
+  it("asks for the building, not for a date range, so last night's visitor is still here", async () => {
+    renderLog();
+    await screen.findByText("In the building now (1)");
+    expect(mocks.rpc).toHaveBeenCalledWith("visitor_log_open", {
+      p_organization_id: "org-1",
+      p_facility_id: "fac-1",
+    });
+    const openCalls = mocks.rpc.mock.calls.filter(([name]) => name === "visitor_log_open");
+    expect(openCalls[0][1]).not.toHaveProperty("p_from");
   });
 });
 
@@ -144,7 +168,6 @@ describe("sign out", () => {
     const user = userEvent.setup();
     renderLog();
     await screen.findByText("In the building now (1)");
-    mocks.rpc.mockResolvedValueOnce({ data: 1, error: null });
     await user.click(screen.getByRole("button", { name: "Sign out everyone" }));
     expect(mocks.confirm).toHaveBeenCalledWith("Sign out the 1 visitor still in the building?");
     await waitFor(() => {
@@ -180,10 +203,13 @@ describe("void", () => {
 
   it("keeps a voided entry visible in the third tier", async () => {
     const user = userEvent.setup();
-    mocks.rpc.mockResolvedValue({
-      data: [dbRow({ voided_at: "2026-06-10T19:00:00Z", void_reason: "entered_in_error" })],
-      error: null,
-    });
+    mocks.rpc.mockImplementation((name: string) =>
+      Promise.resolve(
+        name === "visitor_log"
+          ? { data: [dbRow({ voided_at: "2026-06-10T19:00:00Z", void_reason: "entered_in_error" })], error: null }
+          : { data: [], error: null },
+      ),
+    );
     renderLog();
     await user.click(await screen.findByRole("button", { name: "Voided entries (1)" }));
     expect(await screen.findByText(/voided as Entered in error/)).toBeTruthy();

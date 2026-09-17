@@ -108,8 +108,6 @@ SELECT org,fac,res_b,s.status,s.f,s.t,NULL FROM reg, (VALUES
 DO $$ DECLARE f record; r record; BEGIN
   SELECT * INTO f FROM reg;
   FOR r IN SELECT * FROM public.admission_discharge_register(f.org,f.fac,'2026-01-01Z','2026-07-01Z',true) WHERE resident_id=f.res_a LOOP
-    IF r.event_type IN ('admission','readmission') AND r.admission_source IS NULL THEN
-      RAISE EXCEPTION 'admission row lost its source'; END IF;
     IF r.event_type NOT IN ('admission','readmission') AND r.admission_source IS NOT NULL THEN
       RAISE EXCEPTION 'admission source leaked onto a % row', r.event_type; END IF;
     IF r.event_type = 'discharge' AND r.discharge_reason IS NOT NULL THEN
@@ -190,6 +188,38 @@ DO $$ DECLARE f record; r record; BEGIN
     RAISE EXCEPTION 'a resident admitted the 10th and discharged the 20th showed % presence days, want 11', r.physical_presence_days; END IF;
   IF r.billable_days <> 11 THEN
     RAISE EXCEPTION 'discharged days were billed: % billable days, want 11', r.billable_days; END IF;
+END $$;
+
+-- A resident whose residency ended long before the range must not appear in the
+-- census with two zeroes beside their name. Their final `discharged` interval
+-- stays open forever, so without a guard they join every month.
+DO $$ DECLARE f record; n int; BEGIN
+  SELECT * INTO f FROM reg;
+  SELECT count(*) INTO n FROM public.census_record_monthly(f.org,f.fac,'2026-07-01','2026-09-30')
+    WHERE resident_id = f.res_b;
+  IF n <> 0 THEN
+    RAISE EXCEPTION 'a resident discharged in April appears in % month(s) after it', n; END IF;
+  -- And nobody at all is listed with nothing to show.
+  SELECT count(*) INTO n FROM public.census_record_monthly(f.org,f.fac,'2026-01-01','2026-12-31')
+    WHERE physical_presence_days = 0 AND billable_days = 0;
+  IF n <> 0 THEN RAISE EXCEPTION '% census rows carry two zeroes', n; END IF;
+END $$;
+
+-- Admission source belongs to the admission it describes. residents holds one,
+-- so only the most recent admission or readmission may print it.
+DO $$ DECLARE f record; r record; seen int := 0; BEGIN
+  SELECT * INTO f FROM reg;
+  FOR r IN SELECT * FROM public.admission_discharge_register(f.org,f.fac,'2026-01-01Z','2026-07-01Z',true)
+    WHERE resident_id = f.res_a AND event_type IN ('admission','readmission') LOOP
+    IF r.admission_source IS NOT NULL THEN seen := seen + 1; END IF;
+  END LOOP;
+  IF seen <> 1 THEN
+    RAISE EXCEPTION 'admission source printed on % admission rows; a later readmission overwrote the earlier one', seen; END IF;
+  -- It is the most recent one that carries it.
+  SELECT * INTO r FROM public.admission_discharge_register(f.org,f.fac,'2026-01-01Z','2026-07-01Z',true)
+    WHERE resident_id = f.res_a AND event_type = 'readmission';
+  IF r.admission_source IS DISTINCT FROM 'Hospital referral' THEN
+    RAISE EXCEPTION 'the current admission lost its source'; END IF;
 END $$;
 
 -- ---------------------------------------------------------------------------
