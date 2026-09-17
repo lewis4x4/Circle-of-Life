@@ -747,6 +747,17 @@ export function AdminResidentsPageClient({
           >
             Board check
           </Link>
+          {/* The register is the paper admission and discharge log (COL-353). */}
+          <Link
+            href="/admin/residents/register"
+            title="Every admission, discharge and bed hold Haven has recorded for this building, derived from resident status history."
+            className={cn(
+              buttonVariants({ variant: "outline", size: "default" }),
+              "h-9 px-3 text-[12px] font-medium",
+            )}
+          >
+            Register
+          </Link>
           <Link
             href="/pipeline/admissions/new"
             title="Start a new admission case in the pipeline — the intake form checks for an existing resident or inquiry before creating one."
