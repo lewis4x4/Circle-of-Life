@@ -1,7 +1,7 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { triageDocument } from "./compliance-doc-check/handler.ts";
 import { TypeSafeError, type SystemOneResponse } from "./_shared/typesafe-client.ts";
-import { QUESTIONS_VERSION } from "./_shared/compliance-doc-questions.ts";
+import { categoryMayBeSent, QUESTIONS_VERSION } from "./_shared/compliance-doc-questions.ts";
 
 /**
  * Answers a fully compliant, issued ACORD 28 for Rising Oaks would produce.
@@ -300,4 +300,15 @@ Deno.test("a missing answer fails loudly rather than defaulting", () => {
   const incomplete = answers();
   delete (incomplete.answers as Record<string, unknown>).names_berkadia;
   assertThrows(() => triageDocument(incomplete, RISING_OAKS), TypeSafeError);
+});
+
+Deno.test("a loss run or resident contract is withheld from the model entirely", () => {
+  // Category refusal, not a sniff over the text: a loss run carries claim-level
+  // detail that can name a resident, and the gate is the subprocessor's BAA.
+  assertEquals(categoryMayBeSent("insurance_loss_run"), false);
+  assertEquals(categoryMayBeSent("resident_contracts_master"), false);
+  assertEquals(categoryMayBeSent("insurance_property"), true);
+  assertEquals(categoryMayBeSent("insurance_certificate"), true);
+  // A calibration run has no vault row and therefore no category to refuse on.
+  assertEquals(categoryMayBeSent(null), true);
 });

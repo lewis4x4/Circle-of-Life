@@ -15,16 +15,22 @@
  * and inventing one is not this function's job.
  *
  * PHI: none, deliberately. TypeSafe is a new AI subprocessor with no BAA on
- * file, so only facility-level insurance documents may be sent here. Do not
- * extend this function to resident records, care plans, payers, or anything
- * else resident-identifying until that BAA is signed.
+ * file (COL-466), so only facility-level insurance documents may be sent here.
+ * Do not extend this function to resident records, care plans, payers, or
+ * anything else resident-identifying until that BAA is signed.
+ *
+ * "Facility document" is not by itself that guarantee: a loss run carries
+ * claim-level detail and a resident contract names residents, and both are live
+ * vault categories. Those are refused outright — see
+ * CATEGORIES_WITHHELD_FROM_MODEL. A calibration call carries no vault row and
+ * therefore no category, so the caller owns that judgment on that path.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { evaluateSystemOne, TypeSafeError } from "../_shared/typesafe-client.ts";
-import { COMPLIANCE_QUESTIONS } from "../_shared/compliance-doc-questions.ts";
+import { categoryMayBeSent, COMPLIANCE_QUESTIONS } from "../_shared/compliance-doc-questions.ts";
 import { triageDocument } from "./handler.ts";
 
 /** Nine questions over a whole document; the interactive 5s budget does not apply. */
@@ -123,6 +129,22 @@ Deno.serve(async (req) => {
       document_category: data.document_category as string,
     };
     vaultFacilityName = facilities?.name ?? null;
+
+    // Refuse before the call, not after: a loss run or a resident contract can
+    // name a resident, and TypeSafe has no BAA on file (COL-466). The refusal
+    // keys on the vault's category rather than on what the text looks like —
+    // deciding a document "looks clean" is de-identification by guesswork.
+    if (!categoryMayBeSent(vaultRow.document_category)) {
+      t.log({
+        event: "category_withheld",
+        outcome: "blocked",
+        document_category: vaultRow.document_category,
+      });
+      return jsonResponse(
+        { error: "Document category may not be sent to the model", category: vaultRow.document_category },
+        422,
+      );
+    }
   }
 
   let response;

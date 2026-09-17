@@ -201,6 +201,29 @@ export const FACILITY_NAME_FRAGMENTS: Record<string, readonly string[]> = {
   plantation_on_summers: ["plantation on summers"],
 };
 
+/**
+ * Vault categories that must never be sent to the model.
+ *
+ * "Facility insurance documents" is not by itself a guarantee of anything. A
+ * loss run is claim-level detail and can name a resident who fell; a resident
+ * contract names residents outright. Both are live `document_category` values
+ * on `facility_documents`, so a caller that simply walks the vault reaches them.
+ *
+ * This is a category refusal, not a heuristic over the text. Sniffing a document
+ * for names and deciding it looks clean is de-identification by guesswork, and
+ * the point of the subprocessor gate is that Haven does not do that. Widening
+ * this list is safe; narrowing it is a decision that belongs with the BAA.
+ */
+export const CATEGORIES_WITHHELD_FROM_MODEL: ReadonlySet<string> = new Set([
+  "insurance_loss_run",
+  "resident_contracts_master",
+]);
+
+/** Whether a vault row's category may be sent to the model at all. */
+export function categoryMayBeSent(category: string | null | undefined): boolean {
+  return !category || !CATEGORIES_WITHHELD_FROM_MODEL.has(category);
+}
+
 /** The facility key for a `facilities.name`, or null when it is not in the question set. */
 export function facilityKeyForName(name: string | null | undefined): string | null {
   if (!name) return null;

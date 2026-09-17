@@ -76,4 +76,9 @@ CREATE POLICY compliance_doc_triage_select ON public.compliance_doc_triage
           SELECT
             haven.accessible_facility_ids ()));
 
+-- New table, new PostgREST surface. Without this the first read 404s and the
+-- failure points at the page rather than at the cache.
+NOTIFY pgrst,
+'reload schema';
+
 COMMIT;
