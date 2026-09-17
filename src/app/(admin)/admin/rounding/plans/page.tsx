@@ -181,7 +181,7 @@ export default function AdminRoundingPlansPage() {
       const { data, error } = await supabase
         .from("resident_observation_plans")
         .select(
-          "id, status, source_type, effective_from, effective_to, updated_at, rationale, residents ( first_name, last_name, preferred_name, room_number ), resident_observation_plan_rules ( id, interval_minutes, daypart_start, daypart_end, grace_minutes, sort_order, deleted_at )",
+          "id, status, source_type, effective_from, effective_to, updated_at, rationale, residents ( first_name, last_name, preferred_name ), resident_observation_plan_rules ( id, interval_minutes, daypart_start, daypart_end, grace_minutes, sort_order, deleted_at )",
         )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
