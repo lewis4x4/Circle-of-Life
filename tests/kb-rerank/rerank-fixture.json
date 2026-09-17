@@ -103,6 +103,45 @@
       ]
     },
     {
+      "query": "What is the current training requirement for assistance with self-administration?",
+      "correct_id": "train-current",
+      "notes": "Superseded-vs-current. The distractor is the same rule at an older number. Nearly identical text, one word of difference that matters.",
+      "candidates": [
+        { "id": "train-superseded", "source_title": "Medication Training Handbook (2019 edition, superseded)", "excerpt": "Unlicensed staff who assist with self-administration of medication shall complete a 4-hour training course provided by a registered nurse or pharmacist prior to assisting any resident." },
+        { "id": "train-general", "source_title": "Staff Training Policy", "excerpt": "All training is documented in the employee file and the certificate of completion retained for the duration of employment." },
+        { "id": "train-current", "source_title": "Medication Training Handbook (2024 edition, current)", "excerpt": "Unlicensed staff who assist with self-administration of medication shall complete a 6-hour training course provided by a registered nurse or pharmacist prior to assisting any resident, and 2 hours of continuing education annually thereafter." },
+        { "id": "train-core", "source_title": "Staff Training Policy", "excerpt": "Core training for direct care staff is 26 hours and is completed within 30 days of hire." },
+        { "id": "train-who", "source_title": "Medication Training Handbook (2024 edition, current)", "excerpt": "Training may be delivered in-house by a licensed nurse or by an approved external provider such as Baya." },
+        { "id": "train-toc", "source_title": "Medication Training Handbook (2024 edition, current)", "excerpt": "Chapter 3: Training requirements. 3.1 Who must be trained. 3.2 Hours. 3.3 Trainers. 3.4 Continuing education." }
+      ]
+    },
+    {
+      "query": "In an assisted living facility, how often does the fire drill have to happen?",
+      "correct_id": "drill-alf",
+      "notes": "Scope trap. The nursing-home rule is stated more prominently and is more specific-sounding, but applies to a different facility type.",
+      "candidates": [
+        { "id": "drill-snf", "source_title": "Emergency Preparedness Reference", "excerpt": "Nursing homes shall conduct unannounced fire drills at least once per quarter per shift, with documentation of each drill retained for two years." },
+        { "id": "drill-doc", "source_title": "Fire Safety Policy", "excerpt": "Each drill is documented with the date, time, shift, staff present, and evacuation time, and the log is available for inspection." },
+        { "id": "drill-alf", "source_title": "FAC 59A-36.019 Fire Safety", "excerpt": "An assisted living facility shall conduct a fire drill at least once every three months for each shift of facility personnel." },
+        { "id": "drill-plan", "source_title": "Fire Safety Policy", "excerpt": "The comprehensive emergency management plan is reviewed annually and submitted to the county emergency management agency." },
+        { "id": "drill-resident", "source_title": "Fire Safety Policy", "excerpt": "Residents are not required to physically evacuate during a drill where doing so would pose a risk to their health." },
+        { "id": "drill-extinguisher", "source_title": "Fire Safety Policy", "excerpt": "Portable fire extinguishers are inspected monthly and serviced annually by a licensed contractor." }
+      ]
+    },
+    {
+      "query": "What does a resident have to be given a copy of when they move in?",
+      "correct_id": "rights-copy",
+      "notes": "Regression guard: RRF already placed the correct passage first. The reranker must not demote it.",
+      "candidates": [
+        { "id": "rights-copy", "source_title": "Resident Rights Policy", "excerpt": "On admission the resident is given a written copy of the resident bill of rights, the facility's grievance procedure, and the resident contract, and signs an acknowledgement that each was received." },
+        { "id": "rights-post", "source_title": "Resident Rights Policy", "excerpt": "The resident bill of rights is posted in a conspicuous place in a common area of the facility." },
+        { "id": "rights-list", "source_title": "Resident Rights Policy", "excerpt": "Residents have the right to live in a safe and decent living environment, free from abuse and neglect." },
+        { "id": "rights-ombudsman", "source_title": "Resident Rights Policy", "excerpt": "The name and contact information of the local long-term care ombudsman is posted alongside the bill of rights." },
+        { "id": "rights-contract", "source_title": "Resident Agreement", "excerpt": "The resident contract states the rate, what the rate includes, and the conditions under which it may change." },
+        { "id": "rights-toc", "source_title": "Resident Rights Policy", "excerpt": "Contents: 1 Statement of rights. 2 Notification on admission. 3 Posting. 4 Grievances. 5 Ombudsman access." }
+      ]
+    },
+    {
       "query": "How much notice before we can discharge someone for nonpayment?",
       "correct_id": "discharge-notice",
       "candidates": [
