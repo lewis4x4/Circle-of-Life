@@ -1,7 +1,7 @@
 -- COL-414: the nightly pg_cron job that writes census_daily_log.
 --
 -- Run this by hand in the Supabase SQL editor (or an admin session) on the
--- hosted project after migration 412 is applied and the daily-census-log Edge
+-- hosted project after migration 415 is applied and the daily-census-log Edge
 -- Function is deployed. Do not run it from the build and do not commit values.
 -- Placeholders are in angle brackets. Pattern:
 -- scripts/care-events/cron-schedules.sql and section 5 of
