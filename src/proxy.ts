@@ -142,6 +142,6 @@ export async function proxy(request: NextRequest) {
  */
 export const config = {
   matcher: [
-    "/((?!.*\\.(?:css|js|mjs|json|txt|map|ico|png|jpg|jpeg|svg|woff2?|ttf)$)(?:admin|clinical|billing|finance|pipeline|risk|insurance|vendors|residents|resident|staffing|staff|incidents|incident-draft|schedules|time-records|payroll|certifications|training|transportation|reputation|assessments|care-plans|family-messages|family|executive|search|reports|caregiver|clock|followups|handoff|me|meds|prn-followup|tasks|dietary|med-tech|onboarding)(?:$|/).*)",
+    "/((?!.*\\.(?:css|js|mjs|json|txt|map|ico|png|jpg|jpeg|svg|woff2?|ttf)$)(?:admin|clinical|billing|finance|pipeline|risk|insurance|vendors|residents|resident|staffing|staff|incidents|incident-draft|schedules|time-records|payroll|certifications|training|transportation|reputation|assessments|care-plans|family-messages|family|executive|search|reports|caregiver|clock|followups|handoff|me|meds|print|prn-followup|tasks|dietary|med-tech|onboarding)(?:$|/).*)",
   ],
 };

@@ -15,6 +15,7 @@ import {
   clearFailureRateLimit,
   recordFailureRateLimit,
 } from "@/lib/security/in-memory-failure-rate-limit";
+import { logError } from "@/lib/observability/logger";
 
 /** Five wrong current-password guesses per user per 15 minutes. */
 const CHANGE_PASSWORD_RATE_LIMIT = { maxFailures: 5, windowMs: 15 * 60 * 1000 };
@@ -110,6 +111,26 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not clear password policy flag";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  // `updateUser` above already re-minted the session cookie, but it did so *before* the
+  // flag was cleared, so that token still carries must_change_password: true. Without a
+  // second refresh the client gate keeps bouncing the user back here after a successful
+  // change — they are locked out by the very screen that was supposed to release them.
+  const { error: refreshError } = await supabase.auth.refreshSession();
+  if (refreshError) {
+    logError("account.change-password.refresh", refreshError, {
+      action: "refresh_session_after_password_change",
+    });
+    return NextResponse.json(
+      {
+        error:
+          "Your password was changed, but your session could not be refreshed. Sign out and sign back in.",
+        code: "session_refresh_failed",
+        password_changed: true,
+      },
+      { status: 500 },
+    );
   }
 
   // A successful change clears the budget — the user proved they hold the credential.

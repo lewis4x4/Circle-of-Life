@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   createUser: vi.fn(),
   updateUserById: vi.fn(),
   getUserById: vi.fn(),
+  deleteUser: vi.fn(),
   setMustChange: vi.fn(),
 }));
 
@@ -16,6 +17,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
         createUser: mocks.createUser,
         updateUserById: mocks.updateUserById,
         getUserById: mocks.getUserById,
+        deleteUser: mocks.deleteUser,
       },
     },
   }),
@@ -31,6 +33,7 @@ const options = { app_role: "caregiver", organization_id: "org-1" };
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.updateUserById.mockResolvedValue({ error: null });
+  mocks.deleteUser.mockResolvedValue({ error: null });
   mocks.setMustChange.mockResolvedValue({ expires_at: "2026-09-19T12:00:00.000Z" });
 });
 
@@ -71,6 +74,44 @@ describe("adminInviteUser result inspection", () => {
     );
   });
 
+  it("discards the Auth user it just created when the metadata write fails", async () => {
+    // Otherwise this call adds to the orphan population it exists to prevent: the
+    // caller's rollback has not started yet, so nothing else would clean it up.
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: { id: "u1", email: "a@example.test" } },
+      error: null,
+    });
+    mocks.updateUserById.mockResolvedValue({ error: { message: "metadata rejected" } });
+
+    await expect(adminInviteUser("a@example.test", options)).rejects.toThrow();
+
+    expect(mocks.deleteUser).toHaveBeenCalledWith("u1");
+  });
+
+  it("still reports the original failure when cleanup itself fails", async () => {
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: { id: "u1", email: "a@example.test" } },
+      error: null,
+    });
+    mocks.updateUserById.mockResolvedValue({ error: { message: "metadata rejected" } });
+    mocks.deleteUser.mockRejectedValue(new Error("delete exploded"));
+
+    await expect(adminInviteUser("a@example.test", options)).rejects.toThrow(
+      /app_metadata write failed/,
+    );
+  });
+
+  it("does not delete anyone when the invite succeeds", async () => {
+    mocks.inviteUserByEmail.mockResolvedValue({
+      data: { user: { id: "u1", email: "a@example.test" } },
+      error: null,
+    });
+
+    await adminInviteUser("a@example.test", options);
+
+    expect(mocks.deleteUser).not.toHaveBeenCalled();
+  });
+
   it("mirrors role and org into app_metadata on success", async () => {
     mocks.inviteUserByEmail.mockResolvedValue({
       data: { user: { id: "u1", email: "a@example.test" } },
@@ -101,6 +142,19 @@ describe("adminCreateUser result inspection", () => {
     expect(mocks.setMustChange).not.toHaveBeenCalled();
   });
 
+  it("discards the Auth user when the must-change flag cannot be set", async () => {
+    mocks.createUser.mockResolvedValue({
+      data: { user: { id: "u2", email: "a@example.test" } },
+      error: null,
+    });
+    mocks.setMustChange.mockRejectedValue(new Error("metadata rejected"));
+
+    await expect(adminCreateUser("a@example.test", options)).rejects.toThrow(
+      /metadata rejected/,
+    );
+    expect(mocks.deleteUser).toHaveBeenCalledWith("u2");
+  });
+
   it("flags must-change-password on success", async () => {
     mocks.createUser.mockResolvedValue({
       data: { user: { id: "u2", email: "a@example.test" } },
@@ -113,5 +167,6 @@ describe("adminCreateUser result inspection", () => {
     expect(result.temporary_password).toHaveLength(20);
     expect(result.expires_at).toBe("2026-09-19T12:00:00.000Z");
     expect(mocks.setMustChange).toHaveBeenCalledWith("u2", true);
+    expect(mocks.deleteUser).not.toHaveBeenCalled();
   });
 });

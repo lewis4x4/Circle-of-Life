@@ -150,7 +150,23 @@ and Auth `app_metadata`, both already exposed by migration 387.
 
 ---
 
-## 6. Findings filed separately
+## 6. Review findings fixed on this branch
+
+Cursor Bugbot raised three issues on PR #582. All three were verified against the code
+and all three were real.
+
+| Finding | Verdict | Fix |
+|---|---|---|
+| **Gate stuck after password change** (high) | Real, and a lockout in the exact flow this PR fixes. `supabase.auth.updateUser()` re-mints the session cookie **before** `adminSetMustChangePassword` clears the flag, so the new token still carried `must_change_password: true` and the client gate bounced the user straight back to `/change-password`. | `refreshSession()` after the flag is cleared, with an ordering test. A failed refresh returns `session_refresh_failed` and reports `password_changed: true`, because the password really did change. |
+| **`/print` skips the proxy** (medium) | Real, and **pre-existing**. `ADMIN_SHELL_SEGMENTS` includes `/print` and `(print)/layout.tsx` claimed it was "gated by the admin-shell middleware list", but `config.matcher` never listed `print` — so print sheets ran with no session refresh, no role gate, and (newly) no password-change redirect. | `print` added to the matcher. A test now asserts every path a shell predicate claims is also routed to the proxy, and that `/api` and static assets still are not. |
+| **Provision failures orphan Auth users** (medium) | Real. Rollback only began once `provisionAuthUserForAdminCreate` returned, so a throw from the invite's `app_metadata` write or from `adminSetMustChangePassword` left a brand-new Auth user behind — adding to the very orphan population this work exists to stop. | `adminInviteUser` and `adminCreateUser` discard the user they just created if a later step in the same call fails. Best-effort, so a failing cleanup cannot mask the original error. |
+
+The `/print` finding is the notable one: it means print sheets have been reachable
+without the admin-shell role gate, independent of anything in this PR.
+
+---
+
+## 7. Findings filed separately
 
 - 17 Auth users with no `user_profiles` row in production (15 from the 2026-08-19 bulk
   invite). Not touched by this branch — needs an owner decision on invite-or-purge.

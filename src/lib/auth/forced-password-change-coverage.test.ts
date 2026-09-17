@@ -11,7 +11,13 @@ import { NextRequest, NextResponse } from "next/server";
 const state = vi.hoisted(() => ({ updateSession: vi.fn() }));
 vi.mock("@/lib/supabase/middleware", () => ({ updateSession: state.updateSession }));
 
-import { proxy } from "@/proxy";
+import { config, proxy } from "@/proxy";
+import { isAdminShellPath } from "@/lib/auth/admin-shell";
+import { isCaregiverShellPath } from "@/lib/auth/caregiver-shell";
+import { isDietaryShellPath } from "@/lib/auth/dietary-shell";
+import { isFamilyShellPath } from "@/lib/auth/family-shell";
+import { isMedTechShellPath } from "@/lib/auth/med-tech-shell";
+import { isOnboardingShellPath } from "@/lib/auth/onboarding-shell";
 
 const repoRoot = process.cwd();
 const appDir = path.join(repoRoot, "src/app");
@@ -161,5 +167,88 @@ describe("proxy redirects a pending user from every shell", () => {
     state.updateSession.mockResolvedValue({ response: NextResponse.next(), user: null });
     const response = await proxy(new NextRequest("http://localhost/admin"));
     expect(response.headers.get("location")).toContain("/login");
+  });
+});
+
+// ── Matcher coverage ──────────────────────────────────────────────
+
+describe("the proxy matcher reaches every path the shells claim", () => {
+  const matcher = new RegExp(`^${config.matcher[0]}$`);
+
+  /**
+   * A shell predicate that answers true for a path the matcher never routes to the
+   * proxy is a silent hole: the code reads as guarded and is not. `/print` was exactly
+   * this — `isAdminShellPath` claimed it, the matcher did not list it, so print sheets
+   * ran with no session refresh, no role gate, and no password-change redirect.
+   */
+  const shellPaths = [
+    "/admin",
+    "/admin/settings/users",
+    "/print",
+    "/print/resident-face-sheet",
+    "/clinical",
+    "/billing",
+    "/finance",
+    "/pipeline",
+    "/risk",
+    "/insurance",
+    "/vendors",
+    "/residents",
+    "/staff",
+    "/staffing",
+    "/incidents",
+    "/schedules",
+    "/time-records",
+    "/payroll",
+    "/certifications",
+    "/training",
+    "/transportation",
+    "/reputation",
+    "/assessments",
+    "/care-plans",
+    "/family-messages",
+    "/executive",
+    "/search",
+    "/reports",
+    "/caregiver",
+    "/dietary",
+    "/med-tech",
+    "/family",
+    "/onboarding",
+  ];
+
+  it.each(shellPaths)("%s is claimed by a shell predicate", (pathname) => {
+    const claimed =
+      isAdminShellPath(pathname) ||
+      isCaregiverShellPath(pathname) ||
+      isDietaryShellPath(pathname) ||
+      isMedTechShellPath(pathname) ||
+      isFamilyShellPath(pathname) ||
+      isOnboardingShellPath(pathname);
+    expect(claimed).toBe(true);
+  });
+
+  it.each(shellPaths)("%s is routed to the proxy by config.matcher", (pathname) => {
+    expect(matcher.test(pathname)).toBe(true);
+  });
+
+  it("still keeps /api and static assets out of the proxy", () => {
+    for (const pathname of [
+      "/api/admin/users",
+      "/api/account/change-password",
+      "/login",
+      "/",
+      "/about",
+      "/admin/app.css",
+      "/admin/chunk.js",
+    ]) {
+      expect(matcher.test(pathname), pathname).toBe(false);
+    }
+  });
+
+  it("redirects a pending user away from a print sheet", async () => {
+    const response = await proxy(new NextRequest("http://localhost/print/resident-face-sheet"));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("http://localhost/change-password");
   });
 });

@@ -39,6 +39,22 @@ type AuthAdminSnapshot = {
 // Generator lives in @/lib/auth/temporary-password so it can be unit-tested for
 // uniformity and character-class coverage without a Supabase client in scope.
 
+/**
+ * Remove an Auth user that this call created but could not finish setting up.
+ *
+ * Best effort by design: the caller is already on its way to reporting a failure, and a
+ * cleanup that throws would replace a useful error with a confusing one. A cleanup that
+ * fails leaves an orphan, which is what the caller was going to report anyway.
+ */
+async function discardPartiallyProvisionedAuthUser(userId: string): Promise<void> {
+  try {
+    const supabase = createServiceRoleClient();
+    await supabase.auth.admin.deleteUser(userId);
+  } catch {
+    // Swallowed on purpose — see above.
+  }
+}
+
 // ── Admin API wrappers ────────────────────────────────────────────
 
 /**
@@ -82,8 +98,10 @@ export async function adminInviteUser(
   });
 
   if (metaError) {
-    // The invite already went out. If the metadata write fails, we'd produce
-    // the same bug we're fixing — surface clearly so the admin can react.
+    // The invite already went out, and the Auth user exists. Leaving it behind is how
+    // the orphan population got created in the first place, so remove what this call
+    // made before reporting the failure (COL-362).
+    await discardPartiallyProvisionedAuthUser(invitedUserId);
     throw new Error(`Invite sent but app_metadata write failed: ${metaError.message}`);
   }
 
@@ -257,7 +275,15 @@ export async function adminCreateUser(
     throw new Error("Auth create error: create returned no user");
   }
 
-  const { expires_at } = await adminSetMustChangePassword(data.user.id, true);
+  let expires_at: string | null;
+  try {
+    ({ expires_at } = await adminSetMustChangePassword(data.user.id, true));
+  } catch (err) {
+    // Same reasoning as the invite path: the Auth user exists but is unusable, and the
+    // caller's rollback has not started yet. Do not leave it behind (COL-362).
+    await discardPartiallyProvisionedAuthUser(data.user.id);
+    throw err;
+  }
 
   return {
     user: {

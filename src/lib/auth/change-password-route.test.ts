@@ -9,13 +9,19 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({
   getSession: vi.fn(),
   updateUser: vi.fn(),
+  refreshSession: vi.fn(),
   signInWithPassword: vi.fn(),
   setMustChange: vi.fn(),
+  logError: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
-    auth: { getSession: mocks.getSession, updateUser: mocks.updateUser },
+    auth: {
+      getSession: mocks.getSession,
+      updateUser: mocks.updateUser,
+      refreshSession: mocks.refreshSession,
+    },
   }),
 }));
 vi.mock("@supabase/supabase-js", () => ({
@@ -24,6 +30,7 @@ vi.mock("@supabase/supabase-js", () => ({
 vi.mock("@/lib/supabase/must-change-password-admin", () => ({
   adminSetMustChangePassword: mocks.setMustChange,
 }));
+vi.mock("@/lib/observability/logger", () => ({ logError: mocks.logError }));
 
 import { POST } from "@/app/api/account/change-password/route";
 import { clearFailureRateLimit } from "@/lib/security/in-memory-failure-rate-limit";
@@ -66,6 +73,7 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
   mocks.signInWithPassword.mockResolvedValue({ error: null });
   mocks.updateUser.mockResolvedValue({ error: null });
+  mocks.refreshSession.mockResolvedValue({ error: null });
   mocks.setMustChange.mockResolvedValue({ expires_at: null });
 });
 
@@ -201,5 +209,57 @@ describe("change-password rate limit", () => {
 
     expect(response.status).toBe(401);
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+});
+
+describe("session refresh after a successful change", () => {
+  it("refreshes the session so the cleared flag reaches the client token", async () => {
+    // updateUser re-mints the cookie BEFORE the flag is cleared, so that token still
+    // says must_change_password: true. Without this second refresh the client gate
+    // bounces the user straight back to /change-password -- locked out by the screen
+    // that was meant to release them.
+    mocks.getSession.mockResolvedValue(
+      sessionFor(freshUser(), {
+        must_change_password: true,
+        must_change_password_expires_at: temporaryPasswordExpiresAt(new Date()),
+      }),
+    );
+
+    const response = await changeRequest();
+
+    expect(response.status).toBe(200);
+    expect(mocks.refreshSession).toHaveBeenCalled();
+  });
+
+  it("refreshes only after the flag has been cleared", async () => {
+    const order: string[] = [];
+    mocks.setMustChange.mockImplementation(async () => {
+      order.push("clear-flag");
+      return { expires_at: null };
+    });
+    mocks.refreshSession.mockImplementation(async () => {
+      order.push("refresh");
+      return { error: null };
+    });
+    mocks.getSession.mockResolvedValue(sessionFor(freshUser(), { must_change_password: true,
+      must_change_password_expires_at: temporaryPasswordExpiresAt(new Date()) }));
+
+    await changeRequest();
+
+    expect(order).toEqual(["clear-flag", "refresh"]);
+  });
+
+  it("tells the user to sign in again when the refresh fails", async () => {
+    mocks.getSession.mockResolvedValue(sessionFor(freshUser()));
+    mocks.refreshSession.mockResolvedValue({ error: { message: "refresh failed" } });
+
+    const response = await changeRequest();
+
+    expect(response.status).toBe(500);
+    const json = await response.json();
+    expect(json.code).toBe("session_refresh_failed");
+    // The password really did change; saying otherwise would send them back to a
+    // credential that no longer works.
+    expect(json.password_changed).toBe(true);
   });
 });
