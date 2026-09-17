@@ -372,6 +372,35 @@ constraint is the floor, not the ceiling.
   signature is a breaking change for any caller already written against it; worth folding
   into the next change that touches the function anyway.
 
+**D21. The module now has its own probe, and probes are the only regression net that runs.**
+`supabase/tests/review_smart_rounding_authority.sql` asserts, by named object: invoker
+rights on `observation_compliance_for_range`, `anon` holding nothing on the eleven new
+tables, the definer-only RPCs staying off `authenticated`, a non-empty `search_path` on
+every `SECURITY DEFINER` function in the module, no UPDATE or DELETE policy on the three
+append-only ledgers, the facility predicate in all seven UPDATE `WITH CHECK` clauses, the
+refusal to edit an in-force escalation version's rungs, and the pool-task refusal.
+
+Before it, **nothing in `supabase/tests/` referenced any object this module created**. The
+pool-branch regression was caught only because it happened to touch a function an unrelated
+SYS-001 probe exercises. Any part that adds a table, an RPC or a policy extends this file,
+or that object has no regression cover at all.
+
+**D22. Two RLS facts that will otherwise cost someone a day.**
+
+- **A permissive `WITH CHECK` can be masked by a facility-scoped SELECT policy.** On
+  PostgreSQL 17 a bare `UPDATE` that moves a row out of the reach of the table's SELECT
+  policy raises `42501` on its own, whatever the UPDATE policy's `WITH CHECK` says. The
+  seven omitted facility predicates were real and are fixed, but the cross-facility move
+  they appeared to allow was already refused. A demonstration of that "exploit" almost
+  certainly ran as owner, where RLS does not apply. Fix policies so they stand alone; do
+  not report a masked gap as an exploitable one.
+- **`UPDATE ... RETURNING` re-applies the SELECT policy to the new row**, so an RLS test
+  written with `RETURNING` passes against a broken policy. Every behavioural UPDATE in the
+  probe and the acceptance scripts uses a bare `UPDATE` plus `GET DIAGNOSTICS ROW_COUNT`
+  for that reason. Do not simplify it back.
+- A `WITH CHECK` failure **raises** `42501`; a `USING` failure filters silently to
+  `UPDATE 0`. Assert the right one.
+
 **D9. American spelling. No em dashes** in code comments, UI copy, or documentation.
 
 ---
@@ -386,6 +415,7 @@ constraint is the floor, not the ceiling.
 | 4 | `417_observation_escalation_policy.sql` | `407` |
 | review fix | `418_observation_compliance_occupancy.sql` | n/a (C3) |
 | review fix | `419_escalation_completed_task_guard.sql` | n/a (C1) |
+| majors + probe | `420_smart_rounding_authority_fixes.sql` | n/a (M1, M2, M3, M0) |
 | 5 | next free at the time it is written | `408` |
 | 7 | next two free | `409`, `410` |
 
@@ -721,12 +751,15 @@ Filled in by the orchestrator as parts land.
 
 ## 6. Open items carried by the orchestrator
 
-- **One non-reproducible test failure.** A full `npm run test` reported `1 failed | 5881
-  passed` once during Part 3 integration. Three consecutive full runs immediately after
-  were clean at `5882 passed`. The failing test was not identified because the run output
-  was truncated. Capture full vitest output to a file on every run from here so a
-  recurrence is identifiable. Do not report the suite as reliably green until this either
-  recurs and is fixed or goes a sustained number of runs without appearing.
+- **IDENTIFIED: one load-sensitive flaky test, and it is not this module's.**
+  `src/app/(admin)/admin/operations/profile/page.test.tsx > Facility profile review > has
+  accessible controls and source details` fails intermittently under the full parallel
+  suite (observed twice) and passes 3 of 3 in isolation. It took 5808 ms when it failed.
+  The body runs `axe.run(container)`, a full accessibility scan, inside a unit test with no
+  explicit timeout, which is timing fragile once the runner is saturated by 791 files. It
+  arrived from `origin/main` (`dfae9cc5`) and belongs to another issue's acceptance, so it
+  is reported rather than patched here. **Do not report the full suite as reliably green
+  without naming this.** A re-run of that one file is the discriminator.
 - **No hosted verification.** See decision D17.
 - **Acceptance 1 resident count unconfirmed.** See decision D15.
 - **Replay idempotency is proven.** Applying `412` through `415` a second time to an

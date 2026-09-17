@@ -14,15 +14,33 @@
  * Every task is stamped with the cadence version that produced it, so a later
  * cadence change cannot rewrite a past compliance number.
  *
- * Residents under an active Monitoring Order are skipped for the standard
- * windows and get their order tasks from `generate_monitoring_order_tasks` in
- * the same tick, so one cron entry covers both kinds.
+ * Monitoring Order suppression is per window, not per resident. A resident under
+ * an order loses exactly the standard windows the order's interval covers and
+ * keeps the rest, resolved by `observation_windows_under_monitoring_order`, and
+ * gets their order tasks from `generate_monitoring_order_tasks` in the same
+ * tick, so one cron entry covers both kinds. Asking "is an order in force right
+ * now?" once per resident was wrong in both directions: an order starting later
+ * today read as not in force and the resident got standard tasks across the
+ * order's hours as well as order tasks, and an order ending three hours into a
+ * twelve hour shift suppressed the whole shift and left the resident with no
+ * task of any kind until the next tick.
  *
- * The response is a per facility outcome, not a total. A facility that threw,
- * and a facility that has no cadence in force and therefore generated nothing,
- * are both reported by id and both make `ok` false with a non 200 status. A run
- * that silently logged a per facility exception and still answered `ok: true`
- * told a cron monitor that a building which generated zero tasks was healthy.
+ * Every generated task gets an owner the floor can actually be, resolved by
+ * `resolve_observation_task_assignees`: the resident split where one exists,
+ * otherwise a staff member scheduled for that shift, chosen by a stable hash so
+ * a re-run does not reshuffle the board. Where nobody is scheduled no assignee
+ * is invented. The tasks are still generated, so the gap is counted rather than
+ * hidden, and the shift is raised as a visible defect through
+ * `record_observation_staffing_gap` and reported here by facility, shift and
+ * service date.
+ *
+ * The response is a per facility outcome, not a total. A facility that threw, a
+ * facility that has no cadence in force and therefore generated nothing, and a
+ * facility whose shift has nobody on the schedule are all reported by id and all
+ * make `ok` false with a non 200 status. A run that silently logged a per
+ * facility exception and still answered `ok: true` told a cron monitor that a
+ * building which generated zero tasks was healthy, and a run that generated a
+ * full board no caregiver could work would have read the same way.
  *
  * POST body: `{ "organization_id": uuid, "facility_id"?: uuid }`
  * Auth: `x-cron-secret` must equal env `OBSERVATION_TASK_GENERATOR_SECRET`.
@@ -48,9 +66,6 @@ const NOT_YET_WORKED_STATUSES = ["upcoming", "due_soon"];
 
 const STOOD_DOWN_REASON = "Resident is no longer active at this facility";
 
-/** PostgREST codes for a relation that does not exist in the schema cache. */
-const MISSING_RELATION_CODES = new Set(["42P01", "PGRST205"]);
-
 /** PostgREST codes for a function that does not exist in the schema cache. */
 const MISSING_FUNCTION_CODES = new Set(["42883", "PGRST202"]);
 
@@ -74,10 +89,42 @@ interface CadenceWindowRow {
   starts_shift: boolean;
 }
 
-interface ShiftAssignmentRow {
-  id: string;
-  staff_id: string;
-  assigned_resident_ids: string[] | null;
+/**
+ * One row of `resolve_observation_task_assignees`. `assignment_source` is the
+ * step of the fallback chain that answered, and `none_scheduled` is the one that
+ * means nobody on the schedule can work this resident's checks.
+ */
+interface ResolvedAssigneeRow {
+  resident_id: string;
+  shift_assignment_id: string | null;
+  staff_id: string | null;
+  assignment_source: "resident_split" | "shift_roster" | "none_scheduled";
+}
+
+/** One row of `observation_windows_under_monitoring_order`. */
+interface CoveredWindowRow {
+  resident_id: string;
+  window_key: string;
+  service_date: string;
+  monitoring_order_id: string;
+}
+
+/**
+ * The key a covered window is held under. Deliberately the same three columns as
+ * the task table's partial unique index on
+ * `(resident_id, window_key, service_date)`, so "suppressed" and "already
+ * written" are the same identity and the two cannot drift.
+ */
+function coverageKey(residentId: string, windowKey: string, serviceDate: string): string {
+  return `${residentId}\u0000${windowKey}\u0000${serviceDate}`;
+}
+
+/** A shift at a facility on a service date that nobody is scheduled to work. */
+interface StaffingGap {
+  facility_id: string;
+  shift_key: string;
+  service_date: string;
+  residents_unassigned: number;
 }
 
 interface TaskRow {
@@ -97,69 +144,74 @@ interface TaskRow {
 }
 
 /**
- * Residents under an active Monitoring Order keep order tasks instead of the
- * standard windows. The Monitoring Orders migration owns that table and may not
- * have landed yet, so a missing relation reads as "no active orders" and this
- * function behaves correctly before and after it lands.
+ * The (resident, window, service date) triples of the shift being generated that
+ * an active Monitoring Order covers.
+ *
+ * The interval arithmetic stays in SQL, next to the window rows and next to the
+ * orders, for the same reason the window times do. The grain is the grain of the
+ * task table's idempotency index, so this function subtracts one set from the
+ * other and does no time comparison of its own.
+ *
+ * A failure here is not swallowed. An earlier version of this file treated a
+ * missing Monitoring Orders table as "no active orders" because the orders
+ * migration had not landed yet; that tolerance would now mean writing a full
+ * standard board on top of a resident's order tasks, so the facility fails
+ * loudly instead.
  */
-async function residentsUnderMonitoringOrder(
+async function windowsUnderMonitoringOrder(
   admin: SupabaseClient,
   facilityId: string,
   atIso: string,
-): Promise<{ residentIds: Set<string>; tableMissing: boolean }> {
-  const { data, error } = await admin
-    .from("resident_monitoring_orders")
-    .select("resident_id")
-    .eq("facility_id", facilityId)
-    .eq("status", "active")
-    .is("deleted_at", null)
-    .lte("starts_at", atIso)
-    .or(`ends_at.is.null,ends_at.gt.${atIso}`);
-
-  if (error) {
-    if (MISSING_RELATION_CODES.has(error.code)) return { residentIds: new Set(), tableMissing: true };
-    throw error;
-  }
-
-  const rows = (data ?? []) as { resident_id: string }[];
-  return { residentIds: new Set(rows.map((row) => row.resident_id)), tableMissing: false };
-}
-
-/**
- * Shift assignments for the shift the windows belong to. The lookup matches
- * `roster_shift_type`, not `shift_key`: the key is renameable configuration and
- * `shift_assignments.shift_type` is a fixed enum, so joining the two directly
- * would return nothing the moment an administrator renamed a shift, and would
- * read as "nobody was assigned" rather than as an error. Generating one shift
- * ahead means these are always the incoming shift's rows, which is what a shift
- * change window needs: the check is owned by the staff whose shift begins at
- * that time, not by the shift going off duty. Where no incoming row covers a
- * resident the task is left unassigned, which is the facility pool.
- */
-async function assignmentsByResident(
-  admin: SupabaseClient,
-  organizationId: string,
-  facilityId: string,
-  shiftServiceDate: string,
-  rosterShiftType: string,
-): Promise<Map<string, ShiftAssignmentRow>> {
-  const { data, error } = await admin
-    .from("shift_assignments")
-    .select("id, staff_id, assigned_resident_ids")
-    .eq("organization_id", organizationId)
-    .eq("facility_id", facilityId)
-    .eq("shift_date", shiftServiceDate)
-    .eq("shift_type", rosterShiftType)
-    .in("status", ["assigned", "confirmed"])
-    .is("deleted_at", null);
+): Promise<Set<string>> {
+  const { data, error } = await admin.rpc("observation_windows_under_monitoring_order", {
+    p_facility_id: facilityId,
+    p_at: atIso,
+  });
 
   if (error) throw error;
 
-  const byResident = new Map<string, ShiftAssignmentRow>();
-  for (const row of (data ?? []) as ShiftAssignmentRow[]) {
-    for (const residentId of row.assigned_resident_ids ?? []) {
-      if (!byResident.has(residentId)) byResident.set(residentId, row);
-    }
+  const covered = new Set<string>();
+  for (const row of (data ?? []) as CoveredWindowRow[]) {
+    covered.add(coverageKey(row.resident_id, row.window_key, row.service_date));
+  }
+  return covered;
+}
+
+/**
+ * Who owns each resident's checks for the shift the windows belong to.
+ *
+ * The whole fallback chain lives in SQL, in
+ * `resolve_observation_task_assignees`, for the same reason the window times do:
+ * this file carries no configuration and no scheduling rule of its own, and the
+ * chain has to be provable in the same replay that proves the policies. The
+ * lookup matches `roster_shift_type`, not `shift_key`: the key is renameable
+ * configuration and `shift_assignments.shift_type` is a fixed enum, so joining
+ * the two directly would return nothing the moment an administrator renamed a
+ * shift, and would read as "nobody was assigned" rather than as an error.
+ *
+ * Generating one shift ahead means these are always the incoming shift's rows,
+ * which is what a shift change window needs: the check is owned by the staff
+ * whose shift begins at that time, not by the shift going off duty.
+ */
+async function assigneesByResident(
+  admin: SupabaseClient,
+  facilityId: string,
+  shiftServiceDate: string,
+  rosterShiftType: string,
+  residentIds: string[],
+): Promise<Map<string, ResolvedAssigneeRow>> {
+  const { data, error } = await admin.rpc("resolve_observation_task_assignees", {
+    p_facility_id: facilityId,
+    p_shift_service_date: shiftServiceDate,
+    p_roster_shift_type: rosterShiftType,
+    p_resident_ids: residentIds,
+  });
+
+  if (error) throw error;
+
+  const byResident = new Map<string, ResolvedAssigneeRow>();
+  for (const row of (data ?? []) as ResolvedAssigneeRow[]) {
+    byResident.set(row.resident_id, row);
   }
   return byResident;
 }
@@ -263,8 +315,11 @@ Deno.serve(async (req) => {
         facilities_succeeded: 0,
         facilities_failed: 0,
         facilities_without_cadence: 0,
+        facilities_without_staffing: 0,
         failed_facility_ids: [],
         facility_ids_without_cadence: [],
+        facility_ids_without_staffing: [],
+        staffing_gaps: [],
         tasks_generated: 0,
         order_tasks_generated: 0,
         tasks_stood_down: 0,
@@ -281,6 +336,8 @@ Deno.serve(async (req) => {
   let monitoringOrdersTableMissing = false;
   const failedFacilityIds: string[] = [];
   const facilityIdsWithoutCadence: string[] = [];
+  const facilityIdsWithoutStaffing: string[] = [];
+  const staffingGaps: StaffingGap[] = [];
 
   for (const facility of facilities) {
     try {
@@ -314,15 +371,11 @@ Deno.serve(async (req) => {
 
       tasksStoodDown += await standDownTasksForDepartedResidents(admin, facility.id, activeResidentIds, atIso);
 
-      const monitored = await residentsUnderMonitoringOrder(admin, facility.id, atIso);
-      monitoringOrdersTableMissing = monitoringOrdersTableMissing || monitored.tableMissing;
-
-      // Residents under an order are skipped for the standard windows, so this
-      // is the tick that writes what they are actually due. It runs before the
-      // early return below, because a facility whose whole roster is under
-      // orders still has order tasks to write. The horizon and the interval
-      // scaled grace live in the SQL function, not here, for the same reason
-      // the cadence windows do: this file carries no time and no grace value.
+      // Runs before the early return below, because a facility whose whole
+      // roster is under orders still has order tasks to write. The horizon and
+      // the interval scaled grace live in the SQL function, not here, for the
+      // same reason the cadence windows do: this file carries no time and no
+      // grace value.
       const { data: orderTasks, error: orderErr } = await admin.rpc("generate_monitoring_order_tasks", {
         p_facility_id: facility.id,
         p_through: null,
@@ -330,26 +383,24 @@ Deno.serve(async (req) => {
       if (orderErr) {
         if (!MISSING_FUNCTION_CODES.has(orderErr.code)) throw orderErr;
         monitoringOrdersTableMissing = true;
-      } else {
-        orderTasksGenerated += typeof orderTasks === "number" ? orderTasks : 0;
       }
+      orderTasksGenerated += typeof orderTasks === "number" ? orderTasks : 0;
 
-      const residentIds = [...activeResidentIds].filter((id) => !monitored.residentIds.has(id));
+      const covered = await windowsUnderMonitoringOrder(admin, facility.id, atIso);
+
+      const residentIds = [...activeResidentIds];
       if (residentIds.length === 0) continue;
 
-      const firstWindow = windows[0];
-      const assignments = await assignmentsByResident(
-        admin,
-        facility.organization_id,
-        facility.id,
-        firstWindow.shift_service_date,
-        firstWindow.roster_shift_type,
-      );
-
+      // Every resident is still considered for every window. What an order
+      // takes away is the individual windows it covers, so a resident whose
+      // order starts at midday keeps that morning's checks and a resident whose
+      // order ends at midday keeps that evening's.
       const rows: TaskRow[] = [];
+      const residentsWithWork = new Set<string>();
       for (const window of windows) {
         for (const residentId of residentIds) {
-          const assignment = assignments.get(residentId) ?? null;
+          if (covered.has(coverageKey(residentId, window.window_key, window.service_date))) continue;
+          residentsWithWork.add(residentId);
           rows.push({
             organization_id: facility.organization_id,
             entity_id: facility.entity_id,
@@ -358,12 +409,74 @@ Deno.serve(async (req) => {
             cadence_version_id: window.cadence_version_id,
             window_key: window.window_key,
             service_date: window.service_date,
-            shift_assignment_id: assignment?.id ?? null,
-            assigned_staff_id: assignment?.staff_id ?? null,
+            shift_assignment_id: null,
+            assigned_staff_id: null,
             scheduled_for: window.window_opens_at_utc,
             due_at: window.due_at_utc,
             grace_ends_at: window.window_closes_at_utc,
             status: "upcoming",
+          });
+        }
+      }
+
+      // A facility whose every resident is fully covered by an order has no
+      // standard window to write and no staffing gap to report: their order
+      // tasks went out above.
+      if (rows.length === 0) continue;
+
+      const firstWindow = windows[0];
+      const assignees = await assigneesByResident(
+        admin,
+        facility.id,
+        firstWindow.shift_service_date,
+        firstWindow.roster_shift_type,
+        [...residentsWithWork],
+      );
+
+      for (const row of rows) {
+        const assignee = assignees.get(row.resident_id) ?? null;
+        row.shift_assignment_id = assignee?.shift_assignment_id ?? null;
+        row.assigned_staff_id = assignee?.staff_id ?? null;
+      }
+
+      // Nobody on the schedule for this shift. The tasks below are still
+      // written, because a resident nobody was rostered for is still a resident
+      // who has to be looked at, and a board that quietly shrinks hides the
+      // staffing gap instead of showing it. What must not happen is inventing an
+      // assignee: a task assigned to somebody who is not working is worse than a
+      // task nobody is assigned, because the first one looks covered.
+      const unassigned = [...residentsWithWork].filter((residentId) => !assignees.get(residentId)?.staff_id);
+      if (unassigned.length > 0) {
+        facilityIdsWithoutStaffing.push(facility.id);
+        staffingGaps.push({
+          facility_id: facility.id,
+          shift_key: firstWindow.shift_key,
+          service_date: firstWindow.shift_service_date,
+          residents_unassigned: unassigned.length,
+        });
+        t.log({
+          event: "facility_shift_has_no_scheduled_staff",
+          outcome: "error",
+          facility_id: facility.id,
+          shift_key: firstWindow.shift_key,
+          service_date: firstWindow.shift_service_date,
+          residents_unassigned: unassigned.length,
+        });
+        const { error: gapErr } = await admin.rpc("record_observation_staffing_gap", {
+          p_facility_id: facility.id,
+          p_shift_key: firstWindow.shift_key,
+          p_service_date: firstWindow.shift_service_date,
+        });
+        // The alert is how a human sees the gap; it is not how the gap is
+        // counted. A failure to record it must not swallow the generation this
+        // facility still owes, so it is logged and the run continues.
+        if (gapErr) {
+          t.log({
+            event: "staffing_gap_alert_failed",
+            outcome: "error",
+            facility_id: facility.id,
+            error_code: gapErr.code,
+            error_message: gapErr.message,
           });
         }
       }
@@ -390,8 +503,11 @@ Deno.serve(async (req) => {
   const facilitiesAttempted = facilities.length;
   const facilitiesFailed = failedFacilityIds.length;
   const facilitiesWithoutCadence = facilityIdsWithoutCadence.length;
+  const facilitiesWithoutStaffing = facilityIdsWithoutStaffing.length;
   const facilitiesSucceeded = facilitiesAttempted - facilitiesFailed - facilitiesWithoutCadence;
-  const allFacilitiesProduced = facilitiesFailed === 0 && facilitiesWithoutCadence === 0;
+  const allFacilitiesProduced = facilitiesFailed === 0
+    && facilitiesWithoutCadence === 0
+    && facilitiesWithoutStaffing === 0;
 
   t.log({
     event: "complete",
@@ -400,6 +516,7 @@ Deno.serve(async (req) => {
     facilities_succeeded: facilitiesSucceeded,
     facilities_failed: facilitiesFailed,
     facilities_without_cadence: facilitiesWithoutCadence,
+    facilities_without_staffing: facilitiesWithoutStaffing,
     facilities_with_cadence: facilitiesWithCadence,
     tasks_generated: tasksGenerated,
     order_tasks_generated: orderTasksGenerated,
@@ -415,8 +532,11 @@ Deno.serve(async (req) => {
       facilities_succeeded: facilitiesSucceeded,
       facilities_failed: facilitiesFailed,
       facilities_without_cadence: facilitiesWithoutCadence,
+      facilities_without_staffing: facilitiesWithoutStaffing,
       failed_facility_ids: failedFacilityIds,
       facility_ids_without_cadence: facilityIdsWithoutCadence,
+      facility_ids_without_staffing: facilityIdsWithoutStaffing,
+      staffing_gaps: staffingGaps,
       tasks_generated: tasksGenerated,
       order_tasks_generated: orderTasksGenerated,
       tasks_stood_down: tasksStoodDown,

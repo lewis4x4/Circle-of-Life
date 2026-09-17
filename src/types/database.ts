@@ -13459,7 +13459,9 @@ export type Database = {
         Row: {
           actor_id: string | null
           actor_role: string | null
+          changed_fields: Json
           created_at: string
+          event_type: string
           facility_id: string
           from_status: string | null
           id: string
@@ -13473,7 +13475,9 @@ export type Database = {
         Insert: {
           actor_id?: string | null
           actor_role?: string | null
+          changed_fields?: Json
           created_at?: string
+          event_type?: string
           facility_id: string
           from_status?: string | null
           id?: string
@@ -17814,6 +17818,24 @@ export type Database = {
       record_cadence_observation_tasks: {
         Args: { p_rows: Json }
         Returns: number
+      }
+      resolve_observation_task_assignees: {
+        Args: {
+          p_facility_id: string
+          p_shift_service_date: string
+          p_roster_shift_type: string
+          p_resident_ids: string[]
+        }
+        Returns: {
+          resident_id: string
+          shift_assignment_id: string | null
+          staff_id: string | null
+          assignment_source: string
+        }[]
+      }
+      record_observation_staffing_gap: {
+        Args: { p_facility_id: string; p_shift_key: string; p_service_date: string }
+        Returns: boolean
       }
       submit_observation: {
         Args: {
