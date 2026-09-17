@@ -6,7 +6,7 @@ import {
   composeIntent,
   buildIntentState,
 } from "./router-intent-typesafe.ts";
-import { TypeSafeError, evaluateSystemOne } from "./typesafe-client.ts";
+import { TypeSafeError, evaluateSystemOne, requireScore } from "./typesafe-client.ts";
 import { classifyIntent } from "./router-intent.ts";
 import type { SystemOneResponse } from "./typesafe-client.ts";
 
@@ -209,6 +209,40 @@ Deno.test("evaluateSystemOne maps status codes to kinds and never echoes the bod
     );
     assertEquals(error.kind, kind);
     assertEquals(error.message.includes("John Smith"), false);
+  }
+});
+
+Deno.test("requireScore returns the weighted position, not a level index", () => {
+  const response: SystemOneResponse = {
+    model: "jev-latest",
+    answers: {
+      completeness: {
+        type: "score",
+        score: 1.4,
+        probabilities: { "0": 0.1, "1": 0.4, "2": 0.5 },
+        confidence: 0.52,
+      },
+    },
+  };
+
+  assertEquals(requireScore(response, "completeness").score, 1.4);
+  assertEquals(requireScore(response, "completeness").confidence, 0.52);
+});
+
+Deno.test("requireScore throws on a missing or wrong-typed answer", () => {
+  const response: SystemOneResponse = {
+    model: "jev-latest",
+    answers: { completeness: { type: "noul", noul: 0.9 } },
+  };
+
+  for (const id of ["completeness", "absent"]) {
+    let thrown: unknown;
+    try {
+      requireScore(response, id);
+    } catch (err) {
+      thrown = err;
+    }
+    assertEquals(thrown instanceof TypeSafeError, true);
   }
 });
 

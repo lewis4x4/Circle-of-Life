@@ -220,3 +220,25 @@ export function requireNoul(response: SystemOneResponse, id: string): number {
   }
   return answer.noul;
 }
+
+/**
+ * Read a score answer, or throw.
+ *
+ * `score` is a probability-weighted position across the levels, not an index:
+ * a 3-level question can answer 1.4. Compare scores against each other or
+ * against a threshold; do not round one to look up a level name.
+ */
+export function requireScore(
+  response: SystemOneResponse,
+  id: string,
+): { score: number; probabilities: Record<string, number>; confidence: number } {
+  const answer = response.answers[id];
+  if (!answer || typeof answer.score !== "number") {
+    throw new TypeSafeError("malformed_response", `Missing score answer '${id}'`);
+  }
+  return {
+    score: answer.score,
+    probabilities: answer.probabilities ?? {},
+    confidence: typeof answer.confidence === "number" ? answer.confidence : 0,
+  };
+}
