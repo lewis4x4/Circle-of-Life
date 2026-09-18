@@ -33,6 +33,24 @@ export function kindSupportsPrefill(kind: CareEventKind | null): boolean {
   return kind !== null && PREFILL_KINDS.includes(kind);
 }
 
+/**
+ * Whether the control renders at all, read from the build.
+ *
+ * This is a second switch, in front of the Edge Function's organization
+ * allowlist, and it is not redundant. Without it the button ships visible while
+ * the function is disarmed: a caregiver taps it, the recording goes to
+ * `grace-transcribe` — which means a resident's spoken health information
+ * reaches the transcription vendor — and only then does the prefill call come
+ * back 503 and the screen say "nothing could be filled in". PHI would be spent
+ * on a request that was always going to be refused.
+ *
+ * So the browser refuses first and no audio is captured. Unset means off, and
+ * it must stay off until the BAA lands (COL-466).
+ */
+export function prefillControlEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_CARE_EVENT_PREFILL_ENABLED === "true";
+}
+
 export type CareEventPrefillResponse = {
   prefill: Record<string, string>;
   questions_version: string;

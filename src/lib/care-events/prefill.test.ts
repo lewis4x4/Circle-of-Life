@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { deriveCareEvent, type CareEventAnswers, type CareEventContext } from "./level-engine";
 import casesJson from "./level-cases.json";
-import { applyablePrefill, kindSupportsPrefill, prefillProvenance } from "./prefill";
+import {
+  applyablePrefill,
+  kindSupportsPrefill,
+  prefillControlEnabled,
+  prefillProvenance,
+} from "./prefill";
 import {
   answersForEngine,
   initialReportState,
@@ -178,4 +183,28 @@ describe("prefill provenance cannot move a level", () => {
       expect(confirmed).toEqual(tapped);
     });
   }
+});
+
+describe("the control is off unless the build says otherwise", () => {
+  const original = process.env.NEXT_PUBLIC_CARE_EVENT_PREFILL_ENABLED;
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_CARE_EVENT_PREFILL_ENABLED = original;
+  });
+
+  it("is off when unset", () => {
+    delete process.env.NEXT_PUBLIC_CARE_EVENT_PREFILL_ENABLED;
+    expect(prefillControlEnabled()).toBe(false);
+  });
+
+  it("is off for anything but the exact string", () => {
+    for (const value of ["", "false", "1", "yes", "TRUE"]) {
+      process.env.NEXT_PUBLIC_CARE_EVENT_PREFILL_ENABLED = value;
+      expect(prefillControlEnabled()).toBe(false);
+    }
+  });
+
+  it("is on only for \"true\"", () => {
+    process.env.NEXT_PUBLIC_CARE_EVENT_PREFILL_ENABLED = "true";
+    expect(prefillControlEnabled()).toBe(true);
+  });
 });
