@@ -55,9 +55,26 @@ export function CareEventWitnesses({ careEventId, incidentId, facilityId, timeZo
     }
   }, [supabase, incidentId]);
 
+  // The first read subscribes to one request rather than syncing state into the
+  // effect body. A Note has no incident, and the render above returns before it
+  // ever reads `tasks`, so there is nothing to empty out here — skipping the
+  // fetch says the same thing without a synchronous write.
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!incidentId) return;
+    let current = true;
+    fetchWitnessTasksForIncident(supabase, incidentId)
+      .then((next) => {
+        if (current) setTasks(next);
+      })
+      .catch((caught) => {
+        if (!current) return;
+        setError(describeWitnessError(caught));
+        setTasks([]);
+      });
+    return () => {
+      current = false;
+    };
+  }, [supabase, incidentId]);
 
   async function openAdd() {
     setError(null);
