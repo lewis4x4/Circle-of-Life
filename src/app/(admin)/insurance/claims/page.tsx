@@ -161,7 +161,7 @@ export default function InsuranceClaimsPage() {
                         {r.incident_id && (
                           <Link
                             href={`/admin/incidents/${r.incident_id}`}
-                            className="text-[10px] font-bold text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                            className="text-[10px] font-bold text-primary hover:text-primary flex items-center gap-1"
                           >
                             Incident linked ↗
                           </Link>

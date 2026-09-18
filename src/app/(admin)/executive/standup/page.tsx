@@ -37,7 +37,7 @@ import {
 import type { Database } from "@/types/database";
 
 function sourceBadgeClass(metric: StandupMetricRow): string {
-  if (metric.sourceMode === "forecast") return "border-primary-200 bg-primary-50 text-primary-700";
+  if (metric.sourceMode === "forecast") return "border-primary/20 bg-primary/5 text-primary";
   if (metric.sourceMode === "hybrid") return "border-amber-200 bg-amber-50 text-amber-700";
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
@@ -219,7 +219,7 @@ export default function ExecutiveStandupPage() {
               {draftStatus ? (
                 <Link
                   href={`/admin/executive/standup/${weekOf}`}
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-primary-200 bg-primary-50 px-4 text-xs font-semibold text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200 dark:hover:bg-primary-500/15"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-primary/20 bg-primary/5 px-4 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
                 >
                   Open draft
                 </Link>
@@ -286,7 +286,7 @@ export default function ExecutiveStandupPage() {
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Facility pressure board</h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">Ranked by live operating pressure. Total row is shown in the workbook tables below.</p>
             </div>
-            <Link href="/admin/facilities" className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-300">
+            <Link href="/admin/facilities" className="text-sm font-medium text-primary hover:text-primary">
               Open facilities →
             </Link>
           </div>

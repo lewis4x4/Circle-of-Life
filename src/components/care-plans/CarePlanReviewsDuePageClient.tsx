@@ -28,7 +28,7 @@ function StatusBadge({ row }: { row: CarePlanReviewDueRow }) {
   if (row.daysOverdue > 0) {
     return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Overdue</Badge>;
   }
-  return <Badge className="bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-300">Due now</Badge>;
+  return <Badge className="bg-primary/10 text-primary">Due now</Badge>;
 }
 
 type CarePlanReviewsDuePageClientProps = {
@@ -137,7 +137,7 @@ export function CarePlanReviewsDuePageClient({
     <div className="space-y-8 pb-12">
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between rounded-lg border border-slate-200/50 bg-card p-8 shadow-sm dark:border-white/5">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-100/50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-primary-800 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-bold text-primary">
             <FileSignature className="h-3.5 w-3.5" />
             Care Plans
           </div>
@@ -154,7 +154,7 @@ export function CarePlanReviewsDuePageClient({
           <div className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold tracking-wide text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
             {overdueCount} overdue
           </div>
-          <div className="rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-bold tracking-wide text-primary-800 dark:border-primary-900/40 dark:bg-primary-950/20 dark:text-primary-300">
+          <div className="rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-bold tracking-wide text-primary">
             {dueTodayCount} due today
           </div>
           <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold tracking-wide text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
@@ -188,7 +188,7 @@ export function CarePlanReviewsDuePageClient({
             {rows.map((row) => (
               <div
                 key={row.id}
-                className="flex flex-col gap-4 rounded-lg border border-slate-200/70 bg-white p-5 shadow-sm transition-colors hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-500/30 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-4 rounded-lg border border-slate-200/70 bg-white p-5 shadow-sm transition-colors hover:border-primary/20 dark:border-white/10 md:flex-row md:items-center md:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-3">
@@ -272,7 +272,7 @@ export function CarePlanReviewsDuePageClient({
                   href={`/admin/residents/${row.residentId}/care-plan`}
                   className={cn(
                     buttonVariants({ size: "default" }),
-                    "h-11 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] bg-primary-600 text-white shadow-sm hover:bg-primary-700"
+                    "h-11 rounded-full px-6 font-bold uppercase tracking-wider text-[10px] shadow-sm"
                   )}
                 >
                   Review & sign

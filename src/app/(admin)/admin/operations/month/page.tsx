@@ -7,8 +7,8 @@ export default function MonthlyTasksPage() {
       title="Monthly Tasks"
       category="monthly_rounds"
       iconName="file-text"
-      iconWrapClassName="bg-primary-100"
-      iconClassName="text-primary-700"
+      iconWrapClassName="bg-primary/10"
+      iconClassName="text-primary"
     />
   );
 }

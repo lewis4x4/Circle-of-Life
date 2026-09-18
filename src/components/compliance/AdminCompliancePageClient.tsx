@@ -248,7 +248,7 @@ export function AdminCompliancePageClient({
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
               Incident reporting aligns with{" "}
-              <StatuteCitation statuteCode="59A-36.018" className="font-medium text-primary-700 dark:text-primary-300">
+              <StatuteCitation statuteCode="59A-36.018" className="font-medium text-primary">
                 FAC 59A-36.018
               </StatuteCitation>{" "}
               (see statute tooltip).
@@ -261,20 +261,20 @@ export function AdminCompliancePageClient({
             <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] font-mono text-foreground")}>
               Policy library
             </Link>
-            <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] font-mono bg-primary-600 hover:bg-primary-700 text-white")}>
+            <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] font-mono")}>
               Add deficiencies
             </Link>
-            <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] font-mono bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/50")}>
+            <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] font-mono bg-primary/5 text-primary hover:bg-primary/10")}>
               Certifications
             </Link>
             {/* Enhanced tier links */}
-            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary/5 dark:bg-primary/20 text-[10px] font-mono text-primary")}>
               Compliance Rules
             </Link>
-            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary/5 dark:bg-primary/20 text-[10px] font-mono text-primary")}>
               Run Scan
             </Link>
-            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary/5 dark:bg-primary/20 text-[10px] font-mono text-primary")}>
               Analysis
             </Link>
             <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] font-mono text-orange-700 dark:text-orange-300")}>
@@ -391,7 +391,7 @@ export function AdminCompliancePageClient({
 
                     <Link
                       href={`/admin/compliance/deficiencies/${row.id}`}
-                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-primary-500 group-hover:text-primary-600 dark:group-hover:text-primary-400")}
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-primary group-hover:text-primary")}
                     >
                       Manage Finding
                     </Link>
@@ -413,7 +413,7 @@ export function AdminCompliancePageClient({
                   <p className="text-sm text-muted-foreground">Based on latest rule-based scan</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
+              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary/5 dark:bg-primary/20 text-[10px] font-mono text-primary")}>
                 Run New Scan
               </Link>
             </div>
@@ -536,7 +536,7 @@ export function AdminCompliancePageClient({
                   <p className="text-sm text-muted-foreground">Action items requiring attention</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
+              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary/5 dark:bg-primary/20 text-[10px] font-mono text-primary")}>
                 View All
               </Link>
             </div>
@@ -687,7 +687,7 @@ function Tile({
                {badge}
              </div>
           </div>
-          <p className={cn("text-4xl font-mono tracking-tighter pb-1 transition-colors", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400", hoverColor === "indigo" && !isDanger ? "group-hover:text-primary-600 dark:group-hover:text-primary-400" : "")}>
+          <p className={cn("text-4xl font-mono tracking-tighter pb-1 transition-colors", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400", hoverColor === "indigo" && !isDanger ? "group-hover:text-primary" : "")}>
             {displayValue}
           </p>
         </div>

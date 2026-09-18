@@ -203,7 +203,7 @@ export default function SavedReportsPage() {
                               {view.name}
                            </span>
                            <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
-                              Template: <span className="font-semibold text-primary-600 dark:text-primary-400">{templateNameById.get(view.template_id) ?? "Mapped template"}</span>
+                              Template: <span className="font-semibold text-primary">{templateNameById.get(view.template_id) ?? "Mapped template"}</span>
                            </span>
                         </div>
 
@@ -217,7 +217,7 @@ export default function SavedReportsPage() {
                            <div className="flex flex-col gap-2 align-left md:text-left">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Version Config</span>
                               {view.pinned_template_version ? (
-                                <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400 border-primary-200 dark:border-primary-500/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">
+                                <Badge className="bg-primary/5 text-primary border-primary/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">
                                   Pinned
                                 </Badge>
                               ) : (

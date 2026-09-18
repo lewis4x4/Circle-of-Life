@@ -170,7 +170,7 @@ export default function DeficienciesAnalysisPage() {
           <div>
             
             <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              <BarChart3 className="h-8 w-8 text-primary-500" />
+              <BarChart3 className="h-8 w-8 text-primary" />
               Deficiencies Analysis
             </h1>
             <p className="text-sm text-slate-500 mt-2">
@@ -220,7 +220,7 @@ export default function DeficienciesAnalysisPage() {
                     onClick={() => setSelectedMonths(months)}
                     className={`px-4 py-2 rounded-lg text-[12px] font-mono transition-all ${
                       selectedMonths === months
-                        ? "bg-primary-600 text-white"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-muted text-foreground hover:bg-muted/80"
                     }`}
                   >
@@ -271,7 +271,7 @@ export default function DeficienciesAnalysisPage() {
             {trendData.length > 0 && (
               <V2Card className="p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <TrendingUp className="h-5 w-5 text-primary-500" />
+                  <TrendingUp className="h-5 w-5 text-primary" />
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Deficiency Trend Over Time

@@ -25,7 +25,7 @@ export function Cockpit() {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-slate-300">
-          <Loader2 className="h-5 w-5 animate-spin text-primary-400" />
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
           Loading shift data...
         </div>
       </div>
@@ -65,7 +65,7 @@ export function Cockpit() {
   return (
     <div className="h-screen w-full text-white flex flex-col font-sans antialiased overflow-hidden">
       {/* Ambient gradient blobs */}
-      <div className="pointer-events-none fixed -top-40 -left-40 w-96 h-96 rounded-full bg-primary-600/10 blur-3xl" />
+      <div className="pointer-events-none fixed -top-40 -left-40 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none fixed -bottom-40 -right-40 w-96 h-96 rounded-full bg-sky-600/10 blur-3xl" />
 
       <ShiftBar {...shift} />
