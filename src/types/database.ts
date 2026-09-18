@@ -6022,6 +6022,7 @@ export type Database = {
       }
       incident_followups: {
         Row: {
+          witness_choice: string | null
           assigned_to: string | null
           completed_at: string | null
           completed_by: string | null
@@ -6040,6 +6041,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          witness_choice?: string | null
           assigned_to?: string | null
           completed_at?: string | null
           completed_by?: string | null
@@ -6058,6 +6060,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          witness_choice?: string | null
           assigned_to?: string | null
           completed_at?: string | null
           completed_by?: string | null
@@ -6108,6 +6111,7 @@ export type Database = {
       }
       incident_photos: {
         Row: {
+          kind: string
           created_at: string
           description: string | null
           facility_id: string
@@ -6119,6 +6123,7 @@ export type Database = {
           taken_by: string
         }
         Insert: {
+          kind?: string
           created_at?: string
           description?: string | null
           facility_id: string
@@ -6130,6 +6135,7 @@ export type Database = {
           taken_by: string
         }
         Update: {
+          kind?: string
           created_at?: string
           description?: string | null
           facility_id?: string
@@ -16874,6 +16880,22 @@ export type Database = {
           },
         ]
       }
+      v_care_event_attachments: {
+        Row: {
+          attachment_id: string | null
+          care_event_id: string | null
+          description: string | null
+          facility_id: string | null
+          incident_id: string | null
+          kind: string | null
+          organization_id: string | null
+          storage_path: string | null
+          taken_at: string | null
+          taken_by: string | null
+          taken_by_name: string | null
+        }
+        Relationships: []
+      }
       v_incident_reports_log: {
         Row: {
           bruise: boolean | null
@@ -16918,6 +16940,32 @@ export type Database = {
       }
     }
     Functions: {
+      complete_incident_followup: {
+        Args: { p_followup_id: string; p_choice?: string | null; p_note?: string | null }
+        Returns: Json
+      }
+      care_event_add_witness: {
+        Args: { p_care_event_id: string; p_user_id: string }
+        Returns: Json
+      }
+      care_event_remove_witness: {
+        Args: { p_followup_id: string; p_reason?: string | null }
+        Returns: Json
+      }
+      attach_care_event_file: {
+        Args: { p_care_event_id: string; p_path: string; p_kind?: string | null; p_description?: string | null }
+        Returns: Json
+      }
+      care_event_print_record: {
+        Args: {
+          p_print_kind: string
+          p_care_event_id?: string | null
+          p_facility_id?: string | null
+          p_from?: string | null
+          p_to?: string | null
+        }
+        Returns: string
+      }
       board_check_state: {
         Args: { p_session_id: string }
         Returns: {

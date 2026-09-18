@@ -22,6 +22,7 @@ import { careEventTileWord } from "@/lib/care-events/tiles";
 import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import type { Database } from "@/types/database";
 
+import { CareEventAttachments } from "./CareEventAttachments";
 import { ReportReceiptActions } from "./ReportReceiptActions";
 
 export const RECEIPT_POLL_MS = 5000;
@@ -147,12 +148,25 @@ export function ReportReceipt(props: ReportReceiptProps) {
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{sentence}</p>
       </div>
 
-      <ReportReceiptActions
-        supabase={supabase}
-        careEventId={careEventId}
-        organizationId={props.organizationId}
-        facilityId={props.facilityId}
-      />
+      <ReportReceiptActions supabase={supabase} careEventId={careEventId} />
+
+      {careEventId ? (
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Files on this event</h3>
+          <p className="mb-3 mt-1 text-sm text-muted-foreground">
+            A photo, or a picture of a paper the physician sent back.
+          </p>
+          <CareEventAttachments
+            supabase={supabase}
+            careEventId={careEventId}
+            organizationId={props.organizationId}
+            facilityId={props.facilityId}
+            timeZone={timeZone}
+            kinds={["photo", "physician_order", "other"]}
+            canUpload
+          />
+        </div>
+      ) : null}
 
       <Link
         href="/caregiver"

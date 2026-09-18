@@ -777,3 +777,62 @@
 .high-contrast-mode {
   filter: contrast(1.15) saturate(1.1);
 }
+
+/* =============================================================================
+   Print sheets (COL-354)
+
+   A printed incident form, physician sheet or reports log is the whole page.
+   The admin shell's sidebar, topbar and any control marked data-print-hide are
+   removed rather than tucked away, and the scrolling main column is released so
+   a long sheet breaks across pages instead of clipping at the viewport.
+   ========================================================================= */
+@page {
+  /* Page numbering lives here, not in the sheet's footer text: a string in the
+     body renders once and cannot know which page it is on. Engines that
+     implement margin boxes number the pages; Chrome ignores this and the user's
+     own print-dialog header and footer carry the numbers instead. */
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-size: 9pt;
+    color: #444;
+  }
+}
+
+@media print {
+  [data-print-hide],
+  aside[aria-label="Sidebar"],
+  header.sticky {
+    display: none !important;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  main {
+    overflow: visible !important;
+  }
+
+  /* The shell's h-dvh and overflow-hidden clip a multi-page sheet. */
+  body .h-dvh {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .print-sheet {
+    padding: 0 !important;
+  }
+
+  /* Section 1 to 4 headings and log rows should not be orphaned. */
+  .print-section {
+    break-inside: avoid;
+  }
+
+  .print-page-break {
+    break-before: page;
+  }
+}

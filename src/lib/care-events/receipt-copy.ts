@@ -15,7 +15,6 @@ export const RECEIPT_OFFLINE_SAVED_LINE = "Saved on this device, sending when ba
 export const RECEIPT_ON_CALL_UNAVAILABLE_LINE = "On-call phone not available on this device.";
 export const RECEIPT_TRANSCRIPTION_FAILED_LINE =
   "The voice note could not be transcribed. The event is saved; tell the Administrator or Assistant in person.";
-export const RECEIPT_PHOTO_FAILED_LINE = "The photo did not upload. The event is saved; try the photo again.";
 
 /** "10:06 PM" in the facility timezone. */
 export function formatReceiptTime(iso: string | null | undefined, timeZone: string): string | null {
