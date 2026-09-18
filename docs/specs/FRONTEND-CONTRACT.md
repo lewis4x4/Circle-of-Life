@@ -77,6 +77,7 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/rounding/monitoring-orders` (spec 25A section 4: the facility-level order list. Replaces `watches`; entry stays on the resident record)
 - `/admin/rounding/integrity` (spec 25A section 7.1: documentation integrity plus observation compliance cut by shift, hall and staff)
 - `/admin/rounding/reports` (spec 25A defect 9: Insights folded in)
+- `/admin/facilities/[facilityId]?tab=observation` (spec 25A section 6: the cadence and escalation settings surface. Deliberately in facility administration and not in the Smart Rounding strip, which stays at five tabs. Tier 1 the 24 hour strip and the ladder in wall clock terms, tier 2 editing one check or one step with the preview and the simulate action, tier 3 version history, the change log with reasons, and rollback)
 - `/admin/assessments/overdue`
 - `/admin/care-plans/reviews-due`
 - `/admin/incidents`

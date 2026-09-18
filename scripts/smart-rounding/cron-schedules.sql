@@ -45,3 +45,52 @@
 -- select cron.unschedule('watchlist-signal-engine-hourly');
 
 -- To run one building once, without a schedule, add "facility_id" to the body.
+
+-- ---------------------------------------------------------------------------
+-- Part 7: cadence-version-activator
+--
+-- Puts every scheduled cadence and escalation version into force once its
+-- effective_from has passed, closing the outgoing version's effective_to at
+-- exactly that instant, and asks the task generator to rebuild the board for
+-- any building where pending tasks were cancelled.
+--
+-- Every five minutes, and this one does want to be that often. The default
+-- effective timing is the next shift boundary, and a change that takes effect
+-- at a shift boundary has to be in force before the incoming shift starts
+-- reading its board. An hourly tick would leave a building working the old
+-- schedule for up to an hour after the administrator was told the new one was
+-- live. It is idempotent and cheap: with nothing scheduled it reads two indexed
+-- queries and writes nothing.
+--
+-- Run it after observation-task-generator in the same minute where both fire,
+-- so the generator sees the version that has just taken force rather than the
+-- one it replaced. Five minutes and an offset of 2 keeps them apart.
+--
+-- Fill in the organization id, the function URL and the secret before running.
+-- The secret is the value of the CADENCE_VERSION_ACTIVATOR_SECRET function
+-- secret; do not paste it into a migration, a commit or a ticket.
+--
+-- OBSERVATION_TASK_GENERATOR_URL and OBSERVATION_TASK_GENERATOR_SECRET are
+-- optional function secrets on the activator. Without them the tick still
+-- activates versions and reports regeneration_skipped_reason as
+-- no_generator_endpoint_configured, which is honest rather than silent, and the
+-- generator picks the change up on its own next run.
+-- ---------------------------------------------------------------------------
+-- select cron.schedule(
+--   'cadence-version-activator-5min',
+--   '2-59/5 * * * *',
+--   $$
+--   select net.http_post(
+--     url     := '<project-functions-url>/cadence-version-activator',
+--     headers := jsonb_build_object(
+--                  'Content-Type',  'application/json',
+--                  'x-cron-secret', '<CADENCE_VERSION_ACTIVATOR_SECRET>'),
+--     body    := jsonb_build_object('organization_id', '<organization-id>')
+--   );
+--   $$
+-- );
+
+-- To take it back off:
+-- select cron.unschedule('cadence-version-activator-5min');
+
+-- To activate one building once, without a schedule, add "facility_id" to the body.

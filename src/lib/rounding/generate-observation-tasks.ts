@@ -60,7 +60,7 @@ function normalizeDaypartWindow(day: Date, startTime?: string | null, endTime?: 
   const start = combineDateAndTime(day, startTime);
   const end = combineDateAndTime(day, endTime);
 
-  // Overnight windows, e.g. 20:00 -> 06:00.
+  // An overnight window whose end reads earlier than its start ends the next day.
   if (end.getTime() <= start.getTime()) {
     end.setDate(end.getDate() + 1);
   }

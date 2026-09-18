@@ -36,8 +36,8 @@ type IntervalOptionRow = {
 /**
  * Monitoring Order entry, on the resident record where the paperwork is.
  *
- * A caregiver holding discharge instructions at 21:00 opens the resident and
- * keys it in. The order is in force the moment it saves: there is no approval
+ * A caregiver holding discharge instructions on the night shift opens the
+ * resident and keys it in. The order is in force the moment it saves: there is no approval
  * step, no queue and nothing to wait for. The facility administrator and the
  * standing alert audience are notified by the command, not asked.
  */

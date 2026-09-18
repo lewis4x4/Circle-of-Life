@@ -92,8 +92,8 @@ export type IntervalOptions = {
 };
 
 /**
- * "Every 30 minutes", "Every 2 hours". Whole hours read as hours because that is
- * how the floor says them; anything else stays in minutes rather than becoming
+ * "Every so many minutes", "Every so many hours". Whole hours read as hours
+ * because that is how the floor says them; anything else stays in minutes rather than becoming
  * an awkward fraction.
  */
 export function intervalLabel(minutes: number): string {
@@ -132,7 +132,7 @@ export function emptyMonitoringOrderDraft(startsAtIso: string): MonitoringOrderD
     reasonNote: "",
     // The one field that arrives filled in. A Monitoring Order is a time
     // sensitive clinical event and its start is now unless the operator says
-    // otherwise; a blank start on a 21:00 discharge is the worse answer.
+    // otherwise; a blank start on a late discharge is the worse answer.
     startsAt: startsAtIso,
     endsAt: "",
     reviewDueAt: "",

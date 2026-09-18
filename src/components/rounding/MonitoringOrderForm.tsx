@@ -60,7 +60,7 @@ function Field({
  *
  * Every picker starts empty. The one exception is the start time, which the
  * caller pre-fills with now: a Monitoring Order is a time sensitive clinical
- * event and a blank start on a 21:00 discharge is the worse answer.
+ * event and a blank start on a late discharge is the worse answer.
  *
  * The interval presets and the custom bounds arrive as rows from
  * public.monitoring_order_interval_options; nothing here is a literal.

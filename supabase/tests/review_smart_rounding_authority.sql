@@ -76,7 +76,7 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
--- 2. anon holds nothing on any of the module's sixteen tables.
+-- 2. anon holds nothing on any of the module's twenty five tables.
 --
 -- anon is the publishable key. Every one of these tables carries either
 -- resident clinical instructions, the ladder that decides who gets woken up, or
@@ -84,7 +84,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_tables CONSTANT text[] := ARRAY['facility_shift_definitions', 'facility_cadence_versions', 'facility_cadence_windows', 'resident_monitoring_orders', 'resident_monitoring_order_events', 'resident_monitoring_order_notifications', 'facility_escalation_versions', 'facility_escalation_rungs', 'facility_escalation_rung_shift_overrides', 'observation_escalation_dispatches', 'observation_escalation_deliveries', 'watchlist_signal_rules', 'watchlist_band_rules', 'watchlist_signal_instances', 'watchlist_signal_dispositions', 'watchlist_signal_notifications'];
+  c_tables CONSTANT text[] := ARRAY['facility_shift_definitions', 'facility_cadence_versions', 'facility_cadence_windows', 'resident_monitoring_orders', 'resident_monitoring_order_events', 'resident_monitoring_order_notifications', 'facility_escalation_versions', 'facility_escalation_rungs', 'facility_escalation_rung_shift_overrides', 'observation_escalation_dispatches', 'observation_escalation_deliveries', 'watchlist_signal_rules', 'watchlist_band_rules', 'watchlist_signal_instances', 'watchlist_signal_dispositions', 'watchlist_signal_notifications', 'cadence_templates', 'cadence_template_versions', 'cadence_template_windows', 'escalation_templates', 'escalation_template_versions', 'escalation_template_rungs', 'facility_config_template_bindings', 'jurisdiction_observation_floors', 'facility_observation_thresholds'];
   v_table text;
   v_anon text;
   v_rls boolean;
@@ -128,7 +128,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_service_only CONSTANT text[] := ARRAY['public.record_cadence_observation_tasks(jsonb)', 'public.generate_monitoring_order_tasks(uuid,timestamptz)', 'public.record_observation_escalation_rung(uuid,text,timestamptz)', 'public.expire_monitoring_orders()', 'public.advance_observation_task_lapse(uuid,uuid,timestamptz)', 'public.ensure_facility_observation_defaults(uuid)', 'public.fn_facilities_seed_observation_defaults()', 'public.resolve_observation_task_assignees(uuid,date,text,uuid[])', 'public.record_observation_staffing_gap(uuid,text,date)', 'public.observation_windows_under_monitoring_order(uuid,timestamptz)', 'public.reinstate_standard_observation_windows(uuid,timestamptz)', 'haven.observation_escalation_recipients(uuid,uuid,uuid,uuid)', 'haven.notify_monitoring_order_created(uuid)', 'public.evaluate_watchlist_signals(uuid,timestamptz)', 'haven.notify_watchlist_acute(uuid,timestamptz)'];
+  c_service_only CONSTANT text[] := ARRAY['public.record_cadence_observation_tasks(jsonb)', 'public.generate_monitoring_order_tasks(uuid,timestamptz)', 'public.record_observation_escalation_rung(uuid,text,timestamptz)', 'public.expire_monitoring_orders()', 'public.advance_observation_task_lapse(uuid,uuid,timestamptz)', 'public.ensure_facility_observation_defaults(uuid)', 'public.fn_facilities_seed_observation_defaults()', 'public.resolve_observation_task_assignees(uuid,date,text,uuid[])', 'public.record_observation_staffing_gap(uuid,text,date)', 'public.observation_windows_under_monitoring_order(uuid,timestamptz)', 'public.reinstate_standard_observation_windows(uuid,timestamptz)', 'haven.observation_escalation_recipients(uuid,uuid,uuid,uuid)', 'haven.notify_monitoring_order_created(uuid)', 'public.evaluate_watchlist_signals(uuid,timestamptz)', 'haven.notify_watchlist_acute(uuid,timestamptz)', 'haven.apply_observation_config_activation(text,uuid,timestamptz,uuid,boolean)', 'haven.replay_observation_windows(uuid,date,date,uuid,uuid)', 'public.activate_due_scheduled_config_versions(uuid,uuid,timestamptz)'];
   v_fn text;
   v_role text;
 BEGIN
@@ -152,7 +152,7 @@ $$;
 -- a blanket revoke sweep cannot quietly take the product's own write paths out.
 DO $$
 DECLARE
-  c_caller_facing CONSTANT text[] := ARRAY['public.create_monitoring_order(uuid,integer,text,text,text,text,text,timestamptz,timestamptz,timestamptz,text)', 'public.cancel_monitoring_order(uuid,text)', 'public.submit_observation(uuid,jsonb,text,text,text,text,text,text[],timestamptz,text,uuid,boolean,uuid,text,uuid,integer)', 'public.disposition_watchlist_signal(uuid,text,text)', 'public.watchlist_rules_for_facility(uuid)', 'public.watchlist_band_for_resident(uuid)'];
+  c_caller_facing CONSTANT text[] := ARRAY['public.create_monitoring_order(uuid,integer,text,text,text,text,text,timestamptz,timestamptz,timestamptz,text)', 'public.cancel_monitoring_order(uuid,text)', 'public.submit_observation(uuid,jsonb,text,text,text,text,text,text[],timestamptz,text,uuid,boolean,uuid,text,uuid,integer)', 'public.disposition_watchlist_signal(uuid,text,text)', 'public.watchlist_rules_for_facility(uuid)', 'public.watchlist_band_for_resident(uuid)', 'public.create_cadence_version(uuid,text,jsonb,jsonb,timestamptz,uuid,uuid)', 'public.activate_cadence_version(text,uuid,uuid,text,timestamptz,text)', 'public.rollback_cadence_version(uuid,text,uuid,uuid,text,timestamptz,text)', 'public.apply_template_to_facilities(uuid[],text,uuid,uuid,text,timestamptz,text)', 'public.validate_cadence_version(uuid,uuid)', 'public.simulate_cadence_change(uuid,uuid,uuid,integer)', 'public.send_test_escalation(uuid,text)', 'public.observation_config_overview(uuid,uuid,uuid)', 'public.observation_config_change_log(uuid,integer)', 'public.observation_escalation_role_holders(uuid,uuid)', 'public.cadence_version_day_shape(uuid)', 'public.facility_observation_jurisdiction_floor(uuid,date)', 'public.facility_next_shift_boundary_at(uuid,timestamptz)', 'public.facility_is_shift_boundary(uuid,timestamptz)', 'public.facility_config_template_drift(timestamptz,uuid)'];
   v_fn text;
 BEGIN
   FOREACH v_fn IN ARRAY c_caller_facing LOOP
@@ -175,7 +175,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_module CONSTANT text[] := ARRAY['facility_cadence_in_force', 'facility_observation_windows_for_version', 'facility_observation_windows_for_date', 'facility_shift_window_at', 'facility_next_shift_window', 'facility_next_shift_observation_windows', 'record_cadence_observation_tasks', 'can_record_observation', 'can_cancel_monitoring_order', 'observation_grace_formula', 'monitoring_order_grace_minutes', 'generate_monitoring_order_tasks', 'notify_monitoring_order_created', 'create_monitoring_order', 'cancel_monitoring_order', 'expire_monitoring_orders', 'record_monitoring_order_event', 'monitoring_order_reason_from_watch_source', 'monitoring_order_bridge_defaults', 'bridge_watch_instance_to_monitoring_order', 'monitoring_order_interval_options', 'submit_observation', 'observation_quick_status_label', 'observation_vocab_label', 'compose_observation_summary', 'haven_compose_observation_summary', 'facility_escalation_in_force', 'observation_grace_minutes', 'observation_task_window_close', 'observation_escalation_rungs_at', 'observation_escalations_due', 'observation_escalation_recipients', 'record_observation_escalation_rung', 'advance_observation_task_lapse', 'send_test_escalation', 'observation_compliance_for_range', 'ensure_facility_observation_defaults', 'fn_facilities_seed_observation_defaults', 'assert_monitoring_order_facility_matches_resident', 'resolve_observation_task_assignees', 'record_observation_staffing_gap', 'monitoring_order_covers_window', 'facility_observation_windows_in_span', 'observation_windows_under_monitoring_order', 'reinstate_standard_observation_windows', 'monitoring_order_in_force_until', 'stamp_monitoring_order_closed_at', 'can_disposition_watchlist_signal', 'watchlist_rules_for_facility', 'watchlist_band_for_resident', 'evaluate_watchlist_signals', 'notify_watchlist_acute', 'disposition_watchlist_signal', 'record_watchlist_disposition'];
+  c_module CONSTANT text[] := ARRAY['facility_cadence_in_force', 'facility_observation_windows_for_version', 'facility_observation_windows_for_date', 'facility_shift_window_at', 'facility_next_shift_window', 'facility_next_shift_observation_windows', 'record_cadence_observation_tasks', 'can_record_observation', 'can_cancel_monitoring_order', 'observation_grace_formula', 'monitoring_order_grace_minutes', 'generate_monitoring_order_tasks', 'notify_monitoring_order_created', 'create_monitoring_order', 'cancel_monitoring_order', 'expire_monitoring_orders', 'record_monitoring_order_event', 'monitoring_order_reason_from_watch_source', 'monitoring_order_bridge_defaults', 'bridge_watch_instance_to_monitoring_order', 'monitoring_order_interval_options', 'submit_observation', 'observation_quick_status_label', 'observation_vocab_label', 'compose_observation_summary', 'haven_compose_observation_summary', 'facility_escalation_in_force', 'observation_grace_minutes', 'observation_task_window_close', 'observation_escalation_rungs_at', 'observation_escalations_due', 'observation_escalation_recipients', 'record_observation_escalation_rung', 'advance_observation_task_lapse', 'send_test_escalation', 'observation_compliance_for_range', 'ensure_facility_observation_defaults', 'fn_facilities_seed_observation_defaults', 'assert_monitoring_order_facility_matches_resident', 'resolve_observation_task_assignees', 'record_observation_staffing_gap', 'monitoring_order_covers_window', 'facility_observation_windows_in_span', 'observation_windows_under_monitoring_order', 'reinstate_standard_observation_windows', 'monitoring_order_in_force_until', 'stamp_monitoring_order_closed_at', 'can_disposition_watchlist_signal', 'watchlist_rules_for_facility', 'watchlist_band_for_resident', 'evaluate_watchlist_signals', 'notify_watchlist_acute', 'disposition_watchlist_signal', 'record_watchlist_disposition', 'can_edit_observation_config', 'can_propose_observation_config', 'can_read_observation_config', 'facility_observation_jurisdiction_floor', 'cadence_version_day_shape', 'facility_next_shift_boundary_at', 'facility_is_shift_boundary', 'observation_escalation_role_holders', 'validate_cadence_version', 'apply_observation_config_activation', 'create_cadence_version', 'activate_cadence_version', 'rollback_cadence_version', 'apply_template_to_facilities', 'facility_config_template_drift', 'replay_observation_windows', 'simulate_cadence_change', 'observation_config_change_log', 'observation_config_overview', 'activate_due_scheduled_config_versions'];
   v_bad text;
   v_found integer;
 BEGIN
@@ -275,7 +275,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_policies CONSTANT text[] := ARRAY['facility_shift_definitions.facility_shift_definitions_update', 'facility_cadence_versions.facility_cadence_versions_update', 'facility_cadence_windows.facility_cadence_windows_update', 'resident_monitoring_orders.resident_monitoring_orders_update', 'facility_escalation_versions.facility_escalation_versions_update', 'facility_escalation_rungs.facility_escalation_rungs_update', 'facility_escalation_rung_shift_overrides.facility_escalation_rung_shift_overrides_update', 'watchlist_signal_rules.watchlist_signal_rules_update', 'watchlist_band_rules.watchlist_band_rules_update'];
+  c_policies CONSTANT text[] := ARRAY['facility_shift_definitions.facility_shift_definitions_update', 'facility_cadence_versions.facility_cadence_versions_update', 'facility_cadence_windows.facility_cadence_windows_update', 'resident_monitoring_orders.resident_monitoring_orders_update', 'facility_escalation_versions.facility_escalation_versions_update', 'facility_escalation_rungs.facility_escalation_rungs_update', 'facility_escalation_rung_shift_overrides.facility_escalation_rung_shift_overrides_update', 'watchlist_signal_rules.watchlist_signal_rules_update', 'watchlist_band_rules.watchlist_band_rules_update', 'facility_observation_thresholds.facility_observation_thresholds_update'];
   v_entry text;
   v_table text;
   v_policy text;
@@ -1571,6 +1571,329 @@ BEGIN
     AND pol.polcmd::text IN ('a', 'w', 'd', '*');
   PERFORM
     pg_temp.sr_assert (v_policies IS NULL, format('public.watchlist_signal_instances gained a write policy: %s.', v_policies));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 13. Part 7. The organization template tables are organization scoped and
+--     their UPDATE policies repeat the organization predicate in WITH CHECK.
+--
+-- Section 6 above checks the facility predicate on the facility scoped tables.
+-- A template has no facility_id, so the predicate that matters is the
+-- organization one, and it is the same class of defect: a policy that carries
+-- the predicate in USING and drops it from WITH CHECK lets a caller read a row
+-- inside their tenant and write it into another one.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  c_policies CONSTANT text[] := ARRAY['cadence_templates.cadence_templates_update', 'cadence_template_versions.cadence_template_versions_update', 'cadence_template_windows.cadence_template_windows_update', 'escalation_templates.escalation_templates_update', 'escalation_template_versions.escalation_template_versions_update', 'escalation_template_rungs.escalation_template_rungs_update'];
+  v_entry text;
+  v_table text;
+  v_policy text;
+  v_using text;
+  v_check text;
+BEGIN
+  FOREACH v_entry IN ARRAY c_policies LOOP
+    v_table := split_part(v_entry, '.', 1);
+    v_policy := split_part(v_entry, '.', 2);
+
+    SELECT
+      pg_catalog.pg_get_expr(pol.polqual, pol.polrelid),
+      pg_catalog.pg_get_expr(pol.polwithcheck, pol.polrelid) INTO v_using,
+      v_check
+    FROM
+      pg_catalog.pg_policy pol
+      JOIN pg_catalog.pg_class c ON c.oid = pol.polrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+    WHERE
+      n.nspname = 'public'
+      AND c.relname = v_table
+      AND pol.polname = v_policy;
+
+    PERFORM
+      pg_temp.sr_assert (v_using IS NOT NULL, format('the UPDATE policy %s on public.%s is gone.', v_policy, v_table));
+    PERFORM
+      pg_temp.sr_assert (v_check IS NOT NULL, format('%s on public.%s has no WITH CHECK clause at all, so its USING clause is reused and any row it can read it can write anywhere.', v_policy, v_table));
+    PERFORM
+      pg_temp.sr_assert (strpos(v_using, 'organization_id') > 0, format('%s on public.%s lost the organization predicate from USING.', v_policy, v_table));
+    PERFORM
+      pg_temp.sr_assert (strpos(v_check, 'organization_id') > 0, format('%s on public.%s dropped the organization predicate from WITH CHECK. A caller can read a template row inside their tenant and write it into another one.', v_policy, v_table));
+    PERFORM
+      pg_temp.sr_assert (strpos(v_using, 'org_admin') > 0
+        AND strpos(v_check, 'org_admin') > 0, format('%s on public.%s no longer restricts template edits to org_admin and owner. Spec 25A 6.12 puts template editing at the organization.', v_policy, v_table));
+  END LOOP;
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 14. Part 7. The facility to template pointer has no write policy at all.
+--
+-- Only haven.apply_observation_config_activation writes it, at the moment a
+-- version actually takes force. A hand edited binding would claim a building
+-- inherits a template its windows do not match, and the portfolio drift view
+-- would then be reporting against a claim rather than against a decision.
+--
+-- The grant and the policy are both asserted. A grant with no policy refuses,
+-- but a policy added later to a table that still holds the grant would open it,
+-- and a revoke sweep that left the policy would look like protection.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_grants text;
+  v_policies text;
+BEGIN
+  SELECT
+    string_agg(DISTINCT g.privilege_type, ',' ORDER BY g.privilege_type) INTO v_grants
+  FROM
+    information_schema.role_table_grants g
+  WHERE
+    g.table_schema = 'public'
+    AND g.table_name = 'facility_config_template_bindings'
+    AND g.grantee = 'authenticated'
+    AND g.privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE');
+  PERFORM
+    pg_temp.sr_assert (v_grants IS NULL, format('authenticated holds %s on public.facility_config_template_bindings. The activation command is the only writer; a hand edited binding makes the drift view report a claim rather than a decision.', v_grants));
+
+  SELECT
+    string_agg(pol.polname || ' (' || pol.polcmd::text || ')', ', ' ORDER BY pol.polname) INTO v_policies
+  FROM
+    pg_catalog.pg_policy pol
+    JOIN pg_catalog.pg_class c ON c.oid = pol.polrelid
+    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+  WHERE
+    n.nspname = 'public'
+    AND c.relname = 'facility_config_template_bindings'
+    AND pol.polcmd::text IN ('a', 'w', 'd', '*');
+  PERFORM
+    pg_temp.sr_assert (v_policies IS NULL, format('public.facility_config_template_bindings gained a write policy: %s.', v_policies));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 15. Part 7. The regulator's floor is readable by every signed in caller and
+--     writable by none of them, and the FL_AHCA row still carries no number.
+--
+-- Spec 25A forbids inventing a regulatory floor and open item 6 has Compliance
+-- supplying the Florida number or confirming there is none. A migration that
+-- fills it in without a citation, or a policy that lets a tenant write its own
+-- floor, are both ways the product starts asserting a rule nobody verified.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_grants text;
+  v_policies text;
+  v_row record;
+BEGIN
+  SELECT
+    string_agg(DISTINCT g.privilege_type, ',' ORDER BY g.privilege_type) INTO v_grants
+  FROM
+    information_schema.role_table_grants g
+  WHERE
+    g.table_schema = 'public'
+    AND g.table_name = 'jurisdiction_observation_floors'
+    AND g.grantee = 'authenticated'
+    AND g.privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE');
+  PERFORM
+    pg_temp.sr_assert (v_grants IS NULL, format('authenticated holds %s on public.jurisdiction_observation_floors. Changing a regulatory floor is a migration with a citation on it, not a row edit.', v_grants));
+
+  SELECT
+    string_agg(pol.polname || ' (' || pol.polcmd::text || ')', ', ' ORDER BY pol.polname) INTO v_policies
+  FROM
+    pg_catalog.pg_policy pol
+    JOIN pg_catalog.pg_class c ON c.oid = pol.polrelid
+    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+  WHERE
+    n.nspname = 'public'
+    AND c.relname = 'jurisdiction_observation_floors'
+    AND pol.polcmd::text IN ('a', 'w', 'd', '*');
+  PERFORM
+    pg_temp.sr_assert (v_policies IS NULL, format('public.jurisdiction_observation_floors gained a write policy: %s.', v_policies));
+
+  SELECT
+    j.minimum_windows_per_24h,
+    j.maximum_unobserved_gap_minutes,
+    j.floor_values_pending,
+    j.citation_reference INTO v_row
+  FROM
+    public.jurisdiction_observation_floors j
+  WHERE
+    j.jurisdiction_key = 'FL_AHCA'
+    AND j.deleted_at IS NULL;
+
+  PERFORM
+    pg_temp.sr_assert (v_row.floor_values_pending IS NOT NULL, 'the FL_AHCA jurisdiction floor row is gone; spec 25A section 6.10 ships it present with null values so the structure is ready.');
+  PERFORM
+    pg_temp.sr_assert (v_row.minimum_windows_per_24h IS NULL
+      AND v_row.maximum_unobserved_gap_minutes IS NULL, format('the FL_AHCA floor has acquired numbers (%s windows, %s minute gap). No verified Florida minimum exists in repository authority; supply it with a citation through a deliberate migration and update this assertion in the same change.', v_row.minimum_windows_per_24h, v_row.maximum_unobserved_gap_minutes));
+  PERFORM
+    pg_temp.sr_assert (v_row.floor_values_pending, 'the FL_AHCA floor no longer reads as pending, so a surface would show "no floor exists" where the fact is "nobody has supplied the number".');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 16. Part 7. The activation invariant, asserted on the data rather than on the
+--     function body.
+--
+-- haven.apply_observation_config_activation closes the outgoing version at
+-- exactly the instant the incoming one opens. Every seeded and migrated version
+-- timeline in the database is checked for the two ways that can be wrong: a gap,
+-- where a past instant resolves to no version at all, and an overlap, where it
+-- resolves to whichever row sorted first.
+--
+-- The gist exclusion constraint catches the overlap. Nothing catches the gap,
+-- which is why it is checked here.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_bad text;
+BEGIN
+  SELECT
+    string_agg(format('%s version %s closes at %s but version %s opens at %s', kind, version_number, effective_to, next_number, next_from), '; ' ORDER BY kind, version_number) INTO v_bad
+  FROM (
+    SELECT
+      'cadence' AS kind,
+      v.version_number,
+      v.effective_to,
+      lead(v.version_number) OVER (PARTITION BY v.facility_id ORDER BY v.effective_from) AS next_number,
+      lead(v.effective_from) OVER (PARTITION BY v.facility_id ORDER BY v.effective_from) AS next_from
+    FROM
+      public.facility_cadence_versions v
+    WHERE
+      v.deleted_at IS NULL
+      AND v.status IN ('active', 'superseded')
+    UNION ALL
+    SELECT
+      'escalation',
+      v.version_number,
+      v.effective_to,
+      lead(v.version_number) OVER (PARTITION BY v.facility_id ORDER BY v.effective_from),
+      lead(v.effective_from) OVER (PARTITION BY v.facility_id ORDER BY v.effective_from)
+    FROM
+      public.facility_escalation_versions v
+    WHERE
+      v.deleted_at IS NULL
+      AND v.status IN ('active', 'superseded')) timeline
+  WHERE
+    next_from IS NOT NULL
+    AND effective_to IS DISTINCT FROM next_from;
+
+  PERFORM
+    pg_temp.sr_assert (v_bad IS NULL, format('an observation configuration timeline has a gap or a shift in it: %s. public.facility_cadence_in_force resolves by effective_from, so a gap makes a past date answer from no version and an overlap makes it answer from whichever sorted first. Either way a past compliance report recomputes against configuration that was never in force.', v_bad));
+
+  -- The open ended end of every timeline is the active version and nothing else.
+  SELECT
+    string_agg(format('%s version %s is %s with a null effective_to', kind, version_number, status), '; ' ORDER BY kind, version_number) INTO v_bad
+  FROM (
+    SELECT
+      'cadence' AS kind,
+      v.version_number,
+      v.status
+    FROM
+      public.facility_cadence_versions v
+    WHERE
+      v.deleted_at IS NULL
+      AND v.status = 'superseded'
+      AND v.effective_to IS NULL
+    UNION ALL
+    SELECT
+      'escalation',
+      v.version_number,
+      v.status
+    FROM
+      public.facility_escalation_versions v
+    WHERE
+      v.deleted_at IS NULL
+      AND v.status = 'superseded'
+      AND v.effective_to IS NULL) leftover;
+
+  PERFORM
+    pg_temp.sr_assert (v_bad IS NULL, format('a superseded observation configuration version is still open ended: %s. Supersession has to close effective_to, or two versions cover the same instant.', v_bad));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 17. Part 7. The portfolio drift read runs on the caller's authority.
+--
+-- public.facility_config_template_drift crosses every building in the database
+-- by construction. As a definer it would hand a facility administrator the
+-- configuration posture of buildings they hold no access to, which is the same
+-- defect assertion 1 covers for the compliance read.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_definer boolean;
+BEGIN
+  SELECT
+    p.prosecdef INTO v_definer
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname = 'facility_config_template_drift';
+
+  PERFORM
+    pg_temp.sr_assert (v_definer IS NOT NULL, 'public.facility_config_template_drift is gone; the portfolio settings view reads through it.');
+  PERFORM
+    pg_temp.sr_assert (v_definer = FALSE, 'public.facility_config_template_drift became SECURITY DEFINER. It crosses every building in the database and row level security is the only thing scoping it to the caller''s own.');
+
+  PERFORM
+    pg_temp.sr_assert ((
+      SELECT
+        c.reloptions @> ARRAY['security_invoker=true']
+      FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE
+        n.nspname = 'public'
+        AND c.relname = 'v_facility_config_template_drift'), 'public.v_facility_config_template_drift lost security_invoker, so it answers with the view owner''s authority over every building.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 18. Part 7. The six hard blocks raise an errcode the operator surface will
+--     actually show.
+--
+-- public.activate_cadence_version refuses a blocked change by re-raising the
+-- first block's own message. Whether that message reaches a screen depends
+-- entirely on the SQLSTATE it carries: src/lib/rounding/rounding-query-error.ts
+-- shows a command's own sentence for P0001, P0002, 22023, 23505 and 42501, and
+-- its own fallback for anything else.
+--
+-- 23514, check_violation, is deliberately not in that set, because every CHECK
+-- constraint in the module raises it and its text is raw PostgreSQL. This raise
+-- carried 23514 for one commit. The blocks were enforced the whole time and the
+-- six messages an administrator most needs -- the overlap, the shift with
+-- nothing on it, the early opening at a shift start -- were the only refusals in
+-- the module that arrived as "that could not be done, retry".
+--
+-- Asserted on the body rather than on behaviour, because the message that
+-- reaches a browser cannot be observed from SQL. strpos, never LIKE: every
+-- identifier here contains an underscore and LIKE would match almost anything.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_body text;
+BEGIN
+  SELECT
+    p.prosrc INTO v_body
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname = 'activate_cadence_version';
+
+  PERFORM
+    pg_temp.sr_assert (v_body IS NOT NULL, 'public.activate_cadence_version is gone; it is the only place the six hard blocks are enforced.');
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_body, 'validate_cadence_version') > 0, 'public.activate_cadence_version no longer calls public.validate_cadence_version, so the six hard blocks are enforced in the client only and an API call walks straight past them.');
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_body, '22023') > 0, 'public.activate_cadence_version no longer raises 22023. The block refusal has to carry an errcode src/lib/rounding/rounding-query-error.ts will show, or the operator reads a generic retry message instead of the reason.');
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_body, '23514') = 0, 'public.activate_cadence_version mentions 23514. check_violation is raised by every CHECK constraint in the module and is deliberately excluded from the operator refusal set, so a block raised with it is a block whose reason never reaches a screen.');
 END
 $$;
 

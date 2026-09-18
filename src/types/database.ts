@@ -12762,6 +12762,8 @@ export type Database = {
       facility_escalation_versions: {
         Row: {
           activated_at: string | null
+          activation_reason: string | null
+          apply_mode: string | null
           activated_by: string | null
           change_reason: string
           created_at: string
@@ -12780,6 +12782,8 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          activation_reason?: string | null
+          apply_mode?: string | null
           activated_by?: string | null
           change_reason: string
           created_at?: string
@@ -12798,6 +12802,8 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          activation_reason?: string | null
+          apply_mode?: string | null
           activated_by?: string | null
           change_reason?: string
           created_at?: string
@@ -13014,6 +13020,8 @@ export type Database = {
       facility_cadence_versions: {
         Row: {
           activated_at: string | null
+          activation_reason: string | null
+          apply_mode: string | null
           activated_by: string | null
           change_reason: string
           created_at: string
@@ -13032,6 +13040,8 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          activation_reason?: string | null
+          apply_mode?: string | null
           activated_by?: string | null
           change_reason: string
           created_at?: string
@@ -13050,6 +13060,8 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          activation_reason?: string | null
+          apply_mode?: string | null
           activated_by?: string | null
           change_reason?: string
           created_at?: string
@@ -17902,7 +17914,748 @@ export type Database = {
         }
         Relationships: []
       }
+      cadence_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          template_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          template_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          template_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_templates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cadence_template_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          cadence_template_id: string
+          change_reason: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          organization_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          cadence_template_id: string
+          change_reason: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          organization_id: string
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          cadence_template_id?: string
+          change_reason?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_template_versions_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_versions_cadence_template_id_fkey"
+            columns: ["cadence_template_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_versions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_versions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cadence_template_windows: {
+        Row: {
+          cadence_template_version_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          due_at_local: string
+          enabled: boolean
+          grace_after_minutes: number
+          grace_before_minutes: number
+          id: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+          window_key: string
+        }
+        Insert: {
+          cadence_template_version_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          due_at_local: string
+          enabled?: boolean
+          grace_after_minutes: number
+          grace_before_minutes: number
+          id?: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_key: string
+        }
+        Update: {
+          cadence_template_version_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          due_at_local?: string
+          enabled?: boolean
+          grace_after_minutes?: number
+          grace_before_minutes?: number
+          id?: string
+          label?: string
+          organization_id?: string
+          shift_key?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_template_windows_cadence_template_version_id_fkey"
+            columns: ["cadence_template_version_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_template_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_windows_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_windows_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_windows_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          template_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          template_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          template_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_templates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_template_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          change_reason: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          escalation_template_id: string
+          id: string
+          organization_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          change_reason: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          escalation_template_id: string
+          id?: string
+          organization_id: string
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          change_reason?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          escalation_template_id?: string
+          id?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_template_versions_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_versions_escalation_template_id_fkey"
+            columns: ["escalation_template_id"]
+            isOneToOne: false
+            referencedRelation: "escalation_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_versions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_versions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_template_rungs: {
+        Row: {
+          assigned_staff_only: boolean
+          channels: string[]
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          enabled: boolean
+          escalation_template_version_id: string
+          id: string
+          include_assigned_staff: boolean
+          is_terminal: boolean
+          label: string
+          offset_minutes: number
+          organization_id: string
+          protocol_text: string | null
+          rung_key: string
+          sort_order: number
+          target_staff_roles: string[]
+          updated_at: string
+          updated_by: string | null
+          use_standing_alert_routes: boolean
+        }
+        Insert: {
+          assigned_staff_only?: boolean
+          channels: string[]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          escalation_template_version_id: string
+          id?: string
+          include_assigned_staff?: boolean
+          is_terminal?: boolean
+          label: string
+          offset_minutes: number
+          organization_id: string
+          protocol_text?: string | null
+          rung_key: string
+          sort_order?: number
+          target_staff_roles?: string[]
+          updated_at?: string
+          updated_by?: string | null
+          use_standing_alert_routes?: boolean
+        }
+        Update: {
+          assigned_staff_only?: boolean
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          escalation_template_version_id?: string
+          id?: string
+          include_assigned_staff?: boolean
+          is_terminal?: boolean
+          label?: string
+          offset_minutes?: number
+          organization_id?: string
+          protocol_text?: string | null
+          rung_key?: string
+          sort_order?: number
+          target_staff_roles?: string[]
+          updated_at?: string
+          updated_by?: string | null
+          use_standing_alert_routes?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_template_rungs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_rungs_escalation_template_version_id_fkey"
+            columns: ["escalation_template_version_id"]
+            isOneToOne: false
+            referencedRelation: "escalation_template_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_rungs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_rungs_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_config_template_bindings: {
+        Row: {
+          cadence_bound_at: string | null
+          cadence_detached_at: string | null
+          cadence_template_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          detach_reason: string | null
+          escalation_bound_at: string | null
+          escalation_detached_at: string | null
+          escalation_template_id: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cadence_bound_at?: string | null
+          cadence_detached_at?: string | null
+          cadence_template_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          detach_reason?: string | null
+          escalation_bound_at?: string | null
+          escalation_detached_at?: string | null
+          escalation_template_id?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cadence_bound_at?: string | null
+          cadence_detached_at?: string | null
+          cadence_template_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          detach_reason?: string | null
+          escalation_bound_at?: string | null
+          escalation_detached_at?: string | null
+          escalation_template_id?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_config_template_bindings_cadence_template_id_fkey"
+            columns: ["cadence_template_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_escalation_template_id_fkey"
+            columns: ["escalation_template_id"]
+            isOneToOne: false
+            referencedRelation: "escalation_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jurisdiction_observation_floors: {
+        Row: {
+          citation_reference: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_from: string
+          effective_to: string | null
+          floor_values_pending: boolean
+          id: string
+          jurisdiction_key: string
+          label: string
+          maximum_unobserved_gap_minutes: number | null
+          minimum_windows_per_24h: number | null
+          pending_note: string | null
+          state_code: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          citation_reference?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from: string
+          effective_to?: string | null
+          floor_values_pending?: boolean
+          id?: string
+          jurisdiction_key: string
+          label: string
+          maximum_unobserved_gap_minutes?: number | null
+          minimum_windows_per_24h?: number | null
+          pending_note?: string | null
+          state_code: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          citation_reference?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          floor_values_pending?: boolean
+          id?: string
+          jurisdiction_key?: string
+          label?: string
+          maximum_unobserved_gap_minutes?: number | null
+          minimum_windows_per_24h?: number | null
+          pending_note?: string | null
+          state_code?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jurisdiction_observation_floors_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jurisdiction_observation_floors_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_observation_thresholds: {
+        Row: {
+          change_log_page_size: number
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          facility_id: string
+          id: string
+          maximum_unobserved_gap_minutes: number
+          maximum_windows_per_resident_per_day: number
+          organization_id: string
+          simulation_lookback_days: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          change_log_page_size: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id: string
+          id?: string
+          maximum_unobserved_gap_minutes: number
+          maximum_windows_per_resident_per_day: number
+          organization_id: string
+          simulation_lookback_days: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          change_log_page_size?: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          facility_id?: string
+          id?: string
+          maximum_unobserved_gap_minutes?: number
+          maximum_windows_per_resident_per_day?: number
+          organization_id?: string
+          simulation_lookback_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_observation_thresholds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_observation_thresholds_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_observation_thresholds_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_observation_thresholds_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     Views: {
+      v_facility_config_template_drift: {
+        Row: {
+          cadence_drift_count: number | null
+          cadence_template_id: string | null
+          cadence_template_name: string | null
+          cadence_version_id: string | null
+          escalation_drift_count: number | null
+          escalation_template_id: string | null
+          escalation_template_name: string | null
+          escalation_version_id: string | null
+          facility_id: string | null
+          facility_name: string | null
+          on_cadence_template: boolean | null
+          on_escalation_template: boolean | null
+          organization_id: string | null
+        }
+        Relationships: []
+      }
       v_facility_risk_index: {
         Row: {
           census: number | null
@@ -18091,6 +18844,120 @@ export type Database = {
       }
     }
     Functions: {
+      activate_cadence_version: {
+        Args: {
+          p_change_reason: string
+          p_cadence_version_id?: string | null
+          p_escalation_version_id?: string | null
+          p_apply_mode?: string
+          p_effective_from?: string | null
+          p_acknowledgment?: string | null
+        }
+        Returns: Json
+      }
+      activate_due_scheduled_config_versions: {
+        Args: { p_organization_id: string; p_facility_id?: string | null; p_at?: string }
+        Returns: Json
+      }
+      apply_template_to_facilities: {
+        Args: {
+          p_facility_ids: string[]
+          p_change_reason: string
+          p_cadence_template_id?: string | null
+          p_escalation_template_id?: string | null
+          p_apply_mode?: string
+          p_effective_from?: string | null
+          p_acknowledgment?: string | null
+        }
+        Returns: Json
+      }
+      cadence_version_day_shape: {
+        Args: { p_cadence_version_id: string }
+        Returns: Json
+      }
+      create_cadence_version: {
+        Args: {
+          p_facility_id: string
+          p_change_reason: string
+          p_windows?: Json | null
+          p_escalation_rungs?: Json | null
+          p_effective_from?: string | null
+          p_source_cadence_template_id?: string | null
+          p_source_escalation_template_id?: string | null
+        }
+        Returns: Json
+      }
+      facility_config_template_drift: {
+        Args: { p_at?: string; p_facility_id?: string | null }
+        Returns: {
+          organization_id: string
+          facility_id: string
+          facility_name: string
+          cadence_version_id: string | null
+          escalation_version_id: string | null
+          cadence_template_id: string | null
+          cadence_template_name: string | null
+          escalation_template_id: string | null
+          escalation_template_name: string | null
+          on_cadence_template: boolean
+          on_escalation_template: boolean
+          cadence_drift_count: number | null
+          escalation_drift_count: number | null
+        }[]
+      }
+      facility_is_shift_boundary: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: boolean
+      }
+      facility_next_shift_boundary_at: {
+        Args: { p_facility_id: string; p_at?: string }
+        Returns: string | null
+      }
+      facility_observation_jurisdiction_floor: {
+        Args: { p_facility_id: string; p_on?: string }
+        Returns: Json
+      }
+      observation_config_change_log: {
+        Args: { p_facility_id: string; p_limit?: number | null }
+        Returns: Json
+      }
+      observation_config_overview: {
+        Args: {
+          p_facility_id: string
+          p_proposed_cadence_version_id?: string | null
+          p_proposed_escalation_version_id?: string | null
+        }
+        Returns: Json
+      }
+      observation_escalation_role_holders: {
+        Args: { p_facility_id: string; p_escalation_version_id: string }
+        Returns: Json
+      }
+      rollback_cadence_version: {
+        Args: {
+          p_facility_id: string
+          p_change_reason: string
+          p_restore_cadence_version_id?: string | null
+          p_restore_escalation_version_id?: string | null
+          p_apply_mode?: string
+          p_effective_from?: string | null
+          p_acknowledgment?: string | null
+        }
+        Returns: Json
+      }
+      simulate_cadence_change: {
+        Args: {
+          p_facility_id: string
+          p_proposed_cadence_version_id?: string | null
+          p_proposed_escalation_version_id?: string | null
+          p_lookback_days?: number | null
+        }
+        Returns: Json
+      }
+      validate_cadence_version: {
+        Args: { p_cadence_version_id?: string | null; p_escalation_version_id?: string | null }
+        Returns: Json
+      }
       facility_cadence_in_force: {
         Args: { p_facility_id: string; p_at: string }
         Returns: string | null

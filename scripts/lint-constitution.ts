@@ -21,6 +21,11 @@ const scope = process.env.CONSTITUTION_LINT_SCOPE ?? "smart-rounding";
  * gone: Overview and Escalations folded into the Live board, Plans went with
  * the per resident observation plan, Watches became Monitoring Orders, Safety
  * scores became the Watchlist, and Insights folded into Reports.
+ *
+ * The cadence settings surface is listed here as well, even though it lives in
+ * facility administration rather than in the rounding strip. It is part of the
+ * same module and it is the one surface where an unlinted native control would
+ * be worst: it edits the schedule every other surface reads.
  */
 const segmentTargets = [
   "src/app/(admin)/admin/rounding/page.tsx",
@@ -56,6 +61,17 @@ const segmentTargets = [
   "src/components/rounding/WatchlistDispositionLedger.tsx",
   "src/components/rounding/WatchlistFacilityTable.tsx",
   "src/components/rounding/WatchlistPortfolioTable.tsx",
+  "src/components/rounding/CadenceCurrentSummary.tsx",
+  "src/components/rounding/CadenceEditorSection.tsx",
+  "src/components/rounding/CadenceLadderList.tsx",
+  "src/components/rounding/CadencePreviewPanel.tsx",
+  "src/components/rounding/CadenceRungEditor.tsx",
+  "src/components/rounding/CadenceSimulationSummary.tsx",
+  "src/components/rounding/CadenceVersionHistory.tsx",
+  "src/components/rounding/CadenceWindowEditor.tsx",
+  "src/components/rounding/CadenceWindowStrip.tsx",
+  "src/components/admin/facilities/tabs/ObservationCadenceTab.tsx",
+  "src/hooks/useObservationCadenceSettings.ts",
   "src/components/ui/combobox.tsx",
   "src/components/ui/data-fetch-wrapper.tsx",
   "src/components/ui/date-picker.tsx",
