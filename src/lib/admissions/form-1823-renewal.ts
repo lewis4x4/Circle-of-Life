@@ -1,5 +1,5 @@
 /**
- * Form 1823 renewal helpers (Michelle BH-6).
+ * Form 1823 renewal helpers (owner decision BH-6).
  * Annual default = exam_date + 365 days; hospital return / significant change
  * marks renewal_due so staff capture a new physician assessment.
  */

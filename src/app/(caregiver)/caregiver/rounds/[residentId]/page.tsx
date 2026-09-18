@@ -15,10 +15,9 @@ import { queueRoundingCompletion, shouldQueueRoundingRequest } from "@/lib/pwa/r
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { CompletionPayload } from "@/lib/rounding/types";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
-import {
-  describeCaregiverResidentRoundEmptyState,
-  describeLiveBoardCadenceReminder,
-} from "@/lib/rounding/col-discovery-round-cadence";
+import { describeCaregiverResidentRoundEmptyState } from "@/lib/rounding/caregiver-rounds-copy";
+import { liveBoardStatusCopy } from "@/lib/rounding/live-board-display-copy";
+import { logRoundingQueryFailure } from "@/lib/rounding/rounding-query-error";
 
 type TaskApiRow = {
   id: string;
@@ -87,7 +86,6 @@ export default function CaregiverResidentRoundPage() {
   const taskIdFromQuery = searchParams.get("taskId");
   const [owner, setOwner] = useState<RetryOwner | null>(null);
   const [facilityId, setFacilityId] = useState<string | null>(null);
-  const [facilityName, setFacilityName] = useState<string | null>(null);
   const [residentName, setResidentName] = useState("Resident");
   const [task, setTask] = useState<TaskApiRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,7 +129,6 @@ export default function CaregiverResidentRoundPage() {
           : tasks.find((candidate) => !candidate.derived_status.startsWith("completed_"))) ?? null;
         setOwner(nextOwner);
         setFacilityId(nextOwner.facilityId);
-        setFacilityName(resolved.ctx.facilityName);
         setTask(selected);
         setResidentName(displayName(selected?.residents) || "Resident");
         setLoadedScope(routeScope);
@@ -139,7 +136,13 @@ export default function CaregiverResidentRoundPage() {
       } catch (error) {
         if (!isCurrent()) return;
         setTask(null);
-        setLoadError(error instanceof Error ? error.message : "Could not load resident round.");
+        setLoadError(
+          logRoundingQueryFailure(
+            "caregiver.rounds.resident",
+            error,
+            "This resident's check could not be loaded. Go back to the queue and try again.",
+          ),
+        );
         setLoadedScope(routeScope);
       } finally {
         if (isCurrent()) setLoading(false);
@@ -226,17 +229,8 @@ export default function CaregiverResidentRoundPage() {
   const taskQueuedLocally = Boolean(task && roundingSync.queuedTaskIdSet.has(task.id));
 
   const emptyCopy = useMemo(
-    () =>
-      describeCaregiverResidentRoundEmptyState({
-        facilityName,
-        taskQueuedLocally,
-      }),
-    [facilityName, taskQueuedLocally],
-  );
-
-  const cadenceReminder = useMemo(
-    () => (facilityName && !task && !taskQueuedLocally ? describeLiveBoardCadenceReminder(facilityName) : null),
-    [facilityName, task, taskQueuedLocally],
+    () => describeCaregiverResidentRoundEmptyState({ taskQueuedLocally }),
+    [taskQueuedLocally],
   );
 
   if (loading || loadedScope !== routeScope) {
@@ -262,7 +256,7 @@ export default function CaregiverResidentRoundPage() {
         </Link>
         {task?.derived_status ? (
           <Badge variant="outline" className="border-border text-foreground">
-            {task.derived_status.replaceAll("_", " ")}
+            {liveBoardStatusCopy(task.derived_status).label}
           </Badge>
         ) : null}
       </div>
@@ -281,7 +275,7 @@ export default function CaregiverResidentRoundPage() {
 
       {!task || !owner || successMessage || (!pending && (taskQueuedLocally || task.derived_status.startsWith("completed_"))) ? (
         <div className="space-y-4">
-          <CaregiverRoundsEmptyNotice copy={emptyCopy} cadenceReminder={cadenceReminder} />
+          <CaregiverRoundsEmptyNotice copy={emptyCopy} />
           <Link href="/caregiver/rounds">
             <Button className="min-h-[44px] bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
               Return to live queue

@@ -669,10 +669,18 @@ BEGIN
     n.nspname = 'public'
     AND p.proname = 'observation_compliance_for_range';
 
+  -- Migration 424 brought a join to public.residents back, as a LEFT join, to
+  -- read the current status. What must never come back is either deleted_at
+  -- filter, and the join must never become an inner one: both drop the row for a
+  -- resident whose record has been retired, and with it a closed day that had
+  -- already been reported.
   PERFORM
-    pg_temp.sr_assert (strpos(v_src, 'JOIN public.residents res') = 0, 'public.observation_compliance_for_range joins public.residents again in its resolved CTE. That join supplied no column; it was a visibility filter, and the residents SELECT policy carries its own deleted_at test, so a retired record erases days that carry real task rows.');
+    pg_temp.sr_assert (strpos(v_src, 'res.deleted_at IS NULL') = 0, 'public.observation_compliance_for_range filters the residents join on deleted_at again. The residents SELECT policy carries its own deleted_at test, so a retired record then erases days that carry real task rows.');
   PERFORM
     pg_temp.sr_assert (strpos(v_src, 'r.deleted_at IS NULL') = 0, 'public.observation_compliance_for_range filters residents on deleted_at again in its occupancy source. Retiring a record then rewrites closed reports, and always in the direction that flatters the building.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'JOIN public.residents res') = 0
+      OR strpos(v_src, 'LEFT JOIN public.residents res') > 0, 'public.observation_compliance_for_range joins public.residents with an inner join. It reads the current status from there, and an inner join drops the resident day entirely when the record has been retired.');
 END
 $$;
 
@@ -767,6 +775,55 @@ BEGIN
         WHERE
           con.conrelid = 'public.resident_monitoring_orders'::regclass
           AND con.conname = 'resident_monitoring_orders_party_named_unless_care_event'), 'the CHECK that only a care_event order may leave the ordering party unnamed is gone. An operator entered order with no party is a different defect from an honest system one.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9g. A resident in hospital stops accruing missed checks.
+--
+-- Found on Haven HFO Staging, the first time this module touched a real hosted
+-- database: one resident on hospital_hold carried six expected windows and no
+-- tasks, so they accrued six phantom missed checks for every day they were in
+-- hospital. Spec 2.4 generates no tasks for hospital_hold, loa, discharged or
+-- deceased; generating nothing while remaining expected punishes a building for
+-- a resident who is not in it, and it reads as a staffing failure.
+--
+-- The cause was narrow: the four non generating statuses were caught by a
+-- resident_status_history row covering the date and by nothing else, and
+-- migration 217 installs that table's capture trigger without backfilling, so a
+-- resident whose status was set before it ran has no row at all.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_src text;
+BEGIN
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname = 'observation_compliance_for_range';
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'res.status <> ''active''') > 0, 'public.observation_compliance_for_range stopped consulting the resident''s current status. resident_status_history is the only other source and migration 217 never backfilled it, so a resident on hospital_hold with no history row goes back to accruing six phantom missed checks a day.');
+
+  -- The clause that keeps the fallback narrow. Without it the current status is
+  -- read onto every past date, which erases a resident's recorded misses from
+  -- before their last status change: the C3 defect over again in the other
+  -- direction.
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'h.effective_from > ((c.the_date') > 0, 'public.observation_compliance_for_range no longer limits the current status fallback to dates no recorded change comes after. Today''s status then rewrites every past date and erases recorded misses.');
+
+  -- Evidence wins over status, per window. Without this a resident who went to
+  -- hospital at noon either loses the morning checks a caregiver recorded, or
+  -- keeps an afternoon nobody could have worked.
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'r.generating') > 0, 'public.observation_compliance_for_range no longer carries the per resident day generating flag.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'OR standard_task.id IS NOT NULL') > 0
+      AND strpos(v_src, 'OR satisfying_log.id IS NOT NULL') > 0, 'public.observation_compliance_for_range no longer lets a task or a log keep a window that the status would drop. A resident who went to hospital mid shift then loses the checks that were actually recorded that morning.');
 END
 $$;
 

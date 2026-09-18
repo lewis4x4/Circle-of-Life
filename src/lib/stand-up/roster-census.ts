@@ -10,7 +10,7 @@ import type { MetricKey } from './model'
  * `IN ('active','hospital_hold','loa')` list in public.stand_up_roster_census
  * (migration 404), which is the same set public.resident_billable_status
  * treats as billable. Census treatment of hospital and leave residents is an
- * owner decision for Jessica Murphy; TBD confirmation against the workbook.
+ * owner decision; TBD confirmation against the workbook.
  */
 export const STAND_UP_ROSTER_CENSUS_STATUSES = ['active', 'hospital_hold', 'loa'] as const
 export type RosterCensusStatus = typeof STAND_UP_ROSTER_CENSUS_STATUSES[number]

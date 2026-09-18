@@ -12,16 +12,46 @@ type Finding = {
 const root = process.cwd();
 const scope = process.env.CONSTITUTION_LINT_SCOPE ?? "smart-rounding";
 
+/**
+ * Every Smart Rounding surface, and the primitives they compose with.
+ *
+ * `walk` skips a path that does not exist, silently, so a stale entry here is
+ * not an error but every surface missing from the list is a silent loss of
+ * coverage. The nine-tab strip's routes are gone from it because the routes are
+ * gone: Overview and Escalations folded into the Live board, Plans went with
+ * the per resident observation plan, Watches became Monitoring Orders, Safety
+ * scores became the Watchlist, and Insights folded into Reports.
+ */
 const segmentTargets = [
-  "src/app/(admin)/admin/rounding/plans",
-  "src/app/(admin)/admin/rounding/watches",
-  "src/app/(admin)/admin/rounding/escalations",
+  "src/app/(admin)/admin/rounding/page.tsx",
+  "src/app/(admin)/admin/rounding/live",
+  "src/app/(admin)/admin/rounding/monitoring-orders",
   "src/app/(admin)/admin/rounding/integrity",
   "src/app/(admin)/admin/rounding/reports",
   "src/app/(admin)/admin/rounding/watchlist",
-  "src/app/(admin)/admin/rounding/insights",
   "src/app/(admin)/admin/rounding/rounding-hub-nav.tsx",
-  "src/components/rounding/ObservationPlanEditor.tsx",
+  "src/app/(caregiver)/caregiver/rounds",
+  "src/components/caregiver/CaregiverRoundsEmptyNotice.tsx",
+  "src/components/rounding/IntegrityCompliancePanel.tsx",
+  "src/components/rounding/IntegrityFlagCard.tsx",
+  "src/components/rounding/LiveBoard.tsx",
+  "src/components/rounding/LiveBoardCadenceHeader.tsx",
+  "src/components/rounding/LiveBoardEscalationActions.tsx",
+  "src/components/rounding/LiveBoardSummary.tsx",
+  "src/components/rounding/LiveBoardTaskRow.tsx",
+  "src/components/rounding/MonitoringOrderAction.tsx",
+  "src/components/rounding/MonitoringOrderForm.tsx",
+  "src/components/rounding/MonitoringOrdersTable.tsx",
+  "src/components/rounding/ObservationCapture.tsx",
+  "src/components/rounding/ObservationChipRow.tsx",
+  "src/components/rounding/ObservationInsightsPanel.tsx",
+  "src/components/rounding/ObservationReportBreakdown.tsx",
+  "src/components/rounding/ObservationReportRange.tsx",
+  "src/components/rounding/QuickCheckDrawer.tsx",
+  "src/components/rounding/ResidentMonitoringOrderBand.tsx",
+  "src/components/rounding/RoundingNotices.tsx",
+  "src/components/rounding/RoundingOutbox.tsx",
+  "src/components/rounding/RoundingTaskCard.tsx",
   "src/components/rounding/WatchlistDispositionForm.tsx",
   "src/components/rounding/WatchlistDispositionLedger.tsx",
   "src/components/rounding/WatchlistFacilityTable.tsx",
@@ -37,6 +67,7 @@ const segmentTargets = [
   "src/components/ui/select.tsx",
   "src/components/ui/sortable-table-header.tsx",
   "src/components/ui/status-pill.tsx",
+  "src/components/ui/textarea.tsx",
 ].map((target) => path.join(root, target));
 
 const ignoredSegments = [

@@ -480,7 +480,7 @@ Return JSON only:
           category: "clinical",
           why_it_matters: "AI-detected resident safety pattern requiring review.",
           current_value_json: { resident_id: resident.id, insight_type: insightType },
-          deep_link_path: "/admin/rounding/insights",
+          deep_link_path: "/admin/rounding/reports",
         });
         if (!alertError) alertsCreated += 1;
       }

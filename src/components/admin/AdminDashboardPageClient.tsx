@@ -774,7 +774,7 @@ export function AdminDashboardPageClient({
               title="Watch Center"
               value={assurance.activeWatches > 0 ? assurance.activeWatches : assurance.pendingWatchApprovals}
               icon={ShieldAlert}
-              href={assurance.pendingWatchApprovals > 0 ? "/admin/rounding/watches" : "/admin/rounding/watches"}
+              href="/admin/rounding/monitoring-orders"
               urgency={assurance.pendingWatchApprovals > 0 ? "high" : assurance.activeWatches > 0 ? "medium" : "normal"}
               subLabel={`${assurance.activeWatches} active · ${assurance.pendingWatchApprovals} pending approval`}
             />
@@ -784,7 +784,7 @@ export function AdminDashboardPageClient({
               title="Escalation Queue"
               value={assurance.openEscalations}
               icon={AlertCircle}
-              href="/admin/rounding/escalations"
+              href="/admin/rounding?filter=escalated"
               urgency={assurance.openEscalations > 0 ? "critical" : "normal"}
               subLabel={assurance.openEscalations > 0 ? "Overdue or missed checks need review" : "No active escalations"}
             />

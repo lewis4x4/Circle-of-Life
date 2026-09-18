@@ -4,9 +4,9 @@
  * never fabricate family note text or conference details.
  */
 
-import { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY } from "@/lib/rounding/observation-plan-display-copy";
+import { ROUNDING_SELECT_FACILITY_FIRST_COPY } from "@/lib/rounding/rounding-scope-copy";
 
-export { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY as FAMILY_PORTAL_ADMIN_SELECT_FACILITY_FIRST_COPY };
+export { ROUNDING_SELECT_FACILITY_FIRST_COPY as FAMILY_PORTAL_ADMIN_SELECT_FACILITY_FIRST_COPY };
 
 export const FAMILY_PORTAL_ADMIN_NO_NOTE_COPY = "No note posted";
 export const FAMILY_PORTAL_ADMIN_NO_ROOM_COPY = "No room posted";
@@ -40,7 +40,7 @@ export function resolveFamilyPortalAdminFacilityScope(
 /** Page subtitle — unscoped names the facility gap; named scope may interpolate the facility name. */
 export function formatFamilyPortalAdminPageSubtitle(scope: FamilyPortalAdminFacilityScope): string {
   if (scope.kind === "unscoped") {
-    return `${OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY} ${FAMILY_PORTAL_ADMIN_PAGE_DESCRIPTION_COPY}`;
+    return `${ROUNDING_SELECT_FACILITY_FIRST_COPY} ${FAMILY_PORTAL_ADMIN_PAGE_DESCRIPTION_COPY}`;
   }
   if (scope.kind === "named") {
     return `Family Connections at ${scope.name}. ${FAMILY_PORTAL_ADMIN_PAGE_DESCRIPTION_COPY}`;

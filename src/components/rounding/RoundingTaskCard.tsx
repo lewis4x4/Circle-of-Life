@@ -104,7 +104,7 @@ export function RoundingTaskCard({
               </div>
             </div>
             
-            <div className={`px-2.5 py-1 rounded border text-[10px] uppercase font-bold tracking-widest leading-none flex items-center shrink-0 ${tone.badge}`}>
+            <div className={`px-2.5 py-1 rounded border text-[11px] font-semibold leading-none flex items-center shrink-0 ${tone.badge}`}>
                {formatStatus(task.derivedStatus)}
             </div>
           </div>

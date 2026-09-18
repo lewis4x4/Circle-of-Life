@@ -75,7 +75,7 @@ describe('facility history analytics', () => {
   it('derives per-field changes without treating a blank as zero', () => {
     const changes = revisionChanges([
       { version: 1, revision_id: 'a', status: 'draft', created_at: '2026-09-07T12:00:00Z', reason: null, values: { ...emptyValues(), callouts_last_week: 0 }, updated_by: null, updated_by_name: null },
-      { version: 2, revision_id: 'b', status: 'ready', created_at: '2026-09-07T12:30:00Z', reason: null, values: { ...emptyValues(), callouts_last_week: null, overtime_reported: 17.15 }, updated_by: null, updated_by_name: 'Jessica' },
+      { version: 2, revision_id: 'b', status: 'ready', created_at: '2026-09-07T12:30:00Z', reason: null, values: { ...emptyValues(), callouts_last_week: null, overtime_reported: 17.15 }, updated_by: null, updated_by_name: 'Operations lead' },
     ]);
     expect(changes[1].changes).toEqual(['Callouts last week: 0 to Not provided', 'Overtime last week: Not provided to 17h 15m']);
     expect(changes[1].origin).toBe('Submitted');

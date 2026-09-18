@@ -429,6 +429,241 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 4b. A resident in hospital stops accruing missed checks, even with no history
+--     row at all.
+--
+--     Found on Haven HFO Staging. The four non generating statuses were caught
+--     by one thing only, a resident_status_history row covering the date, and
+--     migration 217 installs that table's capture trigger without backfilling.
+--     A resident sitting in hospital_hold with no history row was fully expected
+--     and accrued six phantom missed checks a day. Case 4 above missed it
+--     because its fixture inserts the history row explicitly, so it only ever
+--     exercised the path that worked.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000001';
+  v_facility CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000003';
+  v_resident CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000004';
+  v_no_history CONSTANT uuid := 'c0de0000-0000-4000-8000-00000000001a';
+  v_today date;
+  v_history_rows integer;
+  v_expected integer;
+  v_control integer;
+BEGIN
+  v_today := (now() AT TIME ZONE 'America/New_York')::date;
+
+  INSERT INTO public.residents (id, facility_id, organization_id, first_name, last_name, status, gender, admission_date)
+    VALUES (v_no_history, v_facility, v_org, 'InHospital', 'Synthetic', 'hospital_hold', 'prefer_not_to_say', current_date - 60);
+
+  -- The state migration 217 leaves behind for anybody whose status was set
+  -- before its trigger existed. The capture trigger fires on the insert above,
+  -- so the row has to be removed for the fixture to reproduce staging.
+  DELETE FROM public.resident_status_history
+  WHERE resident_id = v_no_history;
+
+  SELECT
+    count(*) INTO v_history_rows
+  FROM
+    public.resident_status_history
+  WHERE
+    resident_id = v_no_history;
+  PERFORM
+    pg_temp.ch_assert (v_history_rows = 0, format('the fixture needs a resident with no status history at all, got %s row(s)', v_history_rows));
+
+  SELECT
+    count(*) INTO v_expected
+  FROM
+    public.observation_compliance_for_range (v_facility, v_today, v_today)
+  WHERE
+    resident_id = v_no_history;
+
+  PERFORM
+    pg_temp.ch_assert (v_expected = 0, format('a resident on hospital_hold with no history row expects %s window(s) today. Spec 2.4 generates no tasks for them, so every one of those is a phantom missed check invented against the building, and it reads as a staffing failure.', v_expected));
+
+  -- And the building's actual residents are untouched by the fix.
+  SELECT
+    count(*) INTO v_control
+  FROM
+    public.observation_compliance_for_range (v_facility, v_today, v_today)
+  WHERE
+    resident_id = v_resident;
+  PERFORM
+    pg_temp.ch_assert (v_control = 6, format('the active control resident should still expect six windows today, got %s. A fix that stops expecting anything is not a fix.', v_control));
+
+  INSERT INTO ch_result (check_name, detail)
+    VALUES ('hospital_hold with no history row', format('a resident on hospital_hold with %s history rows expects %s windows today; the active control still expects %s', v_history_rows, v_expected, v_control));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 4c. Today's status does not rewrite yesterday's record.
+--
+--     The narrow part of the fix, and the reason it is narrow. The current
+--     status is consulted only for dates no history row covers and none starts
+--     after. A blanket fallback to the current status would read it onto the
+--     whole timeline and erase a resident's recorded misses from before their
+--     last status change, which is the C3 defect over again in the other
+--     direction.
+--
+--     Three dates on one resident who is in hospital now: one the history says
+--     they were active on, one the history says they were away on, and one that
+--     predates their history entirely.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000001';
+  v_facility CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000003';
+  v_resident CONSTANT uuid := 'c0de0000-0000-4000-8000-00000000001d';
+  v_before_history date;
+  v_active_day date;
+  v_away_day date;
+  v_before_rows integer;
+  v_active_rows integer;
+  v_away_rows integer;
+BEGIN
+  -- Admitted well before anything was ever recorded about them, which is the
+  -- state migration 217 leaves for every resident already in the building when
+  -- its trigger was installed.
+  INSERT INTO public.residents (id, facility_id, organization_id, first_name, last_name, status, gender, admission_date)
+    VALUES (v_resident, v_facility, v_org, 'Away', 'Synthetic', 'hospital_hold', 'prefer_not_to_say', ((now() - interval '40 days') AT TIME ZONE 'America/New_York')::date);
+  DELETE FROM public.resident_status_history
+  WHERE resident_id = v_resident;
+
+  -- The history starts recently and deliberately later than the fixture's
+  -- cadence version, so all three dates below have a cadence in force and the
+  -- assertions are about status rather than about configuration.
+  INSERT INTO public.resident_status_history (organization_id, facility_id, resident_id, status, effective_from, effective_to)
+    VALUES (v_org, v_facility, v_resident, 'active', date_trunc('day', now() - interval '3 days'), date_trunc('day', now() - interval '2 days')),
+    (v_org, v_facility, v_resident, 'hospital_hold', date_trunc('day', now() - interval '2 days'), NULL);
+
+  v_before_history := ((now() - interval '4 days') AT TIME ZONE 'America/New_York')::date;
+  v_active_day := ((now() - interval '3 days') AT TIME ZONE 'America/New_York')::date;
+  v_away_day := ((now() - interval '1 day') AT TIME ZONE 'America/New_York')::date;
+
+  SELECT
+    count(*) INTO v_active_rows
+  FROM
+    public.observation_compliance_for_range (v_facility, v_active_day, v_active_day)
+  WHERE
+    resident_id = v_resident;
+  PERFORM
+    pg_temp.ch_assert (v_active_rows = 6, format('a date the history says this resident was active on expects %s windows, not six. Their status today must not reach backwards and erase the record of a day they were in the building.', v_active_rows));
+
+  SELECT
+    count(*) INTO v_away_rows
+  FROM
+    public.observation_compliance_for_range (v_facility, v_away_day, v_away_day)
+  WHERE
+    resident_id = v_resident;
+  PERFORM
+    pg_temp.ch_assert (v_away_rows = 0, format('a date inside the hospital stay expects %s windows', v_away_rows));
+
+  -- The date that predates every history row. Nothing covers it and something
+  -- starts after it, so the current status does not apply and the day stays
+  -- expected. This is the assertion a blanket fallback would fail.
+  SELECT
+    count(*) INTO v_before_rows
+  FROM
+    public.observation_compliance_for_range (v_facility, v_before_history, v_before_history)
+  WHERE
+    resident_id = v_resident;
+  PERFORM
+    pg_temp.ch_assert (v_before_rows = 6, format('a date that predates every history row expects %s windows. Nothing recorded covers it and a change was recorded after it, so the resident''s status today says nothing about it and the day must stay expected.', v_before_rows));
+
+  INSERT INTO ch_result (check_name, detail)
+    VALUES ('status on the date, not status today', format('one resident who is in hospital now: %s expects %s windows because the history says active, %s expects %s because the history says away, and %s expects %s because nothing recorded reaches it', v_active_day, v_active_rows, v_away_day, v_away_rows, v_before_history, v_before_rows));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 4d. A mid day transfer keeps the morning and drops nothing that happened.
+--
+--     Evidence wins over status, and it wins per window rather than per day. A
+--     resident who was active all morning, whose tasks generated and whose
+--     checks were recorded, and who went to hospital at noon, keeps every
+--     morning window: it carries a task and a log, so it stays expected and
+--     stays satisfied. What they do not keep is the rest of the day, which
+--     nothing generated and nobody could have worked.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000001';
+  v_facility CONSTANT uuid := 'c0de0000-0000-4000-8000-000000000003';
+  v_resident CONSTANT uuid := 'c0de0000-0000-4000-8000-00000000001b';
+  v_staff CONSTANT uuid := 'c0de0000-0000-4000-8000-00000000001c';
+  v_day date;
+  v_noon timestamptz;
+  v_worked integer := 0;
+  v_expected integer;
+  v_satisfied integer;
+  v_projected integer;
+  v_window record;
+  v_task uuid;
+BEGIN
+  v_day := ((now() - interval '4 days') AT TIME ZONE 'America/New_York')::date;
+  v_noon := (v_day + time '12:00') AT TIME ZONE 'America/New_York';
+
+  INSERT INTO public.residents (id, facility_id, organization_id, first_name, last_name, status, gender, admission_date)
+    VALUES (v_resident, v_facility, v_org, 'Transferred', 'Synthetic', 'hospital_hold', 'prefer_not_to_say', current_date - 60);
+  DELETE FROM public.resident_status_history
+  WHERE resident_id = v_resident;
+  INSERT INTO public.resident_status_history (organization_id, facility_id, resident_id, status, effective_from)
+    VALUES (v_org, v_facility, v_resident, 'hospital_hold', v_noon);
+
+  INSERT INTO public.staff (id, facility_id, organization_id, first_name, last_name, staff_role, hire_date, employment_status)
+    VALUES (v_staff, v_facility, v_org, 'Morning', 'Synthetic', 'resident_aide', current_date - 100, 'active');
+
+  SELECT
+    count(*) INTO v_projected
+  FROM
+    public.facility_observation_windows_for_date (v_facility, v_day);
+
+  -- Every window that closed before the transfer got a task and a recorded
+  -- check, which is what the morning of a real transfer day looks like.
+  FOR v_window IN
+  SELECT
+    *
+  FROM
+    public.facility_observation_windows_for_date (v_facility, v_day) w
+  WHERE
+    w.window_closes_at_utc <= v_noon LOOP
+      INSERT INTO public.resident_observation_tasks (organization_id, facility_id, resident_id, cadence_version_id, window_key, service_date, scheduled_for, due_at, grace_ends_at, status, assigned_staff_id, completed_log_id)
+        VALUES (v_org, v_facility, v_resident, v_window.cadence_version_id, v_window.window_key, v_day, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'completed_on_time', v_staff, NULL)
+      RETURNING
+        id INTO v_task;
+
+      INSERT INTO public.resident_observation_logs (organization_id, facility_id, resident_id, task_id, staff_id, observed_at, entered_at, entry_mode, quick_status, resident_location, resident_state, composed_summary)
+        VALUES (v_org, v_facility, v_resident, v_task, v_staff, v_window.due_at_utc, v_window.due_at_utc, 'live', 'calm', 'room', 'awake', 'Synthetic morning check.');
+
+      v_worked := v_worked + 1;
+    END LOOP;
+
+  PERFORM
+    pg_temp.ch_assert (v_worked > 0, 'the fixture needs at least one window that closed before the transfer');
+  PERFORM
+    pg_temp.ch_assert (v_worked < v_projected, format('the fixture worked all %s windows, so there is no afternoon left to test', v_projected));
+
+  SELECT
+    count(*),
+    count(*) FILTER (WHERE satisfied) INTO v_expected,
+    v_satisfied
+  FROM
+    public.observation_compliance_for_range (v_facility, v_day, v_day)
+  WHERE
+    resident_id = v_resident;
+
+  PERFORM
+    pg_temp.ch_assert (v_expected = v_worked, format('a mid day transfer expects %s windows on a day with %s recorded checks out of %s projected. The windows after the transfer were never generated and nobody could have worked them, so expecting them invents misses; dropping the worked ones erases real recorded work.', v_expected, v_worked, v_projected));
+  PERFORM
+    pg_temp.ch_assert (v_satisfied = v_worked, format('%s of %s recorded morning checks read as satisfied. Evidence has to win over status or the C3 defect is back.', v_satisfied, v_worked));
+
+  INSERT INTO ch_result (check_name, detail)
+    VALUES ('mid day transfer keeps the morning', format('on %s the resident went to hospital at local noon: %s of %s projected windows closed before it, all %s carry a recorded check, and the read expects exactly those %s and calls all of them satisfied', v_day, v_worked, v_projected, v_worked, v_expected));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
 -- 5. Route (c). A facility created after the migrations ran.
 --
 -- The sixth building. Migrations 412 and 415 seed every facility that existed

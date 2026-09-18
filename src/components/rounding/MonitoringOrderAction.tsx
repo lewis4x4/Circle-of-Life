@@ -21,6 +21,10 @@ import {
   type IntervalOptions,
   type MonitoringOrderDraft,
 } from "@/lib/rounding/monitoring-orders";
+import {
+  logRoundingQueryFailure,
+  roundingCommandRefusal,
+} from "@/lib/rounding/rounding-query-error";
 import { createClient } from "@/lib/supabase/client";
 
 type IntervalOptionRow = {
@@ -104,7 +108,17 @@ export function MonitoringOrderAction({
         p_review_due_at:
           draft.reviewDueAt.trim().length > 0 ? facilityDatetimeLocalToUtcIso(draft.reviewDueAt) : null,
       } as never);
-      if (error) throw new Error(error.message);
+      if (error) {
+        // The command's own refusals are written for the floor, so they show
+        // verbatim. A PostgREST failure is a defect for the console instead.
+        logRoundingQueryFailure("rounding.monitoring_order.create", error, "");
+        throw new Error(
+          roundingCommandRefusal(
+            error,
+            "The Monitoring Order could not be entered. Check the entries and try again.",
+          ),
+        );
+      }
       toast.success("Monitoring Order in force. The administrator has been notified.");
       setOpen(false);
       onDone?.();

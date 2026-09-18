@@ -874,17 +874,32 @@ BEGIN
   SELECT
     (now() AT TIME ZONE 'America/New_York')::date INTO v_date;
 
-  -- Retire the shift that owns the fewest of today's windows, so the assertion
-  -- below is about a subset rather than about everything.
+  -- Retire one shift, not both, so the assertion below is about a subset. Which
+  -- one is chosen by where the unworked windows are, never by window count.
+  --
+  -- Choosing the shift with the fewest windows, tie broken alphabetically, made
+  -- this case depend on the wall clock. The fixture generates for whatever shift
+  -- `facility_next_shift_observation_windows` says is next, so between 18:00 and
+  -- 06:00 that is the day shift, the day shift is also the alphabetical winner
+  -- of the tie, and every window on the retired shift then carries a task. The
+  -- case is vacuous, and its own guard below correctly refuses to let it pass:
+  -- the suite failed for twelve hours a day and passed for the other twelve.
+  --
+  -- Retiring the shift that holds the most expected windows with neither a task
+  -- nor a covering order makes the case about the rows it was written for,
+  -- whatever time it runs at.
   SELECT
-    w.shift_key INTO v_shift
+    c.shift_key INTO v_shift
   FROM
-    public.facility_observation_windows_for_date (v_facility, v_date) w
+    public.observation_compliance_for_range (v_facility, v_date, v_date) c
+  WHERE
+    c.shift_key IS NOT NULL
   GROUP BY
-    w.shift_key
+    c.shift_key
   ORDER BY
-    count(*),
-    w.shift_key
+    count(*) FILTER (WHERE c.task_id IS NULL
+      AND c.covered_by_monitoring_order_id IS NULL) DESC,
+    c.shift_key
   LIMIT 1;
 
   SELECT

@@ -1,5 +1,4 @@
 import type { GeneratedTaskInput, ObservationTaskStatus, PlanRuleInput } from "@/lib/rounding/types";
-import { extractDiscreteScheduledTime } from "@/lib/rounding/col-discovery-round-cadence";
 import { calculateObservationTaskStatus } from "@/lib/rounding/update-task-status";
 
 type GenerateArgs = {
@@ -17,6 +16,19 @@ type GenerateArgs = {
   rule: PlanRuleInput;
   now?: string | Date;
 };
+
+/**
+ * The wall-clock time a discrete rule carries, when it carries one.
+ *
+ * Inlined from `col-discovery-round-cadence.ts`, which is gone: that file
+ * resolved a facility by name against a hardcoded list and held the 2026-08-14
+ * observation times as literals. This is the only thing in it this generator
+ * ever used, and it reads a rule's own schema rather than any cadence.
+ */
+function extractDiscreteScheduledTime(rule: PlanRuleInput): string | null {
+  const value = rule.requiredFieldsSchema?.scheduled_time;
+  return typeof value === "string" ? value : null;
+}
 
 function toDate(value: string | Date): Date {
   return value instanceof Date ? value : new Date(value);
