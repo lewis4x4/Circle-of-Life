@@ -71,20 +71,35 @@ INSERT INTO public.staff(id,organization_id,facility_id,user_id,first_name,last_
 INSERT INTO public.residents(id,organization_id,facility_id,first_name,last_name,date_of_birth,gender,admission_date,status)
   SELECT resident, org, facility, 'Probe','Resident', current_date-30000,'prefer_not_to_say'::public.gender, current_date-100,'active'::public.resident_status FROM wf;
 
--- Three aides on the evening shift at the facility, one at the other building.
+-- The probe's clock is the facility's, not the server's. submit_care_event
+-- derives the shift from `occurred_at AT TIME ZONE <facility tz>`, so
+-- `date_trunc('day', now()) + 18 hours` only means "evening" when the session
+-- already sits in Eastern. CI replays with the session at UTC, where that
+-- expression is 2 p.m. Eastern -- a day shift -- so the evening roster below
+-- matched nobody and care_event_sync_witness_tasks fell through to its single
+-- unassigned row: expected 2, got 1. Yesterday at 6 p.m. Eastern is evening
+-- wherever the session sits, and is always in the past whatever the hour.
+CREATE TEMP TABLE wclock AS
+SELECT ev,
+       (ev AT TIME ZONE 'America/New_York')::date AS shift_date,
+       date_trunc('week', (ev AT TIME ZONE 'America/New_York')::date)::date AS week_start
+FROM (SELECT ((date_trunc('day', now() AT TIME ZONE 'America/New_York') - interval '1 day' + interval '18 hours') AT TIME ZONE 'America/New_York') AS ev) t;
+GRANT SELECT ON wclock TO authenticated, service_role;
+
+-- Three aides on that evening shift at the facility, one at the other building.
 CREATE TEMP TABLE wsched AS SELECT gen_random_uuid() sched_a, gen_random_uuid() sched_b;
 INSERT INTO public.schedules(id,facility_id,organization_id,week_start_date,status)
-  SELECT sched_a, facility, org, date_trunc('week', current_date)::date, 'published'::public.schedule_status FROM wf, wsched
-  WHERE NOT EXISTS (SELECT 1 FROM public.schedules s WHERE s.facility_id=(SELECT facility FROM wf) AND s.week_start_date=date_trunc('week', current_date)::date)
-  UNION ALL SELECT sched_b, facility_b, org, date_trunc('week', current_date)::date, 'published'::public.schedule_status FROM wf, wsched;
+  SELECT sched_a, facility, org, week_start, 'published'::public.schedule_status FROM wf, wsched, wclock
+  WHERE NOT EXISTS (SELECT 1 FROM public.schedules s WHERE s.facility_id=(SELECT facility FROM wf) AND s.week_start_date=(SELECT week_start FROM wclock))
+  UNION ALL SELECT sched_b, facility_b, org, week_start, 'published'::public.schedule_status FROM wf, wsched, wclock;
 UPDATE wsched SET sched_a = COALESCE(
-  (SELECT s.id FROM public.schedules s WHERE s.facility_id=(SELECT facility FROM wf) AND s.week_start_date=date_trunc('week', current_date)::date LIMIT 1), sched_a);
+  (SELECT s.id FROM public.schedules s WHERE s.facility_id=(SELECT facility FROM wf) AND s.week_start_date=(SELECT week_start FROM wclock) LIMIT 1), sched_a);
 
 INSERT INTO public.shift_assignments(schedule_id,organization_id,facility_id,staff_id,shift_date,shift_type,status)
-  SELECT sched_a, org, facility, staff_a, current_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched
-  UNION ALL SELECT sched_a, org, facility, staff_b, current_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched
-  UNION ALL SELECT sched_a, org, facility, staff_c, current_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched
-  UNION ALL SELECT sched_b, org, facility_b, staff_far, current_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched;
+  SELECT sched_a, org, facility, staff_a, shift_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched, wclock
+  UNION ALL SELECT sched_a, org, facility, staff_b, shift_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched, wclock
+  UNION ALL SELECT sched_a, org, facility, staff_c, shift_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched, wclock
+  UNION ALL SELECT sched_b, org, facility_b, staff_far, shift_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched, wclock;
 
 -- The seed in 403 targets organization 00000000-...-001. Mirror it when the
 -- probe's facility belongs to another organization.
@@ -131,7 +146,7 @@ SELECT public.submit_care_event(jsonb_build_object(
   'facility_id', (SELECT facility FROM wf),
   'resident_id', (SELECT resident FROM wf),
   'kind', 'fall',
-  'occurred_at', (date_trunc('day', now()) + interval '18 hours')::text,
+  'occurred_at', (SELECT ev FROM wclock)::text,
   'answers', jsonb_build_object('hurt','a_little','head','no','witnessed','yes','going_out','no')
 )) AS r;
 GRANT ALL ON w_l2 TO authenticated, service_role;
@@ -288,7 +303,7 @@ SELECT public.submit_care_event(jsonb_build_object(
   'facility_id', (SELECT facility FROM wf),
   'resident_id', (SELECT resident FROM wf),
   'kind', 'fall',
-  'occurred_at', (date_trunc('day', now()) + interval '18 hours')::text,
+  'occurred_at', (SELECT ev FROM wclock)::text,
   'answers', jsonb_build_object('hurt','a_little','head','yes','witnessed','no','going_out','no')
 )) AS r;
 GRANT ALL ON w_l3 TO authenticated, service_role;
