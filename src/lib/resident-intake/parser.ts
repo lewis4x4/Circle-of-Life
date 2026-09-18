@@ -28,45 +28,6 @@ const DEFAULT_MODEL = "claude-sonnet-5";
 const MAX_PROVIDER_IMAGE_EDGE = 4_096;
 const MAX_PROVIDER_IMAGE_PIXELS = 20_000_000;
 
-/**
- * `sharp` is a native module that this file loads on demand, and it is not a
- * declared dependency — it reaches the tree only as an *optional* transitive
- * dependency of next/lightningcss. Optional means npm is free to skip it, and
- * on the Netlify builder it does: Turbopack failed the entire production build
- * on "Module not found: Can't resolve 'sharp'", which stopped every deploy from
- * main for a day while the last healthy build kept serving.
- *
- * So the module is loaded through a specifier the bundler and the type checker
- * both decline to follow: `turbopackIgnore` leaves the import for the runtime,
- * and a non-literal specifier keeps `tsc` from resolving types that are absent
- * whenever sharp is. The shape below covers only the calls made here.
- *
- * Image normalisation still needs sharp actually installed at runtime. Where it
- * is missing the loader throws and the caller reports the page unprocessed —
- * see COL-480 for making the dependency real.
- */
-const SHARP_SPECIFIER = "sharp";
-
-type SharpPipeline = {
-  metadata(): Promise<{ width?: number; height?: number }>;
-  rotate(): SharpPipeline;
-  resize(options: { width: number; height: number; fit: string; withoutEnlargement: boolean }): SharpPipeline;
-  flatten(options: { background: string }): SharpPipeline;
-  jpeg(options: { quality: number; mozjpeg: boolean }): SharpPipeline;
-  toBuffer(): Promise<Buffer>;
-};
-
-type SharpFactory = (input: Uint8Array, options?: { failOn?: string; limitInputPixels?: number }) => SharpPipeline;
-
-async function loadSharp(): Promise<SharpFactory> {
-  const loaded = (await import(/* turbopackIgnore: true */ SHARP_SPECIFIER)) as { default?: SharpFactory };
-  const sharp = loaded.default;
-  if (typeof sharp !== "function") {
-    throw new Error("Image support is unavailable on this server.");
-  }
-  return sharp;
-}
-
 // Migration 391 already refuses allow_phi without a recorded BAA at the table;
 // requiring it here as well means a policy row read through any path that
 // bypasses the constraint (a stale cache, a hand-edited fixture) still fails
@@ -111,7 +72,8 @@ export async function prepareSourceForProvider(bytes: Uint8Array, mime: string):
   const isHeif = mime === "image/heic" || mime === "image/heif";
   if (!isHeif) {
     const direct = mime as ProviderMediaType;
-    const sharp = await loadSharp();
+    const sharpModule = await import("sharp");
+    const sharp = sharpModule.default;
     const metadata = await sharp(bytes, { failOn: "error", limitInputPixels: 100_000_000 }).metadata();
     const width = metadata.width ?? 0;
     const height = metadata.height ?? 0;
@@ -119,7 +81,8 @@ export async function prepareSourceForProvider(bytes: Uint8Array, mime: string):
       return { bytes, mediaType: direct, normalized: false };
     }
   }
-  const sharp = await loadSharp();
+  const sharpModule = await import("sharp");
+  const sharp = sharpModule.default;
   const normalized = await sharp(bytes, { failOn: "error", limitInputPixels: 100_000_000 })
     .rotate()
     .resize({ width: MAX_PROVIDER_IMAGE_EDGE, height: MAX_PROVIDER_IMAGE_EDGE, fit: "inside", withoutEnlargement: true })
