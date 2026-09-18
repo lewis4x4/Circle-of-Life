@@ -47,6 +47,19 @@ jobs:
           deno check compliance-doc-check/index.ts compliance-doc-check/handler.ts _shared/compliance-doc-questions.ts
           deno test --allow-env compliance-doc-check-handler.test.ts
 
+      - name: Care event voice prefill
+        # Not gated behind HAVEN_UI_GATES_ENABLED, for the same reason as the
+        # step above: these cover what Haven puts on a caregiver's screen over a
+        # resident on the floor. That silence is never read as "nobody saw the
+        # fall", that a chip is highlighted on the winning option's own
+        # probability and not on `confidence`, and that an option the Fall tile
+        # does not offer is refused rather than passed through.
+        # Fixed answers, no network, no keys.
+        run: |
+          cd supabase/functions
+          deno check care-event-prefill/index.ts care-event-prefill/prefill.ts _shared/care-event-prefill-questions.ts
+          deno test --allow-env care-event-prefill-handler.test.ts
+
       - name: Stand Up regression contracts
         run: |
           python3 -B -m unittest discover -s scripts/stand-up -p 'test_*.py'
