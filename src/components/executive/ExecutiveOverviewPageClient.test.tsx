@@ -64,6 +64,7 @@ const emptyProps = {
   initialPresenceCensus: EMPTY_PRESENCE_CENSUS,
   initialOccupancyContext: null,
   initialSnapshot: { kind: "never_recorded" } as const,
+  initialResidentDayWindow: null,
   initialMetricChanges: {},
   initialMetricDates: {},
   initialHasServerData: false,

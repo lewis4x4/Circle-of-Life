@@ -12,6 +12,7 @@ const EMPTY_DATA: ExecutiveOverviewData = {
   presenceCensus: EMPTY_PRESENCE_CENSUS,
   occupancyContext: null,
   snapshot: { kind: "never_recorded" },
+  residentDayWindow: null,
   metricChanges: {},
   metricDates: {},
   todayIsoDate: facilityTodayIsoDate(),
@@ -30,6 +31,7 @@ export default function ExecutiveOverviewPage() {
       initialPresenceCensus={EMPTY_DATA.presenceCensus}
       initialOccupancyContext={EMPTY_DATA.occupancyContext}
       initialSnapshot={EMPTY_DATA.snapshot}
+      initialResidentDayWindow={EMPTY_DATA.residentDayWindow}
       initialMetricChanges={EMPTY_DATA.metricChanges}
       initialMetricDates={EMPTY_DATA.metricDates}
       initialHasServerData={false}

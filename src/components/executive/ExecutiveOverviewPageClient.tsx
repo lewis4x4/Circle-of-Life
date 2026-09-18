@@ -1,6 +1,7 @@
 "use client";
 
 import { loadExecutiveOverview } from "@/lib/executive/load-executive-overview";
+import type { ResidentDayWindow } from "@/lib/executive/resident-days";
 import { startupMark } from "@/lib/observability/startup-performance";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -113,6 +114,7 @@ type ExecutiveOverviewPageClientProps = {
   initialPresenceCensus: PresenceCensus;
   initialOccupancyContext: OccupancyContext | null;
   initialSnapshot: ExecutiveSnapshotState;
+  initialResidentDayWindow: ResidentDayWindow | null;
   initialMetricChanges: Record<string, MetricChange>;
   initialMetricDates: Record<string, string>;
   initialHasServerData: boolean;
@@ -127,6 +129,7 @@ export function ExecutiveOverviewPageClient({
   initialPresenceCensus,
   initialOccupancyContext,
   initialSnapshot,
+  initialResidentDayWindow,
   initialMetricChanges,
   initialMetricDates,
   initialHasServerData,
@@ -153,6 +156,10 @@ export function ExecutiveOverviewPageClient({
 
   // When the displayed figures were recorded, and the change since the run before.
   const [snapshot, setSnapshot] = useState<ExecutiveSnapshotState>(initialSnapshot);
+  // How much of the incident-rate window was counted rather than projected.
+  const [residentDayWindow, setResidentDayWindow] = useState<ResidentDayWindow | null>(
+    initialResidentDayWindow,
+  );
   const [metricChanges, setMetricChanges] = useState<Record<string, MetricChange>>(initialMetricChanges);
   // Each displayed figure carries the day it was recorded, which a run that
   // skipped that metric does not.
@@ -197,6 +204,7 @@ export function ExecutiveOverviewPageClient({
       setAssuranceHeatMap(data.assuranceHeatMap);
       setAssuranceTrends(data.assuranceTrends);
       setSnapshot(data.snapshot);
+      setResidentDayWindow(data.residentDayWindow);
       setMetricChanges(data.metricChanges);
       setMetricDates(data.metricDates);
 
@@ -264,6 +272,7 @@ export function ExecutiveOverviewPageClient({
     occupancy: occupancyContext,
     metrics,
     snapshot,
+    residentDays: residentDayWindow,
     metricDates,
     todayIsoDate: facilityTodayIsoDate(),
     observedFacilityCount: assuranceHeatMap.filter((row) => row.observed).length,
@@ -312,6 +321,7 @@ export function ExecutiveOverviewPageClient({
           presenceCensus={presenceCensus}
           occupancyContext={occupancyContext}
           snapshot={snapshot}
+          residentDayWindow={residentDayWindow}
           metricChanges={metricChanges}
           metricDates={metricDates}
           coverage={coverage}
@@ -1036,16 +1046,18 @@ function PortfolioFiguresStrip({
   metrics,
   occupancyContext,
   snapshot,
+  residentDayWindow,
   metricChanges,
   metricDates,
 }: {
   metrics: Record<string, number>;
   occupancyContext: OccupancyContext | null;
   snapshot: ExecutiveSnapshotState;
+  residentDayWindow: ResidentDayWindow | null;
   metricChanges: Record<string, MetricChange>;
   metricDates: Record<string, string>;
 }) {
-  const incidentBasis = incidentRateBasis(snapshot);
+  const incidentBasis = incidentRateBasis(snapshot, residentDayWindow);
   const todayIsoDate = facilityTodayIsoDate();
   const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
 
@@ -1659,6 +1671,7 @@ type DashboardBodyProps = {
   presenceCensus: PresenceCensus;
   occupancyContext: OccupancyContext | null;
   snapshot: ExecutiveSnapshotState;
+  residentDayWindow: ResidentDayWindow | null;
   metricChanges: Record<string, MetricChange>;
   metricDates: Record<string, string>;
   coverage: CoverageRow[];
@@ -1673,6 +1686,7 @@ function ExecutiveDashboardBody({
   presenceCensus,
   occupancyContext,
   snapshot,
+  residentDayWindow,
   metricChanges,
   metricDates,
   coverage,
@@ -1702,6 +1716,7 @@ function ExecutiveDashboardBody({
         metrics={metrics}
         occupancyContext={occupancyContext}
         snapshot={snapshot}
+        residentDayWindow={residentDayWindow}
         metricChanges={metricChanges}
         metricDates={metricDates}
       />
