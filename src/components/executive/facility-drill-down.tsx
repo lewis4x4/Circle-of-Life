@@ -85,8 +85,8 @@ export function FacilityDrillDown({
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-primary-400" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-slate-100">
@@ -141,7 +141,7 @@ export function FacilityDrillDown({
                       className={cn(
                         "text-2xl font-mono font-bold",
                         metric.color === "emerald" && "text-emerald-400",
-                        metric.color === "purple" && "text-primary-400",
+                        metric.color === "purple" && "text-primary",
                         metric.color === "blue" && "text-sky-400",
                         metric.color === "rose" && "text-rose-400",
                         metric.color === "amber" && "text-amber-400",

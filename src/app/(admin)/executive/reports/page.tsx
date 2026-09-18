@@ -784,7 +784,7 @@ export default function ExecutiveSavedReportsPage() {
                               variant="outline"
                               disabled={busyId !== null}
                               onClick={() => void onEnhancedReport(r)}
-                              className="border-primary-500/30 text-primary-400 hover:bg-primary-500/10"
+                              className="border-primary/30 text-primary hover:bg-primary/10"
                             >
                               <MessageSquare className="mr-1 h-3 w-3" />
                               {busyId === r.id ? "Working…" : "Enhanced"}

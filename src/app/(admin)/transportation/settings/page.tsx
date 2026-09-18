@@ -196,7 +196,7 @@ export default function TransportationOrgSettingsPage() {
             <ArrowLeft className="h-4 w-4" />
             Fleet operations
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100/80 dark:bg-primary-500/15 border border-primary-200/60 dark:border-primary-500/20 text-[10px] font-bold uppercase tracking-wider text-primary-700 dark:text-primary-300">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/10 text-[10px] font-bold uppercase tracking-wider text-primary">
             <Gauge className="h-3.5 w-3.5" />
             Operations · Reimbursement
           </div>
@@ -209,8 +209,8 @@ export default function TransportationOrgSettingsPage() {
           </p>
           <p className="max-w-2xl text-sm text-muted-foreground">{TRANSPORT_SETTINGS_ORG_WIDE_SCOPE_CUE}</p>
         </div>
-        <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-primary-200/50 bg-primary-500/10 dark:border-primary-500/20 dark:bg-primary-500/5">
-          <MessageSquare className="h-10 w-10 text-primary-500 dark:text-primary-400" aria-hidden />
+        <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-primary/10 bg-primary/10">
+          <MessageSquare className="h-10 w-10 text-primary" aria-hidden />
         </div>
       </div>
 
@@ -277,7 +277,7 @@ export default function TransportationOrgSettingsPage() {
                     <p className="text-sm text-rose-600 dark:text-rose-400">{form.formState.errors.dollarsPerMile.message}</p>
                   )}
                   <p className="flex items-start gap-2 text-xs leading-relaxed text-slate-500 dark:text-zinc-500">
-                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary-500" aria-hidden />
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                     Many operators align with the IRS optional standard mileage rate for business use; confirm with your CPA. Haven does not provide tax advice.
                   </p>
                 </div>
@@ -286,7 +286,7 @@ export default function TransportationOrgSettingsPage() {
                   <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="h-12 rounded-full px-8 text-sm font-semibold bg-primary-600 hover:bg-primary-700"
+                    className="h-12 rounded-full px-8 text-sm font-semibold bg-primary hover:bg-primary/90"
                   >
                     {form.formState.isSubmitting ? "Saving…" : "Save organization rate"}
                   </Button>
@@ -308,8 +308,8 @@ export default function TransportationOrgSettingsPage() {
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-lg border border-primary-200/40 p-6 shadow-inner dark:border-primary-500/15 dark: dark: dark:shadow-none">
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-primary-700 dark:text-primary-300">Live preview</h2>
+          <div className="rounded-lg border border-primary/10 p-6 shadow-inner dark: dark: dark:shadow-none">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-primary">Live preview</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
               Estimated reimbursement at <span className="font-semibold text-slate-900 dark:text-white">{formatCentsPerMileUsd(previewCents)}</span> / mi
               {!hasRow && !showLoading && !organizationGapMessage && (
@@ -318,14 +318,14 @@ export default function TransportationOrgSettingsPage() {
                 </span>
               )}
             </p>
-            <ul className="mt-6 space-y-3 border-t border-primary-200/30 pt-4 dark:border-white/10">
+            <ul className="mt-6 space-y-3 border-t border-primary/5 pt-4 dark:border-white/10">
               {PREVIEW_MILES.map((m) => (
                 <li
                   key={m}
                   className="flex items-center justify-between rounded-xl bg-card px-4 py-3 text-sm dark:bg-white/5"
                 >
                   <span className="tabular-nums text-slate-600 dark:text-zinc-400">{m} mi</span>
-                  <span className="text-lg font-medium tabular-nums text-primary-700 dark:text-primary-300">
+                  <span className="text-lg font-medium tabular-nums text-primary">
                     {formatCentsPerMileUsd(previewCents * m)}
                   </span>
                 </li>

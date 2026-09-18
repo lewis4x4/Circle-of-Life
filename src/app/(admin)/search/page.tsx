@@ -140,8 +140,8 @@ export default function AdminSearchPage() {
             {/* Wayfinding — same voice as Knowledge, not “SYS module” */}
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex flex-col gap-3">
-                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary-200">
-                  <MessageSquare className="size-3.5 text-primary-400" aria-hidden />
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary">
+                  <MessageSquare className="size-3.5 text-primary" aria-hidden />
                   Find records
                 </div>
                 <h1 className="text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl">
@@ -153,7 +153,7 @@ export default function AdminSearchPage() {
               </div>
               <Link
                 href="/admin/knowledge"
-                className="group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary-500/40 hover:bg-primary-950/30"
+                className="group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary/40 hover:bg-primary/30"
               >
                 <span className="flex size-10 items-center justify-center rounded-xl shadow-lg shadow-[var(--shadow-card)]">
                   <BookOpen className="size-5 text-white" aria-hidden />
@@ -192,15 +192,15 @@ export default function AdminSearchPage() {
                       <Link
                         key={s.label}
                         href={s.href}
-                        className="group flex w-full flex-col items-start gap-2 rounded-2xl border border-zinc-700/80 bg-zinc-900/60 px-5 py-4 text-left shadow-sm  transition hover:border-primary-500/50 hover:bg-primary-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="group flex w-full flex-col items-start gap-2 rounded-2xl border border-zinc-700/80 bg-zinc-900/60 px-5 py-4 text-left shadow-sm transition hover:border-primary/50 hover:bg-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <div className="flex w-full items-center gap-3">
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-500/15 text-primary-400 ring-1 ring-ring">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-ring">
                             <Icon className="size-4" />
                           </span>
                           <span className="text-sm font-semibold text-zinc-200">{s.label}</span>
                         </div>
-                        <p className="pl-12 text-sm font-medium leading-snug text-primary-300/90">{s.mode === "indexed" ? "Available in this search" : "Available in its module"}</p>
+                        <p className="pl-12 text-sm font-medium leading-snug text-primary/90">{s.mode === "indexed" ? "Available in this search" : "Available in its module"}</p>
                         <p className="pl-12 text-xs text-zinc-500 group-hover:text-zinc-400">{s.hint}</p>
                       </Link>
                     );
@@ -215,7 +215,7 @@ export default function AdminSearchPage() {
             )}
 
             {showResultsPanel && (
-              <nav aria-label="Other record modules" className="mb-5 flex flex-wrap gap-4 text-sm text-primary-300">
+              <nav aria-label="Other record modules" className="mb-5 flex flex-wrap gap-4 text-sm text-primary">
                 {SEARCH_SOURCES.filter((source) => source.mode === "module").map((source) => (
                   <Link key={source.source} href={source.href} className="underline underline-offset-4">{source.hint}</Link>
                 ))}
@@ -262,7 +262,7 @@ export default function AdminSearchPage() {
                       return (
                         <li
                           key={r.id}
-                          className="rounded-2xl border border-zinc-800/90 bg-zinc-900/50 transition hover:border-primary-500/35 hover:bg-zinc-900/90"
+                          className="rounded-2xl border border-zinc-800/90 bg-zinc-900/50 transition hover:border-primary/35 hover:bg-zinc-900/90"
                         >
                           <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                             <div className="min-w-0 flex-1">
@@ -274,7 +274,7 @@ export default function AdminSearchPage() {
                               {href ? (
                                 <Link
                                   href={href}
-                                  className="font-medium text-primary-300 underline-offset-4 hover:text-primary-200 hover:underline"
+                                  className="font-medium text-primary underline-offset-4 hover:text-primary hover:underline"
                                 >
                                   {title}
                                 </Link>
@@ -329,7 +329,7 @@ export default function AdminSearchPage() {
             </div>
             <Button
               type="button"
-              className="h-11 shrink-0 rounded-xl bg-primary-600 px-5 text-white hover:bg-primary-500 dark:bg-primary-600 dark:hover:bg-primary-500"
+              className="h-11 shrink-0 rounded-xl px-5"
               onClick={() => void runSearch(q.trim())}
               disabled={loading || q.trim().length < 2}
             >
@@ -345,7 +345,7 @@ export default function AdminSearchPage() {
           </div>
           <p className="mx-auto mt-2 max-w-4xl px-1 text-center text-[11px] text-zinc-600">
             Minimum 2 characters. For policy questions and document-grounded answers, use{" "}
-            <Link href="/admin/knowledge" className="text-primary-400 underline-offset-2 hover:text-primary-300 hover:underline">
+            <Link href="/admin/knowledge" className="text-primary underline-offset-2 hover:text-primary hover:underline">
               Knowledge Base
             </Link>
             .

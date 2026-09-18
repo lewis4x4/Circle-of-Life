@@ -67,7 +67,7 @@ describe("flagship admin route named loading", () => {
     const source = readSource("src/app/(admin)/admin/family-messages/page.tsx");
     expect(source).toMatch(/NamedAdminRouteLoading/);
     expect(source).toMatch(/ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE/);
-    expect(source).not.toMatch(/Loader2 className="h-8 w-8 animate-spin text-primary-500"/);
+    expect(source).not.toMatch(/Loader2 className="h-8 w-8 animate-spin/);
     expect(source).toMatch(/FAMILY_BULLETIN_PAGE_TITLE/);
     expect(source).toMatch(/FAMILY_BULLETIN_PAGE_DESCRIPTION/);
     expect(source).not.toMatch(/Unread messages/i);

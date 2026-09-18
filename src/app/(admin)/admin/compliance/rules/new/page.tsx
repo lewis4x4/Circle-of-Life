@@ -342,7 +342,6 @@ export default function NewComplianceRulePage() {
               <Button
                 type="submit"
                 disabled={saving || !facilityReady}
-                className="bg-primary-600 hover:bg-primary-700 text-white"
               >
                 <Save className="mr-2 h-4 w-4" />
                 {saving ? "Creating…" : "Create Rule"}
