@@ -305,7 +305,7 @@ export default function ExecutiveStandupHistoryPage() {
                         </Link>
                         <Link
                           href={`/admin/executive/standup/${row.weekOf}/board`}
-                          className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
+                          className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
                         >
                           Board packet
                         </Link>

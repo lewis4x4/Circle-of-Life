@@ -196,7 +196,7 @@ export default function TransportationOrgSettingsPage() {
             <ArrowLeft className="h-4 w-4" />
             Fleet operations
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/10 text-[10px] font-bold uppercase tracking-wider text-primary">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/10 text-[10px] font-bold text-primary">
             <Gauge className="h-3.5 w-3.5" />
             Operations · Reimbursement
           </div>
@@ -309,7 +309,7 @@ export default function TransportationOrgSettingsPage() {
 
         <div className="lg:col-span-2 space-y-4">
           <div className="rounded-lg border border-primary/10 p-6 shadow-inner dark: dark: dark:shadow-none">
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-primary">Live preview</h2>
+            <h2 className="text-[11px] font-bold text-primary">Live preview</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
               Estimated reimbursement at <span className="font-semibold text-slate-900 dark:text-white">{formatCentsPerMileUsd(previewCents)}</span> / mi
               {!hasRow && !showLoading && !organizationGapMessage && (

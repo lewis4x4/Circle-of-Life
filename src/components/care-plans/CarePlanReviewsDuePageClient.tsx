@@ -137,7 +137,7 @@ export function CarePlanReviewsDuePageClient({
     <div className="space-y-8 pb-12">
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between rounded-lg border border-slate-200/50 bg-card p-8 shadow-sm dark:border-white/5">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-bold text-primary">
             <FileSignature className="h-3.5 w-3.5" />
             Care Plans
           </div>
