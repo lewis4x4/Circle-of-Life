@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Printer } from "lucide-react";
 
 import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
@@ -19,8 +20,11 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 
+import { CareEventAttachments } from "@/components/care-events/CareEventAttachments";
+
 import { CareEventCard } from "./CareEventCard";
 import { CareEventDeliveryLedger } from "./CareEventDeliveryLedger";
+import { CareEventWitnesses } from "./CareEventWitnesses";
 import { CorrectiveSection, EmsSection, FamilySection, PhysicianSection } from "./CompletionNotifySections";
 import { AhcaSection, CloseSection, DcfSection, LowerLevelSection, VideoSection } from "./CompletionRegulatorySections";
 
@@ -184,6 +188,55 @@ export function AdminCareEventPageClient({ careEventId }: { careEventId: string 
           <LowerLevelSection {...sectionProps} />
           <CloseSection {...sectionProps} />
         </div>
+      </RecordDetailSection>
+
+      <RecordDetailSection
+        title="Print"
+        description="The incident form in the binder's layout, and the sheet that goes to the physician by fax."
+      >
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/admin/care-events/${careEventId}/print/incident-form`}
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Printer className="size-4" aria-hidden />
+            Print incident form
+          </Link>
+          <Link
+            href={`/admin/care-events/${careEventId}/print/physician-sheet`}
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Printer className="size-4" aria-hidden />
+            Print physician sheet
+          </Link>
+        </div>
+      </RecordDetailSection>
+
+      <RecordDetailSection
+        title="Files"
+        description="The photograph, the scanned incident form, the orders the physician faxed back."
+      >
+        <CareEventAttachments
+          supabase={supabase}
+          careEventId={careEventId}
+          organizationId={card.organizationId}
+          facilityId={card.facilityId}
+          timeZone={card.timeZone}
+          canUpload={!locked}
+        />
+      </RecordDetailSection>
+
+      <RecordDetailSection
+        title="Witness statements"
+        description="Section 3 of the incident form. Everyone on that shift was asked, except the person who reported it."
+      >
+        <CareEventWitnesses
+          careEventId={careEventId}
+          incidentId={card.incident?.id ?? null}
+          facilityId={card.facilityId}
+          timeZone={card.timeZone}
+          canManage={!locked}
+        />
       </RecordDetailSection>
 
       <RecordDetailSection title="Who was told" description={open ? "Refreshes every 10 seconds while the event is open." : undefined}>

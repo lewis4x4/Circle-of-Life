@@ -236,7 +236,7 @@ export default function TransportationWeekCalendarPage() {
           <div className="space-y-2">
             
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-              <CalendarDays className="h-8 w-8 text-primary-600 dark:text-primary-400 shrink-0" />
+              <CalendarDays className="h-8 w-8 text-primary shrink-0" />
               Transport calendar
             </h1>
             <p className="mt-1 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-sm">
@@ -253,7 +253,7 @@ export default function TransportationWeekCalendarPage() {
                 className={cn(
                   "h-10 rounded-full px-4 text-[10px] font-bold transition-colors",
                   viewMode === "week"
-                    ? "bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-primary-300"
+                    ? "bg-white text-primary shadow-sm dark:bg-white/10"
                     : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
                 )}
               >
@@ -265,7 +265,7 @@ export default function TransportationWeekCalendarPage() {
                 className={cn(
                   "h-10 rounded-full px-4 text-[10px] font-bold transition-colors",
                   viewMode === "month"
-                    ? "bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-primary-300"
+                    ? "bg-white text-primary shadow-sm dark:bg-white/10"
                     : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
                 )}
               >
@@ -356,7 +356,7 @@ export default function TransportationWeekCalendarPage() {
                 </button>
                 <Link
                   href="/admin/transportation/requests/new"
-                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold bg-primary-600 hover:bg-primary-700 text-white")}
+                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold")}
                 >
                   + Request
                 </Link>
@@ -378,8 +378,8 @@ export default function TransportationWeekCalendarPage() {
                       className={cn(
                         "rounded-2xl border p-2 sm:p-3 text-center transition-colors tap-responsive min-h-[4.5rem] sm:min-h-[5.5rem] flex flex-col items-center justify-center gap-0.5",
                         selected
-                          ? "border-primary-500 bg-primary-50 dark:bg-primary-500/15 dark:border-primary-400/50 shadow-sm"
-                          : "border-slate-200/80 bg-white/60 dark:bg-white/[0.03] dark:border-white/10 hover:border-primary-300 dark:hover:border-primary-500/30",
+                          ? "border-primary bg-primary/5 dark:bg-primary/15 dark:border-primary/50 shadow-sm"
+                          : "border-slate-200/80 bg-white/60 dark:bg-white/[0.03] dark:border-white/10 hover:border-primary/30",
                         today && !selected && "ring-1 ring-slate-300 dark:ring-white/20",
                       )}
                     >
@@ -392,7 +392,7 @@ export default function TransportationWeekCalendarPage() {
                       <span
                         className={cn(
                           "text-[9px] sm:text-[10px] font-bold tabular-nums",
-                          n > 0 ? "text-primary-600 dark:text-primary-400" : "text-slate-400",
+                          n > 0 ? "text-primary" : "text-slate-400",
                         )}
                       >
                         {formatTransportationDayTripCount(n)}
@@ -429,8 +429,8 @@ export default function TransportationWeekCalendarPage() {
                           "rounded-2xl border p-1.5 sm:p-2.5 text-center transition-colors tap-responsive min-h-[3.75rem] sm:min-h-[4.5rem] flex flex-col items-center justify-center gap-0.5",
                           !inMonth && "opacity-45",
                           selected
-                            ? "border-primary-500 bg-primary-50 dark:bg-primary-500/15 dark:border-primary-400/50 shadow-sm"
-                            : "border-slate-200/80 bg-white/60 dark:bg-white/[0.03] dark:border-white/10 hover:border-primary-300 dark:hover:border-primary-500/30",
+                            ? "border-primary bg-primary/5 dark:bg-primary/15 dark:border-primary/50 shadow-sm"
+                            : "border-slate-200/80 bg-white/60 dark:bg-white/[0.03] dark:border-white/10 hover:border-primary/30",
                           today && !selected && "ring-1 ring-slate-300 dark:ring-white/20",
                         )}
                       >
@@ -440,7 +440,7 @@ export default function TransportationWeekCalendarPage() {
                         <span
                           className={cn(
                             "text-[8px] sm:text-[9px] font-bold tabular-nums leading-tight",
-                            n > 0 ? "text-primary-600 dark:text-primary-400" : "text-slate-400",
+                            n > 0 ? "text-primary" : "text-slate-400",
                           )}
                         >
                           {formatTransportationDayTripCount(n)}
@@ -470,11 +470,11 @@ export default function TransportationWeekCalendarPage() {
                       <MotionItem key={row.id}>
                         <Link
                           href={`/admin/transportation/requests/${row.id}`}
-                          className="flex flex-col gap-3 rounded-lg border border-slate-200/90 bg-white p-5 shadow-sm transition-colors hover:border-primary-300 dark:border-white/5 dark:hover:border-primary-500/40 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex flex-col gap-3 rounded-lg border border-slate-200/90 bg-white p-5 shadow-sm transition-colors hover:border-primary/30 dark:border-white/5 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex min-w-0 items-center gap-4">
                             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-white/5">
-                              <Bus className="h-5 w-5 text-primary-500" />
+                              <Bus className="h-5 w-5 text-primary" />
                             </div>
                             <div className="min-w-0">
                               <p className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
@@ -493,7 +493,7 @@ export default function TransportationWeekCalendarPage() {
                             </div>
                           </div>
                           <div className="flex shrink-0 flex-wrap items-center gap-3 sm:flex-col sm:items-end">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-100 bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-400">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-xs font-bold text-primary">
                               <Clock className="h-3 w-3" />
                               {formatTransportationAppointmentTime(row.appointment_time)}
                             </span>

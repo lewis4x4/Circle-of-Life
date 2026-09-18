@@ -239,8 +239,8 @@ export default function RoundingIntegrityPage() {
           status,
           disposition_note,
           residents(first_name, last_name, preferred_name),
-          staff(first_name, last_name, preferred_name),
-          assigned_staff:assigned_to_staff_id(first_name, last_name, preferred_name),
+          staff!resident_observation_integrity_flags_staff_id_fkey(first_name, last_name, preferred_name),
+          assigned_staff:staff!resident_observation_integrity_flags_assigned_to_staff_id_fkey(first_name, last_name, preferred_name),
           resident_observation_logs(quick_status, entry_mode, observed_at, entered_at, late_reason, note)
         `,
         )

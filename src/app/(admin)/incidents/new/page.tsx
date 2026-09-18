@@ -14,6 +14,7 @@ import {
   caregiverIncidentShiftValues,
   type CaregiverIncidentFormData,
 } from "@/lib/validation/caregiver-incident";
+import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -215,7 +216,7 @@ function AdminIncidentFormInner() {
   if (loadingContext) {
     return (
       <div className="flex h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -226,7 +227,7 @@ function AdminIncidentFormInner() {
         <div className="text-center max-w-md">
           <AlertTriangle className="w-10 h-10 text-rose-500 mx-auto mb-4" />
           <p className="text-slate-600 dark:text-zinc-400 mb-4">{configError ?? loadError}</p>
-          <button onClick={() => void loadContext()} className="px-6 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700">Retry</button>
+          <Button type="button" size="lg" onClick={() => void loadContext()}>Retry</Button>
         </div>
       </div>
     );
@@ -387,7 +388,7 @@ function AdminIncidentFormInner() {
 
 export default function AdminIncidentNewPage() {
   return (
-    <Suspense fallback={<div className="flex h-[40vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary-500" /></div>}>
+    <Suspense fallback={<div className="flex h-[40vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
       <AdminIncidentFormInner />
     </Suspense>
   );

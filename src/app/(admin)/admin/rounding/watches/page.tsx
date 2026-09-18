@@ -80,7 +80,7 @@ type WatchInstanceRow = {
     first_name: string;
     last_name: string;
     preferred_name: string | null;
-    room_number: string | null;
+    room_number?: string | null;
   } | null;
 };
 
@@ -94,7 +94,7 @@ type WatchEventRow = {
     first_name: string;
     last_name: string;
     preferred_name: string | null;
-    room_number: string | null;
+    room_number?: string | null;
   } | null;
 };
 
@@ -293,7 +293,7 @@ export default function SmartRoundingWatchesPage() {
             status,
             end_reason,
             resident_watch_protocols(name, trigger_type, approval_required),
-            residents(first_name, last_name, preferred_name, room_number)
+            residents(first_name, last_name, preferred_name)
           `,
           )
           .eq("facility_id", selectedFacilityId)
@@ -309,7 +309,7 @@ export default function SmartRoundingWatchesPage() {
             event_type,
             occurred_at,
             note,
-            residents(first_name, last_name, preferred_name, room_number)
+            residents(first_name, last_name, preferred_name)
           `,
           )
           .eq("facility_id", selectedFacilityId)

@@ -242,8 +242,8 @@ export const TIER_META: Record<
   kb_documents: {
     label: "Knowledge Base",
     color: "#8b5cf6",
-    bgClass: "bg-primary-500/10 dark:bg-primary-500/20",
-    textClass: "text-primary-600 dark:text-primary-400",
+    bgClass: "bg-primary/10 dark:bg-primary/20",
+    textClass: "text-primary",
   },
   clinical: {
     label: "Clinical",

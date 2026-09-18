@@ -80,6 +80,25 @@ const TASK_LOOKBACK_MS = 12 * 60 * 60 * 1000;
 /*  Helpers                                                                   */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Room is not a column on residents. It is reached residents.bed_id -> beds.room_id
+ * -> rooms.room_number, which is why the flat `residents.room_number` embed this
+ * page used to carry returned 42703 and took the whole board down with it.
+ * PostgREST returns a to-one embed as an object, but types it loosely, so the
+ * shape is decoded here once rather than cast at each read site.
+ */
+function residentRoomNumber(residents: unknown): string | null {
+  if (!residents || typeof residents !== "object") return null;
+  const beds = (residents as { beds?: unknown }).beds;
+  const bed = Array.isArray(beds) ? beds[0] : beds;
+  if (!bed || typeof bed !== "object") return null;
+  const rooms = (bed as { rooms?: unknown }).rooms;
+  const room = Array.isArray(rooms) ? rooms[0] : rooms;
+  if (!room || typeof room !== "object") return null;
+  const value = (room as { room_number?: unknown }).room_number;
+  return typeof value === "string" ? value : null;
+}
+
 function displayName(person?: {
   first_name: string | null;
   last_name: string | null;
@@ -150,7 +169,7 @@ function isActionable(status: string) {
 }
 
 function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
-  const room = (task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number;
+  const room = residentRoomNumber(task.residents);
   return {
     id: task.id,
     organizationId: task.organization_id,
@@ -269,7 +288,7 @@ export default function AdminRoundingLivePage() {
       const { data, error } = await supabase
         .from("resident_observation_tasks")
         .select(
-          "id, organization_id, facility_id, due_at, status, residents ( first_name, last_name, preferred_name, room_number ), staff:assigned_staff_id ( first_name, last_name, preferred_name ), shift_assignments ( shift_type )",
+          "id, organization_id, facility_id, due_at, status, residents ( first_name, last_name, preferred_name, beds!residents_bed_id_fkey ( rooms ( room_number ) ) ), staff:staff!resident_observation_tasks_assigned_staff_id_fkey ( first_name, last_name, preferred_name ), shift_assignments ( shift_type )",
         )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
@@ -604,9 +623,7 @@ export default function AdminRoundingLivePage() {
                 const cfg = statusConfig(task.status);
                 const canCheck = isActionable(task.status);
                 const Icon = cfg.icon;
-                const room = (task.residents as LiveTaskRow["residents"] & {
-                  room_number?: string | null;
-                })?.room_number;
+                const room = residentRoomNumber(task.residents);
 
                 return (
                   <li key={task.id}>

@@ -888,7 +888,7 @@ export function AdminStaffingConsolePageClient({
                 className={cn(
                   "h-8 rounded-md border px-3 text-xs font-medium transition-colors",
                   complianceFilter === option.value
-                    ? "border-primary-600 bg-primary-600 text-white"
+                    ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-background text-muted-foreground hover:text-foreground",
                 )}
               >

@@ -38,7 +38,7 @@ export function CaregiverSupportStrip({
               className={cn(
                 "rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors",
                 isActive
-                  ? "border-primary-500/40 bg-primary-500/15 text-primary-200"
+                  ? "border-primary/40 bg-primary/15 text-primary"
                   : "border-white/10 bg-black/30 text-zinc-400 hover:border-white/20 hover:text-zinc-200",
               )}
             >

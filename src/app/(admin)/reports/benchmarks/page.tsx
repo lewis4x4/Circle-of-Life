@@ -89,7 +89,7 @@ export default function ReportsBenchmarksPage() {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full items-center">
                            <div className="flex flex-col gap-2 align-left md:text-left">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Type</span>
-                              <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 border border-primary-200 dark:border-primary-800 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">{row.benchmark_type}</Badge>
+                              <Badge className="bg-primary/5 text-primary border border-primary/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">{row.benchmark_type}</Badge>
                            </div>
                            <div className="flex flex-col gap-2 align-left md:text-left">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Scope</span>
