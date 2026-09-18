@@ -72,6 +72,15 @@ if (isProd) {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
+  // `sharp` is a native module that resident-intake parsing imports dynamically.
+  // It is not a declared dependency — it arrives only as an *optional*
+  // transitive dep of next/lightningcss, so it installs here and not on the
+  // Netlify builder, where Turbopack then failed the whole build on
+  // "Can't resolve 'sharp'". Marking it external stops the bundler resolving it
+  // at build time and leaves it a runtime require on the server, which is the
+  // right treatment for a native addon regardless. The parse route still needs
+  // sharp actually installed to work — see COL-480.
+  serverExternalPackages: ["sharp"],
   // Match npm run typecheck; Vitest executes test fixtures independently.
   typescript: { tsconfigPath: "tsconfig.typecheck.json" },
   experimental: {
