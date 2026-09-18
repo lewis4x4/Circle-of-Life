@@ -128,6 +128,11 @@ const CROSS_FACILITY_RELATIONS = [
   "resident_monitoring_orders",
   "watchlist_signal_instances",
   "facility_escalation_versions",
+  // Holds the interval presets, the grace formula divisor and the board's
+  // display thresholds since migrations 431 and 432, and authenticated holds
+  // UPDATE on it. Reaching another building's row means editing what that
+  // building's staff are told about a missed check.
+  "facility_observation_thresholds",
 ];
 
 const REQUIRED_ENV = [
