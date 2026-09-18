@@ -75,15 +75,32 @@ export function supabaseStore(admin: SupabaseClient): EngineStore {
       return (data ?? { fired: false, reason: "no_result" }) as FireResult;
     },
 
-    async loadQueuedDeliveries(nowIso, limit) {
-      const { data, error } = await admin
-        .from("observation_escalation_deliveries")
-        .select("id, organization_id, facility_id, dispatch_id, rung_key, target_user_id, target_phone, channel, is_test, message_body")
-        .eq("status", "queued")
-        .lte("send_after", nowIso)
-        .order("send_after", { ascending: true })
-        .limit(limit);
-      if (error) throw new StoreError("load deliveries", error.code);
+    /**
+     * Claims deliveries for this tick's organization, and for its facility when
+     * the tick names one, moving them to `sending` in the same statement that
+     * returns them.
+     *
+     * This replaced an unscoped read that filtered on nothing but `queued` and
+     * `send_after`. It selected organization_id and facility_id and filtered on
+     * neither, so a per facility cron entry drained every queued push and SMS
+     * across every facility and every tenant, and each body names a room and a
+     * building. The scope is now the database's business rather than this
+     * file's: the command has no default organization, so a caller that forgets
+     * to pass one gets an error instead of everybody's messages.
+     *
+     * The claim is a status transition rather than a row lock because the send
+     * happens over HTTP after this call returns, and a lock would be released at
+     * commit while the provider call was still in flight.
+     */
+    async claimDeliveries(organizationId, facilityId, claimToken, nowIso, limit) {
+      const { data, error } = await admin.rpc("claim_observation_escalation_deliveries", {
+        p_organization_id: organizationId,
+        p_facility_id: facilityId,
+        p_claim_token: claimToken,
+        p_at: nowIso,
+        p_limit: limit,
+      });
+      if (error) throw new StoreError("claim deliveries", error.code);
       return (data ?? []) as DeliveryRow[];
     },
 
@@ -165,13 +182,29 @@ export function supabaseStore(admin: SupabaseClient): EngineStore {
       return out;
     },
 
-    async updateDelivery(id, patch: DeliveryPatch) {
-      const { error } = await admin
-        .from("observation_escalation_deliveries")
-        .update(patch)
-        .eq("id", id)
-        .eq("status", "queued");
-      if (error) throw new StoreError("update delivery", error.code);
+    /**
+     * Records the outcome of one delivery, through a command rather than a
+     * filtered update.
+     *
+     * The first version of the claim fix left this as
+     * `.update(patch).eq("id", id).eq("status", "queued")`. The claim had just
+     * moved the row to `sending`, so it matched zero rows, and PostgREST returns
+     * no error for an update that matches nothing: the write succeeded silently,
+     * the outcome was never recorded, and the stale claim reclaim sent the
+     * message again every timeout interval. The guard and the claim have to be
+     * one statement in one place, and a write that matches nothing has to raise.
+     */
+    async recordDeliveryOutcome(id, claimToken, patch: DeliveryPatch) {
+      const { error } = await admin.rpc("record_observation_escalation_delivery_outcome", {
+        p_delivery_id: id,
+        p_claim_token: claimToken,
+        p_status: patch.status,
+        p_skip_reason: patch.skip_reason ?? null,
+        p_provider_message_id: patch.provider_message_id ?? null,
+        p_error_message: patch.error_message ?? null,
+        p_sent_at: patch.sent_at ?? null,
+      });
+      if (error) throw new StoreError("record delivery outcome", error.code);
     },
   };
 }

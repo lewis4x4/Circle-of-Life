@@ -18,6 +18,8 @@ import Link from "next/link";
 import { CheckCircle2, Eye, Loader2, UserSearch, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import type { DocumentationLagThresholds } from "@/lib/rounding/board-policy-fetch";
+import { MINUTES_PER_DAY, MINUTES_PER_HOUR, minutesFromMs } from "@/lib/rounding/duration-units";
 import {
   Select,
   SelectContent,
@@ -131,20 +133,36 @@ function lagMinutes(row: IntegrityRow) {
   const log = row.resident_observation_logs;
   if (!log) return null;
   const delta = Math.max(0, new Date(log.entered_at).getTime() - new Date(log.observed_at).getTime());
-  return Math.round(delta / 60000);
+  return minutesFromMs(delta);
 }
 
-function lagTone(minutes: number | null): StatusPillTone {
-  if (minutes == null || minutes < 15) return "muted";
-  if (minutes <= 60) return "warning";
+/**
+ * How concerning a documentation lag reads.
+ *
+ * The two thresholds are rows, `facility_observation_thresholds.
+ * documentation_lag_notable_minutes` and `documentation_lag_serious_minutes`,
+ * added by migration 428. They were constants here until Part 8, and they are
+ * facility policy rather than engineering constants: a building deciding what
+ * counts as a notable gap between observing a resident and writing it down is
+ * an operator judgment, and this is the severity a surveyor reads.
+ *
+ * A building with no thresholds row reads neutral. There is no defensible
+ * default for "how late is concerning here", so the surface says it does not
+ * know instead of picking a number.
+ */
+function lagTone(minutes: number | null, thresholds: DocumentationLagThresholds | null): StatusPillTone {
+  if (minutes == null || thresholds == null) return "muted";
+  if (minutes < thresholds.notableMinutes) return "muted";
+  if (minutes <= thresholds.seriousMinutes) return "warning";
   return "danger";
 }
 
-function lagLabel(minutes: number | null) {
+function lagLabel(minutes: number | null, thresholds: DocumentationLagThresholds | null) {
   if (minutes == null) return "Unavailable";
-  if (minutes < 60) return `${minutes} min`;
-  if (minutes < 24 * 60) return `${(minutes / 60).toFixed(1)} hr`;
-  return `${(minutes / (24 * 60)).toFixed(1)} days`;
+  if (thresholds == null) return `${minutes} min, no threshold set`;
+  if (minutes < MINUTES_PER_HOUR) return `${minutes} min`;
+  if (minutes < MINUTES_PER_DAY) return `${(minutes / MINUTES_PER_HOUR).toFixed(1)} hr`;
+  return `${(minutes / MINUTES_PER_DAY).toFixed(1)} days`;
 }
 
 export function IntegrityCard({
@@ -153,6 +171,7 @@ export function IntegrityCard({
   assignee,
   assigneeOptions,
   history,
+  lagThresholds,
   actionLoading,
   onNoteChange,
   onAssigneeChange,
@@ -163,6 +182,8 @@ export function IntegrityCard({
   assignee: string;
   assigneeOptions: IncidentFollowupAssigneeOption[];
   history: IntegrityHistoryItem[];
+  /** Null when this building has no facility_observation_thresholds row. */
+  lagThresholds: DocumentationLagThresholds | null;
   actionLoading: string | null;
   onNoteChange: (value: string) => void;
   onAssigneeChange: (value: string) => void;
@@ -203,7 +224,7 @@ export function IntegrityCard({
             <DataPair label="Recorded by" value={personName(row.staff, row.staff_id?.slice(0, 8) ?? "Unassigned")} />
             <div className="min-w-0">
               <dt className="text-[11px] font-medium text-muted-foreground">Lag</dt>
-              <dd className="mt-0.5"><StatusPill tone={lagTone(lag)}>{lagLabel(lag)}</StatusPill></dd>
+              <dd className="mt-0.5"><StatusPill tone={lagTone(lag, lagThresholds)}>{lagLabel(lag, lagThresholds)}</StatusPill></dd>
             </div>
           </dl>
 

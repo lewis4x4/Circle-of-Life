@@ -33,6 +33,7 @@
 | **E** | Cross-cutting sweep + next strategic DDL (Resident Assurance 25, Reporting 26, OCE 27, Grace memory 27/28, Executive Standup pack, Facility Admin Portal, KB) | Large portions shipped through migration `288`; see per-spec status | [TRACK-E-CROSS-CUTTING-SWEEP.md](./TRACK-E-CROSS-CUTTING-SWEEP.md), [KB-NEXT-ROADMAP.md](./KB-NEXT-ROADMAP.md), [24-executive-standup-pack-roadmap.md](./24-executive-standup-pack-roadmap.md) |
 | **F** | **Employee Workspace & Office Suite** (this document, §2) | **BUILT except F4-1** — eFax still needs an owner vendor pick; F5-1 live Drive bytes need OAuth | [TRACK-F-BUILD-HANDOFF.md](./TRACK-F-BUILD-HANDOFF.md) |
 | **G** | Something Happened capture (Module 07A: one door, three taps, level engine, routing ledger, Administrator second screen) | Built on branch `blewis/care-events-three-tap`; migrations `400`–`403`; owner decisions D1 to D7 open in the spec §8 | [07A-something-happened-capture.md](./07A-something-happened-capture.md) |
+| **H** | Smart Rounding (Module 25A: six-window versioned cadence, chip-composed capture, Monitoring Orders, versioned escalation ladder, Watchlist, five-tab shell, administrator settings) | **Parts 1–8 built** on branch `blewis/smart-rounding-cadence-watchlist`; migrations `414`–`427`; **applied to Haven HFO Staging, not applied to production**; spec §11 open items 1–8 still open and owner decision D12 (pool task assignment) is a known functional gap | [25A-smart-rounding-cadence-and-watchlist.md](./25A-smart-rounding-cadence-and-watchlist.md), [HANDOFFS/2026-09-16__smart-rounding-build-notes.md](../../HANDOFFS/2026-09-16__smart-rounding-build-notes.md) |
 
 ### Standing gates that apply to everything below
 
@@ -152,6 +153,11 @@ Mostly new surfaces over existing data — cheap relative to impact.
 2. **Homewood acceptance and adoption:** resolve clinical source data and staff access with Homewood staff, then record depth UAT; run RLS-02 against the current multi-facility target before Oakridge goes live.
 3. **Records & Data:** resolve COL-34, then update the integration spec for curated SharePoint/Drive KB ingest. F0-1 through F0-4 are already ratified; F3-1, F3-2, and F3-4 stay frozen.
 4. **Remaining Track F:** eFax requires a vendor decision. Prioritize adoption of shipped workflow tools before expanding scope.
+5. **Smart Rounding (Track H) before production:** the module is complete on its branch and live on staging, and nothing about it is in production. Four things gate the promotion, and none of them is code:
+   - **Owner decision on spec §11 open items 1 through 8**, including the `jurisdiction_observation_floors` `FL_AHCA` row, which ships present with null values and no invented number.
+   - **Owner decision on build-note D12.** A shift-change task with no incoming assignment is completable by nobody below `nurse`, so the 06:00 check the cadence exists for can sit unworkable on the board. The fix is assignment (auto-assign on-duty staff, or an explicit claim that writes a `rescue` row), never a looser assignee guard.
+   - **The hosted row level security check has not run.** `npm run smart-rounding:rls-check -- --target=staging` proves acceptance 6 and 12 under real JWT claims; everything else in the module is verified against a replayed schema with a stubbed `auth` schema. It needs the eight `SMART_ROUNDING_*` environment variables named in its header and refuses production without an explicit flag.
+   - **The Playwright project has not run.** `npm run smart-rounding:e2e` with `SMART_ROUNDING_E2E=1`.
 
 ---
 

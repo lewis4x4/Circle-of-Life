@@ -24,7 +24,14 @@ import {
 } from "@/lib/rounding/cadence-settings";
 import { cn } from "@/lib/utils";
 
-const HOUR_TICKS = [0, 6, 12, 18] as const;
+/**
+ * The axis labels, as minutes of the day. The whole strip speaks in minutes of
+ * the day -- `due_minute`, `opens_minute`, `closes_minute` all arrive that way
+ * from `public.cadence_version_day_shape` -- so the ticks do too rather than
+ * converting an hour on every render. These are axis positions, not cadence:
+ * they do not move when a building changes its windows.
+ */
+const MINUTE_TICKS = [0, 360, 720, 1080] as const;
 
 export function CadenceWindowStrip({
   shape,
@@ -115,13 +122,13 @@ export function CadenceWindowStrip({
         </div>
 
         <div className="relative mt-1 h-4">
-          {HOUR_TICKS.map((hour) => (
+          {MINUTE_TICKS.map((tick) => (
             <span
-              key={hour}
+              key={tick}
               className="absolute text-[11px] tabular-nums text-muted-foreground"
-              style={{ left: `${stripPercent(hour * 60)}%` }}
+              style={{ left: `${stripPercent(tick)}%` }}
             >
-              {formatMinuteOfDay(hour * 60)}
+              {formatMinuteOfDay(tick)}
             </span>
           ))}
         </div>

@@ -719,6 +719,162 @@ BEGIN
 END
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 7. M9. A transferred resident leaves nothing live behind.
+--
+--    The generator picked departed residents as
+--    `facility_id = thisFacility AND status <> 'active'`. A transferred
+--    resident's facility_id points at the new building and their status is still
+--    active, so they matched neither half, and their outstanding tasks stayed
+--    live at the building they had left: they run to overdue, climb the ladder
+--    and reach the terminal rung as an SMS and a critical alert naming a room
+--    the resident is not in, while the same resident is checked normally at the
+--    new building.
+--
+--    Same class as the hospital_hold defect staging surfaced: the generator
+--    decided who to exclude by one predicate while the tasks already on the
+--    board were governed by another. There is one definition now.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := '5a550000-0000-4000-8000-000000000001';
+  -- The roster building is the one this script has already written tasks for.
+  v_from CONSTANT uuid := '5a550000-0000-4000-8000-000000000004';
+  v_to CONSTANT uuid := '5a550000-0000-4000-8000-000000000003';
+  v_mover uuid;
+  v_stayer uuid;
+  v_live_before integer;
+  v_stood_down integer;
+  v_mover_status text;
+  v_stayer_status text;
+  v_mover_reason text;
+  v_second integer;
+BEGIN
+  SELECT
+    id INTO v_mover
+  FROM
+    public.residents
+  WHERE
+    facility_id = v_from
+  ORDER BY
+    id
+  LIMIT 1;
+  SELECT
+    id INTO v_stayer
+  FROM
+    public.residents
+  WHERE
+    facility_id = v_from
+    AND id <> v_mover
+  ORDER BY
+    id
+  LIMIT 1;
+  PERFORM
+    pg_temp.as_assert (v_mover IS NOT NULL
+      AND v_stayer IS NOT NULL, 'the fixture needs two residents at the building being left');
+
+  SELECT
+    count(*) INTO v_live_before
+  FROM
+    public.resident_observation_tasks
+  WHERE
+    facility_id = v_from
+    AND resident_id = v_mover
+    AND status IN ('upcoming', 'due_soon')
+    AND due_at > now();
+  PERFORM
+    pg_temp.as_assert (v_live_before > 0, 'the fixture needs at least one not yet due task for the resident who is about to transfer');
+
+  -- The transfer. facility_id moves; the status stays active, because the
+  -- resident is still a resident.
+  UPDATE
+    public.residents
+  SET
+    facility_id = v_to
+  WHERE
+    id = v_mover;
+
+  v_stood_down := public.stand_down_ungenerated_observation_tasks (v_from, now());
+
+  -- An earlier case in this script completed one of this resident's checks.
+  -- A completed check is a record of work and is never stood down; the
+  -- assertion is about the windows that were still open.
+  SELECT
+    status::text,
+    excused_reason INTO v_mover_status,
+    v_mover_reason
+  FROM
+    public.resident_observation_tasks
+  WHERE
+    facility_id = v_from
+    AND resident_id = v_mover
+    AND status NOT IN ('completed_on_time', 'completed_late')
+  ORDER BY
+    due_at
+  LIMIT 1;
+
+  SELECT
+    status::text INTO v_stayer_status
+  FROM
+    public.resident_observation_tasks
+  WHERE
+    facility_id = v_from
+    AND resident_id = v_stayer
+    AND due_at > now()
+  ORDER BY
+    due_at
+  LIMIT 1;
+
+  PERFORM
+    pg_temp.as_assert (NOT EXISTS (
+        SELECT
+          1
+        FROM
+          public.resident_observation_tasks
+        WHERE
+          facility_id = v_from
+          AND resident_id = v_mover
+          AND status IN ('upcoming', 'due_soon')
+          AND due_at > now()), 'the transferred resident still has live tasks at the building they left. Those run to overdue, climb the ladder and reach the terminal rung as an SMS and a critical alert naming a room they are not in.');
+  PERFORM
+    pg_temp.as_assert (v_stood_down >= v_live_before, format('the stand down excused %s task(s) and the transferred resident had %s live at the old building. Anything left behind climbs the ladder to a terminal rung naming a room they are not in.', v_stood_down, v_live_before));
+  PERFORM
+    pg_temp.as_assert (v_mover_status = 'excused', format('the transferred resident''s task at the old building reads %s', COALESCE(v_mover_status, 'missing')));
+  PERFORM
+    pg_temp.as_assert (v_mover_reason = 'Resident has transferred to another facility', format('the stand down reason is %s, which does not say what happened', COALESCE(v_mover_reason, 'null')));
+  PERFORM
+    pg_temp.as_assert (v_stayer_status = 'upcoming', format('the resident who did not move had their task stood down as well, reading %s. A stand down that clears the board is not a fix.', COALESCE(v_stayer_status, 'missing')));
+
+  -- Nothing left to do on a second pass, and nothing hands the tasks back.
+  v_second := public.stand_down_ungenerated_observation_tasks (v_from, now());
+  PERFORM
+    pg_temp.as_assert (v_second = 0, format('a second stand down excused %s more task(s)', v_second));
+  PERFORM
+    pg_temp.as_assert (public.generate_monitoring_order_tasks (v_from, NULL) >= 0, 'the order generator failed after the transfer');
+  PERFORM
+    pg_temp.as_assert (NOT EXISTS (
+        SELECT
+          1
+        FROM
+          public.resident_observation_tasks t
+          JOIN public.resident_monitoring_orders o ON o.id = t.monitoring_order_id
+        WHERE
+          t.facility_id = v_from
+          AND t.resident_id = v_mover
+          AND t.status IN ('upcoming', 'due_soon')), 'a Monitoring Order handed the transferred resident fresh tasks at the building they left, so the board churns between excused and upcoming on every tick');
+
+  UPDATE
+    public.residents
+  SET
+    facility_id = v_from
+  WHERE
+    id = v_mover;
+
+  INSERT INTO as_result (check_name, detail)
+    VALUES ('case 4, a transfer leaves nothing live', format('the transferred resident had %s live task(s) at the old building and the stand down excused %s of them as a transfer; the resident who stayed keeps theirs; a second pass excuses 0 and no order hands any back', v_live_before, v_stood_down));
+END
+$$;
+
 SELECT
   seq,
   check_name,

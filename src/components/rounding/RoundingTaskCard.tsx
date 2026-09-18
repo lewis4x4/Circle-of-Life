@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, UserRound } from "lucide-react";
 
+import { minutesFromMs } from "@/lib/rounding/duration-units";
+
 type TaskStatus =
   | "upcoming"
   | "due_soon"
@@ -67,7 +69,7 @@ function formatDueLabel(value: string) {
   const dueAt = new Date(value);
   if (Number.isNaN(dueAt.getTime())) return "Due time unknown";
   const deltaMs = dueAt.getTime() - Date.now();
-  const minutes = Math.round(Math.abs(deltaMs) / (60 * 1000));
+  const minutes = minutesFromMs(Math.abs(deltaMs));
   if (deltaMs >= 0) {
     if (minutes < 1) return "Due now";
     return `Due in ${minutes}m`;

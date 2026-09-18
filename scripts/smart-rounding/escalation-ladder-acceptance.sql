@@ -1022,6 +1022,343 @@ BEGIN
 END
 $$;
 
+-- ---------------------------------------------------------------------------
+-- M6. The delivery drain sends this tick's messages and nobody else's.
+--
+--     loadQueuedDeliveries filtered on status and send_after and nothing else,
+--     while selecting organization_id and facility_id and filtering on neither.
+--     Every delivery body names a room and a building, so a per facility cron
+--     entry drained other buildings and, in principle, other tenants.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000001';
+  v_entity CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000002';
+  v_facility CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000003';
+  v_other_org CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f0000000001';
+  v_other_entity CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f0000000002';
+  v_other_facility CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f0000000003';
+  v_sibling CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f0000000004';
+  v_mine integer;
+  v_second integer;
+  v_other_left integer;
+  v_sibling_left integer;
+  v_reclaimed integer;
+BEGIN
+  -- A second tenant, and a second building inside this one.
+  INSERT INTO public.organizations (id, name)
+    VALUES (v_other_org, 'Synthetic Other Tenant');
+  INSERT INTO public.entities (id, organization_id, name)
+    VALUES (v_other_entity, v_other_org, 'Synthetic Other Entity');
+  INSERT INTO public.facilities (id, entity_id, organization_id, name, address_line_1, city, zip, total_licensed_beds, timezone)
+    VALUES (v_other_facility, v_other_entity, v_other_org, 'Synthetic Other Tenant Building', '9 Synthetic Way', 'Synthetic City', '00000', 20, 'America/New_York'),
+    (v_sibling, v_entity, v_org, 'Synthetic Sibling Building', '8 Synthetic Way', 'Synthetic City', '00000', 20, 'America/New_York');
+
+  INSERT INTO public.observation_escalation_deliveries (organization_id, facility_id, dispatch_id, rung_key, target_role, target_phone, channel, status, send_after, is_test)
+    VALUES (v_org, v_facility, NULL, 'tier_3', 'administrator', '+10000000001', 'sms', 'queued', now() - interval '1 minute', TRUE),
+    (v_org, v_sibling, NULL, 'tier_3', 'administrator', '+10000000002', 'sms', 'queued', now() - interval '1 minute', TRUE),
+    (v_other_org, v_other_facility, NULL, 'tier_3', 'administrator', '+10000000003', 'sms', 'queued', now() - interval '1 minute', TRUE);
+
+  -- Earlier sections of this script left their own queued deliveries at this
+  -- building, so the assertion is about what the claim must never reach rather
+  -- than about a total.
+  CREATE TEMP TABLE esc_claimed AS
+  SELECT
+    *
+  FROM
+    public.claim_observation_escalation_deliveries (v_org, v_facility, gen_random_uuid(), now(), 500);
+
+  SELECT
+    count(*) INTO v_mine
+  FROM
+    esc_claimed;
+  PERFORM
+    pg_temp.esc_assert (v_mine > 0, 'the scoped claim took nothing at all, so this assertion proves nothing');
+  PERFORM
+    pg_temp.esc_assert (NOT EXISTS (
+        SELECT
+          1
+        FROM
+          esc_claimed
+        WHERE
+          organization_id <> v_org), 'a tick claimed a delivery belonging to another tenant. Every delivery body names a room and a building, so that is a cross tenant disclosure.');
+  PERFORM
+    pg_temp.esc_assert (NOT EXISTS (
+        SELECT
+          1
+        FROM
+          esc_claimed
+        WHERE
+          facility_id <> v_facility), 'a tick scoped to one building claimed a delivery belonging to another building of the same tenant.');
+
+  -- The duplicate send window.
+  SELECT
+    count(*) INTO v_second
+  FROM
+    public.claim_observation_escalation_deliveries (v_org, v_facility, gen_random_uuid(), now(), 500);
+  PERFORM
+    pg_temp.esc_assert (v_second = 0, format('a second overlapping tick claimed %s of the same deliveries. Both would send.', v_second));
+
+  SELECT
+    count(*) INTO v_other_left
+  FROM
+    public.observation_escalation_deliveries
+  WHERE
+    organization_id = v_other_org
+    AND status = 'queued';
+  SELECT
+    count(*) INTO v_sibling_left
+  FROM
+    public.observation_escalation_deliveries
+  WHERE
+    facility_id = v_sibling
+    AND status = 'queued';
+  PERFORM
+    pg_temp.esc_assert (v_other_left = 1, 'the other tenant''s queued delivery was taken by this tenant''s tick');
+  PERFORM
+    pg_temp.esc_assert (v_sibling_left = 1, 'the sibling building''s queued delivery was taken by a tick scoped to a different building');
+
+  -- A claim whose owner never came back is retryable, not stuck.
+  UPDATE
+    public.observation_escalation_deliveries
+  SET
+    status = 'sending',
+    claimed_at = now() - haven.observation_delivery_claim_timeout () - interval '1 minute'
+  WHERE
+    facility_id = v_sibling;
+  SELECT
+    count(*) INTO v_reclaimed
+  FROM
+    public.claim_observation_escalation_deliveries (v_org, v_sibling, gen_random_uuid(), now(), 500);
+  PERFORM
+    pg_temp.esc_assert (v_reclaimed = 1, format('a delivery claimed by a tick that died mid send was reclaimed %s times. It has to come back, or one resident''s escalation is held forever.', v_reclaimed));
+
+  INSERT INTO esc_result (check_name, detail)
+    VALUES ('M6: the drain is scoped and claimed', format('a tick scoped to one building of one tenant claimed %s deliveries and every one of them was its own; a second overlapping tick claimed %s; the other tenant kept %s queued and the sibling building kept %s; a claim abandoned mid send came back', v_mine, v_second, v_other_left, v_sibling_left));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- M10. A nudge with nobody to nudge does not burn the rung.
+--
+--     The dispatch row is the (task_id, rung_key) anchor and it used to be
+--     written before recipients resolved. The seeded nudge is
+--     assigned_staff_only with no target roles, so on a task with no assigned
+--     staff it reached nobody, took the anchor, and could never fire again for
+--     that task. That is the rung which catches most misses before they reach a
+--     human, disabled on exactly the tasks most likely to be missed.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000001';
+  v_facility CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000003';
+  v_resident CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000004';
+  v_aide_staff CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000007';
+  v_cadence CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000009';
+  v_task CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f1000000001';
+  v_window record;
+  v_pool jsonb;
+  v_assigned jsonb;
+  v_again jsonb;
+  v_dispatches_after_pool integer;
+BEGIN
+  SELECT
+    * INTO v_window
+  FROM
+    public.facility_observation_windows_for_date (v_facility, (now() AT TIME ZONE 'America/New_York')::date) w
+  WHERE
+    w.window_closes_at_utc < now()
+  ORDER BY
+    w.due_at_utc DESC
+  LIMIT 1;
+  PERFORM
+    pg_temp.esc_assert (v_window.window_key IS NOT NULL, 'the fixture needs a window whose grace has already closed today');
+
+  -- A pool task: nobody assigned and no assignment row, which is what the
+  -- generator writes when nobody is on the schedule.
+  INSERT INTO public.resident_observation_tasks (id, organization_id, facility_id, resident_id, cadence_version_id, window_key, service_date, scheduled_for, due_at, grace_ends_at, status, assigned_staff_id)
+    VALUES (v_task, v_org, v_facility, v_resident, v_cadence, v_window.window_key, (now() AT TIME ZONE 'America/New_York')::date, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'overdue', NULL);
+
+  v_pool := public.record_observation_escalation_rung (v_task, 'nudge', now());
+  SELECT
+    count(*) INTO v_dispatches_after_pool
+  FROM
+    public.observation_escalation_dispatches
+  WHERE
+    task_id = v_task
+    AND rung_key = 'nudge';
+
+  PERFORM
+    pg_temp.esc_assert (v_pool ->> 'reason' = 'no_assignee_yet', format('the nudge on a task with nobody assigned answered %s. It has to say it is early rather than say it fired.', COALESCE(v_pool::text, 'null')));
+  PERFORM
+    pg_temp.esc_assert (v_dispatches_after_pool = 0, format('%s dispatch row(s) were written for a nudge that reached nobody. The dispatch row is the idempotency anchor, so writing it burns the rung for this task permanently.', v_dispatches_after_pool));
+
+  -- Somebody is assigned. The nudge fires for real.
+  UPDATE
+    public.resident_observation_tasks
+  SET
+    assigned_staff_id = v_aide_staff
+  WHERE
+    id = v_task;
+
+  v_assigned := public.record_observation_escalation_rung (v_task, 'nudge', now());
+  PERFORM
+    pg_temp.esc_assert ((v_assigned ->> 'fired')::boolean, format('once a staff member is assigned the nudge must fire, got %s. Before this fix the anchor was already gone and it never could.', v_assigned::text));
+  PERFORM
+    pg_temp.esc_assert ((v_assigned ->> 'deliveries_queued')::integer > 0, 'the nudge fired and queued nothing');
+  PERFORM
+    pg_temp.esc_assert (v_assigned ->> 'escalation_id' IS NULL, 'the nudge wrote a resident_observation_escalations row. A nudge is not an escalation and must never be counted as one.');
+
+  -- And it is idempotent from there.
+  v_again := public.record_observation_escalation_rung (v_task, 'nudge', now());
+  PERFORM
+    pg_temp.esc_assert (v_again ->> 'reason' = 'already_fired', format('a third call answered %s rather than already_fired', v_again::text));
+
+  INSERT INTO esc_result (check_name, detail)
+    VALUES ('M10: a pool task does not burn its nudge', format('nobody assigned answers no_assignee_yet with %s dispatch rows; once assigned the nudge fires and queues %s delivery(ies) with no escalation row; a third call answers already_fired', v_dispatches_after_pool, v_assigned ->> 'deliveries_queued'));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- M6, the seam the first version of the claim fix opened.
+--
+--     The claim moves a row to `sending`. The outcome write in store.ts was
+--     still filtered on `status = 'queued'`, so it matched zero rows; PostgREST
+--     returns no error for an update that matches nothing, so the write
+--     succeeded silently, the outcome was never recorded, the row stayed
+--     claimed, and the stale claim reclaim sent the message again every timeout
+--     interval. Forever. That is worse than the duplicate send the claim exists
+--     to prevent: an SMS naming a resident's room to an administrator at 02:00,
+--     on a loop.
+--
+--     This walks the whole life of one delivery against real SQL: claim, record,
+--     advance past the timeout, and confirm nothing is left to hand out.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_org CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000001';
+  v_facility CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000003';
+  v_delivery CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f2000000001';
+  v_stolen_delivery CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f2000000004';
+  v_token CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f2000000002';
+  v_other_token CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f2000000003';
+  v_claimed integer;
+  v_status text;
+  v_attempts integer;
+  v_after_timeout integer;
+  v_stolen boolean := FALSE;
+  v_exhausted text;
+BEGIN
+  INSERT INTO public.observation_escalation_deliveries (id, organization_id, facility_id, dispatch_id, rung_key, target_role, target_phone, channel, status, send_after, is_test)
+    VALUES (v_delivery, v_org, v_facility, NULL, 'tier_3', 'administrator', '+10000000009', 'sms', 'queued', now() - interval '1 minute', TRUE);
+
+  SELECT
+    count(*) INTO v_claimed
+  FROM
+    public.claim_observation_escalation_deliveries (v_org, v_facility, v_token, now(), 500) c
+  WHERE
+    c.id = v_delivery;
+  PERFORM
+    pg_temp.esc_assert (v_claimed = 1, 'the fixture delivery was not claimed');
+
+  SELECT
+    status,
+    send_attempts INTO v_status,
+    v_attempts
+  FROM
+    public.observation_escalation_deliveries
+  WHERE
+    id = v_delivery;
+  PERFORM
+    pg_temp.esc_assert (v_status = 'sending', format('a claimed delivery reads %s rather than sending', v_status));
+  PERFORM
+    pg_temp.esc_assert (v_attempts = 1, format('the claim counted %s attempts rather than one', v_attempts));
+
+  -- The seam, asserted before anything else can speak for it: the holder
+  -- records the outcome and the row has to leave the claimed state. When the
+  -- guard said `queued` this update matched nothing, said nothing, and the row
+  -- stayed `sending`.
+  PERFORM
+    pg_temp.esc_assert (public.record_observation_escalation_delivery_outcome (v_delivery, v_token, 'sent', NULL, 'provider-1', NULL, now()), 'the holder of the claim could not record the outcome');
+
+  SELECT
+    status INTO v_status
+  FROM
+    public.observation_escalation_deliveries
+  WHERE
+    id = v_delivery;
+  PERFORM
+    pg_temp.esc_assert (v_status = 'sent', format('after the holder recorded a send the delivery reads %s. A guard on the wrong status matches nothing, PostgREST reports no error, and the row stays claimed for the reclaim to send again.', v_status));
+
+  -- Past the claim timeout. Nothing may be handed out again.
+  UPDATE
+    public.observation_escalation_deliveries
+  SET
+    claimed_at = now() - haven.observation_delivery_claim_timeout () - interval '1 hour'
+  WHERE
+    id = v_delivery;
+
+  SELECT
+    count(*) INTO v_after_timeout
+  FROM
+    public.claim_observation_escalation_deliveries (v_org, v_facility, gen_random_uuid(), now(), 500) c
+  WHERE
+    c.id = v_delivery;
+  PERFORM
+    pg_temp.esc_assert (v_after_timeout = 0, format('a delivery whose outcome was recorded was claimed %s more time(s) after the timeout. That is the resend loop.', v_after_timeout));
+
+  -- A tick that finished after its claim was reclaimed must not overwrite the
+  -- outcome of the tick that actually sent. Its own delivery, so this cannot
+  -- speak for the assertion above.
+  INSERT INTO public.observation_escalation_deliveries (id, organization_id, facility_id, dispatch_id, rung_key, target_role, target_phone, channel, status, send_after, is_test)
+    VALUES (v_stolen_delivery, v_org, v_facility, NULL, 'tier_3', 'administrator', '+10000000010', 'sms', 'queued', now() - interval '1 minute', TRUE);
+  PERFORM
+    count(*)
+  FROM
+    public.claim_observation_escalation_deliveries (v_org, v_facility, v_token, now(), 500);
+
+  BEGIN
+    PERFORM
+      public.record_observation_escalation_delivery_outcome (v_stolen_delivery, v_other_token, 'sent', NULL, 'provider-2', NULL, now());
+  EXCEPTION
+    WHEN serialization_failure THEN
+      v_stolen := TRUE;
+  END;
+  PERFORM
+    pg_temp.esc_assert (v_stolen, 'a tick that does not hold the claim wrote the outcome anyway. A late finisher would overwrite the result of the tick that actually sent the message.');
+
+  -- And the bound on the other branch: a delivery nobody ever comes back for
+  -- ends failed rather than being handed out forever.
+  UPDATE
+    public.observation_escalation_deliveries
+  SET
+    status = 'sending',
+    claim_token = v_token,
+    claimed_at = now() - haven.observation_delivery_claim_timeout () - interval '1 hour',
+    send_attempts = haven.observation_delivery_max_attempts (),
+    sent_at = NULL
+  WHERE
+    id = v_delivery;
+
+  PERFORM
+    count(*)
+  FROM
+    public.claim_observation_escalation_deliveries (v_org, v_facility, gen_random_uuid(), now(), 500);
+
+  SELECT
+    status INTO v_exhausted
+  FROM
+    public.observation_escalation_deliveries
+  WHERE
+    id = v_delivery;
+  PERFORM
+    pg_temp.esc_assert (v_exhausted = 'failed', format('a delivery abandoned mid send and out of attempts reads %s. Retryable has to stop being retryable at some point or it is a loop with extra steps.', v_exhausted));
+
+  INSERT INTO esc_result (check_name, detail)
+    VALUES ('M6: one delivery, claimed once and recorded once', format('claimed as sending with 1 attempt; a tick that does not hold the claim is refused; the holder records sent; past the claim timeout it is claimed %s more times; and one abandoned past the attempt cap ends %s', v_after_timeout, v_exhausted));
+END
+$$;
+
 SELECT
   check_name AS "check",
   detail

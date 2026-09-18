@@ -128,7 +128,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_service_only CONSTANT text[] := ARRAY['public.record_cadence_observation_tasks(jsonb)', 'public.generate_monitoring_order_tasks(uuid,timestamptz)', 'public.record_observation_escalation_rung(uuid,text,timestamptz)', 'public.expire_monitoring_orders()', 'public.advance_observation_task_lapse(uuid,uuid,timestamptz)', 'public.ensure_facility_observation_defaults(uuid)', 'public.fn_facilities_seed_observation_defaults()', 'public.resolve_observation_task_assignees(uuid,date,text,uuid[])', 'public.record_observation_staffing_gap(uuid,text,date)', 'public.observation_windows_under_monitoring_order(uuid,timestamptz)', 'public.reinstate_standard_observation_windows(uuid,timestamptz)', 'haven.observation_escalation_recipients(uuid,uuid,uuid,uuid)', 'haven.notify_monitoring_order_created(uuid)', 'public.evaluate_watchlist_signals(uuid,timestamptz)', 'haven.notify_watchlist_acute(uuid,timestamptz)', 'haven.apply_observation_config_activation(text,uuid,timestamptz,uuid,boolean)', 'haven.replay_observation_windows(uuid,date,date,uuid,uuid)', 'public.activate_due_scheduled_config_versions(uuid,uuid,timestamptz)'];
+  c_service_only CONSTANT text[] := ARRAY['public.record_cadence_observation_tasks(jsonb)', 'public.generate_monitoring_order_tasks(uuid,timestamptz)', 'public.record_observation_escalation_rung(uuid,text,timestamptz)', 'public.expire_monitoring_orders()', 'public.advance_observation_task_lapse(uuid,uuid,timestamptz)', 'public.ensure_facility_observation_defaults(uuid)', 'public.fn_facilities_seed_observation_defaults()', 'public.resolve_observation_task_assignees(uuid,date,text,uuid[])', 'public.record_observation_staffing_gap(uuid,text,date)', 'public.observation_windows_under_monitoring_order(uuid,timestamptz)', 'public.reinstate_standard_observation_windows(uuid,timestamptz)', 'public.claim_observation_escalation_deliveries(uuid,uuid,uuid,timestamptz,integer)', 'public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz)', 'public.stand_down_ungenerated_observation_tasks(uuid,timestamptz)', 'haven.observation_escalation_recipients(uuid,uuid,uuid,uuid)', 'haven.notify_monitoring_order_created(uuid)', 'public.evaluate_watchlist_signals(uuid,timestamptz)', 'haven.notify_watchlist_acute(uuid,timestamptz)', 'haven.apply_observation_config_activation(text,uuid,timestamptz,uuid,boolean)', 'haven.replay_observation_windows(uuid,date,date,uuid,uuid)', 'public.activate_due_scheduled_config_versions(uuid,uuid,timestamptz)'];
   v_fn text;
   v_role text;
 BEGIN
@@ -175,7 +175,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_module CONSTANT text[] := ARRAY['facility_cadence_in_force', 'facility_observation_windows_for_version', 'facility_observation_windows_for_date', 'facility_shift_window_at', 'facility_next_shift_window', 'facility_next_shift_observation_windows', 'record_cadence_observation_tasks', 'can_record_observation', 'can_cancel_monitoring_order', 'observation_grace_formula', 'monitoring_order_grace_minutes', 'generate_monitoring_order_tasks', 'notify_monitoring_order_created', 'create_monitoring_order', 'cancel_monitoring_order', 'expire_monitoring_orders', 'record_monitoring_order_event', 'monitoring_order_reason_from_watch_source', 'monitoring_order_bridge_defaults', 'bridge_watch_instance_to_monitoring_order', 'monitoring_order_interval_options', 'submit_observation', 'observation_quick_status_label', 'observation_vocab_label', 'compose_observation_summary', 'haven_compose_observation_summary', 'facility_escalation_in_force', 'observation_grace_minutes', 'observation_task_window_close', 'observation_escalation_rungs_at', 'observation_escalations_due', 'observation_escalation_recipients', 'record_observation_escalation_rung', 'advance_observation_task_lapse', 'send_test_escalation', 'observation_compliance_for_range', 'ensure_facility_observation_defaults', 'fn_facilities_seed_observation_defaults', 'assert_monitoring_order_facility_matches_resident', 'resolve_observation_task_assignees', 'record_observation_staffing_gap', 'monitoring_order_covers_window', 'facility_observation_windows_in_span', 'observation_windows_under_monitoring_order', 'reinstate_standard_observation_windows', 'monitoring_order_in_force_until', 'stamp_monitoring_order_closed_at', 'can_disposition_watchlist_signal', 'watchlist_rules_for_facility', 'watchlist_band_for_resident', 'evaluate_watchlist_signals', 'notify_watchlist_acute', 'disposition_watchlist_signal', 'record_watchlist_disposition', 'can_edit_observation_config', 'can_propose_observation_config', 'can_read_observation_config', 'facility_observation_jurisdiction_floor', 'cadence_version_day_shape', 'facility_next_shift_boundary_at', 'facility_is_shift_boundary', 'observation_escalation_role_holders', 'validate_cadence_version', 'apply_observation_config_activation', 'create_cadence_version', 'activate_cadence_version', 'rollback_cadence_version', 'apply_template_to_facilities', 'facility_config_template_drift', 'replay_observation_windows', 'simulate_cadence_change', 'observation_config_change_log', 'observation_config_overview', 'activate_due_scheduled_config_versions'];
+  c_module CONSTANT text[] := ARRAY['facility_cadence_in_force', 'facility_observation_windows_for_version', 'facility_observation_windows_for_date', 'facility_shift_window_at', 'facility_next_shift_window', 'facility_next_shift_observation_windows', 'record_cadence_observation_tasks', 'can_record_observation', 'can_cancel_monitoring_order', 'observation_grace_formula', 'monitoring_order_grace_minutes', 'generate_monitoring_order_tasks', 'notify_monitoring_order_created', 'create_monitoring_order', 'cancel_monitoring_order', 'expire_monitoring_orders', 'record_monitoring_order_event', 'monitoring_order_reason_from_watch_source', 'monitoring_order_bridge_defaults', 'bridge_watch_instance_to_monitoring_order', 'monitoring_order_interval_options', 'submit_observation', 'observation_quick_status_label', 'observation_vocab_label', 'compose_observation_summary', 'haven_compose_observation_summary', 'facility_escalation_in_force', 'observation_grace_minutes', 'observation_task_window_close', 'observation_escalation_rungs_at', 'observation_escalations_due', 'observation_escalation_recipients', 'record_observation_escalation_rung', 'advance_observation_task_lapse', 'send_test_escalation', 'observation_compliance_for_range', 'ensure_facility_observation_defaults', 'fn_facilities_seed_observation_defaults', 'assert_monitoring_order_facility_matches_resident', 'resolve_observation_task_assignees', 'record_observation_staffing_gap', 'monitoring_order_covers_window', 'facility_observation_windows_in_span', 'observation_windows_under_monitoring_order', 'reinstate_standard_observation_windows', 'monitoring_order_in_force_until', 'stamp_monitoring_order_closed_at', 'can_disposition_watchlist_signal', 'watchlist_rules_for_facility', 'watchlist_band_for_resident', 'evaluate_watchlist_signals', 'notify_watchlist_acute', 'disposition_watchlist_signal', 'record_watchlist_disposition', 'can_edit_observation_config', 'can_propose_observation_config', 'can_read_observation_config', 'facility_observation_jurisdiction_floor', 'cadence_version_day_shape', 'facility_next_shift_boundary_at', 'facility_is_shift_boundary', 'observation_escalation_role_holders', 'validate_cadence_version', 'apply_observation_config_activation', 'create_cadence_version', 'activate_cadence_version', 'rollback_cadence_version', 'apply_template_to_facilities', 'facility_config_template_drift', 'replay_observation_windows', 'simulate_cadence_change', 'observation_config_change_log', 'observation_config_overview', 'activate_due_scheduled_config_versions', 'haven_seed_facility_observation_thresholds'];
   v_bad text;
   v_found integer;
 BEGIN
@@ -824,6 +824,217 @@ BEGIN
   PERFORM
     pg_temp.sr_assert (strpos(v_src, 'OR standard_task.id IS NOT NULL') > 0
       AND strpos(v_src, 'OR satisfying_log.id IS NOT NULL') > 0, 'public.observation_compliance_for_range no longer lets a task or a log keep a window that the status would drop. A resident who went to hospital mid shift then loses the checks that were actually recorded that morning.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9h. M6. The delivery drain is scoped to the tick and claims what it sends.
+--
+-- loadQueuedDeliveries in observation-escalation-engine/store.ts filtered on
+-- `status = 'queued'` and `send_after <= now` and nothing else. It selected
+-- organization_id and facility_id and filtered on neither, and its only caller
+-- passed neither although the tick receives both. Reproduced with two synthetic
+-- tenants: a tick scoped to one building of one tenant selected all three queued
+-- rows, including the other tenant's. Every delivery body names a room and a
+-- building, so a per facility cron entry was a cross tenant disclosure path.
+--
+-- The scope now lives in the database rather than in the Edge Function, which is
+-- what this file can hold. The caller side is held by the two scope tests in
+-- supabase/functions/observation-escalation-engine/engine.test.ts, which
+-- npm run test:edge runs.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  c_claim CONSTANT text := 'public.claim_observation_escalation_deliveries(uuid,uuid,uuid,timestamptz,integer)';
+  v_src text;
+  v_defaults integer;
+  v_check text;
+BEGIN
+  PERFORM
+    pg_temp.sr_assert (to_regprocedure(c_claim) IS NOT NULL, 'public.claim_observation_escalation_deliveries is gone. The drain then goes back to reading every queued delivery in the database, whichever tenant it belongs to.');
+
+  -- No default on the organization argument. A caller that forgets the scope
+  -- must fail to resolve the function rather than drain everybody.
+  SELECT
+    p.pronargdefaults INTO v_defaults
+  FROM
+    pg_catalog.pg_proc p
+  WHERE
+    p.oid = to_regprocedure(c_claim);
+  PERFORM
+    pg_temp.sr_assert (v_defaults = 0, format('public.claim_observation_escalation_deliveries has %s defaulted argument(s). A default on the organization turns a forgotten scope into a silent cross tenant drain instead of an error.', v_defaults));
+
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+  WHERE
+    p.oid = to_regprocedure(c_claim);
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'candidate.organization_id = p_organization_id') > 0, 'the delivery claim no longer filters on the organization. That is the cross tenant disclosure path this function exists to close.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'candidate.facility_id = p_facility_id') > 0, 'the delivery claim no longer filters on the facility when the tick names one, so a per facility cron entry sends other buildings'' messages.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, '''sending''') > 0, 'the delivery claim no longer moves a row to sending. Without the status transition two overlapping ticks both send the same delivery; a row lock will not do, because the send happens after the transaction commits.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'SKIP LOCKED') > 0, 'the delivery claim no longer skips locked rows, so two simultaneous claims queue behind each other on the same candidates.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'observation_delivery_claim_timeout') > 0, 'the delivery claim no longer returns a claim its owner never finished. A tick killed mid send then holds a resident''s escalation forever.');
+
+  SELECT
+    pg_catalog.pg_get_constraintdef(con.oid) INTO v_check
+  FROM
+    pg_catalog.pg_constraint con
+  WHERE
+    con.conrelid = 'public.observation_escalation_deliveries'::regclass
+    AND con.conname = 'observation_escalation_deliveries_status_check';
+  PERFORM
+    pg_temp.sr_assert (strpos(v_check, 'sending') > 0, 'observation_escalation_deliveries cannot hold the sending state, so a claim has nowhere to live.');
+
+  -- The seam the first version of this fix opened, and the reason the outcome
+  -- write is a command rather than a filtered update from the Edge Function.
+  --
+  -- The claim moves the row to `sending`. store.ts was still filtering its
+  -- outcome update on `status = 'queued'`, so it matched zero rows, and
+  -- PostgREST returns no error for an update that matches nothing: the write
+  -- succeeded silently, the outcome was never recorded, the row stayed claimed,
+  -- and the stale claim reclaim sent the message again every timeout interval.
+  -- A duplicate send per tick had become an unbounded resend loop.
+  --
+  -- The guard now lives in the same place as the claim it has to agree with,
+  -- which is the only place a probe can read it.
+  PERFORM
+    pg_temp.sr_assert (to_regprocedure('public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz)') IS NOT NULL, 'public.record_observation_escalation_delivery_outcome is gone. The outcome write goes back to the Edge Function, where its status guard and the claim can disagree without anything noticing.');
+
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+  WHERE
+    p.oid = to_regprocedure('public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz)');
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'd.status = ''sending''') > 0, 'the outcome write no longer requires the row to be in the state the claim leaves it in. The first version of this guard said queued, matched nothing, and every delivery resent every claim timeout forever.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'd.claim_token = p_claim_token') > 0, 'the outcome write no longer requires the caller to hold the claim, so a tick that finishes after its claim was reclaimed overwrites the result of the tick that actually sent the message.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'v_rows = 0') > 0
+      AND strpos(v_src, 'RAISE EXCEPTION') > 0, 'the outcome write no longer raises when it matches no row. A send whose outcome cannot be recorded is exactly the case that must not be silent, because the alternative is sending it again.');
+
+  -- And the bound, so retryable can never mean forever whatever the cause.
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+  WHERE
+    p.oid = to_regprocedure(c_claim);
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'observation_delivery_max_attempts') > 0, 'the delivery claim no longer bounds how many times one delivery may be handed out. The stale claim reclaim is then an unbounded resend for any delivery whose outcome cannot be written.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'send_attempts = d.send_attempts + 1') > 0, 'the delivery claim no longer counts attempts, so the bound above can never be reached.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9i. M9. A transferred resident leaves no live tasks behind.
+--
+-- The generator picked departed residents as
+-- `facility_id = thisFacility AND status <> 'active'`. A transfer satisfies
+-- neither half. Reproduced: the stand down found zero candidates at the old
+-- building while the resident's task sat upcoming there.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_src text;
+BEGIN
+  PERFORM
+    pg_temp.sr_assert (to_regprocedure('public.stand_down_ungenerated_observation_tasks(uuid,timestamptz)') IS NOT NULL, 'public.stand_down_ungenerated_observation_tasks is gone. The generator then carries its own stand down predicate again, and it disagreed with the exclusion predicate.');
+
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+  WHERE
+    p.oid = to_regprocedure('public.stand_down_ungenerated_observation_tasks(uuid,timestamptz)');
+
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'res.facility_id IS DISTINCT FROM t.facility_id') > 0, 'the stand down no longer notices a resident who has transferred. Their outstanding tasks stay live at the building they left, climb the escalation ladder and reach the terminal rung as an SMS and a critical alert naming a room they are not in.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 't.due_at > p_at') > 0, 'the stand down no longer limits itself to windows that have not come due. Excusing a window that already lapsed erases a real miss.');
+
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname = 'generate_monitoring_order_tasks';
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, 'r.facility_id = o.facility_id') > 0, 'public.generate_monitoring_order_tasks generates for an order whose resident has left the building again. The stand down then excuses those tasks and this hands them straight back on the next tick, so the board churns every few minutes and the ladder collects fresh tasks each time.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9j. M10. A rung that could reach nobody does not take the anchor.
+--
+-- record_observation_escalation_rung wrote the dispatch row, which is the
+-- (task_id, rung_key) idempotency anchor, before recipients resolved. The
+-- seeded nudge is assigned_staff_only with an empty target_staff_roles, so on a
+-- task with no assigned staff it reached nobody and the anchor was taken
+-- forever. Reproduced: the first call answered fired true with zero recipients,
+-- the second answered already_fired. The nudge is the rung that catches most
+-- misses before they reach a human, so this disabled the early warning on
+-- exactly the tasks most likely to be missed.
+--
+-- Asserted by the order of the statements in the body, which is the thing that
+-- was wrong. C1's guards must still come first, all of them.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_src text;
+  v_lock integer;
+  v_already integer;
+  v_terminal integer;
+  v_recipients integer;
+  v_anchor integer;
+BEGIN
+  SELECT
+    p.prosrc INTO v_src
+  FROM
+    pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE
+    n.nspname = 'public'
+    AND p.proname = 'record_observation_escalation_rung';
+
+  v_lock := strpos(v_src, 'FOR UPDATE');
+  v_already := strpos(v_src, '''already_fired''');
+  v_terminal := strpos(v_src, '''completed_on_time'', ''completed_late'', ''excused'', ''missed'', ''reassigned''');
+  v_recipients := strpos(v_src, 'haven.observation_escalation_recipients');
+  v_anchor := strpos(v_src, 'INSERT INTO public.observation_escalation_dispatches');
+
+  PERFORM
+    pg_temp.sr_assert (v_lock > 0
+      AND v_already > 0
+      AND v_terminal > 0
+      AND v_recipients > 0
+      AND v_anchor > 0, 'one of the five landmarks in record_observation_escalation_rung is gone; this assertion can no longer reason about their order.');
+
+  -- C1, unchanged and still first.
+  PERFORM
+    pg_temp.sr_assert (v_lock < v_already, 'the task is no longer re-selected FOR UPDATE before the idempotency answer. The engine reads its queue seconds to minutes earlier and a completion in flight must be seen.');
+  PERFORM
+    pg_temp.sr_assert (v_already < v_terminal, 'the idempotency answer no longer comes before the completion answer. A rung that already fired did fire, whatever the task did afterwards.');
+  PERFORM
+    pg_temp.sr_assert (v_terminal < v_recipients, 'the terminal status guard no longer comes before anything is resolved or written. A caregiver who finished the check inside the engine''s read to write gap gets escalated on.');
+
+  -- M10, the new ordering.
+  PERFORM
+    pg_temp.sr_assert (v_recipients < v_anchor, 'record_observation_escalation_rung resolves recipients after writing the dispatch row again. The dispatch row is the (task_id, rung_key) anchor, so a nudge that reached nobody burns the rung for that task permanently, and a pool task is exactly the task most likely to be missed.');
+  PERFORM
+    pg_temp.sr_assert (strpos(v_src, '''no_assignee_yet''') > 0, 'a staff reminder with no staff member to remind no longer answers no_assignee_yet. It either anchors on nobody or it disappears; the first burns the rung and the second hides it.');
 END
 $$;
 
@@ -1894,6 +2105,104 @@ BEGIN
 
   PERFORM
     pg_temp.sr_assert (strpos(v_body, '23514') = 0, 'public.activate_cadence_version mentions 23514. check_violation is raised by every CHECK constraint in the module and is deliberately excluded from the operator refusal set, so a block raised with it is a block whose reason never reaches a screen.');
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 19. Part 8. The board's display thresholds are rows, and the ordering between
+--     the two documentation lag thresholds is a constraint rather than a form.
+--
+-- Migration 428 moved three numbers out of TypeScript:
+-- documentation_lag_notable_minutes and documentation_lag_serious_minutes off
+-- src/components/rounding/IntegrityFlagCard.tsx, and
+-- task_upcoming_lead_minutes off src/lib/rounding/update-task-status.ts. A
+-- later migration that drops one of them silently returns the module to two
+-- sources of truth for what an operator sees, which is the defect the Part 8
+-- review found: the board was painting a task critically overdue on a schedule
+-- the settings surface could not change.
+--
+-- The ordering CHECK matters on its own. Serious below notable makes a lag read
+-- as serious and not notable at the same time, and no form can be the thing
+-- that prevents it: public.facility_observation_thresholds carries an UPDATE
+-- grant to authenticated.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  c_columns CONSTANT text[] := ARRAY['documentation_lag_notable_minutes', 'documentation_lag_serious_minutes', 'task_upcoming_lead_minutes'];
+  v_column text;
+  v_nullable text;
+  v_org uuid;
+  v_facility uuid;
+  v_raised text;
+BEGIN
+  FOREACH v_column IN ARRAY c_columns LOOP
+    SELECT
+      c.is_nullable INTO v_nullable
+    FROM
+      information_schema.columns c
+    WHERE
+      c.table_schema = 'public'
+      AND c.table_name = 'facility_observation_thresholds'
+      AND c.column_name = v_column;
+    PERFORM
+      pg_temp.sr_assert (v_nullable IS NOT NULL, format('public.facility_observation_thresholds.%s is gone. Migration 428 moved it out of a TypeScript constant; dropping the column puts the number back in code.', v_column));
+    PERFORM
+      pg_temp.sr_assert (v_nullable = 'NO', format('public.facility_observation_thresholds.%s became nullable. A null display threshold makes the surface choose a fallback, which is the constant again.', v_column));
+  END LOOP;
+
+  -- The trigger that gives a new building a row at all. Without it a facility
+  -- added after migration 425 has no thresholds and every read that needs one
+  -- finds nothing.
+  PERFORM
+    pg_temp.sr_assert (EXISTS (
+        SELECT
+          1
+        FROM
+          pg_catalog.pg_trigger t
+          JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
+          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE
+          n.nspname = 'public'
+          AND c.relname = 'facilities'
+          AND t.tgname = 'tr_facilities_seed_observation_thresholds'
+          AND NOT t.tgisinternal), 'tr_facilities_seed_observation_thresholds is gone from public.facilities. public.ensure_facility_observation_defaults predates the thresholds table and does not seed it, so this trigger is the only thing that gives a new building its thresholds.');
+
+  -- Behaviour: the ordering is refused, by the database, on a real row.
+  SELECT
+    t.organization_id,
+    t.facility_id INTO v_org,
+    v_facility
+  FROM
+    public.facility_observation_thresholds t
+  WHERE
+    t.deleted_at IS NULL
+  ORDER BY
+    t.created_at,
+    t.facility_id
+  LIMIT 1;
+
+  PERFORM
+    pg_temp.sr_assert (v_facility IS NOT NULL, 'no facility carries a public.facility_observation_thresholds row, so the ordering constraint cannot be exercised. Migration 425 seeds one per facility and 428 backstops it.');
+
+  BEGIN
+    -- A bare UPDATE, and the assertion is on the raise rather than on a row
+    -- count: a CHECK violation raises 23514 and a USING failure would filter
+    -- silently to UPDATE 0. Never written with RETURNING, which re-applies the
+    -- SELECT policy to the new row and passes against a broken one.
+    UPDATE
+      public.facility_observation_thresholds
+    SET
+      documentation_lag_notable_minutes = documentation_lag_serious_minutes + 1
+    WHERE
+      facility_id = v_facility;
+    v_raised := NULL;
+  EXCEPTION
+    WHEN check_violation THEN
+      v_raised := SQLSTATE;
+  END;
+
+  PERFORM
+    pg_temp.sr_assert (v_raised = '23514', format('setting documentation_lag_notable_minutes above documentation_lag_serious_minutes was accepted (raised %s). The ordering has to be a constraint: authenticated holds UPDATE on this table, so a form is not the thing preventing it.', COALESCE(v_raised, 'nothing')));
 END
 $$;
 

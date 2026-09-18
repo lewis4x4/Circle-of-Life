@@ -1,15 +1,66 @@
 -- Smart Rounding scheduled ticks, spec 25A section 9.
 --
+-- The whole activation sequence for the module, in one place, all of it
+-- commented out. Nothing here is applied by any gate and nothing here runs from
+-- a build.
+--
 -- The repository holds no cron.schedule statement in any migration, and this
 -- file is deliberately not one either: a schedule that arrives with a migration
 -- starts firing against whichever project the migration lands on, including a
 -- staging rehearsal. Run these against the hosted project by hand, after the
--- function is deployed and its secret is set, and never from a build.
+-- function is deployed and its secret is set.
 --
--- Each part appends its own block. Nothing here is applied by any gate.
+-- ---------------------------------------------------------------------------
+-- READ THIS BEFORE YOU SCHEDULE ANYTHING: STAGING IS ALREADY LIVE
+-- ---------------------------------------------------------------------------
+-- Haven HFO Staging (iwcnajanvjvynolltflw) has migrations 414 through 424
+-- applied, three of the module's Edge Functions deployed with their secrets
+-- set, and three of these jobs installed and active. The task generator has
+-- already run there and produced 69 observation tasks for 23 residents.
+--
+-- Installed and active on staging, by the names they actually carry:
+--
+--   smart-rounding-task-generator   every 15 minutes   observation-task-generator
+--   smart-rounding-escalation       every  5 minutes   observation-escalation-engine
+--   smart-rounding-watchlist        hourly             watchlist-signal-engine
+--
+-- Those names are not the job names in the blocks below, which were written
+-- before the jobs existed. Scheduling a block below on staging under its own
+-- name would install a SECOND job against the same function, and two escalation
+-- engines walking the same queue five minutes apart is how a resident's family
+-- gets told twice about the same missed check. Before scheduling anything, read
+-- what is there:
+--
+--   select jobid, jobname, schedule, active from cron.job order by jobname;
+--
+-- and either reuse the existing name with cron.alter_job, or unschedule the old
+-- name first. Not scheduled anywhere yet: cadence-version-activator and the
+-- Monitoring Order expiry tick.
+--
+-- Production (manfqmasfqppukpobpld) has none of this: no migration from this
+-- module, no function, no secret and no job.
 --
 -- Before running any of it, confirm which project the CLI is linked to.
--- Production and Haven HFO Staging are different buildings' worth of alerts.
+-- Production and Haven HFO Staging are different buildings' worth of alerts,
+-- and supabase/.temp/project-ref in the shared checkout follows whatever was
+-- last rehearsed.
+--
+-- ---------------------------------------------------------------------------
+-- ORDER OF ACTIVATION
+-- ---------------------------------------------------------------------------
+-- Within a minute where several fire, they want this order, and the cron
+-- offsets below keep them apart rather than relying on luck:
+--
+--   :02  cadence-version-activator      a version takes force
+--   :03  observation-task-generator     the board is built from the version in force
+--   :04  observation-escalation-engine  the ladder walks tasks that already exist
+--   :07  watchlist-signal-engine        signals read what the day recorded
+--   03:20 (daily) expire_monitoring_orders
+--
+-- Run the activator before the generator, so the generator sees the version
+-- that has just taken force rather than the one it replaced. Run the generator
+-- before the escalation engine, so the engine never reads a queue the generator
+-- is halfway through writing.
 
 -- ---------------------------------------------------------------------------
 -- Part 5: watchlist-signal-engine
@@ -62,9 +113,11 @@
 -- live. It is idempotent and cheap: with nothing scheduled it reads two indexed
 -- queries and writes nothing.
 --
--- Run it after observation-task-generator in the same minute where both fire,
--- so the generator sees the version that has just taken force rather than the
--- one it replaced. Five minutes and an offset of 2 keeps them apart.
+-- Run it BEFORE observation-task-generator, not after. The Part 7 note here
+-- said "after" and then gave the reason for "before" -- the generator has to
+-- see the version that has just taken force rather than the one it replaced --
+-- so the sentence is corrected rather than the offset. An offset of 2 against
+-- the generator's 3 is what puts it first.
 --
 -- Fill in the organization id, the function URL and the secret before running.
 -- The secret is the value of the CADENCE_VERSION_ACTIVATOR_SECRET function
@@ -94,3 +147,148 @@
 -- select cron.unschedule('cadence-version-activator-5min');
 
 -- To activate one building once, without a schedule, add "facility_id" to the body.
+
+
+-- ---------------------------------------------------------------------------
+-- Part 1: observation-task-generator
+--
+-- Builds the board. Reads the cadence version in force for the service date at
+-- every building in the organization, projects its enabled windows across the
+-- active roster, and stamps cadence_version_id on every task it writes. Skips a
+-- resident under an active Monitoring Order, whose checks come from the order
+-- instead.
+--
+-- Every 15 minutes, and the reason is the horizon rather than the cadence: the
+-- generator writes one shift ahead, so it does not need to run often to keep
+-- the board full. What it needs is to run soon after something changes -- an
+-- admission, a discharge, a Monitoring Order cancelled, a cadence version
+-- activated -- and 15 minutes is the longest an operator should wait to see the
+-- board catch up. It is idempotent per (resident_id, window_key, service_date),
+-- so a tick that has nothing to do writes nothing.
+--
+-- It answers HTTP 207 with ok:false when any building failed or has no cadence
+-- in force. A facility with no cadence is a failure and not a quiet success, so
+-- a monitor on this endpoint should treat 207 as an alert.
+--
+-- Fill in the organization id, the function URL and the secret before running.
+-- The secret is the value of the OBSERVATION_TASK_GENERATOR_SECRET function
+-- secret; do not paste it into a migration, a commit or a ticket.
+-- ---------------------------------------------------------------------------
+-- select cron.schedule(
+--   'observation-task-generator-15min',
+--   '3-59/15 * * * *',
+--   $$
+--   select net.http_post(
+--     url     := '<project-functions-url>/observation-task-generator',
+--     headers := jsonb_build_object(
+--                  'Content-Type',  'application/json',
+--                  'x-cron-secret', '<OBSERVATION_TASK_GENERATOR_SECRET>'),
+--     body    := jsonb_build_object('organization_id', '<organization-id>')
+--   );
+--   $$
+-- );
+
+-- To take it back off:
+-- select cron.unschedule('observation-task-generator-15min');
+
+-- On staging this job already exists as 'smart-rounding-task-generator'. To
+-- change its schedule rather than add a second one:
+-- select cron.alter_job((select jobid from cron.job where jobname = 'smart-rounding-task-generator'), schedule := '3-59/15 * * * *');
+
+-- To generate one building once, without a schedule, add "facility_id" to the body.
+
+-- ---------------------------------------------------------------------------
+-- Part 4: observation-escalation-engine
+--
+-- Walks the escalation ladder. Reads observation_escalations_due, resolves each
+-- task's window close through public.observation_task_window_close, and fires
+-- the rung the escalation version in force defines for that offset, through the
+-- channels and recipient roles that version's rows carry.
+--
+-- Every five minutes, and this one genuinely wants to be that often: the
+-- seeded ladder's first step lands before the window closes, and a nudge that
+-- arrives twenty minutes late is not a nudge. Each rung writes one
+-- observation_escalation_dispatches row per (task_id, rung_key), which is the
+-- idempotency anchor, so a duplicate tick cannot double notify.
+--
+-- The due read returns up to 500 rows and the engine fires them one round trip
+-- at a time, so minutes can separate the read from the call. A rung fired
+-- against a task somebody completed in between answers
+-- {"fired": false, "reason": "task_completed"} and writes nothing. Do not
+-- shorten the interval to try to close that gap; the guard is the fix.
+--
+-- Fill in the organization id, the function URL and the secret before running.
+-- The secret is the value of the OBSERVATION_ESCALATION_SECRET function secret.
+-- DISPATCH_PUSH_SECRET and the SMS credentials are separate function secrets;
+-- without them those channels record a skipped delivery with a reason rather
+-- than failing the tick.
+-- ---------------------------------------------------------------------------
+-- select cron.schedule(
+--   'observation-escalation-engine-5min',
+--   '4-59/5 * * * *',
+--   $$
+--   select net.http_post(
+--     url     := '<project-functions-url>/observation-escalation-engine',
+--     headers := jsonb_build_object(
+--                  'Content-Type',  'application/json',
+--                  'x-cron-secret', '<OBSERVATION_ESCALATION_SECRET>'),
+--     body    := jsonb_build_object('organization_id', '<organization-id>')
+--   );
+--   $$
+-- );
+
+-- To take it back off:
+-- select cron.unschedule('observation-escalation-engine-5min');
+
+-- On staging this job already exists as 'smart-rounding-escalation'.
+-- select cron.alter_job((select jobid from cron.job where jobname = 'smart-rounding-escalation'), schedule := '4-59/5 * * * *');
+
+-- To walk one building once, without a schedule, add "facility_id" to the body.
+
+-- ---------------------------------------------------------------------------
+-- Part 3: Monitoring Order expiry
+--
+-- public.expire_monitoring_orders() closes every order whose end date has
+-- passed. It never expires an open ended order whatever its review date says: a
+-- past review date is a Watchlist signal about a decision nobody made, not an
+-- expiry, and expiring it would quietly drop the resident back to the standard
+-- cadence without anybody deciding that.
+--
+-- This is the only tick in the module that is plain SQL rather than an HTTP
+-- post. There is no function to deploy, no secret to set and no URL to fill in,
+-- because nothing outside the database is involved.
+--
+-- Once a day, shortly after the overnight window closes. An order's end date is
+-- a date, so the finest granularity that means anything is daily, and running
+-- it at 03:20 puts the status change before the morning shift reads the board
+-- rather than in the middle of their round. It returns the number of rows it
+-- closed.
+--
+-- expire_monitoring_orders is granted to service_role only; a cron job runs as
+-- its owner, so schedule this as a role that can execute it.
+-- ---------------------------------------------------------------------------
+-- select cron.schedule(
+--   'monitoring-order-expiry-daily',
+--   '20 3 * * *',
+--   $$ select public.expire_monitoring_orders(); $$
+-- );
+
+-- To take it back off:
+-- select cron.unschedule('monitoring-order-expiry-daily');
+
+-- To close what is due right now, without a schedule:
+-- select public.expire_monitoring_orders();
+
+-- ---------------------------------------------------------------------------
+-- What is scheduled, and whether it is working
+-- ---------------------------------------------------------------------------
+-- Every job in the module, with its schedule and whether it is on:
+-- select jobid, jobname, schedule, active from cron.job order by jobname;
+
+-- The last few runs of each, which is the only way to notice a job that is
+-- installed, active and failing every time:
+-- select j.jobname, d.status, d.return_message, d.start_time
+--   from cron.job_run_details d
+--   join cron.job j on j.jobid = d.jobid
+--  order by d.start_time desc
+--  limit 40;

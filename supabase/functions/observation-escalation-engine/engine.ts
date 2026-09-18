@@ -114,10 +114,16 @@ export interface EngineStore {
   advanceLapse(organizationId: string, facilityId: string | null, atIso: string): Promise<number>;
   loadDue(organizationId: string, facilityId: string | null, atIso: string, limit: number): Promise<DueRungRow[]>;
   fireRung(taskId: string, rungKey: string, atIso: string): Promise<FireResult>;
-  loadQueuedDeliveries(nowIso: string, limit: number): Promise<DeliveryRow[]>;
+  claimDeliveries(
+    organizationId: string,
+    facilityId: string | null,
+    claimToken: string,
+    nowIso: string,
+    limit: number,
+  ): Promise<DeliveryRow[]>;
   loadDispatchContexts(dispatchIds: readonly string[]): Promise<Map<string, DispatchContext>>;
   loadUserPhones(userIds: readonly string[]): Promise<Map<string, string | null>>;
-  updateDelivery(id: string, patch: DeliveryPatch): Promise<void>;
+  recordDeliveryOutcome(id: string, claimToken: string, patch: DeliveryPatch): Promise<void>;
 }
 
 export interface EngineLogger {
@@ -300,7 +306,21 @@ async function fireDueRungs(options: EngineOptions, atIso: string, result: Engin
 
 async function drainDeliveries(options: EngineOptions, result: EngineResult): Promise<void> {
   const nowIso = (options.now ?? new Date()).toISOString();
-  const deliveries = await options.store.loadQueuedDeliveries(nowIso, options.drainLimit ?? DRAIN_LIMIT);
+  // Scoped to the tick. The unscoped version of this call sent every queued
+  // delivery in the database, whichever facility and whichever tenant it
+  // belonged to, and claiming is what stops two overlapping ticks sending the
+  // same one twice.
+  // One token per drain. It is what the outcome write is checked against, so a
+  // tick that finishes after its claim was reclaimed writes nothing instead of
+  // overwriting the result of the tick that actually sent the message.
+  const claimToken = crypto.randomUUID();
+  const deliveries = await options.store.claimDeliveries(
+    options.organizationId,
+    options.facilityId ?? null,
+    claimToken,
+    nowIso,
+    options.drainLimit ?? DRAIN_LIMIT,
+  );
   if (deliveries.length === 0) return;
 
   const contexts = await options.store.loadDispatchContexts(unique(deliveries.map((d) => d.dispatch_id)));
@@ -385,12 +405,17 @@ async function drainDeliveries(options: EngineOptions, result: EngineResult): Pr
       });
     }
     try {
-      await options.store.updateDelivery(delivery.id, patchFor(outcome, new Date().toISOString()));
+      await options.store.recordDeliveryOutcome(delivery.id, claimToken, patchFor(outcome, new Date().toISOString()));
     } catch (error) {
+      // The send happened and its outcome could not be written. The row stays
+      // claimed, so the attempt counter in the claim command is what stops this
+      // becoming a resend loop; this log is how a human finds out it happened.
       options.log.log({
-        event: "delivery_update_failed",
+        event: "delivery_outcome_not_recorded",
         outcome: "error",
         delivery_id: delivery.id,
+        channel: delivery.channel,
+        rung_key: delivery.rung_key,
         error_message: error instanceof Error ? error.name : "Error",
       });
     }

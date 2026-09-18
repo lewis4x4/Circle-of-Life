@@ -822,3 +822,125 @@ Filled in by the orchestrator as parts land.
   sends an SMS has to name SMS. Which channels a rung uses is data; how a channel is
   delivered is code. The acceptance 19 scanner in D16 must distinguish the two rather than
   flag the transport.
+
+---
+
+## 7. Part 8 verification: what runs, what it proves, and what is still unproven
+
+Appended by the Part 8 specialist. The ledger in section 5 and the open items in
+section 6 stay the orchestrator's.
+
+### 7.1 The D16 literal scan, and its four findings
+
+`scripts/smart-rounding/config-literals.mjs` (`npm run smart-rounding:literals`)
+is D16 implemented as specified: an explicit path list of 14 entries covering
+142 TypeScript files, no per-line suppression, time-of-day literals flagged
+anywhere in scope including comments, the offsets flagged only next to a minute,
+hour, grace, offset, window, escalation or shift identifier, `'day'` / `'night'`
+/ `'evening'` flagged outside a type declaration, and every exemption listed in
+the output by file class.
+
+**One stated departure from D16's letter**, because it serves D16's own example
+rather than contradicting it. A Tailwind opacity suffix is excluded: on
+`src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx` the class list
+`hover:bg-primary/90 ... focus-visible:ring-offset-0` reads as "90 next to an
+offset identifier", which is the same class of false positive as D16's own
+`slice(0, 60)`. The exclusion is structural and declared in the script's header;
+it cannot hide a real value, because nothing writes a grace value as a class
+suffix.
+
+**Eighteen of the twenty two original findings were fixed**, not tuned away:
+
+- Six comments named an observation time or a grace value out loud
+  (`MonitoringOrderAction.tsx`, `MonitoringOrderForm.tsx`, `monitoring-orders.ts`
+  twice, `generate-observation-tasks.ts`, `CadenceRungEditor.tsx`). A comment
+  that names 10:00 is a second copy of the cadence, and the module's whole point
+  is that there is exactly one. Rewritten without the numbers.
+- `src/lib/rounding/generate-observation-tasks.ts` defaulted grace to `15` when
+  a plan rule did not carry one. `resident_observation_plan_rules.grace_minutes`
+  is `NOT NULL DEFAULT 15`, so the branch was a second copy of the column default
+  living in TypeScript. It is now `?? 0`: no grace of our own invention.
+- The millisecond conversions moved into `src/lib/rounding/duration-units.ts`,
+  which is the one place in the module a unit conversion is written.
+- `CadenceWindowStrip.tsx` converted an hour to minutes on every render for its
+  axis labels. The whole strip already speaks in minutes of the day, so the
+  ticks now do too.
+
+**Four findings remain and are recorded here rather than suppressed.** Both are
+the same shape: a threshold that belongs in a row and currently sits in code.
+
+| Finding | What it decides | Why it was not fixed in Part 8 |
+|---|---|---|
+| `src/components/rounding/IntegrityFlagCard.tsx:147-148` — `LAG_NOTABLE_MINUTES = 15`, `LAG_SERIOUS_MINUTES = 60` | how concerning a documentation lag reads on the Integrity tab | `public.facility_observation_thresholds` (migration `425`) is exactly where this belongs, next to `maximum_unobserved_gap_minutes`. It has no documentation-lag column, so the fix is a migration plus a probe extension. Part 8 adding a migration races the numbers `414`-`427` have already moved twice over. |
+| `src/lib/rounding/update-task-status.ts:18-19` — `UPCOMING_LEAD_MINUTES = 30`, `OVERDUE_CEILING_MINUTES = 30` (and `CRITICALLY_OVERDUE_CEILING_MINUTES = 120`, which the scanner's number set does not cover) | which status a task renders as while it sits on the board | Same table, same migration. This file also arrived from `origin/main` rather than this branch, and `/api/rounding/tasks` reads it. |
+
+Both are display bands rather than any of the six things acceptance 19
+enumerates, and neither changes when a check is due, when its grace closes or
+when a rung fires. **Acceptance 19 is therefore substantially but not fully
+proven, and the honest statement is that four literals remain, named, with the
+migration that would remove them identified.** They were lifted into named
+constants with the reason in a comment next to them, so the next person finds
+the decision rather than the number.
+
+### 7.2 What the acceptance surface now is
+
+| Artifact | Command | Acceptance items |
+|---|---|---|
+| seven SQL acceptance scripts (Parts 1-7) | `node scripts/smart-rounding/run-*-acceptance.mjs` | 1 (counted), 5, 7, 8, 9, 15, 16, 17, 18, 20, 21 |
+| `supabase/tests/review_smart_rounding_authority.sql` | inside `npm run migrations:verify:pg` | the module's only regression net; D21 |
+| `scripts/smart-rounding/config-literals.mjs` | `npm run smart-rounding:literals` | 19, with the four findings above |
+| `scripts/smart-rounding/phi-scan.mjs` | `npm run smart-rounding:phi-scan` | 14 |
+| `scripts/smart-rounding/rls-check.mjs` | `npm run smart-rounding:rls-check -- --target=staging` | **6 and 12, and unrun** |
+| Playwright project `smart-rounding` | `SMART_ROUNDING_E2E=1 npm run smart-rounding:e2e` | 1 (rendered), 2, 3, 4, 10, 11, and **unrun** |
+| `npm run typecheck`, `lint`, `test`, `build` | | 13 |
+
+### 7.3 D17 still stands, and two acceptance items are unproven
+
+`scripts/smart-rounding/rls-check.mjs` and the Playwright project both exist, both
+refuse to run silently, and **neither has been run**. They need credentials for a
+hosted project that the Part 8 session did not hold. Until they run:
+
+- **Acceptance 6 and 12 are unproven.** The replay cannot reach them: it stands
+  a fake `auth` schema in for Supabase and grants no Supabase default privileges.
+- **Acceptance 2, 3, 4, 10 and 11 are proven only at the unit level**, by the
+  component and library tests, not against a rendered surface.
+
+The RLS check takes a target flag with no default, resolves `--target=staging` to
+`iwcnajanvjvynolltflw`, and refuses `manfqmasfqppukpobpld` without
+`--i-understand-this-is-production` because it calls `create_monitoring_order`
+against a real resident. Its eight environment variables are listed in its
+header; a missing one exits 2 and names every variable, never a skip.
+
+### 7.4 The pilot resident count, for D15
+
+`scripts/homewood/data/homewood-residents.csv` is the gitignored import source
+for the pilot building and carries **32 residents**, not the 33 the spec's
+acceptance item 1 asserts, and not the 200 or 25 the spec's defect 1 reports
+elsewhere. That is the import source rather than the current active roster, so it
+does not settle the number; it does mean **no discoverable source on this machine
+supports 33**, and the acceptance script's derived assertion
+(`residents x enabled windows`) stays the right shape. Do not tune a fixture to
+reach 198.
+
+### 7.5 The `phi-scan` design note worth keeping
+
+The first two versions of `scripts/smart-rounding/phi-scan.mjs` both reported
+dozens of things that were not PHI, for two separate reasons, and both are worth
+knowing about before anybody writes another scanner over this data:
+
+- The pilot import's `primary_diagnosis` column is quoted and full of commas, so
+  a naive split on comma shifted every field to its right and the "emergency
+  contact name" cell arrived holding fragments of a diagnosis. The scan then
+  reported ordinary clinical English as a resident name in five unrelated files.
+  It is quote aware now.
+- A single surname is far too often an ordinary word. Sixty six of the import's
+  ninety eight name tokens already appear somewhere in `origin/main`, so a lone
+  token match is close to meaningless. The scan's primary test is a first and
+  last name **pair** from one row of the import on one line, which has almost no
+  false positive, plus exact dates of birth and phone numbers, plus a single
+  token only when a resident **name column** is on the same line.
+
+It is negative-control tested: planting one real resident's first and last name
+into a file under `scripts/smart-rounding/` is caught by name, by line, and
+without printing the name. It also caught a real name the Part 8 specialist had
+written into one of its own comments.

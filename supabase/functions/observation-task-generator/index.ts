@@ -61,11 +61,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  */
 const GENERATING_RESIDENT_STATUS = "active";
 
-/** Task statuses that have not been worked yet and may still be stood down. */
-const NOT_YET_WORKED_STATUSES = ["upcoming", "due_soon"];
-
-const STOOD_DOWN_REASON = "Resident is no longer active at this facility";
-
 /** PostgREST codes for a function that does not exist in the schema cache. */
 const MISSING_FUNCTION_CODES = new Set(["42883", "PGRST202"]);
 
@@ -217,42 +212,34 @@ async function assigneesByResident(
 }
 
 /**
- * A resident whose status moved away from active mid shift keeps tasks that
- * would otherwise run to overdue and land on the escalation ladder for someone
- * who is not in the building. Stand them down instead of leaving them to miss.
+ * Stands down every not yet worked task at this facility that the module would
+ * no longer generate.
+ *
+ * The predicate lives in SQL, in `stand_down_ungenerated_observation_tasks`,
+ * because the generator's exclusion and the stand down have to be the same
+ * question and they were not. This file used to ask "is there a resident at
+ * this facility whose status is not active?", which a transfer does not satisfy:
+ * a transferred resident's facility_id points at the new building and their
+ * status is still active, so their outstanding tasks stayed live at the building
+ * they had left, ran to overdue, climbed the ladder and reached the terminal
+ * rung as an SMS and a critical alert naming a room they were not in.
+ *
+ * Same shape as the hospital_hold defect staging surfaced, where who to exclude
+ * and which tasks to stand down were decided by two different predicates. One
+ * definition, one place.
  */
-async function standDownTasksForDepartedResidents(
+async function standDownUngeneratedTasks(
   admin: SupabaseClient,
   facilityId: string,
-  activeResidentIds: Set<string>,
   atIso: string,
 ): Promise<number> {
-  const { data: departed, error: residentsErr } = await admin
-    .from("residents")
-    .select("id")
-    .eq("facility_id", facilityId)
-    .neq("status", GENERATING_RESIDENT_STATUS)
-    .is("deleted_at", null);
-
-  if (residentsErr) throw residentsErr;
-
-  const departedIds = ((departed ?? []) as { id: string }[])
-    .map((row) => row.id)
-    .filter((id) => !activeResidentIds.has(id));
-  if (departedIds.length === 0) return 0;
-
-  const { data, error } = await admin
-    .from("resident_observation_tasks")
-    .update({ status: "excused", excused_reason: STOOD_DOWN_REASON })
-    .eq("facility_id", facilityId)
-    .in("resident_id", departedIds)
-    .in("status", NOT_YET_WORKED_STATUSES)
-    .gt("due_at", atIso)
-    .is("deleted_at", null)
-    .select("id");
+  const { data, error } = await admin.rpc("stand_down_ungenerated_observation_tasks", {
+    p_facility_id: facilityId,
+    p_at: atIso,
+  });
 
   if (error) throw error;
-  return (data ?? []).length;
+  return typeof data === "number" ? data : 0;
 }
 
 Deno.serve(async (req) => {
@@ -369,7 +356,7 @@ Deno.serve(async (req) => {
 
       const activeResidentIds = new Set(((residentData ?? []) as { id: string }[]).map((row) => row.id));
 
-      tasksStoodDown += await standDownTasksForDepartedResidents(admin, facility.id, activeResidentIds, atIso);
+      tasksStoodDown += await standDownUngeneratedTasks(admin, facility.id, atIso);
 
       // Runs before the early return below, because a facility whose whole
       // roster is under orders still has order tasks to write. The horizon and

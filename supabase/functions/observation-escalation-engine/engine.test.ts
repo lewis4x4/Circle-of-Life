@@ -66,6 +66,14 @@ interface Recorder {
   fired: { taskId: string; rungKey: string }[];
   patches: { id: string; patch: DeliveryPatch }[];
   lapseCalls: number;
+  /** The scope every drain was claimed under. An unscoped drain is a
+   *  cross facility and in principle cross tenant disclosure, so the tick's
+   *  organization and facility have to reach the claim. */
+  claimScopes: { organizationId: string; facilityId: string | null }[];
+  /** Outcome writes the store refused because the caller did not hold the
+   *  claim. Any entry here in a normal drain means the engine would leave the
+   *  row claimed and the message would be sent again. */
+  rejectedOutcomes: { id: string; claimToken: string }[];
 }
 
 function fakeStore(
@@ -75,6 +83,8 @@ function fakeStore(
   contexts: Map<string, DispatchContext>,
   recorder: Recorder,
 ): EngineStore {
+  /** delivery id to the claim token currently holding it, as the table does. */
+  const claimed = new Map<string, string>();
   return {
     advanceLapse() {
       recorder.lapseCalls += 1;
@@ -87,7 +97,16 @@ function fakeStore(
       recorder.fired.push({ taskId, rungKey });
       return Promise.resolve(fireResults[rungKey] ?? { fired: false, reason: "rung_not_in_force" });
     },
-    loadQueuedDeliveries() {
+    claimDeliveries(organizationId: string, facilityId: string | null, claimToken: string) {
+      recorder.claimScopes.push({ organizationId, facilityId });
+      // The real command stamps the claim token on every row it hands out and
+      // moves it to `sending`. Modelling that is the whole point: the first
+      // version of this fake accepted any outcome write, so the test stayed
+      // green while the real store silently matched zero rows and the delivery
+      // resent every claim timeout forever.
+      for (const delivery of deliveries) {
+        claimed.set(delivery.id, claimToken);
+      }
       return Promise.resolve(deliveries);
     },
     loadDispatchContexts() {
@@ -96,7 +115,15 @@ function fakeStore(
     loadUserPhones() {
       return Promise.resolve(new Map<string, string | null>([[USER, "+15550000000"]]));
     },
-    updateDelivery(id, patch) {
+    recordDeliveryOutcome(id, claimToken, patch) {
+      // What public.record_observation_escalation_delivery_outcome does: write
+      // only for the holder of the claim, only from `sending`, and raise when
+      // nothing matched rather than succeeding quietly.
+      if (claimed.get(id) !== claimToken) {
+        recorder.rejectedOutcomes.push({ id, claimToken });
+        return Promise.reject(new Error("delivery is not held by this claim"));
+      }
+      claimed.delete(id);
       recorder.patches.push({ id, patch });
       return Promise.resolve();
     },
@@ -116,7 +143,7 @@ function bodyOf(init: unknown): string {
 }
 
 function newRecorder(): Recorder {
-  return { fired: [], patches: [], lapseCalls: 0 };
+  return { fired: [], patches: [], lapseCalls: 0, claimScopes: [], rejectedOutcomes: [] };
 }
 
 const silentLog = { log() {} };
@@ -292,4 +319,72 @@ Deno.test("a delivery whose dispatch cannot be loaded is skipped rather than sen
 
   assertEquals(result.deliveries_skipped, 1);
   assertEquals(recorder.patches[0].patch.skip_reason, "dispatch_not_found");
+});
+
+Deno.test("the delivery drain is claimed under the tick's own organization and facility", async () => {
+  const recorder = newRecorder();
+  const deliveries = [deliveryRow({ channel: "in_app" })];
+  const store = fakeStore([], {}, deliveries, new Map(), recorder);
+
+  await runEscalationEngine({
+    store,
+    env: SMS_ENV,
+    log: silentLog,
+    organizationId: ORG,
+    facilityId: FACILITY,
+    fetchImpl: () => Promise.resolve(new Response("{}", { status: 200 })),
+  });
+
+  assertEquals(recorder.claimScopes.length, 1);
+  assertEquals(recorder.claimScopes[0].organizationId, ORG);
+  assertEquals(recorder.claimScopes[0].facilityId, FACILITY);
+});
+
+Deno.test("an organization wide tick still names its organization when it claims", async () => {
+  const recorder = newRecorder();
+  const store = fakeStore([], {}, [deliveryRow({ channel: "in_app" })], new Map(), recorder);
+
+  await runEscalationEngine({
+    store,
+    env: SMS_ENV,
+    log: silentLog,
+    organizationId: ORG,
+    fetchImpl: () => Promise.resolve(new Response("{}", { status: 200 })),
+  });
+
+  assertEquals(recorder.claimScopes[0].organizationId, ORG);
+  // No facility was asked for, so the claim covers the organization and stops
+  // there. It must never be null on both.
+  assertEquals(recorder.claimScopes[0].facilityId, null);
+  assert(recorder.claimScopes[0].organizationId.length > 0);
+});
+
+Deno.test("every claimed delivery has its outcome accepted, so none is left claimed to resend", async () => {
+  const recorder = newRecorder();
+  const deliveries = [
+    deliveryRow({ id: "70000000-0000-4000-8000-0000000000a1", channel: "in_app" }),
+    deliveryRow({ id: "70000000-0000-4000-8000-0000000000a2", channel: "push" }),
+  ];
+  const store = fakeStore([], {}, deliveries, new Map(), recorder);
+
+  await runEscalationEngine({
+    store,
+    env: SMS_ENV,
+    log: silentLog,
+    organizationId: ORG,
+    facilityId: FACILITY,
+    fetchImpl: () => Promise.resolve(new Response("{}", { status: 200 })),
+  });
+
+  // The regression this guards: the outcome write used to be filtered on a
+  // status the claim had already moved away from, so it matched nothing, said
+  // nothing, and the delivery was resent every claim timeout forever.
+  assertEquals(recorder.rejectedOutcomes, []);
+  assertEquals(recorder.patches.length, deliveries.length);
+  for (const delivery of deliveries) {
+    assert(
+      recorder.patches.some((patch) => patch.id === delivery.id),
+      `no outcome was recorded for ${delivery.id}; it stays claimed and sends again`,
+    );
+  }
 });

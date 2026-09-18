@@ -22,6 +22,10 @@ import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { MetricCard } from "@/components/ui/metric-card";
+import {
+  fetchDocumentationLagThresholds,
+  type DocumentationLagThresholds,
+} from "@/lib/rounding/board-policy-fetch";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   formatIntegrityNoFlagsEmptyTitle,
@@ -83,6 +87,10 @@ export default function RoundingIntegrityPage() {
   const [assigneeOptions, setAssigneeOptions] = useState<IncidentFollowupAssigneeOption[]>([]);
   const [historyById, setHistoryById] = useState<Record<string, IntegrityHistoryItem[]>>({});
   const [filter, setFilter] = useState<StatusFilter>("all");
+  // The documentation lag tones are this building's policy, not constants.
+  // Null means the building has no facility_observation_thresholds row, and the
+  // cards say so rather than colouring a lag against a number nobody chose.
+  const [lagThresholds, setLagThresholds] = useState<DocumentationLagThresholds | null>(null);
 
   const load = useCallback(async () => {
     setLoadState("loading");
@@ -93,6 +101,8 @@ export default function RoundingIntegrityPage() {
       setLoadState("ready");
       return;
     }
+
+    setLagThresholds(await fetchDocumentationLagThresholds(supabase, selectedFacilityId));
 
     try {
       const query = supabase
@@ -403,6 +413,7 @@ export default function RoundingIntegrityPage() {
                     assignee={assigneeDrafts[row.id] ?? ""}
                     assigneeOptions={assigneeOptions}
                     history={historyById[row.id] ?? []}
+                    lagThresholds={lagThresholds}
                     actionLoading={actionLoading}
                     onNoteChange={(value) =>
                       setNotes((current) => ({ ...current, [row.id]: value }))

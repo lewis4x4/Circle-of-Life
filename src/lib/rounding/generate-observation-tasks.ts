@@ -1,5 +1,5 @@
 import type { GeneratedTaskInput, ObservationTaskStatus, PlanRuleInput } from "@/lib/rounding/types";
-import { calculateObservationTaskStatus } from "@/lib/rounding/update-task-status";
+import { MS_PER_MINUTE } from "@/lib/rounding/duration-units";
 
 type GenerateArgs = {
   organizationId: string;
@@ -83,12 +83,23 @@ function pushGeneratedTask(
   args: GenerateArgs,
   dueAt: Date,
 ) {
-  const graceEndsAt = new Date(dueAt.getTime() + (args.rule.graceMinutes ?? 15) * 60 * 1000);
-  const status = calculateObservationTaskStatus({
-    dueAt,
-    graceEndsAt,
-    now: args.now,
-  });
+  // resident_observation_plan_rules.grace_minutes is NOT NULL, so the rule
+  // always carries its own grace. A default here would be a second copy of the
+  // column default, which is the literal acceptance 19 exists to forbid; zero
+  // is the honest answer if a caller ever omits it.
+  const graceEndsAt = new Date(dueAt.getTime() + (args.rule.graceMinutes ?? 0) * MS_PER_MINUTE);
+
+  // Every generated task is written `upcoming`, which is what the two SQL
+  // generators do (`public.record_cadence_observation_tasks` and
+  // `public.generate_monitoring_order_tasks` both insert `'upcoming'`).
+  //
+  // This used to derive a band at generation time from constants that stopped
+  // governing anything when Part 4 replaced the escalation engine. Deriving it
+  // here was also the wrong layer: a generated task moves through the bands
+  // afterwards, driven by `public.advance_observation_task_lapse` and
+  // `public.record_observation_escalation_rung` from configuration rows, and a
+  // status stamped at generation is stale the moment it is written.
+  const status: ObservationTaskStatus = "upcoming";
 
   tasks.push({
     organizationId: args.organizationId,
@@ -186,7 +197,7 @@ export function generateObservationTasks(args: GenerateArgs): GeneratedTaskInput
 
     while (cursor.getTime() <= daypart.end.getTime() && cursor.getTime() <= windowEnd.getTime()) {
       pushGeneratedTask(tasks, args, new Date(cursor));
-      cursor = new Date(cursor.getTime() + intervalMinutes * 60 * 1000);
+      cursor = new Date(cursor.getTime() + intervalMinutes * MS_PER_MINUTE);
     }
 
     dayCursor.setDate(dayCursor.getDate() + 1);

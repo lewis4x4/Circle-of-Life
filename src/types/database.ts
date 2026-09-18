@@ -18569,12 +18569,15 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          documentation_lag_notable_minutes: number
+          documentation_lag_serious_minutes: number
           facility_id: string
           id: string
           maximum_unobserved_gap_minutes: number
           maximum_windows_per_resident_per_day: number
           organization_id: string
           simulation_lookback_days: number
+          task_upcoming_lead_minutes: number
           updated_at: string
           updated_by: string | null
         }
@@ -18583,12 +18586,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          documentation_lag_notable_minutes?: number
+          documentation_lag_serious_minutes?: number
           facility_id: string
           id?: string
           maximum_unobserved_gap_minutes: number
           maximum_windows_per_resident_per_day: number
           organization_id: string
           simulation_lookback_days: number
+          task_upcoming_lead_minutes?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -18597,12 +18603,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          documentation_lag_notable_minutes?: number
+          documentation_lag_serious_minutes?: number
           facility_id?: string
           id?: string
           maximum_unobserved_gap_minutes?: number
           maximum_windows_per_resident_per_day?: number
           organization_id?: string
           simulation_lookback_days?: number
+          task_upcoming_lead_minutes?: number
           updated_at?: string
           updated_by?: string | null
         }

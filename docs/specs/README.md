@@ -328,6 +328,7 @@ These landed **after** Phase 6 (`086`–`092`) and Phase 1 auth remediation (`09
 | `098`–`101` | `25-resident-assurance-engine.md` | Resident Assurance schema, RLS, audit, seed (`098`–`101`). |
 | `102`–`106` | `26-reporting-module.md` | Reporting module schema, RLS, audit, seed, saved-views backfill. |
 | `107` | `25-resident-assurance-engine.md` (patch) | Resident Assurance indexes + RLS patch. |
+| `414`–`427` | `25A-smart-rounding-cadence-and-watchlist.md` | Smart Rounding rebuild: shift model and versioned cadence (`414`), chip vocabulary and the composing submit RPC (`415`), Monitoring Orders (`416`), versioned escalation policy (`417`), the projected compliance read and facility inheritance (`418`, `423`, `424`), review fixes and the module authority probe (`419`–`421`), Watchlist signals (`422`), configuration templates and jurisdiction floors (`425`), the seven configuration RPCs (`426`), escalation drain and scope transfers (`427`). **Applied to Haven HFO Staging; not applied to production.** Supersedes the observation cadence set by `219` and `310`. |
 | `108`–`109` | Onboarding (spec TBD / align with FRONTEND-CONTRACT) | `108_onboarding_responses.sql`, `109_onboarding_question_tiers.sql` — wire to product docs when promoting onboarding to FULL. |
 
 **UI pointers (non-exhaustive):** `/admin/rounding/*`, `/caregiver/rounds/*`, `/admin/reports/*`, onboarding routes as present under `src/app/`. Edge Functions and API routes: see `supabase/functions/` and `src/app/api/`.
@@ -462,6 +463,7 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 | Order | Spec file | Module | Migration range (planned) | Repo status (2026-04-08) |
 |-------|-----------|--------|---------------------------|-------------------------|
 | 31 | `25-resident-assurance-engine.md` | Resident Assurance Engine | `098`–`101`, patch `107` | ✅ **Shipped** — schema, RLS, audit, seed, indexes patch; admin `/admin/rounding/*`, caregiver `/caregiver/rounds/*`, API under `src/app/api/rounding/`. Hardening / acceptance: Tracks B–D as applicable. |
+| 31A | `25A-smart-rounding-cadence-and-watchlist.md` | Smart Rounding: cadence, Monitoring Orders, Watchlist, Settings | `414`–`427` | 🟡 **Built on branch `blewis/smart-rounding-cadence-watchlist`, Parts 1–8 complete. Applied to Haven HFO Staging (`414`–`424` as of the Part 8 handoff), NOT applied to production.** Rebuilds the observation model on versioned per-facility configuration: six windows, chip-composed capture, Monitoring Orders in place of the watch approval queue, a versioned escalation ladder, the Watchlist, a five-tab shell and an administrator settings surface. Spec section 11 open items 1–8 remain open. |
 | 32 | `20-expansion-acquisition.md` | Expansion Planning | TBD (`326`+) | 🔲 Not migrated |
 | 33 | `28-regulatory-intelligence.md` (planned) | Regulatory Intelligence | TBD (`326`+) | 🔲 Spec not yet in `docs/specs/`; not migrated |
 
@@ -586,6 +588,7 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — ✅ Core (`092`); API sync remains in Completion Track D |
 | 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) + v3 patch | `24-executive-intelligence.md` — ✅ Core (`047`); v2: `24-executive-v2.md` — ✅ (`085`); **v3:** `096`–`097`; operational hardening remains in Completion Track C |
 | 25 | Resident Assurance Engine | 7 | `25-resident-assurance-engine.md` — ✅ Core DDL + patches (`098`–`101`, `107`); UI/API shipped — acceptance follows Track A + B–D |
+| 25A | Smart Rounding: Cadence, Monitoring Orders, Watchlist, Settings | 7 | `25A-smart-rounding-cadence-and-watchlist.md` — 🟡 Built on branch (`414`–`427`), Parts 1–8 complete; **staging applied, production not applied**; supersedes the `219`/`310` cadence. Acceptance: `scripts/smart-rounding/*`, `npm run smart-rounding:e2e`, `npm run smart-rounding:rls-check` |
 | 26 | Ambient Environment Intelligence (roadmap module 26) | 8 | `26-ambient-intelligence.md` — **not yet in repo**; migration TBD (`326`+) — **do not confuse with `26-reporting-module.md` below** |
 | 27 | Facility Digital Twin | 6 | `27-digital-twin.md` — **not yet in `docs/specs/`**; migration TBD — **`105` in repo is reporting seed, not digital twin** |
 | 28 | Regulatory Intelligence & Arbitrage | 7 | `28-regulatory-intelligence.md` — **not yet in `docs/specs/`**; migration TBD — **`103`–`104` in repo are reporting RLS/audit, not this module** |
