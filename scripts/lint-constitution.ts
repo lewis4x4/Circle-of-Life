@@ -69,6 +69,36 @@ const targets = scope === "all" ? [path.join(root, "src")] : segmentTargets;
 const files = Array.from(new Set(targets.flatMap(walk))).sort();
 const findings: Finding[] = [];
 
+/* Rules below run against the scoped file list. `no-undefined-color-scale`
+   deliberately does not — a utility naming a shade that tailwind.config.ts
+   never declares emits no CSS at all, so the control renders invisible
+   (COL-410). That has to be caught wherever it lands, not only inside the
+   current segment. */
+const scaleFiles = Array.from(new Set(walk(path.join(root, "src")))).sort();
+
+/* Colours declared as DEFAULT + foreground only. `bg-primary-600` and friends
+   look plausible and produce nothing. Use the semantic token with an alpha
+   step instead: bg-primary, bg-primary/10, border-primary/20, text-primary. */
+const scaleLessColors = ["primary", "secondary", "muted", "accent", "destructive"];
+const undefinedScale = new RegExp(
+  `\\b(?:[a-z-]+:)*(?:bg|text|border|ring|fill|stroke|from|to|via|decoration|outline|divide|shadow|accent)-(?:${scaleLessColors.join("|")})-[0-9]{2,3}\\b`,
+);
+
+for (const file of scaleFiles) {
+  const content = readFileSync(file, "utf8");
+  content.split(/\r?\n/).forEach((line, index) => {
+    const match = undefinedScale.exec(line);
+    if (!match) return;
+    addFinding(
+      file,
+      index + 1,
+      "no-undefined-color-scale",
+      `"${match[0]}" names a shade tailwind.config.ts does not declare, so it emits no CSS and the element renders unstyled. Use the semantic token with an alpha step (bg-primary, bg-primary/10, border-primary/20).`,
+      line,
+    );
+  });
+}
+
 function addFinding(file: string, line: number, rule: string, message: string, text: string) {
   findings.push({
     file: path.relative(root, file),

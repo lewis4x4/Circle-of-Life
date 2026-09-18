@@ -30,6 +30,11 @@ import {
   type ExecutiveSnapshotState,
 } from "@/lib/executive/snapshot-evidence";
 import {
+  fetchCensusDailyLog,
+  summarizeResidentDayWindow,
+  type ResidentDayWindow,
+} from "@/lib/executive/resident-days";
+import {
   fetchResidentAssuranceFacilityHeatMap,
   fetchResidentAssuranceFacilityTrendSeries,
   type ResidentAssuranceFacilityRollup,
@@ -52,6 +57,12 @@ export type ExecutiveOverviewData = {
   occupancyContext: OccupancyContext | null;
   /** When the portfolio figures were recorded, and the denominators behind them. */
   snapshot: ExecutiveSnapshotState;
+  /**
+   * Resident-days recorded for the incident-rate window, and how many of the
+   * window's days were recorded at all. Null when the census could not be read
+   * or no facility is in scope — which is not the same as a window of zeros.
+   */
+  residentDayWindow: ResidentDayWindow | null;
   /** Dated portfolio-scope changes, keyed by metric code. Absent = nothing to compare. */
   metricChanges: Record<string, MetricChange>;
   /**
@@ -97,12 +108,30 @@ export async function loadExecutiveOverview(
   organizationId: string,
   { strict = false }: { strict?: boolean } = {},
 ): Promise<ExecutiveOverviewData> {
-  // The bed census depends on this same facility list; do not fetch it twice.
+  // The bed census and the resident-day window depend on this same facility
+  // list; do not fetch it three times.
   const facilityQuery = withTimeout(
     supabase.from("facilities").select("id, name, total_licensed_beds")
       .eq("organization_id", organizationId).is("deleted_at", null)
       .order("name", { ascending: true }),
     "facilities",
+  );
+
+  // The run record behind the tiles: when it executed and what denominators it
+  // used. Its absence is reported, never silently read as "current". The
+  // resident-day window is anchored on the day this run covers, so it is named
+  // here rather than inline below.
+  const snapshotRunQuery = withTimeout(
+    supabase
+      .from("exec_kpi_snapshots")
+      .select("snapshot_date, computed_at, metrics")
+      .eq("organization_id", organizationId)
+      .eq("scope_type", "organization")
+      .is("deleted_at", null)
+      .order("snapshot_date", { ascending: false })
+      .order("computed_at", { ascending: false })
+      .limit(1),
+    "kpi-snapshot-run",
   );
 
   // Use allSettled so one failing query (e.g., a snapshot table that's empty
@@ -119,6 +148,7 @@ export async function loadExecutiveOverview(
     presenceCensusRes,
     bedCensusRes,
     snapshotRunRes,
+    residentDayWindowRes,
   ] = await Promise.allSettled([
       withTimeout(buildAggregateSnapshotQuery(supabase, organizationId), "aggregate-snapshots"),
       withTimeout(buildFacilitySnapshotQuery(supabase, organizationId), "facility-snapshots"),
@@ -147,19 +177,27 @@ export async function loadExecutiveOverview(
         })(),
         "bed-census",
       ),
-      // The run record behind the tiles: when it executed and what denominators
-      // it used. Its absence is reported, never silently read as "current".
+      snapshotRunQuery,
+      // Resident-days actually recorded across the incident-rate window. The
+      // window ends on the day the run covers, so the numerator and denominator
+      // describe the same period even when the run is a day or two behind.
       withTimeout(
-        supabase
-          .from("exec_kpi_snapshots")
-          .select("snapshot_date, computed_at, metrics")
-          .eq("organization_id", organizationId)
-          .eq("scope_type", "organization")
-          .is("deleted_at", null)
-          .order("snapshot_date", { ascending: false })
-          .order("computed_at", { ascending: false })
-          .limit(1),
-        "kpi-snapshot-run",
+        (async () => {
+          const [{ data: facilityRows, error }, snapshotRun] = await Promise.all([
+            facilityQuery,
+            snapshotRunQuery,
+          ]);
+          if (error) return null;
+          const facilityIds = (facilityRows ?? []).map((facility) => facility.id);
+          if (facilityIds.length === 0) return null;
+          const runDate = snapshotRun.error
+            ? null
+            : (snapshotRun.data?.[0] as { snapshot_date?: string } | undefined)?.snapshot_date ?? null;
+          const endIsoDate = runDate ?? facilityTodayIsoDate();
+          const rows = await fetchCensusDailyLog(supabase, organizationId, { endIsoDate });
+          return summarizeResidentDayWindow({ rows, facilityIds, endIsoDate });
+        })(),
+        "resident-day-window",
       ),
     ]);
 
@@ -183,6 +221,10 @@ export async function loadExecutiveOverview(
   const presenceCensus = presenceCensusRes.status === "fulfilled" ? presenceCensusRes.value : EMPTY_PRESENCE_CENSUS;
   const bedCensusByFacility =
     bedCensusRes.status === "fulfilled" ? bedCensusRes.value : new Map<string, never>();
+  // A failed read leaves the window unknown, which the basis reports as a
+  // projection rather than as a window nobody recorded.
+  const residentDayWindow =
+    residentDayWindowRes.status === "fulfilled" ? residentDayWindowRes.value : null;
 
   const todayIsoDate = facilityTodayIsoDate();
   const snapshotState = resolveSnapshotState({
@@ -231,6 +273,7 @@ export async function loadExecutiveOverview(
     presenceCensus,
     occupancyContext,
     snapshot: snapshotState,
+    residentDayWindow,
     metricChanges: buildPortfolioMetricChanges(aggregateRows as MetricSnapshotRow[]),
     metricDates: buildLatestMetricDates(aggregateRows as MetricSnapshotRow[]),
     todayIsoDate,

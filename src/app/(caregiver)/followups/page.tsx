@@ -9,11 +9,13 @@ import { caregiverDisplayRoomLabel } from "@/lib/caregiver/emar-queue-copy";
 import { conditionChangeTypeLabel } from "@/lib/caregiver/floor-queues";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms } from "@/lib/caregiver/facility-residents";
+import { fetchMyWitnessTasks, type WitnessTask } from "@/lib/care-events/witness";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 
 import { Badge } from "@/components/ui/badge";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
+import { WitnessTaskCard } from "@/components/care-events/WitnessTaskCard";
 
 type OpenCondition = {
   id: string;
@@ -31,6 +33,7 @@ export default function CaregiverFollowupsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<OpenCondition[]>([]);
+  const [witnessTasks, setWitnessTasks] = useState<WitnessTask[]>([]);
   const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
@@ -49,6 +52,16 @@ export default function CaregiverFollowupsPage() {
         data: { user },
       } = await supabase.auth.getUser();
       setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
+      // Section 3 of the paper incident form. A statement asked of this person
+      // and nobody else, so it loads by the signed-in user, not by facility.
+      // A failure here must not hide the condition follow-ups below it.
+      if (user?.id) {
+        try {
+          setWitnessTasks(await fetchMyWitnessTasks(supabase, user.id));
+        } catch {
+          setWitnessTasks([]);
+        }
+      }
       const resolved = await loadCaregiverFacilityContext(supabase);
       if (!resolved.ok) {
         setLoadError(resolved.error);
@@ -145,6 +158,21 @@ export default function CaregiverFollowupsPage() {
         title="Review condition-change reports, then move the resident into the next clinical or shift-handoff action."
         description="Use this lane to keep change reports visible, then escalate through incident reporting or carry them into handoff when the next shift needs clarity."
       />
+      {witnessTasks.length > 0 ? (
+        <section className="space-y-3" aria-labelledby="witness-statements-heading">
+          <h2 id="witness-statements-heading" className="text-lg font-semibold text-foreground">
+            Witness statements
+          </h2>
+          {witnessTasks.map((task) => (
+            <WitnessTaskCard
+              key={task.id}
+              task={task}
+              onCompleted={(id) => setWitnessTasks((current) => current.filter((row) => row.id !== id))}
+            />
+          ))}
+        </section>
+      ) : null}
+
       <div className="p-6 sm:p-8 rounded-lg border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
           <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center border border-teal-500/30">

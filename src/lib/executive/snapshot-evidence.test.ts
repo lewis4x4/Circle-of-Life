@@ -88,6 +88,91 @@ describe("snapshot evidence", () => {
     expect(noDenominator.estimated).toBe(false);
   });
 
+  it("adds up the recorded days and projects only the rest, while any day is unrecorded", () => {
+    const state = resolveSnapshotState({ row: RUN, todayIsoDate: "2026-09-15" });
+    const basis = incidentRateBasis(state, {
+      windowDays: 30,
+      measuredDays: 10,
+      residentDays: 320,
+      startDate: "2026-08-17",
+      endDate: "2026-09-15",
+    });
+
+    // 320 counted over ten days, plus 25 × the twenty days nobody recorded.
+    expect(basis.residentDays).toBe(820);
+    expect(basis.usable).toBe(true);
+    expect(basis.estimated).toBe(true);
+    expect(basis.line).toContain("Estimated");
+    expect(basis.measuredDays).toBe(10);
+    expect(basis.detail).toContain("320 counted from the daily census on 10 of the 30 days");
+    expect(basis.detail).toContain("500 projected from 25 residents in census on 2026-09-15");
+    expect(basis.detail).toContain("20 days no census is recorded for");
+  });
+
+  it("drops Estimated only once every day in the window was recorded", () => {
+    const state = resolveSnapshotState({ row: RUN, todayIsoDate: "2026-09-15" });
+
+    // One day short is still an estimate, however close it is.
+    const nearly = incidentRateBasis(state, {
+      windowDays: 30,
+      measuredDays: 29,
+      residentDays: 928,
+      startDate: "2026-08-17",
+      endDate: "2026-09-15",
+    });
+    expect(nearly.estimated).toBe(true);
+    expect(nearly.line).toContain("Estimated");
+
+    const measured = incidentRateBasis(state, {
+      windowDays: 30,
+      measuredDays: 30,
+      residentDays: 960,
+      startDate: "2026-08-17",
+      endDate: "2026-09-15",
+    });
+    expect(measured.estimated).toBe(false);
+    expect(measured.usable).toBe(true);
+    // The counted total stands on its own; the run's one-day census is not
+    // mixed into it, so 960 is not 750 adjusted.
+    expect(measured.residentDays).toBe(960);
+    expect(measured.line).not.toContain("Estimated");
+    expect(measured.detail).toContain("added up across all 30 days from 2026-08-17 through 2026-09-15");
+    expect(measured.detail).toContain("No day in the window is projected");
+  });
+
+  it("uses the counted denominator even when the run recorded no census of its own", () => {
+    const state = resolveSnapshotState({
+      row: { ...RUN, metrics: { ...RUN.metrics, census: {} } },
+      todayIsoDate: "2026-09-15",
+    });
+
+    expect(incidentRateBasis(state).usable).toBe(false);
+    expect(
+      incidentRateBasis(state, {
+        windowDays: 30,
+        measuredDays: 30,
+        residentDays: 960,
+        startDate: "2026-08-17",
+        endDate: "2026-09-15",
+      }),
+    ).toMatchObject({ usable: true, estimated: false, residentDays: 960 });
+  });
+
+  it("keeps a counted zero apart from a missing denominator", () => {
+    const state = resolveSnapshotState({ row: RUN, todayIsoDate: "2026-09-15" });
+    const emptyWindow = incidentRateBasis(state, {
+      windowDays: 30,
+      measuredDays: 30,
+      residentDays: 0,
+      startDate: "2026-08-17",
+      endDate: "2026-09-15",
+    });
+
+    expect(emptyWindow.usable).toBe(false);
+    expect(emptyWindow.residentDays).toBe(0);
+    expect(emptyWindow.line).toContain("No residents in census over the window");
+  });
+
   it("ages a run against the facilities' operating day, not the browser's", () => {
     // 2026-09-16T01:00Z is still the evening of the 15th in America/New_York.
     expect(facilityTodayIsoDate(new Date("2026-09-16T01:00:00.000Z"))).toBe("2026-09-15");

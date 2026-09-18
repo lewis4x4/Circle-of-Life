@@ -107,8 +107,8 @@ function attentionBadge(row: DietRow): { label: string; barClass: string; badgeC
   if (row.medication_texture_review_notes?.trim()) {
     return {
       label: "Med / texture review",
-      barClass: "bg-primary-500",
-      badgeClass: "text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/20",
+      barClass: "bg-primary",
+      badgeClass: "text-primary bg-primary/5 dark:bg-primary/10 border-primary/20",
     };
   }
   return {
@@ -491,7 +491,7 @@ export function AdminDietaryPageClient({
               >
                 Med / diet review
               </Link>
-              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-6 rounded-lg font-bold uppercase tracking-wide text-xs tap-responsive bg-primary-600 hover:bg-primary-700 text-white")} >
+              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-6 rounded-lg font-bold uppercase tracking-wide text-xs tap-responsive")} >
                 + New Diet Order
               </Link>
            </div>
@@ -499,13 +499,13 @@ export function AdminDietaryPageClient({
 
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] md:col-span-3">
-            <V2Card hoverColor="indigo" className="border-primary-500/20 dark:border-primary-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
+            <V2Card hoverColor="indigo" className="border-primary/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
               <MonolithicWatermark value={displayRows.length} className="text-info/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
-                <h3 className="text-[11px] font-bold tracking-wider uppercase text-primary-600 dark:text-primary-400 flex items-center gap-2">
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-primary flex items-center gap-2">
                   <Utensils className="h-4 w-4" /> Active Diet Orders
                 </h3>
-                <p className="text-2xl tracking-tight font-medium text-primary-600 dark:text-primary-400 pb-1">{displayRows.length}</p>
+                <p className="text-2xl tracking-tight font-medium text-primary pb-1">{displayRows.length}</p>
               </div>
             </V2Card>
           </div>
@@ -529,7 +529,7 @@ export function AdminDietaryPageClient({
             id={SNACK_PASS_SECTION_ID}
             ref={snackPassSectionRef}
             aria-labelledby="snack-pass-heading"
-            className="scroll-mt-24 rounded-lg border border-primary-200/70 bg-primary-50/40 p-6 shadow-sm dark:border-primary-500/20 dark:bg-primary-950/20"
+            className="scroll-mt-24 rounded-lg border border-primary/15 bg-primary/5 p-6 shadow-sm"
           >
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-4 lg:max-w-xl">
@@ -538,7 +538,7 @@ export function AdminDietaryPageClient({
                     id="snack-pass-heading"
                     className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-2"
                   >
-                    <Cookie className="h-5 w-5 text-primary-600 dark:text-primary-400" aria-hidden />
+                    <Cookie className="h-5 w-5 text-primary" aria-hidden />
                     Snack pass
                   </h2>
                   <p className="text-sm text-slate-600 dark:text-slate-300">{SNACK_PASS_HELPER_COPY}</p>
@@ -756,13 +756,13 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Allergy Alert</p>
-                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md">
                       {formatDietaryBatchStatPct("allergy", batchStats.allergyPct, loading)}
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
-                      className="bg-primary-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      className="bg-primary h-2 rounded-full transition-all duration-1000 ease-out"
                       style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.allergyPct, loading)}%` }}
                     />
                   </div>
@@ -771,13 +771,13 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Texture Reviews</p>
-                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md">
                       {formatDietaryBatchStatPct("texture", batchStats.medTexturePct, loading)}
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
-                      className="bg-primary-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      className="bg-primary h-2 rounded-full transition-all duration-1000 ease-out"
                       style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.medTexturePct, loading)}%` }}
                     />
                   </div>

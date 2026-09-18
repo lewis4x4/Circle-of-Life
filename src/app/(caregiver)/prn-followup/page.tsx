@@ -228,12 +228,12 @@ export default function CaregiverPrnFollowupPage() {
       />
       <div className="p-6 sm:p-8 rounded-lg border border-white/5 shadow-2xl relative overflow-visible z-10 w-full transition-all text-zinc-100">
         <h3 className="flex items-center gap-3 text-2xl font-semibold text-white tracking-wide">
-          <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center border border-primary-500/30">
-            <Pill className="h-5 w-5 text-primary-400" />
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+            <Pill className="h-5 w-5 text-primary" />
           </div>
           PRN follow-up
         </h3>
-        <p className="text-sm font-mono text-primary-200/60 mt-4 max-w-xl">
+        <p className="text-sm font-mono text-primary/60 mt-4 max-w-xl">
           PRN administrations that still need an effectiveness check (per order window, default <span className="font-bold text-white">{DEFAULT_PRN_REASSESS_MINUTES}</span> min).
         </p>
       </div>
@@ -276,7 +276,7 @@ export default function CaregiverPrnFollowupPage() {
                   
                   <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-white/5">
                     <p className="flex items-center gap-2 text-[11px] font-mono leading-relaxed text-zinc-300 bg-black/40 w-fit px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
-                      <Activity className="h-3.5 w-3.5 text-primary-400" />
+                      <Activity className="h-3.5 w-3.5 text-primary" />
                       Given {r.givenLabel} <span className="text-zinc-500 mx-1">/</span> Target by {r.reassessLabel} ({r.minutes} min)
                     </p>
                   </div>
@@ -313,7 +313,7 @@ export default function CaregiverPrnFollowupPage() {
                         <Button
                           type="button"
                           disabled={savingId === r.id}
-                          className="h-12 px-8 rounded-full font-mono text-xs shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-primary-500 text-white font-bold bg-primary-600 hover:bg-primary-500 tap-responsive flex-1 sm:flex-none"
+                          className="h-12 px-8 rounded-full font-mono text-xs shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] font-bold tap-responsive flex-1 sm:flex-none"
                           onClick={() => void saveEffectiveness(r.id)}
                         >
                           {savingId === r.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

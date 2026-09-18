@@ -26,6 +26,7 @@ import {
   metricFreshness,
   metricRecordedLine,
   type ExecutiveSnapshotState,
+  type MeasuredResidentDays,
 } from "@/lib/executive/snapshot-evidence";
 
 export type CoverageState =
@@ -78,6 +79,11 @@ export type CoverageInput = {
   metricDates: Record<string, string | undefined>;
   /** The facilities' operating day, which every metric is aged against. */
   todayIsoDate: string;
+  /**
+   * Resident-days counted from the recorded daily census, when any of the
+   * incident-rate window has been recorded. Absent means none of it has.
+   */
+  residentDays?: MeasuredResidentDays | null;
   /** Facilities with at least one recorded assurance observation. */
   observedFacilityCount: number;
   /** Facilities carrying a recorded survey readiness review of their own. */
@@ -429,9 +435,13 @@ function roundingRow(input: CoverageInput): CoverageRow {
 /**
  * The incident rate needs both a count and a denominator. A count recorded
  * against no resident-days is not a rate, and the tile withholds it, so
- * coverage must not claim the measure is reported. Where a denominator does
- * exist it is projected from one day's census, so the measure is reported as
- * estimated rather than as an established rate.
+ * coverage must not claim the measure is reported.
+ *
+ * The denominator is reported as counted only when every day of the window has
+ * a recorded census from every facility in scope. Any day still projected from
+ * one day's census — even one — keeps the measure at `estimated`, because the
+ * reader's question is whether the number rests on a count, and a partly
+ * projected denominator does not.
  */
 function incidentRow(input: CoverageInput): CoverageRow {
   const label = "Incident rate";
@@ -453,7 +463,7 @@ function incidentRow(input: CoverageInput): CoverageRow {
     };
   }
 
-  const basis = incidentRateBasis(input.snapshot);
+  const basis = incidentRateBasis(input.snapshot, input.residentDays);
   if (!basis.usable) {
     return {
       key: "incidents",
@@ -471,13 +481,28 @@ function incidentRow(input: CoverageInput): CoverageRow {
   }
   const incidentsPast = earlierDayRow("incidents", label, input, "inc_rate", { actionLabel: "Open incident queue", href: "/admin/incidents" });
   if (incidentsPast) return incidentsPast;
+
   // The arithmetic itself belongs beside the figure, not here as well.
+  if (!basis.estimated) {
+    return {
+      key: "incidents",
+      label,
+      state: "reported",
+      short: "Counted",
+      detail: `Counted across every facility in scope for the trailing ${basis.windowDays} days, over a resident-day denominator added up from the census recorded on each of those days.`,
+    };
+  }
+
+  const projectedDays = Math.max(0, basis.windowDays - basis.measuredDays);
   return {
     key: "incidents",
     label,
     state: "estimated",
     short: "Estimated",
-    detail: `Counted across every facility in scope for the trailing ${INCIDENT_RATE_WINDOW_DAYS} days. The resident-day denominator is projected from one day's census, so the rate is an estimate.`,
+    detail:
+      basis.measuredDays > 0
+        ? `Counted across every facility in scope for the trailing ${basis.windowDays} days. The resident-day denominator is added up from the recorded census on ${basis.measuredDays} of those days and projected from one day's census for the other ${projectedDays}, so the rate is still an estimate.`
+        : `Counted across every facility in scope for the trailing ${INCIDENT_RATE_WINDOW_DAYS} days. The resident-day denominator is projected from one day's census, so the rate is an estimate.`,
   };
 }
 

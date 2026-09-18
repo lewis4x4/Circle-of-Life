@@ -15,7 +15,7 @@ const tapeColor: Record<string, string> = {
   vitals:   "bg-sky-500/20 text-sky-200 ring-sky-500/40",
   hold:     "bg-rose-500/20 text-rose-200 ring-rose-500/40",
   page:     "bg-amber-500/20 text-amber-200 ring-amber-500/40",
-  prn:      "bg-primary-500/20 text-primary-200 ring-ring",
+  prn:      "bg-primary/20 text-primary ring-ring",
   incident: "bg-orange-500/20 text-orange-200 ring-orange-500/40",
 };
 
@@ -43,7 +43,7 @@ export function ShiftTape({
       <div className="h-28 border-t border-slate-800 bg-slate-950/60 ">
         <div className="px-6 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Radio className="w-3.5 h-3.5 text-primary-400" />
+            <Radio className="w-3.5 h-3.5 text-primary" />
             <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
               Shift Tape
             </h3>

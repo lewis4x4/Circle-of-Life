@@ -890,3 +890,16 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Mission alignment** | `pass` — the resident New assessment form keeps the instrument, progress, and provisional-vs-recorded state in view; no assessment content, schedule, threshold, or acuity mapping was invented or changed; records still carry resident, facility, author, answers, and result. |
 | **Evidence** | Gate `test-results/agent-gates/2026-09-16T14-18-34-757Z-assessment-entry-instrument-context.json` PASS (strict, `--ui`, axe on `/` + the new-assessment route). Unit: 83 tests across `src/lib/assessments` + the page. Browser: 35/35 checks on the local scratch stack, `docs/specs/handoff-evidence/assessment-entry-2026-09-16/`. Earlier gate runs `…T12-52-53…` (FAIL: pre-existing `StatusPill` warning-tone contrast in the resident shell, history route) and `…T13-42-44…` (FAIL: transient HTTP 503 from the scratch stack on one viewport) are kept for the record. |
 | **Docs** | `HANDOFFS/2026-09-16__assessment-entry-instrument-context.md` — clinical-content verification (no instrument version column; Katz direction vs published index; PHQ-9 stem/safety/≥10 rule open; Braden descriptors licensed; intervals are seed defaults) reported separately from functional/visual checks. |
+
+---
+
+## RECORD — col-414-resident-days (2026-09-17)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `col-414-resident-days` |
+| **Mission alignment** | `pass` — the executive incident rate now divides by resident-days that were counted where they exist, and says plainly which part of the denominator is still projected; no census number is invented, and no clinical or login behaviour changed. |
+| **Problem** | `census_daily_log` has existed since migration 007 with no writer, so `incidentRateBasis` multiplied one day's census by the 30-day window. A portfolio that admitted through the month is credited with its highest census on all thirty days; Homewood's shape overstates the rate by roughly a third. |
+| **BUILD** | Migration `415_census_daily_log_writer.sql` (`public.record_census_daily_log`, service_role only, today/yesterday ET only, idempotent per facility + day). Edge Function `daily-census-log` (`x-cron-secret` = `DAILY_CENSUS_LOG_SECRET`), scheduled 04:30 + 05:30 UTC with a 00:00-America/New_York gate so exactly one firing records per day. `src/lib/executive/resident-days.ts` sums the window day by day; a day any in-scope facility missed is not counted as measured. `incidentRateBasis` drops "Estimated" only when every day of the window is recorded at every facility in scope. |
+| **Evidence** | Gate `test-results/agent-gates/2026-09-17T00-10-24-516Z-col-414-resident-days.json` PASS (`--ui`: design review 4 screenshots, axe on the executive route). Earlier non-UI run `…T00-06-02-921Z…` also PASS. Unit: 5,856 tests across 771 files. The migration was exercised against a throwaway PostgreSQL 17 cluster with a fixture schema (counts, idempotent re-run, yesterday allowed, two days back refused). |
+| **Not done** | The migration is not applied to production or staging and the Edge Function is not deployed; `scripts/census/cron-schedules.sql` is not installed. Until the job has run for 30 consecutive days the tile stays "Estimated" — by design, and the disclosure names how many days were counted. |

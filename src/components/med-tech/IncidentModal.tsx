@@ -175,7 +175,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
                       onClick={() => setResidentId(r.id)}
                       className={`rounded-xl p-3 text-left ring-1 transition ${
                         residentId === r.id
-                          ? "bg-primary-500/20 ring-ring text-white"
+                          ? "bg-primary/20 ring-ring text-white"
                           : "bg-slate-800/60 ring-slate-700 text-slate-300 hover:ring-slate-500"
                       }`}
                     >

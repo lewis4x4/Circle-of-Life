@@ -29,6 +29,7 @@ it("discards an old organization's result after a newer request completes", asyn
     initialPresenceCensus: EMPTY_PRESENCE_CENSUS,
     initialOccupancyContext: null,
     initialSnapshot: { kind: "never_recorded" } as const,
+  initialResidentDayWindow: null,
     initialMetricChanges: {},
     initialMetricDates: {},
     initialHasServerData: false,
