@@ -1,50 +1,23 @@
-import { cookies } from "next/headers";
+import { Suspense } from "react";
 
-import { AdminRoundingPageClient } from "@/components/rounding/AdminRoundingPageClient";
-import {
-  SELECTED_FACILITY_COOKIE,
-  parseSelectedFacilityCookieValue,
-} from "@/lib/facilities/selected-facility-cookie";
-import {
-  EMPTY_ROUNDING_SUMMARY,
-  fetchRoundingOverviewFromSupabase,
-  type RoundingOverviewSummary,
-  type RoundingTaskRow,
-} from "@/lib/rounding/load-rounding-overview";
-import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
-import { createClient } from "@/lib/supabase/server";
+import { LiveBoard } from "@/components/rounding/LiveBoard";
 
-export default async function AdminRoundingPage() {
-  const cookieStore = await cookies();
-  const initialFacilityId = parseSelectedFacilityCookieValue(
-    cookieStore.get(SELECTED_FACILITY_COOKIE)?.value,
-  );
-
-  const supabase = await createClient();
-  let initialSummary: RoundingOverviewSummary = EMPTY_ROUNDING_SUMMARY;
-  let initialTaskRows: RoundingTaskRow[] = [];
-  let initialError: string | null = null;
-  let initialEmptyNotice: string | null = null;
-
-  try {
-    const result = await fetchRoundingOverviewFromSupabase(initialFacilityId, supabase);
-    initialSummary = result.summary;
-    initialTaskRows = result.taskRows;
-    initialEmptyNotice = result.emptyNotice;
-  } catch (error) {
-    initialError = formatLiveDataLoadError(
-      error,
-      "Could not load Smart Rounding metrics. Confirm the facility scope is set and retry.",
-    );
-  }
-
+/**
+ * Smart Rounding lands on the Live board. Spec 25A defect 9.
+ *
+ * There is no Overview page any more. An overview of the board, one route away
+ * from the board, was a second destination whose only content was counts the
+ * board already carries, and it was where the retired 2026-08-14 cadence apply
+ * panel lived.
+ *
+ * The board reads `?filter=escalated`, so the links that used to point at the
+ * Escalations tab still land an operator on the right rows. Reading a search
+ * param makes the board a client boundary, hence the Suspense wrapper.
+ */
+export default function AdminRoundingPage() {
   return (
-    <AdminRoundingPageClient
-      initialSummary={initialSummary}
-      initialTaskRows={initialTaskRows}
-      initialError={initialError}
-      initialFacilityId={initialFacilityId}
-      initialEmptyNotice={initialEmptyNotice}
-    />
+    <Suspense fallback={null}>
+      <LiveBoard />
+    </Suspense>
   );
 }

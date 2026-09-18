@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext } from "@/lib/rounding/auth";
+import { emptyObservationVocabCatalog, type ObservationVocabOption } from "@/lib/rounding/observation-chips";
 
-type VocabField = "location" | "position" | "state";
+const VOCAB_FIELDS = ["location", "position", "state", "meal_intake", "mood_state", "med_response"] as const;
+
+type VocabField = (typeof VOCAB_FIELDS)[number];
 
 type VocabRow = {
   field_name: VocabField;
+  value_code: string;
   display_label: string;
   display_order: number;
   facility_id: string | null;
@@ -35,9 +39,9 @@ export async function GET(request: Request) {
 
   const { data, error } = await context.admin
     .from("observation_vocab" as never)
-    .select("field_name, display_label, display_order, facility_id")
+    .select("field_name, value_code, display_label, display_order, facility_id")
     .eq("organization_id", context.organizationId)
-    .in("field_name", ["location", "position", "state"])
+    .in("field_name", [...VOCAB_FIELDS])
     .eq("active", true)
     .is("deleted_at", null)
     .or(`facility_id.is.null,facility_id.eq.${facilityId}`)
@@ -52,24 +56,19 @@ export async function GET(request: Request) {
   }
 
   const rows = (data ?? []) as unknown as VocabRow[];
-  const out: Record<VocabField, string[]> = {
-    location: [],
-    position: [],
-    state: [],
-  };
+  const catalog = emptyObservationVocabCatalog();
 
-  for (const field of ["location", "position", "state"] as const) {
-    const fieldRows = rows.filter((row) => row.field_name === field);
-    const byLabel = new Map<string, string>();
-
-    for (const row of fieldRows) {
-      if (!byLabel.has(row.display_label) || row.facility_id === facilityId) {
-        byLabel.set(row.display_label, row.display_label);
+  for (const field of VOCAB_FIELDS) {
+    // A facility row wins over the org-wide row carrying the same code.
+    const byCode = new Map<string, ObservationVocabOption>();
+    for (const row of rows) {
+      if (row.field_name !== field) continue;
+      if (!byCode.has(row.value_code) || row.facility_id === facilityId) {
+        byCode.set(row.value_code, { code: row.value_code, label: row.display_label });
       }
     }
-
-    out[field] = [...byLabel.values()];
+    catalog[field] = [...byCode.values()];
   }
 
-  return NextResponse.json(out);
+  return NextResponse.json(catalog);
 }

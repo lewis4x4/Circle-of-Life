@@ -417,7 +417,7 @@ describe("ExecutiveFacilityDetailPage rounding", () => {
     expect(items[6]).toHaveTextContent("1 escalation");
     expect(screen.getByText(/a watch start counts 1, an integrity flag 2, an escalation 3/)).toBeInTheDocument();
     expect(screen.getByText("2 of 7 days recorded")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^1 open escalations$/ })).toHaveAttribute("href", "/admin/rounding/escalations");
+    expect(screen.getByRole("link", { name: /^1 open escalations$/ })).toHaveAttribute("href", "/admin/rounding?filter=escalated");
   });
 });
 

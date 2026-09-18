@@ -70,15 +70,14 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/residents/new`
 - `/admin/residents/[id]`
 - `/admin/residents/[id]/care-plan`
-- `/admin/rounding`
-- `/admin/rounding/live`
-- `/admin/rounding/watches`
-- `/admin/rounding/escalations`
-- `/admin/rounding/integrity`
-- `/admin/rounding/plans`
-- `/admin/rounding/plans/new`
-- `/admin/rounding/plans/[id]`
-- `/admin/rounding/reports`
+- `/admin/rounding` (spec 25A defect 9: the Live board. Overview folded into it; Escalations folded into it as the `?filter=escalated` filter)
+- `/admin/rounding/live` (redirect to `/admin/rounding`, kept so existing links and bookmarks resolve)
+- `/admin/rounding/watchlist` (spec 25A section 7, tiers 1 and 2. Replaces the retired safety-score board)
+- `/admin/rounding/watchlist/[residentId]` (spec 25A section 7.5 tier 3)
+- `/admin/rounding/monitoring-orders` (spec 25A section 4: the facility-level order list. Replaces `watches`; entry stays on the resident record)
+- `/admin/rounding/integrity` (spec 25A section 7.1: documentation integrity plus observation compliance cut by shift, hall and staff)
+- `/admin/rounding/reports` (spec 25A defect 9: Insights folded in)
+- `/admin/facilities/[facilityId]?tab=observation` (spec 25A section 6: the cadence and escalation settings surface. Deliberately in facility administration and not in the Smart Rounding strip, which stays at five tabs. Tier 1 the 24 hour strip and the ladder in wall clock terms, tier 2 editing one check or one step with the preview and the simulate action, tier 3 version history, the change log with reasons, and rollback)
 - `/admin/assessments/overdue`
 - `/admin/care-plans/reviews-due`
 - `/admin/incidents`

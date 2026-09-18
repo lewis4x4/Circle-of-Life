@@ -1,0 +1,45 @@
+{
+  "stalledDockerClients": [
+    {
+      "pid": 70110,
+      "action": "retained or already exited",
+      "matched": false
+    },
+    {
+      "pid": 73334,
+      "action": "retained or already exited",
+      "matched": false
+    },
+    {
+      "pid": 77389,
+      "action": "retained or already exited",
+      "matched": false
+    },
+    {
+      "pid": 77390,
+      "action": "retained or already exited",
+      "matched": false
+    },
+    {
+      "pid": 79000,
+      "action": "retained or already exited",
+      "matched": false
+    }
+  ],
+  "retainedDockerContainers": [
+    "haven-pg-verify-1788704435607",
+    "haven-pg-verify-1788704685000"
+  ],
+  "reason": "Docker daemon stopped answering; no restart of shared daemon performed. Exact run-owned containers retained pending daemon recovery.",
+  "nativeCluster": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-review-20260906-01a07709",
+  "nativeClusterStopped": true,
+  "nativeScratchFilesRemoved": 3159,
+  "nativeScratchDirectoriesRemoved": 27,
+  "privateProvenanceManifestsRetained": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-review-20260906-01a07709",
+  "retainedDockerReason": "Docker daemon still does not answer its Unix-socket health check; exact run-owned container names retained without restarting shared Docker.",
+  "orderValidationCleanup": {
+    "filesRemoved": 978,
+    "directoriesRemoved": 27,
+    "privateManifestsRetained": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-review-20260906-order"
+  }
+}

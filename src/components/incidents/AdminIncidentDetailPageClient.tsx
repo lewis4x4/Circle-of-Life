@@ -490,11 +490,11 @@ export function AdminIncidentDetailPageClient({
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Link href="/admin/rounding/watches" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                      <Link href="/admin/rounding/monitoring-orders" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                         Open watch center
                       </Link>
                       {(watch.taskSummary.overdue > 0 || watch.taskSummary.missed > 0) ? (
-                        <Link href="/admin/rounding/escalations" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                        <Link href="/admin/rounding?filter=escalated" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                           Review escalations
                         </Link>
                       ) : null}
@@ -567,7 +567,7 @@ export function AdminIncidentDetailPageClient({
                         <p className="text-sm text-muted-foreground">{escalation.resolution_note}</p>
                       ) : null}
                     </div>
-                    <Link href="/admin/rounding/escalations" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                    <Link href="/admin/rounding?filter=escalated" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                       Open escalation queue
                     </Link>
                   </div>

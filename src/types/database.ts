@@ -12291,6 +12291,8 @@ export type Database = {
         Row: {
           assigned_staff_id: string | null
           breathing_concern: boolean
+          chip_selections: Json
+          composed_summary: string
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -12326,6 +12328,8 @@ export type Database = {
         Insert: {
           assigned_staff_id?: string | null
           breathing_concern?: boolean
+          chip_selections?: Json
+          composed_summary: string
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -12361,6 +12365,8 @@ export type Database = {
         Update: {
           assigned_staff_id?: string | null
           breathing_concern?: boolean
+          chip_selections?: Json
+          composed_summary?: string
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -12639,9 +12645,541 @@ export type Database = {
           },
         ]
       }
+      facility_escalation_rung_shift_overrides: {
+        Row: {
+          channels: string[] | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          escalation_rung_id: string
+          escalation_version_id: string
+          facility_id: string
+          id: string
+          offset_minutes: number | null
+          organization_id: string
+          shift_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          channels?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          escalation_rung_id: string
+          escalation_version_id: string
+          facility_id: string
+          id?: string
+          offset_minutes?: number | null
+          organization_id: string
+          shift_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          channels?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          escalation_rung_id?: string
+          escalation_version_id?: string
+          facility_id?: string
+          id?: string
+          offset_minutes?: number | null
+          organization_id?: string
+          shift_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      facility_escalation_rungs: {
+        Row: {
+          assigned_staff_only: boolean
+          channels: string[]
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          enabled: boolean
+          escalation_version_id: string
+          facility_id: string
+          id: string
+          include_assigned_staff: boolean
+          is_terminal: boolean
+          label: string
+          offset_minutes: number
+          organization_id: string
+          protocol_text: string | null
+          rung_key: string
+          sort_order: number
+          target_staff_roles: Database["public"]["Enums"]["staff_role"][]
+          updated_at: string
+          updated_by: string | null
+          use_standing_alert_routes: boolean
+        }
+        Insert: {
+          assigned_staff_only?: boolean
+          channels: string[]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          escalation_version_id: string
+          facility_id: string
+          id?: string
+          include_assigned_staff?: boolean
+          is_terminal?: boolean
+          label: string
+          offset_minutes: number
+          organization_id: string
+          protocol_text?: string | null
+          rung_key: string
+          sort_order?: number
+          target_staff_roles?: Database["public"]["Enums"]["staff_role"][]
+          updated_at?: string
+          updated_by?: string | null
+          use_standing_alert_routes?: boolean
+        }
+        Update: {
+          assigned_staff_only?: boolean
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          escalation_version_id?: string
+          facility_id?: string
+          id?: string
+          include_assigned_staff?: boolean
+          is_terminal?: boolean
+          label?: string
+          offset_minutes?: number
+          organization_id?: string
+          protocol_text?: string | null
+          rung_key?: string
+          sort_order?: number
+          target_staff_roles?: Database["public"]["Enums"]["staff_role"][]
+          updated_at?: string
+          updated_by?: string | null
+          use_standing_alert_routes?: boolean
+        }
+        Relationships: []
+      }
+      facility_escalation_versions: {
+        Row: {
+          activated_at: string | null
+          activation_reason: string | null
+          apply_mode: string | null
+          activated_by: string | null
+          change_reason: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_from: string
+          effective_to: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          source_template_id: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activation_reason?: string | null
+          apply_mode?: string | null
+          activated_by?: string | null
+          change_reason: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from: string
+          effective_to?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          source_template_id?: string | null
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number: number
+        }
+        Update: {
+          activated_at?: string | null
+          activation_reason?: string | null
+          apply_mode?: string | null
+          activated_by?: string | null
+          change_reason?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          source_template_id?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: []
+      }
+      observation_escalation_deliveries: {
+        Row: {
+          channel: string
+          created_at: string
+          dispatch_id: string | null
+          error_message: string | null
+          facility_id: string
+          id: string
+          is_test: boolean
+          message_body: string | null
+          notification_route_id: string | null
+          organization_id: string
+          provider_message_id: string | null
+          rung_key: string
+          send_after: string
+          sent_at: string | null
+          skip_reason: string | null
+          status: string
+          target_phone: string | null
+          target_role: string
+          target_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          dispatch_id?: string | null
+          error_message?: string | null
+          facility_id: string
+          id?: string
+          is_test?: boolean
+          message_body?: string | null
+          notification_route_id?: string | null
+          organization_id: string
+          provider_message_id?: string | null
+          rung_key: string
+          send_after?: string
+          sent_at?: string | null
+          skip_reason?: string | null
+          status: string
+          target_phone?: string | null
+          target_role: string
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          dispatch_id?: string | null
+          error_message?: string | null
+          facility_id?: string
+          id?: string
+          is_test?: boolean
+          message_body?: string | null
+          notification_route_id?: string | null
+          organization_id?: string
+          provider_message_id?: string | null
+          rung_key?: string
+          send_after?: string
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          target_phone?: string | null
+          target_role?: string
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      observation_escalation_dispatches: {
+        Row: {
+          channels: string[]
+          created_at: string
+          entity_id: string | null
+          escalation_id: string | null
+          escalation_rung_id: string
+          escalation_version_id: string
+          facility_id: string
+          fired_at: string
+          id: string
+          is_terminal: boolean
+          organization_id: string
+          recipients_resolved: number
+          resident_id: string
+          rung_key: string
+          shift_key: string | null
+          task_id: string
+          window_closes_at: string
+        }
+        Insert: {
+          channels: string[]
+          created_at?: string
+          entity_id?: string | null
+          escalation_id?: string | null
+          escalation_rung_id: string
+          escalation_version_id: string
+          facility_id: string
+          fired_at?: string
+          id?: string
+          is_terminal?: boolean
+          organization_id: string
+          recipients_resolved?: number
+          resident_id: string
+          rung_key: string
+          shift_key?: string | null
+          task_id: string
+          window_closes_at: string
+        }
+        Update: {
+          channels?: string[]
+          created_at?: string
+          entity_id?: string | null
+          escalation_id?: string | null
+          escalation_rung_id?: string
+          escalation_version_id?: string
+          facility_id?: string
+          fired_at?: string
+          id?: string
+          is_terminal?: boolean
+          organization_id?: string
+          recipients_resolved?: number
+          resident_id?: string
+          rung_key?: string
+          shift_key?: string | null
+          task_id?: string
+          window_closes_at?: string
+        }
+        Relationships: []
+      }
+      facility_shift_definitions: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          ends_at_local: string
+          facility_id: string
+          id: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order: number
+          starts_at_local: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          ends_at_local: string
+          facility_id: string
+          id?: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order?: number
+          starts_at_local: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          ends_at_local?: string
+          facility_id?: string
+          id?: string
+          label?: string
+          organization_id?: string
+          shift_key?: string
+          sort_order?: number
+          starts_at_local?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_shift_definitions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_shift_definitions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_cadence_versions: {
+        Row: {
+          activated_at: string | null
+          activation_reason: string | null
+          apply_mode: string | null
+          activated_by: string | null
+          change_reason: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_from: string
+          effective_to: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          source_template_id: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activation_reason?: string | null
+          apply_mode?: string | null
+          activated_by?: string | null
+          change_reason: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from: string
+          effective_to?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          source_template_id?: string | null
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number: number
+        }
+        Update: {
+          activated_at?: string | null
+          activation_reason?: string | null
+          apply_mode?: string | null
+          activated_by?: string | null
+          change_reason?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          source_template_id?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_cadence_versions_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_cadence_versions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_cadence_windows: {
+        Row: {
+          cadence_version_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          due_at_local: string
+          enabled: boolean
+          facility_id: string
+          grace_after_minutes: number
+          grace_before_minutes: number
+          id: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+          window_key: string
+        }
+        Insert: {
+          cadence_version_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          due_at_local: string
+          enabled?: boolean
+          facility_id: string
+          grace_after_minutes: number
+          grace_before_minutes: number
+          id?: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_key: string
+        }
+        Update: {
+          cadence_version_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          due_at_local?: string
+          enabled?: boolean
+          facility_id?: string
+          grace_after_minutes?: number
+          grace_before_minutes?: number
+          id?: string
+          label?: string
+          organization_id?: string
+          shift_key?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_cadence_windows_cadence_version_id_fkey"
+            columns: ["cadence_version_id"]
+            isOneToOne: false
+            referencedRelation: "facility_cadence_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_cadence_windows_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resident_observation_tasks: {
         Row: {
           assigned_staff_id: string | null
+          cadence_version_id: string | null
           completed_log_id: string | null
           created_at: string
           deleted_at: string | null
@@ -12653,22 +13191,26 @@ export type Database = {
           facility_id: string
           grace_ends_at: string
           id: string
+          monitoring_order_id: string | null
           notes: string | null
           organization_id: string
-          plan_id: string
+          plan_id: string | null
           plan_rule_id: string | null
           reassigned_from_staff_id: string | null
           reassignment_reason: string | null
           resident_id: string
           scheduled_for: string
+          service_date: string | null
           shift_assignment_id: string | null
           status: Database["public"]["Enums"]["resident_observation_task_status"]
           updated_at: string
           updated_by: string | null
           watch_instance_id: string | null
+          window_key: string | null
         }
         Insert: {
           assigned_staff_id?: string | null
+          cadence_version_id?: string | null
           completed_log_id?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -12680,22 +13222,26 @@ export type Database = {
           facility_id: string
           grace_ends_at: string
           id?: string
+          monitoring_order_id?: string | null
           notes?: string | null
           organization_id: string
-          plan_id: string
+          plan_id?: string | null
           plan_rule_id?: string | null
           reassigned_from_staff_id?: string | null
           reassignment_reason?: string | null
           resident_id: string
           scheduled_for: string
+          service_date?: string | null
           shift_assignment_id?: string | null
           status?: Database["public"]["Enums"]["resident_observation_task_status"]
           updated_at?: string
           updated_by?: string | null
           watch_instance_id?: string | null
+          window_key?: string | null
         }
         Update: {
           assigned_staff_id?: string | null
+          cadence_version_id?: string | null
           completed_log_id?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -12707,19 +13253,22 @@ export type Database = {
           facility_id?: string
           grace_ends_at?: string
           id?: string
+          monitoring_order_id?: string | null
           notes?: string | null
           organization_id?: string
-          plan_id?: string
+          plan_id?: string | null
           plan_rule_id?: string | null
           reassigned_from_staff_id?: string | null
           reassignment_reason?: string | null
           resident_id?: string
           scheduled_for?: string
+          service_date?: string | null
           shift_assignment_id?: string | null
           status?: Database["public"]["Enums"]["resident_observation_task_status"]
           updated_at?: string
           updated_by?: string | null
           watch_instance_id?: string | null
+          window_key?: string | null
         }
         Relationships: [
           {
@@ -12797,6 +13346,238 @@ export type Database = {
             columns: ["watch_instance_id"]
             isOneToOne: false
             referencedRelation: "resident_watch_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_monitoring_orders: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          document_path: string | null
+          ends_at: string | null
+          entered_by: string | null
+          entity_id: string | null
+          facility_id: string
+          id: string
+          interval_minutes: number
+          order_received_as: string
+          ordered_by_name: string | null
+          ordered_by_type: string
+          organization_id: string
+          reason_category: string
+          reason_note: string
+          resident_id: string
+          review_due_at: string | null
+          source_watch_instance_id: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_path?: string | null
+          ends_at?: string | null
+          entered_by?: string | null
+          entity_id?: string | null
+          facility_id: string
+          id?: string
+          interval_minutes: number
+          order_received_as: string
+          ordered_by_name?: string | null
+          ordered_by_type: string
+          organization_id: string
+          reason_category: string
+          reason_note: string
+          resident_id: string
+          review_due_at?: string | null
+          source_watch_instance_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          document_path?: string | null
+          ends_at?: string | null
+          entered_by?: string | null
+          entity_id?: string | null
+          facility_id?: string
+          id?: string
+          interval_minutes?: number
+          order_received_as?: string
+          ordered_by_name?: string | null
+          ordered_by_type?: string
+          organization_id?: string
+          reason_category?: string
+          reason_note?: string
+          resident_id?: string
+          review_due_at?: string | null
+          source_watch_instance_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_monitoring_orders_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_orders_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_orders_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_orders_source_watch_instance_id_fkey"
+            columns: ["source_watch_instance_id"]
+            isOneToOne: false
+            referencedRelation: "resident_watch_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_monitoring_order_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          changed_fields: Json
+          created_at: string
+          event_type: string
+          facility_id: string
+          from_status: string | null
+          id: string
+          monitoring_order_id: string
+          note: string | null
+          occurred_at: string
+          organization_id: string
+          resident_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          changed_fields?: Json
+          created_at?: string
+          event_type?: string
+          facility_id: string
+          from_status?: string | null
+          id?: string
+          monitoring_order_id: string
+          note?: string | null
+          occurred_at?: string
+          organization_id: string
+          resident_id: string
+          to_status: string
+        }
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "resident_monitoring_order_events_monitoring_order_id_fkey"
+            columns: ["monitoring_order_id"]
+            isOneToOne: false
+            referencedRelation: "resident_monitoring_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_order_events_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resident_monitoring_order_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          facility_id: string
+          id: string
+          monitoring_order_id: string
+          notification_route_id: string | null
+          organization_id: string
+          send_after: string
+          sent_at: string | null
+          skip_reason: string | null
+          status: string
+          target_phone: string | null
+          target_role: string
+          target_user_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          facility_id: string
+          id?: string
+          monitoring_order_id: string
+          notification_route_id?: string | null
+          organization_id: string
+          send_after?: string
+          sent_at?: string | null
+          skip_reason?: string | null
+          status: string
+          target_phone?: string | null
+          target_role: string
+          target_user_id?: string | null
+        }
+        Update: {
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resident_monitoring_order_notifications_monitoring_order_id_fkey"
+            columns: ["monitoring_order_id"]
+            isOneToOne: false
+            referencedRelation: "resident_monitoring_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resident_monitoring_order_notifications_notification_route_id_fkey"
+            columns: ["notification_route_id"]
+            isOneToOne: false
+            referencedRelation: "notification_routes"
             referencedColumns: ["id"]
           },
         ]
@@ -16803,7 +17584,1179 @@ export type Database = {
         ]
       }
     }
+      watchlist_band_rules: {
+        Row: {
+          band_key: string
+          band_label: string
+          band_rank: number
+          counts_data_quality: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          enabled: boolean
+          facility_id: string | null
+          id: string
+          jurisdiction: string | null
+          min_open_days: number | null
+          min_open_signal_count: number
+          min_severity_weight: number
+          organization_id: string
+          rule_key: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          band_key: string
+          band_label: string
+          band_rank: number
+          counts_data_quality?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          facility_id?: string | null
+          id?: string
+          jurisdiction?: string | null
+          min_open_days?: number | null
+          min_open_signal_count?: number
+          min_severity_weight?: number
+          organization_id: string
+          rule_key: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          band_key?: string
+          band_label?: string
+          band_rank?: number
+          counts_data_quality?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          facility_id?: string | null
+          id?: string
+          jurisdiction?: string | null
+          min_open_days?: number | null
+          min_open_signal_count?: number
+          min_severity_weight?: number
+          organization_id?: string
+          rule_key?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      watchlist_signal_dispositions: {
+        Row: {
+          acted_at: string
+          acted_by: string | null
+          acted_by_role: string | null
+          actor_kind: string
+          created_at: string
+          facility_id: string
+          from_status: string | null
+          id: string
+          ledger_seq: number
+          note: string | null
+          organization_id: string
+          resident_id: string
+          signal_instance_id: string
+          signal_key: string
+          to_status: string
+        }
+        Insert: {
+          acted_at?: string
+          acted_by?: string | null
+          acted_by_role?: string | null
+          actor_kind: string
+          created_at?: string
+          facility_id: string
+          from_status?: string | null
+          id?: string
+          ledger_seq?: number
+          note?: string | null
+          organization_id: string
+          resident_id: string
+          signal_instance_id: string
+          signal_key: string
+          to_status: string
+        }
+        Update: {
+          acted_at?: string
+          acted_by?: string | null
+          acted_by_role?: string | null
+          actor_kind?: string
+          created_at?: string
+          facility_id?: string
+          from_status?: string | null
+          id?: string
+          ledger_seq?: number
+          note?: string | null
+          organization_id?: string
+          resident_id?: string
+          signal_instance_id?: string
+          signal_key?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
+      watchlist_signal_instances: {
+        Row: {
+          acute_notified_at: string | null
+          cleared_at: string | null
+          cleared_reason: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          disposition_note: string | null
+          entity_id: string | null
+          evidence: Json
+          facility_id: string
+          first_detected_at: string
+          id: string
+          last_evaluated_at: string
+          observed_count: number
+          organization_id: string
+          owner_user_id: string | null
+          resident_id: string
+          severity_class: string
+          severity_weight: number
+          signal_key: string
+          signal_rule_id: string
+          source_kind: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          acute_notified_at?: string | null
+          cleared_at?: string | null
+          cleared_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          disposition_note?: string | null
+          entity_id?: string | null
+          evidence?: Json
+          facility_id: string
+          first_detected_at?: string
+          id?: string
+          last_evaluated_at?: string
+          observed_count?: number
+          organization_id: string
+          owner_user_id?: string | null
+          resident_id: string
+          severity_class: string
+          severity_weight: number
+          signal_key: string
+          signal_rule_id: string
+          source_kind: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          acute_notified_at?: string | null
+          cleared_at?: string | null
+          cleared_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          disposition_note?: string | null
+          entity_id?: string | null
+          evidence?: Json
+          facility_id?: string
+          first_detected_at?: string
+          id?: string
+          last_evaluated_at?: string
+          observed_count?: number
+          organization_id?: string
+          owner_user_id?: string | null
+          resident_id?: string
+          severity_class?: string
+          severity_weight?: number
+          signal_key?: string
+          signal_rule_id?: string
+          source_kind?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      watchlist_signal_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          facility_id: string
+          id: string
+          notification_route_id: string | null
+          organization_id: string
+          send_after: string
+          sent_at: string | null
+          signal_instance_id: string
+          skip_reason: string | null
+          status: string
+          target_phone: string | null
+          target_role: string
+          target_user_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          facility_id: string
+          id?: string
+          notification_route_id?: string | null
+          organization_id: string
+          send_after?: string
+          sent_at?: string | null
+          signal_instance_id: string
+          skip_reason?: string | null
+          status: string
+          target_phone?: string | null
+          target_role: string
+          target_user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          facility_id?: string
+          id?: string
+          notification_route_id?: string | null
+          organization_id?: string
+          send_after?: string
+          sent_at?: string | null
+          signal_instance_id?: string
+          skip_reason?: string | null
+          status?: string
+          target_phone?: string | null
+          target_role?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      watchlist_signal_rules: {
+        Row: {
+          baseline_days: number | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string
+          enabled: boolean
+          facility_id: string | null
+          id: string
+          jurisdiction: string | null
+          label: string
+          lookback_days: number
+          organization_id: string
+          secondary_lookback_days: number | null
+          secondary_threshold_percent: number | null
+          severity_class: string
+          severity_weight: number
+          signal_key: string
+          sort_order: number
+          source_filter: Json
+          source_kind: string
+          threshold_count: number
+          threshold_percent: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          baseline_days?: number | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description: string
+          enabled?: boolean
+          facility_id?: string | null
+          id?: string
+          jurisdiction?: string | null
+          label: string
+          lookback_days: number
+          organization_id: string
+          secondary_lookback_days?: number | null
+          secondary_threshold_percent?: number | null
+          severity_class: string
+          severity_weight: number
+          signal_key: string
+          sort_order?: number
+          source_filter?: Json
+          source_kind: string
+          threshold_count: number
+          threshold_percent?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          baseline_days?: number | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string
+          enabled?: boolean
+          facility_id?: string | null
+          id?: string
+          jurisdiction?: string | null
+          label?: string
+          lookback_days?: number
+          organization_id?: string
+          secondary_lookback_days?: number | null
+          secondary_threshold_percent?: number | null
+          severity_class?: string
+          severity_weight?: number
+          signal_key?: string
+          sort_order?: number
+          source_filter?: Json
+          source_kind?: string
+          threshold_count?: number
+          threshold_percent?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      cadence_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          template_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          template_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          template_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_templates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cadence_template_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          cadence_template_id: string
+          change_reason: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          organization_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          cadence_template_id: string
+          change_reason: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          organization_id: string
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          cadence_template_id?: string
+          change_reason?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_template_versions_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_versions_cadence_template_id_fkey"
+            columns: ["cadence_template_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_versions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_versions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cadence_template_windows: {
+        Row: {
+          cadence_template_version_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          due_at_local: string
+          enabled: boolean
+          grace_after_minutes: number
+          grace_before_minutes: number
+          id: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+          window_key: string
+        }
+        Insert: {
+          cadence_template_version_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          due_at_local: string
+          enabled?: boolean
+          grace_after_minutes: number
+          grace_before_minutes: number
+          id?: string
+          label: string
+          organization_id: string
+          shift_key: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_key: string
+        }
+        Update: {
+          cadence_template_version_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          due_at_local?: string
+          enabled?: boolean
+          grace_after_minutes?: number
+          grace_before_minutes?: number
+          id?: string
+          label?: string
+          organization_id?: string
+          shift_key?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cadence_template_windows_cadence_template_version_id_fkey"
+            columns: ["cadence_template_version_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_template_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_windows_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_windows_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cadence_template_windows_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          template_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          template_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          template_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_templates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_template_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          change_reason: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          escalation_template_id: string
+          id: string
+          organization_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          change_reason: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          escalation_template_id: string
+          id?: string
+          organization_id: string
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          change_reason?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          escalation_template_id?: string
+          id?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_template_versions_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_versions_escalation_template_id_fkey"
+            columns: ["escalation_template_id"]
+            isOneToOne: false
+            referencedRelation: "escalation_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_versions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_versions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_template_rungs: {
+        Row: {
+          assigned_staff_only: boolean
+          channels: string[]
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          enabled: boolean
+          escalation_template_version_id: string
+          id: string
+          include_assigned_staff: boolean
+          is_terminal: boolean
+          label: string
+          offset_minutes: number
+          organization_id: string
+          protocol_text: string | null
+          rung_key: string
+          sort_order: number
+          target_staff_roles: string[]
+          updated_at: string
+          updated_by: string | null
+          use_standing_alert_routes: boolean
+        }
+        Insert: {
+          assigned_staff_only?: boolean
+          channels: string[]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          escalation_template_version_id: string
+          id?: string
+          include_assigned_staff?: boolean
+          is_terminal?: boolean
+          label: string
+          offset_minutes: number
+          organization_id: string
+          protocol_text?: string | null
+          rung_key: string
+          sort_order?: number
+          target_staff_roles?: string[]
+          updated_at?: string
+          updated_by?: string | null
+          use_standing_alert_routes?: boolean
+        }
+        Update: {
+          assigned_staff_only?: boolean
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          escalation_template_version_id?: string
+          id?: string
+          include_assigned_staff?: boolean
+          is_terminal?: boolean
+          label?: string
+          offset_minutes?: number
+          organization_id?: string
+          protocol_text?: string | null
+          rung_key?: string
+          sort_order?: number
+          target_staff_roles?: string[]
+          updated_at?: string
+          updated_by?: string | null
+          use_standing_alert_routes?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_template_rungs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_rungs_escalation_template_version_id_fkey"
+            columns: ["escalation_template_version_id"]
+            isOneToOne: false
+            referencedRelation: "escalation_template_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_rungs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalation_template_rungs_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_config_template_bindings: {
+        Row: {
+          cadence_bound_at: string | null
+          cadence_detached_at: string | null
+          cadence_template_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          detach_reason: string | null
+          escalation_bound_at: string | null
+          escalation_detached_at: string | null
+          escalation_template_id: string | null
+          facility_id: string
+          id: string
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cadence_bound_at?: string | null
+          cadence_detached_at?: string | null
+          cadence_template_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          detach_reason?: string | null
+          escalation_bound_at?: string | null
+          escalation_detached_at?: string | null
+          escalation_template_id?: string | null
+          facility_id: string
+          id?: string
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cadence_bound_at?: string | null
+          cadence_detached_at?: string | null
+          cadence_template_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          detach_reason?: string | null
+          escalation_bound_at?: string | null
+          escalation_detached_at?: string | null
+          escalation_template_id?: string | null
+          facility_id?: string
+          id?: string
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_config_template_bindings_cadence_template_id_fkey"
+            columns: ["cadence_template_id"]
+            isOneToOne: false
+            referencedRelation: "cadence_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_escalation_template_id_fkey"
+            columns: ["escalation_template_id"]
+            isOneToOne: false
+            referencedRelation: "escalation_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_config_template_bindings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jurisdiction_observation_floors: {
+        Row: {
+          citation_reference: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_from: string
+          effective_to: string | null
+          floor_values_pending: boolean
+          id: string
+          jurisdiction_key: string
+          label: string
+          maximum_unobserved_gap_minutes: number | null
+          minimum_windows_per_24h: number | null
+          pending_note: string | null
+          state_code: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          citation_reference?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from: string
+          effective_to?: string | null
+          floor_values_pending?: boolean
+          id?: string
+          jurisdiction_key: string
+          label: string
+          maximum_unobserved_gap_minutes?: number | null
+          minimum_windows_per_24h?: number | null
+          pending_note?: string | null
+          state_code: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          citation_reference?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          floor_values_pending?: boolean
+          id?: string
+          jurisdiction_key?: string
+          label?: string
+          maximum_unobserved_gap_minutes?: number | null
+          minimum_windows_per_24h?: number | null
+          pending_note?: string | null
+          state_code?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jurisdiction_observation_floors_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jurisdiction_observation_floors_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facility_observation_thresholds: {
+        Row: {
+          change_log_page_size: number
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          documentation_lag_notable_minutes: number
+          documentation_lag_serious_minutes: number
+          facility_id: string
+          id: string
+          maximum_unobserved_gap_minutes: number
+          maximum_windows_per_resident_per_day: number
+          monitoring_order_interval_presets: number[]
+          monitoring_order_interval_min_minutes: number
+          monitoring_order_interval_max_minutes: number
+          observation_grace_divisor: number
+          observation_grace_floor_minutes: number
+          observation_grace_ceiling_minutes: number
+          organization_id: string
+          simulation_lookback_days: number
+          task_upcoming_lead_minutes: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          change_log_page_size: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          documentation_lag_notable_minutes?: number
+          documentation_lag_serious_minutes?: number
+          facility_id: string
+          id?: string
+          maximum_unobserved_gap_minutes: number
+          maximum_windows_per_resident_per_day: number
+          monitoring_order_interval_presets: number[]
+          monitoring_order_interval_min_minutes: number
+          monitoring_order_interval_max_minutes: number
+          observation_grace_divisor: number
+          observation_grace_floor_minutes: number
+          observation_grace_ceiling_minutes: number
+          organization_id: string
+          simulation_lookback_days: number
+          task_upcoming_lead_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          change_log_page_size?: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          documentation_lag_notable_minutes?: number
+          documentation_lag_serious_minutes?: number
+          facility_id?: string
+          id?: string
+          maximum_unobserved_gap_minutes?: number
+          maximum_windows_per_resident_per_day?: number
+          monitoring_order_interval_presets?: number[]
+          monitoring_order_interval_min_minutes?: number
+          monitoring_order_interval_max_minutes?: number
+          observation_grace_divisor?: number
+          observation_grace_floor_minutes?: number
+          observation_grace_ceiling_minutes?: number
+          organization_id?: string
+          simulation_lookback_days?: number
+          task_upcoming_lead_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_observation_thresholds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_observation_thresholds_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_observation_thresholds_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facility_observation_thresholds_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     Views: {
+      v_facility_config_template_drift: {
+        Row: {
+          cadence_drift_count: number | null
+          cadence_template_id: string | null
+          cadence_template_name: string | null
+          cadence_version_id: string | null
+          escalation_drift_count: number | null
+          escalation_template_id: string | null
+          escalation_template_name: string | null
+          escalation_version_id: string | null
+          facility_id: string | null
+          facility_name: string | null
+          on_cadence_template: boolean | null
+          on_escalation_template: boolean | null
+          organization_id: string | null
+        }
+        Relationships: []
+      }
+      v_facility_risk_index: {
+        Row: {
+          census: number | null
+          critical_signal_count: number | null
+          data_quality_signal_count: number | null
+          elevated_signal_count: number | null
+          facility_id: string | null
+          informational_signal_count: number | null
+          open_signal_count: number | null
+          organization_id: string | null
+          residents_with_open_signals: number | null
+          risk_index: number | null
+          service_date: string | null
+        }
+        Relationships: []
+      }
+      v_watchlist_facility: {
+        Row: {
+          band_key: string | null
+          band_label: string | null
+          band_rank: number | null
+          days_open: number | null
+          disposition_note: string | null
+          evidence: Json | null
+          facility_id: string | null
+          facility_name: string | null
+          first_detected_at: string | null
+          last_evaluated_at: string | null
+          observed_count: number | null
+          open_signal_count: number | null
+          organization_id: string | null
+          owner_name: string | null
+          owner_user_id: string | null
+          resident_first_name: string | null
+          resident_id: string | null
+          resident_last_name: string | null
+          resident_preferred_name: string | null
+          room_number: string | null
+          severity_class: string | null
+          signal_description: string | null
+          signal_instance_id: string | null
+          signal_key: string | null
+          signal_label: string | null
+          source_kind: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
+      v_watchlist_portfolio: {
+        Row: {
+          acute_resident_count: number | null
+          data_quality_signal_count: number | null
+          facility_id: string | null
+          facility_name: string | null
+          open_acute_signal_count: number | null
+          open_signal_count: number | null
+          organization_id: string | null
+          residents_on_watchlist: number | null
+          risk_index_latest: number | null
+          risk_index_prior_avg: number | null
+          risk_index_recent_avg: number | null
+          trend_direction: string | null
+          worst_band_key: string | null
+          worst_band_label: string | null
+          worst_band_rank: number | null
+        }
+        Relationships: []
+      }
       ar_aging_facility_daily: {
         Row: {
           balance_due_cents: number | null
@@ -16940,6 +18893,316 @@ export type Database = {
       }
     }
     Functions: {
+      activate_cadence_version: {
+        Args: {
+          p_change_reason: string
+          p_cadence_version_id?: string | null
+          p_escalation_version_id?: string | null
+          p_apply_mode?: string
+          p_effective_from?: string | null
+          p_acknowledgment?: string | null
+        }
+        Returns: Json
+      }
+      activate_due_scheduled_config_versions: {
+        Args: { p_organization_id: string; p_facility_id?: string | null; p_at?: string }
+        Returns: Json
+      }
+      apply_template_to_facilities: {
+        Args: {
+          p_facility_ids: string[]
+          p_change_reason: string
+          p_cadence_template_id?: string | null
+          p_escalation_template_id?: string | null
+          p_apply_mode?: string
+          p_effective_from?: string | null
+          p_acknowledgment?: string | null
+        }
+        Returns: Json
+      }
+      cadence_version_day_shape: {
+        Args: { p_cadence_version_id: string }
+        Returns: Json
+      }
+      create_cadence_version: {
+        Args: {
+          p_facility_id: string
+          p_change_reason: string
+          p_windows?: Json | null
+          p_escalation_rungs?: Json | null
+          p_effective_from?: string | null
+          p_source_cadence_template_id?: string | null
+          p_source_escalation_template_id?: string | null
+        }
+        Returns: Json
+      }
+      facility_config_template_drift: {
+        Args: { p_at?: string; p_facility_id?: string | null }
+        Returns: {
+          organization_id: string
+          facility_id: string
+          facility_name: string
+          cadence_version_id: string | null
+          escalation_version_id: string | null
+          cadence_template_id: string | null
+          cadence_template_name: string | null
+          escalation_template_id: string | null
+          escalation_template_name: string | null
+          on_cadence_template: boolean
+          on_escalation_template: boolean
+          cadence_drift_count: number | null
+          escalation_drift_count: number | null
+        }[]
+      }
+      facility_is_shift_boundary: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: boolean
+      }
+      facility_next_shift_boundary_at: {
+        Args: { p_facility_id: string; p_at?: string }
+        Returns: string | null
+      }
+      facility_observation_jurisdiction_floor: {
+        Args: { p_facility_id: string; p_on?: string }
+        Returns: Json
+      }
+      observation_config_change_log: {
+        Args: { p_facility_id: string; p_limit?: number | null }
+        Returns: Json
+      }
+      observation_config_overview: {
+        Args: {
+          p_facility_id: string
+          p_proposed_cadence_version_id?: string | null
+          p_proposed_escalation_version_id?: string | null
+        }
+        Returns: Json
+      }
+      observation_escalation_role_holders: {
+        Args: { p_facility_id: string; p_escalation_version_id: string }
+        Returns: Json
+      }
+      rollback_cadence_version: {
+        Args: {
+          p_facility_id: string
+          p_change_reason: string
+          p_restore_cadence_version_id?: string | null
+          p_restore_escalation_version_id?: string | null
+          p_apply_mode?: string
+          p_effective_from?: string | null
+          p_acknowledgment?: string | null
+        }
+        Returns: Json
+      }
+      simulate_cadence_change: {
+        Args: {
+          p_facility_id: string
+          p_proposed_cadence_version_id?: string | null
+          p_proposed_escalation_version_id?: string | null
+          p_lookback_days?: number | null
+        }
+        Returns: Json
+      }
+      validate_cadence_version: {
+        Args: { p_cadence_version_id?: string | null; p_escalation_version_id?: string | null }
+        Returns: Json
+      }
+      facility_cadence_in_force: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: string | null
+      }
+      facility_observation_windows_for_date: {
+        Args: { p_facility_id: string; p_service_date: string }
+        Returns: {
+          cadence_version_id: string
+          window_key: string
+          label: string
+          shift_key: string
+          due_at_utc: string
+          window_opens_at_utc: string
+          window_closes_at_utc: string
+        }[]
+      }
+      facility_shift_window_at: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: {
+          shift_key: string
+          shift_service_date: string
+          starts_at_utc: string
+          ends_at_utc: string
+        }[]
+      }
+      facility_next_shift_window: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: {
+          shift_key: string
+          shift_service_date: string
+          starts_at_utc: string
+          ends_at_utc: string
+        }[]
+      }
+      facility_next_shift_observation_windows: {
+        Args: { p_facility_id: string; p_at: string }
+        Returns: {
+          cadence_version_id: string
+          window_key: string
+          label: string
+          shift_key: string
+          shift_service_date: string
+          service_date: string
+          due_at_utc: string
+          window_opens_at_utc: string
+          window_closes_at_utc: string
+          starts_shift: boolean
+        }[]
+      }
+      /**
+       * Grace in minutes for an observation interval at one building, spec 25A
+       * section 5.2. Takes the facility since migration 432: the divisor and
+       * the bounds are `facility_observation_thresholds` columns, not
+       * constants. Raises 22023 for a building with no thresholds row rather
+       * than answering null.
+       */
+      monitoring_order_grace_minutes: {
+        Args: { p_facility_id: string; p_interval_minutes: number }
+        Returns: number
+      }
+      /** Delegates to monitoring_order_grace_minutes. One rule, not two. */
+      observation_grace_minutes: {
+        Args: { p_facility_id: string; p_interval_minutes: number }
+        Returns: number
+      }
+      /**
+       * The compliance contract for the observation module, replacing the
+       * v_resident_observation_compliance view. One row per resident per
+       * facility local service date per projected standard window, plus one
+       * row with a null `window_key` for a resident day that projects nothing.
+       * `p_facility_id` null means every facility the caller can reach.
+       * Expected is the row count; satisfied is the count where `satisfied`.
+       * Never count resident_observation_tasks to get either number.
+       */
+      observation_compliance_for_range: {
+        Args: { p_facility_id: string | null; p_from: string; p_to: string }
+        Returns: {
+          organization_id: string
+          facility_id: string
+          resident_id: string
+          service_date: string
+          window_key: string | null
+          window_label: string | null
+          shift_key: string | null
+          cadence_version_id: string | null
+          stamped_cadence_version_id: string | null
+          projected_cadence_version_id: string | null
+          cadence_version_matches_projection: boolean | null
+          no_cadence_in_force: boolean
+          due_at_utc: string | null
+          window_opens_at_utc: string | null
+          window_closes_at_utc: string | null
+          task_id: string | null
+          task_status: string | null
+          covered_by_monitoring_order_id: string | null
+          satisfied_by_log_id: string | null
+          satisfied_at: string | null
+          satisfied_by_monitoring_order_id: string | null
+          satisfied: boolean
+          absorbed: boolean
+          expectation_source: "standard_task" | "monitoring_order" | "projected_only" | "no_cadence"
+        }[]
+      }
+      ensure_facility_observation_defaults: {
+        Args: { p_facility_id: string }
+        Returns: Json
+      }
+      /**
+       * The Monitoring Order intervals one building offers, and the bounds a
+       * custom value must fall inside. A facility row since migration 432.
+       *
+       * `RETURNS TABLE`, so this comes back as an array of one row and
+       * `preset_minutes` inside it is an integer array. Reading it as a single
+       * object was a real bug in the hosted RLS check, which then reported the
+       * function as having answered nothing when it had answered correctly.
+       * An empty array means the building has no thresholds row.
+       */
+      monitoring_order_interval_options: {
+        Args: { p_facility_id: string }
+        Returns: {
+          preset_minutes: number[]
+          min_minutes: number
+          max_minutes: number
+        }[]
+      }
+      create_monitoring_order: {
+        Args: {
+          p_resident_id: string
+          p_interval_minutes: number
+          p_ordered_by_type: string
+          p_ordered_by_name: string
+          p_order_received_as: string
+          p_reason_category: string
+          p_reason_note: string
+          p_starts_at?: string | null
+          p_ends_at?: string | null
+          p_review_due_at?: string | null
+          p_document_path?: string | null
+        }
+        Returns: string
+      }
+      cancel_monitoring_order: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: string
+      }
+      expire_monitoring_orders: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      generate_monitoring_order_tasks: {
+        Args: { p_facility_id?: string | null; p_through?: string | null }
+        Returns: number
+      }
+      record_cadence_observation_tasks: {
+        Args: { p_rows: Json }
+        Returns: number
+      }
+      resolve_observation_task_assignees: {
+        Args: {
+          p_facility_id: string
+          p_shift_service_date: string
+          p_roster_shift_type: string
+          p_resident_ids: string[]
+        }
+        Returns: {
+          resident_id: string
+          shift_assignment_id: string | null
+          staff_id: string | null
+          assignment_source: string
+        }[]
+      }
+      record_observation_staffing_gap: {
+        Args: { p_facility_id: string; p_shift_key: string; p_service_date: string }
+        Returns: boolean
+      }
+      submit_observation: {
+        Args: {
+          p_task_id: string
+          p_chip_selections: Json
+          p_resident_location: string
+          p_resident_state: string
+          p_quick_status: string
+          p_note?: string | null
+          p_resident_position?: string | null
+          p_intervention_codes?: string[] | null
+          p_observed_at?: string | null
+          p_late_reason?: string | null
+          p_request_id?: string | null
+          p_offline?: boolean | null
+          p_actor_id?: string | null
+          p_actor_role?: string | null
+          p_session_id?: string | null
+          p_claim_version?: number | null
+        }
+        Returns: Json
+      }
       complete_incident_followup: {
         Args: { p_followup_id: string; p_choice?: string | null; p_note?: string | null }
         Returns: Json

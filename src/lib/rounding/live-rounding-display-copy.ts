@@ -1,42 +1,28 @@
 /**
- * Quiet Operator copy for the admin live rounding board (`/admin/rounding/live`).
- * Missing shift types name real gaps — never fabricate shift labels.
+ * Timestamp copy for the Smart Rounding Live board.
+ *
+ * `formatLiveRoundingShiftType` is gone with the board's `shift_assignments`
+ * embed. It turned a `shift_type` value into "night shift" by appending a word,
+ * which meant the module rendered whatever the roster enum held, including the
+ * `evening` value the enum still carries for other modules. Spec decision D3
+ * puts that out of this module: shift labels now come from
+ * `facility_shift_definitions` rows through `liveBoardShiftLabel`, and a window
+ * whose shift the building does not run says so.
+ *
+ * `formatLiveRoundingResidentDisplay` is gone with the same embed. Resident
+ * names come from the roster read and are named by `indexLiveBoardRoster`,
+ * because the task-side embed that used to carry them also asked for a
+ * `residents.room_number` column that does not exist and failed the whole
+ * query.
  */
-
-export const LIVE_ROUNDING_NO_RESIDENT_COPY = "No resident posted";
-
-export const LIVE_ROUNDING_NO_SHIFT_TYPE_COPY = "No shift posted";
 
 export const LIVE_ROUNDING_NO_DUE_DATE_COPY = "No date posted";
 
 export const LIVE_ROUNDING_NO_TIME_COPY = "No time posted";
 
 const LIVE_ROUNDING_LEGACY_UNKNOWN_DUE = "Unknown";
-const LIVE_ROUNDING_LEGACY_RESIDENT = "Resident";
 const LIVE_ROUNDING_EM_DASH = "—";
 const LIVE_ROUNDING_NEW_YORK_TZ = "America/New_York";
-
-/** Resident name on a live rounding card — names the join gap instead of inventing “Resident”. */
-export function formatLiveRoundingResidentDisplay(person?: {
-  first_name: string | null;
-  last_name: string | null;
-  preferred_name: string | null;
-} | null): string {
-  const first = (person?.preferred_name ?? person?.first_name)?.trim() ?? "";
-  const last = person?.last_name?.trim() ?? "";
-  const combined = `${first} ${last}`.trim();
-  if (!combined || combined === LIVE_ROUNDING_LEGACY_RESIDENT) {
-    return LIVE_ROUNDING_NO_RESIDENT_COPY;
-  }
-  return combined;
-}
-
-/** Shift type cell on a live rounding task row — full phrase, no dangling "shift". */
-export function formatLiveRoundingShiftType(shiftType: string | null | undefined): string {
-  const trimmed = shiftType?.trim();
-  if (!trimmed) return LIVE_ROUNDING_NO_SHIFT_TYPE_COPY;
-  return `${trimmed} shift`;
-}
 
 /** Due-at cell on a live rounding task row — relative time or named gap when unposted. */
 export function formatLiveRoundingDueLabel(
@@ -62,10 +48,8 @@ export function formatLiveRoundingDueLabel(
   return `${mins}m ago`;
 }
 
-/** Clock-time cell on a live rounding task row — hour:minute in Eastern or named gap when unposted. */
-export function formatLiveRoundingTimeOfDay(
-  value: string | null | undefined,
-): string {
+/** Clock-time cell — hour:minute in Eastern, or the named gap when unposted. */
+export function formatLiveRoundingTimeOfDay(value: string | null | undefined): string {
   const trimmed = value?.trim();
   if (
     !trimmed ||

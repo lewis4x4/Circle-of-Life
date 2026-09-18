@@ -11,13 +11,12 @@ type Body = {
   windowStart?: string;
   windowEnd?: string;
   shiftDate?: string;
-  shift?: "day" | "evening" | "night" | "custom";
 };
 
 type ShiftAssignmentRecord = {
   id: string;
   staff_id: string;
-  shift_type: "day" | "evening" | "night" | "custom";
+  shift_type: string;
 };
 
 type PlanRuleRecord = {
@@ -49,31 +48,6 @@ type PlanWatchRecord = {
   status: string;
 };
 
-function buildShiftWindow(shiftDate?: string, shift?: Body["shift"]) {
-  if (!shiftDate || !shift) {
-    return null;
-  }
-
-  const start = new Date(`${shiftDate}T00:00:00`);
-  const end = new Date(start);
-  if (shift === "day") {
-    start.setHours(7, 0, 0, 0);
-    end.setHours(15, 0, 0, 0);
-  } else if (shift === "evening") {
-    start.setHours(15, 0, 0, 0);
-    end.setHours(23, 0, 0, 0);
-  } else if (shift === "night") {
-    start.setHours(23, 0, 0, 0);
-    end.setDate(end.getDate() + 1);
-    end.setHours(7, 0, 0, 0);
-  } else {
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
-  }
-
-  return { start, end };
-}
-
 export async function POST(request: Request) {
   const auth = await getRoundingRequestContext({ managerOnly: true });
   if ("response" in auth) return auth.response;
@@ -90,12 +64,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const shiftWindow = buildShiftWindow(body.shiftDate, body.shift);
+  // Shift boundaries are facility configuration (`facility_shift_definitions`),
+  // never literals here, so this route takes the window it should generate.
   const requestedFacilityId = body.facilityId?.trim();
-  const windowStart = body.windowStart ? new Date(body.windowStart) : shiftWindow?.start;
-  const windowEnd = body.windowEnd ? new Date(body.windowEnd) : shiftWindow?.end;
+  const windowStart = body.windowStart ? new Date(body.windowStart) : undefined;
+  const windowEnd = body.windowEnd ? new Date(body.windowEnd) : undefined;
   if (!windowStart || !windowEnd || Number.isNaN(windowStart.getTime()) || Number.isNaN(windowEnd.getTime())) {
-    return NextResponse.json({ error: "A valid windowStart/windowEnd or shiftDate/shift is required" }, { status: 400 });
+    return NextResponse.json({ error: "A valid windowStart and windowEnd is required" }, { status: 400 });
   }
   if (!body.planId && !requestedFacilityId) {
     return NextResponse.json({ error: "facilityId is required when planId is not provided" }, { status: 400 });

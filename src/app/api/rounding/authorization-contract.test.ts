@@ -3,14 +3,15 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROUTES = [
+  // The `plans/*` routes and `reports/completion` are gone with spec 25A
+  // defect 7 and decision D13: the per resident observation plan is retired,
+  // and compliance is read from `observation_compliance_for_range` rather than
+  // by counting task rows. `compliance/route.ts` is their replacement.
+  "compliance/route.ts",
   "escalations/[id]/route.ts",
   "generate-tasks/route.ts",
   "integrity-flags/[id]/route.ts",
   "integrity-flags/history/route.ts",
-  "plans/apply-discovery-default/route.ts",
-  "plans/route.ts",
-  "plans/templates/route.ts",
-  "reports/completion/route.ts",
   "tasks/[id]/complete/route.ts",
   "tasks/[id]/excuse/route.ts",
   "tasks/[id]/reassign/route.ts",
@@ -23,8 +24,6 @@ const MUTATION_ROUTES = [
   "escalations/[id]/route.ts",
   "generate-tasks/route.ts",
   "integrity-flags/[id]/route.ts",
-  "plans/apply-discovery-default/route.ts",
-  "plans/route.ts",
   "tasks/[id]/complete/route.ts",
   "tasks/[id]/excuse/route.ts",
   "tasks/[id]/reassign/route.ts",
@@ -56,7 +55,6 @@ describe("rounding route current-authority contract", () => {
   it.each([
     "escalations/[id]/route.ts",
     "integrity-flags/[id]/route.ts",
-    "plans/route.ts",
     "tasks/[id]/complete/route.ts",
     "tasks/[id]/excuse/route.ts",
     "tasks/[id]/reassign/route.ts",

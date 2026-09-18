@@ -90,7 +90,7 @@ const STEPS_BY_DASHBOARD: Record<V2DashboardId, readonly Step[]> = {
     {
       title: "Configure round templates",
       body: "Set the question packs and expected cadence per unit. Rounds inherit these and surface on the round-cadence panel.",
-      href: "/admin/rounding/plans",
+      href: "/admin/rounding",
       cta: "Open plans",
     },
     {
