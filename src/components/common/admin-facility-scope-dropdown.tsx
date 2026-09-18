@@ -114,7 +114,7 @@ export function AdminFacilityScopeDropdown({
                 <button
                   type="button"
                   onClick={() => onRetry()}
-                  className="mt-2 block text-primary-600 underline dark:text-primary-400"
+                  className="mt-2 block text-primary underline"
                 >
                   Retry
                 </button>

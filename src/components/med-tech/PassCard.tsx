@@ -59,7 +59,7 @@ export function PassCard({
               Room {p.room}
             </span>
             {p.controlled && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-500/20 text-primary-300 text-[10px] font-semibold ring-1 ring-ring">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/20 text-primary text-[10px] font-semibold ring-1 ring-ring">
                 <ShieldCheck className="w-3 h-3" /> Controlled · witness
               </span>
             )}

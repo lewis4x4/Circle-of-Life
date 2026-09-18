@@ -373,7 +373,7 @@ export function SearchToolDashboard() {
       {/* ── RBAC Matrix ─────────────────────────────────── */}
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5  dark:bg-[#0A0A0A]/50">
         <div className="mb-4 flex items-center gap-2">
-          <Shield className="h-4 w-4 text-primary-500" />
+          <Shield className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Access Control Matrix
           </h3>

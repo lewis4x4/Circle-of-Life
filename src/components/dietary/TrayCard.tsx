@@ -10,7 +10,7 @@ export const DIET_COLOR: Record<string, string> = {
   Renal:             "bg-rose-500/15 text-rose-300 ring-rose-500/40",
   "Mech Soft":       "bg-amber-500/15 text-amber-300 ring-amber-500/40",
   "Mech Soft · NCS": "bg-amber-500/15 text-amber-300 ring-amber-500/40",
-  Puree:             "bg-primary-500/15 text-primary-300 ring-ring",
+  Puree:             "bg-primary/15 text-primary ring-ring",
   Vegetarian:        "bg-lime-500/15 text-lime-300 ring-lime-500/40",
   Vegan:             "bg-lime-500/15 text-lime-300 ring-lime-500/40",
   "Low Sodium":      "bg-sky-500/15 text-sky-300 ring-sky-500/40",
@@ -51,7 +51,7 @@ export function TrayCard({
           </div>
           <div className="text-sm font-semibold text-white truncate">{ticket.resident_name}</div>
         </div>
-        <span className="px-1.5 py-0.5 rounded-md bg-primary-500/20 text-primary-200 text-[10px] font-bold ring-1 ring-ring font-mono shrink-0">
+        <span className="px-1.5 py-0.5 rounded-md bg-primary/20 text-primary text-[10px] font-bold ring-1 ring-ring font-mono shrink-0">
           L{ticket.iddsi_level}
         </span>
       </div>

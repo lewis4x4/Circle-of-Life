@@ -113,7 +113,7 @@ export default function ReportsGovernancePage() {
                                 {row.name}
                              </span>
                              <span className="text-[10px] font-mono tracking-wider text-slate-500 dark:text-slate-400">
-                                Slug: <span className="font-semibold text-primary-600 dark:text-primary-400">{row.slug}</span>
+                                Slug: <span className="font-semibold text-primary">{row.slug}</span>
                              </span>
                           </div>
   
@@ -122,7 +122,7 @@ export default function ReportsGovernancePage() {
                                 <span className="xl:hidden text-[9px] uppercase font-mono tracking-wider text-slate-400 mb-0.5">Directives</span>
                                 <div className="flex flex-wrap gap-2">
                                   {row.official_template ? (
-                                    <Badge className="bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 border border-primary-200 dark:border-primary-800 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Official</Badge>
+                                    <Badge className="bg-primary/5 text-primary border border-primary/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Official</Badge>
                                   ) : (
                                     <Badge className="bg-slate-100 text-slate-700 dark:bg-black/40 dark:text-slate-300 border border-slate-200 dark:border-white/10 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Custom</Badge>
                                   )}
