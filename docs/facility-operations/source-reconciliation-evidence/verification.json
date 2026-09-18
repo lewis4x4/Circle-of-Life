@@ -1,0 +1,83 @@
+{
+  "recorded_at": "2026-09-13T01:14:10.290508+00:00",
+  "mission_alignment": "pass",
+  "scope": "source-only reconciliation; fresh local verification",
+  "branch": "codex/hfo-source-migration-reconciliation",
+  "tested_application_revision": "08fd3a43da2fbfaa42d2d37051774ab7d196eb07",
+  "origin_main": "50bc07c4c877b65e17f471895e4446ff11c4d69c",
+  "new_application_or_sql_changes": [],
+  "checks": [
+    {
+      "id": "source-check",
+      "command": "python3 docs/facility-operations/source-reconciliation-evidence/verify-source.py",
+      "exit_code": 0,
+      "result": "342 main files and 366 integrated files unchanged; 22 mapped migrations byte-identical; 27 synthetic variants preserved; repeated output identical"
+    },
+    {
+      "id": "native-replay",
+      "command": "PG_VERIFY_NATIVE_SOCKET=<run-owned socket> PG_VERIFY_NATIVE_BIN=/opt/homebrew/opt/postgresql@17/bin PG_VERIFY_NATIVE_PORT=55449 REQUIRE_PG_VERIFY=1 node scripts/pg-verify-migrations.mjs",
+      "exit_code": 0,
+      "migrations": 366,
+      "sql_probes": 46
+    },
+    {
+      "id": "focused-tests",
+      "command": "npx vitest run src/lib/operations src/app/api/operations src/app/api/admin/operations src/components/operations src/lib/finance-integration src/lib/platform-audit src/lib/billing src/lib/finance 'src/app/(admin)/billing'",
+      "exit_code": 0,
+      "files_passed": 85,
+      "tests_passed": 958
+    },
+    {
+      "id": "typecheck",
+      "command": "npm run typecheck",
+      "exit_code": 0
+    },
+    {
+      "id": "catalog-parity",
+      "command": "npx tsx scripts/facility-operations/sync-activity-catalog-seed.ts --check",
+      "exit_code": 0,
+      "source_mappings": 91
+    },
+    {
+      "id": "audit-export-forward-repair",
+      "artifact": "audit-export-red-green.json",
+      "result": "Expected admin history exclusion assertion fails before 363, passes after 363 in isolated native database"
+    },
+    {
+      "id": "segment-gates",
+      "command": "npm run segment:gates -- --segment HFO-SOURCE-MIGRATION-RECONCILIATION",
+      "environment": {
+        "REQUIRE_PG_VERIFY": "1",
+        "PG_VERIFY_NATIVE_SOCKET": "run-owned local socket",
+        "NODE_OPTIONS": "--max-old-space-size=8192",
+        "NEXT_PUBLIC_SUPABASE_URL": "http://127.0.0.1:54321",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY": "non-secret source-only placeholder"
+      },
+      "exit_code": 0,
+      "artifact": "test-results/agent-gates/2026-09-13T01-04-29-215Z-HFO-SOURCE-MIGRATION-RECONCILIATION.json",
+      "verdict": "PASS"
+    },
+    {
+      "id": "new-evidence-secret-scan",
+      "command": "gitleaks detect --no-git --source docs/facility-operations/source-reconciliation-evidence --config .gitleaks.toml --redact 100",
+      "exit_code": 0,
+      "initial_findings": 17,
+      "resolution": "All findings were SHA256 values adjacent to SQL filenames containing credential/auth words. Changed JSON to separate file and sha256 fields. No exclusions added; no secrets found on repeat scan."
+    }
+  ],
+  "independent_review": "review.json",
+  "preservation": "preservation.json",
+  "cleanup": "local-cluster-cleanup.json",
+  "not_run": [
+    "Hosted ledger read or hosted migration application",
+    "Deployment, merge or provider activation",
+    "Full Vitest suite and separate Edge/provider suites (focused suite used)",
+    "Authenticated browser/axe, hosted Auth/Storage, staff or operating-cycle acceptance"
+  ],
+  "historical_evidence_boundary": "Inherited COL-217 hosted evidence is historical, not a current live claim or acceptance in this run",
+  "remaining_gates": [
+    "Technical review of source draft PR",
+    "Separately authorized fresh target/ledger reconciliation before any future installation",
+    "Separate hosted, staff and facility acceptance"
+  ]
+}
