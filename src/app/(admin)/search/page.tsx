@@ -153,7 +153,7 @@ export default function AdminSearchPage() {
               </div>
               <Link
                 href="/admin/knowledge"
-                className="group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary/40 hover:bg-primary/30"
+                className="group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary/40 hover:bg-zinc-900/70"
               >
                 <span className="flex size-10 items-center justify-center rounded-xl shadow-lg shadow-[var(--shadow-card)]">
                   <BookOpen className="size-5 text-white" aria-hidden />
@@ -192,7 +192,7 @@ export default function AdminSearchPage() {
                       <Link
                         key={s.label}
                         href={s.href}
-                        className="group flex w-full flex-col items-start gap-2 rounded-2xl border border-zinc-700/80 bg-zinc-900/60 px-5 py-4 text-left shadow-sm transition hover:border-primary/50 hover:bg-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="group flex w-full flex-col items-start gap-2 rounded-2xl border border-zinc-700/80 bg-zinc-900/60 px-5 py-4 text-left shadow-sm transition hover:border-primary/50 hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <div className="flex w-full items-center gap-3">
                           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-ring">

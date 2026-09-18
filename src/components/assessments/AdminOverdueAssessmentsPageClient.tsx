@@ -184,7 +184,7 @@ export function AdminOverdueAssessmentsPageClient({
                           <Badge variant="destructive" className={cn(
                             "h-5 px-2 text-[10px] font-bold uppercase tracking-wider rounded border-0",
                             a.daysOverdue === 0
-                              ? "bg-primary/10 text-primary dark:bg-primary/40"
+                              ? "bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary"
                               : a.daysOverdue > 7
                                 ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400 ring-1 ring-rose-500/50 shadow-[0_4px_15px_rgba(244,63,94,0.2)]"
                                 : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/50"
