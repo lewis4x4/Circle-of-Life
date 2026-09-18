@@ -6022,6 +6022,7 @@ export type Database = {
       }
       incident_followups: {
         Row: {
+          witness_choice: string | null
           assigned_to: string | null
           completed_at: string | null
           completed_by: string | null
@@ -6040,6 +6041,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          witness_choice?: string | null
           assigned_to?: string | null
           completed_at?: string | null
           completed_by?: string | null
@@ -6058,6 +6060,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          witness_choice?: string | null
           assigned_to?: string | null
           completed_at?: string | null
           completed_by?: string | null
@@ -6108,6 +6111,7 @@ export type Database = {
       }
       incident_photos: {
         Row: {
+          kind: string
           created_at: string
           description: string | null
           facility_id: string
@@ -6119,6 +6123,7 @@ export type Database = {
           taken_by: string
         }
         Insert: {
+          kind?: string
           created_at?: string
           description?: string | null
           facility_id: string
@@ -6130,6 +6135,7 @@ export type Database = {
           taken_by: string
         }
         Update: {
+          kind?: string
           created_at?: string
           description?: string | null
           facility_id?: string
@@ -18575,6 +18581,12 @@ export type Database = {
           id: string
           maximum_unobserved_gap_minutes: number
           maximum_windows_per_resident_per_day: number
+          monitoring_order_interval_presets: number[]
+          monitoring_order_interval_min_minutes: number
+          monitoring_order_interval_max_minutes: number
+          observation_grace_divisor: number
+          observation_grace_floor_minutes: number
+          observation_grace_ceiling_minutes: number
           organization_id: string
           simulation_lookback_days: number
           task_upcoming_lead_minutes: number
@@ -18592,6 +18604,12 @@ export type Database = {
           id?: string
           maximum_unobserved_gap_minutes: number
           maximum_windows_per_resident_per_day: number
+          monitoring_order_interval_presets: number[]
+          monitoring_order_interval_min_minutes: number
+          monitoring_order_interval_max_minutes: number
+          observation_grace_divisor: number
+          observation_grace_floor_minutes: number
+          observation_grace_ceiling_minutes: number
           organization_id: string
           simulation_lookback_days: number
           task_upcoming_lead_minutes?: number
@@ -18609,6 +18627,12 @@ export type Database = {
           id?: string
           maximum_unobserved_gap_minutes?: number
           maximum_windows_per_resident_per_day?: number
+          monitoring_order_interval_presets?: number[]
+          monitoring_order_interval_min_minutes?: number
+          monitoring_order_interval_max_minutes?: number
+          observation_grace_divisor?: number
+          observation_grace_floor_minutes?: number
+          observation_grace_ceiling_minutes?: number
           organization_id?: string
           simulation_lookback_days?: number
           task_upcoming_lead_minutes?: number
@@ -18808,6 +18832,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_care_event_attachments: {
+        Row: {
+          attachment_id: string | null
+          care_event_id: string | null
+          description: string | null
+          facility_id: string | null
+          incident_id: string | null
+          kind: string | null
+          organization_id: string | null
+          storage_path: string | null
+          taken_at: string | null
+          taken_by: string | null
+          taken_by_name: string | null
+        }
+        Relationships: []
       }
       v_incident_reports_log: {
         Row: {
@@ -19016,8 +19056,20 @@ export type Database = {
           starts_shift: boolean
         }[]
       }
+      /**
+       * Grace in minutes for an observation interval at one building, spec 25A
+       * section 5.2. Takes the facility since migration 432: the divisor and
+       * the bounds are `facility_observation_thresholds` columns, not
+       * constants. Raises 22023 for a building with no thresholds row rather
+       * than answering null.
+       */
       monitoring_order_grace_minutes: {
-        Args: { p_interval_minutes: number }
+        Args: { p_facility_id: string; p_interval_minutes: number }
+        Returns: number
+      }
+      /** Delegates to monitoring_order_grace_minutes. One rule, not two. */
+      observation_grace_minutes: {
+        Args: { p_facility_id: string; p_interval_minutes: number }
         Returns: number
       }
       /**
@@ -19062,8 +19114,18 @@ export type Database = {
         Args: { p_facility_id: string }
         Returns: Json
       }
+      /**
+       * The Monitoring Order intervals one building offers, and the bounds a
+       * custom value must fall inside. A facility row since migration 432.
+       *
+       * `RETURNS TABLE`, so this comes back as an array of one row and
+       * `preset_minutes` inside it is an integer array. Reading it as a single
+       * object was a real bug in the hosted RLS check, which then reported the
+       * function as having answered nothing when it had answered correctly.
+       * An empty array means the building has no thresholds row.
+       */
       monitoring_order_interval_options: {
-        Args: Record<PropertyKey, never>
+        Args: { p_facility_id: string }
         Returns: {
           preset_minutes: number[]
           min_minutes: number
@@ -19140,6 +19202,32 @@ export type Database = {
           p_claim_version?: number | null
         }
         Returns: Json
+      }
+      complete_incident_followup: {
+        Args: { p_followup_id: string; p_choice?: string | null; p_note?: string | null }
+        Returns: Json
+      }
+      care_event_add_witness: {
+        Args: { p_care_event_id: string; p_user_id: string }
+        Returns: Json
+      }
+      care_event_remove_witness: {
+        Args: { p_followup_id: string; p_reason?: string | null }
+        Returns: Json
+      }
+      attach_care_event_file: {
+        Args: { p_care_event_id: string; p_path: string; p_kind?: string | null; p_description?: string | null }
+        Returns: Json
+      }
+      care_event_print_record: {
+        Args: {
+          p_print_kind: string
+          p_care_event_id?: string | null
+          p_facility_id?: string | null
+          p_from?: string | null
+          p_to?: string | null
+        }
+        Returns: string
       }
       board_check_state: {
         Args: { p_session_id: string }

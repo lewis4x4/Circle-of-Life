@@ -141,7 +141,7 @@ function lagMinutes(row: IntegrityRow) {
  *
  * The two thresholds are rows, `facility_observation_thresholds.
  * documentation_lag_notable_minutes` and `documentation_lag_serious_minutes`,
- * added by migration 428. They were constants here until Part 8, and they are
+ * added by migration 431. They were constants here until Part 8, and they are
  * facility policy rather than engineering constants: a building deciding what
  * counts as a notable gap between observing a resident and writing it down is
  * an operator judgment, and this is the severity a surveyor reads.

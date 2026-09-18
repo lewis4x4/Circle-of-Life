@@ -12,6 +12,7 @@
 | `resident-safety-scorer` | no | `POST { "organization_id", "facility_id"? }` — writes `resident_safety_scores` and opens safety-related `exec_alerts` on downward risk-tier transitions. Auth: **`x-cron-secret`** = `RESIDENT_SAFETY_SCORER_SECRET`. |
 | `report-scheduler` | no | `POST` — processes due **`report_schedules`** into **`report_runs`**. Auth: **`x-cron-secret`** = `REPORT_SCHEDULER_SECRET`. |
 | `ar-aging-check` | no | `POST` — marks past-due `sent`/`partial` invoices as **`overdue`**. Auth: **`x-cron-secret`** = `AR_AGING_CHECK_SECRET`. |
+| `daily-census-log` | no | `POST { "organization_id"?, "log_date"?, "force"? }` — records one **`census_daily_log`** row per live facility for one operating day (the midnight census) via `public.record_census_daily_log`. Auth: **`x-cron-secret`** = `DAILY_CENSUS_LOG_SECRET`. Scheduled at 04:30 and 05:30 UTC; only the invocation that is 00:30 in America/New_York records, the other returns `outcome: "skipped"`. Idempotent per facility + day. Must run before `exec-kpi-snapshot` on the same day. |
 | `generate-emar-schedule` | no | `POST` — creates future **`emar_records`** for scheduled meds. Auth: **`x-cron-secret`** = `GENERATE_EMAR_SCHEDULE_SECRET`. |
 | `emar-missed-dose-check` | no | `POST` — opens **`exec_alerts`** for overdue scheduled eMAR rows. Auth: **`x-cron-secret`** = `EMAR_MISSED_DOSE_SECRET`. |
 | `exec-alert-evaluator` | no | `POST { "organization_id" }` — inserts **`exec_alerts`** from live KPI thresholds. Auth: **`x-cron-secret`** = `EXEC_ALERT_EVALUATOR_SECRET`. |
@@ -99,6 +100,7 @@ Do **not** send `facility_id` and `organization_id` together.
 - `RESIDENT_SAFETY_SCORER_SECRET` — required for `resident-safety-scorer` and the Executive Overview manual refresh route.
 - `REPORT_SCHEDULER_SECRET` — required for `report-scheduler`.
 - `AR_AGING_CHECK_SECRET` — required for `ar-aging-check`.
+- `DAILY_CENSUS_LOG_SECRET` — required for `daily-census-log` (header `x-cron-secret`). Rotate if leaked.
 - `GENERATE_EMAR_SCHEDULE_SECRET` — required for `generate-emar-schedule`.
 - `EMAR_MISSED_DOSE_SECRET` — required for `emar-missed-dose-check`.
 - `EXEC_ALERT_EVALUATOR_SECRET` — required for `exec-alert-evaluator`.
@@ -207,6 +209,7 @@ supabase functions deploy exec-kpi-snapshot --project-ref manfqmasfqppukpobpld
 supabase functions deploy resident-safety-scorer --project-ref manfqmasfqppukpobpld --no-verify-jwt
 supabase functions deploy report-scheduler --project-ref manfqmasfqppukpobpld
 supabase functions deploy ar-aging-check --project-ref manfqmasfqppukpobpld
+supabase functions deploy daily-census-log --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-emar-schedule --project-ref manfqmasfqppukpobpld
 supabase functions deploy emar-missed-dose-check --project-ref manfqmasfqppukpobpld
 supabase functions deploy exec-alert-evaluator --project-ref manfqmasfqppukpobpld

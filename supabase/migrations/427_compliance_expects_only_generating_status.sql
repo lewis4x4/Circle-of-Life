@@ -389,7 +389,7 @@ FROM
   -- 414 deleted it.
   LEFT JOIN LATERAL public.facility_observation_windows_for_version (r.fac_id, r.version_id, r.the_date) w ON TRUE
   -- M5. The window names a shift; this is whether that shift is one the
-  -- facility actually runs. The composite foreign key added in migration 423
+  -- facility actually runs. The composite foreign key added in migration 426
   -- makes an unmatched key impossible, but a shift that has been deactivated or
   -- soft deleted still leaves its windows projecting here while
   -- public.facility_shift_window_at refuses to resolve them, so the generator

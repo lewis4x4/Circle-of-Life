@@ -41,10 +41,29 @@ test.describe("Monitoring Orders", () => {
       .maybeSingle();
     if (!resident.data) throw new Error(`no active resident the caregiver can reach at facility ${facility}`);
 
-    const options = await caregiver.client.rpc("monitoring_order_interval_options");
+    // RETURNS TABLE, so PostgREST answers an array of one row, and that row's
+    // preset_minutes is an integer array. Reading it as a single object with an
+    // interval_minutes column was a real bug in the sibling RLS check and it
+    // reported the function as having answered nothing when it had answered
+    // correctly. The facility argument arrived with migration 432.
+    const options = await caregiver.client.rpc("monitoring_order_interval_options", {
+      p_facility_id: facility,
+    });
     if (options.error) throw new Error(`monitoring_order_interval_options failed: ${options.error.message}`);
-    const interval = (options.data as { interval_minutes?: number }[] | null)?.[0]?.interval_minutes ?? null;
-    expect(interval, "the interval presets are rows and there is none to use").not.toBeNull();
+    const optionRow = (options.data as { preset_minutes?: number[]; min_minutes?: number; max_minutes?: number }[] | null)?.[0];
+    const interval = optionRow?.preset_minutes?.[0] ?? null;
+    expect(
+      interval,
+      `facility ${facility} offers no interval presets, so it has no facility_observation_thresholds row`,
+    ).not.toBeNull();
+
+    // Every preset the picker offers has to be one the table will accept, and
+    // the bounds have to sit inside the column CHECK. A preset outside them is
+    // a form offering a value its own insert refuses.
+    for (const preset of optionRow?.preset_minutes ?? []) {
+      expect(preset, "a preset sits below the configured minimum").toBeGreaterThanOrEqual(optionRow?.min_minutes ?? 0);
+      expect(preset, "a preset sits above the configured maximum").toBeLessThanOrEqual(optionRow?.max_minutes ?? 0);
+    }
 
     const oneDayMs = 24 * 60 * 60 * 1000;
     const created = await caregiver.client.rpc("create_monitoring_order", {
@@ -88,7 +107,12 @@ test.describe("Monitoring Orders", () => {
         .order("due_at", { ascending: true });
       expect((tasks.data ?? []).length, "the order generated no checks, so it did not take effect on save").toBeGreaterThan(0);
 
-      const grace = await admin.rpc("monitoring_order_grace_minutes", { p_interval_minutes: interval });
+      // Takes the facility since migration 432: the divisor and the bounds of
+      // the interval scaled rule are that building's configuration.
+      const grace = await admin.rpc("monitoring_order_grace_minutes", {
+        p_facility_id: facility,
+        p_interval_minutes: interval,
+      });
       expect(grace.error, grace.error ? `monitoring_order_grace_minutes failed: ${grace.error.message}` : undefined).toBeNull();
       const graceMinutes = grace.data as number;
 

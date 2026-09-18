@@ -29,7 +29,14 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 function renderAction(onDone = vi.fn()) {
-  render(<MonitoringOrderAction residentId="res-1" residentName="Synthetic Resident" onDone={onDone} />);
+  render(
+    <MonitoringOrderAction
+      residentId="res-1"
+      residentName="Synthetic Resident"
+      facilityId="fac-1"
+      onDone={onDone}
+    />,
+  );
   return onDone;
 }
 
@@ -51,7 +58,12 @@ describe("MonitoringOrderAction", () => {
 
   it("reads the interval choices from the database rather than carrying them", async () => {
     await openDialog();
-    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith("monitoring_order_interval_options"));
+    // Asked for this building's presets, not the organization's. The presets
+    // and the custom bounds moved into facility_observation_thresholds in
+    // migration 432, so a call without a facility reads nothing.
+    await waitFor(() =>
+      expect(mocks.rpc).toHaveBeenCalledWith("monitoring_order_interval_options", { p_facility_id: "fac-1" }),
+    );
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByRole("button", { name: "Every 30 minutes" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Every 4 hours" })).toBeInTheDocument();

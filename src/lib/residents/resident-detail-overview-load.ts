@@ -76,6 +76,13 @@ export type ResidentOverviewDetail = {
   unitName: string;
   /** `facilities.name` for the resident's facility; null when the facility row is unreadable. */
   facilityName: string | null;
+  /**
+   * `residents.facility_id`. Needed by any action on this record that reads
+   * facility configuration: a Monitoring Order's interval presets come from
+   * `public.monitoring_order_interval_options`, which takes a facility since
+   * migration 432.
+   */
+  facilityId: string;
   admissionLabel: string;
   dobLabel: string;
   ageYears: number | null;
@@ -650,6 +657,7 @@ export async function loadResidentOverviewDetail(
     roomLabel,
     unitName: unitName.length > 0 ? unitName : RESIDENT_NO_UNIT_COPY,
     facilityName: facilityResult.data?.name?.trim() || null,
+    facilityId,
     admissionLabel: formatResidentOverviewAdmissionLabel(resident.admission_date),
     dobLabel: formatResidentOverviewDobLabel(resident.date_of_birth),
     ageYears: computeAgeYears(resident.date_of_birth),

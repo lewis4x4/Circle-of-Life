@@ -72,6 +72,10 @@ if (isProd) {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
+  // sharp is a native addon, so the server build must require it at runtime
+  // rather than bundle it. It is declared in dependencies for the same reason
+  // the build broke without it: see COL-479.
+  serverExternalPackages: ["sharp"],
   // Match npm run typecheck; Vitest executes test fixtures independently.
   typescript: { tsconfigPath: "tsconfig.typecheck.json" },
   experimental: {

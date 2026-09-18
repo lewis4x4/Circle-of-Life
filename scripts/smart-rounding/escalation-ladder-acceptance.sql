@@ -84,11 +84,29 @@ DECLARE
   v_got integer;
   i integer;
   v_seeded_grace integer;
+  v_grace_facility uuid;
 BEGIN
+  -- Both grace functions take the facility since migration 432. Any building
+  -- with a thresholds row will do; migration 431 guarantees every building has
+  -- one.
+  SELECT
+    t.facility_id INTO v_grace_facility
+  FROM
+    public.facility_observation_thresholds t
+  WHERE
+    t.deleted_at IS NULL
+  ORDER BY
+    t.created_at,
+    t.facility_id
+  LIMIT 1;
+
+  PERFORM
+    pg_temp.esc_assert (v_grace_facility IS NOT NULL, 'no building carries a public.facility_observation_thresholds row, so neither grace function has a divisor to read');
+
   FOR i IN 1..4 LOOP
-    v_got := public.observation_grace_minutes (v_intervals[i]);
+    v_got := public.observation_grace_minutes (v_grace_facility, v_intervals[i]);
     PERFORM
-      pg_temp.esc_assert (v_got = public.monitoring_order_grace_minutes (v_intervals[i]), format('observation_grace_minutes and monitoring_order_grace_minutes disagree at interval %s', v_intervals[i]));
+      pg_temp.esc_assert (v_got = public.monitoring_order_grace_minutes (v_grace_facility, v_intervals[i]), format('observation_grace_minutes and monitoring_order_grace_minutes disagree at interval %s', v_intervals[i]));
     PERFORM
       pg_temp.esc_assert (v_got = v_expected[i], format('grace at interval %s should be %s, got %s', v_intervals[i], v_expected[i], v_got));
   END LOOP;
@@ -105,7 +123,7 @@ BEGIN
     AND w.window_key = 'mid_morning'
   LIMIT 1;
   PERFORM
-    pg_temp.esc_assert (v_seeded_grace = public.observation_grace_minutes (240), format('the seeded mid_morning grace (%s) should fall out of the one grace rule at the standard spacing (%s)', v_seeded_grace, public.observation_grace_minutes (240)));
+    pg_temp.esc_assert (v_seeded_grace = public.observation_grace_minutes (v_grace_facility, 240), format('the seeded mid_morning grace (%s) should fall out of the one grace rule at the standard spacing (%s)', v_seeded_grace, public.observation_grace_minutes (v_grace_facility, 240)));
 
   INSERT INTO esc_result (check_name, detail)
     VALUES ('one grace rule', format('interval 30/60/120/240 gives 10/15/30/60 through both entry points; the seeded standard grace is %s and comes from the same formula', v_seeded_grace));
@@ -181,7 +199,7 @@ BEGIN
     v.created_at
   LIMIT 1;
   PERFORM
-    pg_temp.esc_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 414 is missing');
+    pg_temp.esc_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 417 is missing');
 
   SELECT
     v.id INTO v_source_escalation
@@ -193,7 +211,7 @@ BEGIN
     AND v.deleted_at IS NULL
   LIMIT 1;
   PERFORM
-    pg_temp.esc_assert (v_source_escalation IS NOT NULL, 'the seeded escalation version from migration 417 is missing');
+    pg_temp.esc_assert (v_source_escalation IS NOT NULL, 'the seeded escalation version from migration 420 is missing');
 
   INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order)
   SELECT

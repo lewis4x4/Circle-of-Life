@@ -44,10 +44,17 @@ type IntervalOptionRow = {
 export function MonitoringOrderAction({
   residentId,
   residentName,
+  facilityId,
   onDone,
 }: {
   residentId: string;
   residentName: string;
+  /**
+   * The resident's building. The interval presets and the custom bounds are
+   * that building's configuration since migration 432, so the picker cannot be
+   * opened without knowing which building it is for.
+   */
+  facilityId: string;
   onDone?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -58,14 +65,19 @@ export function MonitoringOrderAction({
 
   const loadOptions = useCallback(async () => {
     const supabase = createClient();
-    const { data, error } = await supabase.rpc("monitoring_order_interval_options" as never);
+    const { data, error } = await supabase.rpc("monitoring_order_interval_options" as never, {
+      p_facility_id: facilityId,
+    } as never);
     if (error) {
       setProblems(["Could not load the interval choices. Close this and open it again."]);
       return;
     }
     const row = (Array.isArray(data) ? data[0] : data) as IntervalOptionRow | null;
     if (!row?.preset_minutes || row.min_minutes == null || row.max_minutes == null) {
-      setProblems(["The interval choices are not configured for this organization yet."]);
+      // Since migration 432 this means the building has no
+      // facility_observation_thresholds row, which is a configuration gap and
+      // not a reason to offer a list of intervals this file chose.
+      setProblems(["The interval choices are not configured for this building yet."]);
       return;
     }
     setOptions({
@@ -73,7 +85,7 @@ export function MonitoringOrderAction({
       minMinutes: row.min_minutes,
       maxMinutes: row.max_minutes,
     });
-  }, []);
+  }, [facilityId]);
 
   useEffect(() => {
     if (!open) return;

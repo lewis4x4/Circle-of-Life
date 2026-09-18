@@ -258,7 +258,7 @@ BEGIN
     v.id
   LIMIT 1;
   PERFORM
-    pg_temp.cfg_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 414 is missing');
+    pg_temp.cfg_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 417 is missing');
 
   SELECT
     v.id INTO v_source_escalation
@@ -270,7 +270,7 @@ BEGIN
     AND v.deleted_at IS NULL
   LIMIT 1;
   PERFORM
-    pg_temp.cfg_assert (v_source_escalation IS NOT NULL, 'the seeded escalation version from migration 417 is missing');
+    pg_temp.cfg_assert (v_source_escalation IS NOT NULL, 'the seeded escalation version from migration 420 is missing');
 
   FOREACH v_facility IN ARRAY ARRAY[v_fac_a, v_fac_b, v_fac_c, v_fac_d] LOOP
     INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order)
@@ -341,6 +341,12 @@ BEGIN
       r.escalation_version_id = v_source_escalation
       AND r.deleted_at IS NULL;
 
+    -- ON CONFLICT because a facility arrives with a thresholds row now:
+    -- migration 431 put an AFTER INSERT trigger on public.facilities that
+    -- seeds one, which is what closed the gap where a building created after
+    -- the thresholds table existed had none at all. This fixture wants the
+    -- source building's values specifically, so it overwrites rather than
+    -- skipping.
     INSERT INTO public.facility_observation_thresholds (organization_id, facility_id, maximum_unobserved_gap_minutes, maximum_windows_per_resident_per_day, simulation_lookback_days, change_log_page_size)
     SELECT
       v_org,
@@ -353,7 +359,13 @@ BEGIN
       public.facility_observation_thresholds t
     WHERE
       t.facility_id = v_source_facility
-      AND t.deleted_at IS NULL;
+      AND t.deleted_at IS NULL
+    ON CONFLICT (facility_id)
+      DO UPDATE SET
+        maximum_unobserved_gap_minutes = EXCLUDED.maximum_unobserved_gap_minutes,
+        maximum_windows_per_resident_per_day = EXCLUDED.maximum_windows_per_resident_per_day,
+        simulation_lookback_days = EXCLUDED.simulation_lookback_days,
+        change_log_page_size = EXCLUDED.change_log_page_size;
   END LOOP;
 
   -- One organization template per kind, inherited from building 1's windows and
@@ -1159,7 +1171,7 @@ BEGIN
   -- ---- Block 6. Below the jurisdiction floor ------------------------------
   --
   -- The shipped FL_AHCA row has null values and passes, which is the point of
-  -- decision 3 in migration 425 and of spec open item 6, so the floor check
+  -- decision 3 in migration 428 and of spec open item 6, so the floor check
   -- cannot be exercised against it without inventing a Florida number.
   --
   -- This fixture writes a floor keyed ZZ_SYNTHETIC against a state code that
@@ -1317,7 +1329,7 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 5. Acceptance 20. A test send creates no escalation row.
 --
---    public.send_test_escalation shipped with migration 417 and is unchanged by
+--    public.send_test_escalation shipped with migration 420 and is unchanged by
 --    this part. It is asserted here anyway, because the settings surface is what
 --    puts the button in front of an administrator and a test send that quietly
 --    started recording escalations would show up as a spike in missed checks

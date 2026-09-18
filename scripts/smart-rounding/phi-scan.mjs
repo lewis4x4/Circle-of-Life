@@ -57,10 +57,10 @@ const RESIDENT_SOURCE = "scripts/homewood/data/homewood-residents.csv";
 /** Read in full rather than by diff: a seed or a fixture is where a real name hides. */
 const ALWAYS_SCANNED = [
   "scripts/smart-rounding",
-  "supabase/migrations/414_col_observation_cadence_2026_09_16.sql",
-  "supabase/migrations/415_observation_chip_vocabulary.sql",
-  "supabase/migrations/416_resident_monitoring_orders.sql",
-  "supabase/migrations/417_observation_escalation_policy.sql",
+  "supabase/migrations/417_col_observation_cadence_2026_09_16.sql",
+  "supabase/migrations/418_observation_chip_vocabulary.sql",
+  "supabase/migrations/419_resident_monitoring_orders.sql",
+  "supabase/migrations/420_observation_escalation_policy.sql",
   "tests/smart-rounding",
 ];
 
@@ -210,9 +210,32 @@ function loadKnownResidentIdentifiers() {
   return { available: true, pairs, exact: [...exact], tokens: [...tokens], residents: lines.length - 1 };
 }
 
+/**
+ * The module's own surface, for labelling a finding's origin.
+ *
+ * Acceptance 14 is about the branch, so the scan reads the whole branch diff
+ * and that is deliberate. But a branch can carry an unrelated merge -- this one
+ * picked up another module's work from origin/main mid-review -- and a report
+ * that does not say which findings are this module's sends somebody to the
+ * wrong owner. The scan still fails on either.
+ */
+const MODULE_PATHS = [
+  "scripts/smart-rounding/",
+  "src/app/(admin)/admin/rounding/",
+  "src/app/(caregiver)/caregiver/rounds/",
+  "src/app/api/rounding/",
+  "src/components/rounding/",
+  "src/lib/rounding/",
+  "supabase/functions/observation-",
+  "supabase/functions/watchlist-signal-engine/",
+  "supabase/functions/cadence-version-activator/",
+  "tests/smart-rounding/",
+];
+
 const findings = [];
 function report(category, where, note) {
-  findings.push({ category, where, note });
+  const inModule = MODULE_PATHS.some((prefix) => where.includes(prefix));
+  findings.push({ category, where, note, origin: inModule ? "smart-rounding" : "elsewhere on the branch" });
 }
 
 function wordPattern(token) {
@@ -364,8 +387,11 @@ function main() {
   console.log(`${PREFIX} ${findings.length} finding(s):`);
   const width = Math.max(...findings.map((finding) => finding.where.length));
   for (const finding of findings) {
-    console.log(`${PREFIX} ${finding.where.padEnd(width)}  ${finding.category}: ${finding.note}`);
+    console.log(`${PREFIX} ${finding.where.padEnd(width)}  [${finding.origin}] ${finding.category}: ${finding.note}`);
   }
+  const mine = findings.filter((finding) => finding.origin === "smart-rounding").length;
+  console.log("");
+  console.log(`${PREFIX} ${mine} in the Smart Rounding module, ${findings.length - mine} elsewhere on the branch`);
   console.error(`${PREFIX} FAIL`);
   process.exit(1);
 }

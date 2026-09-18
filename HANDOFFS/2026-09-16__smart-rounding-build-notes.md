@@ -440,13 +440,13 @@ this happened. Log the underlying PostgREST code.
 
 | Part | File | Spec number |
 |---|---|---|
-| 1 | `414_col_observation_cadence_2026_09_16.sql` | `404` |
-| 2 | `415_observation_chip_vocabulary.sql` | `405` |
-| 3 | `416_resident_monitoring_orders.sql` | `406` |
-| 4 | `417_observation_escalation_policy.sql` | `407` |
-| review fix | `418_observation_compliance_occupancy.sql` | n/a (C3) |
-| review fix | `419_escalation_completed_task_guard.sql` | n/a (C1) |
-| majors + probe | `420_smart_rounding_authority_fixes.sql` | n/a (M1, M2, M3, M0) |
+| 1 | `417_col_observation_cadence_2026_09_16.sql` | `404` |
+| 2 | `418_observation_chip_vocabulary.sql` | `405` |
+| 3 | `419_resident_monitoring_orders.sql` | `406` |
+| 4 | `420_observation_escalation_policy.sql` | `407` |
+| review fix | `421_observation_compliance_occupancy.sql` | n/a (C3) |
+| review fix | `422_escalation_completed_task_guard.sql` | n/a (C1) |
+| majors + probe | `423_smart_rounding_authority_fixes.sql` | n/a (M1, M2, M3, M0) |
 | 5 | next free at the time it is written | `408` |
 | 7 | next two free | `409`, `410` |
 
@@ -830,7 +830,7 @@ Filled in by the orchestrator as parts land.
 Appended by the Part 8 specialist. The ledger in section 5 and the open items in
 section 6 stay the orchestrator's.
 
-### 7.1 The D16 literal scan, and its four findings
+### 7.1 The D16 literal scan, and the four findings it found
 
 `scripts/smart-rounding/config-literals.mjs` (`npm run smart-rounding:literals`)
 is D16 implemented as specified: an explicit path list of 14 entries covering
@@ -839,6 +839,8 @@ anywhere in scope including comments, the offsets flagged only next to a minute,
 hour, grace, offset, window, escalation or shift identifier, `'day'` / `'night'`
 / `'evening'` flagged outside a type declaration, and every exemption listed in
 the output by file class.
+
+**It reads clean.** Twenty two findings, all twenty two fixed, none suppressed.
 
 **One stated departure from D16's letter**, because it serves D16's own example
 rather than contradicting it. A Tailwind opacity suffix is excluded: on
@@ -849,11 +851,9 @@ offset identifier", which is the same class of false positive as D16's own
 it cannot hide a real value, because nothing writes a grace value as a class
 suffix.
 
-**Eighteen of the twenty two original findings were fixed**, not tuned away:
+**Eighteen were straightforward:**
 
-- Six comments named an observation time or a grace value out loud
-  (`MonitoringOrderAction.tsx`, `MonitoringOrderForm.tsx`, `monitoring-orders.ts`
-  twice, `generate-observation-tasks.ts`, `CadenceRungEditor.tsx`). A comment
+- Six comments named an observation time or a grace value out loud. A comment
   that names 10:00 is a second copy of the cadence, and the module's whole point
   is that there is exactly one. Rewritten without the numbers.
 - `src/lib/rounding/generate-observation-tasks.ts` defaulted grace to `15` when
@@ -866,21 +866,102 @@ suffix.
   axis labels. The whole strip already speaks in minutes of the day, so the
   ticks now do too.
 
-**Four findings remain and are recorded here rather than suppressed.** Both are
-the same shape: a threshold that belongs in a row and currently sits in code.
+### 7.1a The fourth finding was a live defect, not a style violation
 
-| Finding | What it decides | Why it was not fixed in Part 8 |
-|---|---|---|
-| `src/components/rounding/IntegrityFlagCard.tsx:147-148` — `LAG_NOTABLE_MINUTES = 15`, `LAG_SERIOUS_MINUTES = 60` | how concerning a documentation lag reads on the Integrity tab | `public.facility_observation_thresholds` (migration `425`) is exactly where this belongs, next to `maximum_unobserved_gap_minutes`. It has no documentation-lag column, so the fix is a migration plus a probe extension. Part 8 adding a migration races the numbers `414`-`427` have already moved twice over. |
-| `src/lib/rounding/update-task-status.ts:18-19` — `UPCOMING_LEAD_MINUTES = 30`, `OVERDUE_CEILING_MINUTES = 30` (and `CRITICALLY_OVERDUE_CEILING_MINUTES = 120`, which the scanner's number set does not cover) | which status a task renders as while it sits on the board | Same table, same migration. This file also arrived from `origin/main` rather than this branch, and `/api/rounding/tasks` reads it. |
+The remaining four were `LAG_NOTABLE_MINUTES = 15` and
+`LAG_SERIOUS_MINUTES = 60` in `IntegrityFlagCard.tsx`, and
+`UPCOMING_LEAD_MINUTES = 30` and `OVERDUE_CEILING_MINUTES = 30` in
+`update-task-status.ts`. Part 8 first reported them as recorded exceptions. The
+orchestrator ruled that none of them is acceptable, and that **the overdue bands
+were a second source of truth with an operator-visible consequence**, which is
+the more important finding and was not in the original report.
 
-Both are display bands rather than any of the six things acceptance 19
-enumerates, and neither changes when a check is due, when its grace closes or
-when a rung fires. **Acceptance 19 is therefore substantially but not fully
-proven, and the honest statement is that four literals remain, named, with the
-migration that would remove them identified.** They were lifted into named
-constants with the reason in a comment next to them, so the next person finds
-the decision rather than the number.
+**The defect.** Part 4 replaced the escalation engine.
+`public.advance_observation_task_lapse` writes `overdue` once the window has
+closed, and `public.record_observation_escalation_rung` writes
+`critically_overdue` on a non-terminal rung and `missed` on the terminal one,
+both driven from `facility_escalation_rungs`, which an administrator edits in
+the Part 7 settings surface. `update-task-status.ts` was recomputing the same
+three conclusions client side from `30` and `120`, numbers that stopped
+governing anything when that engine landed. Move tier 1 to plus 45 in the
+settings surface and the board still painted the task critically overdue at plus
+30. Displayed status and configured escalation disagreed, and nothing on screen
+told an operator which was real.
+
+**What changed.**
+
+- **The recomputation is deleted, not relocated.** `calculateObservationTaskStatus`
+  now returns any server-owned status unchanged (`overdue`,
+  `critically_overdue`, `missed`, both completions, `excused`, `reassigned`,
+  `escalated`). It only refines `upcoming`, which is the one status no
+  server-side writer produces, into `upcoming` / `due_soon` / `due_now`.
+  `due_now` needs no policy value at all: it is the span between the check being
+  due and its window closing, and the window close arrives on the row.
+- **Where a surface does need an escalation answer before the engine's next
+  tick**, for a row still `upcoming` whose window has already closed, it reads
+  the rung offsets of the escalation version in force through
+  `public.facility_escalation_in_force` and `facility_escalation_rungs`: the
+  same rows `record_observation_escalation_rung` fires from. One answer, one
+  place, and a nudge (`assigned_staff_only`) correctly moves nothing, because a
+  nudge is not an escalation.
+- **The legacy plan-rule generator stamps `upcoming`** and nothing else, which
+  is what `public.record_cadence_observation_tasks` and
+  `public.generate_monitoring_order_tasks` already do. Deriving a band at
+  generation time was the wrong layer twice over: the numbers were stale, and a
+  status stamped at generation is stale the moment it is written.
+- **Migration `431_observation_board_display_thresholds.sql`** adds
+  `documentation_lag_notable_minutes`, `documentation_lag_serious_minutes` and
+  `task_upcoming_lead_minutes` to `public.facility_observation_thresholds`,
+  seeded at the values the constants carried so no building's behaviour changes
+  on the day it lands, with a CHECK that serious is at or above notable because
+  `authenticated` holds UPDATE on that table and a form cannot be the thing that
+  prevents it. `src/lib/rounding/board-policy-fetch.ts` reads them on the
+  caller's authority.
+- **A building with no thresholds row reads neutral and says so.** There is no
+  defensible default for "how late is concerning here", so the Integrity card
+  renders `N min, no threshold set` in a muted tone rather than colouring a lag
+  against a number nobody chose, and the tasks route returns
+  `board_policy_gap` alongside the rows, which still carry the status the server
+  wrote. A fallback pair in the fetch would have put the constants back one
+  layer down.
+
+**A gap this found rather than created.** Nothing gave a facility created after
+migration `425` a `facility_observation_thresholds` row at all:
+`public.ensure_facility_observation_defaults` is the function that hands a new
+building its organization's configuration, but it was written in `418`, before
+that table existed. `428` closes it with `tr_facilities_seed_observation_thresholds`
+on `public.facilities`, which copies the organization's oldest row whole, or
+falls back to the column defaults for the first facility of a brand new
+organization. The trigger body carries no value of its own and cannot fail a
+facility insert.
+
+**An implementation note worth keeping.** The first version of that inheritance
+was a `BEFORE INSERT` trigger on the thresholds table that COALESCEd the three
+new columns against the organization's row. It was dead code: PostgreSQL applies
+a column default *before* a `BEFORE INSERT` trigger sees the row, so `NEW`
+already carried `15`, `60` and `30` and the COALESCE never fired. The trigger
+moved to `public.facilities`, where there is no default to race.
+
+**Two guards, because a TypeScript constant cannot be guarded by a SQL probe.**
+
+- `supabase/tests/review_smart_rounding_authority.sql` assertion 19 asserts the
+  three columns exist and are `NOT NULL`, that the facilities trigger is present,
+  and that the ordering CHECK actually raises `23514` on a bare `UPDATE` of a
+  real row. Bare, with the assertion on the raise: `UPDATE ... RETURNING`
+  re-applies the SELECT policy and would pass against a broken policy (D22), and
+  a `USING` failure filters silently to `UPDATE 0` where a `WITH CHECK` or a
+  CHECK constraint raises. `haven_seed_facility_observation_thresholds` joined
+  the definer `search_path` list in assertion 4.
+- `src/lib/rounding/update-task-status.test.ts`, 20 tests, asserting behaviour
+  rather than the absence of a string, because a grep for `30` is satisfied by
+  renaming the constant. The two load-bearing ones are that a server-owned
+  status survives untouched at any distance past the window, and that **the same
+  clock with two different policies gives two different answers** - which is only
+  true if the answer comes from the row. Negative-control tested: pasting the
+  retired arithmetic back into the function fails 15 of the 20.
+
+`src/types/database.ts` was updated by hand for the three columns, which the
+build notes already record as a file that drifts silently.
 
 ### 7.2 What the acceptance surface now is
 
@@ -888,10 +969,11 @@ the decision rather than the number.
 |---|---|---|
 | seven SQL acceptance scripts (Parts 1-7) | `node scripts/smart-rounding/run-*-acceptance.mjs` | 1 (counted), 5, 7, 8, 9, 15, 16, 17, 18, 20, 21 |
 | `supabase/tests/review_smart_rounding_authority.sql` | inside `npm run migrations:verify:pg` | the module's only regression net; D21 |
-| `scripts/smart-rounding/config-literals.mjs` | `npm run smart-rounding:literals` | 19, with the four findings above |
+| `scripts/smart-rounding/config-literals.mjs` | `npm run smart-rounding:literals` | 19, clean |
 | `scripts/smart-rounding/phi-scan.mjs` | `npm run smart-rounding:phi-scan` | 14 |
 | `scripts/smart-rounding/rls-check.mjs` | `npm run smart-rounding:rls-check -- --target=staging` | **6 and 12, and unrun** |
 | Playwright project `smart-rounding` | `SMART_ROUNDING_E2E=1 npm run smart-rounding:e2e` | 1 (rendered), 2, 3, 4, 10, 11, and **unrun** |
+| `src/lib/rounding/update-task-status.test.ts` | inside `npm run test` | the guard on 7.1a; a display band cannot return to a constant without turning it red |
 | `npm run typecheck`, `lint`, `test`, `build` | | 13 |
 
 ### 7.3 D17 still stands, and two acceptance items are unproven
@@ -944,3 +1026,148 @@ It is negative-control tested: planting one real resident's first and last name
 into a file under `scripts/smart-rounding/` is caught by name, by line, and
 without printing the name. It also caught a real name the Part 8 specialist had
 written into one of its own comments.
+
+### 7.6 The hosted RLS check ran, and what it found
+
+The orchestrator ran `scripts/smart-rounding/rls-check.mjs` against live Haven
+HFO Staging with three dedicated accounts. **The single most valuable result in
+the build: twenty five tables, every `anon` read refused, under real JWT
+claims.** The replay could never establish that. `scripts/pg-verify-stub.sql`
+stands a fake `auth` schema in for Supabase and grants no Supabase default
+privileges, and a prior Haven finding is that a `has_table_privilege(...) =
+false` assertion is a replay-only artifact that reads the other way on hosted.
+This is the first hard evidence the module's row level security holds rather
+than merely being written.
+
+The run then stopped, on a bug in the check itself and an unmet spec
+requirement behind it.
+
+**The bug.** `public.monitoring_order_interval_options` is `RETURNS TABLE`, so
+PostgREST answers it as an array of one row whose `preset_minutes` is an integer
+array. The script indexed `[0]` correctly and then looked for a column called
+`interval_minutes`, which does not exist, read `undefined`, and reported
+"monitoring_order_interval_options gave no interval". The function had answered
+perfectly. Worse, the failure message asserted a cause it had not observed -
+"the interval is a row, so there is no literal to fall back on" - when the value
+was in fact still a literal. That is the same class of defect as the generic
+"Confirm facility scope and retry" that hid three unrelated query bugs on the
+live board (D23): **a failure message that names a cause it did not observe
+sends the next person to the wrong place.** The read is fixed, and when it fails
+it now prints the shape it actually received rather than a diagnosis.
+
+Every other RPC read in the Part 8 scripts and the Playwright project was
+audited for the same shape error. `monitoring_order_interval_options` was the
+only `RETURNS TABLE` function being read as a single object;
+`observation_compliance_for_range` and `facility_observation_windows_for_date`
+were already read as arrays, and the eight `RETURNS jsonb` commands as objects.
+`ensure_facility_observation_defaults` was being read defensively as either,
+which is now just the object it returns.
+
+### 7.7 Migration 432: the last two deferred promises
+
+Two functions in this module returned constants behind a comment saying the
+cadence configuration work would replace them with a facility read:
+
+```
+public.monitoring_order_interval_options()  ARRAY[30, 60, 120, 240], 15, 720
+haven.observation_grace_formula()           4.0, 10, 60
+```
+
+Part 7 built `public.facility_observation_thresholds` and did not do it, so both
+promises were still promises four parts later, and spec 6.2 lists "Monitoring
+Order intervals: the preset list offered in the picker, and the grace formula
+divisor" as per-facility configuration. Fixing the read above is what surfaced
+it. Migration `432` makes both true:
+
+- six columns on `facility_observation_thresholds`, seeded at the values the
+  function bodies carried so no building's behaviour changes
+- `haven.observation_grace_formula(uuid)`,
+  `public.monitoring_order_grace_minutes(uuid, integer)`,
+  `public.observation_grace_minutes(uuid, integer)` and
+  `public.monitoring_order_interval_options(uuid)` all read the row
+- the old signatures are **dropped, not kept alongside**. An overload with no
+  facility would have to guess one, and a grace value computed against another
+  building's divisor is a wrong answer that reads perfectly plausible. The probe
+  asserts each of them stays absent.
+- `public.observation_task_window_close(uuid)` keeps its signature: it already
+  joins the task, so the facility it needs is on a row it is already reading.
+  One caller changed, `public.generate_monitoring_order_tasks`, replayed from
+  its migration 430 text with one line different.
+- `public.monitoring_order_grace_minutes` raises `22023` for a building with no
+  thresholds row rather than answering null. A null grace flows into
+  `resident_observation_tasks.grace_ends_at` and fails on a NOT NULL a long way
+  from the building nobody configured.
+- two CHECK constraints, because `authenticated` holds UPDATE on that table: the
+  bounds sit inside the CHECK on `resident_monitoring_orders.interval_minutes`,
+  and every preset sits inside the bounds. A preset outside them is an entry
+  form offering the floor a value its own insert refuses.
+
+**Two implementation notes worth keeping.**
+
+- A CHECK constraint may not contain a subquery, so the obvious
+  `NOT EXISTS (SELECT 1 FROM unnest(presets) ...)` is rejected with
+  `cannot use subquery in check constraint`, and core PostgreSQL has no array
+  minimum or maximum. Hence `haven.int_array_min` and `haven.int_array_max`,
+  two immutable one-liners the constraint calls. PostgreSQL does not revalidate
+  a CHECK when a function it calls changes; if either ever does, revalidate.
+- **Migration 431 shipped with a latent bug that a Part 3 fixture found, not a
+  reading.** Migration 428 created four threshold columns `NOT NULL` with no
+  default, so 431's new facilities trigger, inserting a row naming only the
+  keys for a building with nothing to inherit, was rejected - and the trigger
+  swallowed the error with a bare `WHEN OTHERS THEN NULL`. The building got no
+  thresholds row and the first grace call raised half a schema away. 431 now
+  gives those four columns defaults, and **the handler raises a WARNING naming
+  the building and the reason instead of swallowing silently.** An empty
+  exception handler is how this stayed invisible.
+
+### 7.8 What the renumbering did, and where staging now sits
+
+The module was authored at `414`-`429` and is now `417`-`432`: `origin/main`
+merged its own `414`, `415` and `416` for unrelated work while Part 8 was under
+review, and the merge in the shared checkout renumbered the whole block.
+`npm run migrations:check:claims` had been reporting those three collisions for
+a day beforehand. **Re-run both checks immediately before any push and expect to
+renumber again.**
+
+Consequences for the hosted state:
+
+- Haven HFO Staging has the module applied through what was `424` at the Part 8
+  handoff. **Migrations `431` and `432` are applied nowhere.**
+- `smart-rounding:rls-check` and the Playwright project cannot run through until
+  staging has `431` and `432`: the board's display thresholds and the Monitoring
+  Order interval presets are columns those two add, and without them the
+  interval picker offers nothing and the board reports a configuration gap for
+  every building.
+- `src/types/database.ts` was an unmerged path in git's index for the whole of
+  this work. Its working tree content carries the Part 8 entries and no conflict
+  markers, and `npm run typecheck` passes against it, but whoever finishes the
+  merge should read it rather than assuming.
+
+### 7.9 Acceptance, honestly, after the hosted run
+
+| item | state |
+|---|---|
+| anon reads nothing across 25 tables | **proven on hosted staging**, real JWT claims |
+| 1 (counted), 5, 7, 8, 9, 15, 16, 17, 18, 20, 21 | proven, replayed schema |
+| 13 | proven |
+| 14 | proven for this module; see 7.10 |
+| 19 | **proven, scanner clean** |
+| 6, 12 | **still unproven.** The harness works and the accounts exist; the run stopped before reaching either |
+| 1 (rendered), 2, 3, 4, 10, 11 | **still unproven** above the unit level. The Playwright project has never run |
+
+### 7.10 The phi-scan now labels a finding's origin
+
+`phi-scan` reports two `birth date shape` findings, both carrying the same
+DOB-shaped date, in
+`scripts/care-events/print-sheet-screenshots.mjs` and
+`src/components/care-events/print/sheets.test.tsx`. Both arrived with the
+`origin/main` care-events merge and neither is in the Smart Rounding module.
+Neither matches any of the 32 residents in the pilot import, so they are
+synthetic print fixtures, but they are DOB-shaped and the scan is right to say
+so. The date itself is deliberately not reproduced in this file: quoting it made
+these notes trip the very scan they describe, which is a small lesson in its own
+right about writing about PHI patterns.
+
+The scan now labels every finding `smart-rounding` or
+`elsewhere on the branch` and prints the split, because acceptance 14 is about
+the branch and a branch can carry somebody else's work.

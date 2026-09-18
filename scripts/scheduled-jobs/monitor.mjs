@@ -57,6 +57,7 @@ export function assessJob(job, now = new Date()) {
 
 export const secretMapping = {
   'ar-aging-check':['ar_aging_check_secret','AR_AGING_CHECK_SECRET'],
+  'daily-census-log':['daily_census_log_cron_secret','DAILY_CENSUS_LOG_SECRET'],
   'emar-missed-dose-check':['emar_missed_dose_secret','EMAR_MISSED_DOSE_SECRET'],
   'exec-alert-evaluator':['exec_alert_evaluator_secret','EXEC_ALERT_EVALUATOR_SECRET'],
   'exec-kpi-snapshot':['exec_kpi_snapshot_secret','EXEC_KPI_SNAPSHOT_SECRET'],

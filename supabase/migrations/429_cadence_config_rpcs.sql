@@ -14,7 +14,7 @@
 --   public.apply_template_to_facilities    fan a template out
 --   public.validate_cadence_version        the six hard blocks and four warnings
 --   public.simulate_cadence_change         replay against what actually happened
---   public.send_test_escalation            already shipped by migration 417, unchanged
+--   public.send_test_escalation            already shipped by migration 420, unchanged
 --
 -- The one invariant this whole module rests on
 -- -------------------------------------------------------------------------
@@ -266,7 +266,7 @@ GRANT EXECUTE ON FUNCTION public.cadence_version_day_shape (uuid) TO authenticat
 -- ---------------------------------------------------------------------------
 -- The next shift boundary
 --
--- Read from facility_shift_definitions through the shift resolver migration 414
+-- Read from facility_shift_definitions through the shift resolver migration 417
 -- already owns, so the default effective timing carries no boundary of its own.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.facility_next_shift_boundary_at (p_facility_id uuid, p_at timestamptz DEFAULT now())
@@ -1515,7 +1515,7 @@ BEGIN
   -- close the outgoing version's effective_to at a date that has not arrived,
   -- so a second change needed before then would have nowhere in the timeline to
   -- go, and public.facility_cadence_in_force would be answering from a version
-  -- nobody had reached yet. Migration 414 put draft, pending and scheduled
+  -- nobody had reached yet. Migration 417 put draft, pending and scheduled
   -- outside the exclusion constraint for exactly this reason.
   --
   -- next_shift_boundary and scheduled are therefore both future dated and both

@@ -119,7 +119,7 @@ BEGIN
     v.created_at
   LIMIT 1;
   PERFORM
-    pg_temp.as_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 414 is missing');
+    pg_temp.as_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 417 is missing');
 
   INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order)
   SELECT

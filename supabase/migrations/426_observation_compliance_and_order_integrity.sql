@@ -17,7 +17,7 @@
 --
 -- Closed here with a composite foreign key on (facility_id, shift_key), which
 -- needs a full uniqueness guarantee on the parent rather than the partial one
--- migration 414 created. See the ruling on soft delete and rename below.
+-- migration 417 created. See the ruling on soft delete and rename below.
 --
 -- M7. `completed` WAS A LEGAL ORDER STATUS THAT NEVER CLOSED.
 --
@@ -40,7 +40,7 @@ BEGIN;
 -- ---------------------------------------------------------------------------
 -- M5, part one. A shift key is the shift's identity at a building.
 --
--- Migration 414's unique index is partial on `deleted_at IS NULL`, and a
+-- Migration 417's unique index is partial on `deleted_at IS NULL`, and a
 -- partial index cannot back a foreign key. The replacement is unconditional,
 -- which is a ruling and not an accident:
 --
@@ -203,7 +203,7 @@ GRANT EXECUTE ON FUNCTION haven.monitoring_order_in_force_until (text, timestamp
 -- ---------------------------------------------------------------------------
 -- M7, part three, and M5, part three. The compliance read.
 --
--- Replaced from migration 418 with three changes and nothing else:
+-- Replaced from migration 421 with three changes and nothing else:
 --
 --   1. the coverage day range closes an order through
 --      haven.monitoring_order_in_force_until rather than through
@@ -494,7 +494,7 @@ FROM
   -- 414 deleted it.
   LEFT JOIN LATERAL public.facility_observation_windows_for_version (r.fac_id, r.version_id, r.the_date) w ON TRUE
   -- M5. The window names a shift; this is whether that shift is one the
-  -- facility actually runs. The composite foreign key added in migration 423
+  -- facility actually runs. The composite foreign key added in migration 426
   -- makes an unmatched key impossible, but a shift that has been deactivated or
   -- soft deleted still leaves its windows projecting here while
   -- public.facility_shift_window_at refuses to resolve them, so the generator
@@ -716,7 +716,7 @@ REVOKE ALL ON FUNCTION haven.place_monitoring_order (uuid, integer, text, text, 
 -- ---------------------------------------------------------------------------
 -- M11, part three. create_monitoring_order keeps every guard and delegates.
 --
--- Changed from migration 421: the insert, the excuse, the task generation and
+-- Changed from migration 424: the insert, the excuse, the task generation and
 -- the notification move into haven.place_monitoring_order. Every authorization
 -- check, the open ended review rule and the one active order rule are unchanged
 -- and still happen here, before anything is written.
@@ -811,7 +811,7 @@ COMMENT ON FUNCTION public.create_monitoring_order (uuid, integer, text, text, t
 -- M11, part four. The bridge goes through the same internal, and attributes the
 -- order honestly or not at all.
 --
--- Changed from migration 416: the direct INSERT becomes a call to
+-- Changed from migration 419: the direct INSERT becomes a call to
 -- haven.place_monitoring_order, so a bridged order now excuses the standard
 -- windows it covers, writes its order tasks immediately and notifies the
 -- administrator. The ordering party is resolved from the watch instance instead

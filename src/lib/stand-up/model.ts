@@ -299,7 +299,9 @@ export function periodRange(start: string, end: string): string {
  * saves at its own minute, so the recorded time is shown rather than implied.
  * An open report without a stamp is simply not saved yet; a historical report
  * without one has no recorded time, and the label never invents one from the
- * reader's clock.
+ * reader's clock. Correcting a past week keeps whatever time was recorded then
+ * (COL-395, migration 416), so "No recorded time" on a historical report means
+ * none was ever recorded rather than that a correction dropped it.
  */
 export function sectionPeriodLabel(section: StandUpSection, week: string, asOf?: string | null, open = false): string {
   if (section.period === 'completed') return `Completed week · ${periodRange(shiftDay(week, -7), shiftDay(week, -1))}`

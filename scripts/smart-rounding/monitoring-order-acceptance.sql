@@ -77,14 +77,33 @@ DECLARE
   v_intervals CONSTANT integer[] := ARRAY[30, 60, 120, 240];
   v_got integer;
   i integer;
+  v_facility uuid;
 BEGIN
+  -- The divisor and the bounds are a facility row since migration 432, so the
+  -- rule is exercised against a real building rather than against a function
+  -- that returned constants. Any building with a thresholds row will do, and
+  -- migration 431 guarantees every building has one.
+  SELECT
+    t.facility_id INTO v_facility
+  FROM
+    public.facility_observation_thresholds t
+  WHERE
+    t.deleted_at IS NULL
+  ORDER BY
+    t.created_at,
+    t.facility_id
+  LIMIT 1;
+
+  PERFORM
+    pg_temp.mo_assert (v_facility IS NOT NULL, 'no building carries a public.facility_observation_thresholds row, so the interval scaled grace rule has no divisor to read');
+
   FOR i IN 1..4 LOOP
-    v_got := public.monitoring_order_grace_minutes (v_intervals[i]);
+    v_got := public.monitoring_order_grace_minutes (v_facility, v_intervals[i]);
     PERFORM
       pg_temp.mo_assert (v_got = v_expected[i], format('grace at interval %s should be %s, got %s', v_intervals[i], v_expected[i], v_got));
   END LOOP;
   INSERT INTO mo_result (check_name, detail)
-    VALUES ('grace formula', 'interval 30/60/120/240 gives grace 10/15/30/60');
+    VALUES ('grace formula', 'interval 30/60/120/240 gives grace 10/15/30/60, read from the facility row');
 END
 $$;
 
@@ -147,7 +166,7 @@ BEGIN
     v.created_at
   LIMIT 1;
   PERFORM
-    pg_temp.mo_assert (v_source_version IS NOT NULL, 'the seeded cadence version from migration 414 is missing');
+    pg_temp.mo_assert (v_source_version IS NOT NULL, 'the seeded cadence version from migration 417 is missing');
 
   INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order)
   SELECT

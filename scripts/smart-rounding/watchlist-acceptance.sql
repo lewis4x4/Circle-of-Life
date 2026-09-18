@@ -92,7 +92,7 @@ $$;
 --    cadence and the rules the organization actually ships.
 --
 --    The rules and the bands are copied from the seeded organization defaults
---    rather than restated, so this file asserts against the list migration 422
+--    rather than restated, so this file asserts against the list migration 425
 --    ships and not against a second copy of it that could drift.
 --
 --    The month it describes: six falls across the building with two residents
@@ -187,7 +187,7 @@ BEGIN
         count(*)
       FROM public.watchlist_signal_rules
       WHERE
-        organization_id = v_org) = 15, 'migration 422 no longer seeds the fifteen signals of spec section 7.2 as organization defaults');
+        organization_id = v_org) = 15, 'migration 425 no longer seeds the fifteen signals of spec section 7.2 as organization defaults');
 
   INSERT INTO public.watchlist_band_rules (organization_id, facility_id, rule_key, band_key, band_label, band_rank, min_open_signal_count, min_severity_weight, min_open_days, counts_data_quality, enabled, jurisdiction, sort_order)
   SELECT
@@ -226,7 +226,7 @@ BEGIN
     v.created_at
   LIMIT 1;
   PERFORM
-    pg_temp.wl_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 414 is missing');
+    pg_temp.wl_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 417 is missing');
 
   INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order)
   SELECT

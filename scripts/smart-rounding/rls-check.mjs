@@ -220,6 +220,40 @@ function requireCredentials() {
   process.exit(2);
 }
 
+/**
+ * The first interval preset the building offers.
+ *
+ * `public.monitoring_order_interval_options` is `RETURNS TABLE`, so PostgREST
+ * answers it as an array of one row, and that row's `preset_minutes` is an
+ * integer array. Both layers of that shape were got wrong here once: the first
+ * version of this script indexed `[0]` correctly and then looked for a column
+ * called `interval_minutes`, which does not exist, so it read `undefined` and
+ * reported the call as having "given no interval". It had answered perfectly.
+ *
+ * The lesson is the one the Live board taught with `PGRST201`: a failure
+ * message that names a cause it did not observe sends the next person to the
+ * wrong place. Read the shape, and when the read fails, print the shape.
+ */
+function firstIntervalPreset(data) {
+  const row = Array.isArray(data) ? data[0] : data;
+  const presets = row?.preset_minutes;
+  if (!Array.isArray(presets) || presets.length === 0) return null;
+  const candidate = presets[0];
+  return Number.isInteger(candidate) ? candidate : null;
+}
+
+/** What came back, structurally, with no value from it. */
+function describeShape(data) {
+  if (data === null || data === undefined) return String(data);
+  if (Array.isArray(data)) {
+    if (data.length === 0) return "an empty array";
+    const keys = data[0] && typeof data[0] === "object" ? Object.keys(data[0]).join(", ") : typeof data[0];
+    return `an array of ${data.length}, first element keys: ${keys}`;
+  }
+  if (typeof data === "object") return `an object with keys: ${Object.keys(data).join(", ")}`;
+  return typeof data;
+}
+
 const results = [];
 function record(check, ok, detail) {
   results.push({ check, ok, detail });
@@ -326,13 +360,17 @@ async function main() {
     process.exit(1);
   }
 
-  const options = await caregiver.client.rpc("monitoring_order_interval_options");
-  const intervalMinutes = Array.isArray(options.data) && options.data.length > 0
-    ? options.data[0].interval_minutes ?? options.data[0].minutes ?? null
-    : null;
+  const options = await caregiver.client.rpc("monitoring_order_interval_options", {
+    p_facility_id: caregiverResident.data.facility_id,
+  });
+  const intervalMinutes = firstIntervalPreset(options.data);
   if (options.error || intervalMinutes == null) {
-    console.error(`${PREFIX} FAIL: monitoring_order_interval_options gave no interval (${errorSummary(options.error)}).`);
-    console.error(`${PREFIX} The interval is a row, so there is no literal to fall back on.`);
+    console.error(`${PREFIX} FAIL: could not read an interval preset from monitoring_order_interval_options.`);
+    console.error(`${PREFIX} error: ${errorSummary(options.error)}`);
+    console.error(`${PREFIX} shape returned: ${describeShape(options.data)}`);
+    console.error(`${PREFIX} It returns a table of one row, so the read is data[0].preset_minutes, an integer array.`);
+    console.error(`${PREFIX} Since migration 432 that row comes from public.facility_observation_thresholds, so an`);
+    console.error(`${PREFIX} empty answer means facility ${redact(caregiverResident.data.facility_id)} has no thresholds row.`);
     process.exit(1);
   }
 

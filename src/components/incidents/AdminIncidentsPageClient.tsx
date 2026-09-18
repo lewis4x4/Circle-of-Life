@@ -227,6 +227,14 @@ export function AdminIncidentsPageClient({
           <Link href="/admin/incidents/reports-log" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}>
             Reports log
           </Link>
+          {facilityReady ? (
+            <Link
+              href={`/admin/incidents/print/log?facility=${selectedFacilityId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}
+            >
+              Print incident log
+            </Link>
+          ) : null}
           <Link href={level4BadgeHref}>
             <Badge variant="outline" className="h-8 px-3 border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 cursor-pointer">
               {level4ExceptionCount} {formatLevelWord(4)} exceptions

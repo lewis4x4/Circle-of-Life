@@ -2,7 +2,7 @@
 -- while the engine was walking its queue.
 --
 -- Spec: docs/specs/25A-smart-rounding-cadence-and-watchlist.md section 5.
--- Fixes the read-write gap in migration 417's
+-- Fixes the read-write gap in migration 420's
 -- public.record_observation_escalation_rung.
 --
 -- The defect, demonstrated rather than theorized.
@@ -27,7 +27,7 @@
 -- is taken before the decision, so a completion already in flight blocks and
 -- this command then reads its committed status instead of a stale one.
 --
--- Migration 415 is not edited. This file replaces the function body in place;
+-- Migration 418 is not edited. This file replaces the function body in place;
 -- nothing else in that migration changes.
 
 BEGIN;

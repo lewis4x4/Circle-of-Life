@@ -451,7 +451,7 @@ BEGIN
     pg_temp.sr_assert (to_regprocedure('haven.monitoring_order_covers_window(timestamptz,timestamptz,timestamptz,timestamptz)') IS NOT NULL, 'haven.monitoring_order_covers_window is gone. It is the single definition of when an order owns a standard window, and three callers read it.');
 
   -- The excuse lives in haven.place_monitoring_order, the internal both entry
-  -- points delegate to. Migration 423 moved it there; before that it was inline
+  -- points delegate to. Migration 426 moved it there; before that it was inline
   -- in create_monitoring_order, which is why this assertion names the internal
   -- and section 9f separately holds the delegation in place.
   SELECT
@@ -669,7 +669,7 @@ BEGIN
     n.nspname = 'public'
     AND p.proname = 'observation_compliance_for_range';
 
-  -- Migration 424 brought a join to public.residents back, as a LEFT join, to
+  -- Migration 427 brought a join to public.residents back, as a LEFT join, to
   -- read the current status. What must never come back is either deleted_at
   -- filter, and the join must never become an inner one: both drop the row for a
   -- resident whose record has been retired, and with it a closed day that had
@@ -1142,7 +1142,7 @@ BEGIN
     v.created_at
   LIMIT 1;
   PERFORM
-    pg_temp.sr_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version is missing; migration 414 no longer seeds one.');
+    pg_temp.sr_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version is missing; migration 417 no longer seeds one.');
 
   SELECT
     v.id INTO v_source_ladder
@@ -1156,7 +1156,7 @@ BEGIN
     v.created_at
   LIMIT 1;
   PERFORM
-    pg_temp.sr_assert (v_source_ladder IS NOT NULL, 'the seeded escalation version is missing; migration 417 no longer seeds one.');
+    pg_temp.sr_assert (v_source_ladder IS NOT NULL, 'the seeded escalation version is missing; migration 420 no longer seeds one.');
 
   INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order)
   SELECT
@@ -1262,14 +1262,14 @@ $$;
 -- own, with no RETURNING clause and whatever the UPDATE policy's WITH CHECK
 -- says. Verified against a two column table with nothing else on it. Every one
 -- of this module's seven tables has a facility scoped SELECT policy, so the
--- cross facility move was refused by that policy before migration 420 as well.
+-- cross facility move was refused by that policy before migration 423 as well.
 --
 -- Which means a test that only attempts the move proves nothing about the fix:
 -- it passes against the broken policy. The second half of this block therefore
 -- widens the SELECT policy to the whole organization, inside this rolled back
 -- transaction, and attempts the move again. With the sibling policy out of the
 -- way the UPDATE policy's WITH CHECK is the only thing left, and that assertion
--- does fail without migration 420.
+-- does fail without migration 423.
 SELECT
   pg_temp.sr_sign_in ('5add0000-0000-4000-8000-000000000006', '5add0000-0000-4000-8000-000000000006');
 
@@ -2112,7 +2112,7 @@ $$;
 -- 19. Part 8. The board's display thresholds are rows, and the ordering between
 --     the two documentation lag thresholds is a constraint rather than a form.
 --
--- Migration 428 moved three numbers out of TypeScript:
+-- Migration 431 moved three numbers out of TypeScript:
 -- documentation_lag_notable_minutes and documentation_lag_serious_minutes off
 -- src/components/rounding/IntegrityFlagCard.tsx, and
 -- task_upcoming_lead_minutes off src/lib/rounding/update-task-status.ts. A
@@ -2145,13 +2145,13 @@ BEGIN
       AND c.table_name = 'facility_observation_thresholds'
       AND c.column_name = v_column;
     PERFORM
-      pg_temp.sr_assert (v_nullable IS NOT NULL, format('public.facility_observation_thresholds.%s is gone. Migration 428 moved it out of a TypeScript constant; dropping the column puts the number back in code.', v_column));
+      pg_temp.sr_assert (v_nullable IS NOT NULL, format('public.facility_observation_thresholds.%s is gone. Migration 431 moved it out of a TypeScript constant; dropping the column puts the number back in code.', v_column));
     PERFORM
       pg_temp.sr_assert (v_nullable = 'NO', format('public.facility_observation_thresholds.%s became nullable. A null display threshold makes the surface choose a fallback, which is the constant again.', v_column));
   END LOOP;
 
   -- The trigger that gives a new building a row at all. Without it a facility
-  -- added after migration 425 has no thresholds and every read that needs one
+  -- added after migration 428 has no thresholds and every read that needs one
   -- finds nothing.
   PERFORM
     pg_temp.sr_assert (EXISTS (
@@ -2182,7 +2182,7 @@ BEGIN
   LIMIT 1;
 
   PERFORM
-    pg_temp.sr_assert (v_facility IS NOT NULL, 'no facility carries a public.facility_observation_thresholds row, so the ordering constraint cannot be exercised. Migration 425 seeds one per facility and 428 backstops it.');
+    pg_temp.sr_assert (v_facility IS NOT NULL, 'no facility carries a public.facility_observation_thresholds row, so the ordering constraint cannot be exercised. Migration 428 seeds one per facility and 431 backstops it.');
 
   BEGIN
     -- A bare UPDATE, and the assertion is on the raise rather than on a row
@@ -2203,6 +2203,146 @@ BEGIN
 
   PERFORM
     pg_temp.sr_assert (v_raised = '23514', format('setting documentation_lag_notable_minutes above documentation_lag_serious_minutes was accepted (raised %s). The ordering has to be a constraint: authenticated holds UPDATE on this table, so a form is not the thing preventing it.', COALESCE(v_raised, 'nothing')));
+END
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 20. Part 8. The Monitoring Order interval presets and the grace formula are
+--     facility rows, and the signatures that could read the wrong building are
+--     gone.
+--
+-- Two functions in this module returned constants for four parts behind a
+-- comment promising configuration would replace them:
+-- public.monitoring_order_interval_options and haven.observation_grace_formula.
+-- Migration 432 made the promise true. The reason the old signatures are
+-- asserted absent rather than merely deprecated: a zero argument overload
+-- alongside a facility scoped one is a call that compiles, runs, and answers
+-- for the wrong building, and a grace value computed against another facility's
+-- divisor is a wrong answer that reads perfectly plausible.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  c_columns CONSTANT text[] := ARRAY['monitoring_order_interval_presets', 'monitoring_order_interval_min_minutes', 'monitoring_order_interval_max_minutes', 'observation_grace_divisor', 'observation_grace_floor_minutes', 'observation_grace_ceiling_minutes'];
+  v_column text;
+  v_nullable text;
+  v_facility uuid;
+  v_raised text;
+  v_grace integer;
+BEGIN
+  FOREACH v_column IN ARRAY c_columns LOOP
+    SELECT
+      c.is_nullable INTO v_nullable
+    FROM
+      information_schema.columns c
+    WHERE
+      c.table_schema = 'public'
+      AND c.table_name = 'facility_observation_thresholds'
+      AND c.column_name = v_column;
+    PERFORM
+      pg_temp.sr_assert (v_nullable IS NOT NULL, format('public.facility_observation_thresholds.%s is gone. Migration 432 moved it out of a function body that returned a constant; dropping the column puts the constant back.', v_column));
+    PERFORM
+      pg_temp.sr_assert (v_nullable = 'NO', format('public.facility_observation_thresholds.%s became nullable. A null divisor or a null preset list makes the caller choose a fallback, which is the constant again.', v_column));
+  END LOOP;
+
+  -- The signatures that would read the wrong building.
+  PERFORM
+    pg_temp.sr_assert (NOT EXISTS (
+        SELECT
+          1
+        FROM
+          pg_catalog.pg_proc p
+          JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+        WHERE
+          n.nspname = 'public'
+          AND p.proname = 'monitoring_order_interval_options'
+          AND p.pronargs = 0), 'public.monitoring_order_interval_options() with no argument is back. It cannot know which building it is answering for, so it answers for whichever row it happens to find.');
+  PERFORM
+    pg_temp.sr_assert (EXISTS (
+        SELECT
+          1
+        FROM
+          pg_catalog.pg_proc p
+          JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+        WHERE
+          n.nspname = 'public'
+          AND p.proname = 'monitoring_order_interval_options'
+          AND p.pronargs = 1), 'public.monitoring_order_interval_options(uuid) is gone; the Monitoring Order entry form has no presets to offer.');
+  PERFORM
+    pg_temp.sr_assert (NOT EXISTS (
+        SELECT
+          1
+        FROM
+          pg_catalog.pg_proc p
+          JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+        WHERE
+          n.nspname = 'haven'
+          AND p.proname = 'observation_grace_formula'
+          AND p.pronargs = 0), 'haven.observation_grace_formula() with no argument is back, so the interval scaled grace rule has a divisor that belongs to no building.');
+  PERFORM
+    pg_temp.sr_assert (NOT EXISTS (
+        SELECT
+          1
+        FROM
+          pg_catalog.pg_proc p
+          JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+        WHERE
+          n.nspname = 'public'
+          AND p.proname IN ('monitoring_order_grace_minutes', 'observation_grace_minutes')
+          AND p.pronargs = 1), 'a single argument grace function is back. Grace is per facility since migration 432, and an interval-only signature computes it against whatever divisor it finds.');
+
+  SELECT
+    t.facility_id INTO v_facility
+  FROM
+    public.facility_observation_thresholds t
+  WHERE
+    t.deleted_at IS NULL
+  ORDER BY
+    t.created_at,
+    t.facility_id
+  LIMIT 1;
+
+  PERFORM
+    pg_temp.sr_assert (v_facility IS NOT NULL, 'no building carries a public.facility_observation_thresholds row, so neither the presets nor the grace formula can be exercised.');
+
+  -- The seeded rule still gives the answers spec 5.2 names, now through a row.
+  PERFORM
+    pg_temp.sr_assert (public.monitoring_order_grace_minutes (v_facility, 30) = 10
+      AND public.monitoring_order_grace_minutes (v_facility, 60) = 15
+      AND public.monitoring_order_grace_minutes (v_facility, 120) = 30
+      AND public.monitoring_order_grace_minutes (v_facility, 240) = 60, 'the seeded interval scaled grace rule no longer gives 10, 15, 30 and 60 at the four presets. Spec 5.2 names those, and migration 432 was meant to move the divisor into a row without changing any answer.');
+
+  -- A building nobody configured raises rather than answering NULL. A NULL
+  -- grace flows into resident_observation_tasks.grace_ends_at and fails on a
+  -- NOT NULL a long way from the cause.
+  BEGIN
+    v_grace := public.monitoring_order_grace_minutes ('00000000-0000-0000-0000-0000000000ff'::uuid, 30);
+    v_raised := NULL;
+  EXCEPTION
+    WHEN OTHERS THEN
+      v_raised := SQLSTATE;
+  END;
+
+  PERFORM
+    pg_temp.sr_assert (v_raised = '22023', format('the grace rule answered %s for a facility with no thresholds row instead of raising 22023. A null grace surfaces as a NOT NULL violation on a task insert, a long way from the building that was never configured.', COALESCE(v_grace::text, 'null')));
+
+  -- A preset the entry form offers has to be one the task table will accept.
+  -- Bare UPDATE, assertion on the raise: a CHECK violation raises 23514 and a
+  -- USING failure would filter silently to UPDATE 0.
+  BEGIN
+    UPDATE
+      public.facility_observation_thresholds
+    SET
+      monitoring_order_interval_presets = monitoring_order_interval_presets || ARRAY[monitoring_order_interval_max_minutes + 1]
+    WHERE
+      facility_id = v_facility;
+    v_raised := NULL;
+  EXCEPTION
+    WHEN check_violation THEN
+      v_raised := SQLSTATE;
+  END;
+
+  PERFORM
+    pg_temp.sr_assert (v_raised = '23514', format('a Monitoring Order interval preset above the configured maximum was accepted (raised %s). The picker would offer the floor a value resident_monitoring_orders rejects on insert, and authenticated holds UPDATE on this table, so a form is not the thing preventing it.', COALESCE(v_raised, 'nothing')));
 END
 $$;
 

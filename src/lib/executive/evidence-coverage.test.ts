@@ -141,6 +141,48 @@ describe("executive evidence coverage", () => {
     expect(estimated.detail).not.toContain("resident-days is");
   });
 
+  it("reports the incident rate as counted only when no day of the window is projected", () => {
+    const withCount = { ...BASE, metrics: { inc_rate: 0.4 }, snapshot: RECORDED_TODAY };
+
+    const partlyCounted = row(
+      {
+        ...withCount,
+        residentDays: {
+          windowDays: 30,
+          measuredDays: 29,
+          residentDays: 928,
+          startDate: "2026-08-17",
+          endDate: "2026-09-15",
+        },
+      },
+      "incidents",
+    );
+    // Twenty-nine days of counted census is still an estimate, and says which
+    // part of the denominator was counted and which was assumed.
+    expect(partlyCounted.state).toBe("estimated");
+    expect(partlyCounted.short).toBe("Estimated");
+    expect(partlyCounted.detail).toContain("recorded census on 29 of those days");
+    expect(partlyCounted.detail).toContain("projected from one day's census for the other 1");
+
+    const fullyCounted = row(
+      {
+        ...withCount,
+        residentDays: {
+          windowDays: 30,
+          measuredDays: 30,
+          residentDays: 960,
+          startDate: "2026-08-17",
+          endDate: "2026-09-15",
+        },
+      },
+      "incidents",
+    );
+    expect(fullyCounted.state).toBe("reported");
+    expect(fullyCounted.short).toBe("Counted");
+    expect(fullyCounted.detail).toContain("added up from the census recorded on each of those days");
+    expect(fullyCounted.detail).not.toContain("estimate");
+  });
+
   it("ages each measure against its own recording, not the run's", () => {
     // The run executed today and wrote billed revenue. Survey readiness was
     // last computed three days ago, so its value is the newest on file — and

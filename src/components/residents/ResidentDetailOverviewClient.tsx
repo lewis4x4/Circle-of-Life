@@ -522,6 +522,7 @@ export function ResidentDetailOverviewClient({
                 <MonitoringOrderAction
                   residentId={detail.id}
                   residentName={detail.fullName}
+                  facilityId={detail.facilityId}
                   onDone={onMonitoringOrderChanged}
                 />
               </>

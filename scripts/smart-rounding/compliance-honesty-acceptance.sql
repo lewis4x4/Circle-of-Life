@@ -13,7 +13,7 @@
 -- safe to re-run and leaves nothing behind. All fixture data is synthetic: no
 -- resident, no staff member and no facility here corresponds to a real one.
 --
--- The defect this file exists to keep fixed. Migration 414 derived the set of
+-- The defect this file exists to keep fixed. Migration 417 derived the set of
 -- resident days from task rows and Monitoring Order days. A resident day with
 -- neither produced no rows at all, so expected was zero, satisfied was zero,
 -- and a dashboard read zero over zero as a hundred percent or as no data. Three
@@ -99,7 +99,7 @@ BEGIN
     v.created_at
   LIMIT 1;
   PERFORM
-    pg_temp.ch_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 414 is missing');
+    pg_temp.ch_assert (v_source_cadence IS NOT NULL, 'the seeded cadence version from migration 417 is missing');
 
   SELECT
     v.id INTO v_source_escalation
@@ -111,7 +111,7 @@ BEGIN
     AND v.deleted_at IS NULL
   LIMIT 1;
   PERFORM
-    pg_temp.ch_assert (v_source_escalation IS NOT NULL, 'the seeded escalation version from migration 417 is missing');
+    pg_temp.ch_assert (v_source_escalation IS NOT NULL, 'the seeded escalation version from migration 420 is missing');
 
   INSERT INTO public.facility_shift_definitions (organization_id, facility_id, shift_key, roster_shift_type, label, starts_at_local, ends_at_local, sort_order)
   SELECT
@@ -293,7 +293,7 @@ $$;
 --
 -- The demonstrated case: a resident admitted before the cadence version's
 -- effective_from. Both the resolver and the projector return nothing, and
--- because migration 416 projected through a CROSS JOIN LATERAL the entire
+-- because migration 419 projected through a CROSS JOIN LATERAL the entire
 -- resident day was deleted from the answer rather than read as
 -- expected-and-unsatisfied. Every one of those days now yields exactly one row
 -- that says so.

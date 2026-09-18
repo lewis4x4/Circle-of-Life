@@ -5,7 +5,7 @@
 -- Spec: docs/specs/25A-smart-rounding-cadence-and-watchlist.md sections 6.2,
 -- 6.5, 6.8, 6.10, 6.13.
 --
--- Migration 414 already built the versioned cadence shape and migration 417
+-- Migration 417 already built the versioned cadence shape and migration 420
 -- built the versioned escalation shape, both seeded active at every facility in
 -- the organization. Nothing here recreates any of that. What is genuinely
 -- missing is everything above the facility: a named organization template a
@@ -344,7 +344,7 @@ COMMENT ON COLUMN public.facility_observation_thresholds.simulation_lookback_day
   'Default lookback for public.simulate_cadence_change. Lives here so the settings surface calls the simulation without carrying a span of its own.';
 
 -- ---------------------------------------------------------------------------
--- The foreign keys migration 414 and migration 417 deliberately deferred
+-- The foreign keys migration 417 and migration 420 deliberately deferred
 -- ---------------------------------------------------------------------------
 ALTER TABLE public.facility_cadence_versions
   DROP CONSTRAINT IF EXISTS facility_cadence_versions_source_template_id_fkey;
@@ -781,7 +781,7 @@ WHERE
 -- The template is created once per organization that has an active cadence
 -- version to inherit from. Nothing is restated: the six windows, their labels,
 -- their due times and their asymmetric grace all come out of
--- facility_cadence_windows, which is where migration 414 put them.
+-- facility_cadence_windows, which is where migration 417 put them.
 --
 -- The source version is the organization's oldest active one, chosen the same
 -- way public.ensure_facility_observation_defaults chooses it, so both commands

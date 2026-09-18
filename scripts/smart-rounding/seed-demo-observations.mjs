@@ -185,7 +185,8 @@ async function main() {
   for (const facility of facilities) {
     const { data, error } = await admin.rpc("ensure_facility_observation_defaults", { p_facility_id: facility.id });
     if (error) fail(`ensure_facility_observation_defaults failed for ${facility.id}: ${error.message}`);
-    const seeded = data?.seeded ?? data?.[0]?.seeded ?? null;
+    // RETURNS jsonb, so `data` is the object itself and never an array of one.
+    const seeded = data?.seeded ?? null;
     if (seeded === false) summary.configurationSkipped.push(`${facility.id}:${data?.reason ?? "no reason given"}`);
     else summary.configured += 1;
   }
@@ -196,12 +197,20 @@ async function main() {
   // 2. One Monitoring Order per facility, guarded by the seed marker. The
   //    command generates the order's own checks, so the board is not empty even
   //    when the cadence generator has not run here.
-  const intervalOptions = await admin.rpc("monitoring_order_interval_options");
-  const intervalMinutes = Array.isArray(intervalOptions.data) && intervalOptions.data.length > 0
-    ? intervalOptions.data[0].interval_minutes ?? intervalOptions.data[0].minutes ?? null
-    : null;
-  if (intervalOptions.error || intervalMinutes == null) {
-    fail(`monitoring_order_interval_options gave no interval: ${intervalOptions.error?.message ?? "empty"}`);
+  // monitoring_order_interval_options is RETURNS TABLE, so PostgREST answers an
+  // array of one row whose preset_minutes is an integer array, and since
+  // migration 432 it takes the facility whose configuration to read. Both
+  // layers of that shape were got wrong here once, and the failure message
+  // blamed the function rather than the read.
+  async function firstIntervalPreset(facilityId) {
+    const answer = await admin.rpc("monitoring_order_interval_options", { p_facility_id: facilityId });
+    if (answer.error) fail(`monitoring_order_interval_options failed at ${facilityId}: ${answer.error.message}`);
+    const row = Array.isArray(answer.data) ? answer.data[0] : answer.data;
+    const presets = row?.preset_minutes;
+    if (!Array.isArray(presets) || presets.length === 0) {
+      fail(`facility ${facilityId} offers no Monitoring Order interval presets, so it has no facility_observation_thresholds row.`);
+    }
+    return presets[0];
   }
 
   for (const [index, facility] of facilities.entries()) {
@@ -234,7 +243,7 @@ async function main() {
 
     const created = await caregiver.client.rpc("create_monitoring_order", {
       p_resident_id: resident.data.id,
-      p_interval_minutes: intervalMinutes,
+      p_interval_minutes: await firstIntervalPreset(facility.id),
       p_ordered_by_type: "facility_nurse",
       p_ordered_by_name: SYNTHETIC_ORDERING_PARTIES[index % SYNTHETIC_ORDERING_PARTIES.length],
       p_order_received_as: "verbal",

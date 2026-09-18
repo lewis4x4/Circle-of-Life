@@ -103,6 +103,27 @@ COMMENT ON COLUMN public.facility_observation_thresholds.documentation_lag_serio
 COMMENT ON COLUMN public.facility_observation_thresholds.task_upcoming_lead_minutes IS
   'How far ahead of its due time a check reads as due soon rather than upcoming on the board. The only display band left in this module: overdue, critically_overdue and missed all come from resident_observation_tasks.status, which the escalation engine writes from facility_escalation_rungs, so the board and the configured ladder cannot disagree.';
 
+-- ---------------------------------------------------------------------------
+-- 1a. The four columns migration 428 created NOT NULL with no default
+--
+-- Found by the Part 3 acceptance fixture rather than by reading: it creates a
+-- synthetic organization with one building and nothing to inherit from, the
+-- seeding trigger below tried to insert a row naming only the keys, and four
+-- NOT NULL columns with no default rejected it. The trigger swallowed the
+-- error, the building got no thresholds row, and the first grace call raised
+-- half a schema away.
+--
+-- Defaults matching what migration 428 seeded, except the unobserved gap: 428
+-- derived that per facility from the cadence the building already ran, and a
+-- building with no cadence has no such number. A full day is the honest
+-- permissive answer for a building nobody has configured yet, and the
+-- inheritance path below means a real second building never reaches it.
+ALTER TABLE public.facility_observation_thresholds
+  ALTER COLUMN maximum_unobserved_gap_minutes SET DEFAULT 1440,
+  ALTER COLUMN maximum_windows_per_resident_per_day SET DEFAULT 8,
+  ALTER COLUMN simulation_lookback_days SET DEFAULT 14,
+  ALTER COLUMN change_log_page_size SET DEFAULT 10;
+
 COMMENT ON TABLE public.facility_observation_thresholds IS
   'Per facility warning thresholds and read defaults for the cadence settings surface and the rounding board, per spec 25A section 6.2. Rows rather than constants, so no threshold and no lookback span appears in a TypeScript file or an Edge Function body.';
 
@@ -183,9 +204,12 @@ BEGIN
       DO NOTHING;
   EXCEPTION
     WHEN OTHERS THEN
-      -- Deliberately swallowed. See the note above: a facility insert must not
-      -- fail because its thresholds could not be seeded.
-      NULL;
+      -- Swallowed, but never silently. A facility insert must not fail because
+      -- its thresholds could not be seeded, and an empty handler is what let
+      -- the missing column defaults above go unnoticed until a grace call
+      -- raised half a schema away. The warning names the building and the
+      -- reason, which is what 418's sibling trigger does.
+      RAISE WARNING 'observation thresholds were not seeded for facility %: % (%)', NEW.id, SQLERRM, SQLSTATE;
   END;
   RETURN NEW;
 END
