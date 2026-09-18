@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 
 import type { CareEventDerivation } from "@/lib/care-events/level-engine";
 import { careEventSendButtonLabel } from "@/lib/care-events/level-copy";
+import { kindSupportsPrefill } from "@/lib/care-events/prefill";
 import type { LocationChip } from "@/lib/care-events/report-data";
 import { canSend, type ReportAction, type ReportState } from "@/lib/care-events/report-state";
 import { careEventTileByKind, type CareEventQuestion } from "@/lib/care-events/tiles";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { EarlierStepper } from "./EarlierStepper";
 import { LevelBanner } from "./LevelBanner";
 import { TapButton } from "./TapButton";
+import { VoicePrefillButton } from "./VoicePrefillButton";
 
 const SEND_TONE: Record<1 | 2 | 3 | 4, "neutral" | "primary" | "destructive"> = {
   1: "primary",
@@ -102,6 +104,15 @@ export function ReportHowBadStep({
           {state.resident ? `${state.resident.displayName}, ${state.resident.roomLabel}.` : "The building."} Tap the answers that fit.
         </p>
       </div>
+
+      {kindSupportsPrefill(state.kind) ? (
+        <VoicePrefillButton
+          kind={state.kind}
+          onPrefill={(prefill, questionsVersion) =>
+            dispatch({ type: "apply_prefill", prefill, questionsVersion })
+          }
+        />
+      ) : null}
 
       {tile.questions.map((question) => (
         <QuestionRow

@@ -5,6 +5,7 @@
  */
 
 import { type CareEventAnswers, type CareEventKind, isCareEventKind } from "./level-engine";
+import { prefillProvenance } from "./prefill";
 import { careEventTileByKind } from "./tiles";
 import type { CareEventReceipt } from "./submit";
 
@@ -28,6 +29,15 @@ export type ReportState = {
   resident: ReportResident | null;
   kind: CareEventKind | null;
   answers: Record<string, string | string[]>;
+  /**
+   * Answer keys the model highlighted from the caregiver's spoken account and
+   * the caregiver has not touched since. A key leaves this list the moment they
+   * tap that row, so it means "the model chose this and a person confirmed it
+   * by sending", never "the model chose this".
+   */
+  prefilledByModel: string[];
+  /** Question-set version behind `prefilledByModel`, recorded with it. */
+  prefillQuestionsVersion: string | null;
   worried: boolean;
   locationCode: string | null;
   locationLabel: string | null;
@@ -51,6 +61,7 @@ export type ReportAction =
   | { type: "pick_kind"; kind: CareEventKind }
   | { type: "set_answer"; key: string; value: string }
   | { type: "toggle_answer"; key: string; value: string }
+  | { type: "apply_prefill"; prefill: Record<string, string>; questionsVersion: string | null }
   | { type: "toggle_worried" }
   | { type: "set_location"; code: string | null; label: string | null }
   | { type: "toggle_earlier" }
@@ -70,6 +81,8 @@ export function initialReportState(clientEventId: string): ReportState {
     resident: null,
     kind: null,
     answers: {},
+    prefilledByModel: [],
+    prefillQuestionsVersion: null,
     worried: false,
     locationCode: null,
     locationLabel: null,
@@ -92,7 +105,22 @@ function stepAfterWho(state: ReportState): ReportStep {
 }
 
 function resetAnswers(state: ReportState): ReportState {
-  return { ...state, answers: {}, worried: false };
+  // Changing the resident or the tile clears the model's claim along with the
+  // answers it made the claim about. Provenance must never outlive its answers.
+  return {
+    ...state,
+    answers: {},
+    prefilledByModel: [],
+    prefillQuestionsVersion: null,
+    worried: false,
+  };
+}
+
+/** The caregiver touched this row, so the model no longer owns the answer on it. */
+function releaseKey(state: ReportState, key: string): string[] {
+  return state.prefilledByModel.includes(key)
+    ? state.prefilledByModel.filter((entry) => entry !== key)
+    : state.prefilledByModel;
 }
 
 export function reportReducer(state: ReportState, action: ReportAction): ReportState {
@@ -130,14 +158,42 @@ export function reportReducer(state: ReportState, action: ReportAction): ReportS
       return { ...next, step: "how_bad" };
     }
     case "set_answer":
-      return { ...state, answers: { ...state.answers, [action.key]: action.value } };
+      return {
+        ...state,
+        answers: { ...state.answers, [action.key]: action.value },
+        prefilledByModel: releaseKey(state, action.key),
+      };
     case "toggle_answer": {
       const current = state.answers[action.key];
       const list = Array.isArray(current) ? current : [];
       const nextList = list.includes(action.value)
         ? list.filter((value) => value !== action.value)
         : [...list, action.value];
-      return { ...state, answers: { ...state.answers, [action.key]: nextList } };
+      return {
+        ...state,
+        answers: { ...state.answers, [action.key]: nextList },
+        prefilledByModel: releaseKey(state, action.key),
+      };
+    }
+    case "apply_prefill": {
+      // Only fills rows the caregiver has not already answered. Coming back and
+      // recording a second time must never overwrite a tap; the person in the
+      // room outranks the recording.
+      const answers = { ...state.answers };
+      const claimed = [...state.prefilledByModel];
+      for (const [key, value] of Object.entries(action.prefill)) {
+        const existing = state.answers[key];
+        if (typeof existing === "string" && existing.length > 0) continue;
+        answers[key] = value;
+        if (!claimed.includes(key)) claimed.push(key);
+      }
+      if (claimed.length === state.prefilledByModel.length) return { ...state, answers };
+      return {
+        ...state,
+        answers,
+        prefilledByModel: claimed,
+        prefillQuestionsVersion: action.questionsVersion,
+      };
     }
     case "toggle_worried":
       return { ...state, worried: !state.worried };
@@ -191,11 +247,18 @@ export function canSend(state: ReportState): boolean {
 
 /** Answers in the engine's flat shape with the reporter bump merged in. */
 export function answersForEngine(state: ReportState): CareEventAnswers & { worried: boolean } {
-  const answers: Record<string, string | string[] | boolean> = {};
+  const answers: Record<string, string | string[] | boolean | unknown> = {};
   for (const [key, value] of Object.entries(state.answers)) {
     if (Array.isArray(value) ? value.length > 0 : value.length > 0) answers[key] = value;
   }
   answers.worried = state.worried;
+  // Provenance rides in its own namespace alongside `admin` and `attachments`,
+  // the two sub-objects `submit_care_event` already stores this way. It is not
+  // an answer: `care_event_derive` reads named keys and never looks here, so
+  // adding it cannot move a level. Only present when the model set something
+  // the caregiver then confirmed by sending.
+  const provenance = prefillProvenance(state.prefilledByModel, state.prefillQuestionsVersion);
+  if (provenance) answers.prefill = provenance;
   return answers as CareEventAnswers & { worried: boolean };
 }
 
