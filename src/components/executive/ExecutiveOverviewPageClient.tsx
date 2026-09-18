@@ -77,6 +77,7 @@ import {
   billedRevenuePeriodLine,
   facilityTodayIsoDate,
   incidentRateBasis,
+  incidentRateForDisplay,
   metricFreshness,
   metricRecordedLine,
   snapshotFreshnessLine,
@@ -1058,6 +1059,10 @@ function PortfolioFiguresStrip({
   metricDates: Record<string, string>;
 }) {
   const incidentBasis = incidentRateBasis(snapshot, residentDayWindow);
+  const incidentRateValue =
+    hasMetric(metrics.inc_rate)
+      ? incidentRateForDisplay(metrics.inc_rate, snapshot, residentDayWindow)
+      : null;
   const todayIsoDate = facilityTodayIsoDate();
   const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
 
@@ -1086,8 +1091,8 @@ function PortfolioFiguresStrip({
                   ? formatExecutiveOccPtPctWithSuffix(rawValue)
                   : null
               : tile.key === "inc_rate"
-                ? hasMetric(rawValue) && incidentBasis.usable
-                  ? formatMetricValue(rawValue, tile.format)
+                ? incidentRateValue != null
+                  ? formatMetricValue(incidentRateValue, tile.format)
                   : null
                 : hasMetric(rawValue)
                   ? formatMetricValue(rawValue, tile.format)

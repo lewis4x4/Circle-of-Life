@@ -322,6 +322,41 @@ export function incidentRateBasis(
   };
 }
 
+function roundTo(value: number, places: number): number {
+  const factor = 10 ** places;
+  return Math.round(value * factor) / factor;
+}
+
+/**
+ * The nightly run still stores a rate divided by one day's census × 30. Rescale
+ * it to the denominator `incidentRateBasis` describes so the figure and its
+ * disclosure use the same arithmetic.
+ */
+export function incidentRateForDisplay(
+  storedIncRate: number,
+  state: ExecutiveSnapshotState,
+  measured?: MeasuredResidentDays | null,
+): number | null {
+  const basis = incidentRateBasis(state, measured);
+  if (!basis.usable || basis.residentDays == null || basis.residentDays <= 0) {
+    return null;
+  }
+  if (state.kind !== "recorded") return null;
+
+  const residents = state.evidence.occupiedResidents;
+  const kpiResidentDays =
+    residents != null ? residents * INCIDENT_RATE_WINDOW_DAYS : null;
+  if (kpiResidentDays == null || kpiResidentDays <= 0) {
+    return null;
+  }
+  if (kpiResidentDays === basis.residentDays) {
+    return storedIncRate;
+  }
+
+  const trailingIncidents = (storedIncRate * kpiResidentDays) / 1000;
+  return roundTo((trailingIncidents / basis.residentDays) * 1000, 2);
+}
+
 /** The dates billed revenue covers, or null when no run dates the figure. */
 export function billedRevenuePeriod(state: ExecutiveSnapshotState): string | null {
   if (state.kind !== "recorded") return null;

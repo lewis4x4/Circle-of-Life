@@ -4,6 +4,7 @@ import {
   billedRevenuePeriodLine,
   facilityTodayIsoDate,
   incidentRateBasis,
+  incidentRateForDisplay,
   readSnapshotEvidence,
   resolveSnapshotState,
   snapshotFreshnessLine,
@@ -107,6 +108,23 @@ describe("snapshot evidence", () => {
     expect(basis.detail).toContain("320 counted from the daily census on 10 of the 30 days");
     expect(basis.detail).toContain("500 projected from 25 residents in census on 2026-09-15");
     expect(basis.detail).toContain("20 days no census is recorded for");
+  });
+
+  it("rescales the stored rate to the disclosed resident-day denominator", () => {
+    const state = resolveSnapshotState({ row: RUN, todayIsoDate: "2026-09-15" });
+    const stored = 4; // 3 incidents over 25 × 30 = 750 resident-days
+
+    expect(
+      incidentRateForDisplay(stored, state, {
+        windowDays: 30,
+        measuredDays: 30,
+        residentDays: 960,
+        startDate: "2026-08-17",
+        endDate: "2026-09-15",
+      }),
+    ).toBe(3.13);
+
+    expect(incidentRateForDisplay(stored, state)).toBe(stored);
   });
 
   it("drops Estimated only once every day in the window was recorded", () => {
