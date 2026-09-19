@@ -349,9 +349,9 @@ export function AdminReferralsPageClient({
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
 
   const selectedFacilityLabel = useMemo(() => {
-    if (!selectedFacilityId) return null;
+    if (noFacility) return null;
     return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? selectedFacilityId;
-  }, [availableFacilities, selectedFacilityId]);
+  }, [availableFacilities, noFacility, selectedFacilityId]);
 
   const kpiMetrics = useMemo(() => {
     if (noFacility || leadListTruncated) return null;
@@ -464,12 +464,13 @@ export function AdminReferralsPageClient({
           <div className="min-w-0 space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Referrals CRM</h1>
             <p className="max-w-prose text-[13px] leading-relaxed text-muted-foreground">
-              Inquiries and pipeline before admission — attribution, follow-up, and conversion for{" "}
+              Inquiries and pipeline before admission — attribution, follow-up, and conversion
               {selectedFacilityLabel ? (
-                <span className="font-medium text-foreground">{selectedFacilityLabel}</span>
-              ) : (
-                "the selected facility"
-              )}
+                <>
+                  {" for "}
+                  <span className="font-medium text-foreground">{selectedFacilityLabel}</span>
+                </>
+              ) : null}
               .
             </p>
           </div>
