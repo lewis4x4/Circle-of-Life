@@ -13,32 +13,24 @@
 -- ---------------------------------------------------------------------------
 -- READ THIS BEFORE YOU SCHEDULE ANYTHING: STAGING IS ALREADY LIVE
 -- ---------------------------------------------------------------------------
--- Haven HFO Staging (iwcnajanvjvynolltflw) has migrations 414 through 424
--- applied, three of the module's Edge Functions deployed with their secrets
--- set, and three of these jobs installed and active. The task generator has
--- already run there and produced 69 observation tasks for 23 residents.
+-- Activation record: 2026-09-19. Verify live state before changing schedules.
+-- Staging and production both run the four Smart Rounding workers. Production
+-- already had legacy generator/escalation jobs; activation updates those jobs
+-- in place, preserving their history and avoiding duplicate dispatch.
 --
--- Installed and active on staging, by the names they actually carry:
+-- Existing job names (names retain their legacy labels; read actual schedules):
+--   production: observation-task-generator-4h, observation-escalation-15m,
+--               smart-rounding-cadence-activator, smart-rounding-watchlist,
+--               monitoring-order-expiry-daily
+--   staging:    smart-rounding-task-generator, smart-rounding-escalation,
+--               smart-rounding-cadence-activator, smart-rounding-watchlist,
+--               monitoring-order-expiry-daily
 --
---   smart-rounding-task-generator   every 15 minutes   observation-task-generator
---   smart-rounding-escalation       every  5 minutes   observation-escalation-engine
---   smart-rounding-watchlist        hourly             watchlist-signal-engine
---
--- Those names are not the job names in the blocks below, which were written
--- before the jobs existed. Scheduling a block below on staging under its own
--- name would install a SECOND job against the same function, and two escalation
--- engines walking the same queue five minutes apart is how a resident's family
--- gets told twice about the same missed check. Before scheduling anything, read
--- what is there:
---
---   select jobid, jobname, schedule, active from cron.job order by jobname;
---
--- and either reuse the existing name with cron.alter_job, or unschedule the old
--- name first. Not scheduled anywhere yet: cadence-version-activator and the
--- Monitoring Order expiry tick.
---
--- Production (manfqmasfqppukpobpld) has none of this: no migration from this
--- module, no function, no secret and no job.
+-- Read jobid, jobname, schedule, active from cron.job first. Reuse job IDs with
+-- cron.alter_job; do not blindly install the alternative example names below.
+-- Live HTTP jobs read their worker secret from Supabase Vault at runtime and
+-- set timeout_milliseconds := 120000. Never paste secret values into evidence.
+-- See HANDOFFS/2026-09-19__smart-rounding-production-activation.md for proof.
 --
 -- Before running any of it, confirm which project the CLI is linked to.
 -- Production and Haven HFO Staging are different buildings' worth of alerts,
@@ -258,7 +250,9 @@
 -- post. There is no function to deploy, no secret to set and no URL to fill in,
 -- because nothing outside the database is involved.
 --
--- Once a day, shortly after the overnight window closes. An order's end date is
+-- Once a day at 03:20 America/New_York. Both hosted cron schedulers use GMT;
+-- the two UTC candidate hours plus the local-time guard handle daylight saving
+-- time without changing the timezone of unrelated jobs. An order's end date is
 -- a date, so the finest granularity that means anything is daily, and running
 -- it at 03:20 puts the status change before the morning shift reads the board
 -- rather than in the middle of their round. It returns the number of rows it
@@ -269,8 +263,9 @@
 -- ---------------------------------------------------------------------------
 -- select cron.schedule(
 --   'monitoring-order-expiry-daily',
---   '20 3 * * *',
---   $$ select public.expire_monitoring_orders(); $$
+--   '20 7,8 * * *',
+--   $$ select public.expire_monitoring_orders()
+--      where to_char(now() at time zone 'America/New_York', 'HH24:MI') = '03:20'; $$
 -- );
 
 -- To take it back off:

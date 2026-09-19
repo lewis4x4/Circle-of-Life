@@ -1,0 +1,1141 @@
+{
+  "release_source": "3ef3359b8ecd586b4eef56bd801918dcf21aeef6",
+  "owner_authorization": "Explicit production activation instruction in this task on 2026-09-19",
+  "mission_alignment": "pass",
+  "targets": {
+    "production": "manfqmasfqppukpobpld",
+    "staging": "iwcnajanvjvynolltflw"
+  },
+  "production_pitr_verified": true,
+  "staging_backup_completed": "2026-09-19",
+  "staging_migrations": [
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "version": "433",
+      "event": "applying",
+      "sha256": "25219dd29babb9f6dda01ec274e7c3e2912e1e0c74679c8fb723b7a20dc437c4"
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "version": "433",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "version": "434",
+      "event": "applying",
+      "sha256": "3340339542e8efefd276d4afc89f529a4a15f2dd6d84eea332d2d0b40efda673"
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "version": "434",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "version": "435",
+      "event": "applying",
+      "sha256": "a1fe62734ca0cd99527a7fc3cf7b9b856548349d29032e36cc176cf447fb1ed5"
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "version": "435",
+      "event": "applied_and_verified"
+    }
+  ],
+  "production_migrations": [
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "417",
+      "event": "applying",
+      "sha256": "bb6ca85af10e92dddc170bfcaaeb41aa937dbda1deb17559139a3b70c43f0f24"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "417",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "418",
+      "event": "applying",
+      "sha256": "bb03ae6cd35dddfae7165571932a73be8e007c16bd6882f7d4393b2b85206ed4"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "418",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "419",
+      "event": "applying",
+      "sha256": "200e3e056563a0f8c8aa661208644f110d0af6b8381b977c98a38f6017d2cc65"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "419",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "420",
+      "event": "applying",
+      "sha256": "a543b9ff0e91eb6eccca441083dfa505c28b5e9526efb5b5ed2ef4fbef456874"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "420",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "421",
+      "event": "applying",
+      "sha256": "70f6ba48dd4df916a5604bcdf8831b6af8eff4ccf637df2fe54a97c9f3afc3bc"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "421",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "422",
+      "event": "applying",
+      "sha256": "63be145a42b77ece246b31deb844c5fde2434004cedd3532cc4e06bf64105c6b"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "422",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "423",
+      "event": "applying",
+      "sha256": "9685e7be978c958a63cea90923ec8a8667f330b4a8b16b01b24b547b53dfc3e3"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "423",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "424",
+      "event": "applying",
+      "sha256": "f8a4cac93fac418e19214359f86d7e30c8c7bbd6e0708eae35bacf16ae6953bd"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "424",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "425",
+      "event": "applying",
+      "sha256": "500243f98163dd69574de6a73d66374ad7dbef6b26e65d80d1fbba8e87712e37"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "425",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "426",
+      "event": "applying",
+      "sha256": "0bd30559167158450cc6f033b81a9e1d6ad289fed90aad16a383d68a7c0603ea"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "426",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "427",
+      "event": "applying",
+      "sha256": "c30b74c07d789d6caab15f0239d47fb3480f5a1ecbb23a1ad94d79c4344a1c26"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "427",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "428",
+      "event": "applying",
+      "sha256": "97237796826d92f9b3b5c52030d0e7b8f6783889ea0f6df7f2b12594df03a2e0"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "428",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "429",
+      "event": "applying",
+      "sha256": "fbe1ee773e8bfeaa1c8bdf46d3e680930e63926cef809672d2cf3f245af334c3"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "429",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "430",
+      "event": "applying",
+      "sha256": "8d22b8a58a73335a1601ac7f293570d67a7e15e0d75614984b4e4e4e6c320537"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "430",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "431",
+      "event": "applying",
+      "sha256": "72e81a2997eb6631036998a1964ebf6d6d0e0be68cbbff896271f2360a2f9c0f"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "431",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "432",
+      "event": "applying",
+      "sha256": "dc216029904a70963c476bd4a521d2e3068677bf4805813a9381aab36100a389"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "432",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "433",
+      "event": "applying",
+      "sha256": "25219dd29babb9f6dda01ec274e7c3e2912e1e0c74679c8fb723b7a20dc437c4"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "433",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "434",
+      "event": "applying",
+      "sha256": "3340339542e8efefd276d4afc89f529a4a15f2dd6d84eea332d2d0b40efda673"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "434",
+      "event": "applied_and_verified"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "435",
+      "event": "applying",
+      "sha256": "a1fe62734ca0cd99527a7fc3cf7b9b856548349d29032e36cc176cf447fb1ed5"
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "version": "435",
+      "event": "applied_and_verified"
+    }
+  ],
+  "staging_worker_auth_and_scope": [
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "cadence-version-activator",
+      "check": "unauthorized",
+      "status": 401
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "cadence-version-activator",
+      "check": "zero",
+      "status": 200,
+      "elapsedMs": 494,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "regeneration_failed_facility_ids": [],
+        "versions_due": 0,
+        "versions_activated": 0,
+        "versions_failed": 0,
+        "failed_version_ids": [],
+        "pending_tasks_cancelled": 0,
+        "facilities_regenerated": [],
+        "regeneration_requested": false,
+        "regeneration_skipped_reason": "nothing_to_regenerate",
+        "versions": []
+      }
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "observation-task-generator",
+      "check": "unauthorized",
+      "status": 401
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "observation-task-generator",
+      "check": "zero",
+      "status": 200,
+      "elapsedMs": 546,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "facilities_attempted": 0,
+        "facilities_succeeded": 0,
+        "facilities_failed": 0,
+        "facilities_without_cadence": 0,
+        "facilities_without_staffing": 0,
+        "failed_facility_ids": [],
+        "facility_ids_without_cadence": [],
+        "facility_ids_without_staffing": [],
+        "staffing_gaps": [],
+        "tasks_generated": 0,
+        "order_tasks_generated": 0,
+        "tasks_stood_down": 0
+      }
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "watchlist-signal-engine",
+      "check": "unauthorized",
+      "status": 401
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "watchlist-signal-engine",
+      "check": "zero",
+      "status": 200,
+      "elapsedMs": 473,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "facilities_attempted": 0,
+        "facilities_succeeded": 0,
+        "facilities_failed": 0,
+        "failed_facility_ids": [],
+        "opened": 0,
+        "refreshed": 0,
+        "cleared": 0,
+        "notified": 0,
+        "facilities": []
+      }
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "observation-escalation-engine",
+      "check": "unauthorized",
+      "status": 401
+    },
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "observation-escalation-engine",
+      "check": "zero",
+      "status": 200,
+      "elapsedMs": 1305,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "queue_claims_failed": 0,
+        "rungs_failed": 0,
+        "delivery_outcomes_failed": 0,
+        "tasks_lapsed": 0,
+        "rungs_due": 0,
+        "rungs_fired": 0,
+        "rungs_already_fired": 0,
+        "escalations_recorded": 0,
+        "reminders_recorded": 0,
+        "deliveries_processed": 0,
+        "deliveries_sent": 0,
+        "deliveries_skipped": 0,
+        "deliveries_failed": 0,
+        "sms_enabled": false
+      }
+    }
+  ],
+  "production_worker_auth_and_scope": [
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "cadence-version-activator",
+      "check": "unauthorized",
+      "status": 401
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "cadence-version-activator",
+      "check": "zero",
+      "status": 200,
+      "elapsedMs": 559,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "regeneration_failed_facility_ids": [],
+        "versions_due": 0,
+        "versions_activated": 0,
+        "versions_failed": 0,
+        "failed_version_ids": [],
+        "pending_tasks_cancelled": 0,
+        "facilities_regenerated": [],
+        "regeneration_requested": false,
+        "regeneration_skipped_reason": "nothing_to_regenerate",
+        "versions": []
+      }
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "observation-task-generator",
+      "check": "unauthorized",
+      "status": 401
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "observation-task-generator",
+      "check": "zero",
+      "status": 200,
+      "elapsedMs": 524,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "facilities_attempted": 0,
+        "facilities_succeeded": 0,
+        "facilities_failed": 0,
+        "facilities_without_cadence": 0,
+        "facilities_without_staffing": 0,
+        "failed_facility_ids": [],
+        "facility_ids_without_cadence": [],
+        "facility_ids_without_staffing": [],
+        "staffing_gaps": [],
+        "tasks_generated": 0,
+        "order_tasks_generated": 0,
+        "tasks_stood_down": 0
+      }
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "watchlist-signal-engine",
+      "check": "unauthorized",
+      "status": 401
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "watchlist-signal-engine",
+      "check": "zero",
+      "status": 200,
+      "elapsedMs": 525,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "facilities_attempted": 0,
+        "facilities_succeeded": 0,
+        "facilities_failed": 0,
+        "failed_facility_ids": [],
+        "opened": 0,
+        "refreshed": 0,
+        "cleared": 0,
+        "notified": 0,
+        "facilities": []
+      }
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "observation-escalation-engine",
+      "check": "unauthorized",
+      "status": 401
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "observation-escalation-engine",
+      "check": "zero",
+      "status": 200,
+      "elapsedMs": 790,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "queue_claims_failed": 0,
+        "rungs_failed": 0,
+        "delivery_outcomes_failed": 0,
+        "tasks_lapsed": 0,
+        "rungs_due": 0,
+        "rungs_fired": 0,
+        "rungs_already_fired": 0,
+        "escalations_recorded": 0,
+        "reminders_recorded": 0,
+        "deliveries_processed": 0,
+        "deliveries_sent": 0,
+        "deliveries_skipped": 0,
+        "deliveries_failed": 0,
+        "sms_enabled": false
+      }
+    }
+  ],
+  "production_first_live_tick": [
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "cadence-version-activator",
+      "check": "live",
+      "status": 200,
+      "elapsedMs": 524,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "regeneration_failed_facility_ids": [],
+        "versions_due": 0,
+        "versions_activated": 0,
+        "versions_failed": 0,
+        "failed_version_ids": [],
+        "pending_tasks_cancelled": 0,
+        "facilities_regenerated": [],
+        "regeneration_requested": false,
+        "regeneration_skipped_reason": "nothing_to_regenerate",
+        "versions": []
+      }
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "observation-task-generator",
+      "check": "live",
+      "status": 207,
+      "elapsedMs": 3932,
+      "result": {
+        "ok": false,
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "facilities_attempted": 5,
+        "facilities_succeeded": 5,
+        "facilities_failed": 0,
+        "facilities_without_cadence": 0,
+        "facilities_without_staffing": 1,
+        "failed_facility_ids": [],
+        "facility_ids_without_cadence": [],
+        "facility_ids_without_staffing": [
+          "00000000-0000-0000-0002-000000000003"
+        ],
+        "staffing_gaps": [
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000003",
+            "shift_key": "night",
+            "service_date": "2026-09-19",
+            "residents_unassigned": 25
+          }
+        ],
+        "tasks_generated": 75,
+        "order_tasks_generated": 0,
+        "tasks_stood_down": 0
+      }
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "watchlist-signal-engine",
+      "check": "live",
+      "status": 207,
+      "elapsedMs": 1814,
+      "result": {
+        "ok": false,
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "facilities_attempted": 5,
+        "facilities_succeeded": 0,
+        "facilities_failed": 5,
+        "failed_facility_ids": [
+          "00000000-0000-0000-0002-000000000001",
+          "00000000-0000-0000-0002-000000000002",
+          "00000000-0000-0000-0002-000000000003",
+          "00000000-0000-0000-0002-000000000004",
+          "00000000-0000-0000-0002-000000000005"
+        ],
+        "opened": 0,
+        "refreshed": 0,
+        "cleared": 0,
+        "notified": 0,
+        "facilities": [
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000001",
+            "ok": false,
+            "reason": "evaluate watchlist signals (21000)",
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000002",
+            "ok": false,
+            "reason": "evaluate watchlist signals (21000)",
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000003",
+            "ok": false,
+            "reason": "evaluate watchlist signals (21000)",
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000004",
+            "ok": false,
+            "reason": "evaluate watchlist signals (21000)",
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000005",
+            "ok": false,
+            "reason": "evaluate watchlist signals (21000)",
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          }
+        ]
+      }
+    },
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "observation-escalation-engine",
+      "check": "live",
+      "status": 200,
+      "elapsedMs": 603,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "queue_claims_failed": 0,
+        "rungs_failed": 0,
+        "delivery_outcomes_failed": 0,
+        "tasks_lapsed": 0,
+        "rungs_due": 0,
+        "rungs_fired": 0,
+        "rungs_already_fired": 0,
+        "escalations_recorded": 0,
+        "reminders_recorded": 0,
+        "deliveries_processed": 0,
+        "deliveries_sent": 0,
+        "deliveries_skipped": 0,
+        "deliveries_failed": 0,
+        "sms_enabled": false
+      }
+    }
+  ],
+  "watchlist_hosted_correction_staging": [
+    {
+      "ref": "iwcnajanvjvynolltflw",
+      "slug": "watchlist-signal-engine",
+      "check": "live",
+      "status": 200,
+      "elapsedMs": 2540,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "facilities_attempted": 5,
+        "facilities_succeeded": 5,
+        "facilities_failed": 0,
+        "failed_facility_ids": [],
+        "opened": 26,
+        "refreshed": 0,
+        "cleared": 0,
+        "notified": 36,
+        "facilities": [
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000001",
+            "ok": true,
+            "opened": 10,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 36
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000002",
+            "ok": true,
+            "opened": 4,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000003",
+            "ok": true,
+            "opened": 4,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000004",
+            "ok": true,
+            "opened": 4,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000005",
+            "ok": true,
+            "opened": 4,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          }
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "Homewood September19 night roster missing assignments for25residents",
+    "SMS credentials absent",
+    "No active push subscriptions",
+    "Authenticated production browser witness unavailable"
+  ],
+  "watchlist_hosted_correction_production": [
+    {
+      "ref": "manfqmasfqppukpobpld",
+      "slug": "watchlist-signal-engine",
+      "check": "live",
+      "status": 200,
+      "elapsedMs": 2061,
+      "result": {
+        "ok": true,
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "facilities_attempted": 5,
+        "facilities_succeeded": 5,
+        "facilities_failed": 0,
+        "failed_facility_ids": [],
+        "opened": 25,
+        "refreshed": 0,
+        "cleared": 0,
+        "notified": 0,
+        "facilities": [
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000001",
+            "ok": true,
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000002",
+            "ok": true,
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000003",
+            "ok": true,
+            "opened": 25,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000004",
+            "ok": true,
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          },
+          {
+            "facility_id": "00000000-0000-0000-0002-000000000005",
+            "ok": true,
+            "opened": 0,
+            "refreshed": 0,
+            "cleared": 0,
+            "notified": 0
+          }
+        ]
+      }
+    }
+  ],
+  "production_jobs": [
+    {
+      "jobid": 31,
+      "jobname": "observation-escalation-15m",
+      "schedule": "4-59/5 * * * *",
+      "active": true
+    },
+    {
+      "jobid": 32,
+      "jobname": "observation-task-generator-4h",
+      "schedule": "3-59/15 * * * *",
+      "active": true
+    },
+    {
+      "jobid": 41,
+      "jobname": "smart-rounding-cadence-activator",
+      "schedule": "2-59/5 * * * *",
+      "active": true
+    },
+    {
+      "jobid": 42,
+      "jobname": "smart-rounding-watchlist",
+      "schedule": "7 * * * *",
+      "active": true
+    },
+    {
+      "jobid": 43,
+      "jobname": "monitoring-order-expiry-daily",
+      "schedule": "20 7,8 * * *",
+      "active": true
+    }
+  ],
+  "production_functions": [
+    {
+      "slug": "dispatch-push",
+      "version": 52,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "updated_at": 1788798577260
+    },
+    {
+      "slug": "observation-task-generator",
+      "version": 30,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "updated_at": 1789854375967
+    },
+    {
+      "slug": "observation-escalation-engine",
+      "version": 30,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "updated_at": 1789854375967
+    },
+    {
+      "slug": "cadence-version-activator",
+      "version": 2,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "updated_at": 1789854375967
+    },
+    {
+      "slug": "watchlist-signal-engine",
+      "version": 2,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "updated_at": 1789854375967
+    }
+  ],
+  "scheduled_http_requests": [
+    {
+      "jobid": 41,
+      "jobname": "smart-rounding-cadence-activator",
+      "request_id": 49372
+    },
+    {
+      "jobid": 32,
+      "jobname": "observation-task-generator-4h",
+      "request_id": 49373
+    },
+    {
+      "jobid": 42,
+      "jobname": "smart-rounding-watchlist",
+      "request_id": 49374
+    },
+    {
+      "jobid": 31,
+      "jobname": "observation-escalation-15m",
+      "request_id": 49375
+    }
+  ],
+  "scheduled_http_responses": [
+    {
+      "id": 49372,
+      "status_code": 200,
+      "timed_out": false,
+      "error_msg": null,
+      "created": "2026-09-19 21:57:56.655211+00",
+      "result": {
+        "ok": true,
+        "versions": [],
+        "versions_due": 0,
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "versions_failed": 0,
+        "failed_version_ids": [],
+        "versions_activated": 0,
+        "facilities_regenerated": [],
+        "regeneration_requested": false,
+        "pending_tasks_cancelled": 0,
+        "regeneration_skipped_reason": "nothing_to_regenerate",
+        "regeneration_failed_facility_ids": []
+      }
+    },
+    {
+      "id": 49373,
+      "status_code": 207,
+      "timed_out": false,
+      "error_msg": null,
+      "created": "2026-09-19 21:57:56.655211+00",
+      "result": {
+        "ok": false,
+        "staffing_gaps": [
+          {
+            "shift_key": "night",
+            "facility_id": "00000000-0000-0000-0002-000000000003",
+            "service_date": "2026-09-19",
+            "residents_unassigned": 25
+          }
+        ],
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "tasks_generated": 0,
+        "tasks_stood_down": 0,
+        "facilities_failed": 0,
+        "failed_facility_ids": [],
+        "facilities_attempted": 5,
+        "facilities_succeeded": 5,
+        "order_tasks_generated": 0,
+        "facilities_without_cadence": 0,
+        "facilities_without_staffing": 1,
+        "facility_ids_without_cadence": [],
+        "facility_ids_without_staffing": [
+          "00000000-0000-0000-0002-000000000003"
+        ]
+      }
+    },
+    {
+      "id": 49374,
+      "status_code": 200,
+      "timed_out": false,
+      "error_msg": null,
+      "created": "2026-09-19 21:57:56.655211+00",
+      "result": {
+        "ok": true,
+        "opened": 0,
+        "cleared": 0,
+        "notified": 0,
+        "refreshed": 25,
+        "facilities": [
+          {
+            "ok": true,
+            "opened": 0,
+            "cleared": 0,
+            "notified": 0,
+            "refreshed": 0,
+            "facility_id": "00000000-0000-0000-0002-000000000001"
+          },
+          {
+            "ok": true,
+            "opened": 0,
+            "cleared": 0,
+            "notified": 0,
+            "refreshed": 0,
+            "facility_id": "00000000-0000-0000-0002-000000000002"
+          },
+          {
+            "ok": true,
+            "opened": 0,
+            "cleared": 0,
+            "notified": 0,
+            "refreshed": 25,
+            "facility_id": "00000000-0000-0000-0002-000000000003"
+          },
+          {
+            "ok": true,
+            "opened": 0,
+            "cleared": 0,
+            "notified": 0,
+            "refreshed": 0,
+            "facility_id": "00000000-0000-0000-0002-000000000004"
+          },
+          {
+            "ok": true,
+            "opened": 0,
+            "cleared": 0,
+            "notified": 0,
+            "refreshed": 0,
+            "facility_id": "00000000-0000-0000-0002-000000000005"
+          }
+        ],
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "facilities_failed": 0,
+        "failed_facility_ids": [],
+        "facilities_attempted": 5,
+        "facilities_succeeded": 5
+      }
+    },
+    {
+      "id": 49375,
+      "status_code": 200,
+      "timed_out": false,
+      "error_msg": null,
+      "created": "2026-09-19 21:57:56.655211+00",
+      "result": {
+        "ok": true,
+        "rungs_due": 0,
+        "rungs_fired": 0,
+        "sms_enabled": false,
+        "rungs_failed": 0,
+        "tasks_lapsed": 0,
+        "deliveries_sent": 0,
+        "organization_id": "00000000-0000-0000-0000-000000000001",
+        "deliveries_failed": 0,
+        "deliveries_skipped": 0,
+        "reminders_recorded": 0,
+        "queue_claims_failed": 0,
+        "rungs_already_fired": 0,
+        "deliveries_processed": 0,
+        "escalations_recorded": 0,
+        "delivery_outcomes_failed": 0
+      }
+    }
+  ],
+  "new_tables_rls": [
+    {
+      "relname": "cadence_template_versions",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "cadence_template_windows",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "cadence_templates",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "escalation_template_rungs",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "escalation_template_versions",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "escalation_templates",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "facility_cadence_versions",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "facility_cadence_windows",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "facility_config_template_bindings",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "facility_escalation_rung_shift_overrides",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "facility_escalation_rungs",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "facility_escalation_versions",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "facility_observation_shift_history",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "facility_observation_thresholds",
+      "rls_enabled": true,
+      "policies": 2
+    },
+    {
+      "relname": "facility_shift_definitions",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "jurisdiction_observation_floors",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "observation_escalation_deliveries",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "observation_escalation_dispatches",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "resident_monitoring_order_events",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "resident_monitoring_order_notifications",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "resident_monitoring_orders",
+      "rls_enabled": true,
+      "policies": 3
+    },
+    {
+      "relname": "watchlist_band_rules",
+      "rls_enabled": true,
+      "policies": 2
+    },
+    {
+      "relname": "watchlist_signal_dispositions",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "watchlist_signal_instances",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "watchlist_signal_notifications",
+      "rls_enabled": true,
+      "policies": 1
+    },
+    {
+      "relname": "watchlist_signal_rules",
+      "rls_enabled": true,
+      "policies": 2
+    }
+  ],
+  "expiry_first_run": [
+    {
+      "expired_orders": 0
+    }
+  ],
+  "required_gate": "test-results/agent-gates/2026-09-19T21-51-39-728Z-SMART-ROUNDING-HOSTED-WATCHLIST-20260919.json"
+}
