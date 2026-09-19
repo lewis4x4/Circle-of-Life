@@ -388,3 +388,24 @@ Deno.test("every claimed delivery has its outcome accepted, so none is left clai
     );
   }
 });
+
+Deno.test("rate limited SMS preserves retry metadata through the outcome store", async () => {
+  const recorder = newRecorder();
+  const store = fakeStore([], {}, [deliveryRow({channel:"sms",is_test:true,message_body:"TEST retry"})], new Map(), recorder);
+  await runEscalationEngine({ store, fetchImpl: () => Promise.resolve(new Response("{}",{status:429,headers:{"retry-after":"90"}})),
+    env:SMS_ENV,log:silentLog,organizationId:ORG });
+  assertEquals(recorder.patches[0].patch.status,"failed");
+  assertEquals(recorder.patches[0].patch.retryable,true);
+  assertEquals(recorder.patches[0].patch.retry_after_seconds,90);
+});
+
+Deno.test("Acute and monitoring notifications use transport without a clinical context", async () => {
+  const recorder = newRecorder();
+  const store = fakeStore([], {}, [deliveryRow({channel:"push",notification_source:"watchlist",dispatch_id:null})], new Map(), recorder);
+  let body = "";
+  await runEscalationEngine({store, fetchImpl: (_url, init) => { body=bodyOf(init); return Promise.resolve(new Response('{"sent":1,"failed":0}')); },
+    env:SMS_ENV,log:silentLog,organizationId:ORG });
+  assertStringIncludes(body,"Acute Watchlist signal needs review");
+  assert(!body.includes(RESIDENT));
+  assertEquals(recorder.patches[0].patch.status,"sent");
+});

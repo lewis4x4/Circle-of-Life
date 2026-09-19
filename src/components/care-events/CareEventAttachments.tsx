@@ -69,9 +69,23 @@ export function CareEventAttachments({
     }
   }, [supabase, careEventId]);
 
+  // The first read subscribes to one request rather than syncing state into the
+  // effect body: the rows land in the promise callback, and an unmount or a
+  // change of care event drops the answer instead of letting a slow earlier
+  // request overwrite a newer list.
   useEffect(() => {
-    void load();
-  }, [load]);
+    let current = true;
+    fetchCareEventAttachments(supabase, careEventId)
+      .then((next) => {
+        if (current) setRows(next);
+      })
+      .catch(() => {
+        if (current) setRows([]);
+      });
+    return () => {
+      current = false;
+    };
+  }, [supabase, careEventId]);
 
   async function upload(file: File | undefined) {
     if (!file) return;

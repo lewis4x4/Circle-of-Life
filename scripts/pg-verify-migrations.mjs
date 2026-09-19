@@ -35,6 +35,21 @@ function orderedMigrationFiles() {
   return fs.readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort();
 }
 
+function verificationFiles() {
+  const testsDir = path.join(root, "supabase", "tests");
+  const probes = fs.readdirSync(testsDir)
+    .filter((name) => /^review_.*\.sql$/.test(name) || ["rpc_grant_posture.sql", "family_portal_messages_one_way.sql", "team_space_rls_no_recursion.sql"].includes(name))
+    .sort().map((name) => path.join(testsDir, name));
+  const acceptance = ["assignment", "compliance-honesty", "config-invariants", "escalation-ladder", "monitoring-order", "order-boundary", "watchlist"]
+    .map((name) => path.join(root, "scripts", "smart-rounding", `${name}-acceptance.sql`));
+  // These are required suites, not optional discoveries. A removed fixture
+  // must fail the replay instead of reducing the number of checks silently.
+  for (const file of acceptance) {
+    if (!fs.existsSync(file)) throw new Error(`Required Smart Rounding acceptance missing: ${path.basename(file)}`);
+  }
+  return { probes, acceptance };
+}
+
 /**
  * 07A level-engine parity (TS fixture vs public.care_event_derive) against the
  * freshly replayed database. Runs after every migration file and before the
@@ -74,8 +89,7 @@ function nativeVerification(socket) {
   if (create.status !== 0) throw new Error(create.stderr || create.error?.message || "Could not create isolated replay database");
   try {
     const files = orderedMigrationFiles();
-    const tests = fs.readdirSync(path.join(root, "supabase", "tests"))
-      .filter((name) => /^review_.*\.sql$/.test(name) || ["rpc_grant_posture.sql", "family_portal_messages_one_way.sql", "team_space_rls_no_recursion.sql"].includes(name)).sort();
+    const tests = verificationFiles();
     const applyFile = (file) => {
       const result = run("psql", [...connection, "-d", database, "-v", "ON_ERROR_STOP=1", "-f", file]);
       if (result.status !== 0) throw new Error(`${path.basename(file)}: ${result.stderr || result.error?.message || "SQL failed"}`);
@@ -87,8 +101,8 @@ function nativeVerification(socket) {
       CARE_EVENT_PARITY_PSQL: path.join(bin, "psql"),
     });
     if (parityFailure) throw new Error(`care-events level parity: ${parityFailure}`);
-    for (const file of tests.map((file) => path.join(root, "supabase", "tests", file))) applyFile(file);
-    console.log(`[migrations:verify:pg] PASS (${files.length} migration files, ${tests.length} SQL probes, level parity; native PostgreSQL with Supabase stubs)`);
+    for (const file of [...tests.probes, ...tests.acceptance]) applyFile(file);
+    console.log(`[migrations:verify:pg] PASS (${files.length} migration files, ${tests.probes.length} SQL probes, ${tests.acceptance.length} acceptance suites, level parity; native PostgreSQL with Supabase stubs)`);
   } finally {
     const dropped = run("dropdb", [...connection, database]);
     if (dropped.status !== 0) throw new Error(`Run-owned replay database retained: ${database}. ${dropped.stderr}`);
@@ -222,26 +236,10 @@ async function main() {
       process.exit(1);
     }
 
-    const rpcGrantPosturePath = path.join(root, "supabase", "tests", "rpc_grant_posture.sql");
-    if (fs.existsSync(rpcGrantPosturePath)) {
-      runFile("rpc_grant_posture", rpcGrantPosturePath);
-    }
+    const tests = verificationFiles();
+    for (const file of [...tests.probes, ...tests.acceptance]) runFile(path.basename(file), file);
 
-    const familyOneWayPath = path.join(root, "supabase", "tests", "family_portal_messages_one_way.sql");
-    if (fs.existsSync(familyOneWayPath)) {
-      runFile("family_portal_messages_one_way", familyOneWayPath);
-    }
-
-    const teamSpaceRlsPath = path.join(root, "supabase", "tests", "team_space_rls_no_recursion.sql");
-    if (fs.existsSync(teamSpaceRlsPath)) {
-      runFile("team_space_rls_no_recursion", teamSpaceRlsPath);
-    }
-
-    for (const file of fs.readdirSync(path.join(root, "supabase", "tests")).filter((file) => /^review_.*\.sql$/.test(file)).sort()) {
-      runFile(file, path.join(root, "supabase", "tests", file));
-    }
-
-    console.log(`[migrations:verify:pg] PASS (${files.length} migration file(s), level parity)`);
+    console.log(`[migrations:verify:pg] PASS (${files.length} migration files, ${tests.probes.length} SQL probes, ${tests.acceptance.length} acceptance suites, level parity; Docker PostgreSQL with Supabase stubs)`);
   } finally {
     cleanup();
   }

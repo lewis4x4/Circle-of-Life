@@ -125,3 +125,21 @@ Deno.test("twilio success carries the sid and failure carries the short reason",
   assertEquals(failed.status, "failed");
   assertStringIncludes(failed.error ?? "", "twilio sms 400");
 });
+
+Deno.test("provider failures behind a successful push gateway response remain retryable", () => {
+  const outcome = classifyPushResponse(200, { sent: 0, failed: 1 });
+  assertEquals(outcome.status, "failed");
+  assertEquals(outcome.retryable, true);
+});
+
+Deno.test("rate limits and provider outages retry but invalid numbers do not", () => {
+  assertEquals(classifyTwilioResponse(429, {}).retryable, true);
+  assertEquals(classifyTwilioResponse(503, {}).retryable, true);
+  assertEquals(classifyTwilioResponse(400, {}).retryable, false);
+});
+
+Deno.test("provider free-text errors cannot leak a phone or message into logs", () => {
+  const result = classifyTwilioResponse(400, { message: "Invalid To: +15551234567", code: 21211 });
+  assert(!result.error?.includes("15551234567"));
+  assertStringIncludes(result.error ?? "", "21211");
+});

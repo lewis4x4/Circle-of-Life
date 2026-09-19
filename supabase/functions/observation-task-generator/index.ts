@@ -1,13 +1,13 @@
 /**
  * Observation task generator (spec 25A, Smart Rounding cadence).
  *
- * Cron triggered. Generates one shift ahead, not a fixed number of hours, so a
- * caregiver coming on duty sees every window of their shift at once.
+ * Cron triggered. Repairs open windows in the current shift and generates one
+ * shift ahead, so cadence activations cannot leave the current board empty.
  *
  * This file deliberately contains no observation time, no grace value and no
  * shift boundary. The cadence in force, the shift model and all window
  * arithmetic live in facility configuration and are read through
- * `facility_next_shift_observation_windows`, which resolves them against the
+ * `facility_current_and_next_shift_observation_windows`, which resolves them against the
  * facility timezone. Changing a window time is a configuration change here,
  * never a deploy.
  *
@@ -328,14 +328,32 @@ Deno.serve(async (req) => {
 
   for (const facility of facilities) {
     try {
-      const { data: windowData, error: windowsErr } = await admin.rpc("facility_next_shift_observation_windows", {
+      const { data: windowData, error: windowsErr } = await admin.rpc("facility_current_and_next_shift_observation_windows", {
         p_facility_id: facility.id,
         p_at: atIso,
       });
       if (windowsErr) throw windowsErr;
 
-      const windows = (windowData ?? []) as CadenceWindowRow[];
-      if (windows.length === 0) {
+      tasksStoodDown += await standDownUngeneratedTasks(admin, facility.id, atIso);
+
+      // Orders and transferred-resident stand-down also run when cadence
+      // windows are absent. A standard-cadence gap must not stop a clinical order. The horizon and
+      // the interval scaled grace live in the SQL function, not here, for the
+      // same reason the cadence windows do: this file carries no time and no
+      // grace value.
+      const { data: orderTasks, error: orderErr } = await admin.rpc("generate_monitoring_order_tasks", {
+        p_facility_id: facility.id,
+        p_through: null,
+      });
+      if (orderErr) {
+        if (!MISSING_FUNCTION_CODES.has(orderErr.code)) throw orderErr;
+        monitoringOrdersTableMissing = true;
+      }
+      orderTasksGenerated += typeof orderTasks === "number" ? orderTasks : 0;
+
+
+      const projectedWindows = (windowData ?? []) as CadenceWindowRow[];
+      if (projectedWindows.length === 0) {
         // Not a success. A building with no cadence version in force generates
         // nothing, escalates nothing, and reads as a quiet facility. It is
         // reported by id so a monitor can name the building rather than
@@ -356,22 +374,6 @@ Deno.serve(async (req) => {
 
       const activeResidentIds = new Set(((residentData ?? []) as { id: string }[]).map((row) => row.id));
 
-      tasksStoodDown += await standDownUngeneratedTasks(admin, facility.id, atIso);
-
-      // Runs before the early return below, because a facility whose whole
-      // roster is under orders still has order tasks to write. The horizon and
-      // the interval scaled grace live in the SQL function, not here, for the
-      // same reason the cadence windows do: this file carries no time and no
-      // grace value.
-      const { data: orderTasks, error: orderErr } = await admin.rpc("generate_monitoring_order_tasks", {
-        p_facility_id: facility.id,
-        p_through: null,
-      });
-      if (orderErr) {
-        if (!MISSING_FUNCTION_CODES.has(orderErr.code)) throw orderErr;
-        monitoringOrdersTableMissing = true;
-      }
-      orderTasksGenerated += typeof orderTasks === "number" ? orderTasks : 0;
 
       const covered = await windowsUnderMonitoringOrder(admin, facility.id, atIso);
 
@@ -382,98 +384,107 @@ Deno.serve(async (req) => {
       // takes away is the individual windows it covers, so a resident whose
       // order starts at midday keeps that morning's checks and a resident whose
       // order ends at midday keeps that evening's.
-      const rows: TaskRow[] = [];
-      const residentsWithWork = new Set<string>();
-      for (const window of windows) {
-        for (const residentId of residentIds) {
-          if (covered.has(coverageKey(residentId, window.window_key, window.service_date))) continue;
-          residentsWithWork.add(residentId);
-          rows.push({
-            organization_id: facility.organization_id,
-            entity_id: facility.entity_id,
-            facility_id: facility.id,
-            resident_id: residentId,
-            cadence_version_id: window.cadence_version_id,
-            window_key: window.window_key,
-            service_date: window.service_date,
-            shift_assignment_id: null,
-            assigned_staff_id: null,
-            scheduled_for: window.window_opens_at_utc,
-            due_at: window.due_at_utc,
-            grace_ends_at: window.window_closes_at_utc,
-            status: "upcoming",
-          });
+      // Assignment is shift-specific: a repaired current shift must never inherit
+      // the staff roster of the following shift.
+      const shiftWindows = new Map<string, CadenceWindowRow[]>();
+      for (const window of projectedWindows) {
+        const key = `${window.shift_key}:${window.shift_service_date}`;
+        shiftWindows.set(key, [...(shiftWindows.get(key) ?? []), window]);
+      }
+      for (const windows of shiftWindows.values()) {
+        const rows: TaskRow[] = [];
+        const residentsWithWork = new Set<string>();
+        for (const window of windows) {
+          for (const residentId of residentIds) {
+            if (covered.has(coverageKey(residentId, window.window_key, window.service_date))) continue;
+            residentsWithWork.add(residentId);
+            rows.push({
+              organization_id: facility.organization_id,
+              entity_id: facility.entity_id,
+              facility_id: facility.id,
+              resident_id: residentId,
+              cadence_version_id: window.cadence_version_id,
+              window_key: window.window_key,
+              service_date: window.service_date,
+              shift_assignment_id: null,
+              assigned_staff_id: null,
+              scheduled_for: window.window_opens_at_utc,
+              due_at: window.due_at_utc,
+              grace_ends_at: window.window_closes_at_utc,
+              status: "upcoming",
+            });
+          }
         }
-      }
 
-      // A facility whose every resident is fully covered by an order has no
-      // standard window to write and no staffing gap to report: their order
-      // tasks went out above.
-      if (rows.length === 0) continue;
+        // A facility whose every resident is fully covered by an order has no
+        // standard window to write and no staffing gap to report: their order
+        // tasks went out above.
+        if (rows.length === 0) continue;
 
-      const firstWindow = windows[0];
-      const assignees = await assigneesByResident(
-        admin,
-        facility.id,
-        firstWindow.shift_service_date,
-        firstWindow.roster_shift_type,
-        [...residentsWithWork],
-      );
+        const firstWindow = windows[0];
+        const assignees = await assigneesByResident(
+          admin,
+          facility.id,
+          firstWindow.shift_service_date,
+          firstWindow.roster_shift_type,
+          [...residentsWithWork],
+        );
 
-      for (const row of rows) {
-        const assignee = assignees.get(row.resident_id) ?? null;
-        row.shift_assignment_id = assignee?.shift_assignment_id ?? null;
-        row.assigned_staff_id = assignee?.staff_id ?? null;
-      }
+        for (const row of rows) {
+          const assignee = assignees.get(row.resident_id) ?? null;
+          row.shift_assignment_id = assignee?.shift_assignment_id ?? null;
+          row.assigned_staff_id = assignee?.staff_id ?? null;
+        }
 
-      // Nobody on the schedule for this shift. The tasks below are still
-      // written, because a resident nobody was rostered for is still a resident
-      // who has to be looked at, and a board that quietly shrinks hides the
-      // staffing gap instead of showing it. What must not happen is inventing an
-      // assignee: a task assigned to somebody who is not working is worse than a
-      // task nobody is assigned, because the first one looks covered.
-      const unassigned = [...residentsWithWork].filter((residentId) => !assignees.get(residentId)?.staff_id);
-      if (unassigned.length > 0) {
-        facilityIdsWithoutStaffing.push(facility.id);
-        staffingGaps.push({
-          facility_id: facility.id,
-          shift_key: firstWindow.shift_key,
-          service_date: firstWindow.shift_service_date,
-          residents_unassigned: unassigned.length,
-        });
-        t.log({
-          event: "facility_shift_has_no_scheduled_staff",
-          outcome: "error",
-          facility_id: facility.id,
-          shift_key: firstWindow.shift_key,
-          service_date: firstWindow.shift_service_date,
-          residents_unassigned: unassigned.length,
-        });
-        const { error: gapErr } = await admin.rpc("record_observation_staffing_gap", {
-          p_facility_id: facility.id,
-          p_shift_key: firstWindow.shift_key,
-          p_service_date: firstWindow.shift_service_date,
-        });
-        // The alert is how a human sees the gap; it is not how the gap is
-        // counted. A failure to record it must not swallow the generation this
-        // facility still owes, so it is logged and the run continues.
-        if (gapErr) {
+        // Nobody on the schedule for this shift. The tasks below are still
+        // written, because a resident nobody was rostered for is still a resident
+        // who has to be looked at, and a board that quietly shrinks hides the
+        // staffing gap instead of showing it. What must not happen is inventing an
+        // assignee: a task assigned to somebody who is not working is worse than a
+        // task nobody is assigned, because the first one looks covered.
+        const unassigned = [...residentsWithWork].filter((residentId) => !assignees.get(residentId)?.staff_id);
+        if (unassigned.length > 0) {
+          if (!facilityIdsWithoutStaffing.includes(facility.id)) facilityIdsWithoutStaffing.push(facility.id);
+          staffingGaps.push({
+            facility_id: facility.id,
+            shift_key: firstWindow.shift_key,
+            service_date: firstWindow.shift_service_date,
+            residents_unassigned: unassigned.length,
+          });
           t.log({
-            event: "staffing_gap_alert_failed",
+            event: "facility_shift_has_no_scheduled_staff",
             outcome: "error",
             facility_id: facility.id,
-            error_code: gapErr.code,
-            error_message: gapErr.message,
+            shift_key: firstWindow.shift_key,
+            service_date: firstWindow.shift_service_date,
+            residents_unassigned: unassigned.length,
           });
+          const { error: gapErr } = await admin.rpc("record_observation_staffing_gap", {
+            p_facility_id: facility.id,
+            p_shift_key: firstWindow.shift_key,
+            p_service_date: firstWindow.shift_service_date,
+          });
+          // The alert is how a human sees the gap; it is not how the gap is
+          // counted. A failure to record it must not swallow the generation this
+          // facility still owes, so it is logged and the run continues.
+          if (gapErr) {
+            t.log({
+              event: "staffing_gap_alert_failed",
+              outcome: "error",
+              facility_id: facility.id,
+              error_code: gapErr.code,
+              error_message: gapErr.message,
+            });
+          }
         }
+
+        const { data: inserted, error: writeErr } = await admin.rpc("record_cadence_observation_tasks", {
+          p_rows: rows,
+        });
+        if (writeErr) throw writeErr;
+
+        tasksGenerated += typeof inserted === "number" ? inserted : 0;
       }
-
-      const { data: inserted, error: writeErr } = await admin.rpc("record_cadence_observation_tasks", {
-        p_rows: rows,
-      });
-      if (writeErr) throw writeErr;
-
-      tasksGenerated += typeof inserted === "number" ? inserted : 0;
     } catch (caught) {
       const error = caught as PostgrestError;
       failedFacilityIds.push(facility.id);

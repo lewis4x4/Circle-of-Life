@@ -308,6 +308,11 @@ BEGIN
 END
 $$;
 
+-- This synthetic fixture describes configuration already in force before today.
+UPDATE public.facility_observation_shift_history SET effective_from='-infinity'::timestamptz
+WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
+
+
 -- ---------------------------------------------------------------------------
 -- 3. Acceptance item 7, clock advanced.
 --

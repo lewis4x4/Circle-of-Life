@@ -66,6 +66,7 @@ export type ComplianceSummary = {
 };
 
 export const NO_CADENCE_SOURCE = "no_cadence";
+export const ORPHANED_SHIFT_SOURCE = "orphaned_shift";
 
 /** Labels for the buckets a row can fall into when its cut has no value. */
 export const COMPLIANCE_NO_SHIFT_LABEL = "No cadence in force";
@@ -85,9 +86,13 @@ function emptyTotals(): ComplianceTotals {
 }
 
 function accumulate(totals: ComplianceTotals, row: ComplianceRow): void {
+  if (row.expectation_source === NO_CADENCE_SOURCE || row.expectation_source === ORPHANED_SHIFT_SOURCE) {
+    totals.unconfigured += 1;
+    return;
+  }
   totals.expected += 1;
   if (row.satisfied) totals.satisfied += 1;
-  if (row.expectation_source === NO_CADENCE_SOURCE) totals.unconfigured += 1;
+
   if (row.absorbed) totals.absorbed += 1;
   if (row.task_id) {
     totals.withTask += 1;

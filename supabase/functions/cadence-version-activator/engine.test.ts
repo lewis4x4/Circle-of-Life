@@ -178,3 +178,21 @@ Deno.test("the tick log carries counts and no resident detail", async () => {
   // Counts only. No resident id, no name, no room, no message body.
   assert(!Object.keys(entry).some((key) => /resident|name|room|body|phone/i.test(key)));
 });
+
+Deno.test("a new cadence with no canceled tasks still generates its new windows", async () => {
+  const s = store({ ok: true, versions_activated: 1, versions: [
+    { ok: true, kind: "cadence", facility_id: FACILITY_A, pending_tasks_cancelled: 0 },
+  ] });
+  const tick = await runCadenceVersionActivator({store:s,log:noopLog(),organizationId:ORG,facilityId:null});
+  assertEquals(tick.facilities_regenerated, [FACILITY_A]);
+});
+
+Deno.test("failed regeneration is reported separately from successful activation", async () => {
+  const s = store({ ok:true, versions_activated:1, versions:[
+    { ok:true,kind:"cadence",facility_id:FACILITY_A,pending_tasks_cancelled:2 },
+  ] }, false);
+  const log = noopLog();
+  const tick = await runCadenceVersionActivator({store:s,log,organizationId:ORG,facilityId:null});
+  assertEquals(tick.regeneration_failed_facility_ids,[FACILITY_A]);
+  assertEquals(log.entries[0].outcome,"error");
+});

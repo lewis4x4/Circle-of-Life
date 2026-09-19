@@ -5,7 +5,7 @@ export async function readAllPages<T>(fetchPage: (from: number, to: number) => P
   let expected: number | null = null;
   for (;;) {
     const page = await fetchPage(rows.length, rows.length + 499);
-    if (page.error) throw new Error(page.error.message);
+    if (page.error) throw Object.assign(new Error(page.error.message), page.error);
     if (page.count === null) throw new Error('Exact row count unavailable. Retry before exporting.');
     expected ??= page.count;
     if (page.count !== expected) throw new Error('Records changed while loading. Reload before exporting.');

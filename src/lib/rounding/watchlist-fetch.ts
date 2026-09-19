@@ -1,3 +1,4 @@
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 /**
  * Reads for the three Watchlist tiers. Spec 25A section 7.5.
  *
@@ -125,11 +126,11 @@ const HISTORY_SELECT =
 export async function fetchWatchlistPortfolio(
   supabase: SupabaseClient,
 ): Promise<WatchlistPortfolioRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readAllPages((from, to) => supabase
     .from("v_watchlist_portfolio")
-    .select(PORTFOLIO_SELECT)
+    .select(PORTFOLIO_SELECT, { count: "exact" })
     .order("open_acute_signal_count", { ascending: false })
-    .order("facility_name", { ascending: true });
+    .order("facility_name", { ascending: true }).order("facility_id").range(from, to));
   if (error) throw error;
   return (data ?? []) as unknown as WatchlistPortfolioRow[];
 }
@@ -138,12 +139,12 @@ export async function fetchFacilityWatchlist(
   supabase: SupabaseClient,
   facilityId: string,
 ): Promise<WatchlistSignalRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readAllPages((from, to) => supabase
     .from("v_watchlist_facility")
-    .select(SIGNAL_SELECT)
+    .select(SIGNAL_SELECT, { count: "exact" })
     .eq("facility_id", facilityId)
     .order("band_rank", { ascending: false, nullsFirst: false })
-    .order("first_detected_at", { ascending: true });
+    .order("first_detected_at", { ascending: true }).order("signal_instance_id").range(from, to));
   if (error) throw error;
   return (data ?? []) as unknown as WatchlistSignalRow[];
 }
@@ -152,12 +153,12 @@ export async function fetchResidentWatchlistSignals(
   supabase: SupabaseClient,
   residentId: string,
 ): Promise<WatchlistSignalHistoryRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readAllPages((from, to) => supabase
     .from("watchlist_signal_instances")
-    .select(HISTORY_SELECT)
+    .select(HISTORY_SELECT, { count: "exact" })
     .eq("resident_id", residentId)
     .is("deleted_at", null)
-    .order("first_detected_at", { ascending: false });
+    .order("first_detected_at", { ascending: false }).order("id").range(from, to));
   if (error) throw error;
   return (data ?? []) as unknown as WatchlistSignalHistoryRow[];
 }
@@ -166,11 +167,11 @@ export async function fetchResidentDispositionLedger(
   supabase: SupabaseClient,
   residentId: string,
 ): Promise<WatchlistDispositionRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readAllPages((from, to) => supabase
     .from("watchlist_signal_dispositions")
-    .select(DISPOSITION_SELECT)
+    .select(DISPOSITION_SELECT, { count: "exact" })
     .eq("resident_id", residentId)
-    .order("ledger_seq", { ascending: false });
+    .order("ledger_seq", { ascending: false }).order("id").range(from, to));
   if (error) throw error;
   return ((data ?? []) as unknown as RawDispositionRow[]).map(withActorName);
 }
@@ -179,11 +180,11 @@ export async function fetchFacilityDispositionLedger(
   supabase: SupabaseClient,
   facilityId: string,
 ): Promise<WatchlistDispositionRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readAllPages((from, to) => supabase
     .from("watchlist_signal_dispositions")
-    .select(DISPOSITION_SELECT)
+    .select(DISPOSITION_SELECT, { count: "exact" })
     .eq("facility_id", facilityId)
-    .order("ledger_seq", { ascending: false });
+    .order("ledger_seq", { ascending: false }).order("id").range(from, to));
   if (error) throw error;
   return ((data ?? []) as unknown as RawDispositionRow[]).map(withActorName);
 }

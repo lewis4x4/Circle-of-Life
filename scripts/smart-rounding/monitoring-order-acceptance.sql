@@ -221,6 +221,11 @@ BEGIN
 END
 $$;
 
+-- This synthetic fixture describes configuration already in force before today.
+UPDATE public.facility_observation_shift_history SET effective_from='-infinity'::timestamptz
+WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
+
+
 -- ---------------------------------------------------------------------------
 -- 3. Acceptance 6. A Resident Aide enters the order and it is active at once.
 --    There is no pending state to pass through and nothing waits on anybody.

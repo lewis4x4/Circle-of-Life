@@ -128,7 +128,7 @@ $$;
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  c_service_only CONSTANT text[] := ARRAY['public.record_cadence_observation_tasks(jsonb)', 'public.generate_monitoring_order_tasks(uuid,timestamptz)', 'public.record_observation_escalation_rung(uuid,text,timestamptz)', 'public.expire_monitoring_orders()', 'public.advance_observation_task_lapse(uuid,uuid,timestamptz)', 'public.ensure_facility_observation_defaults(uuid)', 'public.fn_facilities_seed_observation_defaults()', 'public.resolve_observation_task_assignees(uuid,date,text,uuid[])', 'public.record_observation_staffing_gap(uuid,text,date)', 'public.observation_windows_under_monitoring_order(uuid,timestamptz)', 'public.reinstate_standard_observation_windows(uuid,timestamptz)', 'public.claim_observation_escalation_deliveries(uuid,uuid,uuid,timestamptz,integer)', 'public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz)', 'public.stand_down_ungenerated_observation_tasks(uuid,timestamptz)', 'haven.observation_escalation_recipients(uuid,uuid,uuid,uuid)', 'haven.notify_monitoring_order_created(uuid)', 'public.evaluate_watchlist_signals(uuid,timestamptz)', 'haven.notify_watchlist_acute(uuid,timestamptz)', 'haven.apply_observation_config_activation(text,uuid,timestamptz,uuid,boolean)', 'haven.replay_observation_windows(uuid,date,date,uuid,uuid)', 'public.activate_due_scheduled_config_versions(uuid,uuid,timestamptz)'];
+  c_service_only CONSTANT text[] := ARRAY['public.record_cadence_observation_tasks(jsonb)', 'public.generate_monitoring_order_tasks(uuid,timestamptz)', 'public.record_observation_escalation_rung(uuid,text,timestamptz)', 'public.expire_monitoring_orders()', 'public.advance_observation_task_lapse(uuid,uuid,timestamptz)', 'public.ensure_facility_observation_defaults(uuid)', 'public.fn_facilities_seed_observation_defaults()', 'public.resolve_observation_task_assignees(uuid,date,text,uuid[])', 'public.record_observation_staffing_gap(uuid,text,date)', 'public.observation_windows_under_monitoring_order(uuid,timestamptz)', 'public.reinstate_standard_observation_windows(uuid,timestamptz)', 'public.claim_observation_escalation_deliveries(uuid,uuid,uuid,timestamptz,integer)', 'public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz,boolean,integer)', 'public.stand_down_ungenerated_observation_tasks(uuid,timestamptz)', 'haven.observation_escalation_recipients(uuid,uuid,uuid,uuid)', 'haven.notify_monitoring_order_created(uuid)', 'public.evaluate_watchlist_signals(uuid,timestamptz)', 'haven.notify_watchlist_acute(uuid,timestamptz)', 'haven.apply_observation_config_activation(text,uuid,timestamptz,uuid,boolean)', 'haven.replay_observation_windows(uuid,date,date,uuid,uuid)', 'public.activate_due_scheduled_config_versions(uuid,uuid,timestamptz)'];
   v_fn text;
   v_role text;
 BEGIN
@@ -806,26 +806,40 @@ BEGIN
     n.nspname = 'public'
     AND p.proname = 'observation_compliance_for_range';
 
-  PERFORM
-    pg_temp.sr_assert (strpos(v_src, 'res.status <> ''active''') > 0, 'public.observation_compliance_for_range stopped consulting the resident''s current status. resident_status_history is the only other source and migration 217 never backfilled it, so a resident on hospital_hold with no history row goes back to accruing six phantom missed checks a day.');
-
-  -- The clause that keeps the fallback narrow. Without it the current status is
-  -- read onto every past date, which erases a resident's recorded misses from
-  -- before their last status change: the C3 defect over again in the other
-  -- direction.
-  PERFORM
-    pg_temp.sr_assert (strpos(v_src, 'h.effective_from > ((c.the_date') > 0, 'public.observation_compliance_for_range no longer limits the current status fallback to dates no recorded change comes after. Today''s status then rewrites every past date and erases recorded misses.');
-
-  -- Evidence wins over status, per window. Without this a resident who went to
-  -- hospital at noon either loses the morning checks a caregiver recorded, or
-  -- keeps an afternoon nobody could have worked.
-  PERFORM
-    pg_temp.sr_assert (strpos(v_src, 'r.generating') > 0, 'public.observation_compliance_for_range no longer carries the per resident day generating flag.');
+  -- The history-first implementation evaluates each occurrence, not a noon
+  -- generating flag. Assert behavior below rather than one spelling of SQL.
   PERFORM
     pg_temp.sr_assert (strpos(v_src, 'OR standard_task.id IS NOT NULL') > 0
       AND strpos(v_src, 'OR satisfying_log.id IS NOT NULL') > 0, 'public.observation_compliance_for_range no longer lets a task or a log keep a window that the status would drop. A resident who went to hospital mid shift then loses the checks that were actually recorded that morning.');
 END
 $$;
+
+-- Residents without history retain the generating-status rule, and today's
+-- status cannot erase an independently recorded active day.
+DO $$
+DECLARE v_fac uuid; v_org uuid; v_tz text; v_day date; v_expected integer;
+ v_active uuid:=gen_random_uuid(); v_away uuid:=gen_random_uuid(); v_past uuid:=gen_random_uuid();
+BEGIN
+ SELECT f.id,f.organization_id,f.timezone INTO v_fac,v_org,v_tz FROM public.facilities f
+ WHERE f.deleted_at IS NULL AND EXISTS(SELECT 1 FROM public.facility_observation_windows_for_date(f.id,(now() AT TIME ZONE f.timezone)::date)) LIMIT 1;
+ PERFORM pg_temp.sr_assert(v_fac IS NOT NULL,'status authority fixture needs a configured facility');
+ v_day:=(now() AT TIME ZONE v_tz)::date;
+ SELECT count(*) INTO v_expected FROM public.facility_observation_windows_for_date(v_fac,v_day);
+ INSERT INTO public.residents(id,organization_id,facility_id,first_name,last_name,status,gender,admission_date)
+ VALUES(v_active,v_org,v_fac,'Active authority','Synthetic','active','prefer_not_to_say',v_day-20),
+ (v_away,v_org,v_fac,'Away authority','Synthetic','hospital_hold','prefer_not_to_say',v_day-20),
+ (v_past,v_org,v_fac,'Historical authority','Synthetic','hospital_hold','prefer_not_to_say',v_day-20);
+ DELETE FROM public.resident_status_history WHERE resident_id IN(v_active,v_away,v_past);
+ PERFORM pg_temp.sr_assert((SELECT count(*) FROM public.observation_compliance_for_range(v_fac,v_day,v_day) WHERE resident_id=v_active)=v_expected,'active resident without status history lost expected windows');
+ PERFORM pg_temp.sr_assert(NOT EXISTS(SELECT 1 FROM public.observation_compliance_for_range(v_fac,v_day,v_day) WHERE resident_id=v_away),'hospital_hold resident without history acquired phantom expected checks');
+ INSERT INTO public.resident_status_history(organization_id,facility_id,resident_id,status,effective_from,effective_to)
+ VALUES(v_org,v_fac,v_past,'active',((v_day-1)::timestamp AT TIME ZONE v_tz),(v_day::timestamp AT TIME ZONE v_tz)),
+ (v_org,v_fac,v_past,'hospital_hold',(v_day::timestamp AT TIME ZONE v_tz),NULL);
+ SELECT count(*) INTO v_expected FROM public.facility_observation_windows_for_date(v_fac,v_day-1);
+ PERFORM pg_temp.sr_assert(v_expected>0,'historical status authority fixture needs a full cadence day');
+ PERFORM pg_temp.sr_assert((SELECT count(*) FROM public.observation_compliance_for_range(v_fac,v_day-1,v_day-1) WHERE resident_id=v_past)=v_expected,'current hospital status erased the recorded active day');
+ PERFORM pg_temp.sr_assert(NOT EXISTS(SELECT 1 FROM public.observation_compliance_for_range(v_fac,v_day,v_day) WHERE resident_id=v_past),'recorded hospital day acquired expected windows');
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- 9h. M6. The delivery drain is scoped to the tick and claims what it sends.
@@ -905,14 +919,14 @@ BEGIN
   -- The guard now lives in the same place as the claim it has to agree with,
   -- which is the only place a probe can read it.
   PERFORM
-    pg_temp.sr_assert (to_regprocedure('public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz)') IS NOT NULL, 'public.record_observation_escalation_delivery_outcome is gone. The outcome write goes back to the Edge Function, where its status guard and the claim can disagree without anything noticing.');
+    pg_temp.sr_assert (to_regprocedure('public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz,boolean,integer)') IS NOT NULL, 'public.record_observation_escalation_delivery_outcome is gone. The outcome write goes back to the Edge Function, where its status guard and the claim can disagree without anything noticing.');
 
   SELECT
     p.prosrc INTO v_src
   FROM
     pg_catalog.pg_proc p
   WHERE
-    p.oid = to_regprocedure('public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz)');
+    p.oid = to_regprocedure('public.record_observation_escalation_delivery_outcome(uuid,uuid,text,text,text,text,timestamptz,boolean,integer)');
 
   PERFORM
     pg_temp.sr_assert (strpos(v_src, 'd.status = ''sending''') > 0, 'the outcome write no longer requires the row to be in the state the claim leaves it in. The first version of this guard said queued, matched nothing, and every delivery resent every claim timeout forever.');

@@ -358,6 +358,11 @@ BEGIN
 END
 $$;
 
+-- This synthetic fixture describes configuration already in force before today.
+UPDATE public.facility_observation_shift_history SET effective_from='-infinity'::timestamptz
+WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
+
+
 -- ---------------------------------------------------------------------------
 -- 2. The evaluation runs, and every signal it opens traces to a rule row.
 -- ---------------------------------------------------------------------------

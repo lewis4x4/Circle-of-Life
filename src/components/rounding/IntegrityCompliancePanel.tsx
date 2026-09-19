@@ -16,7 +16,7 @@
  * and hides it has put the dishonesty back.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
 import { RoundingEmptyNotice, RoundingErrorNotice } from "@/components/rounding/RoundingNotices";
@@ -53,6 +53,10 @@ const LOAD_FAILED =
   "Observation compliance could not be loaded. Retry, or try again in a moment.";
 
 export function IntegrityCompliancePanel({ facilityId }: { facilityId: string | null }) {
+  return <ScopedIntegrityCompliancePanel key={facilityId ?? "none"} facilityId={facilityId} />;
+}
+
+function ScopedIntegrityCompliancePanel({ facilityId }: { facilityId: string | null }) {
   const [preset, setPreset] = useState<DateRangePreset>("last_7");
   const [summary, setSummary] = useState<ComplianceSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -60,7 +64,10 @@ export function IntegrityCompliancePanel({ facilityId }: { facilityId: string | 
 
   const range = useMemo(() => roundingReportRangeForPreset(preset), [preset]);
 
+  const requestSequence = useRef(0);
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    setSummary(null);
     if (!facilityId) {
       setSummary(null);
       return;
@@ -75,6 +82,7 @@ export function IntegrityCompliancePanel({ facilityId }: { facilityId: string | 
       const payload = (await response.json().catch(() => null)) as
         | (ComplianceSummary & { error?: string })
         | null;
+      if (sequence !== requestSequence.current) return;
       if (!response.ok || !payload || payload.error) {
         setSummary(null);
         setError(payload?.error ?? LOAD_FAILED);
@@ -82,15 +90,17 @@ export function IntegrityCompliancePanel({ facilityId }: { facilityId: string | 
       }
       setSummary(payload);
     } catch {
+      if (sequence !== requestSequence.current) return;
       setSummary(null);
       setError(LOAD_FAILED);
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }, [facilityId, range.from, range.to]);
 
   useEffect(() => {
     void load();
+    return () => { requestSequence.current += 1; };
   }, [load]);
 
   if (!facilityId) return null;
@@ -189,7 +199,7 @@ export function IntegrityCompliancePanel({ facilityId }: { facilityId: string | 
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-3">
             <ComplianceCutTable title="By shift" rows={summary.byShift} />
             <ComplianceCutTable title="By hall" rows={summary.byHall} />
             <ComplianceCutTable title="By staff member" rows={summary.byStaff} />
@@ -202,7 +212,7 @@ export function IntegrityCompliancePanel({ facilityId }: { facilityId: string | 
 
 function ComplianceCutTable({ title, rows }: { title: string; rows: ComplianceCut[] }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
+    <div role="region" aria-label={title} tabIndex={0} className="min-w-0 overflow-x-auto rounded-lg border border-border bg-card">
       <table className="w-full border-collapse text-[13px]">
         <caption className="border-b border-border px-4 py-2 text-left text-[13px] font-semibold text-foreground">
           {title}

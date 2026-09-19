@@ -8,6 +8,83 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Fleet house rules (Lewi / CoS — 2026-09-19)
+
+Read this block before the first Haven builder action. It does **not** replace the Haven builder guide below — it adds verification, gates, and anti-sprawl from fleet standing directives. Brian approved land 2026-09-19 (hold pack → main).
+
+House rules for any coding agent in this repo. Read before the first action.
+Overrides defaults. Distilled from fleet standing directives + field practice.
+
+## The one rule
+
+**Verification is the job. Writing code is the easy part.**
+If you cannot show the change works, you are not done — confidence does not count.
+
+## Before you write
+
+1. **Reproduce first.** Run the path. See the bug. No fix without a reproduction.
+2. **Restate the task** in one line: what you will do, what you will *not* do, what you assumed.
+3. **Name done.** One sentence for the proof you will attach.
+4. **Investigate means investigate.** If asked only for a diagnosis, do not open a PR.
+
+## While you work
+
+- **Small diffs.** One concern per change. Unreviewable = unfinished.
+- **Run the app**, not only the typechecker. Break the happy path on purpose.
+- **Root cause > symptom.** If shipping a workaround, say so and why the real fix is out of scope.
+- **No invented product facts.** Names, facilities, votes, thresholds — look them up or ask.
+- **Persons, not records.** Residents and staff are people.
+
+## Before you open a PR
+
+Attach proof every time:
+
+| Change | Required proof |
+|--------|----------------|
+| UI | Screenshot or short recording of the flow |
+| Bug fix | Repro steps failing, then same steps passing |
+| Backend / data | Before/after from a real run |
+| Refactor | Test or manual flow proving behaviour unchanged |
+
+A PR with no proof is a draft. Also state: what changed and why; what you deliberately did *not* change; anything uncertain.
+
+## Fleet gates (non-negotiable)
+
+- **Draft-and-hold** for mail, buys, deletes, publishes, prod mutations — Brian’s explicit yes in chat only.
+- **GATE PASS + green CI** before merge. Then merge to `main` and push unless: security-finding draft, explicit HOLD, or Haven HFO source-only policy.
+- **Harness routing:** Opus / Claude / Codex / Sol → Lewi → harness bots only. **Never** Cursor cloud agents for those models. Cloud agents = Composer / Cursor-model builds only.
+- **Haven coding default:** Sol (Codex) unless Brian names Opus. Analysis/plans → Claude Opus 5 Max via Lewi.
+- **Human gate forever:** auth, payments, permissions, migrations, deploys, secrets, prod DB — stop and ask.
+
+## Anti-sprawl
+
+Before creating a new bot, skill, or recurring job ask:
+1. Can an existing specialist take this as a skill or routine?
+2. Is this a one-shot (no new standing agent)?
+3. Who already owns the playbook this would fork?
+
+Prefer fewer true owners over a dense roster.
+
+## When corrected
+
+1. Apply the fix.
+2. Write the **general principle** (strip the incident story).
+3. Put the principle here or in the relevant skill — not only in chat.
+
+Bad: “On 2026-09-19 the strip reused Day-34 stall art.”
+Good: “Never reuse a prior day’s artifact as today’s proof; regenerate or fail closed.”
+
+## When to stop
+
+Two failed attempts on the same approach → stop, report what you tried, ask.
+Do not loop. Do not manufacture status when nothing changed.
+
+## Short version
+
+> Reproduce it. Run it. Prove it. Fix the cause.
+> Principles, not incident stories. Lean roster. Brian gates blast radius.
+
+---
 # Haven — App Builder System Prompt
 
 ## Mission (non-negotiable ship gate)

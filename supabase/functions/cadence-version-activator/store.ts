@@ -38,9 +38,12 @@ export function supabaseStore(
         const response = await fetch(generator.url, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-cron-secret": generator.secret },
+          signal: AbortSignal.timeout(30_000),
           body: JSON.stringify({ organization_id: organizationId, facility_id: facilityId }),
         });
-        return response.ok;
+        if (response.status !== 200) return false;
+        const body = await response.json();
+        return body.ok === true;
       } catch {
         return false;
       }

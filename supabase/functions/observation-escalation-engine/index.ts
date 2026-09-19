@@ -103,7 +103,8 @@ Deno.serve(async (req) => {
       organizationId,
       facilityId,
     });
-    return jsonResponse({ ok: true, organization_id: organizationId, ...result }, 200, origin);
+    const ok = result.deliveries_failed + result.rungs_failed + result.delivery_outcomes_failed + result.queue_claims_failed === 0;
+    return jsonResponse({ ok, organization_id: organizationId, ...result }, ok ? 200 : 207, origin);
   } catch (error) {
     t.log({
       event: "tick_failed",

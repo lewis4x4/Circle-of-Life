@@ -69,6 +69,11 @@ function deriveBoardState(args: {
 /* -------------------------------------------------------------------------- */
 
 export default function RoundingIntegrityPage() {
+  const { selectedFacilityId } = useFacilityStore();
+  return <ScopedRoundingIntegrityPage key={selectedFacilityId ?? "portfolio"} />;
+}
+
+function ScopedRoundingIntegrityPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
@@ -102,9 +107,8 @@ export default function RoundingIntegrityPage() {
       return;
     }
 
-    setLagThresholds(await fetchDocumentationLagThresholds(supabase, selectedFacilityId));
-
     try {
+      setLagThresholds(await fetchDocumentationLagThresholds(supabase, selectedFacilityId));
       const query = supabase
         .from("resident_observation_integrity_flags" as never)
         .select(

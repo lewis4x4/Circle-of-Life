@@ -77,6 +77,7 @@ export interface FireResult {
 
 /** One queued row of `public.observation_escalation_deliveries`. */
 export interface DeliveryRow {
+  notification_source?: "monitoring_order" | "watchlist";
   id: string;
   organization_id: string;
   facility_id: string;
@@ -103,6 +104,8 @@ export interface DispatchContext {
 }
 
 export interface DeliveryPatch {
+  retryable?: boolean;
+  retry_after_seconds?: number | null;
   status: DeliveryOutcomeStatus;
   skip_reason?: string | null;
   provider_message_id?: string | null;
@@ -111,6 +114,7 @@ export interface DeliveryPatch {
 }
 
 export interface EngineStore {
+  takeClaimFailures?(): number;
   advanceLapse(organizationId: string, facilityId: string | null, atIso: string): Promise<number>;
   loadDue(organizationId: string, facilityId: string | null, atIso: string, limit: number): Promise<DueRungRow[]>;
   fireRung(taskId: string, rungKey: string, atIso: string): Promise<FireResult>;
@@ -154,6 +158,9 @@ export interface EngineOptions {
 }
 
 export interface EngineResult {
+  queue_claims_failed: number;
+  rungs_failed: number;
+  delivery_outcomes_failed: number;
   tasks_lapsed: number;
   rungs_due: number;
   rungs_fired: number;
@@ -168,6 +175,8 @@ export interface EngineResult {
 }
 
 interface Outcome {
+  retryable?: boolean;
+  retryAfterSeconds?: number;
   status: DeliveryOutcomeStatus;
   skipReason?: string;
   providerMessageId?: string;
@@ -190,7 +199,7 @@ async function readJson(response: Response): Promise<unknown> {
 
 function fetchFailure(prefix: string, error: unknown): Outcome {
   const name = error instanceof Error ? error.name : "Error";
-  return { status: "failed", error: `${prefix} request failed: ${name}` };
+  return { status: "failed", retryable: true, error: `${prefix} request failed: ${name}` };
 }
 
 async function sendPush(
@@ -215,6 +224,7 @@ async function sendPush(
     response = await options.fetchImpl(`${supabaseUrl}/functions/v1/dispatch-push`, {
       method: "POST",
       headers,
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         user_id: delivery.target_user_id,
         title: message.title,
@@ -225,7 +235,7 @@ async function sendPush(
   } catch (error) {
     return fetchFailure("dispatch-push", error);
   }
-  return classifyPushResponse(response.status, await readJson(response));
+  return { ...classifyPushResponse(response.status, await readJson(response)), retryAfterSeconds: retryAfter(response) };
 }
 
 async function sendSms(to: string, body: string, options: EngineOptions): Promise<Outcome> {
@@ -243,6 +253,7 @@ async function sendSms(to: string, body: string, options: EngineOptions): Promis
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: form,
+      signal: AbortSignal.timeout(15_000),
     });
   } catch (error) {
     return fetchFailure("twilio sms", error);
@@ -250,7 +261,14 @@ async function sendSms(to: string, body: string, options: EngineOptions): Promis
   const classified = classifyTwilioResponse(response.status, await readJson(response));
   return classified.status === "sent"
     ? { status: "sent", providerMessageId: classified.providerMessageId }
-    : { status: "failed", error: classified.error };
+    : { status: "failed", error: classified.error, retryable: classified.retryable, retryAfterSeconds: retryAfter(response) };
+}
+
+function retryAfter(response: Response): number | undefined {
+  const value = response.headers.get("retry-after");
+  if (!value) return undefined;
+  const seconds = /^\d+$/.test(value) ? Number(value) : (Date.parse(value) - Date.now()) / 1000;
+  return Number.isFinite(seconds) ? Math.min(3600, Math.max(1, Math.ceil(seconds))) : undefined;
 }
 
 function patchFor(outcome: Outcome, nowIso: string): DeliveryPatch {
@@ -266,7 +284,8 @@ function patchFor(outcome: Outcome, nowIso: string): DeliveryPatch {
   if (outcome.status === "skipped") {
     return { status: "skipped", skip_reason: outcome.skipReason ?? null, error_message: null };
   }
-  return { status: "failed", error_message: outcome.error ?? "unknown", skip_reason: null };
+  return { status: "failed", error_message: outcome.error ?? "unknown", skip_reason: null,
+    retryable: outcome.retryable ?? false, retry_after_seconds: outcome.retryAfterSeconds ?? null };
 }
 
 async function fireDueRungs(options: EngineOptions, atIso: string, result: EngineResult): Promise<void> {
@@ -283,6 +302,7 @@ async function fireDueRungs(options: EngineOptions, atIso: string, result: Engin
     try {
       fired = await options.store.fireRung(row.task_id, row.rung_key, atIso);
     } catch (error) {
+      result.rungs_failed += 1;
       options.log.log({
         event: "rung_fire_failed",
         outcome: "error",
@@ -321,6 +341,7 @@ async function drainDeliveries(options: EngineOptions, result: EngineResult): Pr
     nowIso,
     options.drainLimit ?? DRAIN_LIMIT,
   );
+  result.queue_claims_failed += options.store.takeClaimFailures?.() ?? 0;
   if (deliveries.length === 0) return;
 
   const contexts = await options.store.loadDispatchContexts(unique(deliveries.map((d) => d.dispatch_id)));
@@ -340,7 +361,12 @@ async function drainDeliveries(options: EngineOptions, result: EngineResult): Pr
     // A test send carries its own body, already prefixed with the word TEST by
     // send_test_escalation, and has no dispatch and no resident behind it.
     let message: { title: string; body: string; url: string };
-    if (delivery.is_test) {
+    if (delivery.notification_source) {
+      const watchlist = delivery.notification_source === "watchlist";
+      const url = `${appBaseUrl.replace(/\/+$/, "")}/admin/rounding`;
+      message = { title: watchlist ? "Watchlist needs attention" : "Monitoring order updated",
+        body: `${watchlist ? "An Acute Watchlist signal needs review." : "A resident monitoring order needs review."} Open Smart Rounding. ${url}`, url };
+    } else if (delivery.is_test) {
       if (!delivery.message_body) return { status: "skipped", skipReason: "no_test_body" };
       message = { title: delivery.rung_key, body: delivery.message_body, url: "" };
     } else {
@@ -365,6 +391,7 @@ async function drainDeliveries(options: EngineOptions, result: EngineResult): Pr
     // for the same reason.
     switch (delivery.channel) {
       case "in_app":
+        if (delivery.notification_source) return { status: "skipped", skipReason: "in_app_inbox_not_available" };
         // The escalation row and the dispatch row are the in-app artifact; the
         // module surface reads them. Nothing further to send.
         return { status: "sent" };
@@ -407,6 +434,7 @@ async function drainDeliveries(options: EngineOptions, result: EngineResult): Pr
     try {
       await options.store.recordDeliveryOutcome(delivery.id, claimToken, patchFor(outcome, new Date().toISOString()));
     } catch (error) {
+      result.delivery_outcomes_failed += 1;
       // The send happened and its outcome could not be written. The row stays
       // claimed, so the attempt counter in the claim command is what stops this
       // becoming a resend loop; this log is how a human finds out it happened.
@@ -430,6 +458,9 @@ export async function runEscalationEngine(options: EngineOptions): Promise<Engin
   const now = options.now ?? new Date();
   const atIso = now.toISOString();
   const result: EngineResult = {
+    queue_claims_failed: 0,
+    rungs_failed: 0,
+    delivery_outcomes_failed: 0,
     tasks_lapsed: 0,
     rungs_due: 0,
     rungs_fired: 0,
@@ -454,7 +485,7 @@ export async function runEscalationEngine(options: EngineOptions): Promise<Engin
 
   options.log.log({
     event: "complete",
-    outcome: result.deliveries_failed === 0 ? "success" : "error",
+    outcome: result.deliveries_failed + result.rungs_failed + result.delivery_outcomes_failed + result.queue_claims_failed === 0 ? "success" : "error",
     organization_id: options.organizationId,
     ...result,
   });

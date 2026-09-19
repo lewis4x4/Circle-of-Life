@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "node scripts/check-deploy-schema.mjs && npm run build"
   publish = ".next"
 
 [build.environment]

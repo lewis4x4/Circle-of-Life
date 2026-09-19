@@ -13,7 +13,10 @@ type Call = { table?: string; select?: string; filters: Array<[string, unknown]>
 function client(result: { data: unknown; error: unknown }) {
   const calls: Call[] = [];
   const builder = (call: Call) => {
+    let start = 0;
+    let end = 999;
     const chain = {
+      range(from: number, to: number) { start = from; end = to; return chain; },
       select(columns: string) {
         call.select = columns;
         return chain;
@@ -31,7 +34,7 @@ function client(result: { data: unknown; error: unknown }) {
         return chain;
       },
       then(resolve: (value: typeof result) => unknown) {
-        return Promise.resolve(result).then(resolve);
+        return Promise.resolve({ ...result, count: Array.isArray(result.data) ? result.data.length : 0, data: Array.isArray(result.data) ? result.data.slice(start, end + 1) : result.data }).then(resolve);
       },
     };
     return chain;
@@ -54,7 +57,7 @@ describe("Watchlist reads", () => {
     const rows = await fetchWatchlistPortfolio(supabase);
     expect(rows).toHaveLength(1);
     expect(calls[0].table).toBe("v_watchlist_portfolio");
-    expect(calls[0].orders).toEqual(["open_acute_signal_count", "facility_name"]);
+    expect(calls[0].orders).toEqual(["open_acute_signal_count", "facility_name", "facility_id"]);
   });
 
   it("asks the facility board for one building, ranked by band then age", async () => {
@@ -62,7 +65,7 @@ describe("Watchlist reads", () => {
     await fetchFacilityWatchlist(supabase, "facility-1");
     expect(calls[0].table).toBe("v_watchlist_facility");
     expect(calls[0].filters).toContainEqual(["facility_id", "facility-1"]);
-    expect(calls[0].orders).toEqual(["band_rank", "first_detected_at"]);
+    expect(calls[0].orders).toEqual(["band_rank", "first_detected_at", "signal_instance_id"]);
   });
 
   it("never asks for a resident safety score", async () => {
@@ -80,7 +83,7 @@ describe("Watchlist reads", () => {
     const { supabase, calls } = client({ data: [], error: null });
     await fetchResidentDispositionLedger(supabase, "resident-1");
     expect(calls[0].table).toBe("watchlist_signal_dispositions");
-    expect(calls[0].orders).toEqual(["ledger_seq"]);
+    expect(calls[0].orders).toEqual(["ledger_seq", "id"]);
   });
 
   it("surfaces a read failure rather than answering with an empty board", async () => {

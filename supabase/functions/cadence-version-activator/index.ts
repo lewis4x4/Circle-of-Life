@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       organizationId,
       facilityId,
     });
-    const ok = result.versions_failed === 0;
+    const ok = result.versions_failed === 0 && result.regeneration_failed_facility_ids.length === 0;
     return jsonResponse({ ok, organization_id: organizationId, ...result }, ok ? 200 : 207, origin);
   } catch (error) {
     t.log({

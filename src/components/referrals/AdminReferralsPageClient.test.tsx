@@ -127,4 +127,56 @@ describe("<AdminReferralsPageClient />", () => {
     expect(screen.getByText(/pipeline roster is limited to the 200 most recently updated leads/i)).toBeInTheDocument();
     expect(screen.getAllByText("Requires complete reporting")).toHaveLength(5);
   });
+
+  it("names the facility gap instead of claiming a facility when none is selected", () => {
+    mocks.useFacilityStoreMock.mockReturnValue({
+      selectedFacilityId: null,
+      availableFacilities: [{ id: baseFacilityId, name: "Demo ALF" }],
+    });
+
+    render(
+      <AdminReferralsPageClient
+        {...loadedProps}
+        initialFacilityId={null}
+        serverBootstrapped={false}
+      />,
+    );
+
+    expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/select a facility in the header to load referral leads and kpis for that site/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/inquiries and pipeline before admission — attribution, follow-up, and conversion\.$/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Demo ALF")).not.toBeInTheDocument();
+  });
+
+  it("does not claim a facility when the selected id cannot be queried", () => {
+    mocks.useFacilityStoreMock.mockReturnValue({
+      selectedFacilityId: "not-a-uuid",
+      availableFacilities: [{ id: baseFacilityId, name: "Demo ALF" }],
+    });
+
+    render(
+      <AdminReferralsPageClient
+        {...loadedProps}
+        initialFacilityId={"not-a-uuid"}
+        serverBootstrapped={false}
+      />,
+    );
+
+    expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("not-a-uuid")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/select a facility in the header to load referral leads and kpis for that site/i),
+    ).toBeInTheDocument();
+  });
+
+  it("names the selected facility in the hub subheading once one is selected", () => {
+    render(<AdminReferralsPageClient {...loadedProps} />);
+
+    expect(screen.getByText("Demo ALF")).toBeInTheDocument();
+    expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
+  });
 });

@@ -89,18 +89,10 @@ export function smsChannelEnabled(env: Record<string, string | undefined>): bool
 export type DeliveryOutcomeStatus = "sent" | "skipped" | "failed";
 
 export interface PushClassification {
+  retryable?: boolean;
   status: DeliveryOutcomeStatus;
   skipReason?: string;
   error?: string;
-}
-
-const MAX_ERROR_CHARS = 200;
-
-function shortError(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  return trimmed.length > MAX_ERROR_CHARS ? `${trimmed.slice(0, MAX_ERROR_CHARS)}...` : trimmed;
 }
 
 /**
@@ -114,16 +106,20 @@ export function classifyPushResponse(status: number, payload: unknown): PushClas
   if (status >= 200 && status < 300) {
     const sent = typeof record.sent === "number" ? record.sent : 0;
     if (sent > 0) return { status: "sent" };
+    if (typeof record.failed === "number" && record.failed > 0) {
+      return { status: "failed", retryable: true, error: "dispatch-push delivery failed" };
+    }
     return { status: "skipped", skipReason: "no_subscription" };
   }
-  const reason = shortError(record.error);
   return {
     status: "failed",
-    error: reason ? `dispatch-push ${status}: ${reason}` : `dispatch-push ${status}`,
+    retryable: status === 408 || status === 429 || status >= 500,
+    error: `dispatch-push ${status}`,
   };
 }
 
 export interface TwilioClassification {
+  retryable?: boolean;
   status: "sent" | "failed";
   providerMessageId?: string;
   error?: string;
@@ -136,9 +132,10 @@ export function classifyTwilioResponse(status: number, payload: unknown): Twilio
     const sid = typeof record.sid === "string" ? record.sid : undefined;
     return sid ? { status: "sent", providerMessageId: sid } : { status: "sent" };
   }
-  const reason = shortError(record.message);
   return {
     status: "failed",
-    error: reason ? `twilio sms ${status}: ${reason}` : `twilio sms ${status}`,
+    retryable: status === 408 || status === 429 || status >= 500,
+    // Provider free text may echo the recipient phone or message body.
+    error: `twilio sms ${status}${typeof record.code === "number" ? ` code ${record.code}` : ""}`,
   };
 }

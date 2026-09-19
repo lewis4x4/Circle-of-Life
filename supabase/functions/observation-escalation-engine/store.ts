@@ -43,7 +43,10 @@ interface ResidentSelect {
 }
 
 export function supabaseStore(admin: SupabaseClient): EngineStore {
+  const notificationSources = new Map<string, string>();
+  let claimFailures = 0;
   return {
+    takeClaimFailures() { const count = claimFailures; claimFailures = 0; return count; },
     async advanceLapse(organizationId, facilityId, atIso) {
       const { data, error } = await admin.rpc("advance_observation_task_lapse", {
         p_organization_id: organizationId,
@@ -101,7 +104,27 @@ export function supabaseStore(admin: SupabaseClient): EngineStore {
         p_limit: limit,
       });
       if (error) throw new StoreError("claim deliveries", error.code);
-      return (data ?? []) as DeliveryRow[];
+      try {
+      const { data: notifications, error: notificationError } = await admin.rpc("claim_smart_rounding_notifications", {
+        p_organization_id: organizationId, p_facility_id: facilityId,
+        p_claim_token: claimToken, p_at: nowIso, p_limit: limit,
+      });
+      if (notificationError) throw new StoreError("claim rounding notifications", notificationError.code);
+      const notificationRows = (notifications ?? []).map((row: {
+        source: "watchlist" | "monitoring_order"; id: string; organization_id: string;
+        facility_id: string; target_user_id: string | null; target_phone: string | null; channel: DeliveryRow["channel"];
+      }): DeliveryRow => {
+        notificationSources.set(row.id, row.source);
+        return { ...row, notification_source: row.source, dispatch_id: null,
+          rung_key: row.source, is_test: false, message_body: null };
+      });
+      return [...((data ?? []) as DeliveryRow[]), ...notificationRows];
+      } catch {
+        // Urgent escalation claims already belong to this tick. A separate
+        // queue failure must not strand them until their lease expires.
+        claimFailures += 1;
+        return (data ?? []) as DeliveryRow[];
+      }
     },
 
     async loadDispatchContexts(dispatchIds) {
@@ -195,7 +218,9 @@ export function supabaseStore(admin: SupabaseClient): EngineStore {
      * one statement in one place, and a write that matches nothing has to raise.
      */
     async recordDeliveryOutcome(id, claimToken, patch: DeliveryPatch) {
-      const { error } = await admin.rpc("record_observation_escalation_delivery_outcome", {
+      const source = notificationSources.get(id);
+      const { error } = await admin.rpc(source ? "record_smart_rounding_notification_outcome" : "record_observation_escalation_delivery_outcome", {
+        ...(source ? { p_source: source } : {}),
         p_delivery_id: id,
         p_claim_token: claimToken,
         p_status: patch.status,
@@ -203,6 +228,8 @@ export function supabaseStore(admin: SupabaseClient): EngineStore {
         p_provider_message_id: patch.provider_message_id ?? null,
         p_error_message: patch.error_message ?? null,
         p_sent_at: patch.sent_at ?? null,
+        p_retryable: patch.retryable ?? false,
+        p_retry_after_seconds: patch.retry_after_seconds ?? null,
       });
       if (error) throw new StoreError("record delivery outcome", error.code);
     },

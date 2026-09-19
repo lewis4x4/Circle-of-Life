@@ -71,7 +71,7 @@ export default function CaregiverRoundsPage() {
       setFacilityName(resolved.ctx.facilityName);
 
       const response = await fetch(
-        `/api/rounding/tasks?facilityId=${encodeURIComponent(resolved.ctx.facilityId)}&limit=100`,
+        `/api/rounding/tasks?facilityId=${encodeURIComponent(resolved.ctx.facilityId)}&queue=1`,
         {
           cache: "no-store",
         },

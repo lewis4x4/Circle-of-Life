@@ -51,6 +51,11 @@ import {
 import { cn } from "@/lib/utils";
 
 export function LiveBoard() {
+  const { selectedFacilityId } = useFacilityStore();
+  return <ScopedLiveBoard key={selectedFacilityId ?? "none"} />;
+}
+
+function ScopedLiveBoard() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const data = useLiveBoardData(selectedFacilityId);
   // Escalations is a filter, not a destination, so the links that used to point

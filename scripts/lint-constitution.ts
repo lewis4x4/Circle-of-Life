@@ -15,9 +15,9 @@ const scope = process.env.CONSTITUTION_LINT_SCOPE ?? "smart-rounding";
 /**
  * Every Smart Rounding surface, and the primitives they compose with.
  *
- * `walk` skips a path that does not exist, silently, so a stale entry here is
- * not an error but every surface missing from the list is a silent loss of
- * coverage. The nine-tab strip's routes are gone from it because the routes are
+ * Every required target must exist. Deleting or moving a surface requires an
+ * explicit scope update rather than silently removing lint coverage.
+ * The nine-tab strip's routes are gone from it because the routes are
  * gone: Overview and Escalations folded into the Live board, Plans went with
  * the per resident observation plan, Watches became Monitoring Orders, Safety
  * scores became the Watchlist, and Insights folded into Reports.
@@ -116,7 +116,16 @@ function walk(target: string): string[] {
 }
 
 const targets = scope === "all" ? [path.join(root, "src")] : segmentTargets;
+const missingTargets = targets.filter((target) => !statSync(target, { throwIfNoEntry: false }));
+if (missingTargets.length > 0) {
+  console.error(`Constitution lint missing required targets:\n${missingTargets.map((target) => path.relative(root, target)).join("\n")}`);
+  process.exit(1);
+}
 const files = Array.from(new Set(targets.flatMap(walk))).sort();
+if (files.length === 0) {
+  console.error(`Constitution lint has no files in required ${scope} scope.`);
+  process.exit(1);
+}
 const findings: Finding[] = [];
 
 /* Rules below run against the scoped file list. `no-undefined-color-scale`

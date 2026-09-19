@@ -114,7 +114,7 @@ export default function CaregiverResidentRoundPage() {
         if (!resolved.ok) throw new Error(resolved.error);
         const nextOwner = await currentOwner(resolved.ctx.organizationId, resolved.ctx.facilityId);
         const response = await fetch(
-          `/api/rounding/tasks?facilityId=${encodeURIComponent(nextOwner.facilityId)}&residentId=${encodeURIComponent(residentId)}&limit=20`,
+          `/api/rounding/tasks?facilityId=${encodeURIComponent(nextOwner.facilityId)}&residentId=${encodeURIComponent(residentId)}${taskIdFromQuery ? `&taskId=${encodeURIComponent(taskIdFromQuery)}` : "&queue=1"}`,
           { cache: "no-store" },
         );
         const json = (await response.json()) as { error?: string; tasks?: TaskApiRow[] };
@@ -126,7 +126,7 @@ export default function CaregiverResidentRoundPage() {
         const tasks = json.tasks ?? [];
         const selected = retained?.task ?? (taskIdFromQuery
           ? tasks.find((candidate) => candidate.id === taskIdFromQuery)
-          : tasks.find((candidate) => !candidate.derived_status.startsWith("completed_"))) ?? null;
+          : tasks.find((candidate) => !candidate.derived_status.startsWith("completed_") && candidate.derived_status !== "excused")) ?? null;
         setOwner(nextOwner);
         setFacilityId(nextOwner.facilityId);
         setTask(selected);

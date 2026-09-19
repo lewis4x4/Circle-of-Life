@@ -50,6 +50,11 @@ import { cn } from "@/lib/utils";
 type LoadState = "idle" | "loading" | "ready" | "error";
 
 export default function MonitoringOrdersPage() {
+  const { selectedFacilityId } = useFacilityStore();
+  return <ScopedMonitoringOrdersPage key={selectedFacilityId ?? "none"} />;
+}
+
+function ScopedMonitoringOrdersPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
   const scope = resolveRoundingFacilityScope(

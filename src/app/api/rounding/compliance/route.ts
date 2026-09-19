@@ -1,3 +1,4 @@
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { NextResponse } from "next/server";
 
 import { logError } from "@/lib/observability/logger";
@@ -29,8 +30,6 @@ import {
  * constraint-name form, because the task table holds two foreign keys to
  * `staff` and any other form is ambiguous.
  */
-
-const ROW_LIMIT = 20_000;
 
 export async function GET(request: Request) {
   const auth = await getRoundingRequestContext({ managerOnly: true });
@@ -65,110 +64,103 @@ export async function GET(request: Request) {
 
   const client = context.actor.client;
 
-  const compliance = await client.rpc("observation_compliance_for_range", {
-    p_facility_id: facilityId,
-    p_from: from,
-    p_to: to,
-  });
-  if (compliance.error) {
-    logError("rounding.compliance.range", compliance.error, { facilityId, from, to });
-    return NextResponse.json({ error: "Could not load observation compliance" }, { status: 500 });
-  }
-  const rows = ((compliance.data ?? []) as unknown as ComplianceRow[]).slice(0, ROW_LIMIT);
+  try {
+    const compliance = await readAllPages((start, end) => client.rpc("observation_compliance_for_range", {
+      p_facility_id: facilityId,
+      p_from: from,
+      p_to: to,
+    }, { count: "exact" }).order("resident_id").order("service_date").order("window_key").order("cadence_version_id").range(start, end));
+    const rows = ((compliance.data ?? []) as unknown as ComplianceRow[]);
 
-  const [shifts, tasks, residents, beds, rooms, units] = await Promise.all([
-    client
-      .from("facility_shift_definitions")
-      .select("shift_key, label")
-      .eq("facility_id", facilityId)
-      .is("deleted_at", null),
-    client
-      .from("resident_observation_tasks")
-      .select(
-        "id, assigned_staff_id, staff!resident_observation_tasks_assigned_staff_id_fkey(first_name, last_name, preferred_name)",
-      )
-      .eq("facility_id", facilityId)
-      .gte("service_date", from)
-      .lte("service_date", to)
-      .is("deleted_at", null)
-      .limit(ROW_LIMIT),
-    client
-      .from("residents")
-      .select("id, bed_id")
-      .eq("facility_id", facilityId)
-      .is("deleted_at", null),
-    client
-      .from("beds")
-      .select("id, room_id")
-      .eq("facility_id", facilityId)
-      .is("deleted_at", null),
-    client
-      .from("rooms")
-      .select("id, room_number, unit_id")
-      .eq("facility_id", facilityId)
-      .is("deleted_at", null),
-    client
-      .from("units")
-      .select("id, name")
-      .eq("facility_id", facilityId)
-      .is("deleted_at", null),
-  ]);
+    const [shifts, tasks, residents, beds, rooms, units] = await Promise.all([
+      readAllPages((start, end) => client
+        .from("facility_shift_definitions")
+        .select("shift_key, label", { count: "exact" })
+        .eq("facility_id", facilityId)
+        .is("deleted_at", null)
+        .order("shift_key").range(start, end)),
+      readAllPages((start, end) => client
+        .from("resident_observation_tasks")
+        .select(
+          "id, assigned_staff_id, staff!resident_observation_tasks_assigned_staff_id_fkey(first_name, last_name, preferred_name)",
+          { count: "exact" },
+        )
+        .eq("facility_id", facilityId)
+        .gte("service_date", from)
+        .lte("service_date", to)
+        .is("deleted_at", null)
+        .order("id").range(start, end)),
+      readAllPages((start, end) => client
+        .from("residents")
+        .select("id, bed_id", { count: "exact" })
+        .eq("facility_id", facilityId)
+        .is("deleted_at", null)
+        .order("id").range(start, end)),
+      readAllPages((start, end) => client
+        .from("beds")
+        .select("id, room_id", { count: "exact" })
+        .eq("facility_id", facilityId)
+        .is("deleted_at", null)
+        .order("id").range(start, end)),
+      readAllPages((start, end) => client
+        .from("rooms")
+        .select("id, room_number, unit_id", { count: "exact" })
+        .eq("facility_id", facilityId)
+        .is("deleted_at", null)
+        .order("id").range(start, end)),
+      readAllPages((start, end) => client
+        .from("units")
+        .select("id, name", { count: "exact" })
+        .eq("facility_id", facilityId)
+        .is("deleted_at", null)
+        .order("id").range(start, end)),
+    ]);
 
-  for (const [scope, result] of [
-    ["shifts", shifts],
-    ["tasks", tasks],
-    ["residents", residents],
-    ["beds", beds],
-    ["rooms", rooms],
-    ["units", units],
-  ] as const) {
-    if (result.error) {
-      logError(`rounding.compliance.${scope}`, result.error, { facilityId, from, to });
-      return NextResponse.json({ error: "Could not load observation compliance" }, { status: 500 });
+    const shiftLabels = new Map<string, string>();
+    for (const row of shifts.data ?? []) {
+      if (row.shift_key) shiftLabels.set(row.shift_key, row.label ?? "No shift posted");
     }
-  }
 
-  const shiftLabels = new Map<string, string>();
-  for (const row of shifts.data ?? []) {
-    if (row.shift_key) shiftLabels.set(row.shift_key, row.label ?? "No shift posted");
-  }
+    const staffByTask = new Map<string, { key: string; label: string }>();
+    for (const row of tasks.data ?? []) {
+      const person = row.staff as
+        | { first_name: string | null; last_name: string | null; preferred_name: string | null }
+        | null;
+      const first = (person?.preferred_name ?? person?.first_name)?.trim() ?? "";
+      const last = person?.last_name?.trim() ?? "";
+      const label = `${first} ${last}`.trim();
+      staffByTask.set(row.id, {
+        key: row.assigned_staff_id ?? "no_staff",
+        label: label || "No assigned staff",
+      });
+    }
 
-  const staffByTask = new Map<string, { key: string; label: string }>();
-  for (const row of tasks.data ?? []) {
-    const person = row.staff as
-      | { first_name: string | null; last_name: string | null; preferred_name: string | null }
-      | null;
-    const first = (person?.preferred_name ?? person?.first_name)?.trim() ?? "";
-    const last = person?.last_name?.trim() ?? "";
-    const label = `${first} ${last}`.trim();
-    staffByTask.set(row.id, {
-      key: row.assigned_staff_id ?? "no_staff",
-      label: label || "No assigned staff",
-    });
-  }
+    const unitNames = new Map((units.data ?? []).map((unit) => [unit.id, unit.name]));
+    const roomById = new Map((rooms.data ?? []).map((room) => [room.id, room]));
+    const bedById = new Map((beds.data ?? []).map((bed) => [bed.id, bed]));
+    const hallByResident = new Map<string, { key: string; label: string }>();
+    for (const resident of residents.data ?? []) {
+      const room = resident.bed_id ? roomById.get(bedById.get(resident.bed_id)?.room_id ?? "") : null;
+      const unitId = room?.unit_id ?? null;
+      if (!unitId) continue;
+      hallByResident.set(resident.id, {
+        key: unitId,
+        label: unitNames.get(unitId) ?? "No hall posted",
+      });
+    }
 
-  const unitNames = new Map((units.data ?? []).map((unit) => [unit.id, unit.name]));
-  const roomById = new Map((rooms.data ?? []).map((room) => [room.id, room]));
-  const bedById = new Map((beds.data ?? []).map((bed) => [bed.id, bed]));
-  const hallByResident = new Map<string, { key: string; label: string }>();
-  for (const resident of residents.data ?? []) {
-    const room = resident.bed_id ? roomById.get(bedById.get(resident.bed_id)?.room_id ?? "") : null;
-    const unitId = room?.unit_id ?? null;
-    if (!unitId) continue;
-    hallByResident.set(resident.id, {
-      key: unitId,
-      label: unitNames.get(unitId) ?? "No hall posted",
-    });
+    return NextResponse.json(
+      summarizeObservationCompliance({
+        from,
+        to,
+        rows,
+        shiftLabels,
+        hallByResident,
+        staffByTask,
+      }),
+    );
+  } catch (error) {
+    logError("rounding.compliance", error, { facilityId, from, to });
+    return NextResponse.json({ error: "Could not load complete observation compliance" }, { status: 500 });
   }
-
-  return NextResponse.json(
-    summarizeObservationCompliance({
-      from,
-      to,
-      rows,
-      shiftLabels,
-      hallByResident,
-      staffByTask,
-    }),
-  );
 }

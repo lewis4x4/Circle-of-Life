@@ -41,6 +41,11 @@ type LoadState = "idle" | "loading" | "ready" | "error";
 const LOAD_FAILED = "The Watchlist could not be loaded. Try again in a moment.";
 
 export default function WatchlistPage() {
+  const { selectedFacilityId } = useFacilityStore();
+  return <ScopedWatchlistPage key={selectedFacilityId ?? "portfolio"} />;
+}
+
+function ScopedWatchlistPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find(
     (facility) => facility.id === selectedFacilityId,

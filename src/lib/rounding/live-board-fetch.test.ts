@@ -19,7 +19,10 @@ type Call = {
 function client(result: { data: unknown; error: unknown }) {
   const calls: Call[] = [];
   const builder = (call: Call) => {
+    let start = 0;
+    let end = 999;
     const chain = {
+      range(from: number, to: number) { start = from; end = to; return chain; },
       select(columns: string) {
         call.select = columns;
         return chain;
@@ -52,7 +55,7 @@ function client(result: { data: unknown; error: unknown }) {
         return chain;
       },
       then(resolve: (value: typeof result) => unknown) {
-        return Promise.resolve(result).then(resolve);
+        return Promise.resolve({ ...result, count: Array.isArray(result.data) ? result.data.length : 0, data: Array.isArray(result.data) ? result.data.slice(start, end + 1) : result.data }).then(resolve);
       },
     };
     return chain;
@@ -148,4 +151,10 @@ describe("Live board reads", () => {
       code: "42703",
     });
   });
+});
+
+it("loads current checks beyond the first 500 historical rows", async () => {
+  const all = Array.from({ length: 1007 }, (_, index) => ({ id: `task-${index}`, facility_id: "f" }));
+  const { supabase } = client({ data: all, error: null });
+  expect(await fetchLiveBoardTasks(supabase, "f", "2026-09-18", "2026-09-19")).toEqual(all);
 });

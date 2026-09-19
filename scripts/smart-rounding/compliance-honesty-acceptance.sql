@@ -226,6 +226,11 @@ BEGIN
 END
 $$;
 
+-- This synthetic fixture describes configuration already in force before today.
+UPDATE public.facility_observation_shift_history SET effective_from='-infinity'::timestamptz
+WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
+
+
 -- ---------------------------------------------------------------------------
 -- 2. Route (a). The generator never ran.
 --
@@ -534,8 +539,8 @@ BEGIN
   -- cadence version, so all three dates below have a cadence in force and the
   -- assertions are about status rather than about configuration.
   INSERT INTO public.resident_status_history (organization_id, facility_id, resident_id, status, effective_from, effective_to)
-    VALUES (v_org, v_facility, v_resident, 'active', date_trunc('day', now() - interval '3 days'), date_trunc('day', now() - interval '2 days')),
-    (v_org, v_facility, v_resident, 'hospital_hold', date_trunc('day', now() - interval '2 days'), NULL);
+    VALUES (v_org, v_facility, v_resident, 'active', (((now() AT TIME ZONE 'America/New_York')::date - 3)::timestamp AT TIME ZONE 'America/New_York'), (((now() AT TIME ZONE 'America/New_York')::date - 2)::timestamp AT TIME ZONE 'America/New_York')),
+    (v_org, v_facility, v_resident, 'hospital_hold', (((now() AT TIME ZONE 'America/New_York')::date - 2)::timestamp AT TIME ZONE 'America/New_York'), NULL);
 
   v_before_history := ((now() - interval '4 days') AT TIME ZONE 'America/New_York')::date;
   v_active_day := ((now() - interval '3 days') AT TIME ZONE 'America/New_York')::date;

@@ -1,3 +1,4 @@
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 /**
  * Reads for the Smart Rounding Live board. Spec 25A section 8, defects 1, 2,
  * 3, 5 and 6.
@@ -143,15 +144,15 @@ export async function fetchLiveBoardTasks(
   fromServiceDate: string,
   toServiceDate: string,
 ): Promise<LiveBoardTaskRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readAllPages((from, to) => supabase
     .from("resident_observation_tasks")
-    .select(TASK_SELECT)
+    .select(TASK_SELECT, { count: "exact" })
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .gte("service_date", fromServiceDate)
     .lte("service_date", toServiceDate)
     .order("due_at", { ascending: true })
-    .limit(500);
+    .order("id").range(from, to));
   if (error) throw error;
   return (data ?? []) as unknown as LiveBoardTaskRow[];
 }
@@ -166,13 +167,13 @@ export async function fetchLiveBoardRoster(
   supabase: SupabaseClient,
   facilityId: string,
 ): Promise<LiveBoardRosterRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readAllPages((from, to) => supabase
     .from("residents")
-    .select(ROSTER_SELECT)
+    .select(ROSTER_SELECT, { count: "exact" })
     .eq("facility_id", facilityId)
     .eq("status", "active")
     .is("deleted_at", null)
-    .order("last_name", { ascending: true });
+    .order("last_name", { ascending: true }).order("id").range(from, to));
   if (error) throw error;
   return (data ?? []) as unknown as LiveBoardRosterRow[];
 }
@@ -190,14 +191,14 @@ export async function fetchLiveBoardEscalations(
   supabase: SupabaseClient,
   facilityId: string,
 ): Promise<LiveBoardEscalationRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readAllPages((from, to) => supabase
     .from("resident_observation_escalations")
-    .select(ESCALATION_SELECT)
+    .select(ESCALATION_SELECT, { count: "exact" })
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .in("status", ["open", "in_progress"])
     .order("triggered_at", { ascending: false })
-    .limit(200);
+    .order("id").range(from, to));
   if (error) throw error;
   return (data ?? []) as unknown as LiveBoardEscalationRow[];
 }

@@ -54,7 +54,8 @@ describe("observation compliance summary", () => {
       staffByTask: new Map(),
     });
 
-    expect(summary.totals.expected).toBe(3);
+    expect(summary.totals.expected).toBe(2);
+    expect(complianceRate(summary.totals)).toBe(0.5);
     expect(summary.totals.satisfied).toBe(1);
     expect(summary.totals.unconfigured).toBe(1);
     expect(summary.totals.withTask).toBe(2);
@@ -150,4 +151,17 @@ describe("observation compliance summary", () => {
     expect(formatComplianceRate(null)).toBe("No data posted");
     expect(formatComplianceRate(0.84)).toBe("84%");
   });
+});
+
+it.each(["no_cadence", "orphaned_shift"])("keeps %s gaps out of compliance and missing-work totals", (source) => {
+  const summarize = (rows: ComplianceRow[]) => summarizeObservationCompliance({
+    from: "2026-09-18", to: "2026-09-18", rows,
+    shiftLabels: new Map(), hallByResident: new Map(), staffByTask: new Map(),
+  });
+  const gap = row({ expectation_source: source, satisfied: false, task_id: null, task_status: null });
+  const mixed = summarize([row({}), gap]);
+  expect(complianceRate(mixed.totals)).toBe(1);
+  expect(mixed.totals.expected - mixed.totals.satisfied).toBe(0);
+  expect(mixed.totals.unconfigured).toBe(1);
+  expect(complianceRate(summarize([gap]).totals)).toBeNull();
 });

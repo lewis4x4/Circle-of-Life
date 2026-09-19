@@ -549,6 +549,11 @@ BEGIN
 END
 $$;
 
+-- This synthetic fixture describes configuration already in force before today.
+UPDATE public.facility_observation_shift_history SET effective_from='-infinity'::timestamptz
+WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
+
+
 -- Strip the service dates at or after a cutoff, so a spanning report can be
 -- compared on the part of it that is already history.
 CREATE FUNCTION pg_temp.cfg_past_only (p_report jsonb, p_before date)

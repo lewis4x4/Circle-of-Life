@@ -70,6 +70,7 @@ export interface EngineLog {
 }
 
 export interface EngineTick {
+  regeneration_failed_facility_ids: string[];
   versions_due: number;
   versions_activated: number;
   versions_failed: number;
@@ -101,19 +102,19 @@ export async function runCadenceVersionActivator(args: {
   const failed = outcomes.filter((outcome) => !outcome.ok);
   const cancelled = outcomes.reduce((sum, outcome) => sum + count(outcome.pending_tasks_cancelled), 0);
 
-  /* Only a cadence version that actually took force and cancelled pending tasks
-     leaves a hole in the board. An escalation change moves who hears about a
-     missed check and generates nothing, so it never needs a regeneration. */
+  /* Every newly active cadence may introduce windows, including when no old
+     task existed to cancel. Escalation-only changes generate no tasks. */
   const needsRegeneration = Array.from(
     new Set(
       outcomes
-        .filter((outcome) => outcome.ok && outcome.kind === "cadence" && count(outcome.pending_tasks_cancelled) > 0)
+        .filter((outcome) => outcome.ok && outcome.kind === "cadence")
         .map((outcome) => outcome.facility_id)
         .filter((id): id is string => typeof id === "string" && id.length > 0),
     ),
   );
 
   const regenerated: string[] = [];
+  const regenerationFailed: string[] = [];
   let regenerationRequested = false;
   let regenerationSkippedReason: string | null = null;
 
@@ -121,15 +122,18 @@ export async function runCadenceVersionActivator(args: {
     const requested = await store.requestRegeneration(organizationId, id);
     if (requested === null) {
       regenerationSkippedReason = "no_generator_endpoint_configured";
+      regenerationFailed.push(id);
       continue;
     }
     regenerationRequested = true;
     if (requested) regenerated.push(id);
+    else regenerationFailed.push(id);
   }
 
   if (needsRegeneration.length === 0) regenerationSkippedReason = "nothing_to_regenerate";
 
   const tick: EngineTick = {
+    regeneration_failed_facility_ids: regenerationFailed,
     versions_due: count(result.versions_due) || outcomes.length,
     versions_activated: count(result.versions_activated),
     versions_failed: count(result.versions_failed) || failed.length,
@@ -143,7 +147,7 @@ export async function runCadenceVersionActivator(args: {
 
   log.log({
     event: "tick_complete",
-    outcome: tick.versions_failed > 0 ? "error" : "success",
+    outcome: (tick.versions_failed > 0 || regenerationFailed.length > 0) ? "error" : "success",
     versions_due: tick.versions_due,
     versions_activated: tick.versions_activated,
     versions_failed: tick.versions_failed,

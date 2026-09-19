@@ -29,7 +29,7 @@
  * retired three-daypart model kept appearing in a two-shift building.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, RefreshCw } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
@@ -68,6 +68,11 @@ type LoadState = "idle" | "loading" | "ready" | "error";
 const LOAD_FAILED = "The report could not be built. Confirm the range and retry.";
 
 export default function AdminRoundingReportsPage() {
+  const { selectedFacilityId } = useFacilityStore();
+  return <ScopedAdminRoundingReportsPage key={selectedFacilityId ?? "portfolio"} />;
+}
+
+function ScopedAdminRoundingReportsPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const scope = resolveRoundingReportsFacilityScope(
     selectedFacilityId,
@@ -82,7 +87,10 @@ export default function AdminRoundingReportsPage() {
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const requestSequence = useRef(0);
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    setSummary(null);
     setErrorMessage(null);
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
       setSummary(null);
@@ -99,6 +107,7 @@ export default function AdminRoundingReportsPage() {
       const payload = (await response.json().catch(() => null)) as
         | (ComplianceSummary & { error?: string })
         | null;
+      if (sequence !== requestSequence.current) return;
       if (!response.ok || !payload || payload.error) {
         setSummary(null);
         setErrorMessage(payload?.error ?? LOAD_FAILED);
@@ -108,6 +117,7 @@ export default function AdminRoundingReportsPage() {
       setSummary(payload);
       setLoadState("ready");
     } catch {
+      if (sequence !== requestSequence.current) return;
       setSummary(null);
       setErrorMessage(LOAD_FAILED);
       setLoadState("error");
@@ -116,6 +126,7 @@ export default function AdminRoundingReportsPage() {
 
   useEffect(() => {
     void load();
+    return () => { requestSequence.current += 1; };
   }, [load]);
 
   function changePreset(value: DateRangePreset) {

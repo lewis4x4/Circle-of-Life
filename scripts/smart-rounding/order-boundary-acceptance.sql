@@ -234,6 +234,11 @@ BEGIN
 END
 $$;
 
+-- This synthetic fixture describes configuration already in force before today.
+UPDATE public.facility_observation_shift_history SET effective_from='-infinity'::timestamptz
+WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
+
+
 -- ---------------------------------------------------------------------------
 -- 2. The shift the generator would be writing, and its windows, read from the
 --    projection. Nothing below names a clock time.
@@ -794,44 +799,15 @@ BEGIN
   PERFORM
     pg_temp.su_assert (v_rejected = 2, format('%s of 2 shift_key typos were rejected. A key that matches no shift takes the window out of generation and leaves it in the compliance expectation forever.', v_rejected));
 
-  -- A rename is a real operation the settings surface needs, so the foreign key
-  -- cascades rather than forbidding it.
-  SELECT
-    count(*) INTO v_before
-  FROM
-    public.facility_cadence_windows
-  WHERE
-    facility_id = v_facility
-    AND shift_key = v_shift;
-
-  UPDATE
-    public.facility_shift_definitions
-  SET
-    shift_key = v_shift || '_renamed'
-  WHERE
-    facility_id = v_facility
-    AND shift_key = v_shift;
-
-  SELECT
-    count(*) INTO v_after
-  FROM
-    public.facility_cadence_windows
-  WHERE
-    facility_id = v_facility
-    AND shift_key = v_shift || '_renamed';
-
-  PERFORM
-    pg_temp.su_assert (v_before > 0
-      AND v_after = v_before, format('renaming a shift moved %s of %s window(s) with it. A foreign key that makes a legitimate rename impossible is not an improvement on no foreign key.', v_after, v_before));
-
-  -- Put it back so the rest of the script sees the shift model it started with.
-  UPDATE
-    public.facility_shift_definitions
-  SET
-    shift_key = v_shift
-  WHERE
-    facility_id = v_facility
-    AND shift_key = v_shift || '_renamed';
+  -- Effective cadence keeps its structural keys. Operators can change labels.
+  BEGIN
+    UPDATE public.facility_shift_definitions SET shift_key=v_shift||'_renamed'
+    WHERE facility_id=v_facility AND shift_key=v_shift;
+    RAISE EXCEPTION 'historical shift key was rewritten';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  SELECT count(*) INTO v_before FROM public.facility_cadence_windows WHERE facility_id=v_facility AND shift_key=v_shift;
+  PERFORM pg_temp.su_assert(v_before>0,'historical shift references must survive rejected rename');
 
   -- And a shift that still owns windows cannot be hard deleted out from under
   -- them.
@@ -847,7 +823,7 @@ BEGIN
   END;
 
   INSERT INTO su_result (check_name, detail)
-    VALUES ('case 6, shift_key is a reference', format('2 of 2 typos rejected, a rename carried %s window(s) with it, a hard delete refused', v_before));
+    VALUES ('case 6, shift_key is a reference', format('2 of 2 typos rejected, a rejected rename preserved %s window(s), a hard delete refused', v_before));
 END
 $$;
 
@@ -916,6 +892,13 @@ BEGIN
   WHERE
     facility_id = v_facility
     AND shift_key = v_shift;
+
+  -- This case is a shift disabled before the service date, not a request to
+  -- rewrite already-closed windows when a shift is disabled now.
+  UPDATE public.facility_observation_shift_history SET effective_to=(v_date::timestamp AT TIME ZONE 'America/New_York')
+  WHERE facility_id=v_facility AND shift_key=v_shift AND effective_to IS NOT NULL;
+  UPDATE public.facility_observation_shift_history SET effective_from=(v_date::timestamp AT TIME ZONE 'America/New_York')
+  WHERE facility_id=v_facility AND shift_key=v_shift AND effective_to IS NULL;
 
   -- The generator's own read drops them silently. That is the defect, restated
   -- here so the assertion below is clearly about the other half of it.
