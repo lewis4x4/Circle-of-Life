@@ -21,6 +21,11 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { assembleRenewalPackagePayload } from "@/lib/insurance/assemble-renewal-package-payload";
 import { formatRenewalPackagePolicyNumber } from "@/lib/insurance/renewal-packages-display-copy";
+import {
+  INSURANCE_RENEWAL_PACKAGES_LOADING_PROFILE_COPY,
+  resolveInsuranceRenewalPackagesFetchErrorBannerMessage,
+  resolveInsuranceRenewalPackagesOrganizationGapMessage,
+} from "@/lib/insurance/renewal-packages-page-state";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import type { Database } from "@/types/database";
 
@@ -36,6 +41,8 @@ type PackagesData = {
   policies: PolicyMini[];
   rows: PackageRow[];
 };
+
+export { INSURANCE_RENEWAL_PACKAGES_LOADING_PROFILE_COPY };
 
 function firstOfPriorMonth(): string {
   const d = new Date();
@@ -107,14 +114,15 @@ export default function InsuranceRenewalPackagesPage() {
   const rows = data?.rows ?? [];
 
   const loading = authLoading || isPending;
-  const loadError =
-    !authLoading && !organizationId
-      ? "Organization missing on profile."
-      : mutationError
-        ? mutationError
-        : error
-          ? error.message
-          : null;
+  const organizationGapMessage = resolveInsuranceRenewalPackagesOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const retryableErrorMessage = resolveInsuranceRenewalPackagesFetchErrorBannerMessage({
+    authLoading,
+    fetchError: mutationError ?? error?.message ?? null,
+  });
 
   const canMutate = canMutateFinance(appRole as Database["public"]["Enums"]["app_role"]);
 
@@ -168,9 +176,21 @@ export default function InsuranceRenewalPackagesPage() {
         </p>
       </div>
 
-      {loadError ? (
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {INSURANCE_RENEWAL_PACKAGES_LOADING_PROFILE_COPY}
+        </p>
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {retryableErrorMessage ? (
         <AdminLiveDataFallbackNotice
-          message={loadError}
+          message={retryableErrorMessage}
           onRetry={() => void queryClient.invalidateQueries({ queryKey: packagesQueryKey })}
         />
       ) : null}
@@ -266,7 +286,9 @@ export default function InsuranceRenewalPackagesPage() {
           {loading ? (
             <p className="text-sm text-slate-500">Loading…</p>
           ) : rows.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No renewal data packages yet.</p>
+            organizationId ? (
+              <p className="text-sm text-slate-600 dark:text-slate-400">No renewal data packages yet.</p>
+            ) : null
           ) : (
             <Table>
               <TableHeader>

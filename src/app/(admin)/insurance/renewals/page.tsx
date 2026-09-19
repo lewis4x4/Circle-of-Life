@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -12,12 +13,20 @@ import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { formatInsuranceRenewalTargetDate } from "@/lib/insurance/renewals-display-copy";
 import {
+  INSURANCE_RENEWALS_LOADING_LIST_COPY,
+  INSURANCE_RENEWALS_LOADING_PROFILE_COPY,
+  resolveInsuranceRenewalsFetchErrorBannerMessage,
+  resolveInsuranceRenewalsOrganizationGapMessage,
+} from "@/lib/insurance/renewals-page-state";
+import {
   INSURANCE_HUB_LIST_LIMIT,
   INSURANCE_RENEWALS_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 
 type Row = Database["public"]["Tables"]["insurance_renewals"]["Row"];
+
+export { INSURANCE_RENEWALS_LOADING_PROFILE_COPY, INSURANCE_RENEWALS_LOADING_LIST_COPY };
 
 export default function InsuranceRenewalsPage() {
   const supabase = createClient();
@@ -44,12 +53,15 @@ export default function InsuranceRenewalsPage() {
   });
 
   const loading = authLoading || isPending;
-  const loadError =
-    !authLoading && !organizationId
-      ? "Organization missing on profile."
-      : error
-        ? error.message
-        : null;
+  const organizationGapMessage = resolveInsuranceRenewalsOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveInsuranceRenewalsFetchErrorBannerMessage({
+    authLoading,
+    fetchError: error?.message ?? null,
+  });
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -68,11 +80,23 @@ export default function InsuranceRenewalsPage() {
           </div>
         </header>
 
-        {loadError && (
-          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-            {loadError}
+        {authLoading ? (
+          <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+            {INSURANCE_RENEWALS_LOADING_PROFILE_COPY}
           </p>
-        )}
+        ) : null}
+
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {fetchErrorBannerMessage ? (
+          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {fetchErrorBannerMessage}
+          </p>
+        ) : null}
 
         <div className="p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/5 pl-2">
@@ -84,7 +108,9 @@ export default function InsuranceRenewalsPage() {
 
            <MotionList className="space-y-3">
              {loading ? (
-               <p className="text-sm font-mono text-slate-500 pl-2">Loading renewals…</p>
+               <p className="text-sm font-mono text-slate-500 pl-2" role="status" aria-live="polite">
+                 {INSURANCE_RENEWALS_LOADING_LIST_COPY}
+               </p>
              ) : rows.length === 0 ? (
                <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Renewals Found</p>
