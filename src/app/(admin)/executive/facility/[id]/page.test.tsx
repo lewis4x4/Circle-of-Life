@@ -234,7 +234,8 @@ describe("ExecutiveFacilityDetailPage header and context", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Anon Facility" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toHaveTextContent("Executive overview/Anon Facility");
     expect(screen.getByText("Facility overview")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Anon Entity/ })).toHaveAttribute("href", `/admin/executive/entity/${ENTITY_ID}`);
+    // Entity details resolve in a separate request after the facility heading.
+    expect(await screen.findByRole("link", { name: /Anon Entity/ })).toHaveAttribute("href", `/admin/executive/entity/${ENTITY_ID}`);
     expect(screen.queryByText(/same engine as the executive overview/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Scoped facility/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Source modules/)).not.toBeInTheDocument();

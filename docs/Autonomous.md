@@ -928,3 +928,9 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 - Recovered ownerless open tasks when the roster arrives after generation; preserved assigned/claimed/completed/closed tasks and clinical timing.
 - Proof: old writer fails the expanded assignment acceptance; correction recovers 18 original tasks and primary assignments. [Required segment gate PASS](../test-results/agent-gates/2026-09-19T20-51-43-930Z-SMART-ROUNDING-ASSIGNMENT-RECOVERY-20260919.json).
 - Source-only holds remain. Final-head green CI required before merge.
+
+## RECORD — Smart Rounding CI entity request (2026-09-19)
+
+- Segment: `SMART-ROUNDING-CI-ENTITY-20260919`; mission alignment: `pass`.
+- Existing executive-facility test now awaits the independently loaded entity link instead of assuming the facility heading signals its readiness.
+- 20 focused tests passed; [required segment gate PASS](../test-results/agent-gates/2026-09-19T21-06-24-222Z-SMART-ROUNDING-CI-ENTITY-20260919.json). Product behavior and source-only deployment boundary unchanged.
