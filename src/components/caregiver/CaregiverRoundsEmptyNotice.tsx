@@ -1,33 +1,27 @@
-import type { CaregiverRoundsEmptyCopy } from "@/lib/rounding/col-discovery-round-cadence";
+import type { CaregiverRoundsEmptyCopy } from "@/lib/rounding/caregiver-rounds-copy";
 
 type CaregiverRoundsEmptyNoticeProps = {
   copy: CaregiverRoundsEmptyCopy;
-  /** Optional adjacent cadence reminder for the scoped facility. */
-  cadenceReminder?: string | null;
 };
 
-export function CaregiverRoundsEmptyNotice({ copy, cadenceReminder }: CaregiverRoundsEmptyNoticeProps) {
+/**
+ * The caregiver queue's empty state. Two lines, left aligned, and it says what
+ * would fill the queue.
+ *
+ * The cadence reminder that used to sit beside it is gone. It named a person,
+ * it read the cadence off a hardcoded list keyed by facility name, and a
+ * caregiver with nothing in their queue does not need to be told the times:
+ * they need to be told who to ask.
+ */
+export function CaregiverRoundsEmptyNotice({ copy }: CaregiverRoundsEmptyNoticeProps) {
   return (
-    <div className="space-y-3">
-      <section
-        aria-label="Rounding queue status"
-        className="rounded-lg border border-dashed border-border bg-muted/20 p-4"
-        role="status"
-      >
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground">{copy.why}</span>
-          {" — "}
-          {copy.guidance}
-        </p>
-      </section>
-      {cadenceReminder ? (
-        <section
-          aria-label="Jessica discovery cadence reminder"
-          className="rounded-lg border border-border bg-card px-4 py-3"
-        >
-          <p className="text-[13px] leading-relaxed text-muted-foreground">{cadenceReminder}</p>
-        </section>
-      ) : null}
-    </div>
+    <section
+      aria-label="Rounding queue status"
+      className="rounded-lg border border-border bg-card px-4 py-4"
+      role="status"
+    >
+      <p className="text-sm font-medium text-foreground">{copy.why}</p>
+      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{copy.guidance}</p>
+    </section>
   );
 }

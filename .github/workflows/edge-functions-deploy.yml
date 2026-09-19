@@ -148,15 +148,23 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Validate deploy configuration
-        if: github.event_name == 'push' && steps.detect.outputs.count != '0'
+        if: github.event_name == 'push' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
         shell: bash
         run: |
           set -euo pipefail
           test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "SUPABASE_ACCESS_TOKEN is missing" >&2; exit 1; }
           test -n "${SUPABASE_PROJECT_REF:-}" || { echo "SUPABASE_PROJECT_REF is missing" >&2; exit 1; }
 
+      - name: Target schema is ready for this source
+        if: github.event_name == 'push' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
+        run: node scripts/check-migration-ledger.mjs --project "$SUPABASE_PROJECT_REF"
+
+      - name: Record source-only release hold
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[skip deploy]')
+        run: echo 'Source merged. Edge deployment is explicitly held pending approved schema and runtime activation.' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Deploy changed functions
-        if: github.event_name == 'push' && steps.detect.outputs.count != '0'
+        if: github.event_name == 'push' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
         shell: bash
         run: |
           set -euo pipefail
@@ -190,7 +198,7 @@ jobs:
               '',
               count === 0
                 ? 'No deployable function directories were detected.'
-                : `On merge to \`main\`, this workflow will deploy:\n${functions.split('\n').map((fn) => `- \`${fn}\``).join('\n')}`,
+                : `After target migration parity, this workflow will deploy on merge unless the merge explicitly carries \`[skip deploy]\`:\n${functions.split('\n').map((fn) => `- \`${fn}\``).join('\n')}`,
               '',
               '_Direct pushes to main skip PR comments and write the same summary to the workflow step summary._',
             ].join('\n');

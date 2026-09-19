@@ -30,17 +30,30 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 function response(body: object, status = 200) { return new Response(JSON.stringify(body), { status }); }
+const NOTE_LABEL = "Note, if there is something to add";
+const REASON_LABEL = "Reason this went in after the window";
+const VOCABULARY = {
+  location: [{ code: "dining_room", label: "Dining Room" }],
+  position: [{ code: "sitting", label: "Sitting" }],
+  state: [{ code: "eating_meal", label: "Eating Meal/Snack" }],
+  meal_intake: [{ code: "ate_well", label: "Ate well" }],
+  mood_state: [{ code: "pleasant", label: "Pleasant" }],
+  med_response: [{ code: "took_meds", label: "Took meds" }],
+};
 function installFetch(complete: (url: string, init?: RequestInit) => unknown) {
   vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
     if (url.endsWith("/complete")) return complete(url, init);
-    if (url.includes("vocabulary")) return response({});
+    if (url.includes("vocabulary")) return response(VOCABULARY);
     return response({ tasks: [{ id: mocks.taskId, due_at: "2026-09-07T12:00:00Z", derived_status: "due_now", residents: { id: mocks.residentId, first_name: "Synthetic", last_name: "Resident" } }] });
   }));
 }
 async function fillAndSubmit() {
   fireEvent.click(await screen.findByRole("radio", { name: "Distressed" }));
-  fireEvent.change(screen.getByPlaceholderText("Add exception or intervention details when needed"), { target: { value: "Original distressed observation" } });
-  fireEvent.click(screen.getByRole("button", { name: "Complete round" }));
+  fireEvent.click(await screen.findByRole("radio", { name: "Dining Room" }));
+  fireEvent.click(screen.getByRole("radio", { name: "Eating Meal/Snack" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Ate well" }));
+  fireEvent.change(screen.getByLabelText(NOTE_LABEL), { target: { value: "Original distressed observation" } });
+  fireEvent.click(screen.getByRole("button", { name: "Record check" }));
 }
 function submitted(complete: ReturnType<typeof vi.fn>, index = 0): CompletionPayload { return JSON.parse(complete.mock.calls[index][1].body); }
 
@@ -52,12 +65,11 @@ describe("caregiver completion delivery with the real observation form", () => {
     installFetch(complete); render(<Page />); await fillAndSubmit();
     await screen.findByText(failure === "server failure" ? "Save failed" : "Outbox unavailable; keep draft open");
     expect(screen.getByRole("radio", { name: "Awake" })).toBeDisabled();
-    expect(screen.getByPlaceholderText("Add exception or intervention details when needed")).toBeDisabled();
-    expect(screen.getByPlaceholderText("Required only for late entries")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Record" })).toBeDisabled();
+    expect(screen.getByLabelText(NOTE_LABEL)).toBeDisabled();
+    expect(screen.queryByLabelText(REASON_LABEL)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "Awake" }));
-    fireEvent.change(screen.getByPlaceholderText("Add exception or intervention details when needed"), { target: { value: "Changed clinical observation" } });
-    fireEvent.click(screen.getByRole("button", { name: "Complete round" }));
+    fireEvent.change(screen.getByLabelText(NOTE_LABEL), { target: { value: "Changed clinical observation" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record check" }));
     await waitFor(() => expect(complete).toHaveBeenCalledTimes(2));
     expect(submitted(complete, 1)).toEqual(submitted(complete));
     expect(submitted(complete)).toMatchObject({ quickStatus: "distressed", note: "Original distressed observation", retryOwner: { userId: "operator", sessionId: mocks.sessionId, organizationId: "org", facilityId: "facility" } });
@@ -68,14 +80,18 @@ describe("caregiver completion delivery with the real observation form", () => {
     const complete = vi.fn().mockImplementationOnce(async () => response({ error: "Add delayed reason", reasonRequired: true }, status))
       .mockImplementation(async () => response({ error: "Save failed" }, 500));
     installFetch(complete); render(<Page />); await fillAndSubmit(); await screen.findByText("Add delayed reason");
-    const reason = screen.getByPlaceholderText("Required only for late entries");
-    if (status === 400) expect(reason).toBeEnabled(); else expect(reason).toBeDisabled();
+    if (status === 400) {
+      const reason = screen.getByLabelText(REASON_LABEL);
+      expect(reason).toBeEnabled();
+      fireEvent.change(reason, { target: { value: "Emergency assistance delayed entry" } });
+    } else {
+      expect(screen.queryByLabelText(REASON_LABEL)).not.toBeInTheDocument();
+    }
     expect(screen.getByRole("radio", { name: "Awake" })).toBeDisabled();
-    fireEvent.change(reason, { target: { value: "Emergency assistance delayed entry" } });
-    fireEvent.click(screen.getByRole("button", { name: "Complete round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record check" }));
     await screen.findByText("Save failed");
     expect(submitted(complete, 1)).toEqual({ ...submitted(complete), lateReason: status === 400 ? "Emergency assistance delayed entry" : null });
-    expect(reason).toBeDisabled();
+    expect(screen.queryByLabelText(REASON_LABEL)).not.toBeInTheDocument();
   });
 
   it("queues precisely the original online request and owner after a lost response", async () => {
@@ -83,12 +99,12 @@ describe("caregiver completion delivery with the real observation form", () => {
     installFetch(complete); render(<Page />); await fillAndSubmit();
     await screen.findByText(/Connection lost. Round queued/);
     expect(mocks.queue).toHaveBeenCalledWith("task", "resident", submitted(complete), { ownerUserId: "operator", organizationId: "org", facilityId: "facility" });
-    expect(screen.queryByRole("button", { name: "Complete round" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record check" })).not.toBeInTheDocument();
   });
 
   it("queues an offline observation using the captured session without a network authority call", async () => {
     const complete = vi.fn(); installFetch(complete); render(<Page />);
-    await screen.findByRole("button", { name: "Complete round" });
+    await screen.findByRole("button", { name: "Record check" });
     mocks.client.rpc.mockRejectedValue(new TypeError("Failed to fetch"));
     vi.stubGlobal("navigator", { onLine: false });
     await fillAndSubmit(); await screen.findByText(/Round queued for sync/);
@@ -101,7 +117,7 @@ describe("caregiver completion delivery with the real observation form", () => {
     installFetch(complete); render(<Page />); await fillAndSubmit();
     await screen.findByText(/retained in the Outbox/);
     expect(mocks.queue).toHaveBeenCalledWith("task", "resident", submitted(complete), expect.any(Object));
-    expect(screen.queryByRole("button", { name: "Complete round" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record check" })).not.toBeInTheDocument();
   });
 
   it("restores the original observation across route changes and unmounts", async () => {
@@ -111,8 +127,8 @@ describe("caregiver completion delivery with the real observation form", () => {
     expect(await screen.findByRole("radio", { name: "Awake" })).toBeEnabled();
     view.unmount(); mocks.taskId = "task"; mocks.residentId = "resident"; render(<Page />);
     expect(await screen.findByRole("radio", { name: "Distressed" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByPlaceholderText("Add exception or intervention details when needed")).toHaveValue("Original distressed observation");
-    fireEvent.click(screen.getByRole("button", { name: "Complete round" }));
+    expect(screen.getByLabelText(NOTE_LABEL)).toHaveValue("Original distressed observation");
+    fireEvent.click(screen.getByRole("button", { name: "Record check" }));
     await waitFor(() => expect(complete).toHaveBeenCalledTimes(2)); expect(submitted(complete, 1)).toEqual(submitted(complete));
   });
 
@@ -129,7 +145,7 @@ describe("caregiver completion delivery with the real observation form", () => {
     expect(screen.queryByDisplayValue("Original distressed observation")).not.toBeInTheDocument();
     Object.assign(mocks, original); view.unmount(); render(<Page />);
     expect(await screen.findByRole("radio", { name: "Distressed" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Complete round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record check" }));
     await waitFor(() => expect(complete).toHaveBeenCalledTimes(2)); expect(submitted(complete, 1)).toEqual(submitted(complete));
   });
 
@@ -137,7 +153,7 @@ describe("caregiver completion delivery with the real observation form", () => {
     const complete = vi.fn().mockImplementation(async () => response({ error: "Save failed" }, 500));
     installFetch(complete); render(<Page />); await fillAndSubmit(); await screen.findByText("Save failed");
     mocks.sessionId = "changed-session";
-    fireEvent.click(screen.getByRole("button", { name: "Complete round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record check" }));
     await screen.findByText(/account or session changed/);
     expect(complete).toHaveBeenCalledOnce(); expect(mocks.queue).not.toHaveBeenCalled();
   });
@@ -147,11 +163,11 @@ describe("caregiver completion delivery with the real observation form", () => {
       .mockImplementation(async () => response({ ok: true }));
     installFetch(complete); const view = render(<Page />); await fillAndSubmit();
     await screen.findByText(/Save acknowledgment was incomplete/);
-    fireEvent.click(screen.getByRole("button", { name: "Complete round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record check" }));
     await screen.findByText("Round saved successfully.");
     expect(submitted(complete, 1)).toEqual(submitted(complete));
     view.unmount(); render(<Page />); await screen.findByText("Round saved successfully.");
-    expect(screen.queryByRole("button", { name: "Complete round" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record check" })).not.toBeInTheDocument();
     expect(complete).toHaveBeenCalledTimes(2);
   });
   it("does not send or queue under a replacement session after a lost in-flight response", async () => {
@@ -174,10 +190,13 @@ describe("caregiver completion delivery with the real observation form", () => {
     expect(await screen.findByRole("radio", { name: "Awake" })).toBeEnabled();
     await act(async () => finishSave(response({ ok: true })));
     expect(screen.queryByText("Round saved successfully.")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Complete round" })).toBeEnabled();
+    // The other task's surface is live and untapped, so Record is present and
+    // waiting on its own chips rather than carrying the first task's state.
+    expect(screen.getByRole("button", { name: "Record check" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Awake" })).toBeEnabled();
     mocks.taskId = "task"; mocks.residentId = "resident"; view.rerender(<Page />);
     await screen.findByText("Round saved successfully.");
-    expect(screen.queryByRole("button", { name: "Complete round" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record check" })).not.toBeInTheDocument();
   });
 
 });

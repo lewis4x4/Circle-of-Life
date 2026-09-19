@@ -13,8 +13,8 @@ import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
 import {
   deriveCaregiverRoundsQueueState,
   describeCaregiverRoundsEmptyState,
-  describeLiveBoardCadenceReminder,
-} from "@/lib/rounding/col-discovery-round-cadence";
+} from "@/lib/rounding/caregiver-rounds-copy";
+import { logRoundingQueryFailure } from "@/lib/rounding/rounding-query-error";
 import { cn } from "@/lib/utils";
 
 type TaskApiRow = {
@@ -71,7 +71,7 @@ export default function CaregiverRoundsPage() {
       setFacilityName(resolved.ctx.facilityName);
 
       const response = await fetch(
-        `/api/rounding/tasks?facilityId=${encodeURIComponent(resolved.ctx.facilityId)}&limit=100`,
+        `/api/rounding/tasks?facilityId=${encodeURIComponent(resolved.ctx.facilityId)}&queue=1`,
         {
           cache: "no-store",
         },
@@ -94,7 +94,13 @@ export default function CaregiverRoundsPage() {
         })),
       );
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Could not load rounding queue.");
+      setLoadError(
+        logRoundingQueryFailure(
+          "caregiver.rounds.queue",
+          error,
+          "Your queue could not be loaded. Pull to refresh, or try again in a moment.",
+        ),
+      );
       setTasks([]);
     } finally {
       setLoading(false);
@@ -131,19 +137,13 @@ export default function CaregiverRoundsPage() {
         hasFacility,
         totalTasks: tasks.length,
         activeTaskCount: grouped.activeCount,
-        facilityName,
       }),
-    [facilityName, grouped.activeCount, hasFacility, tasks.length],
+    [grouped.activeCount, hasFacility, tasks.length],
   );
 
   const emptyCopy = useMemo(
     () => (queueState ? describeCaregiverRoundsEmptyState(queueState) : null),
     [queueState],
-  );
-
-  const cadenceReminder = useMemo(
-    () => (facilityName ? describeLiveBoardCadenceReminder(facilityName) : null),
-    [facilityName],
   );
 
   const showGlobalEmpty = queueState != null && !loadError;
@@ -166,7 +166,7 @@ export default function CaregiverRoundsPage() {
     return (
       <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-success" />
-        <p className="text-sm font-medium uppercase tracking-wide">Syncing Rounds…</p>
+        <p className="text-sm font-medium">Syncing rounds…</p>
       </div>
     );
   }
@@ -195,7 +195,7 @@ export default function CaregiverRoundsPage() {
       <div className="mb-2 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Smart Rounds</h1>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="mt-1 text-[13px] font-medium text-muted-foreground">
             {facilityName ? `${facilityName} live queue` : "Live queue"}
           </p>
         </div>
@@ -233,14 +233,7 @@ export default function CaregiverRoundsPage() {
       )}
 
       {(showGlobalEmpty || noFacilityFromError) && facilityEmptyCopy ? (
-        <CaregiverRoundsEmptyNotice copy={facilityEmptyCopy} cadenceReminder={cadenceReminder} />
-      ) : cadenceReminder ? (
-        <section
-          aria-label="Jessica discovery cadence reminder"
-          className="rounded-lg border border-border bg-card px-4 py-3"
-        >
-          <p className="text-[13px] leading-relaxed text-muted-foreground">{cadenceReminder}</p>
-        </section>
+        <CaregiverRoundsEmptyNotice copy={facilityEmptyCopy} />
       ) : null}
 
       {roundingSync.pendingCount > 0 && (
@@ -331,7 +324,7 @@ function MetricPill({
 
   return (
     <div className={cn("flex min-w-[120px] flex-1 flex-col justify-between rounded-lg border px-4 py-3", toneClass)}>
-      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+      <div className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
         <span className={iconColor}>{icon}</span>
         <span>{label}</span>
       </div>
@@ -363,7 +356,7 @@ function Section({
   return (
     <section className="space-y-4 pb-2">
       <div className="flex items-center gap-3 border-b border-border pb-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
         <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground">{count}</span>
       </div>
       {items.length === 0 ? (

@@ -1,6 +1,5 @@
 import type { GeneratedTaskInput, ObservationTaskStatus, PlanRuleInput } from "@/lib/rounding/types";
-import { extractDiscreteScheduledTime } from "@/lib/rounding/col-discovery-round-cadence";
-import { calculateObservationTaskStatus } from "@/lib/rounding/update-task-status";
+import { MS_PER_MINUTE } from "@/lib/rounding/duration-units";
 
 type GenerateArgs = {
   organizationId: string;
@@ -17,6 +16,19 @@ type GenerateArgs = {
   rule: PlanRuleInput;
   now?: string | Date;
 };
+
+/**
+ * The wall-clock time a discrete rule carries, when it carries one.
+ *
+ * Inlined from `col-discovery-round-cadence.ts`, which is gone: that file
+ * resolved a facility by name against a hardcoded list and held the 2026-08-14
+ * observation times as literals. This is the only thing in it this generator
+ * ever used, and it reads a rule's own schema rather than any cadence.
+ */
+function extractDiscreteScheduledTime(rule: PlanRuleInput): string | null {
+  const value = rule.requiredFieldsSchema?.scheduled_time;
+  return typeof value === "string" ? value : null;
+}
 
 function toDate(value: string | Date): Date {
   return value instanceof Date ? value : new Date(value);
@@ -48,7 +60,7 @@ function normalizeDaypartWindow(day: Date, startTime?: string | null, endTime?: 
   const start = combineDateAndTime(day, startTime);
   const end = combineDateAndTime(day, endTime);
 
-  // Overnight windows, e.g. 20:00 -> 06:00.
+  // An overnight window whose end reads earlier than its start ends the next day.
   if (end.getTime() <= start.getTime()) {
     end.setDate(end.getDate() + 1);
   }
@@ -71,12 +83,23 @@ function pushGeneratedTask(
   args: GenerateArgs,
   dueAt: Date,
 ) {
-  const graceEndsAt = new Date(dueAt.getTime() + (args.rule.graceMinutes ?? 15) * 60 * 1000);
-  const status = calculateObservationTaskStatus({
-    dueAt,
-    graceEndsAt,
-    now: args.now,
-  });
+  // resident_observation_plan_rules.grace_minutes is NOT NULL, so the rule
+  // always carries its own grace. A default here would be a second copy of the
+  // column default, which is the literal acceptance 19 exists to forbid; zero
+  // is the honest answer if a caller ever omits it.
+  const graceEndsAt = new Date(dueAt.getTime() + (args.rule.graceMinutes ?? 0) * MS_PER_MINUTE);
+
+  // Every generated task is written `upcoming`, which is what the two SQL
+  // generators do (`public.record_cadence_observation_tasks` and
+  // `public.generate_monitoring_order_tasks` both insert `'upcoming'`).
+  //
+  // This used to derive a band at generation time from constants that stopped
+  // governing anything when Part 4 replaced the escalation engine. Deriving it
+  // here was also the wrong layer: a generated task moves through the bands
+  // afterwards, driven by `public.advance_observation_task_lapse` and
+  // `public.record_observation_escalation_rung` from configuration rows, and a
+  // status stamped at generation is stale the moment it is written.
+  const status: ObservationTaskStatus = "upcoming";
 
   tasks.push({
     organizationId: args.organizationId,
@@ -140,7 +163,11 @@ export function generateObservationTasks(args: GenerateArgs): GeneratedTaskInput
     return [];
   }
 
-  const intervalMinutes = args.rule.intervalMinutes ?? (args.rule.intervalType === "per_shift" ? 8 * 60 : null);
+  // A `per_shift` rule with no interval carries no cadence of its own. It used
+  // to fall back to an eight hour shift, which is the retired three daypart
+  // model; shift length is now facility configuration and belongs to
+  // `facility_shift_definitions`, never to a default in code.
+  const intervalMinutes = args.rule.intervalMinutes;
 
   if (!intervalMinutes || intervalMinutes <= 0) {
     return [];
@@ -170,7 +197,7 @@ export function generateObservationTasks(args: GenerateArgs): GeneratedTaskInput
 
     while (cursor.getTime() <= daypart.end.getTime() && cursor.getTime() <= windowEnd.getTime()) {
       pushGeneratedTask(tasks, args, new Date(cursor));
-      cursor = new Date(cursor.getTime() + intervalMinutes * 60 * 1000);
+      cursor = new Date(cursor.getTime() + intervalMinutes * MS_PER_MINUTE);
     }
 
     dayCursor.setDate(dayCursor.getDate() + 1);

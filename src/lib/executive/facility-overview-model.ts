@@ -52,10 +52,10 @@ export const FACILITY_ROUTES = {
   certifications: "/admin/certifications",
   infectionControl: "/admin/infection-control",
   rounding: "/admin/rounding",
-  watches: "/admin/rounding/watches",
-  escalations: "/admin/rounding/escalations",
+  watches: "/admin/rounding/monitoring-orders",
+  escalations: "/admin/rounding?filter=escalated",
   integrity: "/admin/rounding/integrity",
-  safety: "/admin/rounding/safety",
+  safety: "/admin/rounding/watchlist",
   insurance: "/admin/insurance",
 } as const;
 

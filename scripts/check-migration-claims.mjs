@@ -37,6 +37,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { readdirSync } from "node:fs";
 import process from "node:process";
 
 const MIGRATIONS_PREFIX = "supabase/migrations/";
@@ -80,23 +81,16 @@ function migrationsOnBase(baseRef) {
 
 /** Migrations this branch adds that the base branch does not have. */
 function migrationsAddedHere(baseRef) {
-  const diff = run("git", [
-    "diff",
-    "--name-only",
-    "--diff-filter=A",
-    `${baseRef}...HEAD`,
-    "--",
-    MIGRATIONS_PREFIX,
-  ]);
-  if (!diff.ok) fail(`could not diff against ${baseRef}: ${diff.stderr.trim()}`);
+  const base = migrationsOnBase(baseRef);
+  return localMigrations().filter(({ file, number }) => base.get(number) !== file);
+}
 
-  const added = [];
-  for (const line of diff.stdout.split("\n")) {
-    const file = line.trim().slice(MIGRATIONS_PREFIX.length);
+// Include working tree allocations, even before the segment is committed.
+function localMigrations() {
+  return readdirSync(MIGRATIONS_PREFIX).flatMap((file) => {
     const match = file.match(NAME_PATTERN);
-    if (match) added.push({ file, number: match[1] });
-  }
-  return added;
+    return match ? [{ file, number: match[1] }] : [];
+  });
 }
 
 /**
@@ -113,7 +107,7 @@ function claimsFromOpenPullRequests(selfPrNumber) {
     "--limit",
     "100",
     "--json",
-    "number,title,files",
+    "number,title",
   ]);
   if (!listed.ok) return null;
 
@@ -126,9 +120,12 @@ function claimsFromOpenPullRequests(selfPrNumber) {
 
   const claims = new Map();
   for (const pull of pulls) {
-    if (selfPrNumber && String(pull.number) === String(selfPrNumber)) continue;
-    for (const entry of pull.files ?? []) {
-      const filePath = entry.path ?? "";
+    if (!wantNext && selfPrNumber && String(pull.number) === String(selfPrNumber)) continue;
+    // GraphQL's embedded files connection can stop before a large PR's SQL.
+    // Fetch every REST page rather than mistaking an incomplete list for none.
+    const files = run("gh", ["api", "--paginate", `repos/{owner}/{repo}/pulls/${pull.number}/files`, "--jq", ".[].filename"]);
+    if (!files.ok) return null;
+    for (const filePath of files.stdout.split("\n")) {
       if (!filePath.startsWith(MIGRATIONS_PREFIX)) continue;
       const match = filePath.slice(MIGRATIONS_PREFIX.length).match(NAME_PATTERN);
       if (!match) continue;
@@ -164,15 +161,22 @@ const baseMigrations = migrationsOnBase(baseRef);
 const selfPr = selfPullRequestNumber();
 const openClaims = noRemote ? null : claimsFromOpenPullRequests(selfPr);
 
+if (!noRemote && !openClaims) {
+  const message = "could not reach the GitHub API (gh missing or unauthenticated) — open PRs were NOT checked";
+  if (process.env.GITHUB_ACTIONS === "true") fail(`${message}. In CI this is a broken gate, not a network hiccup.`);
+  log(`${message}.`);
+}
+
 if (wantNext) {
   let candidate = 1;
   for (const key of baseMigrations.keys()) candidate = Math.max(candidate, Number(key) + 1);
+  for (const { number } of localMigrations()) candidate = Math.max(candidate, Number(number) + 1);
   if (openClaims) {
     for (const key of openClaims.keys()) candidate = Math.max(candidate, Number(key) + 1);
   }
   const padded = String(candidate).padStart(3, "0");
   if (!openClaims) {
-    log("could not reach the GitHub API — this number accounts for merged work only.");
+    log("open PR claims unavailable or explicitly disabled — this number covers main and the working tree only.");
   }
   log(`next free migration number: ${padded}`);
   console.log(padded);
@@ -188,15 +192,6 @@ if (wantNext) {
 // token is always present, so failing to reach the API means the gate is
 // broken rather than the network — say so loudly. `--no-remote` is the escape
 // hatch if the API is ever down long enough to matter.
-if (!noRemote && !openClaims) {
-  const message =
-    "could not reach the GitHub API (gh missing or unauthenticated) — open PRs were NOT checked";
-  if (process.env.GITHUB_ACTIONS === "true") {
-    fail(`${message}. In CI this is a broken gate, not a network hiccup.`);
-  }
-  log(`${message}.`);
-}
-
 const added = migrationsAddedHere(baseRef);
 if (added.length === 0) {
   log(`no new migrations against ${baseRef} — nothing to claim.`);

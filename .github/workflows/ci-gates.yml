@@ -8,7 +8,7 @@ on:
 jobs:
   gates:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,9 +22,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Gate failure regression tests
+        run: node --test scripts/review-gates.test.mjs
+
+      - name: TypeScript and application tests
+        run: npm run typecheck && npm test
+
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+
+      - name: Smart Rounding Edge Function tests
+        run: npm run test:edge
 
       - name: Officer catalog Edge Function tests
         # Not gated behind HAVEN_UI_GATES_ENABLED: the verifier must be proven
@@ -122,20 +131,28 @@ jobs:
           HOMEWOOD_LAUNCH_PASSWORD: ${{ secrets.HOMEWOOD_LAUNCH_PASSWORD }}
 
       - name: Segment gates (security, lint, migrations, build, stress)
-        # Pre-launch: dormant. The build is verified by the Netlify deploy
-        # preview check + the bundle-size workflow; lint + gitleaks + stress
-        # are nice-to-have but not gating until the site goes live.
-        # Flip `vars.HAVEN_UI_GATES_ENABLED` to `'true'` to re-enable.
-        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
-        run: npm run segment:gates -- --segment "ci-${{ github.run_id }}" --no-chaos
+        # Core checks must run even when credentialed browser tests are dormant.
+        run: npm run segment:gates -- --segment "ci-${{ github.run_id }}"
         env:
           CI: true
           # Require Docker-backed migration replay on CI (ubuntu provides Docker)
           REQUIRE_PG_VERIFY: "1"
 
-      - name: Install Playwright Chromium (auth smoke)
-        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
+      - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Smart Rounding component browser regressions
+        # Synthetic component requests need no hosted identity or credentials.
+        run: npx playwright test --config=playwright.smart-rounding-fixture.config.ts
+
+      - name: Upload gate and synthetic browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-rounding-regressions
+          path: |
+            test-results/agent-gates/*-ci-${{ github.run_id }}.json
+            test-results/smart-rounding-fixture/
 
       - name: Route probe + auth smoke
         if: vars.HAVEN_UI_GATES_ENABLED == 'true'
@@ -187,8 +204,8 @@ jobs:
           REQUIRE_PG_VERIFY: "0"
 
       - name: Bundle size snapshot
-        # Depends on `.next/static/` produced by the gated Segment-gates
-        # build step. Pre-launch: dormant alongside Segment gates.
+        # Depends on `.next/static/` produced by the core Segment-gates build.
+        # The dedicated bundle-size workflow also checks every PR.
         if: vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: node scripts/bundle-size-check.mjs
         env:

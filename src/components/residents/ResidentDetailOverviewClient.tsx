@@ -18,6 +18,8 @@ import { ResidentDetailTabStrip, type ResidentDetailHrefConfig } from "@/compone
 import { ResidentPresenceControl } from "@/components/residents/ResidentPresenceControl";
 import { HoldDeclineReturnButton } from "@/components/residents/HoldDeclineReturnButton";
 import { RecordDischargeAction } from "@/components/residents/RecordDischargeAction";
+import { MonitoringOrderAction } from "@/components/rounding/MonitoringOrderAction";
+import { ResidentMonitoringOrderBand } from "@/components/rounding/ResidentMonitoringOrderBand";
 import { ResidentIntakeLinks } from "@/components/resident-intake";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -350,6 +352,15 @@ export function ResidentDetailOverviewClient({
     void load({ silent: true });
   }, [load]);
 
+  // The Monitoring Order band reads its own row, so entering an order has to
+  // tell it to look again; reloading the overview alone would leave the band
+  // showing the state from before the order.
+  const [monitoringOrderToken, setMonitoringOrderToken] = useState(0);
+  const onMonitoringOrderChanged = useCallback(() => {
+    setMonitoringOrderToken((token) => token + 1);
+    void load({ silent: true });
+  }, [load]);
+
   if (loading) {
     return (
       <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
@@ -505,6 +516,15 @@ export function ResidentDetailOverviewClient({
                     confirmed action rather than an option in the presence
                     picker. It is also the event that frees the bed (COL-418). */}
                 <RecordDischargeAction residentId={detail.id} residentName={detail.fullName} onDone={onAfterLog} />
+                {/* Monitoring Order lives here rather than inside Smart
+                    Rounding: the person holding the discharge paperwork opens
+                    the resident, not a module. */}
+                <MonitoringOrderAction
+                  residentId={detail.id}
+                  residentName={detail.fullName}
+                  facilityId={detail.facilityId}
+                  onDone={onMonitoringOrderChanged}
+                />
               </>
             ) : (
               <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
@@ -520,6 +540,8 @@ export function ResidentDetailOverviewClient({
       <div className="-mt-3 grid grid-cols-3 gap-2 md:hidden" aria-label="Documentation actions">
         {logActions}
       </div>
+
+      <ResidentMonitoringOrderBand residentId={detail.id} reloadToken={monitoringOrderToken} />
 
       <div className="w-full shrink-0">
         <ResidentDetailTabStrip hrefs={hrefs} active="overview" />

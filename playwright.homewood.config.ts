@@ -54,5 +54,23 @@ export default defineConfig({
         navigationTimeout: 60_000,
       },
     },
+    {
+      // Spec 25A section 12: the Smart Rounding acceptance items that need a
+      // real database and a real session. Desktop Chrome, because the surfaces
+      // under test are the five operator tabs and the settings tier; the
+      // caregiver capture spec drives the same phone-first component and does
+      // not need the phone viewport to prove what it asserts.
+      //
+      // Off unless SMART_ROUNDING_E2E is set, and once it is set nothing in the
+      // project skips: a missing credential throws. See tests/smart-rounding/_helpers.ts.
+      name: "smart-rounding",
+      testDir: "./tests/smart-rounding",
+      timeout: 120_000,
+      use: {
+        ...devices["Desktop Chrome"],
+        actionTimeout: 30_000,
+        navigationTimeout: 60_000,
+      },
+    },
   ],
 });

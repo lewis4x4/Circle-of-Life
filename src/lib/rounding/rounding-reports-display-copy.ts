@@ -4,9 +4,9 @@
  * Missing facility scope names the gap — never interpolate legacy "selected facility" copy.
  */
 
-import { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY } from "./observation-plan-display-copy";
+import { ROUNDING_SELECT_FACILITY_FIRST_COPY } from "./rounding-scope-copy";
 
-export { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY as ROUNDING_REPORTS_SELECT_FACILITY_FIRST_COPY };
+export { ROUNDING_SELECT_FACILITY_FIRST_COPY as ROUNDING_REPORTS_SELECT_FACILITY_FIRST_COPY };
 
 export const ROUNDING_REPORT_NO_VALUE_COPY = "No value posted";
 export const ROUNDING_REPORTS_NO_FACILITY_NAME_COPY = "No facility name posted";
@@ -33,7 +33,7 @@ const ROUNDING_REPORTS_SUBTITLE_PREFIX =
 /** Page header subtitle — never interpolates "selected facility". */
 export function formatRoundingReportsPageSubtitle(scope: RoundingReportsFacilityScope): string {
   if (scope.kind === "unscoped") {
-    return `${ROUNDING_REPORTS_SUBTITLE_PREFIX}. ${OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY}`;
+    return `${ROUNDING_REPORTS_SUBTITLE_PREFIX}. ${ROUNDING_SELECT_FACILITY_FIRST_COPY}`;
   }
   if (scope.kind === "missing_name") {
     return `${ROUNDING_REPORTS_SUBTITLE_PREFIX}. ${ROUNDING_REPORTS_NO_FACILITY_NAME_COPY}.`;

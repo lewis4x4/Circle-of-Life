@@ -1,0 +1,13 @@
+{
+  "numTotalTestSuites": 1464,
+  "numPassedTestSuites": 1464,
+  "numFailedTestSuites": 0,
+  "numTotalTests": 2948,
+  "numPassedTests": 2948,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "success": true,
+  "command": "npx vitest run --maxWorkers=4 --reporter=json",
+  "scope": "Full application source suite on synchronized locked dependencies; no hosted writes",
+  "testFileCount": 486
+}

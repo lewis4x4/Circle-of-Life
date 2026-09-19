@@ -473,6 +473,12 @@ verify_jwt = false
 [functions."observation-escalation-engine"]
 verify_jwt = false
 
+[functions."watchlist-signal-engine"]
+verify_jwt = false
+
+[functions."cadence-version-activator"]
+verify_jwt = false
+
 [functions."care-event-dispatcher"]
 verify_jwt = false
 

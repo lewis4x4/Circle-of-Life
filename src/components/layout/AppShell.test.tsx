@@ -317,3 +317,18 @@ describe("AppShell all-sections jump list", () => {
     expect(within(jumpList).queryByText("Standup")).not.toBeInTheDocument();
   });
 });
+
+it("marks the same pillar before and after hydration through the rounding rewrite", () => {
+  const activeLinks = (pathname: string) => {
+    pathMock.pathname = pathname;
+    const html = renderToString(<TooltipProvider><AppShell><div>Rounding fixture</div></AppShell></TooltipProvider>);
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    return [...new Set([...container.querySelectorAll('nav[aria-label="Primary"] a[aria-current="page"]')]
+      .map(link => link.textContent?.trim()))];
+  };
+  authMock.loading = false;
+  authMock.appRole = "facility_admin";
+  expect(activeLinks("/admin/v2/rounding")).toEqual(["Clinical", "Smart Rounding"]);
+  expect(activeLinks("/admin/rounding")).toEqual(["Clinical", "Smart Rounding"]);
+});

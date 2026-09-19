@@ -3,7 +3,7 @@
  * Idempotent per (facility, resident, period_start) via DB unique index (migration 071).
  * Edge duplicate: `supabase/functions/_shared/billing/generate-monthly-invoices.ts`.
  *
- * BH-3 (Michelle 2026-07): bill active + hospital_hold + loa; Medicaid catalog rates;
+ * BH-3 (owner decision 2026-07): bill active + hospital_hold + loa; Medicaid catalog rates;
  * admission + discharge proration; due date = 5th of billing month.
  * Private-pay holds bill full monthly rent (not reduced daily bed_hold).
  */
@@ -310,7 +310,7 @@ export async function buildMonthlyInvoicePreview(
   const billingMonthText = String(billingMonth).padStart(2, "0");
   const periodStart = `${billingYear}-${billingMonthText}-01`;
   const periodEnd = `${billingYear}-${billingMonthText}-${String(days).padStart(2, "0")}`;
-  // Michelle: private-pay rent due by the 5th.
+  // Owner decision: private-pay rent due by the 5th.
   const dueDate = `${billingYear}-${billingMonthText}-05`;
 
   type QR<T> = { data: T | null; error: QueryError | null; count?: number | null };
@@ -703,7 +703,7 @@ export async function persistMonthlyInvoicesFromPreview(
           ? "Generated from imported resident monthly rate until a negotiated agreement is confirmed."
           : line.billingSource === "medicaid_provider_rate" ||
               line.billingSource === "medicaid_resident_override"
-            ? "Generated from Medicaid provider / resident override rate (Michelle COL defaults)."
+            ? "Generated from Medicaid provider / resident override rate (COL defaults)."
             : line.presenceStatus === "hospital_hold" || line.presenceStatus === "loa"
               ? "Generated while resident on bed hold — full monthly rent per COL policy."
               : null;

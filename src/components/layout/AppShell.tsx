@@ -146,7 +146,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function AppShellInner({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  // Proxy renders V2 routes under an internal pathname, while hydration reads
+  // the public URL. Navigation must use the same identity on both renders.
+  const pathname = usePathname().replace(/^\/admin\/v2(?=\/|$)/, "/admin");
   const router = useRouter();
   const { navigate, isNavigating } = useNavigationPending();
   const { setTheme, theme } = useTheme();

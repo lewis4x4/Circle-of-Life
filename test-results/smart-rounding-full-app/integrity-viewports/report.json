@@ -1,0 +1,55 @@
+{
+  "timestamp": "2026-09-19T20:25:25.449Z",
+  "baseUrl": "http://127.0.0.1:4398",
+  "authenticatedContextProvided": false,
+  "routes": [
+    "/admin/rounding/integrity"
+  ],
+  "authentication": "provided-storage-state",
+  "readySelector": "text=expected windows recorded",
+  "viewports": [
+    "375",
+    "768",
+    "1024",
+    "1440"
+  ],
+  "shots": [
+    {
+      "route": "/admin/rounding/integrity",
+      "viewport": "375",
+      "url": "http://127.0.0.1:4398/admin/rounding/integrity",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4398/admin/rounding/integrity",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_rounding_integrity-375.png"
+    },
+    {
+      "route": "/admin/rounding/integrity",
+      "viewport": "768",
+      "url": "http://127.0.0.1:4398/admin/rounding/integrity",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4398/admin/rounding/integrity",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_rounding_integrity-768.png"
+    },
+    {
+      "route": "/admin/rounding/integrity",
+      "viewport": "1024",
+      "url": "http://127.0.0.1:4398/admin/rounding/integrity",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4398/admin/rounding/integrity",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_rounding_integrity-1024.png"
+    },
+    {
+      "route": "/admin/rounding/integrity",
+      "viewport": "1440",
+      "url": "http://127.0.0.1:4398/admin/rounding/integrity",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:4398/admin/rounding/integrity",
+      "title": "Haven — Circle of Life",
+      "screenshot": "test-results/design-review/screenshots/_admin_rounding_integrity-1440.png"
+    }
+  ],
+  "errors": []
+}

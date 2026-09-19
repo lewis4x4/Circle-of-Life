@@ -14,6 +14,7 @@ import {
   RotateCw,
 } from "lucide-react";
 
+import { logRoundingQueryFailure } from "@/lib/rounding/rounding-query-error";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { CompletionPayload, ObservationQuickStatus, ObservationExceptionType } from "@/lib/rounding/types";
@@ -112,7 +113,15 @@ export function QuickCheckDrawer(props: QuickCheckDrawerProps) {
       void Promise.resolve().then(() => currentOwner(task!)).then((next) => {
         if (active && attempt === generation) setOwner(next);
       }).catch((error: unknown) => {
-        if (active && attempt === generation) setAuthorityError(error instanceof Error ? error.message : "Sign in required.");
+        if (active && attempt === generation) {
+          setAuthorityError(
+            logRoundingQueryFailure(
+              "rounding.quick_check.authority",
+              error,
+              "Your session could not be confirmed. Sign in again to record a check.",
+            ),
+          );
+        }
       });
     }
     resolveOwner();
@@ -367,7 +376,7 @@ function ScopedQuickCheckDrawer({
             <fieldset disabled={!!pending} className="min-w-0 space-y-5">
             {/* Step 1: Quick Status — the most important tap */}
             <div className="min-w-0">
-              <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Status</label>
+              <label className="mb-2 block text-[12px] font-medium text-slate-400">Status</label>
               <div
                 role="radiogroup"
                 aria-label="Quick status"
@@ -397,7 +406,7 @@ function ScopedQuickCheckDrawer({
             {/* Step 2: Location + Position — two taps */}
             <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-3">
               <div className="min-w-0">
-                <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Location</label>
+                <label className="mb-2 block text-[12px] font-medium text-slate-400">Location</label>
                 <div className="flex min-w-0 flex-wrap gap-1.5">
                   {LOCATIONS.map((loc) => (
                     <button
@@ -417,7 +426,7 @@ function ScopedQuickCheckDrawer({
                 </div>
               </div>
               <div className="min-w-0">
-                <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Position</label>
+                <label className="mb-2 block text-[12px] font-medium text-slate-400">Position</label>
                 <div className="flex min-w-0 flex-wrap gap-1.5">
                   {POSITIONS.map((pos) => (
                     <button
@@ -440,7 +449,7 @@ function ScopedQuickCheckDrawer({
 
             {/* Quick intervention toggles — always visible */}
             <div className="min-w-0">
-              <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Interventions</label>
+              <label className="mb-2 block text-[12px] font-medium text-slate-400">Interventions</label>
               <div className="grid min-w-0 grid-cols-1 gap-2 min-[400px]:grid-cols-2">
                 <InterventionToggle icon={<Droplets className="h-3.5 w-3.5" />} label="Hydration offered" checked={hydration} onChange={setHydration} />
                 <InterventionToggle icon={<Bath className="h-3.5 w-3.5" />} label="Toileting assisted" checked={toileting} onChange={setToileting} />
@@ -452,13 +461,13 @@ function ScopedQuickCheckDrawer({
             {/* Expanded detail section — only when abnormal */}
             {showDetails && (
               <div className="min-w-0 space-y-3 rounded-xl border border-amber-700/30 bg-amber-950/10 p-3 sm:p-4">
-                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-amber-400">
+                <div className="flex items-center gap-2 text-[12px] font-medium text-amber-300">
                   <AlertTriangle className="h-3.5 w-3.5" />
                   Requires detail
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5 block">Exception type</label>
+                  <label className="mb-1.5 block text-[12px] font-medium text-slate-400">Exception type</label>
                   <div className="flex min-w-0 flex-wrap gap-1.5">
                     {EXCEPTION_OPTIONS.map((opt) => (
                       <button
@@ -479,7 +488,7 @@ function ScopedQuickCheckDrawer({
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5 block">Note</label>
+                  <label className="mb-1.5 block text-[12px] font-medium text-slate-400">Note</label>
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}

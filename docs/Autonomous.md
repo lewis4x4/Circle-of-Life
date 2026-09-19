@@ -903,3 +903,34 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **BUILD** | Migration `415_census_daily_log_writer.sql` (`public.record_census_daily_log`, service_role only, today/yesterday ET only, idempotent per facility + day). Edge Function `daily-census-log` (`x-cron-secret` = `DAILY_CENSUS_LOG_SECRET`), scheduled 04:30 + 05:30 UTC with a 00:00-America/New_York gate so exactly one firing records per day. `src/lib/executive/resident-days.ts` sums the window day by day; a day any in-scope facility missed is not counted as measured. `incidentRateBasis` drops "Estimated" only when every day of the window is recorded at every facility in scope. |
 | **Evidence** | Gate `test-results/agent-gates/2026-09-17T00-10-24-516Z-col-414-resident-days.json` PASS (`--ui`: design review 4 screenshots, axe on the executive route). Earlier non-UI run `…T00-06-02-921Z…` also PASS. Unit: 5,856 tests across 771 files. The migration was exercised against a throwaway PostgreSQL 17 cluster with a fixture schema (counts, idempotent re-run, yesterday allowed, two days back refused). |
 | **Not done** | The migration is not applied to production or staging and the Edge Function is not deployed; `scripts/census/cron-schedules.sql` is not installed. Until the job has run for 30 consecutive days the tile stays "Estimated" — by design, and the disclosure names how many days were counted. |
+
+
+## RECORD — Smart Rounding review and source integration (2026-09-19)
+
+| Field | Value |
+|-------|-------|
+| Segment | `SMART-ROUNDING-REVIEW-20260919` |
+| Mission alignment | `pass` — historical compliance preserves facility/configuration boundaries; configuration gaps and unavailable delivery channels remain explicit. |
+| Change | PR #595 review; forward migrations 433–434, reliable delivery and generation, complete/scoped report reads, caregiver capture and route hydration, mandatory CI/replay/browser regression gates. |
+| Evidence | [Review handoff](../HANDOFFS/2026-09-19__smart-rounding-review.md); [PASS gate](../test-results/agent-gates/2026-09-19T20-20-08-587Z-SMART-ROUNDING-REVIEW-20260919.json); [authenticated local proof](../test-results/smart-rounding-full-app/proof.json). Earlier failed gate artifacts retained. |
+| Release boundary | Source integration only. Read-only hosted ledgers: staging through432; production through416. No hosted schema, cron, secret, or deployment changes. Production activation requires the existing human gate; A3 depth UAT is not closed. |
+
+## RECORD — Smart Rounding CI accessibility budget (2026-09-19)
+
+- Segment: `SMART-ROUNDING-CI-A11Y-20260919`; mission alignment: `pass`.
+- Existing facility-profile axe test exceeded its five-second CI budget. Set a localized 15-second budget, preserving the complete page scan and assertions.
+- Verification: 16 focused tests passed; [required segment gate PASS](../test-results/agent-gates/2026-09-19T20-41-39-205Z-SMART-ROUNDING-CI-A11Y-20260919.json). Final-head CI remains required before merge.
+- Source-only deployment holds remain unchanged.
+
+## RECORD — Smart Rounding late-roster recovery (2026-09-19)
+
+- Segment: `SMART-ROUNDING-ASSIGNMENT-RECOVERY-20260919`; mission alignment: `pass`.
+- Recovered ownerless open tasks when the roster arrives after generation; preserved assigned/claimed/completed/closed tasks and clinical timing.
+- Proof: old writer fails the expanded assignment acceptance; correction recovers 18 original tasks and primary assignments. [Required segment gate PASS](../test-results/agent-gates/2026-09-19T20-51-43-930Z-SMART-ROUNDING-ASSIGNMENT-RECOVERY-20260919.json).
+- Source-only holds remain. Final-head green CI required before merge.
+
+## RECORD — Smart Rounding CI entity request (2026-09-19)
+
+- Segment: `SMART-ROUNDING-CI-ENTITY-20260919`; mission alignment: `pass`.
+- Existing executive-facility test now awaits the independently loaded entity link instead of assuming the facility heading signals its readiness.
+- 20 focused tests passed; [required segment gate PASS](../test-results/agent-gates/2026-09-19T21-06-24-222Z-SMART-ROUNDING-CI-ENTITY-20260919.json). Product behavior and source-only deployment boundary unchanged.

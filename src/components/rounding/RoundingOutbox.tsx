@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
+import { describeObservationQuickStatus } from "@/lib/rounding/observation-chips";
 
 export function RoundingOutbox() {
   const sync = useRoundingOfflineSync();
@@ -13,7 +14,7 @@ export function RoundingOutbox() {
     <ul className="my-2 space-y-3">
       {sync.items?.map((item) => <li key={item.id} className="border-t border-border pt-2">
         <Link className="underline" href={`/caregiver/rounds/${item.residentId}?taskId=${item.taskId}`}>Open observation task</Link>
-        <p>{new Date(item.payload.observedAt ?? item.queuedAt).toLocaleString("en-US", { timeZone: "America/New_York", timeZoneName: "short" })} · {item.payload.quickStatus.replaceAll("_", " ")}</p>
+        <p>{new Date(item.payload.observedAt ?? item.queuedAt).toLocaleString("en-US", { timeZone: "America/New_York", timeZoneName: "short" })} · {describeObservationQuickStatus(item.payload.quickStatus) ?? "Status not recorded"}</p>
         {item.payload.note && <p className="whitespace-pre-wrap">{item.payload.note}</p>}
         <p>{item.lastError ?? "Pending upload"}</p>
       </li>)}
