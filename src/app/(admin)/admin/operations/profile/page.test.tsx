@@ -216,5 +216,6 @@ describe("Facility profile review", () => {
     await screen.findByText("Source items: 91 · Checklist components: 110");
     container.querySelector("details")!.open = true;
     expect((await axe.run(container)).violations).toEqual([]);
-  });
+    // Scan all 91 source items and 110 components, including on shared CI CPUs.
+  }, 15_000);
 });

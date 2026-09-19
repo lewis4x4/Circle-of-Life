@@ -914,3 +914,10 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | Change | PR #595 review; forward migrations 433–434, reliable delivery and generation, complete/scoped report reads, caregiver capture and route hydration, mandatory CI/replay/browser regression gates. |
 | Evidence | [Review handoff](../HANDOFFS/2026-09-19__smart-rounding-review.md); [PASS gate](../test-results/agent-gates/2026-09-19T20-20-08-587Z-SMART-ROUNDING-REVIEW-20260919.json); [authenticated local proof](../test-results/smart-rounding-full-app/proof.json). Earlier failed gate artifacts retained. |
 | Release boundary | Source integration only. Read-only hosted ledgers: staging through432; production through416. No hosted schema, cron, secret, or deployment changes. Production activation requires the existing human gate; A3 depth UAT is not closed. |
+
+## RECORD — Smart Rounding CI accessibility budget (2026-09-19)
+
+- Segment: `SMART-ROUNDING-CI-A11Y-20260919`; mission alignment: `pass`.
+- Existing facility-profile axe test exceeded its five-second CI budget. Set a localized 15-second budget, preserving the complete page scan and assertions.
+- Verification: 16 focused tests passed; [required segment gate PASS](../test-results/agent-gates/2026-09-19T20-41-39-205Z-SMART-ROUNDING-CI-A11Y-20260919.json). Final-head CI remains required before merge.
+- Source-only deployment holds remain unchanged.
