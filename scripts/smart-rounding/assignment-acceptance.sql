@@ -474,6 +474,7 @@ DECLARE
   v_without_row integer;
   v_second integer;
   v_worked record;
+  v_guard_case text;
   v_user uuid;
   v_session CONSTANT uuid := '5a550000-0000-4000-8000-000000000009';
   v_result jsonb;
@@ -505,9 +506,19 @@ BEGIN
         WHERE
           facility_id = v_roster)) a;
 
+  -- The first tick can precede roster arrival. The later resolved payload must
+  -- assign the existing tasks, keeping their identities and clinical stamps.
+  v_written := public.record_cadence_observation_tasks ((
+    SELECT jsonb_agg(row_value || jsonb_build_object('assigned_staff_id', NULL, 'shift_assignment_id', NULL))
+    FROM jsonb_array_elements(v_payload) row_value));
+  PERFORM pg_temp.as_assert(v_written > 0, 'initial pre-roster generation wrote no tasks');
+  CREATE TEMP TABLE late_roster_original_tasks ON COMMIT DROP AS
+    SELECT id, scheduled_for, due_at, grace_ends_at, cadence_version_id
+    FROM public.resident_observation_tasks WHERE facility_id = v_roster;
+
   v_written := public.record_cadence_observation_tasks (v_payload);
   PERFORM
-    pg_temp.as_assert (v_written > 0, 'the generator payload wrote no tasks at all');
+    pg_temp.as_assert (v_written > 0, 'late roster did not recover existing unassigned tasks');
 
   SELECT
     count(*),
@@ -533,6 +544,15 @@ BEGIN
   PERFORM
     pg_temp.as_assert (v_without_row = 0, format('%s of %s generated tasks have no live primary assignment row. The assignee guard then passes only through assigned_staff_id and there is no audit trail naming who owns the check.', v_without_row, v_tasks));
 
+  PERFORM pg_temp.as_assert(NOT EXISTS (
+    SELECT 1 FROM late_roster_original_tasks original
+    FULL JOIN public.resident_observation_tasks t ON t.id = original.id AND t.facility_id = v_roster
+    WHERE (original.id IS NOT NULL OR t.facility_id = v_roster)
+      AND (original.id IS NULL OR t.id IS NULL OR
+        (original.scheduled_for, original.due_at, original.grace_ends_at, original.cadence_version_id)
+          IS DISTINCT FROM (t.scheduled_for, t.due_at, t.grace_ends_at, t.cadence_version_id))
+  ), 'late roster recovery changed task identity or clinical timing');
+
   -- Idempotent. A second identical run writes nothing and assigns nothing.
   v_second := public.record_cadence_observation_tasks (v_payload);
   PERFORM
@@ -545,6 +565,45 @@ BEGIN
       JOIN public.resident_observation_tasks t ON t.id = ra.task_id
       WHERE
         t.facility_id = v_roster) = v_tasks, 'the second run duplicated assignment rows');
+
+  -- A different roster must not steal tasks that already have an owner.
+  PERFORM pg_temp.as_assert((SELECT count(DISTINCT assigned_staff_id) > 1
+    FROM public.resident_observation_tasks WHERE facility_id = v_roster),
+    'changed roster preservation fixture needs multiple original assignees');
+  PERFORM pg_temp.as_assert(public.record_cadence_observation_tasks((
+    SELECT jsonb_agg(row_value || jsonb_build_object('assigned_staff_id',
+      (v_payload->0->>'assigned_staff_id')::uuid))
+    FROM jsonb_array_elements(v_payload) row_value)) = 0,
+    'a changed roster replaced existing task ownership');
+
+  -- Each isolated scenario rolls back its fixture mutation after the assertion.
+  FOREACH v_guard_case IN ARRAY ARRAY['completed', 'closed', 'claimed'] LOOP
+    BEGIN
+      SELECT id AS task_id INTO v_worked FROM public.resident_observation_tasks
+        WHERE facility_id = v_roster ORDER BY due_at LIMIT 1;
+      IF v_guard_case <> 'claimed' THEN
+        UPDATE public.resident_observation_assignments SET released_at = now()
+          WHERE task_id = v_worked.task_id AND released_at IS NULL;
+      END IF;
+      UPDATE public.resident_observation_tasks SET assigned_staff_id = NULL,
+        shift_assignment_id = NULL WHERE id = v_worked.task_id;
+      IF v_guard_case = 'completed' THEN
+        UPDATE public.resident_observation_tasks SET status = 'completed_on_time'
+          WHERE id = v_worked.task_id;
+      ELSIF v_guard_case = 'closed' THEN
+        UPDATE public.resident_observation_tasks SET scheduled_for = now() - interval '3 hours',
+          due_at = now() - interval '2 hours', grace_ends_at = now() - interval '1 hour'
+          WHERE id = v_worked.task_id;
+      END IF;
+      PERFORM pg_temp.as_assert(public.record_cadence_observation_tasks(v_payload) = 0,
+        format('late roster reassigned a %s task', v_guard_case));
+      PERFORM pg_temp.as_assert((SELECT assigned_staff_id IS NULL
+        FROM public.resident_observation_tasks WHERE id = v_worked.task_id),
+        format('late roster rewrote %s task ownership', v_guard_case));
+      RAISE SQLSTATE 'ZX001' USING MESSAGE = 'rollback isolated guard fixture';
+    EXCEPTION WHEN SQLSTATE 'ZX001' THEN NULL;
+    END;
+  END LOOP;
 
   -- A caregiver among the scheduled staff completes one of their own checks.
   SELECT

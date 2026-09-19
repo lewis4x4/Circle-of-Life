@@ -49,3 +49,11 @@ For activation, obtain the repository-required approval, rehearse 433–434 on s
 ## CI accessibility follow-up
 
 The first pushed review commit passed finance/schema CI, but application CI timed out at five seconds while axe scanned the existing facility-profile fixture (91 source items and 110 components). The other 6,357 application tests passed, with two intentional skips. The test now has a localized 15-second timeout; its full DOM scan and zero-violation assertion are unchanged. All 16 tests in that file pass locally. The test-only follow-up segment passed [its required gate](../test-results/agent-gates/2026-09-19T20-41-39-205Z-SMART-ROUNDING-CI-A11Y-20260919.json). Mission alignment: **pass**; accessibility coverage is preserved under shared CI load. Final-head CI must pass before merge.
+
+## Late-roster recovery follow-up
+
+The final sweep of earlier PR comments exposed a remaining real defect: `record_cadence_observation_tasks` ignored conflicts, so generation before roster publication permanently left tasks unassigned. Migration 433 now reconciles only open, ownerless tasks with no live assignment and the same organization, facility, and cadence. It preserves existing task IDs, clinical timestamps, completed checks, and current owners, and atomically records primary assignments.
+
+The expanded assignment acceptance first fails against the old function and then passes against the correction: 18 original tasks recover ownership and primary assignments; repeated generation is idempotent; changed roster, completed, closed, and already-claimed cases remain unchanged. Mission alignment: **pass**, restoring caregiver access without rewriting existing care responsibility.
+
+Required [assignment-recovery segment gate PASS](../test-results/agent-gates/2026-09-19T20-51-43-930Z-SMART-ROUNDING-ASSIGNMENT-RECOVERY-20260919.json): fresh 437-migration replay, 81 probes, seven acceptance suites, typecheck, lint, security, build, and stress. Manual reassignment and completion lock the task row, serializing recovery with those operations. The preceding accessibility-fix commit also passed the complete application and Edge tests in GitHub CI.

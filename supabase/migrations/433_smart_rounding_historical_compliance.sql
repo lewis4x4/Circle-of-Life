@@ -1598,5 +1598,93 @@ WHERE
 END;
 $func$;
 
+-- Reconcile a late roster on the generator's next current/next-window tick.
+-- Only ownerless, still-open tasks are eligible. Never replace an existing
+-- assignee or live claim, and never rewrite clinical timing or terminal checks.
+CREATE OR REPLACE FUNCTION public.record_cadence_observation_tasks (p_rows jsonb)
+  RETURNS integer
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path = public, pg_catalog
+  AS $func$
+DECLARE
+  v_inserted integer;
+BEGIN
+  IF jsonb_typeof(p_rows) IS DISTINCT FROM 'array' THEN
+    RAISE EXCEPTION 'Cadence observation task payload must be a JSON array'
+      USING ERRCODE = '22023';
+  END IF;
+
+  WITH inserted AS (
+    INSERT INTO public.resident_observation_tasks AS existing (organization_id, entity_id, facility_id, resident_id, cadence_version_id, window_key, service_date, shift_assignment_id, assigned_staff_id, scheduled_for, due_at, grace_ends_at, status)
+    SELECT
+      r.organization_id,
+      r.entity_id,
+      r.facility_id,
+      r.resident_id,
+      r.cadence_version_id,
+      r.window_key,
+      r.service_date,
+      r.shift_assignment_id,
+      r.assigned_staff_id,
+      r.scheduled_for,
+      r.due_at,
+      r.grace_ends_at,
+      COALESCE(r.status, 'upcoming')::public.resident_observation_task_status
+    FROM
+      jsonb_to_recordset(p_rows) AS r (organization_id uuid, entity_id uuid, facility_id uuid, resident_id uuid, cadence_version_id uuid, window_key text, service_date date, shift_assignment_id uuid, assigned_staff_id uuid, scheduled_for timestamptz, due_at timestamptz, grace_ends_at timestamptz, status text)
+    ON CONFLICT (resident_id, window_key, service_date)
+      WHERE deleted_at IS NULL AND window_key IS NOT NULL
+      DO UPDATE SET
+        assigned_staff_id = EXCLUDED.assigned_staff_id,
+        shift_assignment_id = EXCLUDED.shift_assignment_id,
+        updated_at = now()
+      WHERE existing.assigned_staff_id IS NULL
+        AND EXCLUDED.assigned_staff_id IS NOT NULL
+        AND existing.organization_id = EXCLUDED.organization_id
+        AND existing.facility_id = EXCLUDED.facility_id
+        AND existing.cadence_version_id = EXCLUDED.cadence_version_id
+        AND existing.status IN ('upcoming', 'due_soon', 'due_now', 'overdue', 'critically_overdue')
+        AND existing.grace_ends_at >= now()
+        AND NOT EXISTS (
+          SELECT 1 FROM public.resident_observation_assignments ownership
+          WHERE ownership.task_id = existing.id AND ownership.released_at IS NULL
+        )
+    RETURNING
+      id, organization_id, entity_id, facility_id, resident_id, shift_assignment_id, assigned_staff_id
+),
+  assigned AS (
+  INSERT INTO public.resident_observation_assignments (organization_id, entity_id, facility_id, resident_id, task_id, shift_assignment_id, staff_id, assignment_type)
+  SELECT
+    i.organization_id,
+    i.entity_id,
+    i.facility_id,
+    i.resident_id,
+    i.id,
+    i.shift_assignment_id,
+    i.assigned_staff_id,
+    'primary'::public.resident_observation_assignment_type
+  FROM
+    inserted i
+  WHERE
+    i.assigned_staff_id IS NOT NULL
+  ON CONFLICT (task_id, staff_id)
+    WHERE released_at IS NULL
+    DO NOTHING
+  RETURNING
+    id
+)
+  SELECT
+    count(*)::integer INTO v_inserted
+  FROM
+    inserted;
+
+  RETURN v_inserted;
+END;
+$func$;
+
+COMMENT ON FUNCTION public.record_cadence_observation_tasks (jsonb) IS
+  'Atomically creates cadence tasks and primary assignments, or assigns an existing ownerless open task when a roster arrives later. Existing ownership, terminal tasks, clinical timing and cadence stamps are preserved. Returns tasks inserted or newly assigned; identical retries return zero.';
+
 NOTIFY pgrst, 'reload schema';
 COMMIT;

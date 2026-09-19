@@ -921,3 +921,10 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 - Existing facility-profile axe test exceeded its five-second CI budget. Set a localized 15-second budget, preserving the complete page scan and assertions.
 - Verification: 16 focused tests passed; [required segment gate PASS](../test-results/agent-gates/2026-09-19T20-41-39-205Z-SMART-ROUNDING-CI-A11Y-20260919.json). Final-head CI remains required before merge.
 - Source-only deployment holds remain unchanged.
+
+## RECORD — Smart Rounding late-roster recovery (2026-09-19)
+
+- Segment: `SMART-ROUNDING-ASSIGNMENT-RECOVERY-20260919`; mission alignment: `pass`.
+- Recovered ownerless open tasks when the roster arrives after generation; preserved assigned/claimed/completed/closed tasks and clinical timing.
+- Proof: old writer fails the expanded assignment acceptance; correction recovers 18 original tasks and primary assignments. [Required segment gate PASS](../test-results/agent-gates/2026-09-19T20-51-43-930Z-SMART-ROUNDING-ASSIGNMENT-RECOVERY-20260919.json).
+- Source-only holds remain. Final-head green CI required before merge.
