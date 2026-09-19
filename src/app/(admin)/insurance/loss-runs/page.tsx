@@ -8,12 +8,19 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import {
+  INSURANCE_LOSS_RUNS_LOADING_PROFILE_COPY,
+  resolveInsuranceLossRunsFetchErrorBannerMessage,
+  resolveInsuranceLossRunsOrganizationGapMessage,
+} from "@/lib/insurance/loss-runs-page-state";
+import {
   INSURANCE_HUB_LIST_LIMIT,
   INSURANCE_LOSS_RUNS_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 
 type Row = Database["public"]["Tables"]["loss_runs"]["Row"];
+
+export { INSURANCE_LOSS_RUNS_LOADING_PROFILE_COPY };
 
 export default function InsuranceLossRunsPage() {
   const supabase = createClient();
@@ -40,12 +47,15 @@ export default function InsuranceLossRunsPage() {
   });
 
   const loading = authLoading || isPending;
-  const loadError =
-    !authLoading && !organizationId
-      ? "Organization missing on profile."
-      : error
-        ? error.message
-        : null;
+  const organizationGapMessage = resolveInsuranceLossRunsOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveInsuranceLossRunsFetchErrorBannerMessage({
+    authLoading,
+    fetchError: error?.message ?? null,
+  });
 
   return (
     <div className="space-y-6">
@@ -56,11 +66,23 @@ export default function InsuranceLossRunsPage() {
           Generated loss summaries by entity and period (export in a later iteration).
         </p>
       </div>
-      {loadError && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {loadError}
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {INSURANCE_LOSS_RUNS_LOADING_PROFILE_COPY}
         </p>
-      )}
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {fetchErrorBannerMessage}
+        </p>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">History</CardTitle>
@@ -89,9 +111,9 @@ export default function InsuranceLossRunsPage() {
               ))}
             </tbody>
           </table>
-          {!loading && rows.length === 0 && (
+          {!loading && rows.length === 0 && organizationId ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">No loss runs generated yet.</p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>

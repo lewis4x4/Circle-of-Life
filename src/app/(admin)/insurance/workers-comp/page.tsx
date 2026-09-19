@@ -9,12 +9,19 @@ import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { workersCompReturnToWorkDateCopy } from "@/lib/insurance/workers-comp-copy";
 import {
+  INSURANCE_WORKERS_COMP_LOADING_PROFILE_COPY,
+  resolveInsuranceWorkersCompFetchErrorBannerMessage,
+  resolveInsuranceWorkersCompOrganizationGapMessage,
+} from "@/lib/insurance/workers-comp-page-state";
+import {
   INSURANCE_HUB_LIST_LIMIT,
   INSURANCE_WORKERS_COMP_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 
 type Row = Database["public"]["Tables"]["workers_comp_claims"]["Row"];
+
+export { INSURANCE_WORKERS_COMP_LOADING_PROFILE_COPY };
 
 export default function InsuranceWorkersCompPage() {
   const supabase = createClient();
@@ -41,12 +48,15 @@ export default function InsuranceWorkersCompPage() {
   });
 
   const loading = authLoading || isPending;
-  const loadError =
-    !authLoading && !organizationId
-      ? "Organization missing on profile."
-      : error
-        ? error.message
-        : null;
+  const organizationGapMessage = resolveInsuranceWorkersCompOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveInsuranceWorkersCompFetchErrorBannerMessage({
+    authLoading,
+    fetchError: error?.message ?? null,
+  });
 
   return (
     <div className="space-y-6">
@@ -57,11 +67,23 @@ export default function InsuranceWorkersCompPage() {
           Facility-scoped WC claim headers (OSHA 300 detail is out of Core scope).
         </p>
       </div>
-      {loadError && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {loadError}
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {INSURANCE_WORKERS_COMP_LOADING_PROFILE_COPY}
         </p>
-      )}
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {fetchErrorBannerMessage}
+        </p>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Claims</CardTitle>
@@ -90,9 +112,9 @@ export default function InsuranceWorkersCompPage() {
               ))}
             </tbody>
           </table>
-          {!loading && rows.length === 0 && (
+          {!loading && rows.length === 0 && organizationId ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">No workers’ comp claims yet.</p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>
