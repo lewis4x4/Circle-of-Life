@@ -12,15 +12,24 @@ on:
       - "supabase/functions/**"
       - "supabase/config.toml"
       - ".github/workflows/edge-functions-deploy.yml"
+  # Reconcile after each scheduled migration-ledger check. A deploy blocked on
+  # schema parity is retried here once the migration reaches production.
+  schedule:
+    - cron: "15 13,23 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: edge-functions-production-deploy
+  cancel-in-progress: false
+
 jobs:
   detect-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -43,6 +52,8 @@ jobs:
       # - `_shared` changes redeploy only functions that import shared modules, preserving correctness
       #   without redeploying the full Edge Function inventory on every helper edit.
       # - `supabase/config.toml` changes deploy functions whose verify_jwt/config block changed.
+      # - Scheduled/manual runs reconcile every function. The CLI content hash makes matching
+      #   bundles a no-op and repairs a push that was previously blocked on schema parity.
       # - Deployment fails loud: any failed function deploy fails the workflow.
       # - Direct main commits have no PR to comment on, so they write to GITHUB_STEP_SUMMARY instead.
       - name: Detect changed Edge Functions
@@ -51,23 +62,37 @@ jobs:
         run: |
           set -euo pipefail
 
+          full_reconciliation=false
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             base="${{ github.event.pull_request.base.sha }}"
             head="${{ github.event.pull_request.head.sha }}"
-          else
+            git diff --name-only "$base" "$head" > /tmp/changed-files.txt
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
             base="${{ github.event.before }}"
             head="${{ github.sha }}"
             if [[ "$base" == "0000000000000000000000000000000000000000" ]]; then
               base="${head}^"
             fi
+            git diff --name-only "$base" "$head" > /tmp/changed-files.txt
+          else
+            base="full-inventory"
+            head="${{ github.sha }}"
+            full_reconciliation=true
+            : > /tmp/changed-files.txt
           fi
 
-          git diff --name-only "$base" "$head" > /tmp/changed-files.txt
-
-          direct_functions=$(
-            awk -F/ 'NF>=4 && $1=="supabase" && $2=="functions" && $3 != "_shared" && $3 != "" {print $3}' /tmp/changed-files.txt \
-              | sort -u
-          )
+          if [[ "$full_reconciliation" == "true" ]]; then
+            direct_functions=$(
+              find supabase/functions -mindepth 2 -maxdepth 2 -name index.ts -type f \
+                | awk -F/ '$3 != "_shared" {print $3}' \
+                | sort -u
+            )
+          else
+            direct_functions=$(
+              awk -F/ 'NF>=4 && $1=="supabase" && $2=="functions" && $3 != "_shared" && $3 != "" {print $3}' /tmp/changed-files.txt \
+                | sort -u
+            )
+          fi
 
           shared_changed=false
           if grep -q '^supabase/functions/_shared/' /tmp/changed-files.txt; then
@@ -137,7 +162,11 @@ jobs:
           {
             echo "### Edge Function deploy detection"
             echo
-            echo "Diff range: \`$base..$head\`"
+            if [[ "$full_reconciliation" == "true" ]]; then
+              echo "Full production reconciliation at \`$head\`."
+            else
+              echo "Diff range: \`$base..$head\`"
+            fi
             echo
             if [[ -z "$functions" ]]; then
               echo "No deployable function directories changed."
@@ -148,7 +177,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Validate deploy configuration
-        if: github.event_name == 'push' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
+        if: github.event_name != 'pull_request' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
         shell: bash
         run: |
           set -euo pipefail
@@ -156,7 +185,7 @@ jobs:
           test -n "${SUPABASE_PROJECT_REF:-}" || { echo "SUPABASE_PROJECT_REF is missing" >&2; exit 1; }
 
       - name: Target schema is ready for this source
-        if: github.event_name == 'push' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
+        if: github.event_name != 'pull_request' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
         run: node scripts/check-migration-ledger.mjs --project "$SUPABASE_PROJECT_REF"
 
       - name: Record source-only release hold
@@ -164,7 +193,7 @@ jobs:
         run: echo 'Source merged. Edge deployment is explicitly held pending approved schema and runtime activation.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy changed functions
-        if: github.event_name == 'push' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
+        if: github.event_name != 'pull_request' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
         shell: bash
         run: |
           set -euo pipefail
@@ -185,6 +214,38 @@ jobs:
             echo "$failures Edge Function deploy(s) failed" >&2
             exit 1
           fi
+
+      - name: Verify deployed function inventory
+        if: github.event_name != 'pull_request' && steps.detect.outputs.count != '0' && !contains(github.event.head_commit.message, '[skip deploy]')
+        shell: bash
+        run: |
+          set -euo pipefail
+          live_json="$RUNNER_TEMP/edge-functions-live.json"
+          supabase functions list --project-ref "$SUPABASE_PROJECT_REF" --output json > "$live_json"
+          python3 - "$live_json" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          source = {
+              path.parent.name
+              for path in pathlib.Path("supabase/functions").glob("*/index.ts")
+              if path.parent.name != "_shared"
+          }
+          live_rows = json.loads(pathlib.Path(sys.argv[1]).read_text())
+          live = {row["slug"] for row in live_rows}
+          inactive = sorted(row["slug"] for row in live_rows if row.get("status") != "ACTIVE")
+          missing = sorted(source - live)
+          unexpected = sorted(live - source)
+
+          if missing or unexpected or inactive:
+              print(f"missing deployments: {missing}", file=sys.stderr)
+              print(f"deployed without source: {unexpected}", file=sys.stderr)
+              print(f"inactive deployments: {inactive}", file=sys.stderr)
+              raise SystemExit(1)
+
+          print(f"Edge Function inventory verified: {len(source)}/{len(source)} ACTIVE")
+          PY
 
       - name: Comment PR deploy preview
         if: github.event_name == 'pull_request'

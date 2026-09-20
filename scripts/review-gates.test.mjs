@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -89,4 +89,30 @@ test("production publishing checks the actual build database, not an unrelated p
   assert.equal(productionProject(env), "synthetic");
   assert.throws(() => productionProject({ ...env, SUPABASE_PROJECT_REF: "different" }), /do not match/);
   assert.throws(() => productionProject({ ...env, NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321" }), /explicit hosted/);
+});
+
+test("edge deployment can recover after a schema-gated push", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/edge-functions-deploy.yml"), "utf8");
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /cron: ["']15 13,23 \* \* \*["']/);
+  assert.match(workflow, /full_reconciliation=true/);
+  assert.match(workflow, /Verify deployed function inventory/);
+  assert.match(workflow, /edge-functions-production-deploy/);
+});
+
+test("every deployable edge function declares its gateway JWT policy", () => {
+  const functionsRoot = path.join(root, "supabase/functions");
+  const source = new Set(
+    readdirSync(functionsRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name !== "_shared")
+      .filter((entry) => existsSync(path.join(functionsRoot, entry.name, "index.ts")))
+      .map((entry) => entry.name),
+  );
+  const config = readFileSync(path.join(root, "supabase/config.toml"), "utf8");
+  const configured = new Set(
+    [...config.matchAll(/^\[functions\.(?:"([^"]+)"|([^\]]+))\]\s*$/gm)]
+      .map((match) => (match[1] ?? match[2]).trim()),
+  );
+  assert.deepEqual([...source].filter((name) => !configured.has(name)).sort(), []);
+  assert.deepEqual([...configured].filter((name) => !source.has(name)).sort(), []);
 });
