@@ -19,6 +19,21 @@ Overrides defaults. Distilled from fleet standing directives + field practice.
 
 Haven supports `npm ci` with the tracked root `package-lock.json` only. Do not run pnpm, Yarn, or Bun in this repository, and never commit their lockfiles. Deno's lockfiles remain valid for the Edge Function runtime.
 
+## Standing technical production-release contract
+
+For any request from Brian to **build, implement, fix, finish, or ship**, unless he explicitly says `draft`, `hold`, `review-only`, `source-only`, or `do not deploy`, “done” means **technically live in production**.
+
+After the required focused and repository gates pass, continue through every applicable release step:
+
+1. Stage only the intended files and create an atomic Lore-protocol commit.
+2. Push the branch, create or update the PR, wait for required checks, and fix failures.
+3. Merge to `main` and complete any repository-defined release promotion.
+4. In the verified production target and repository-defined order, apply pending migrations and deploy changed Edge Functions, jobs, crons, configuration, and application services.
+5. Verify post-merge CI, the exact hosted revision, migration-ledger parity, relevant function versions, health checks, and applicable live smoke tests.
+6. Record commit, PR, CI, migration, function, deployment, and hosted evidence; report staff/provider/clinical/customer acceptance separately.
+
+Do not stop at local completion, a commit, a pushed branch, an open or merged PR, green pre-merge CI, or a deployment that merely started. Routine, recoverable production release operations within the requested scope are standing-authorized. This does not authorize secret disclosure, purchases/payments, external communications, destructive data loss without a recovery path, or claims of human acceptance without dated evidence.
+
 ## The one rule
 
 **Verification is the job. Writing code is the easy part.**
@@ -54,11 +69,11 @@ A PR with no proof is a draft. Also state: what changed and why; what you delibe
 
 ## Fleet gates (non-negotiable)
 
-- **Draft-and-hold** for mail, buys, deletes, publishes, prod mutations — Brian’s explicit yes in chat only.
-- **GATE PASS + green CI** before merge. Then merge to `main` and push unless: security-finding draft, explicit HOLD, or Haven HFO source-only policy.
+- **Draft-and-hold** for external mail/publication, purchases or payments, secret rotation/disclosure, and destructive or irreversible data loss without a verified recovery path. Routine technical production releases follow the standing contract above.
+- **GATE PASS + required CI** before merge. Then merge to `main`, complete release promotion, deploy all applicable technical artifacts, and verify the hosted revision unless Brian explicitly set a current task-specific HOLD.
 - **Harness routing:** Opus / Claude / Codex / Sol → Lewi → harness bots only. **Never** Cursor cloud agents for those models. Cloud agents = Composer / Cursor-model builds only.
 - **Haven coding default:** Sol (Codex) unless Brian names Opus. Analysis/plans → Claude Opus 5 Max via Lewi.
-- **Human gate forever:** auth, payments, permissions, migrations, deploys, secrets, prod DB — stop and ask.
+- **Standing release authority:** Auth/permission code, forward migrations, Edge Functions, deploys, and production database changes inside the approved implementation scope may ship after their required security, replay, rollback, and release gates pass. Human decisions and human acceptance remain separate issues.
 
 ## Anti-sprawl
 
@@ -80,8 +95,8 @@ Good: “Never reuse a prior day’s artifact as today’s proof; regenerate or 
 
 ## When to stop
 
-Two failed attempts on the same approach → stop, report what you tried, ask.
-Do not loop. Do not manufacture status when nothing changed.
+Two failed attempts on the same approach → stop repeating that approach, inspect the evidence, and try a materially different safe path. Ask only when an external credential, destructive ambiguity, or human decision truly blocks further progress.
+Do not loop or manufacture status when nothing changed.
 
 ## Short version
 
