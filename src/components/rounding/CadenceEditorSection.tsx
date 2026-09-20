@@ -37,6 +37,7 @@ export function CadenceEditorSection({
   openRungKey,
   onOpenWindow,
   onWindowChange,
+  onAddWindow,
   onRungChange,
   reason,
   onReasonChange,
@@ -45,6 +46,7 @@ export function CadenceEditorSection({
   showReason,
   locked,
   busy,
+  invalid = false,
 }: {
   overview: ObservationConfigOverview;
   windowDrafts: WindowDraft[];
@@ -52,8 +54,9 @@ export function CadenceEditorSection({
   openWindowKey: string | null;
   openRungKey: string | null;
   onOpenWindow: (windowKey: string) => void;
-  onWindowChange: (next: WindowDraft) => void;
-  onRungChange: (next: RungDraft) => void;
+  onWindowChange: (next: WindowDraft, previousKey: string) => void;
+  onAddWindow?: () => void;
+  onRungChange: (next: RungDraft, previousKey: string) => void;
   reason: string;
   onReasonChange: (next: string) => void;
   onPropose: () => void;
@@ -61,20 +64,22 @@ export function CadenceEditorSection({
   showReason: boolean;
   locked: boolean;
   busy: boolean;
+  invalid?: boolean;
 }) {
-  const channels = Array.from(new Set(overview.current.ladder.flatMap((rung) => rung.channels)));
-  const roles = Array.from(
+  const channels = overview.available_channels ?? Array.from(new Set(overview.current.ladder.flatMap((rung) => rung.channels)));
+  const roles = overview.available_staff_roles ?? Array.from(
     new Map(overview.current.ladder.flatMap((rung) => rung.roles).map((role) => [role.staff_role, role])).values(),
   );
 
   return (
     <section aria-label="Change one check or one step" className="space-y-3">
       <h2 className="text-sm font-semibold text-foreground">Change one check or one step</h2>
-      {overview.cadence_template_name ? (
-        <p className="text-[13px] leading-relaxed text-warning">{DETACH_WARNING}</p>
+      {overview.cadence_template_name || overview.escalation_template_name ? (
+        <p className="text-[13px] leading-relaxed text-warning">{DETACH_WARNING} Current templates: {[overview.cadence_template_name, overview.escalation_template_name].filter(Boolean).join(", ")}.</p>
       ) : null}
 
       <div className="flex flex-wrap gap-2">
+        {onAddWindow && <Button type="button" variant="outline" size="sm" disabled={busy || locked} onClick={onAddWindow}>Add observation window</Button>}
         {windowDrafts.map((draft) => (
           <Button
             key={draft.window_key}
@@ -96,7 +101,7 @@ export function CadenceEditorSection({
             draft={draft}
             shifts={overview.shifts}
             disabled={busy || locked}
-            onChange={onWindowChange}
+            onChange={(next) => onWindowChange(next, draft.window_key)}
           />
         ))}
 
@@ -106,10 +111,11 @@ export function CadenceEditorSection({
           <CadenceRungEditor
             key={draft.rung_key}
             draft={draft}
+            shifts={overview.shifts}
             channels={channels}
             roles={roles}
             disabled={busy || locked}
-            onChange={onRungChange}
+            onChange={(next) => onRungChange(next, draft.rung_key)}
           />
         ))}
 
@@ -129,7 +135,8 @@ export function CadenceEditorSection({
             <p className="text-[13px] text-muted-foreground">{PROPOSAL_REASON_HELPER}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={onPropose} disabled={busy || reason.trim() === ""}>
+        {onAddWindow && <Button type="button" variant="outline" size="sm" disabled={busy || locked} onClick={onAddWindow}>Add observation window</Button>}
+            <Button type="button" onClick={onPropose} disabled={busy || invalid || reason.trim() === ""}>
               Save and preview
             </Button>
             <Button type="button" variant="ghost" onClick={onDiscard} disabled={busy}>

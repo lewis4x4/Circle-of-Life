@@ -1,0 +1,25 @@
+{
+  "path": "real browser proposer saves -> separate owner approves -> configured open window reader -> service-role record_cadence_observation_tasks",
+  "inserted": 1,
+  "idempotent_retry_inserted": 0,
+  "window": {
+    "cadence_version_id": "9863897d-6530-4ea3-9720-8e7d575e1cdb",
+    "window_key": "overnight",
+    "label": "Synthetic overnight",
+    "shift_key": "night",
+    "roster_shift_type": "night",
+    "shift_service_date": "2026-09-19",
+    "service_date": "2026-09-20",
+    "due_at_utc": "2026-09-20T06:00:00+00:00",
+    "window_opens_at_utc": "2026-09-20T05:00:00+00:00",
+    "window_closes_at_utc": "2026-09-20T07:00:00+00:00",
+    "starts_shift": false
+  },
+  "task_id": "0dccd603-68c6-4f9b-80f2-0d5fcf798764",
+  "manual_task_insert": false,
+  "activation": {
+    "source": "Current window from policy approved through real owner browser session",
+    "cadence_version_id": "9863897d-6530-4ea3-9720-8e7d575e1cdb"
+  },
+  "synthetic_data_only": true
+}

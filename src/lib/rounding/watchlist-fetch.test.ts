@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   dispositionWatchlistSignal,
   fetchFacilityWatchlist,
+  fetchWatchlistObservationEvidence,
+  fetchResidentWatchlistSignals,
   fetchResidentDispositionLedger,
   fetchWatchlistPortfolio,
 } from "./watchlist-fetch";
@@ -25,6 +27,7 @@ function client(result: { data: unknown; error: unknown }) {
         call.filters.push([column, value]);
         return chain;
       },
+      in(column: string, value: unknown) { call.filters.push([column, value]); return chain; },
       is(column: string, value: unknown) {
         call.filters.push([column, value]);
         return chain;
@@ -72,7 +75,7 @@ describe("Watchlist reads", () => {
     const { supabase, calls } = client({ data: [], error: null });
     await fetchWatchlistPortfolio(supabase);
     await fetchFacilityWatchlist(supabase, "facility-1");
-    await fetchResidentDispositionLedger(supabase, "resident-1");
+    await fetchResidentDispositionLedger(supabase, "resident-1", "facility-1");
     for (const call of calls) {
       expect(call.table).not.toBe("resident_safety_scores");
       expect(call.select ?? "").not.toContain("score");
@@ -81,7 +84,7 @@ describe("Watchlist reads", () => {
 
   it("reads the ledger in append order rather than by timestamp", async () => {
     const { supabase, calls } = client({ data: [], error: null });
-    await fetchResidentDispositionLedger(supabase, "resident-1");
+    await fetchResidentDispositionLedger(supabase, "resident-1", "facility-1");
     expect(calls[0].table).toBe("watchlist_signal_dispositions");
     expect(calls[0].orders).toEqual(["ledger_seq", "id"]);
   });
@@ -139,7 +142,7 @@ describe("the ledger names who acted", () => {
       ],
       error: null,
     });
-    const rows = await fetchResidentDispositionLedger(supabase, "r1");
+    const rows = await fetchResidentDispositionLedger(supabase, "r1", "facility-1");
     expect(rows[0].acted_by_name).toBe("A Reviewer");
     expect("user_profiles" in rows[0]).toBe(false);
   });
@@ -165,7 +168,37 @@ describe("the ledger names who acted", () => {
       ],
       error: null,
     });
-    const rows = await fetchResidentDispositionLedger(supabase, "r1");
+    const rows = await fetchResidentDispositionLedger(supabase, "r1", "facility-1");
     expect(rows[0].acted_by_name).toBeNull();
   });
+});
+
+it("scopes resident history and ledger to the selected building", async () => {
+  const { supabase, calls } = client({ data: [], error: null });
+  await fetchResidentWatchlistSignals(supabase, "resident", "facility");
+  await fetchResidentDispositionLedger(supabase, "resident", "facility");
+  for (const call of calls) {
+    expect(call.filters).toContainEqual(["resident_id", "resident"]);
+    expect(call.filters).toContainEqual(["facility_id", "facility"]);
+  }
+});
+
+it("uses the configured history label, never a raw rule key", async () => {
+  const { supabase, calls } = client({ data: [{ signal_key: "internal_key", watchlist_signal_rules: { label: "Changes in mood" } }, { signal_key: "unavailable_key" }], error: null });
+  const rows = await fetchResidentWatchlistSignals(supabase, "resident", "facility");
+  expect(calls[0].select).toContain("watchlist_signal_rules!");
+  expect(rows.map((row) => row.signal_label)).toEqual(["Changes in mood", "Watchlist signal"]);
+});
+it("reads only referenced observations within the facility and resident scope", async () => {
+  const { supabase, calls } = client({ data: [], error: null });
+  await fetchWatchlistObservationEvidence(supabase, "resident", "facility", ["log-1", "log-1"]);
+  expect(calls[0].table).toBe("resident_observation_logs");
+  expect(calls[0].filters).toEqual([["resident_id", "resident"], ["facility_id", "facility"], ["id", ["log-1"]], ["deleted_at", null]]);
+  expect(calls[0].select).toContain("composed_summary");
+});
+it("does not query all observations when evidence is empty and propagates access failures", async () => {
+  const { supabase, calls } = client({ data: null, error: { code: "42501" } });
+  await expect(fetchWatchlistObservationEvidence(supabase, "r", "f", [])).resolves.toEqual([]);
+  expect(calls).toHaveLength(0);
+  await expect(fetchWatchlistObservationEvidence(supabase, "r", "f", ["log"])).rejects.toMatchObject({ code: "42501" });
 });

@@ -52,7 +52,12 @@ export type CadenceDayShape = {
 
 export type LadderRoleHolders = { staff_role: string; holder_count: number };
 
+export type ShiftOverride = { shift_key: string; offset_minutes: number | null; channels: string[] | null };
+
 export type LadderRung = {
+  sort_order?: number;
+  protocol_text?: string | null;
+  shift_overrides?: ShiftOverride[];
   rung_key: string;
   label: string;
   offset_minutes: number;
@@ -108,6 +113,7 @@ export type CadenceValidation = {
 };
 
 export type ConfigSide = {
+  configuration?: ConfigurationSnapshot;
   cadence_version_id: string | null;
   cadence_version_number?: number | null;
   cadence_effective_from?: string | null;
@@ -121,7 +127,22 @@ export type ConfigSide = {
   validation?: CadenceValidation;
 };
 
+export type ConfigurationSnapshot = {
+  shifts: (Pick<CadenceShift, "shift_key" | "label" | "starts_at_local" | "ends_at_local"> & { roster_shift_type: string; enabled: boolean; sort_order: number })[];
+  monitoring_interval_presets_minutes: number[];
+  monitoring_grace_divisor: number;
+  watchlist_rules: ({ signal_key: string; label: string; threshold_count: number | null; lookback_days: number; severity_class: string; enabled: boolean } & Record<string, unknown>)[];
+  thresholds: ConfigThresholds;
+};
+export type PendingProposal = { proposal_id: string; cadence_version_id: string | null; escalation_version_id: string | null; change_reason: string; created_at: string; created_by_name: string | null };
+
 export type ObservationConfigOverview = {
+  available_staff_roles?: LadderRoleHolders[];
+  available_channels?: string[];
+  available_severity_classes?: string[];
+  roster_shift_types?: string[];
+  configuration?: ConfigurationSnapshot;
+  pending_proposals?: PendingProposal[];
   facility_id: string;
   facility_name: string;
   timezone: string;
@@ -139,6 +160,8 @@ export type ObservationConfigOverview = {
 };
 
 export type ChangeLogEntry = {
+  configuration?: ConfigurationSnapshot | null;
+  previous_configuration?: ConfigurationSnapshot | null;
   kind: "cadence" | "escalation";
   version_id: string;
   version_number: number;
@@ -272,6 +295,7 @@ export type WindowDraft = {
 
 /** The payload shape `create_cadence_version` takes for one rung. */
 export type RungDraft = {
+  shift_overrides?: ShiftOverride[];
   rung_key: string;
   label: string;
   offset_minutes: number;
@@ -313,8 +337,9 @@ export function rungDraftsFrom(ladder: LadderRung[]): RungDraft[] {
     use_standing_alert_routes: rung.use_standing_alert_routes,
     target_staff_roles: rung.roles.map((role) => role.staff_role),
     channels: rung.channels,
-    protocol_text: null,
-    sort_order: index,
+    protocol_text: rung.protocol_text ?? null,
+    ...(rung.shift_overrides ? { shift_overrides: structuredClone(rung.shift_overrides) } : {}),
+    sort_order: rung.sort_order ?? index,
     enabled: rung.enabled,
   }));
 }
@@ -335,4 +360,10 @@ export function splitLocalTime(value: string): { hour: number; minute: number } 
 /** Joins the two numeric fields back into the stored HH:MM. */
 export function joinLocalTime(hour: number, minute: number): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+/** Clock geometry for a versioned shift snapshot; no policy is supplied here. */
+export function shiftsFromConfiguration(configuration: ConfigurationSnapshot): CadenceShift[] {
+  const minute = (value: string) => { const time = splitLocalTime(value); return time.hour * MINUTES_PER_HOUR + time.minute; };
+  return configuration.shifts.filter((shift) => shift.enabled).map((shift) => ({ ...shift, starts_minute: minute(shift.starts_at_local), ends_minute: minute(shift.ends_at_local) }));
 }

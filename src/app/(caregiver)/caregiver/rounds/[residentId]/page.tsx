@@ -23,6 +23,7 @@ type TaskApiRow = {
   id: string;
   due_at: string;
   derived_status: string;
+  requires_claim?: boolean;
   residents?: { id: string; first_name: string | null; last_name: string | null; preferred_name: string | null } | null;
 };
 
@@ -88,6 +89,8 @@ export default function CaregiverResidentRoundPage() {
   const [facilityId, setFacilityId] = useState<string | null>(null);
   const [residentName, setResidentName] = useState("Resident");
   const [task, setTask] = useState<TaskApiRow | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const routeScope = `${residentId}:${taskIdFromQuery ?? ""}`;
@@ -106,6 +109,8 @@ export default function CaregiverResidentRoundPage() {
       const isCurrent = () => active && attempt === generation;
       activeScope.current = null;
       setLoading(true);
+      setClaiming(false);
+      setClaimError(null);
       setOwner(null);
       setLoadError(null);
       try {
@@ -159,8 +164,27 @@ export default function CaregiverResidentRoundPage() {
     return () => { active = false; activeScope.current = null; subscription.unsubscribe(); };
   }, [residentId, routeScope, supabase, taskIdFromQuery]);
 
+  async function claimCheck() {
+    if (!task || !owner || claiming || activeScope.current !== key) return;
+    setClaiming(true); setClaimError(null);
+    try {
+      await assertOriginalSession(owner);
+      if (activeScope.current !== key) return;
+      const response = await fetch(`/api/rounding/tasks/${task.id}/claim`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ retryOwner: owner }),
+      });
+      const result = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok || result.ok !== true) throw new Error(result.error ?? "The check could not be claimed. Try again.");
+      if (activeScope.current === key) setTask({ ...task, requires_claim: false });
+    } catch (failure) {
+      if (activeScope.current === key) setClaimError(failure instanceof Error ? failure.message : "The check could not be claimed.");
+    } finally {
+      if (activeScope.current === key) setClaiming(false);
+    }
+  }
+
   async function submitRound(draft: CompletionPayload) {
-    if (!task || !owner || activeScope.current !== key || acknowledgedRounds.has(key)) return;
+    if (!task || !owner || activeScope.current !== key || acknowledgedRounds.has(key) || (task.requires_claim && !pendingRounds.has(key))) return;
     const previous = pendingRounds.get(key);
     if (previous?.busy) return;
     const payload: CompletionPayload = previous ? {
@@ -282,6 +306,12 @@ export default function CaregiverResidentRoundPage() {
             </Button>
           </Link>
         </div>
+      ) : task.requires_claim && !pending ? (
+        <Card><CardContent className="space-y-3 py-4">
+          <p className="text-sm">Take responsibility for this check before recording it. The original assigned staff member remains on its history.</p>
+          {claimError ? <p role="alert" className="text-sm text-destructive">{claimError}</p> : null}
+          <Button disabled={claiming} onClick={() => void claimCheck()}>{claiming ? "Taking this check…" : "Take this check"}</Button>
+        </CardContent></Card>
       ) : (
         <ObservationCapture
           key={key}

@@ -16,6 +16,8 @@
 
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 
+import { CadencePolicyDiff } from "@/components/rounding/CadencePolicyDiff";
+import { rungDraftsFrom, shiftsFromConfiguration } from "@/lib/rounding/cadence-settings";
 import { CadenceLadderList } from "@/components/rounding/CadenceLadderList";
 import { CadenceSimulationSummary } from "@/components/rounding/CadenceSimulationSummary";
 import { CadenceWindowStrip } from "@/components/rounding/CadenceWindowStrip";
@@ -81,7 +83,11 @@ export function CadencePreviewPanel({
   const proposed = overview.proposed;
   if (!proposed) return null;
   const validation = proposed.validation;
-  const blocked = validation != null && !validation.ok;
+  const candidateShape = proposed.day_shape ?? (proposed.cadence_version_id == null ? overview.current.day_shape : null);
+  const candidateTotal = proposed.daily_task_total ?? (proposed.cadence_version_id == null ? overview.current.daily_task_total : null);
+  const candidateShifts = proposed.configuration ? shiftsFromConfiguration(proposed.configuration) : overview.shifts;
+  const candidateLadder = proposed.escalation_version_id == null ? overview.current.ladder : proposed.ladder;
+  const blocked = validation?.ok !== true || candidateShape == null || (proposed.escalation_version_id != null && candidateLadder.length === 0);
   const needsAcknowledgment =
     applyMode !== "next_shift_boundary" || (validation?.warnings.length ?? 0) > 0;
 
@@ -124,22 +130,22 @@ export function CadencePreviewPanel({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <MetricCard
           label="Checks per resident per day"
-          value={proposed.day_shape?.windows_per_day ?? 0}
-          numericValue={proposed.day_shape?.windows_per_day ?? 0}
+          value={candidateShape?.windows_per_day ?? "Unavailable"}
+          numericValue={candidateShape?.windows_per_day}
           thresholds={{ type: "informational" }}
           hint={`Now ${overview.current.day_shape?.windows_per_day ?? 0}`}
         />
         <MetricCard
           label="Checks a day across the building"
-          value={proposed.daily_task_total ?? 0}
-          numericValue={proposed.daily_task_total ?? 0}
+          value={candidateTotal ?? "Unavailable"}
+          numericValue={candidateTotal ?? undefined}
           thresholds={{ type: "informational" }}
           hint={`${overview.active_resident_count} residents in the building right now`}
         />
         <MetricCard
           label="Longest unobserved span"
-          value={formatSpanMinutes(proposed.day_shape?.largest_unobserved_gap_minutes ?? 0)}
-          numericValue={proposed.day_shape?.largest_unobserved_gap_minutes ?? 0}
+          value={candidateShape ? formatSpanMinutes(candidateShape.largest_unobserved_gap_minutes) : "Unavailable"}
+          numericValue={candidateShape?.largest_unobserved_gap_minutes}
           thresholds={{ type: "informational" }}
           hint={`Now ${formatSpanMinutes(overview.current.day_shape?.largest_unobserved_gap_minutes ?? 0)}`}
         />
@@ -153,22 +159,27 @@ export function CadencePreviewPanel({
             label="The day as it runs now"
           />
         ) : null}
-        {proposed.day_shape ? (
+        {candidateShape ? (
           <CadenceWindowStrip
-            shape={proposed.day_shape}
-            shifts={overview.shifts}
+            shape={candidateShape}
+            shifts={candidateShifts}
             label="The day as proposed"
           />
         ) : null}
       </div>
 
-      {proposed.ladder.length > 0 && proposed.day_shape ? (
+      {candidateLadder.length > 0 && candidateShape ? (
         <CadenceLadderList
-          ladder={proposed.ladder}
-          shape={proposed.day_shape}
+          ladder={candidateLadder}
+          shape={candidateShape}
           label="The ladder as proposed, in wall clock terms"
         />
       ) : null}
+
+      <section aria-label="Escalation policy changes" className="space-y-3">
+        <h3 className="text-sm font-semibold">Escalation instructions, recipients and shift changes</h3>
+        <CadencePolicyDiff before={rungDraftsFrom(overview.current.ladder)} after={rungDraftsFrom(candidateLadder)} />
+      </section>
 
       <CadenceSimulationSummary simulation={simulation} onSimulate={onSimulate} busy={busy} />
 
@@ -211,6 +222,7 @@ export function CadencePreviewPanel({
               required
               onValueChange={onScheduledForChange}
             />
+            <p className="text-[13px] text-muted-foreground">Shown in your local timezone.</p>
           </div>
         ) : null}
 

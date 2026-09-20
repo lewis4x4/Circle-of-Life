@@ -629,6 +629,59 @@ export type Database = {
           },
         ]
       }
+      observation_configuration_baselines: {
+        Row: {
+          captured_at: string
+          configuration: Json
+          facility_id: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          captured_at?: string
+          configuration: Json
+          facility_id: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          captured_at?: string
+          configuration?: Json
+          facility_id?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observation_configuration_baselines_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: true
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observation_configuration_baselines_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: true
+            referencedRelation: "v_facility_risk_index"
+            referencedColumns: ["facility_id"]
+          },
+          {
+            foreignKeyName: "observation_configuration_baselines_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: true
+            referencedRelation: "v_watchlist_portfolio"
+            referencedColumns: ["facility_id"]
+          },
+          {
+            foreignKeyName: "observation_configuration_baselines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       observation_vocab: {
         Row: {
           active: boolean
@@ -14220,6 +14273,7 @@ export type Database = {
           facility_id: string
           id: string
           organization_id: string
+          proposal_id: string | null
           source_template_id: string | null
           status: string
           updated_at: string
@@ -14240,6 +14294,7 @@ export type Database = {
           facility_id: string
           id?: string
           organization_id: string
+          proposal_id?: string | null
           source_template_id?: string | null
           status: string
           updated_at?: string
@@ -14260,6 +14315,7 @@ export type Database = {
           facility_id?: string
           id?: string
           organization_id?: string
+          proposal_id?: string | null
           source_template_id?: string | null
           status?: string
           updated_at?: string
@@ -14681,6 +14737,7 @@ export type Database = {
           activation_reason: string | null
           apply_mode: string | null
           change_reason: string
+          configuration: Json | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -14689,6 +14746,7 @@ export type Database = {
           facility_id: string
           id: string
           organization_id: string
+          proposal_id: string | null
           source_template_id: string | null
           status: string
           updated_at: string
@@ -14701,6 +14759,7 @@ export type Database = {
           activation_reason?: string | null
           apply_mode?: string | null
           change_reason: string
+          configuration?: Json | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -14709,6 +14768,7 @@ export type Database = {
           facility_id: string
           id?: string
           organization_id: string
+          proposal_id?: string | null
           source_template_id?: string | null
           status: string
           updated_at?: string
@@ -14721,6 +14781,7 @@ export type Database = {
           activation_reason?: string | null
           apply_mode?: string | null
           change_reason?: string
+          configuration?: Json | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -14729,6 +14790,7 @@ export type Database = {
           facility_id?: string
           id?: string
           organization_id?: string
+          proposal_id?: string | null
           source_template_id?: string | null
           status?: string
           updated_at?: string
@@ -20249,8 +20311,9 @@ export type Database = {
           organization_id: string
           protocol_text: string | null
           rung_key: string
+          shift_overrides: Json
           sort_order: number
-          target_staff_roles: string[]
+          target_staff_roles: Database["public"]["Enums"]["staff_role"][]
           updated_at: string
           updated_by: string | null
           use_standing_alert_routes: boolean
@@ -20271,8 +20334,9 @@ export type Database = {
           organization_id: string
           protocol_text?: string | null
           rung_key: string
+          shift_overrides?: Json
           sort_order?: number
-          target_staff_roles?: string[]
+          target_staff_roles?: Database["public"]["Enums"]["staff_role"][]
           updated_at?: string
           updated_by?: string | null
           use_standing_alert_routes?: boolean
@@ -20293,8 +20357,9 @@ export type Database = {
           organization_id?: string
           protocol_text?: string | null
           rung_key?: string
+          shift_overrides?: Json
           sort_order?: number
-          target_staff_roles?: string[]
+          target_staff_roles?: Database["public"]["Enums"]["staff_role"][]
           updated_at?: string
           updated_by?: string | null
           use_standing_alert_routes?: boolean
@@ -20319,13 +20384,6 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "escalation_template_rungs_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -21116,7 +21174,21 @@ export type Database = {
           p_apply_mode?: string
           p_effective_from?: string | null
           p_acknowledgment?: string | null
+          p_expected_cadence_template_version_id?: string | null
+          p_expected_escalation_template_version_id?: string | null
         }
+        Returns: Json
+      }
+      claim_observation_task: {
+        Args: { p_task_id: string }
+        Returns: Json
+      }
+      observation_config_templates: {
+        Args: { p_facility_id: string }
+        Returns: Json
+      }
+      save_observation_template: {
+        Args: { p_facility_id: string; p_kind: string; p_name: string; p_change_reason: string; p_rows: Json; p_template_id?: string | null }
         Returns: Json
       }
       cadence_version_day_shape: {
@@ -21132,6 +21204,7 @@ export type Database = {
           p_source_cadence_template_id?: string
           p_source_escalation_template_id?: string
           p_windows?: Json
+          p_configuration?: Json
         }
         Returns: Json
       }

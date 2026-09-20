@@ -102,13 +102,33 @@ describe("chip capture routes through the composing command", () => {
     }));
   });
 
-  it("leaves a chip-less completion on the existing command", async () => {
+  it("preserves the legacy command for immutable previously submitted receipts", async () => {
     const current = install();
     current.rpc.mockResolvedValue({ data: { log_id: "log-1", status: "completed_on_time" }, error: null });
 
     await POST(request({}), { params: Promise.resolve({ id: "task-1" }) });
 
     expect(current.rpc.mock.calls[0][0]).toBe("complete_rounding_task_review");
+  });
+
+  it("returns the shared write boundary rejection for a new chip-less admin completion", async () => {
+    const current = install();
+    current.value.appRole = "facility_admin";
+    mocks.managerRole.mockReturnValue(true);
+    current.rpc.mockResolvedValue({ data: null, error: { code: "22023", message: "Observation chips are required" } });
+    const response = await POST(request({}), { params: Promise.resolve({ id: "task-1" }) });
+    expect(response.status).toBe(400);
+    expect(await response.json()).not.toHaveProperty("ok", true);
+  });
+
+  it("routes an admin board chip payload through the same composing command", async () => {
+    const current = install();
+    current.value.appRole = "facility_admin";
+    mocks.managerRole.mockReturnValue(true);
+    current.rpc.mockResolvedValue({ data: { log_id: "log-1", status: "completed_on_time" }, error: null });
+    const response = await POST(request({ chipSelections: { mood_state: ["pleasant"] }, note: null }), { params: Promise.resolve({ id: "task-1" }) });
+    expect(response.status).toBe(200);
+    expect(current.rpc).toHaveBeenCalledWith("submit_observation", expect.objectContaining({ p_actor_role: "facility_admin", p_chip_selections: { mood_state: ["pleasant"] }, p_resident_state: "eating_meal" }));
   });
 
   it("sends an unrecognized chip code through rather than dropping it, and surfaces the refusal", async () => {

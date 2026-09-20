@@ -14,7 +14,7 @@
  * window arithmetic in the browser.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -23,6 +23,7 @@ import {
   windowDraftsFrom,
   type ApplyMode,
   type ChangeLogEntry,
+  type ConfigurationSnapshot,
   type ObservationConfigOverview,
   type RungDraft,
   type SimulationResult,
@@ -53,6 +54,7 @@ export type CadenceProposal = { cadenceVersionId: string | null; escalationVersi
 export function useObservationCadenceSettings(facilityId: string) {
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
 
+  const loadGeneration = useRef(0);
   const [overview, setOverview] = useState<ObservationConfigOverview | null>(null);
   const [changeLog, setChangeLog] = useState<ChangeLogEntry[]>([]);
   const [loadState, setLoadState] = useState<CadenceLoadState>("idle");
@@ -61,6 +63,7 @@ export function useObservationCadenceSettings(facilityId: string) {
 
   const [windowDrafts, setWindowDrafts] = useState<WindowDraft[]>([]);
   const [rungDrafts, setRungDrafts] = useState<RungDraft[]>([]);
+  const [configurationDraft, setConfigurationDraft] = useState<ConfigurationSnapshot | null>(null);
   const [proposalReason, setProposalReason] = useState("");
 
   const [proposal, setProposal] = useState<CadenceProposal | null>(null);
@@ -74,6 +77,7 @@ export function useObservationCadenceSettings(facilityId: string) {
 
   const load = useCallback(
     async (withProposal: CadenceProposal | null) => {
+      const generation = ++loadGeneration.current;
       setErrorMessage(null);
       if (!facilityId || !isBrowserSupabaseConfigured()) {
         setOverview(null);
@@ -84,13 +88,16 @@ export function useObservationCadenceSettings(facilityId: string) {
       setLoadState("loading");
       try {
         const next = await fetchObservationConfigOverview(supabase, facilityId, withProposal ?? undefined);
+        if (generation !== loadGeneration.current) return;
         setOverview(next);
         if (withProposal == null) {
+          setConfigurationDraft(next.configuration ?? null);
           setWindowDrafts(windowDraftsFrom(next.current.day_shape));
           setRungDrafts(rungDraftsFrom(next.current.ladder));
         }
         setLoadState("ready");
       } catch (error) {
+        if (generation !== loadGeneration.current) return;
         setErrorMessage(
           logRoundingQueryFailure("rounding.cadence_settings.overview", error, CADENCE_SETTINGS_LOAD_FAILED),
         );
@@ -99,8 +106,11 @@ export function useObservationCadenceSettings(facilityId: string) {
       }
 
       try {
-        setChangeLog(await fetchObservationConfigChangeLog(supabase, facilityId));
+        const entries = await fetchObservationConfigChangeLog(supabase, facilityId);
+        if (generation !== loadGeneration.current) return;
+        setChangeLog(entries);
       } catch (error) {
+        if (generation !== loadGeneration.current) return;
         setErrorMessage(
           logRoundingQueryFailure("rounding.cadence_settings.change_log", error, CHANGE_LOG_LOAD_FAILED),
         );
@@ -110,7 +120,13 @@ export function useObservationCadenceSettings(facilityId: string) {
   );
 
   useEffect(() => {
+    setOverview(null);
+    setChangeLog([]);
+    setProposal(null);
+    setSimulation(null);
+    setNotice(null);
     void load(null);
+    return () => { loadGeneration.current += 1; };
   }, [load]);
 
   // The drafts are compared against the rows in force, so the memo keys on the
@@ -119,10 +135,12 @@ export function useObservationCadenceSettings(facilityId: string) {
   // the dependency is the overview itself.
   const originalWindows = useMemo(() => windowDraftsFrom(overview?.current.day_shape ?? null), [overview]);
   const originalRungs = useMemo(() => rungDraftsFrom(overview?.current.ladder ?? []), [overview]);
+  const configurationChanged = JSON.stringify(configurationDraft) !== JSON.stringify(overview?.configuration ?? null);
   const windowsChanged = draftsDiffer(windowDrafts, originalWindows);
   const rungsChanged = draftsDiffer(rungDrafts, originalRungs);
 
   const resetDrafts = useCallback(() => {
+    setConfigurationDraft(overview?.configuration ?? null);
     setWindowDrafts(originalWindows);
     setRungDrafts(originalRungs);
     setProposalReason("");
@@ -130,7 +148,7 @@ export function useObservationCadenceSettings(facilityId: string) {
     setSimulation(null);
     setActivationReason("");
     setAcknowledgment("");
-  }, [originalRungs, originalWindows]);
+  }, [originalRungs, originalWindows, overview]);
 
   const runCommand = useCallback(
     async (step: string, fallback: string, action: () => Promise<void>) => {
@@ -160,7 +178,8 @@ export function useObservationCadenceSettings(facilityId: string) {
           const created = await createCadenceVersion(supabase, {
             facilityId,
             changeReason: proposalReason,
-            windows: windowsChanged ? windowDrafts : null,
+            windows: windowsChanged || configurationChanged ? windowDrafts : null,
+            ...(configurationChanged ? { configuration: configurationDraft } : {}),
             rungs: rungsChanged ? rungDrafts : null,
           });
           const next: CadenceProposal = {
@@ -173,7 +192,7 @@ export function useObservationCadenceSettings(facilityId: string) {
           await load(next);
         },
       ),
-    [facilityId, load, proposalReason, rungDrafts, rungsChanged, runCommand, supabase, windowDrafts, windowsChanged],
+    [configurationChanged, configurationDraft, facilityId, load, proposalReason, rungDrafts, rungsChanged, runCommand, supabase, windowDrafts, windowsChanged],
   );
 
   const simulate = useCallback(
@@ -207,7 +226,7 @@ export function useObservationCadenceSettings(facilityId: string) {
             cadenceVersionId: proposal.cadenceVersionId,
             escalationVersionId: proposal.escalationVersionId,
             applyMode,
-            effectiveFrom: applyMode === "scheduled" ? scheduledFor || null : null,
+            effectiveFrom: applyMode === "scheduled" && scheduledFor ? new Date(scheduledFor).toISOString() : null,
             acknowledgment: acknowledgment.trim() === "" ? null : acknowledgment,
           });
           setNotice(
@@ -273,6 +292,8 @@ export function useObservationCadenceSettings(facilityId: string) {
     loadState,
     errorMessage,
     notice,
+    configurationDraft,
+    setConfigurationDraft,
     windowDrafts,
     setWindowDrafts,
     rungDrafts,
@@ -291,7 +312,8 @@ export function useObservationCadenceSettings(facilityId: string) {
     setAcknowledgment,
     busy,
     testSendRungKey,
-    dirty: windowsChanged || rungsChanged,
+    dirty: windowsChanged || rungsChanged || configurationChanged,
+    reopenProposal: async (next: CadenceProposal) => { setProposal(next); setSimulation(null); setActivationReason(""); setAcknowledgment(""); await load(next); },
     reload: load,
     resetDrafts,
     propose,

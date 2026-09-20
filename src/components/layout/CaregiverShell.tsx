@@ -14,26 +14,33 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
 import { loadCaregiverFacilityContextForUser } from "@/lib/caregiver/facility-context";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { fetchLiveBoardShifts } from "@/lib/rounding/live-board-fetch";
+import { shiftSpanAt } from "@/lib/rounding/observation-cadence";
 import { createClient } from "@/lib/supabase/client";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
 import { cn } from "@/lib/utils";
 
 type SyncState = {
-  variant: "success" | "warning" | "destructive";
+  variant: "default" | "success" | "warning" | "destructive";
   label: string;
   pulsing: boolean;
 };
 
 function deriveSyncState({
+  ready,
+  lastError,
   isSyncing,
   online,
   pendingCount,
 }: {
+  ready: boolean;
+  lastError: string | null;
   isSyncing: boolean;
   online: boolean;
   pendingCount: number;
 }): SyncState {
+  if (!ready) return { variant: "default", label: "Checking sync…", pulsing: false };
+  if (lastError) return { variant: "warning", label: "Sync unavailable", pulsing: false };
   if (isSyncing) return { variant: "warning", label: "Syncing", pulsing: true };
   if (!online) {
     return {
@@ -54,18 +61,20 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const { appRole, loading, organizationId, user } = useHavenAuth();
   const [workingFacilityId, setWorkingFacilityId] = useState("");
   const [facilityName, setFacilityName] = useState("Facility");
-  const [shiftLabel, setShiftLabel] = useState("Shift");
+  const [shiftLabel, setShiftLabel] = useState<string | null>(null);
   const effectiveRole = getAppRoleFromClaims(user) || appRole;
   const isHousekeeper = effectiveRole === "housekeeper";
   const roundingSync = useRoundingOfflineSync();
   const syncState = useMemo(
     () =>
       deriveSyncState({
+        ready: roundingSync.ready,
+        lastError: roundingSync.lastError,
         isSyncing: roundingSync.isSyncing,
         online: roundingSync.online,
         pendingCount: roundingSync.pendingCount,
       }),
-    [roundingSync.isSyncing, roundingSync.online, roundingSync.pendingCount],
+    [roundingSync.ready, roundingSync.lastError, roundingSync.isSyncing, roundingSync.online, roundingSync.pendingCount],
   );
 
   useEffect(() => {
@@ -73,6 +82,10 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
 
     const supabase = createClient();
     let cancelled = false;
+    let shiftRequest = 0;
+    let shiftTimer: ReturnType<typeof setTimeout> | null = null;
+    let refreshShift = () => {};
+    setShiftLabel(null);
     void (async () => {
       try {
         const resolved = await loadCaregiverFacilityContextForUser(supabase, {
@@ -82,23 +95,33 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
           appRole: effectiveRole,
         });
         if (!resolved.ok || cancelled) return;
-        const shiftType = currentShiftForTimezone(resolved.ctx.timeZone);
-        const label =
-          shiftType === "day"
-            ? "Day Shift (7A - 3P)"
-            : shiftType === "evening"
-              ? "Evening Shift (3P - 11P)"
-              : "Night Shift (11P - 7A)";
         setFacilityName(resolved.ctx.facilityName ?? "Facility");
-        setShiftLabel(label);
+        refreshShift = () => {
+          const attempt = ++shiftRequest;
+          if (shiftTimer) clearTimeout(shiftTimer);
+          void fetchLiveBoardShifts(supabase, resolved.ctx.facilityId).then((rows) => {
+            if (cancelled || attempt !== shiftRequest) return;
+            const now = new Date();
+            const span = shiftSpanAt(rows.map((row, index) => ({ shiftKey: row.shift_key, label: row.label, startsAtLocal: row.starts_at_local, endsAtLocal: row.ends_at_local, sortOrder: index })), now, resolved.ctx.timeZone);
+            setShiftLabel(span ? `${span.label} shift` : null);
+            if (span) shiftTimer = setTimeout(refreshShift, span.endsAt.getTime() - now.getTime() + 1);
+          }).catch(() => {
+            if (!cancelled && attempt === shiftRequest) setShiftLabel(null);
+          });
+        };
+        refreshShift();
       } catch (error) {
         if (!cancelled) {
           console.error("[CaregiverShell] Failed to load caregiver facility context", error);
         }
       }
     })();
+    const onVisible = () => { if (document.visibilityState === "visible") refreshShift(); };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      if (shiftTimer) clearTimeout(shiftTimer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [effectiveRole, loading, organizationId, user?.id, workingFacilityId]);
 
@@ -163,17 +186,17 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="flex min-w-0 flex-1 flex-col md:ml-20 md:border-l md:border-border">
-          <header className="haven-chrome-topnav sticky top-0 z-40 flex items-center justify-between border-b border-border px-4 py-3 md:px-8 md:py-4">
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
+          <header className="haven-chrome-topnav sticky top-0 z-40 flex flex-col items-stretch gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8 md:py-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="break-words text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
                 {facilityName}
                 {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
               </h1>
-              <p className="mt-0.5 text-[11px] uppercase tracking-wider haven-chrome-fg-muted">
+              {shiftLabel ? <p className="mt-0.5 text-xs haven-chrome-fg-muted">
                 {shiftLabel}
-              </p>
+              </p> : null}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
               <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
               <Link href="/caregiver/acknowledgments" className="text-xs underline">Required reading</Link>
               <PilotFeedbackLauncher shellKind="caregiver" compact />
@@ -183,7 +206,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
                 className="tap-responsive rounded-full haven-chrome-tw-ring-offset-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 aria-label="Sync queued caregiver rounds"
               >
-                <StatusPill variant={syncState.variant} dot pulsing={syncState.pulsing}>
+                <StatusPill variant={syncState.variant} dot pulsing={syncState.pulsing} className="text-chrome-foreground">
                   {syncState.label}
                 </StatusPill>
               </button>
@@ -198,7 +221,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Mobile bottom tab bar */}
-        <BottomNav aria-label="Caregiver navigation" className="md:hidden">
+        <BottomNav aria-label="Caregiver navigation" className="md:hidden [&_[data-state=active]>span:last-child]:text-chrome-foreground">
           {primaryItems.map((item) => (
             <BottomNavItem
               key={item.href}

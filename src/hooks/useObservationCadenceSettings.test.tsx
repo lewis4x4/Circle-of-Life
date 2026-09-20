@@ -383,7 +383,7 @@ describe("putting a change in force", () => {
     });
     expect(reads.activateCadenceVersion.mock.calls[0][1]).toMatchObject({
       applyMode: "scheduled",
-      effectiveFrom: "2026-09-20T10:00",
+      effectiveFrom: new Date("2026-09-20T10:00").toISOString(),
     });
   });
 
@@ -610,5 +610,21 @@ describe("the test send", () => {
       "No enabled escalation rung named tier_9 is in force at this facility",
     );
     expect(result.current.testSendRungKey).toBeNull();
+  });
+});
+
+describe("durable approval handoff", () => {
+  it.each(["saved-cadence", null])("opens another administrator's saved proposal and activates its exact pair (cadence %s)", async (cadenceVersionId) => {
+    const saved = { proposal_id: "shared-proposal", cadence_version_id: cadenceVersionId, escalation_version_id: "saved-escalation", change_reason: "Night coverage", created_at: "2026-09-20T00:00:00Z", created_by_name: "Proposing administrator" };
+    reads.fetchObservationConfigOverview.mockResolvedValue(overview({ pending_proposals: [saved] }));
+    reads.activateCadenceVersion.mockResolvedValue({ scheduled: true, effective_from: "2026-09-21T00:00:00Z" });
+    const { result } = await mounted();
+    expect(result.current.overview?.pending_proposals?.[0].created_by_name).toBe(saved.created_by_name);
+    await act(async () => { await result.current.reopenProposal({ cadenceVersionId: saved.cadence_version_id, escalationVersionId: saved.escalation_version_id }); });
+    expect(reads.fetchObservationConfigOverview).toHaveBeenLastCalledWith(expect.anything(), FACILITY, { cadenceVersionId, escalationVersionId: "saved-escalation" });
+    act(() => result.current.setActivationReason("Approved night coverage"));
+    await act(async () => { await result.current.commit(); });
+    expect(reads.createCadenceVersion).not.toHaveBeenCalled();
+    expect(reads.activateCadenceVersion).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ cadenceVersionId, escalationVersionId: "saved-escalation", changeReason: "Approved night coverage" }));
   });
 });

@@ -934,3 +934,11 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 - Segment: `SMART-ROUNDING-CI-ENTITY-20260919`; mission alignment: `pass`.
 - Existing executive-facility test now awaits the independently loaded entity link instead of assuming the facility heading signals its readiness.
 - 20 focused tests passed; [required segment gate PASS](../test-results/agent-gates/2026-09-19T21-06-24-222Z-SMART-ROUNDING-CI-ENTITY-20260919.json). Product behavior and source-only deployment boundary unchanged.
+
+## RECORD — Smart Rounding production activation and hosted Watchlist correction (2026-09-19)
+
+- Segment: `SMART-ROUNDING-HOSTED-WATCHLIST-20260919`; mission alignment: `pass`.
+- Owner explicitly authorized production activation. Staging rehearsal preceded atomic production migrations417–435, four worker deployments, secrets and five schedules.
+- Real PostgREST exposed `safeupdate` rejecting an unconditional temporary-table delete. Forward435 resets only the session-local working table; real staging and production worker checks now pass5/5facilities.
+- [Required gate PASS](../test-results/agent-gates/2026-09-19T21-51-39-728Z-SMART-ROUNDING-HOSTED-WATCHLIST-20260919.json); [activation handoff](../HANDOFFS/2026-09-19__smart-rounding-production-activation.md); [live machine evidence](../test-results/production-activation/2026-09-19-smart-rounding.json).
+- Limits remain explicit: Homewood night roster unassigned25residents; SMS credentials and push subscriptions absent; authenticated production browser witness unavailable. Frontend publication is tracked in the handoff.

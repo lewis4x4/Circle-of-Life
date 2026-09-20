@@ -1,0 +1,52 @@
+{
+  "runtimeCommit": "f491ca73ed86364e740778493353da5e5d97f8d6",
+  "sourceState": "Exact working source includes reviewed caregiver phone CSS fixes",
+  "deployId": "6aaf747aa10b67f18b9145b6",
+  "url": "https://6aaf747aa10b67f18b9145b6--circleoflifealf.netlify.app",
+  "existingTaskId": "0dccd603-68c6-4f9b-80f2-0d5fcf798764",
+  "existingLogId": "0b250544-2aa9-4cfe-8ae7-264a3edf23b9",
+  "axe": [
+    {
+      "path": "/caregiver/rounds",
+      "violations": []
+    },
+    {
+      "path": "/caregiver/rounds/3d3e9334-5f69-40a7-9810-8d87c5ae86ff",
+      "violations": []
+    }
+  ],
+  "instrumented": false,
+  "clinicalWrites": false,
+  "errors": [],
+  "consoleErrors": [],
+  "routes": [
+    {
+      "path": "/caregiver/rounds",
+      "configuredShift": true,
+      "noHorizontalOverflow": true,
+      "overflow": {
+        "width": 390,
+        "scrollWidth": 390,
+        "elements": []
+      }
+    },
+    {
+      "path": "/caregiver/rounds/3d3e9334-5f69-40a7-9810-8d87c5ae86ff",
+      "configuredShift": true,
+      "noHorizontalOverflow": true,
+      "overflow": {
+        "width": 390,
+        "scrollWidth": 390,
+        "elements": []
+      }
+    }
+  ],
+  "supabaseHosts": [
+    "iwcnajanvjvynolltflw.supabase.co"
+  ],
+  "scopedTaskRead": true,
+  "foreignFacilityRefused": true,
+  "primaryOwnerPreserved": true,
+  "passed": true,
+  "synthetic_data_only": true
+}

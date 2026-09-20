@@ -22,6 +22,9 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 
+import { CadencePolicyDiff } from "@/components/rounding/CadencePolicyDiff";
+import { CadenceTemplatePortfolio } from "@/components/rounding/CadenceTemplatePortfolio";
+import { CadenceConfigurationEditor } from "@/components/rounding/CadenceConfigurationEditor";
 import { CadenceCurrentSummary } from "@/components/rounding/CadenceCurrentSummary";
 import { CadenceEditorSection } from "@/components/rounding/CadenceEditorSection";
 import { CadencePreviewPanel } from "@/components/rounding/CadencePreviewPanel";
@@ -34,10 +37,12 @@ import {
   CADENCE_SETTINGS_SUBTITLE,
   templateLine,
 } from "@/lib/rounding/cadence-settings-copy";
+import { shiftsFromConfiguration, type WindowDraft, type RungDraft } from "@/lib/rounding/cadence-settings";
 import { cn } from "@/lib/utils";
 
 export function ObservationCadenceTab({ facilityId }: { facilityId: string }) {
   const settings = useObservationCadenceSettings(facilityId);
+  const [configurationValid, setConfigurationValid] = useState(true);
   const [openWindowKey, setOpenWindowKey] = useState<string | null>(null);
   const [openRungKey, setOpenRungKey] = useState<string | null>(null);
 
@@ -117,8 +122,16 @@ export function ObservationCadenceTab({ facilityId }: { facilityId: string }) {
         testSendBusyRungKey={settings.testSendRungKey}
       />
 
+      {overview.pending_proposals?.length ? <section aria-label="Saved proposals" className="space-y-2">
+        <h2 className="text-sm font-semibold">Proposals awaiting approval</h2>
+        {overview.pending_proposals.map((pending) => <div key={pending.proposal_id} className="rounded border border-border p-3 text-sm">
+          <p>{pending.change_reason} — {pending.created_by_name ?? "Recorded administrator"}, {new Date(pending.created_at).toLocaleString()}</p>
+          <Button variant="outline" size="sm" disabled={busy} onClick={() => void settings.reopenProposal({ cadenceVersionId: pending.cadence_version_id, escalationVersionId: pending.escalation_version_id })}>Review saved proposal</Button>
+        </div>)}
+      </section> : null}
+      {settings.configurationDraft && <CadenceConfigurationEditor value={settings.configurationDraft} severityClasses={overview.available_severity_classes} rosterShiftTypes={overview.roster_shift_types} onChange={settings.setConfigurationDraft} onValidityChange={setConfigurationValid} disabled={busy || proposal != null} />}
       <CadenceEditorSection
-        overview={overview}
+        overview={{ ...overview, shifts: settings.configurationDraft ? shiftsFromConfiguration(settings.configurationDraft) : overview.shifts }}
         windowDrafts={settings.windowDrafts}
         rungDrafts={settings.rungDrafts}
         openWindowKey={openWindowKey}
@@ -127,25 +140,35 @@ export function ObservationCadenceTab({ facilityId }: { facilityId: string }) {
           setOpenWindowKey(openWindowKey === windowKey ? null : windowKey);
           setOpenRungKey(null);
         }}
-        onWindowChange={(next) =>
-          settings.setWindowDrafts((drafts) =>
-            drafts.map((candidate) => (candidate.window_key === next.window_key ? next : candidate)),
-          )
-        }
-        onRungChange={(next) =>
-          settings.setRungDrafts((drafts) =>
-            drafts.map((candidate) => (candidate.rung_key === next.rung_key ? next : candidate)),
-          )
-        }
+        onAddWindow={() => {
+          const source = settings.windowDrafts[0];
+          if (!source) return;
+          const next = { ...source, window_key: `window_${crypto.randomUUID().replaceAll("-", "_")}`, label: "New observation window", enabled: false, sort_order: settings.windowDrafts.length };
+          settings.setWindowDrafts((rows) => [...rows, next]);
+          setOpenWindowKey(next.window_key);
+        }}
+        onWindowChange={(next, previousKey) => {
+          settings.setWindowDrafts((drafts) => drafts.map((candidate) => candidate.window_key === previousKey ? next : candidate));
+          setOpenWindowKey(next.window_key);
+        }}
+        onRungChange={(next, previousKey) => {
+          settings.setRungDrafts((drafts) => drafts.map((candidate) => candidate.rung_key === previousKey ? next : candidate));
+          setOpenRungKey(next.rung_key);
+        }}
         reason={settings.proposalReason}
         onReasonChange={settings.setProposalReason}
         onPropose={() => void settings.propose()}
         onDiscard={discard}
+        invalid={!configurationValid}
         showReason={settings.dirty && proposal == null}
         locked={proposal != null}
         busy={busy}
       />
 
+      {proposal && overview.proposed?.configuration && <section aria-label="Proposed facility policy changes" className="space-y-3">
+        <h2 className="text-sm font-semibold">Facility policy changes in this proposal</h2>
+        <CadencePolicyDiff before={overview.configuration ? [overview.configuration] : []} after={[overview.proposed.configuration]} />
+      </section>}
       {proposal ? (
         <CadencePreviewPanel
           overview={overview}
@@ -164,6 +187,8 @@ export function ObservationCadenceTab({ facilityId }: { facilityId: string }) {
           busy={busy}
         />
       ) : null}
+
+      <CadenceTemplatePortfolio key={facilityId} facilityId={facilityId} windows={settings.windowDrafts} rungs={settings.rungDrafts} onEditTemplate={(kind, rows) => { if (kind === "cadence") { settings.setWindowDrafts(rows as WindowDraft[]); setOpenWindowKey((rows as WindowDraft[])[0]?.window_key ?? null); } else { settings.setRungDrafts(rows as RungDraft[]); setOpenRungKey((rows as RungDraft[])[0]?.rung_key ?? null); } }} />
 
       <CadenceVersionHistory
         entries={settings.changeLog}

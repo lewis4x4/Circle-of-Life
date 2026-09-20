@@ -28,8 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import type { LadderRung, RungDraft } from "@/lib/rounding/cadence-settings";
+import type { CadenceShift, LadderRung, RungDraft } from "@/lib/rounding/cadence-settings";
 import { channelLabel, staffRoleLabel } from "@/lib/rounding/cadence-settings-copy";
 
 const BEFORE = "before";
@@ -37,12 +38,14 @@ const AFTER = "after";
 
 export function CadenceRungEditor({
   draft,
+  shifts = [],
   channels,
   roles,
   onChange,
   disabled,
 }: {
   draft: RungDraft;
+  shifts?: CadenceShift[];
   /** The channels this building already uses, read from the rungs in force. */
   channels: string[];
   /** The roles this building already targets, with how many people hold each. */
@@ -76,6 +79,10 @@ export function CadenceRungEditor({
 
   return (
     <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+      <div className="space-y-2">
+        <FormLabel htmlFor={`rung-key-${draft.rung_key}`}>Stable rung key</FormLabel>
+        <Input id={`rung-key-${draft.rung_key}`} defaultValue={draft.rung_key} disabled={disabled} onBlur={(event) => onChange({ ...draft, rung_key: event.target.value })} />
+      </div>
       <div className="space-y-2">
         <FormLabel htmlFor={`rung-label-${draft.rung_key}`} required>
           What this step is called
@@ -142,6 +149,11 @@ export function CadenceRungEditor({
           ))}
         </div>
         <label className="flex items-center gap-2 text-[13px] text-foreground">
+          <Switch checked={draft.assigned_staff_only} disabled={disabled} aria-label="Only notify assigned staff"
+            onCheckedChange={(on) => onChange({ ...draft, assigned_staff_only: on, include_assigned_staff: on || draft.include_assigned_staff })} />
+          <span>Only notify assigned staff</span>
+        </label>
+        <label className="flex items-center gap-2 text-[13px] text-foreground">
           <Switch
             checked={draft.include_assigned_staff}
             disabled={disabled || draft.assigned_staff_only}
@@ -184,6 +196,36 @@ export function CadenceRungEditor({
           The overnight mix is worth setting separately. A loud step every night gets the whole channel muted
           inside a week, and once it is muted the steps that matter are muted with it.
         </p>
+      </fieldset>
+
+      <div className="space-y-2">
+        <FormLabel htmlFor={`protocol-${draft.rung_key}`}>Instructions for this step</FormLabel>
+        <Textarea id={`protocol-${draft.rung_key}`} value={draft.protocol_text ?? ""} disabled={disabled}
+          onChange={(event) => onChange({ ...draft, protocol_text: event.target.value || null })} />
+      </div>
+      <fieldset className="space-y-3" disabled={disabled}>
+        <legend>Per-shift timing and channels</legend>
+        {shifts.map((shift) => {
+          const override = draft.shift_overrides?.find((item) => item.shift_key === shift.shift_key);
+          const update = (value: typeof override) => onChange({ ...draft, shift_overrides: [
+            ...(draft.shift_overrides ?? []).filter((item) => item.shift_key !== shift.shift_key), ...(value ? [value] : []),
+          ] });
+          return <div key={shift.shift_key} className="space-y-2 rounded border border-border p-3">
+            <label className="flex items-center gap-2"><Switch checked={Boolean(override)} disabled={disabled}
+              onCheckedChange={(on) => update(on ? { shift_key: shift.shift_key, offset_minutes: null, channels: null } : undefined)} />Override {shift.label}</label>
+            {override && <>
+              <FormLabel htmlFor={`override-${draft.rung_key}-${shift.shift_key}`}>Signed minutes from window close (blank inherits)</FormLabel>
+              <Input id={`override-${draft.rung_key}-${shift.shift_key}`} type="number" value={override.offset_minutes ?? ""} disabled={disabled}
+                onChange={(event) => update({ ...override, offset_minutes: event.target.value === "" ? null : Number(event.target.value) })} />
+              <label className="flex items-center gap-2"><Switch checked={override.channels !== null} disabled={disabled}
+                onCheckedChange={(on) => update({ ...override, channels: on ? [...draft.channels] : null })} />Use a different channel mix</label>
+              {override.channels !== null && channels.map((channel) => <label key={channel} className="flex items-center gap-2">
+                <Switch checked={override.channels?.includes(channel)} disabled={disabled} onCheckedChange={(on) => update({ ...override,
+                  channels: on ? [...new Set([...(override.channels ?? []), channel])] : (override.channels ?? []).filter((item) => item !== channel) })} />{channelLabel(channel)}
+              </label>)}
+            </>}
+          </div>;
+        })}
       </fieldset>
 
       <div className="flex items-center justify-between gap-4 border-t border-border pt-4">
