@@ -26,6 +26,8 @@
     "check:memory-care": "node scripts/check-memory-care.mjs",
     "check:env-example": "node scripts/check-env-example.mjs",
     "check:secrets": "node scripts/check-tracked-secrets.mjs",
+    "ci:classify": "node scripts/ci/classify-changes.mjs",
+    "ci:classify:test": "node --test scripts/ci/classify-changes.test.mjs",
     "secrets:gitleaks": "node scripts/run-gitleaks.mjs",
     "seed:repair": "node scripts/seed/repair-demo-auth.mjs",
     "seed:verify": "node scripts/seed/verify-auth-fixtures.mjs",

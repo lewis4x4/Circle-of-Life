@@ -5,8 +5,36 @@ on:
     branches: [main, master]
   pull_request:
 
+concurrency:
+  group: haven-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  classify:
+    name: Classify change risk
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      classification_safe: ${{ steps.risk.outputs.classification_safe }}
+      database_sensitive: ${{ steps.risk.outputs.database_sensitive }}
+      finance_sensitive: ${{ steps.risk.outputs.finance_sensitive }}
+      ui_sensitive: ${{ steps.risk.outputs.ui_sensitive }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed paths
+        id: risk
+        run: node scripts/ci/classify-changes.mjs
+        env:
+          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_DIFF_MODE: ${{ github.event_name == 'pull_request' && 'merge-base' || 'range' }}
+
   gates:
+    name: Application and platform gates
+    needs: classify
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -23,7 +51,7 @@ jobs:
         run: npm ci
 
       - name: Gate failure regression tests
-        run: node --test scripts/review-gates.test.mjs
+        run: npm run ci:classify:test && node --test scripts/review-gates.test.mjs
 
       - name: TypeScript and application tests
         run: npm run typecheck && npm test
@@ -103,11 +131,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Stand Up database authorization and recovery replay
-        run: npm run migrations:verify:pg
-        env:
-          REQUIRE_PG_VERIFY: "1"
-
       - name: Seed roster auth verify
         # Authenticates every account in `scripts/seed/canonical-roster.mjs`
         # against the pilot Supabase project. Pre-launch this gate is
@@ -145,8 +168,11 @@ jobs:
         run: npm run segment:gates -- --segment "ci-${{ github.run_id }}"
         env:
           CI: true
-          # Require Docker-backed migration replay on CI (ubuntu provides Docker)
-          REQUIRE_PG_VERIFY: "1"
+          # The segment runner remains the only full-replay owner. Application-only
+          # changes skip it explicitly; database-sensitive and uncertain diffs fail
+          # closed and require Docker-backed verification.
+          REQUIRE_PG_VERIFY: ${{ needs.classify.outputs.database_sensitive != 'false' && '1' || '0' }}
+          SKIP_PG_VERIFY: ${{ needs.classify.outputs.database_sensitive == 'false' && '1' || '0' }}
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -192,19 +218,7 @@ jobs:
 
       - name: Detect UI changes
         id: ui_changes
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}" --depth=1
-            diff_range="origin/${{ github.base_ref }}...HEAD"
-          else
-            diff_range="HEAD~1..HEAD"
-          fi
-
-          if git diff --name-only "${diff_range}" | grep -q '^src/app/'; then
-            echo "ui_changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ui_changed=false" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "ui_changed=${{ needs.classify.outputs.ui_sensitive == 'false' && 'false' || 'true' }}" >> "$GITHUB_OUTPUT"
 
       - name: UI gates (conditional)
         if: steps.ui_changes.outputs.ui_changed == 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
@@ -212,6 +226,7 @@ jobs:
         env:
           CI: true
           REQUIRE_PG_VERIFY: "0"
+          SKIP_PG_VERIFY: "1"
 
       - name: Bundle size snapshot
         # Depends on `.next/static/` produced by the core Segment-gates build.
@@ -220,3 +235,65 @@ jobs:
         run: node scripts/bundle-size-check.mjs
         env:
           CI: true
+
+  finance:
+    name: Finance-specific tests
+    if: needs.classify.result == 'success' && needs.classify.outputs.finance_sensitive != 'false'
+    needs: classify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Finance and platform audit contracts
+        run: |
+          npm run test:finance-integration
+          npm run test:platform-audit
+          npm run test:audit-edge
+          npm run test:finance-webhook
+          npm run test:finance-read
+          npm run test:finance-provider-contract
+
+      - name: Upload finance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-audit-evidence
+          path: test-results/finance-integration/
+          if-no-files-found: error
+
+  required:
+    name: Required CI summary
+    if: always()
+    needs: [classify, gates, finance]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Enforce applicable jobs
+        env:
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          GATES_RESULT: ${{ needs.gates.result }}
+          FINANCE_RESULT: ${{ needs.finance.result }}
+          CLASSIFICATION_SAFE: ${{ needs.classify.outputs.classification_safe }}
+          DATABASE_SENSITIVE: ${{ needs.classify.outputs.database_sensitive }}
+          FINANCE_SENSITIVE: ${{ needs.classify.outputs.finance_sensitive }}
+          UI_SENSITIVE: ${{ needs.classify.outputs.ui_sensitive }}
+        run: |
+          test "$CLASSIFY_RESULT" = "success"
+          test "$GATES_RESULT" = "success"
+          test "$FINANCE_RESULT" = "success" || test "$FINANCE_RESULT" = "skipped"
+          for value in "$CLASSIFICATION_SAFE" "$DATABASE_SENSITIVE" "$FINANCE_SENSITIVE" "$UI_SENSITIVE"; do
+            test "$value" = "true" || test "$value" = "false"
+          done
