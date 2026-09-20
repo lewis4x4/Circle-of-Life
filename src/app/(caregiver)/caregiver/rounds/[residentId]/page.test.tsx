@@ -200,3 +200,28 @@ describe("caregiver completion delivery with the real observation form", () => {
   });
 
 });
+
+it("requires an explicit accepted rescue claim before capture for a colleague's task", async () => {
+  const claim = vi.fn().mockResolvedValue(response({ ok: true }));
+  const complete = vi.fn().mockResolvedValue(response({ ok: true }));
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.endsWith("/claim")) return claim(url, init);
+    if (url.endsWith("/complete")) return complete(url, init);
+    if (url.includes("vocabulary")) return response(VOCABULARY);
+    return response({ tasks: [{ id: mocks.taskId, due_at: "2026-09-07T12:00:00Z", derived_status: "due_now", requires_claim: true }] });
+  }));
+  render(<Page />);
+  fireEvent.click(await screen.findByRole("button", { name: "Take this check" }));
+  expect(complete).not.toHaveBeenCalled();
+  await fillAndSubmit();
+  await screen.findByText("Round saved successfully.");
+  expect(claim).toHaveBeenCalledOnce(); expect(complete).toHaveBeenCalledOnce();
+});
+it("keeps capture unavailable when a rescue claim is rejected", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => url.endsWith("/claim")
+    ? response({ error: "This check cannot be claimed." }, 403)
+    : response({ tasks: [{ id: mocks.taskId, due_at: "2026-09-07T12:00:00Z", derived_status: "due_now", requires_claim: true }] })));
+  render(<Page />); fireEvent.click(await screen.findByRole("button", { name: "Take this check" }));
+  await screen.findByText("This check cannot be claimed.");
+  expect(screen.queryByRole("button", { name: "Record check" })).toBeNull();
+});

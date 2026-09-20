@@ -40,6 +40,28 @@ function renderDrawer(overrides: Partial<ComponentProps<typeof QuickCheckDrawer>
   return { ...view, onClose, onCompleted };
 }
 
+const catalog = {
+  location: [{ code: "common_area", label: "Common area", sort_order: 1 }],
+  state: [{ code: "sitting", label: "Sitting", sort_order: 1 }],
+  mood_state: [{ code: "pleasant", label: "Pleasant", sort_order: 1 }],
+};
+function installFetch(completion: ReturnType<typeof vi.fn>) {
+  vi.stubGlobal("fetch", (url: string, init?: RequestInit) => url.includes("/vocabulary?")
+    ? Promise.resolve(new Response(JSON.stringify(catalog), { status: 200 })) : completion(url, init));
+}
+async function recordCheck() {
+  const button = await screen.findByRole("button", { name: "Record check" });
+  const status = await screen.findByRole("radio", { name: "Awake" });
+  if (!(status as HTMLButtonElement).disabled) {
+    if (!screen.getAllByRole("radio").some((radio) => radio.getAttribute("aria-checked") === "true" && ["Awake", "Distressed"].includes(radio.textContent ?? ""))) fireEvent.click(status);
+    fireEvent.click(await screen.findByRole("radio", { name: "Common area" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Sitting" }));
+    const mood = screen.getByRole("checkbox", { name: "Pleasant" });
+    if (mood.getAttribute("aria-checked") !== "true") fireEvent.click(mood);
+  }
+  fireEvent.click(button);
+}
+
 let sessionNumber = 0;
 beforeEach(() => {
   auth.rpc.mockReset().mockResolvedValue({ data: { user_id: "operator", session_id: `session-${++sessionNumber}`, organization_id: "org" }, error: null });
@@ -59,11 +81,11 @@ afterEach(() => {
 describe("QuickCheckDrawer persistence mode", () => {
   it("persists synthetic-looking task ids by default", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
 
     const { onCompleted } = renderDrawer();
 
-    fireEvent.click(await screen.findByRole("button", { name: /complete check|retry original check/i }));
+    await recordCheck();
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -77,13 +99,13 @@ describe("QuickCheckDrawer persistence mode", () => {
 
   it("uses local-only completion only when explicitly configured as preview", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
 
     const { onCompleted } = renderDrawer({ persistCompletion: false });
 
     expect(screen.getByText("Preview mode — checks are not saved to the database.")).toBeTruthy();
 
-    fireEvent.click(await screen.findByRole("button", { name: /complete check|retry original check/i }));
+    await recordCheck();
 
     await waitFor(() => expect(onCompleted).toHaveBeenCalledWith("d1"));
     expect(fetchMock).not.toHaveBeenCalled();
@@ -95,15 +117,15 @@ describe("completion retry identity", () => {
   it("reuses the original request and observation time after a lost response", async () => {
     const fetchMock = vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch"))
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
     const { onCompleted } = renderDrawer();
-    fireEvent.click(await screen.findByRole("button", { name: /complete check|retry original check/i }));
+    await recordCheck();
     await screen.findByText("Failed to fetch");
     expect(onCompleted).not.toHaveBeenCalled();
     const first = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(first.requestId).toMatch(/^[0-9a-f-]{36}$/);
     expect(Number.isNaN(Date.parse(first.observedAt))).toBe(false);
-    fireEvent.click(await screen.findByRole("button", { name: /complete check|retry original check/i }));
+    await recordCheck();
     await waitFor(() => expect(onCompleted).toHaveBeenCalledOnce());
     const retry = JSON.parse(fetchMock.mock.calls[1][1].body);
     expect(retry).toEqual(first);
@@ -113,11 +135,11 @@ describe("completion retry identity", () => {
 it("allows a delayed unsaved request to gain its required reason without changing identity", async () => {
   const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ error: "Add a reason for this delayed entry, then retry.", reasonRequired: true }), { status: 400 }))
     .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-  vi.stubGlobal("fetch", fetchMock);
+  installFetch(fetchMock);
   const { onCompleted } = renderDrawer();
-  fireEvent.click(await screen.findByRole("button", { name: /complete check|retry original check/i }));
-  fireEvent.change(await screen.findByLabelText("Reason for delayed entry"), { target: { value: "Connection interrupted during the original entry" } });
-  fireEvent.click(await screen.findByRole("button", { name: /complete check|retry original check/i }));
+  await recordCheck();
+  fireEvent.change(await screen.findByLabelText("Reason this went in after the window"), { target: { value: "Connection interrupted during the original entry" } });
+  await recordCheck();
   await waitFor(() => expect(onCompleted).toHaveBeenCalledOnce());
   const first = JSON.parse(fetchMock.mock.calls[0][1].body);
   const second = JSON.parse(fetchMock.mock.calls[1][1].body);
@@ -128,12 +150,8 @@ describe("pending clinical observation lifecycle", () => {
   const props = { task, open: true, onClose: vi.fn(), onCompleted: vi.fn() };
   async function enterDistress() {
     fireEvent.click(await screen.findByRole("radio", { name: /distressed/i }));
-    fireEvent.change(screen.getByPlaceholderText("Describe the situation..."), { target: { value: "Synthetic original clinical note" } });
-    fireEvent.click(screen.getByRole("switch", { name: "Hydration offered" }));
-    fireEvent.click(screen.getByRole("button", { name: "common area" }));
-    fireEvent.click(screen.getByRole("button", { name: "in chair" }));
-    fireEvent.click(screen.getByRole("button", { name: "Appears ill" }));
-    fireEvent.click(screen.getByRole("button", { name: /complete check/i }));
+    fireEvent.change(screen.getByLabelText("Note, if there is something to add"), { target: { value: "Synthetic original clinical note" } });
+    await recordCheck();
   }
   function request(fetchMock: ReturnType<typeof vi.fn>, index: number) {
     return JSON.parse(fetchMock.mock.calls[index][1].body as string);
@@ -153,22 +171,22 @@ describe("pending clinical observation lifecycle", () => {
       receipt = payload;
       return new Response(JSON.stringify({ ok: true, replayed: committed }), { status: 200 });
     });
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
     const view = render(<QuickCheckDrawer {...props} />);
     await enterDistress();
     await screen.findByText("Response lost");
     const original = request(fetchMock, 0);
-    expect(original).toMatchObject({ quickStatus: "distressed", distressPresent: true, note: "Synthetic original clinical note", hydrationOffered: true, residentLocation: "common area", residentPosition: "in chair", exceptionType: "resident_appears_ill" });
+    expect(original).toMatchObject({ quickStatus: "distressed", distressPresent: true, note: "Synthetic original clinical note", residentLocation: "common_area", residentState: "sitting", chipSelections: { mood_state: ["pleasant"] } });
     view.rerender(<QuickCheckDrawer {...props} open={false} />);
     view.rerender(<QuickCheckDrawer {...props} task={{ ...task, id: "another-task" }} />);
-    await screen.findByRole("button", { name: /complete check/i });
+    await screen.findByRole("button", { name: /record check/i });
     expect(screen.queryByDisplayValue("Synthetic original clinical note")).toBeNull();
     view.unmount();
     render(<QuickCheckDrawer {...props} task={{ ...task }} />);
     await screen.findByDisplayValue("Synthetic original clinical note");
     expect(screen.getByRole("radio", { name: /distressed/i }).getAttribute("aria-checked")).toBe("true");
-    expect(screen.getByRole("radio", { name: /distressed/i }).closest("fieldset")?.disabled).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: /retry original check/i }));
+    expect(screen.getByRole("radio", { name: /distressed/i })).toBeDisabled();
+    await recordCheck();
     await screen.findByText("Check complete");
     expect(request(fetchMock, 1)).toEqual(original);
     expect(receipt).toEqual(original);
@@ -176,18 +194,18 @@ describe("pending clinical observation lifecycle", () => {
 
   it("retains separate pending requests when both tasks lose responses", async () => {
     const fetchMock = vi.fn().mockRejectedValue(new TypeError("Response lost"));
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
     const view = render(<QuickCheckDrawer {...props} />);
     await enterDistress();
     await screen.findByText("Response lost");
     const first = request(fetchMock, 0);
     view.rerender(<QuickCheckDrawer {...props} task={{ ...task, id: "second-task" }} />);
-    fireEvent.click(await screen.findByRole("button", { name: /complete check/i }));
+    await recordCheck();
     await screen.findByText("Response lost");
     const second = request(fetchMock, 1);
     expect(second.requestId).not.toBe(first.requestId);
     view.rerender(<QuickCheckDrawer {...props} task={{ ...task }} />);
-    fireEvent.click(await screen.findByRole("button", { name: /retry original check/i }));
+    await recordCheck();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     expect(request(fetchMock, 2)).toEqual(first);
   });
@@ -198,7 +216,7 @@ describe("pending clinical observation lifecycle", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ error: "Reason required; request unsaved", reasonRequired: true }), { status: 400 }))
       .mockRejectedValueOnce(new TypeError("Reason response lost"))
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
     const view = render(<QuickCheckDrawer {...props} />);
     await enterDistress();
     await screen.findByText("Response lost");
@@ -207,15 +225,15 @@ describe("pending clinical observation lifecycle", () => {
     view.rerender(<QuickCheckDrawer {...props} open={false} />);
     view.rerender(<QuickCheckDrawer {...props} />);
     await screen.findByDisplayValue("Synthetic original clinical note");
-    expect(screen.queryByLabelText("Reason for delayed entry")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /retry original check/i }));
-    const reason = await screen.findByLabelText("Reason for delayed entry");
+    expect(screen.queryByLabelText("Reason this went in after the window")).toBeNull();
+    await recordCheck();
+    const reason = await screen.findByLabelText("Reason this went in after the window");
     expect(request(fetchMock, 1)).toEqual(original);
     fireEvent.change(reason, { target: { value: "Connection interrupted during original entry" } });
-    fireEvent.click(screen.getByRole("button", { name: /retry original check/i }));
+    await recordCheck();
     await screen.findByText("Reason response lost");
-    expect(screen.queryByLabelText("Reason for delayed entry")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /retry original check/i }));
+    expect(screen.queryByLabelText("Reason this went in after the window")).toBeNull();
+    await recordCheck();
     await screen.findByText("Check complete");
     expect(request(fetchMock, 2)).toEqual({ ...original, lateReason: "Connection interrupted during original entry" });
     expect(request(fetchMock, 3)).toEqual(request(fetchMock, 2));
@@ -225,7 +243,7 @@ describe("pending clinical observation lifecycle", () => {
   it.each(["operator", "session", "organization", "facility"])("does not expose or replay another %s scope's pending payload", async (changed) => {
     const originalActor = { user_id: "operator", session_id: `session-${sessionNumber}`, organization_id: "org" };
     const fetchMock = vi.fn().mockRejectedValue(new TypeError("Response lost"));
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
     const view = render(<QuickCheckDrawer {...props} />);
     await enterDistress();
     await screen.findByText("Response lost");
@@ -242,9 +260,9 @@ describe("pending clinical observation lifecycle", () => {
     };
     await act(async () => auth.callback?.("SIGNED_IN"));
     view.rerender(<QuickCheckDrawer {...props} task={otherTask} />);
-    await screen.findByRole("button", { name: /complete check/i });
+    await screen.findByRole("button", { name: /record check/i });
     expect(screen.queryByDisplayValue("Synthetic original clinical note")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /complete check/i }));
+    await recordCheck();
     await screen.findByText("Response lost");
     expect(request(fetchMock, 1).requestId).not.toBe(original.requestId);
     expect(request(fetchMock, 1).note).toBeNull();
@@ -252,18 +270,18 @@ describe("pending clinical observation lifecycle", () => {
     await act(async () => auth.callback?.("SIGNED_IN"));
     view.rerender(<QuickCheckDrawer {...props} />);
     await screen.findByDisplayValue("Synthetic original clinical note");
-    fireEvent.click(screen.getByRole("button", { name: /retry original check/i }));
+    await recordCheck();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     expect(request(fetchMock, 2)).toEqual(original);
   });
 
   it("refuses dispatch when the session changes during preflight without an auth event", async () => {
     const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
     render(<QuickCheckDrawer {...props} />);
-    await screen.findByRole("button", { name: /complete check/i });
+    await screen.findByRole("button", { name: /record check/i });
     auth.rpc.mockResolvedValue({ data: { user_id: "operator", session_id: "changed-session", organization_id: "org" }, error: null });
-    fireEvent.click(screen.getByRole("button", { name: /complete check/i }));
+    await recordCheck();
     await screen.findByText(/account or session changed/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -271,13 +289,13 @@ describe("pending clinical observation lifecycle", () => {
   it("settles an old task's in-flight request without completing the task opened afterward", async () => {
     let resolve!: (value: Response) => void;
     const fetchMock = vi.fn(() => new Promise<Response>((done) => { resolve = done; }));
-    vi.stubGlobal("fetch", fetchMock);
+    installFetch(fetchMock);
     const onCompleted = vi.fn();
     const view = render(<QuickCheckDrawer {...props} onCompleted={onCompleted} />);
     await enterDistress();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
     view.rerender(<QuickCheckDrawer {...props} task={{ ...task, id: "second-task" }} onCompleted={onCompleted} />);
-    await screen.findByRole("button", { name: /complete check/i });
+    await screen.findByRole("button", { name: /record check/i });
     await act(async () => resolve(new Response(JSON.stringify({ ok: true }), { status: 200 })));
     expect(onCompleted).not.toHaveBeenCalled();
     expect(screen.queryByText("Check complete")).toBeNull();
@@ -287,18 +305,18 @@ describe("pending clinical observation lifecycle", () => {
 it("consumes an acknowledgment received after close and reopen without offering a new observation", async () => {
   let resolve!: (value: Response) => void;
   const fetchMock = vi.fn(() => new Promise<Response>((done) => { resolve = done; }));
-  vi.stubGlobal("fetch", fetchMock);
+  installFetch(fetchMock);
   const props = { task, open: true, onClose: vi.fn(), onCompleted: vi.fn() };
   const view = render(<QuickCheckDrawer {...props} />);
-  fireEvent.click(await screen.findByRole("button", { name: /complete check/i }));
+  await recordCheck();
   await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
   view.rerender(<QuickCheckDrawer {...props} open={false} />);
   view.rerender(<QuickCheckDrawer {...props} />);
-  await screen.findByRole("button", { name: /saving/i });
+  await screen.findByRole("button", { name: /record check/i });
   await act(async () => resolve(new Response(JSON.stringify({ ok: true }), { status: 200 })));
   await screen.findByText("Check complete");
   expect(props.onCompleted).toHaveBeenCalledExactlyOnceWith(task.id);
-  expect(screen.queryByRole("button", { name: /complete check/i })).toBeNull();
+  expect(screen.queryByRole("button", { name: /record check/i })).toBeNull();
   view.rerender(<QuickCheckDrawer {...props} open={false} />);
   view.rerender(<QuickCheckDrawer {...props} />);
   await screen.findByText("Check complete");
@@ -306,21 +324,21 @@ it("consumes an acknowledgment received after close and reopen without offering 
 });
 
 it("cancels sequential advancement when the completed drawer is replaced", async () => {
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })));
+  installFetch(vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })));
   const onNextTask = vi.fn();
   const props = { task, open: true, onClose: vi.fn(), onCompleted: vi.fn(), onNextTask, queuePosition: { current: 1, total: 2 } };
   const view = render(<QuickCheckDrawer {...props} />);
-  fireEvent.click(await screen.findByRole("button", { name: /complete check/i }));
+  await recordCheck();
   await screen.findByText("Check complete");
   view.rerender(<QuickCheckDrawer {...props} task={{ ...task, id: "next-task" }} />);
-  await screen.findByRole("button", { name: /complete check/i });
+  await screen.findByRole("button", { name: /record check/i });
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 850)); });
   expect(onNextTask).not.toHaveBeenCalled();
 });
 
 
 it.each([2, 3])("advances to B when completing A removes it from a %s-resident parent queue", async (count) => {
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })));
+  installFetch(vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })));
   const advanced = vi.fn();
   function ParentQueue() {
     const [queue, setQueue] = useState(["A", "B", "C"].slice(0, count));
@@ -330,8 +348,26 @@ it.each([2, 3])("advances to B when completing A removes it from a %s-resident p
       onNextTask={() => advanced(queue[1])} />;
   }
   render(<ParentQueue />);
-  fireEvent.click(await screen.findByRole("button", { name: /complete check/i }));
+  await recordCheck();
   await screen.findByText("Check complete");
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 850)); });
   expect(advanced).toHaveBeenCalledExactlyOnceWith("B");
+});
+
+it("requires observation chips before an administrator can submit", async () => {
+  const completion = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+  installFetch(completion);
+  renderDrawer();
+  const record = await screen.findByRole("button", { name: "Record check" });
+  expect(record).toBeDisabled();
+  fireEvent.click(screen.getByRole("radio", { name: "Awake" }));
+  fireEvent.click(await screen.findByRole("radio", { name: "Common area" }));
+  fireEvent.click(screen.getByRole("radio", { name: "Sitting" }));
+  expect(record).toBeDisabled();
+  expect(completion).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("checkbox", { name: "Pleasant" }));
+  expect(record).toBeEnabled();
+  fireEvent.click(record);
+  await screen.findByText("Check complete");
+  expect(JSON.parse(completion.mock.calls[0][1]!.body as string)).toMatchObject({ residentState: "sitting", residentLocation: "common_area", chipSelections: { mood_state: ["pleasant"] } });
 });

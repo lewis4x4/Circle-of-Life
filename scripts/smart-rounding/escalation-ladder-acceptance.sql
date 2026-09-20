@@ -1186,21 +1186,22 @@ DECLARE
   v_dispatches_after_pool integer;
 BEGIN
   SELECT
-    * INTO v_window
+    w.*,d.service_date INTO v_window
   FROM
-    public.facility_observation_windows_for_date (v_facility, (now() AT TIME ZONE 'America/New_York')::date) w
+    unnest(ARRAY[(now() AT TIME ZONE 'America/New_York')::date-1,(now() AT TIME ZONE 'America/New_York')::date]) d(service_date)
+    CROSS JOIN LATERAL public.facility_observation_windows_for_date(v_facility,d.service_date) w
   WHERE
     w.window_closes_at_utc < now()
   ORDER BY
     w.due_at_utc DESC
   LIMIT 1;
   PERFORM
-    pg_temp.esc_assert (v_window.window_key IS NOT NULL, 'the fixture needs a window whose grace has already closed today');
+    pg_temp.esc_assert (v_window.window_key IS NOT NULL, 'the fixture needs a recent window whose grace has closed');
 
   -- A pool task: nobody assigned and no assignment row, which is what the
   -- generator writes when nobody is on the schedule.
   INSERT INTO public.resident_observation_tasks (id, organization_id, facility_id, resident_id, cadence_version_id, window_key, service_date, scheduled_for, due_at, grace_ends_at, status, assigned_staff_id)
-    VALUES (v_task, v_org, v_facility, v_resident, v_cadence, v_window.window_key, (now() AT TIME ZONE 'America/New_York')::date, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'overdue', NULL);
+    VALUES (v_task, v_org, v_facility, v_resident, v_cadence, v_window.window_key, v_window.service_date, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'overdue', NULL);
 
   v_pool := public.record_observation_escalation_rung (v_task, 'nudge', now());
   SELECT

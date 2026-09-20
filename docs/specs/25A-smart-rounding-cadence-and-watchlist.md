@@ -7,7 +7,7 @@
 
 **Authority:** This spec is build authority for this scope. Where it conflicts with `AGENTS.md` or `CODEX.md` on process or security, those win and the conflict is recorded. `HAVEN_BRAIN.md` is domain supplement only.
 
-**Migration allocation for this build.** The spec text names migrations `404` through `410`. At the branch point the repo head was `411`, so this build allocates the next seven sequential numbers, `412` through `418`, keeping the suffixes. Read the mapping in section 9.
+**Migration allocation, reconciled 2026-09-20.** Design numbers `404` through `410` are historical planning references. The delivered implementation uses `417` through `435`; the full-plan review corrections are forward migrations `436` through `438`. Current filenames in section 9 and the migration ledger govern, never the original reserved numbers. Delivery is tracked in COL-489; staff/device acceptance is COL-490.
 
 ---
 
@@ -477,17 +477,17 @@ Empty states follow the constitution: left-aligned, two lines, no centered halo 
 
 ## 9. Data model
 
-Spec numbers `404` through `410` map to allocated migrations `412` through `418`.
+Spec numbers `404` through `410` map to the current delivered files below. Migrations `421`–`424`, `426`–`427`, and `430`–`435` contain the intervening integrity, authorization, configuration and hosted corrections. Do not renumber applied files.
 
 | Spec | Allocated | Contents |
 |---|---|---|
-| `404` | `412_col_observation_cadence_michelle_2026_09_16.sql` | Six windows with asymmetric grace, applied to all five facilities, superseding `310`. Deprecates `apply_plantation_wing_observation_plan` without dropping it. Two-shift model |
-| `405` | `413_observation_chip_vocabulary.sql` | Extends `observation_vocab` with `meal_intake`, `mood_state`, `med_response`. Adds `composed_summary` to the log table. Adds the composing submit RPC |
-| `406` | `414_resident_monitoring_orders.sql` | Table, CHECK constraints, RLS, `create_monitoring_order`, `cancel_monitoring_order`, `expire_monitoring_orders`, absorption view, bridge trigger and backfill from `resident_watch_instances`, audit and updated-at triggers |
-| `407` | `415_observation_escalation_policy.sql` | Facility-scoped policy rows for the four rungs, interval-scaled grace function, rewrite of the engine's reads |
-| `408` | `416_resident_watchlist_signals.sql` | `watchlist_signal_rules`, `watchlist_signal_instances`, `watchlist_signal_dispositions` (append-only), `v_facility_risk_index`, `v_watchlist_facility`, `v_watchlist_portfolio`, RLS, COL seed with no named person |
-| `409` | `417_cadence_config_versioning.sql` | `facility_shift_definitions`, `facility_cadence_versions`, `facility_cadence_windows`, `facility_escalation_versions`, `facility_escalation_rungs`, `cadence_templates` and `escalation_templates` with their window and rung children, `jurisdiction_observation_floors` with the `FL_AHCA` row and null floors. Adds `cadence_version_id` to `resident_observation_tasks` and `escalation_version_id` to `resident_observation_escalations`, backfilling both to the seeded version |
-| `410` | `418_cadence_config_rpcs.sql` | `create_cadence_version`, `activate_cadence_version`, `rollback_cadence_version`, `apply_template_to_facilities`, `validate_cadence_version`, `simulate_cadence_change`, `send_test_escalation`. All `SECURITY DEFINER` with explicit `search_path`, all audited, all role-gated per section 6.12 |
+| `404` | `417_col_observation_cadence_2026_09_16.sql` | Six windows with asymmetric grace, applied to all five facilities, superseding `310`. Deprecates `apply_plantation_wing_observation_plan` without dropping it. Two-shift model |
+| `405` | `418_observation_chip_vocabulary.sql` | Extends `observation_vocab` with `meal_intake`, `mood_state`, `med_response`. Adds `composed_summary` to the log table. Adds the composing submit RPC |
+| `406` | `419_resident_monitoring_orders.sql` | Table, CHECK constraints, RLS, `create_monitoring_order`, `cancel_monitoring_order`, `expire_monitoring_orders`, absorption view, bridge trigger and backfill from `resident_watch_instances`, audit and updated-at triggers |
+| `407` | `420_observation_escalation_policy.sql` | Facility-scoped policy rows for the four rungs, interval-scaled grace function, rewrite of the engine's reads |
+| `408` | `425_resident_watchlist_signals.sql` | `watchlist_signal_rules`, `watchlist_signal_instances`, `watchlist_signal_dispositions` (append-only), `v_facility_risk_index`, `v_watchlist_facility`, `v_watchlist_portfolio`, RLS, COL seed with no named person |
+| `409` | `428_cadence_config_templates_and_floors.sql` | `facility_shift_definitions`, `facility_cadence_versions`, `facility_cadence_windows`, `facility_escalation_versions`, `facility_escalation_rungs`, `cadence_templates` and `escalation_templates` with their window and rung children, `jurisdiction_observation_floors` with the `FL_AHCA` row and null floors. Adds `cadence_version_id` to `resident_observation_tasks` and `escalation_version_id` to `resident_observation_escalations`, backfilling both to the seeded version |
+| `410` | `429_cadence_config_rpcs.sql` | `create_cadence_version`, `activate_cadence_version`, `rollback_cadence_version`, `apply_template_to_facilities`, `validate_cadence_version`, `simulate_cadence_change`, `send_test_escalation`. All `SECURITY DEFINER` with explicit `search_path`, all audited, all role-gated per section 6.12 |
 
 Naming law, non-negotiable: `organization_id` never `org_id`; business-user foreign keys reference `user_profiles(id)`; `docs/specs/` never `specs/`; integer cents on any new money column; no new rounds tables; text plus CHECK for new enums in this module.
 
@@ -505,6 +505,14 @@ Regenerate `src/types/database.ts`.
 The repo has no `cron.schedule` statements in migrations. Ship `scripts/smart-rounding/cron-schedules.sql` with the schedules to run against the hosted project. Do not run them from the build.
 
 ---
+
+### Full-plan review corrections
+
+- `436_smart_rounding_configuration_closeout.sql`: authoritative chip writes, immutable full configuration snapshots, effective-shift validation, durable proposals and closed direct-write escapes.
+- `437_smart_rounding_template_revisions.sql`: immutable organization template revisions, pinned application previews and complete drift comparison.
+- `438_monitoring_order_task_ownership.sql`: Monitoring Order roster ownership and explicit audited rescue claims. A staff member takes a check through a claim before completion; direct unassigned completion remains refused.
+
+See `HANDOFFS/2026-09-20__smart-rounding-plan-closeout.md` for executed proof and historical-data limits.
 
 ## 10. Permissions
 

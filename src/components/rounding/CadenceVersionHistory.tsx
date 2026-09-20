@@ -14,6 +14,7 @@
  * after somebody undoes a mistake. The button says so.
  */
 
+import { policyText } from "@/lib/rounding/cadence-policy-diff";
 import { useState } from "react";
 
 import { RoundingEmptyNotice } from "@/components/rounding/RoundingNotices";
@@ -31,22 +32,15 @@ function rowKey(row: Record<string, unknown>): string {
 }
 
 function rowSummary(row: Record<string, unknown>): string {
-  if ("window_key" in row) {
-    return `${String(row.label)} at ${String(row.due_at_local)}, open ${String(
-      row.grace_before_minutes,
-    )} min before and ${String(row.grace_after_minutes)} min after, on the ${String(row.shift_key)} shift${
-      row.enabled === false ? ", turned off" : ""
-    }`;
-  }
-  return `${String(row.label)} at ${String(row.offset_minutes)} min from the window closing, over ${
-    Array.isArray(row.channels) ? row.channels.join(", ") : ""
-  }${row.enabled === false ? ", turned off" : ""}`;
+  return policyText(row);
 }
 
 /** The rows that differ between a version and the one before it. */
-function changedRows(entry: ChangeLogEntry): { key: string; before: string | null; after: string | null }[] {
-  const before = new Map(entry.previous_rows.map((row) => [rowKey(row), rowSummary(row)]));
-  const after = new Map(entry.rows.map((row) => [rowKey(row), rowSummary(row)]));
+export function changedRows(entry: ChangeLogEntry): { key: string; before: string | null; after: string | null }[] {
+  const previousRows = [...entry.previous_rows, ...(entry.previous_configuration ? [{ window_key: "facility_policy", label: "Facility policy", ...entry.previous_configuration }] : [])];
+  const nextRows = [...entry.rows, ...(entry.configuration ? [{ window_key: "facility_policy", label: "Facility policy", ...entry.configuration }] : [])];
+  const before = new Map(previousRows.map((row) => [rowKey(row), rowSummary(row)]));
+  const after = new Map(nextRows.map((row) => [rowKey(row), rowSummary(row)]));
   const keys = Array.from(new Set([...before.keys(), ...after.keys()])).sort();
   return keys
     .filter((key) => before.get(key) !== after.get(key))

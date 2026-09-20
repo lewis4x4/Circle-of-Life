@@ -18,7 +18,7 @@ const history = Array.from({ length: 1050 }, (_, index) => ({
   assigned_staff_id: "staff", facility_id: "f", organization_id: "org", resident_id: "r", deleted_at: null,
 }));
 const current = { ...history[0], id: "current", status: "due_now", service_date: todayFacilityDateIso() };
-const foreign = { ...current, id: "foreign", assigned_staff_id: "other" };
+const foreign = { ...current, id: "foreign", assigned_staff_id: "other", facility_id: "other-facility" };
 function install(rows: typeof history) {
   mocks.context.mockResolvedValue({ context: {
     appRole: "caregiver", currentStaffId: "staff", organizationId: "org",
@@ -49,4 +49,25 @@ it("loads every pending queue entry through a lower server cap without letting o
   install([...history, ...pending, foreign]);
   const result = await GET(new Request("https://haven.test/api/rounding/tasks?facilityId=f&queue=1"));
   expect((await result.json()).tasks.map((row: { id: string }) => row.id)).toEqual(pending.map(row => row.id));
+});
+
+it("surfaces same-facility pool and other-owner checks with explicit claim required", async () => {
+  install([{ ...current, id: "pool", assigned_staff_id: null as unknown as string }, { ...current, id: "colleague", assigned_staff_id: "other" }, current, foreign]);
+  const response = await GET(new Request("https://haven.test/api/rounding/tasks?facilityId=f&queue=1"));
+  const rows = (await response.json()).tasks;
+  expect(rows.map((row: { id: string }) => row.id)).toEqual(["pool", "colleague", "current"]);
+  expect(rows.map((row: { requires_claim: boolean }) => row.requires_claim)).toEqual([true, true, false]);
+});
+
+it("recognizes an active rescue assignment and keeps released assignments out of ownership", async () => {
+  const rows = [
+    { ...current, id: "rescued", assigned_staff_id: "original", resident_observation_assignments: [{ staff_id: "staff", released_at: null }] },
+    { ...current, id: "released", assigned_staff_id: "original", resident_observation_assignments: [{ staff_id: "staff", released_at: "2026-09-20T00:00:00Z" }] },
+  ];
+  install(rows);
+  const response = await GET(new Request("https://haven.test/api/rounding/tasks?facilityId=f&queue=1"));
+  const tasks = (await response.json()).tasks;
+  expect(tasks.map((row: { requires_claim: boolean }) => row.requires_claim)).toEqual([false, true]);
+  expect(tasks[0].assigned_staff_id).toBe("original");
+  expect(tasks[0]).not.toHaveProperty("resident_observation_assignments");
 });

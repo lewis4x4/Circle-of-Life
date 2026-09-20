@@ -16,6 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type {
   ApplyMode,
+  ConfigurationSnapshot,
   ChangeLogEntry,
   ObservationConfigOverview,
   RungDraft,
@@ -82,6 +83,7 @@ export async function createCadenceVersion(
     changeReason: string;
     windows: WindowDraft[] | null;
     rungs: RungDraft[] | null;
+    configuration?: ConfigurationSnapshot | null;
   },
 ): Promise<CreatedVersions> {
   const { data, error } = await supabase.rpc("create_cadence_version", {
@@ -92,6 +94,7 @@ export async function createCadenceVersion(
     p_effective_from: null,
     p_source_cadence_template_id: null,
     p_source_escalation_template_id: null,
+    ...(args.configuration !== undefined ? { p_configuration: args.configuration } : {}),
   });
   return unwrap<CreatedVersions>(data, error, "create_cadence_version");
 }

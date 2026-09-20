@@ -93,6 +93,7 @@ function withActorName(row: RawDispositionRow): WatchlistDispositionRow {
 
 export interface WatchlistSignalHistoryRow {
   id: string;
+  signal_label: string;
   signal_key: string;
   severity_class: string;
   source_kind: string;
@@ -116,7 +117,7 @@ const DISPOSITION_SELECT =
   "id, ledger_seq, signal_instance_id, signal_key, resident_id, from_status, to_status, note, actor_kind, acted_by, acted_by_role, acted_at, user_profiles!watchlist_signal_dispositions_acted_by_fkey(full_name)";
 
 const HISTORY_SELECT =
-  "id, signal_key, severity_class, source_kind, status, first_detected_at, last_evaluated_at, cleared_at, cleared_reason, observed_count, evidence, disposition_note";
+  "id, signal_key, severity_class, source_kind, status, first_detected_at, last_evaluated_at, cleared_at, cleared_reason, observed_count, evidence, disposition_note, watchlist_signal_rules!watchlist_signal_instances_signal_rule_id_fkey(label)";
 
 /**
  * Ranked by band and then by age, which is spec section 7.5's ordering. Done in
@@ -152,25 +153,31 @@ export async function fetchFacilityWatchlist(
 export async function fetchResidentWatchlistSignals(
   supabase: SupabaseClient,
   residentId: string,
+  facilityId: string,
 ): Promise<WatchlistSignalHistoryRow[]> {
   const { data, error } = await readAllPages((from, to) => supabase
     .from("watchlist_signal_instances")
     .select(HISTORY_SELECT, { count: "exact" })
     .eq("resident_id", residentId)
+    .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .order("first_detected_at", { ascending: false }).order("id").range(from, to));
   if (error) throw error;
-  return (data ?? []) as unknown as WatchlistSignalHistoryRow[];
+  return ((data ?? []) as unknown as Array<WatchlistSignalHistoryRow & { watchlist_signal_rules?: { label: string } | null }>).map(({ watchlist_signal_rules, ...row }) => ({
+    ...row, signal_label: watchlist_signal_rules?.label ?? "Watchlist signal",
+  }));
 }
 
 export async function fetchResidentDispositionLedger(
   supabase: SupabaseClient,
   residentId: string,
+  facilityId: string,
 ): Promise<WatchlistDispositionRow[]> {
   const { data, error } = await readAllPages((from, to) => supabase
     .from("watchlist_signal_dispositions")
     .select(DISPOSITION_SELECT, { count: "exact" })
     .eq("resident_id", residentId)
+    .eq("facility_id", facilityId)
     .order("ledger_seq", { ascending: false }).order("id").range(from, to));
   if (error) throw error;
   return ((data ?? []) as unknown as RawDispositionRow[]).map(withActorName);
@@ -205,4 +212,30 @@ export async function dispositionWatchlistSignal(
     p_note: args.note,
   });
   if (error) throw error;
+}
+
+export interface WatchlistObservationEvidence {
+  id: string;
+  observed_at: string;
+  composed_summary: string;
+  note: string | null;
+}
+
+/** Only evidence named by the signal, inside both selected scopes, read under RLS. */
+export async function fetchWatchlistObservationEvidence(
+  supabase: SupabaseClient, residentId: string, facilityId: string, logIds: string[],
+): Promise<WatchlistObservationEvidence[]> {
+  const ids = [...new Set(logIds)];
+  const rows: WatchlistObservationEvidence[] = [];
+  for (let offset = 0; offset < ids.length; offset += 100) {
+    const { data, error } = await readAllPages((from, to) => supabase
+      .from("resident_observation_logs")
+      .select("id, observed_at, composed_summary, note", { count: "exact" })
+      .eq("resident_id", residentId).eq("facility_id", facilityId)
+      .in("id", ids.slice(offset, offset + 100)).is("deleted_at", null)
+      .order("observed_at", { ascending: false }).order("id").range(from, to));
+    if (error) throw error;
+    rows.push(...(data ?? []) as WatchlistObservationEvidence[]);
+  }
+  return rows;
 }

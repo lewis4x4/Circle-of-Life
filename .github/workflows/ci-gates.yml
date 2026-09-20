@@ -32,6 +32,12 @@ jobs:
         with:
           deno-version: v2.x
 
+      - name: Smart Rounding policy source checks
+        run: |
+          node --test scripts/smart-rounding/sql-policy-literals.test.mjs
+          npm run smart-rounding:literals
+          node scripts/smart-rounding/sql-policy-literals.mjs
+
       - name: Smart Rounding Edge Function tests
         run: npm run test:edge
 

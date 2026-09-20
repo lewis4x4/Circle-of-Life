@@ -642,12 +642,16 @@ BEGIN
         WHERE
           id = v_user))::text, TRUE);
 
+  -- The assignment proof still records a clinically valid chip observation.
+  INSERT INTO public.observation_vocab(organization_id,facility_id,field_name,value_code,display_label,display_order,active)
+    VALUES(v_org,v_roster,'mood_state','calm','Calm',1,true);
+
   v_result := public.complete_rounding_task_review (v_worked.task_id, v_user, 'caregiver', v_session, (
       SELECT
         auth_claim_version
       FROM public.user_profiles
       WHERE
-        id = v_user), v_org, v_roster, v_worked.assigned_staff_id, jsonb_build_object('request_id', gen_random_uuid(), 'observed_at', now(), 'entered_at', now(), 'entry_mode', 'live', 'quick_status', 'calm', 'resident_location', 'room', 'resident_state', 'awake'));
+        id = v_user), v_org, v_roster, v_worked.assigned_staff_id, jsonb_build_object('request_id', gen_random_uuid(), 'observed_at', now(), 'entered_at', now(), 'entry_mode', 'live', 'quick_status', 'calm', 'resident_location', 'room', 'resident_state', 'awake', 'chip_selections',jsonb_build_object('mood_state',jsonb_build_array('calm'))));
 
   PERFORM
     pg_temp.as_assert (v_result ->> 'log_id' IS NOT NULL, 'a caregiver the generator assigned from the shift roster could not complete their own check. The assignment is not reaching the assignee guard.');

@@ -53,6 +53,10 @@ export function CadenceWindowEditor({
   return (
     <div className="space-y-4 rounded-lg border border-border bg-card p-4">
       <div className="space-y-2">
+        <FormLabel htmlFor={`window-key-${draft.window_key}`}>Stable window key</FormLabel>
+        <Input id={`window-key-${draft.window_key}`} defaultValue={draft.window_key} disabled={disabled} onBlur={(event) => onChange({ ...draft, window_key: event.target.value })} />
+      </div>
+      <div className="space-y-2">
         <FormLabel htmlFor={`window-label-${draft.window_key}`} required>
           What staff see this check called
         </FormLabel>

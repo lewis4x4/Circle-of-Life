@@ -12,7 +12,7 @@
  * band rules, not from arithmetic performed here.
  */
 
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { ArrowLeft, RefreshCw } from "lucide-react";
@@ -39,6 +39,8 @@ import {
 } from "@/lib/rounding/watchlist-display-copy";
 import {
   fetchFacilityWatchlist,
+  fetchWatchlistObservationEvidence,
+  type WatchlistObservationEvidence,
   fetchResidentDispositionLedger,
   fetchResidentWatchlistSignals,
   type WatchlistSignalHistoryRow,
@@ -89,6 +91,11 @@ export default function ResidentWatchlistPage({
   params: Promise<{ residentId: string }>;
 }) {
   const { residentId } = use(params);
+  const { selectedFacilityId } = useFacilityStore();
+  return <ScopedResidentWatchlist key={`${selectedFacilityId}:${residentId}`} residentId={residentId} />;
+}
+
+function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find(
     (facility) => facility.id === selectedFacilityId,
@@ -100,23 +107,36 @@ export default function ResidentWatchlistPage({
   const [history, setHistory] = useState<WatchlistSignalHistoryRow[]>([]);
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasData, setHasData] = useState(false);
+  const [observations, setObservations] = useState<WatchlistObservationEvidence[]>([]);
+  const generation = useRef(0);
 
   const load = useCallback(async () => {
-    if (!isBrowserSupabaseConfigured()) return;
+    const attempt = ++generation.current;
+    if (!selectedFacilityId) { setLoading(false); return; }
+    if (!isBrowserSupabaseConfigured()) { setFailed(true); setLoading(false); return; }
+    setLoading(true);
     setFailed(false);
     try {
       const [board, signalHistory, transitions] = await Promise.all([
         selectedFacilityId
           ? fetchFacilityWatchlist(supabase, selectedFacilityId)
           : Promise.resolve([] as WatchlistSignalRow[]),
-        fetchResidentWatchlistSignals(supabase, residentId),
-        fetchResidentDispositionLedger(supabase, residentId),
+        fetchResidentWatchlistSignals(supabase, residentId, selectedFacilityId),
+        fetchResidentDispositionLedger(supabase, residentId, selectedFacilityId),
       ]);
 
+      if (attempt !== generation.current) return;
+      const logIds = [...new Set(signalHistory.flatMap((row) => evidenceLogIds(row.evidence)))];
+      const entries = await fetchWatchlistObservationEvidence(supabase, residentId, selectedFacilityId, logIds);
+      if (attempt !== generation.current) return;
+      setObservations(entries);
+      setHasData(true);
       const mine = board.filter((row) => row.resident_id === residentId);
       // A cleared signal is off the board but still in the ledger, so the label
-      // map falls back to the signal key rather than leaving the column empty.
-      const labelFor = new Map(signalHistory.map((row) => [row.signal_key, row.signal_key]));
+      // map uses the configured human-readable label even after clearing.
+      const labelFor = new Map(signalHistory.map((row) => [row.signal_key, row.signal_label]));
       for (const row of mine) labelFor.set(row.signal_key, row.signal_label);
 
       setOpen(mine);
@@ -127,7 +147,7 @@ export default function ResidentWatchlistPage({
           acted_at: row.acted_at,
           resident_name: mine[0] ? residentDisplayName(mine[0]) : "This resident",
           room_number: mine[0]?.room_number ?? null,
-          signal_label: labelFor.get(row.signal_key) ?? row.signal_key,
+          signal_label: labelFor.get(row.signal_key) ?? "Watchlist signal",
           from_status: row.from_status,
           to_status: row.to_status,
           acted_by_name: row.acted_by_name,
@@ -137,12 +157,17 @@ export default function ResidentWatchlistPage({
         })),
       );
     } catch {
-      setFailed(true);
+      if (attempt === generation.current) setFailed(true);
+    } finally {
+      if (attempt === generation.current) setLoading(false);
     }
   }, [supabase, residentId, selectedFacilityId]);
 
   useEffect(() => {
     void load();
+    // This counter invalidates requests; it is not a captured DOM ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { generation.current++; };
   }, [load]);
 
   const heading = open[0] ? residentDisplayName(open[0]) : "Resident watchlist";
@@ -164,6 +189,7 @@ export default function ResidentWatchlistPage({
             size="icon-sm"
             onClick={() => void load()}
             aria-label="Refresh this resident's record"
+            disabled={loading}
             title="Refresh"
           >
             <RefreshCw className="size-4" aria-hidden />
@@ -183,10 +209,13 @@ export default function ResidentWatchlistPage({
 
       {failed ? (
         <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-          <p className="text-[13px] text-foreground">{LOAD_FAILED}</p>
+          <p className="text-[13px] text-foreground">{LOAD_FAILED}{hasData ? " Showing the last successfully loaded records." : ""}</p>
         </div>
       ) : null}
 
+      {!selectedFacilityId ? <p role="status">Choose a building to see this resident’s record.</p> : null}
+      {loading ? <p role="status">{hasData ? "Refreshing resident record…" : "Loading resident record…"}</p> : null}
+      {hasData ? <>
       <section aria-label="Open signals" className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Open signals</h2>
         {open.length === 0 ? (
@@ -225,6 +254,7 @@ export default function ResidentWatchlistPage({
                 </div>
               </dl>
               <EvidenceLines signalKey={signal.signal_key} evidence={signal.evidence} />
+              <ObservationEvidence evidence={signal.evidence} observations={observations} />
               <WatchlistDispositionForm
                 supabase={supabase}
                 signalInstanceId={signal.signal_instance_id}
@@ -261,7 +291,7 @@ export default function ResidentWatchlistPage({
               <tbody className="divide-y divide-border">
                 {history.map((row) => (
                   <tr key={row.id} className="h-9">
-                    <td className="px-3 py-2 text-[13px] text-foreground">{row.signal_key}</td>
+                    <td className="px-3 py-2 text-[13px] text-foreground">{row.signal_label}<ObservationEvidence evidence={row.evidence} observations={observations} /></td>
                     <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
                       {new Date(row.first_detected_at).toLocaleDateString()}
                     </td>
@@ -282,6 +312,28 @@ export default function ResidentWatchlistPage({
       </section>
 
       <WatchlistDispositionLedger entries={ledger} facilityScope={facilityScope} />
+      </> : null}
     </div>
   );
+}
+
+function evidenceLogIds(evidence: Record<string, unknown> | null): string[] {
+  return Array.isArray(evidence?.log_ids) ? evidence.log_ids.filter((id): id is string => typeof id === "string") : [];
+}
+
+function ObservationEvidence({ evidence, observations }: {
+  evidence: Record<string, unknown> | null; observations: WatchlistObservationEvidence[];
+}) {
+  const ids = evidenceLogIds(evidence);
+  if (!ids.length) return null;
+  const entries = observations.filter((row) => ids.includes(row.id));
+  return <details className="mt-2 rounded-md border border-border p-3">
+    <summary className="cursor-pointer text-sm font-medium">View underlying observations</summary>
+    {entries.length < ids.length ? <p className="mt-2 text-sm text-muted-foreground">Some referenced observations are unavailable in this building or with your access.</p> : null}
+    <ul className="mt-2 space-y-3">{entries.map((row) => <li key={row.id}>
+      <time className="text-xs text-muted-foreground" dateTime={row.observed_at}>{new Date(row.observed_at).toLocaleString()}</time>
+      <p className="text-sm">{row.composed_summary || "Observation narrative unavailable."}</p>
+      {row.note ? <p className="text-sm text-muted-foreground">Note: {row.note}</p> : null}
+    </li>)}</ul>
+  </details>;
 }

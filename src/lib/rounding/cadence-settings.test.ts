@@ -332,6 +332,11 @@ describe("rungDraftsFrom", () => {
     ]);
   });
 
+  it("preserves terminal instructions and shift overrides while editing an unrelated field", () => {
+    const policy = { ...ladder[1], sort_order: 7, protocol_text: "Call the on-call lead", shift_overrides: [{ shift_key: "night", offset_minutes: 120, channels: ["in_app"] }] };
+    expect(rungDraftsFrom([policy])[0]).toMatchObject({ sort_order: 7, protocol_text: policy.protocol_text, shift_overrides: policy.shift_overrides });
+  });
+
   it("carries a role with nobody in it through to the payload", () => {
     // Dropping an unheld role here would silently rewrite the ladder while the
     // administrator was editing something else. The zero holder case is a

@@ -21116,7 +21116,21 @@ export type Database = {
           p_apply_mode?: string
           p_effective_from?: string | null
           p_acknowledgment?: string | null
+          p_expected_cadence_template_version_id?: string | null
+          p_expected_escalation_template_version_id?: string | null
         }
+        Returns: Json
+      }
+      claim_observation_task: {
+        Args: { p_task_id: string }
+        Returns: Json
+      }
+      observation_config_templates: {
+        Args: { p_facility_id: string }
+        Returns: Json
+      }
+      save_observation_template: {
+        Args: { p_facility_id: string; p_kind: string; p_name: string; p_change_reason: string; p_rows: Json; p_template_id?: string | null }
         Returns: Json
       }
       cadence_version_day_shape: {
@@ -21132,6 +21146,7 @@ export type Database = {
           p_source_cadence_template_id?: string
           p_source_escalation_template_id?: string
           p_windows?: Json
+          p_configuration?: Json
         }
         Returns: Json
       }

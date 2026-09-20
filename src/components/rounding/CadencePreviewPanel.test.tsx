@@ -229,3 +229,16 @@ describe("the preview before commit", () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+it("shows a reopened escalation-only proposal's full policy and unchanged schedule before approval", () => {
+  const data = overview(clean());
+  const rung = { rung_key: "final", label: "Final escalation", offset_minutes: 90, is_terminal: true, assigned_staff_only: false, include_assigned_staff: true, use_standing_alert_routes: false, channels: ["in_app"], enabled: true, standing_alert_route_count: 0, roles: [{ staff_role: "administrator", holder_count: 1 }], protocol_text: "Call the day lead", shift_overrides: [{ shift_key: "night", offset_minutes: 100, channels: ["in_app"] }] };
+  data.current.ladder = [rung];
+  data.proposed = { cadence_version_id: null, escalation_version_id: "saved-escalation", day_shape: null, daily_task_total: null, validation: clean(), ladder: [{ ...rung, protocol_text: "Call the on-call lead", shift_overrides: [{ shift_key: "night", offset_minutes: 120, channels: ["in_app", "push"] }] }] };
+  render(<CadencePreviewPanel {...props(clean(), { overview: data })} />);
+  expect(screen.getByRole("article", { name: "Checks per resident per day: 6" })).toBeInTheDocument();
+  expect(screen.getByRole("article", { name: "Checks a day across the building: 198" })).toBeInTheDocument();
+  expect(screen.getByText("Was: Call the day lead")).toBeInTheDocument();
+  expect(screen.getByText("Proposed: Call the on-call lead")).toBeInTheDocument();
+  expect(screen.getByText(/Proposed: shift key: night, offset minutes: 120, channels: in app; push/)).toBeInTheDocument();
+});

@@ -314,14 +314,16 @@ BEGIN
   FROM
     public.observation_windows_under_monitoring_order (v_facility, now()) c
   WHERE
-    c.resident_id = v_starts_later;
+    c.resident_id = v_starts_later
+    AND EXISTS(SELECT 1 FROM su_next_windows w WHERE w.window_key=c.window_key AND w.service_date=c.service_date);
 
   SELECT
     array_agg(c.window_key ORDER BY c.window_key) INTO v_covered_early
   FROM
     public.observation_windows_under_monitoring_order (v_facility, now()) c
   WHERE
-    c.resident_id = v_ends_early;
+    c.resident_id = v_ends_early
+    AND EXISTS(SELECT 1 FROM su_next_windows w WHERE w.window_key=c.window_key AND w.service_date=c.service_date);
 
   PERFORM
     pg_temp.su_assert (v_covered_later = ARRAY[v_last.window_key], format('an order starting at the last window of the shift should suppress that window and no other. Covered: %s. The old per resident test suppressed all %s.', COALESCE(array_to_string(v_covered_later, ', '), '<none>'), v_count));

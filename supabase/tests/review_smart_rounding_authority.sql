@@ -1459,51 +1459,28 @@ BEGIN
 END
 $$;
 
--- 10c. M1, demonstrated. The rungs of the ladder in force cannot be edited; the
---      rungs of a draft can.
+-- 10c. Configuration children are command-only. Draft changes create forward
+-- proposals through the role-gated RPC; neither INSERT nor UPDATE may bypass it.
 DO $$
-DECLARE
-  v_active_ladder CONSTANT uuid := '5add0000-0000-4000-8000-00000000000b';
-  v_draft_ladder CONSTANT uuid := '5add0000-0000-4000-8000-00000000000c';
-  v_in_force integer;
-  v_draft integer;
-  v_override_in_force integer;
 BEGIN
-  SET LOCAL ROLE authenticated;
-
-  UPDATE
-    public.facility_escalation_rungs
-  SET
-    offset_minutes = offset_minutes + 1
-  WHERE
-    escalation_version_id = v_active_ladder;
-  GET DIAGNOSTICS v_in_force = ROW_COUNT;
-  PERFORM
-    pg_temp.sr_assert (v_in_force = 0, format('an org_admin rewrote %s rung(s) of the escalation version currently in force. Every escalation row stamped with that version now recomputes against a ladder that was never in force.', v_in_force));
-
-  UPDATE
-    public.facility_escalation_rung_shift_overrides
-  SET
-    channels = ARRAY['in_app']
-  WHERE
-    escalation_version_id = v_active_ladder;
-  GET DIAGNOSTICS v_override_in_force = ROW_COUNT;
-  PERFORM
-    pg_temp.sr_assert (v_override_in_force = 0, format('an org_admin rewrote %s per shift override(s) on the escalation version currently in force.', v_override_in_force));
-
-  UPDATE
-    public.facility_escalation_rungs
-  SET
-    offset_minutes = offset_minutes + 1
-  WHERE
-    escalation_version_id = v_draft_ladder;
-  GET DIAGNOSTICS v_draft = ROW_COUNT;
-  PERFORM
-    pg_temp.sr_assert (v_draft > 0, 'an org_admin could not edit the rungs of a draft escalation version. The M1 fix is refusing the edit the versioning scheme exists to allow.');
-
-  RESET ROLE;
-END
-$$;
+ SET LOCAL ROLE authenticated;
+ BEGIN
+  UPDATE public.facility_escalation_rungs SET offset_minutes=offset_minutes+1
+   WHERE escalation_version_id='5add0000-0000-4000-8000-00000000000b';
+  RAISE EXCEPTION 'Direct effective rung update unexpectedly allowed';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN
+  UPDATE public.facility_escalation_rung_shift_overrides SET channels=ARRAY['in_app']
+   WHERE escalation_version_id='5add0000-0000-4000-8000-00000000000b';
+  RAISE EXCEPTION 'Direct effective override update unexpectedly allowed';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN
+  UPDATE public.facility_escalation_rungs SET offset_minutes=offset_minutes+1
+   WHERE escalation_version_id='5add0000-0000-4000-8000-00000000000c';
+  RAISE EXCEPTION 'Direct draft policy bypass unexpectedly allowed';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ RESET ROLE;
+END $$;
 
 -- 10e. M3, demonstrated. Changing the interval a resident is physically checked
 --      at leaves a history row naming the old value and the new one.
@@ -1639,6 +1616,9 @@ BEGIN
   -- And the same caregiver completes the same shaped task once the assignment
   -- row the generator now writes exists, which is what makes the assignment fix
   -- a fix rather than a different way of being stuck.
+  INSERT INTO public.observation_vocab(organization_id,facility_id,field_name,value_code,display_label,display_order,active)
+    VALUES(v_org,v_facility_a,'mood_state','calm','Calm',1,true);
+
   INSERT INTO public.resident_observation_tasks (organization_id, facility_id, resident_id, cadence_version_id, monitoring_order_id, service_date, scheduled_for, due_at, grace_ends_at, status, assigned_staff_id)
     VALUES (v_org, v_facility_a, v_resident, v_active_cadence, NULL, (now() AT TIME ZONE 'America/New_York')::date, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'upcoming', NULL)
   RETURNING
@@ -1653,7 +1633,7 @@ BEGIN
         auth_claim_version
       FROM public.user_profiles
       WHERE
-        id = v_caregiver), v_org, v_facility_a, v_staff, jsonb_build_object('request_id', gen_random_uuid(), 'observed_at', now(), 'entered_at', now(), 'entry_mode', 'live', 'quick_status', 'calm', 'resident_location', 'room', 'resident_state', 'awake'));
+        id = v_caregiver), v_org, v_facility_a, v_staff, jsonb_build_object('request_id', gen_random_uuid(), 'observed_at', now(), 'entered_at', now(), 'entry_mode', 'live', 'quick_status', 'calm', 'resident_location', 'room', 'resident_state', 'awake','chip_selections',jsonb_build_object('mood_state',jsonb_build_array('calm'))));
 
   PERFORM
     pg_temp.sr_assert (EXISTS (

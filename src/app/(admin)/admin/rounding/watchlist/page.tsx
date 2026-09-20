@@ -13,7 +13,7 @@
  * Tier 3 is a resident and lives one route down.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RefreshCw } from "lucide-react";
 
@@ -55,13 +55,14 @@ function ScopedWatchlistPage() {
 
   const [portfolio, setPortfolio] = useState<WatchlistPortfolioRow[]>([]);
   const [signals, setSignals] = useState<WatchlistSignalRow[]>([]);
+  const [hasData, setHasData] = useState(false);
+  const generation = useRef(0);
   const [loadState, setLoadState] = useState<LoadState>("idle");
 
   const load = useCallback(async () => {
+    const attempt = ++generation.current;
     if (!isBrowserSupabaseConfigured()) {
-      setPortfolio([]);
-      setSignals([]);
-      setLoadState("ready");
+      setLoadState("error");
       return;
     }
 
@@ -73,18 +74,21 @@ function ScopedWatchlistPage() {
           ? fetchFacilityWatchlist(supabase, selectedFacilityId)
           : Promise.resolve([] as WatchlistSignalRow[]),
       ]);
+      if (attempt !== generation.current) return;
+      setHasData(true);
       setPortfolio(portfolioRows);
       setSignals(signalRows);
       setLoadState("ready");
     } catch {
-      setPortfolio([]);
-      setSignals([]);
-      setLoadState("error");
+      if (attempt === generation.current) setLoadState("error");
     }
   }, [supabase, selectedFacilityId]);
 
   useEffect(() => {
     void load();
+    // This counter invalidates requests; it is not a captured DOM ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { generation.current++; };
   }, [load]);
 
   const totals = useMemo(() => {
@@ -128,13 +132,15 @@ function ScopedWatchlistPage() {
           role="alert"
           className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 sm:flex-row sm:items-center sm:justify-between"
         >
-          <p className="text-[13px] leading-relaxed text-foreground">{LOAD_FAILED}</p>
+          <p className="text-[13px] leading-relaxed text-foreground">{LOAD_FAILED}{hasData ? " Showing the last successfully loaded records." : ""}</p>
           <Button type="button" variant="outline" size="sm" onClick={() => void load()}>
             Retry
           </Button>
         </div>
       ) : null}
 
+      {loadState === "loading" || loadState === "idle" ? <p role="status">{hasData ? "Refreshing the Watchlist…" : "Loading the Watchlist…"}</p> : null}
+      {hasData ? <>
       <section aria-label="Watchlist summary">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <MetricCard
@@ -181,6 +187,7 @@ function ScopedWatchlistPage() {
           </div>
         )}
       </section>
+      </> : null}
     </div>
   );
 }

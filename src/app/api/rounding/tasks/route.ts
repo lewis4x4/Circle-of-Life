@@ -23,6 +23,8 @@ const TASK_STATUS_FILTERS = new Set<ObservationTaskStatus>([
 
 type TaskListRow = {
   id: string;
+  assigned_staff_id: string | null;
+  resident_observation_assignments?: Array<{ staff_id: string; released_at: string | null }>;
   status: string;
   due_at: string;
   grace_ends_at: string;
@@ -78,17 +80,14 @@ export async function GET(request: Request) {
         *,
         residents(id, first_name, last_name, preferred_name, bed_id),
         staff!resident_observation_tasks_assigned_staff_id_fkey(id, first_name, last_name, preferred_name),
-        shift_assignments(id, shift_type, shift_date)
+        shift_assignments(id, shift_type, shift_date),
+        resident_observation_assignments(staff_id, released_at)
       `, { count: "exact" })
       .eq("organization_id", context.organizationId)
       .eq("facility_id", facilityId)
       .is("deleted_at", null)
       .order("due_at", { ascending: true })
       .order("id");
-
-    if (!isRoundingManagerRole(context.appRole)) {
-      query = query.eq("assigned_staff_id", context.currentStaffId!);
-    }
 
     if (taskId) query = query.eq("id", taskId);
     if (queue && !taskId) {
@@ -139,8 +138,14 @@ export async function GET(request: Request) {
     logError("rounding.tasks.board-policy", cause, { facilityId, reason: cause.reason, postgrestCode: cause.postgrestCode });
   }
 
-  const tasks = ((data ?? []) as TaskListRow[]).map((task) => ({
-    ...task,
+  const tasks = ((data ?? []) as TaskListRow[]).map(({ resident_observation_assignments, ...task }) => {
+    const activeAssignments = (resident_observation_assignments ?? []).filter((row) => row.released_at == null);
+    const ownsCheck = activeAssignments.length
+      ? activeAssignments.some((row) => row.staff_id === context.currentStaffId)
+      : task.assigned_staff_id === context.currentStaffId;
+    return {
+      ...task,
+    requires_claim: !isRoundingManagerRole(context.appRole) && !ownsCheck,
     derived_status: policy
       ? calculateObservationTaskStatus({
           status: task.status as ObservationTaskStatus,
@@ -149,7 +154,8 @@ export async function GET(request: Request) {
           policy,
         })
       : task.status,
-  }));
+    };
+  });
 
   return NextResponse.json({ tasks, board_policy_gap: policyGap });
 }
