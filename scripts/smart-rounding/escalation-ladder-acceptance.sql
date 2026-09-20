@@ -1179,28 +1179,34 @@ DECLARE
   v_aide_staff CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000007';
   v_cadence CONSTANT uuid := 'e5ca0000-0000-4000-8000-000000000009';
   v_task CONSTANT uuid := 'e5ca0000-0000-4000-8000-0f1000000001';
+  v_service_date date;
   v_window record;
   v_pool jsonb;
   v_assigned jsonb;
   v_again jsonb;
   v_dispatches_after_pool integer;
 BEGIN
+  -- Same time-stable pattern as earlier blocks: a past service day whose
+  -- windows have already closed relative to now(). Wall-clock "today" fails
+  -- around midnight ET when no window has closed yet (CI ~00:00–early morning).
+  v_service_date := ((now() - interval '2 days') AT TIME ZONE 'America/New_York')::date;
+
   SELECT
-    * INTO v_window
+    w.* INTO v_window
   FROM
-    public.facility_observation_windows_for_date (v_facility, (now() AT TIME ZONE 'America/New_York')::date) w
+    public.facility_observation_windows_for_version (v_facility, v_cadence, v_service_date) w
   WHERE
     w.window_closes_at_utc < now()
   ORDER BY
     w.due_at_utc DESC
   LIMIT 1;
   PERFORM
-    pg_temp.esc_assert (v_window.window_key IS NOT NULL, 'the fixture needs a window whose grace has already closed today');
+    pg_temp.esc_assert (v_window.window_key IS NOT NULL, 'the fixture needs a projected window whose grace has already closed on the past service day');
 
   -- A pool task: nobody assigned and no assignment row, which is what the
   -- generator writes when nobody is on the schedule.
   INSERT INTO public.resident_observation_tasks (id, organization_id, facility_id, resident_id, cadence_version_id, window_key, service_date, scheduled_for, due_at, grace_ends_at, status, assigned_staff_id)
-    VALUES (v_task, v_org, v_facility, v_resident, v_cadence, v_window.window_key, (now() AT TIME ZONE 'America/New_York')::date, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'overdue', NULL);
+    VALUES (v_task, v_org, v_facility, v_resident, v_cadence, v_window.window_key, v_service_date, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'overdue', NULL);
 
   v_pool := public.record_observation_escalation_rung (v_task, 'nudge', now());
   SELECT
