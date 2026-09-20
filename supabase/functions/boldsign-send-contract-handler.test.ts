@@ -1,6 +1,7 @@
 import {
   assert,
   assertEquals,
+  assertMatch,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
 const IDS = {
@@ -44,8 +45,11 @@ type RequestDoubleOptions = {
   actorAt: (rpcCall: number) => ActorPayload | null;
   contractOrganization?: string;
   contractFacility?: string;
+  failCommit?: boolean;
+  failFailureRecording?: boolean;
   onLinkRequest?: () => void;
   linkResponse?: () => Response;
+  providerSend?: () => Response | Promise<Response>;
   signerCount?: number;
 };
 
@@ -83,8 +87,35 @@ function urlOf(input: RequestInfo | URL): URL {
 function installRequestDouble(options: RequestDoubleOptions) {
   const originalFetch = globalThis.fetch;
   const providerCalls: string[] = [];
+  const providerBodies: Record<string, unknown>[] = [];
   const databaseMutations: string[] = [];
   let actorRpcCalls = 0;
+  let generation = 0;
+  let sendState: "new" | "provider_outcome_unknown" | "rejected_definitively" | "committed" = "new";
+  let currentRequestId: string | null = null;
+  let providerDocumentId: string | null = null;
+  const recoveryLabel = "haven-0123456789abcdef0123456789abcdef";
+  const requestSha256 = "a".repeat(64);
+  const providerPayload = {
+    title: "Synthetic residency agreement",
+    message: "Please review and sign this Circle of Life resident agreement.",
+    roles: Array.from({ length: options.signerCount ?? 1 }, (_, index) => ({
+      roleIndex: index + 1,
+      signerName: "Synthetic signer",
+      signerEmail: index === 0 ? "signer@example.test" : `signer-${index + 1}@example.test`,
+      signerOrder: index + 1,
+      signerType: "Signer",
+      signerRole: "resident_representative",
+      locale: "EN",
+    })),
+    enableSigningOrder: (options.signerCount ?? 1) > 1,
+    disableEmails: true,
+    labels: [recoveryLabel],
+  };
+  const linkSigners = Array.from({ length: options.signerCount ?? 1 }, (_, index) => ({
+    id: index === 0 ? IDS.signer : `${IDS.signer}-${index}`,
+    email: index === 0 ? "signer@example.test" : `signer-${index + 1}@example.test`,
+  }));
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = urlOf(input);
@@ -94,6 +125,123 @@ function installRequestDouble(options: RequestDoubleOptions) {
       if (url.pathname === "/rest/v1/rpc/haven_current_edge_actor") {
         actorRpcCalls += 1;
         return json(options.actorAt(actorRpcCalls));
+      }
+
+      if (url.pathname === "/rest/v1/rpc/prepare_boldsign_contract_send") {
+        databaseMutations.push(`POST ${url.pathname}`);
+        const raw = input instanceof Request
+          ? await input.clone().text()
+          : String((init as { body?: unknown } | undefined)?.body ?? "{}");
+        const args = JSON.parse(raw) as { p_request_id?: string };
+        const requestedId = args.p_request_id ?? IDS.contract;
+        if (currentRequestId && requestedId !== currentRequestId) {
+          if (sendState !== "rejected_definitively") {
+            return json({ code: "P0409", message: "contract_send_already_claimed" }, 409);
+          }
+          currentRequestId = requestedId;
+          generation += 1;
+          sendState = "provider_outcome_unknown";
+          return json({
+            action: "send",
+            state: sendState,
+            generation,
+            request_sha256: requestSha256,
+            provider_document_id: null,
+            recovery_label: recoveryLabel,
+            provider_payload: providerPayload,
+            link_signers: linkSigners,
+          });
+        }
+        if (sendState === "committed") {
+          return json({
+            action: "replay",
+            state: "committed",
+            generation,
+            request_sha256: requestSha256,
+            provider_document_id: providerDocumentId,
+            recovery_label: recoveryLabel,
+            provider_payload: providerPayload,
+            link_signers: linkSigners,
+          });
+        }
+        if (sendState === "provider_outcome_unknown") {
+          return json({
+            action: "reconcile",
+            state: sendState,
+            generation,
+            request_sha256: requestSha256,
+            provider_document_id: providerDocumentId,
+            recovery_label: recoveryLabel,
+            provider_payload: providerPayload,
+            link_signers: linkSigners,
+          });
+        }
+        if (sendState === "rejected_definitively") {
+          return json({
+            action: "rejected",
+            state: sendState,
+            generation,
+            request_sha256: requestSha256,
+            provider_document_id: null,
+            recovery_label: recoveryLabel,
+            provider_payload: providerPayload,
+            link_signers: linkSigners,
+          });
+        }
+        generation += 1;
+        currentRequestId = requestedId;
+        sendState = "provider_outcome_unknown";
+        return json({
+          action: "send",
+          state: sendState,
+          generation,
+          request_sha256: requestSha256,
+          provider_document_id: null,
+          recovery_label: recoveryLabel,
+          provider_payload: providerPayload,
+          link_signers: linkSigners,
+        });
+      }
+
+      if (url.pathname === "/rest/v1/rpc/commit_boldsign_contract_send") {
+        databaseMutations.push(`POST ${url.pathname}`);
+        if (options.failCommit) {
+          return json({ code: "P0001", message: "synthetic commit rollback" }, 500);
+        }
+        const raw = input instanceof Request
+          ? await input.clone().text()
+          : String((init as { body?: unknown } | undefined)?.body ?? "{}");
+        const args = JSON.parse(raw) as { p_provider_document_id?: string };
+        providerDocumentId = args.p_provider_document_id ?? null;
+        sendState = "committed";
+        return json({
+          action: "committed",
+          state: "committed",
+          generation,
+          request_sha256: requestSha256,
+          provider_document_id: providerDocumentId,
+          recovery_label: recoveryLabel,
+          provider_payload: providerPayload,
+          link_signers: linkSigners,
+        });
+      }
+
+      if (url.pathname === "/rest/v1/rpc/fail_boldsign_contract_send") {
+        databaseMutations.push(`POST ${url.pathname}`);
+        if (options.failFailureRecording) {
+          return json({ code: "P0001", message: "synthetic failure receipt rollback" }, 500);
+        }
+        const raw = input instanceof Request
+          ? await input.clone().text()
+          : String((init as { body?: unknown } | undefined)?.body ?? "{}");
+        const args = JSON.parse(raw) as { p_definite?: boolean };
+        sendState = args.p_definite ? "rejected_definitively" : "provider_outcome_unknown";
+        return json({
+          action: "failed",
+          state: sendState,
+          generation,
+          request_sha256: requestSha256,
+        });
       }
 
       if (url.pathname === "/rest/v1/resident_contracts" && method === "GET") {
@@ -136,7 +284,8 @@ function installRequestDouble(options: RequestDoubleOptions) {
     if (url.host === "boldsign.test") {
       if (url.pathname === "/v1/template/send") {
         providerCalls.push("send");
-        return json({ documentId: "synthetic-document" });
+        providerBodies.push(JSON.parse(String(init?.body ?? "{}")));
+        return options.providerSend?.() ?? json({ documentId: "synthetic-document" });
       }
       if (url.pathname === "/v1/document/getEmbeddedSignLink") {
         providerCalls.push("link");
@@ -151,6 +300,7 @@ function installRequestDouble(options: RequestDoubleOptions) {
 
   return {
     providerCalls,
+    providerBodies,
     databaseMutations,
     actorRpcCalls: () => actorRpcCalls,
     restore: () => {
@@ -159,7 +309,7 @@ function installRequestDouble(options: RequestDoubleOptions) {
   };
 }
 
-function signingRequest(): Request {
+function signingRequest(idempotencyKey?: string): Request {
   return new Request("https://edge.test/functions/v1/boldsign-send-contract", {
     method: "POST",
     headers: {
@@ -170,6 +320,7 @@ function signingRequest(): Request {
       contract_id: IDS.contract,
       disable_emails: true,
       get_embedded_links: true,
+      ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
     }),
   });
 }
@@ -304,21 +455,17 @@ actualHandlerTest("actual signing handler preserves an authorized multi-site nur
     assertEquals(body.embedded_links, {
       [IDS.signer]: "https://sign.test/synthetic-link",
     });
-    assert(
-      double.databaseMutations.includes(
-        "PATCH /rest/v1/resident_contracts",
-      ),
+    assertEquals(double.providerBodies.length, 1);
+    assertMatch(
+      String((double.providerBodies[0].labels as string[])[0]),
+      /^haven-[0-9a-f]{32}$/,
     );
-    assert(
-      double.databaseMutations.includes(
-        "PATCH /rest/v1/resident_contract_signers",
-      ),
-    );
-    assert(
-      double.databaseMutations.includes(
-        "POST /rest/v1/resident_contract_events",
-      ),
-    );
+    assert(double.databaseMutations.includes(
+      "POST /rest/v1/rpc/prepare_boldsign_contract_send",
+    ));
+    assert(double.databaseMutations.includes(
+      "POST /rest/v1/rpc/commit_boldsign_contract_send",
+    ));
   } finally {
     double.restore();
   }
@@ -368,7 +515,10 @@ actualHandlerTest("actual signing handler denies accumulated links when authorit
       assertEquals(response.status, revokedActor ? 403 : 401);
       await assertDeniedWithoutSigningData(response, revokedActor ? "Forbidden" : "Unauthorized");
       assertEquals(double.providerCalls, ["send", "link", "link"]);
-      assertEquals(double.databaseMutations.length, 3);
+      assertEquals(double.databaseMutations, [
+        "POST /rest/v1/rpc/prepare_boldsign_contract_send",
+        "POST /rest/v1/rpc/commit_boldsign_contract_send",
+      ]);
     } finally {
       double.restore();
     }
@@ -401,6 +551,190 @@ actualHandlerTest("actual signing handler rechecks authority before returning ac
     assertEquals(response.status, 403);
     await assertDeniedWithoutSigningData(response, "Forbidden");
     assertEquals(double.providerCalls, ["send", "link"]);
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("an ambiguous provider outcome is durably held for reconciliation and never auto-resent", async () => {
+  const double = installRequestDouble({
+    actorAt: () => actor(),
+    providerSend: () => {
+      throw new TypeError("synthetic connection reset after dispatch");
+    },
+  });
+  try {
+    const first = await handleBoldSignSend(signingRequest());
+    const second = await handleBoldSignSend(signingRequest());
+    assertEquals(first.status, 502);
+    assertEquals(second.status, 409);
+    assertEquals(double.providerCalls, ["send"]);
+    assertEquals(await bodyOf(second), {
+      error: "BoldSign send outcome requires reconciliation",
+    });
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("provider success with local commit rollback is not reported as success or resent", async () => {
+  const double = installRequestDouble({
+    actorAt: () => actor(),
+    failCommit: true,
+  });
+  try {
+    const first = await handleBoldSignSend(signingRequest());
+    const second = await handleBoldSignSend(signingRequest());
+    assertEquals(first.status, 503);
+    assertEquals(second.status, 409);
+    assertEquals(double.providerCalls, ["send"]);
+    assertEquals(await bodyOf(first), {
+      error: "BoldSign send was accepted but local reconciliation is required",
+    });
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("a committed exact replay reuses the provider document and never sends twice", async () => {
+  const double = installRequestDouble({ actorAt: () => actor() });
+  try {
+    const first = await handleBoldSignSend(signingRequest());
+    const second = await handleBoldSignSend(signingRequest());
+    assertEquals(first.status, 200);
+    assertEquals(second.status, 200);
+    assertEquals(double.providerCalls, ["send", "link", "link"]);
+    assertEquals((await bodyOf(first)).document_id, "synthetic-document");
+    assertEquals((await bodyOf(second)).document_id, "synthetic-document");
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("concurrent exact requests can produce at most one provider send", async () => {
+  const double = installRequestDouble({ actorAt: () => actor() });
+  try {
+    const responses = await Promise.all([
+      handleBoldSignSend(signingRequest()),
+      handleBoldSignSend(signingRequest()),
+    ]);
+    assertEquals(double.providerCalls.filter((call) => call === "send").length, 1);
+    assert(responses.some((response) => response.status === 200));
+    assert(responses.every((response) => [200, 409].includes(response.status)));
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("unclassified 409 and 429 provider responses remain uncertain and cannot unlock a resend", async () => {
+  for (const status of [409, 429]) {
+    const double = installRequestDouble({
+      actorAt: () => actor(),
+      providerSend: () => json({ error: "synthetic provider refusal" }, status),
+    });
+    try {
+      const first = await handleBoldSignSend(signingRequest());
+      const second = await handleBoldSignSend(signingRequest());
+      assertEquals(first.status, 502, String(status));
+      assertEquals(second.status, 409, String(status));
+      assertEquals(await bodyOf(second), {
+        error: "BoldSign send outcome requires reconciliation",
+      });
+      assertEquals(double.providerCalls, ["send"]);
+    } finally {
+      double.restore();
+    }
+  }
+});
+
+actualHandlerTest("failure-receipt rollback is surfaced instead of hiding local persistence loss", async () => {
+  const double = installRequestDouble({
+    actorAt: () => actor(),
+    failFailureRecording: true,
+    providerSend: () => {
+      throw new TypeError("synthetic transport failure");
+    },
+  });
+  try {
+    const response = await handleBoldSignSend(signingRequest());
+    assertEquals(response.status, 503);
+    assertEquals(await bodyOf(response), {
+      error: "BoldSign outcome could not be recorded",
+    });
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("a null 2xx provider body is recorded as ambiguous and cannot be resent", async () => {
+  const double = installRequestDouble({
+    actorAt: () => actor(),
+    providerSend: () => json(null),
+  });
+  try {
+    const first = await handleBoldSignSend(signingRequest());
+    const second = await handleBoldSignSend(signingRequest());
+    assertEquals(first.status, 502);
+    assertEquals(second.status, 409);
+    assertEquals(await bodyOf(second), {
+      error: "BoldSign send outcome requires reconciliation",
+    });
+    assertEquals(double.providerCalls, ["send"]);
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("a definite rejection requires a new idempotency generation before retrying", async () => {
+  let sends = 0;
+  const double = installRequestDouble({
+    actorAt: () => actor(),
+    providerSend: () => {
+      sends += 1;
+      return sends === 1
+        ? json({ error: "synthetic invalid template" }, 422)
+        : json({ documentId: "synthetic-document-retry" });
+    },
+  });
+  try {
+    const first = await handleBoldSignSend(signingRequest());
+    const sameGeneration = await handleBoldSignSend(signingRequest());
+    const nextGeneration = await handleBoldSignSend(signingRequest(
+      "00000000-0000-4000-8000-000000000499",
+    ));
+    assertEquals(first.status, 502);
+    assertEquals(sameGeneration.status, 409);
+    assertEquals(await bodyOf(sameGeneration), {
+      error: "Previous BoldSign send was rejected; use a new idempotency_key to retry",
+    });
+    assertEquals(nextGeneration.status, 200);
+    assertEquals(double.providerCalls.filter((call) => call === "send").length, 2);
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("partial embedded-link failure resumes links from the committed document without resending", async () => {
+  let linkCalls = 0;
+  const double = installRequestDouble({
+    actorAt: () => actor(),
+    signerCount: 2,
+    linkResponse: () => {
+      linkCalls += 1;
+      if (linkCalls === 2) {
+        throw new TypeError("synthetic second-link transport failure");
+      }
+      return json({ signLink: `https://sign.test/link-${linkCalls}` });
+    },
+  });
+  try {
+    const first = await handleBoldSignSend(signingRequest());
+    const replay = await handleBoldSignSend(signingRequest());
+    assertEquals(first.status, 502);
+    assertEquals(replay.status, 200);
+    assertEquals(double.providerCalls.filter((call) => call === "send").length, 1);
+    assertEquals(double.providerCalls.filter((call) => call === "link").length, 4);
+    assertEquals(Object.keys((await bodyOf(replay)).embedded_links as object).length, 2);
   } finally {
     double.restore();
   }

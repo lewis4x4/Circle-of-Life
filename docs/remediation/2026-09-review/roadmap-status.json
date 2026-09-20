@@ -303,8 +303,18 @@
       "id": "SYS-006",
       "severity": "P2",
       "title": "signing retries and webhook duplicates can corrupt local contract state",
-      "status": "open",
-      "evidence": []
+      "status": "verified_resolved",
+      "evidence": [
+        "supabase/migrations/439_signing_delivery_idempotency.sql",
+        "supabase/tests/review_boldsign_delivery_idempotency.sql",
+        "scripts/verify-boldsign-concurrency.py",
+        "supabase/functions/boldsign-send-contract/index.ts",
+        "supabase/functions/boldsign-send-contract-handler.test.ts",
+        "supabase/functions/boldsign-webhook/handler.ts",
+        "supabase/functions/boldsign-webhook-handler.test.ts",
+        "docs/remediation/2026-09-review/COL-294-SIGNING-IDEMPOTENCY.md"
+      ],
+      "notes": "Durable immutable-generation send claims prevent automatic replay after an ambiguous provider outcome. Provider success commits contract, signers, event history and the receipt atomically or remains explicit reconciliation work. Verified webhook identity/content is serialized and deduplicated before monotonic provider-time projection; environment, facility, organization, signer identity and trusted lifecycle fields fail closed. Full local migration/probe/concurrency/build review passed. No production migration, Edge deployment, live BoldSign operation, staff/device, legal, customer or release acceptance is claimed."
     },
     {
       "id": "SYS-007",

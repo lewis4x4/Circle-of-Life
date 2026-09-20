@@ -34,6 +34,7 @@
     "migrations:next": "node scripts/check-migration-claims.mjs --next",
     "migrations:check:hosted": "node scripts/check-hosted-sql.mjs",
     "migrations:verify:pg": "node scripts/pg-verify-migrations.mjs",
+    "verify:boldsign-concurrency": "python3 scripts/verify-boldsign-concurrency.py",
     "migrations:verify:ledger": "node scripts/check-migration-ledger.mjs",
     "migrations:verify:remote": "node scripts/verify-remote-schema.mjs",
     "a11y:routes": "node scripts/a11y-axe-routes.mjs",
