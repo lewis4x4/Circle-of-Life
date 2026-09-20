@@ -9,8 +9,11 @@
 1. Implement one **bounded segment** at a time.
 2. Run **`npm run segment:gates -- --segment "<id>"`** (add `--ui` when UI/routes changed).
 3. Do not claim “done” without a **machine-readable gate artifact** under `test-results/agent-gates/`.
-4. On required gate **PASS**: stage only segment files, **atomic commit**, push, then start the next segment.
-5. Before updating Linear, follow `docs/LINEAR-WORKFLOW.md`; keep delivery, human decisions, and release/acceptance as separate issues with real dependency links.
+4. On required gate **PASS**: stage only segment files, create an **atomic Lore-protocol commit**, push, create/update the PR, wait for required checks, and fix failures.
+5. Unless Brian explicitly set `draft`, `hold`, `review-only`, `source-only`, or `do not deploy`, merge to `main` and complete the repository-defined production release path.
+6. Apply required production migrations and deploy changed Edge Functions, jobs, crons, configuration, and application services in the verified target and documented release order.
+7. Verify post-merge CI, migration-ledger parity, relevant function versions, the exact hosted revision, health checks, and applicable live smoke tests. A merge or started deployment is not release proof.
+8. Before updating Linear, follow `docs/LINEAR-WORKFLOW.md`; keep delivery, technical deployment evidence, human decisions, and release/acceptance as separate issues with real dependency links.
 
 ## Form primitives (operator-facing defaults)
 
@@ -44,5 +47,6 @@ Shared UI primitives—including **`QuietDatePicker`**—must **not** silently i
 - Full agent registry: `agents/registry.yaml`
 - Playbooks: `agents/playbooks/`
 - Runbook: `docs/agent-gates-runbook.md`
+- Production operations: `docs/specs/PHASE1-OPS-VERIFICATION-RUNBOOK.md`
 - Linear workflow: `docs/LINEAR-WORKFLOW.md`
 - Next.js agent notes: `AGENTS.md`
