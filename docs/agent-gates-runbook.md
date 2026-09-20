@@ -17,7 +17,7 @@ Duplicated in `docs/mission-statement.md`, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`,
 | `npm run audit:ci` | `npm audit --audit-level=high` |
 | `npm run secrets:gitleaks` | Gitleaks (local binary or Docker) |
 | `npm run migrations:check` | Validates `supabase/migrations/*.sql` naming and `001..N` sequence |
-| `npm run migrations:verify:pg` | Replays migrations on throwaway Postgres 16 (Docker + auth stub) |
+| `npm run migrations:verify:pg` | Replays migrations on throwaway Postgres 17 (Docker + auth stub) |
 | `npm run migrations:verify:remote` | Probes linked Supabase for critical columns/tables (migrations 250–288); requires `.env.local` service role |
 | `npm run lint` | ESLint on `src/` (`--max-warnings 0`). Historic `react-hooks/*` compiler-rule debt is baselined in `eslint-suppressions.json` (ESLint bulk suppressions) so the gate fails only on new violations; `npx eslint src --prune-suppressions` after paying some down. |
 | `npm run a11y:routes` | Playwright + axe (`BASE_URL` / `AXE_ROUTES`; app must be up) |
@@ -46,12 +46,12 @@ Checks stream prefixed output live. Quiet commands emit a 30-second `still runni
 | Variable | Effect |
 |----------|--------|
 | `CI=true` | Gitleaks must run (install binary or use Docker) |
-| `REQUIRE_PG_VERIFY=1` | Docker migration replay is **blocking** if it fails or Docker is unavailable (set in CI workflow) |
-| `SKIP_PG_VERIFY=1` | Skip Docker migration verify (local only; conflicts with `REQUIRE_PG_VERIFY=1`) |
+| `REQUIRE_PG_VERIFY=1` | Docker migration replay is **blocking** if it fails or Docker is unavailable. CI sets this for database-sensitive or unclassifiable changes. |
+| `SKIP_PG_VERIFY=1` | Explicitly skip Docker migration verify. CI sets this only after the fail-closed classifier proves the diff is not database-sensitive; it conflicts with `REQUIRE_PG_VERIFY=1`. |
 | `SKIP_GITLEAKS=1` | Skip gitleaks (local only; **not** for CI). The runner records `security.gitleaks` as **skipped**, not passed. |
 | `FAIL_ON_NEXT_DEPRECATIONS=1` | Fail gates if `next build` reports the middleware → proxy deprecation |
 
-GitHub Actions: `.github/workflows/ci-gates.yml` runs gates with `CI=true` and `REQUIRE_PG_VERIFY=1`.
+GitHub Actions: `.github/workflows/ci-gates.yml` always runs the application/platform gates with `CI=true`. `scripts/ci/classify-changes.mjs` selects exactly one of `REQUIRE_PG_VERIFY=1` or `SKIP_PG_VERIFY=1`; unknown diff state requires the replay. `.github/workflows/ci-nightly.yml` always requires the full replay.
 
 ## Known npm audit moderates
 

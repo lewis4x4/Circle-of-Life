@@ -82,6 +82,52 @@ test("segment CI runs core gates regardless of the hosted UI toggle", () => {
   assert.doesNotMatch(step, /if:.*HAVEN_UI_GATES_ENABLED/);
 });
 
+test("segment CI has one path-sensitive database replay owner", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  assert.doesNotMatch(workflow, /run: npm run migrations:verify:pg/);
+  const segment = workflow.split("      - name: Segment gates ")[1]?.split("      - ")[0];
+  assert.ok(segment, "core segment gate exists");
+  assert.match(segment, /REQUIRE_PG_VERIFY:.*database_sensitive != 'false'/);
+  assert.match(segment, /SKIP_PG_VERIFY:.*database_sensitive == 'false'/);
+});
+
+test("UI reruns cannot accidentally start another database replay", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  const ui = workflow.split("      - name: UI gates (conditional)")[1]?.split("      - ")[0];
+  assert.ok(ui, "conditional UI gate exists");
+  assert.match(ui, /SKIP_PG_VERIFY: "1"/);
+});
+
+test("finance checks are conditional and no longer invoke the general segment suite", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  const finance = workflow.split("  finance:\n")[1]?.split("  required:\n")[0];
+  assert.ok(finance, "finance job exists");
+  assert.match(finance, /finance_sensitive != 'false'/);
+  assert.doesNotMatch(finance, /segment:gates|migrations:verify:pg|npm test|typecheck/);
+  assert.equal(existsSync(path.join(root, ".github/workflows/finance-integration.yml")), false);
+});
+
+test("CI exposes an always-present required summary and retains nightly database replay", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  assert.match(workflow, /name: Required CI summary/);
+  assert.match(workflow, /if: always\(\)/);
+  assert.match(workflow, /cancel-in-progress: true/);
+
+  const nightly = readFileSync(path.join(root, ".github/workflows/ci-nightly.yml"), "utf8");
+  assert.match(nightly, /REQUIRE_PG_VERIFY: "1"/);
+  assert.doesNotMatch(nightly, /SKIP_PG_VERIFY: "1"/);
+});
+
+test("missing or invalid classifier outputs cannot silently skip sensitive gates", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  assert.match(workflow, /classification_safe: \$\{\{ steps\.risk\.outputs\.classification_safe \}\}/);
+  assert.match(workflow, /REQUIRE_PG_VERIFY:.*database_sensitive != 'false'/);
+  assert.match(workflow, /finance_sensitive != 'false'/);
+  assert.match(workflow, /CLASSIFICATION_SAFE:.*classification_safe/);
+  assert.match(workflow, /for value in "\$CLASSIFICATION_SAFE" "\$DATABASE_SENSITIVE" "\$FINANCE_SENSITIVE" "\$UI_SENSITIVE"/);
+  assert.match(workflow, /test "\$value" = "true" \|\| test "\$value" = "false"/);
+});
+
 test("production publishing checks the actual build database, not an unrelated project", () => {
   assert.equal(productionProject({}), null);
   assert.equal(productionProject({ NETLIFY: "true", CONTEXT: "deploy-preview" }), null);
