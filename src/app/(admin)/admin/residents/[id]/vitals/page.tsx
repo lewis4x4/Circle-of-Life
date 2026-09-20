@@ -16,10 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import {
-  RecordDetailHeader,
-  RecordDetailSection,
-} from "@/design-system/components/record-detail";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 export default function ResidentVitalsPage() {
   const params = useParams<{ id: string }>();
@@ -81,22 +78,20 @@ export default function ResidentVitalsPage() {
       {loading && <p role="status">Loading clinical data…</p>}
       {(logsError || alertsError) && <div role="alert" className="rounded border border-amber-500 p-4">{logsError && <p>Vitals unavailable: {logsError}</p>}{alertsError && <p>Alerts unavailable: {alertsError}</p>}<button onClick={() => void load()}>Retry</button></div>}
       <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)] ease-[var(--motion-ease)]">
-        <RecordDetailHeader
-          title="Vitals"
-          subtitle="Recent daily logs and vital alerts."
-          backLink={{ label: "Back to profile", href: `/admin/residents/${residentId}` }}
-          actions={
-            <a
-              href={`/admin/residents/${residentId}/vitals/thresholds`}
-              className={cn(
-                buttonVariants({ size: "sm", variant: "outline" }),
-                "font-medium",
-              )}
-            >
-              Alert thresholds
-            </a>
-          }
-        />
+        {/* COL-432: the resident <h1> comes from AdminResidentDetailShell; this
+            tab adds a toolbar row plus <h2> sections, not a second <h1>. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">Recent daily logs and vital alerts.</p>
+          <a
+            href={`/admin/residents/${residentId}/vitals/thresholds`}
+            className={cn(
+              buttonVariants({ size: "sm", variant: "outline" }),
+              "font-medium",
+            )}
+          >
+            Alert thresholds
+          </a>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">

@@ -19,10 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import {
-  RecordDetailHeader,
-  RecordDetailSection,
-} from "@/design-system/components/record-detail";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 const TYPE_LABELS: Record<string, string> = {
   katz_adl: "Katz ADL",
@@ -67,7 +64,6 @@ export default function ResidentAssessmentHistoryPage() {
   const supabase = useMemo(() => createClient(), []);
 
   const [rows, setRows] = useState<Row[]>([]);
-  const [residentName, setResidentName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState("all");
@@ -78,13 +74,8 @@ export default function ResidentAssessmentHistoryPage() {
     try {
       const facilityFilter = isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : undefined;
 
-      const { data: resident } = await supabase
-        .from("residents")
-        .select("first_name, last_name")
-        .eq("id", residentId)
-        .maybeSingle();
-      if (resident) setResidentName(`${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim());
-
+      // The resident's name is rendered once, by the shell header — this tab
+      // no longer queries for it (COL-432).
       let q = supabase
         .from("assessments")
         .select("id, assessment_type, assessment_date, total_score, risk_level, assessed_by")
@@ -141,19 +132,20 @@ export default function ResidentAssessmentHistoryPage() {
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-[var(--motion-duration)]">
-        <RecordDetailHeader
-          title="Assessments"
-          subtitle={`${rows.length} assessment${rows.length !== 1 ? "s" : ""} on record${residentName ? ` · ${residentName}` : ""}`}
-          backLink={{ label: "Back to profile", href: `/admin/residents/${residentId}` }}
-          actions={
-            <Link
-              href={`/admin/residents/${residentId}/assessments/new`}
-              className={cn(buttonVariants({ size: "sm" }), "font-medium")}
-            >
-              <Plus className="h-4 w-4 mr-1.5" /> New assessment
-            </Link>
-          }
-        />
+        {/* COL-432: the resident name <h1> and the back-to-roster link live in
+            AdminResidentDetailShell. This tab contributes a toolbar row and an
+            <h2> section — never a second <h1>. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm tabular-nums text-muted-foreground">
+            {`${rows.length} assessment${rows.length !== 1 ? "s" : ""} on record`}
+          </p>
+          <Link
+            href={`/admin/residents/${residentId}/assessments/new`}
+            className={cn(buttonVariants({ size: "sm" }), "font-medium")}
+          >
+            <Plus className="h-4 w-4 mr-1.5" /> New assessment
+          </Link>
+        </div>
 
         <AdminFilterBar
           searchPlaceholder="Filter by type…"

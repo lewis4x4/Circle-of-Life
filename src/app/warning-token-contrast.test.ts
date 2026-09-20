@@ -87,6 +87,18 @@ function hue([r, g, b]: Rgb): number {
   return (raw * 60 + 360) % 360;
 }
 
+/**
+ * Alpha-composite `fg` over `bg` — the browser's `color-mix`-free equivalent of
+ * a Tailwind `/NN` opacity utility painted on an opaque surface.
+ */
+function composite(fg: Rgb, bg: Rgb, alpha: number): Rgb {
+  return [
+    Math.round(fg[0] * alpha + bg[0] * (1 - alpha)),
+    Math.round(fg[1] * alpha + bg[1] * (1 - alpha)),
+    Math.round(fg[2] * alpha + bg[2] * (1 - alpha)),
+  ];
+}
+
 const THEMES = [":root", ".light", ".dark"] as const;
 const WARNING_TOKENS = ["warning", "chart-3", "compliance-warning"] as const;
 
@@ -122,4 +134,68 @@ describe("orange warning tokens meet AA on their own theme surfaces", () => {
       expect(compliance, `${theme} --compliance-warning drifted from --warning`).toEqual(warning);
     }
   });
+});
+
+/**
+ * COL-432. `warning on --background` clearing AA is not the same question as
+ * "is the warning StatusPill readable" — the pill paints its own surface
+ * (`bg-warning/10`) under its own text (`text-warning`), which drags the
+ * surface toward the text colour and eats the margin. The light warning tone
+ * measured 4.03:1 on that tint while passing 4.58:1 on bare `--background`,
+ * so the surface the pill actually uses has to be modelled explicitly.
+ *
+ * `STATUS_PILL_TINT` mirrors `pillVariants` in
+ * `src/components/ui/status-pill.tsx` — bump it here if the `/10` changes there.
+ */
+const STATUS_PILL_TINT_PERCENT = 10;
+const STATUS_PILL_TINT = STATUS_PILL_TINT_PERCENT / 100;
+
+/** Opaque surfaces a StatusPill is placed on in the admin/detail shells. */
+const PILL_SURFACES = ["background", "card"] as const;
+
+/**
+ * Tone → token, matching `pillVariants`. `muted` is excluded: it renders
+ * `bg-transparent text-muted-foreground`, so it has no tint to model.
+ */
+const PILL_TONES = {
+  warning: "warning",
+  success: "success",
+  danger: "destructive",
+  info: "info",
+} as const;
+
+type PillTone = keyof typeof PILL_TONES;
+
+const PILL_TONE_NAMES = Object.keys(PILL_TONES) as PillTone[];
+
+/**
+ * Only `warning` is held to AA here — it is the tone COL-432 fixed. The other
+ * tones are recorded so a regression is visible, and floored at the 3:1
+ * non-text/large-text threshold; several of them sit between 3:1 and 4.5:1 on
+ * their own tint today and deepening them is a separate, wider change.
+ */
+const AA_ENFORCED_TONES = new Set<PillTone>(["warning"]);
+const LARGE_TEXT_FLOOR = 3;
+
+describe("StatusPill tones on their own tinted surface", () => {
+  for (const theme of THEMES) {
+    for (const tone of PILL_TONE_NAMES) {
+      const token = PILL_TONES[tone];
+      const threshold = AA_ENFORCED_TONES.has(tone) ? AA_NORMAL_TEXT : LARGE_TEXT_FLOOR;
+
+      it(`${theme} tone="${tone}" clears ${threshold}:1 on bg-${token}/${STATUS_PILL_TINT_PERCENT}`, () => {
+        const block = themeBlock(theme);
+        const fg = tokenRgb(block, token);
+
+        for (const surface of PILL_SURFACES) {
+          const tinted = composite(fg, tokenRgb(block, surface), STATUS_PILL_TINT);
+          const ratio = contrastRatio(fg, tinted);
+          expect(
+            ratio,
+            `${theme} tone="${tone}" text on bg-${token}/${STATUS_PILL_TINT_PERCENT} over --${surface} measured ${ratio.toFixed(2)}:1`,
+          ).toBeGreaterThanOrEqual(threshold);
+        }
+      });
+    }
+  }
 });
