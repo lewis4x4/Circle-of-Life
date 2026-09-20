@@ -75,3 +75,7 @@ Spec section 11 clinical/operating decisions remain explicit in COL-490. No staf
 ## Local release gate
 
 [Combined gate PASS](../test-results/agent-gates/2026-09-20T04-52-41-136Z-SMART-ROUNDING-CLOSEOUT-20260920.json): security, lint, 441-migration replay, 83 SQL probes, 7 acceptance suites, 105 parity cases, build, 18,000-row stress scenario, 8 synthetic component screenshots and 2 axe routes. Fresh lockfile-install application suite again passed 6,391 tests with2 skips; typecheck passed. The earlier failed gate is retained: Turbopack rejected the worktree dependency symlink, corrected by npm ci inside the isolated worktree. No product workaround was introduced.
+
+## Generated schema follow-up
+
+Regenerated public types from verified staging438 and copied the four affected table declarations: cadence/escalation proposal IDs, full configuration snapshots, baseline storage, and template overrides. The independent reviewer confirmed exact agreement with generated output. [Follow-up gate PASS](../test-results/agent-gates/2026-09-20T05-04-41-362Z-SMART-ROUNDING-TYPEGEN-20260920.json); typecheck passes. This changes declarations only, with no runtime JavaScript or SQL change.
