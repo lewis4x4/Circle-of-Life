@@ -45,6 +45,8 @@ type RequestDoubleOptions = {
   contractOrganization?: string;
   contractFacility?: string;
   onLinkRequest?: () => void;
+  linkResponse?: () => Response;
+  signerCount?: number;
 };
 
 function actor(
@@ -114,13 +116,13 @@ function installRequestDouble(options: RequestDoubleOptions) {
         url.pathname === "/rest/v1/resident_contract_signers" &&
         method === "GET"
       ) {
-        return json([{
-          id: IDS.signer,
+        return json(Array.from({ length: options.signerCount ?? 1 }, (_, index) => ({
+          id: index === 0 ? IDS.signer : `${IDS.signer}-${index}`,
           signer_name: "Synthetic signer",
           signer_email: "signer@example.test",
           signer_role: "resident_representative",
-          routing_order: 1,
-        }]);
+          routing_order: index + 1,
+        })));
       }
 
       if (["POST", "PATCH"].includes(method)) {
@@ -139,7 +141,7 @@ function installRequestDouble(options: RequestDoubleOptions) {
       if (url.pathname === "/v1/document/getEmbeddedSignLink") {
         providerCalls.push("link");
         options.onLinkRequest?.();
-        return json({ signLink: "https://sign.test/synthetic-link" });
+        return options.linkResponse?.() ?? json({ signLink: "https://sign.test/synthetic-link" });
       }
       throw new Error(`Unhandled BoldSign request: ${method} ${url}`);
     }
@@ -298,7 +300,6 @@ actualHandlerTest("actual signing handler preserves an authorized multi-site nur
     const body = await bodyOf(response);
     assertEquals(response.status, 200);
     assertEquals(double.providerCalls, ["send", "link"]);
-    assertEquals(double.actorRpcCalls(), 4);
     assertEquals(body.document_id, "synthetic-document");
     assertEquals(body.embedded_links, {
       [IDS.signer]: "https://sign.test/synthetic-link",
@@ -323,7 +324,7 @@ actualHandlerTest("actual signing handler preserves an authorized multi-site nur
   }
 });
 
-actualHandlerTest("characterizes remaining link disclosure if access changes while the final provider request is in flight", async () => {
+actualHandlerTest("actual signing handler denies links if access changes while the final provider request is in flight", async () => {
   let liveActor = actor();
   const double = installRequestDouble({
     actorAt: () => liveActor,
@@ -333,14 +334,73 @@ actualHandlerTest("characterizes remaining link disclosure if access changes whi
   });
   try {
     const response = await handleBoldSignSend(signingRequest());
-    const body = await bodyOf(response);
-    assertEquals(response.status, 200);
+    assertEquals(response.status, 403);
+    await assertDeniedWithoutSigningData(response, "Forbidden");
     assertEquals(double.providerCalls, ["send", "link"]);
-    assertEquals(double.actorRpcCalls(), 4);
     assertEquals(liveActor.accessible_facility_ids, []);
-    assertEquals(body.embedded_links, {
-      [IDS.signer]: "https://sign.test/synthetic-link",
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("actual signing handler denies accumulated links when authority changes during a later link response body", async () => {
+  for (const revokedActor of [actor("nurse", []), actor("caregiver"), null]) {
+    let liveActor: ActorPayload | null = actor();
+    let linkRequests = 0;
+    const double = installRequestDouble({
+      actorAt: () => liveActor,
+      signerCount: 3,
+      linkResponse: () => {
+        linkRequests += 1;
+        const response = json({ signLink: "https://sign.test/synthetic-link" });
+        if (linkRequests === 2) {
+          response.json = async () => {
+            await Promise.resolve();
+            liveActor = revokedActor;
+            return { signLink: "https://sign.test/second-link" };
+          };
+        }
+        return response;
+      },
     });
+    try {
+      const response = await handleBoldSignSend(signingRequest());
+      assertEquals(response.status, revokedActor ? 403 : 401);
+      await assertDeniedWithoutSigningData(response, revokedActor ? "Forbidden" : "Unauthorized");
+      assertEquals(double.providerCalls, ["send", "link", "link"]);
+      assertEquals(double.databaseMutations.length, 3);
+    } finally {
+      double.restore();
+    }
+  }
+});
+
+actualHandlerTest("actual signing handler denies a failed final link response after facility revocation", async () => {
+  let liveActor = actor();
+  const double = installRequestDouble({
+    actorAt: () => liveActor,
+    onLinkRequest: () => { liveActor = actor("nurse", []); },
+    linkResponse: () => json({ error: "Provider failure" }, 502),
+  });
+  try {
+    const response = await handleBoldSignSend(signingRequest());
+    assertEquals(response.status, 403);
+    await assertDeniedWithoutSigningData(response, "Forbidden");
+    assertEquals(double.providerCalls, ["send", "link"]);
+  } finally {
+    double.restore();
+  }
+});
+
+actualHandlerTest("actual signing handler rechecks authority before returning accumulated links", async () => {
+  const double = installRequestDouble({
+    actorAt: (rpcCall) => rpcCall < 6 ? actor() : actor("nurse", []),
+  });
+  try {
+    const response = await handleBoldSignSend(signingRequest());
+    assertEquals(response.status, 403);
+    await assertDeniedWithoutSigningData(response, "Forbidden");
+    assertEquals(double.providerCalls, ["send", "link"]);
   } finally {
     double.restore();
   }
