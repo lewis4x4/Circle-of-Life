@@ -924,7 +924,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {/* Scrolling main — full-bleed, no mx-auto/max-w. Pages that need a
             narrow column for long-form content (settings forms, etc.) apply
             max-w on an inner block, not on this wrapper. */}
-        <main className="flex-1 overflow-y-auto">
+        <main
+          aria-label="Page content"
+          tabIndex={0}
+          className="flex-1 overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        >
           <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8">
             {children}
           </div>
