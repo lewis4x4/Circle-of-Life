@@ -14,7 +14,6 @@ import { FACILITY_OPERATOR_TZ } from "@/lib/facility-wall-clock";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import {
-  ROUNDING_EXPECTATION_NOT_RECORDED_COPY,
   roundingBandLabel,
   roundingLastObservedLine,
   roundingTrendCoverageLine,
@@ -24,6 +23,11 @@ import type {
   ResidentAssuranceFacilityTrendPoint,
   ResidentAssuranceFacilityTrendRow,
 } from "@/lib/resident-assurance/command-center-brief";
+import {
+  complianceRate,
+  formatComplianceRate,
+  type ComplianceSummary,
+} from "@/lib/rounding/observation-compliance-summary";
 
 /** One independently loaded part of the page. A failed part never hides the others. */
 export type SectionState<T> =
@@ -384,6 +388,70 @@ export function buildFacilitySnapshotTiles(kpi: ExecKpiPayload, facilityId: stri
 
 // ── Rounding ─────────────────────────────────────────────────────────────────
 
+export type RoundingComplianceDisplay =
+  | { state: "successful-empty"; from: string; to: string }
+  | {
+      state: "configuration-gap";
+      from: string;
+      to: string;
+      configurationGaps: number;
+    }
+  | {
+      state: "recorded";
+      from: string;
+      to: string;
+      completed: number;
+      missed: number;
+      expected: number;
+      configurationGaps: number;
+      rateLabel: string;
+    };
+
+/**
+ * Executive roll-up of the version-aware compliance response.
+ *
+ * Configuration gaps stay outside the completion denominator. A successful
+ * response with no expected windows is also a named state; it must not become
+ * a favorable-looking 0 missed or 100% completed.
+ */
+export function buildRoundingComplianceDisplay(
+  summary: ComplianceSummary,
+): RoundingComplianceDisplay {
+  const { expected, satisfied, unconfigured } = summary.totals;
+  if (expected === 0 && unconfigured === 0) {
+    return { state: "successful-empty", from: summary.from, to: summary.to };
+  }
+  if (expected === 0) {
+    return {
+      state: "configuration-gap",
+      from: summary.from,
+      to: summary.to,
+      configurationGaps: unconfigured,
+    };
+  }
+  return {
+    state: "recorded",
+    from: summary.from,
+    to: summary.to,
+    completed: satisfied,
+    missed: Math.max(0, expected - satisfied),
+    expected,
+    configurationGaps: unconfigured,
+    rateLabel: formatComplianceRate(complianceRate(summary.totals)),
+  };
+}
+
+/** Compact inclusive range label with date-only parsing, so UTC cannot move a day. */
+export function roundingComplianceRangeLabel(from: string, to: string): string {
+  const fromMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(from);
+  const toMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(to);
+  if (!fromMatch || !toMatch) return `${from}–${to} · ${FACILITY_OPERATOR_TZ}`;
+  if (fromMatch[1] === toMatch[1] && fromMatch[2] === toMatch[2]) {
+    return `${shortDayLabel(from)}–${Number(toMatch[3])}, ${toMatch[1]} · ${FACILITY_OPERATOR_TZ}`;
+  }
+  return `${shortDayLabel(from)}–${longDateLabel(to)} · ${FACILITY_OPERATOR_TZ}`;
+}
+
 export type RoundingDayCell = {
   date: string;
   /** Short operator label, e.g. "Sep 9". */
@@ -407,6 +475,9 @@ export type RoundingSummary = {
 
 export const ROUNDING_BAND_EXPLANATION =
   "Each day's band comes from what was recorded that day: a watch start counts 1, an integrity flag 2, an escalation 3, and a resident at a critical safety score 4. Low is under 3, Watch 3 to 6, Elevated 7 to 11, Critical 12 or more.";
+
+export const ROUNDING_FINDINGS_SCOPE_COPY =
+  "Finding bands are separate from completion compliance. They summarize watches, integrity flags, escalations, and critical safety scores recorded that day.";
 
 /** "2026-09-09" → "Sep 9" without a timezone shift. */
 export function shortDayLabel(isoDate: string): string {
@@ -444,7 +515,7 @@ export function buildRoundingSummary(
     bandLabel: roundingBandLabel(rollup),
     lastObservedLine: roundingLastObservedLine(rollup.lastObservedAt),
     coverageLine: trend ? roundingTrendCoverageLine(trend) : "No days in range",
-    expectationLine: ROUNDING_EXPECTATION_NOT_RECORDED_COPY,
+    expectationLine: ROUNDING_FINDINGS_SCOPE_COPY,
     openItems: [
       { key: "watches", label: "Active watches", count: rollup.activeWatches, href: FACILITY_ROUTES.watches },
       { key: "approvals", label: "Awaiting approval", count: rollup.pendingWatchApprovals, href: FACILITY_ROUTES.watches },
