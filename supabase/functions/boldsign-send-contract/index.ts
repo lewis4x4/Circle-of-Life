@@ -26,12 +26,20 @@ type ContractRow = {
   metadata: Record<string, unknown> | null;
 };
 
-type SignerRow = {
+type LinkSigner = {
   id: string;
-  signer_name: string;
-  signer_email: string | null;
-  signer_role: string;
-  routing_order: number;
+  email: string;
+};
+
+type SendClaimResult = {
+  action: "send" | "replay" | "reconcile" | "rejected";
+  state: string;
+  generation: number;
+  request_sha256: string;
+  recovery_label: string;
+  provider_payload: Record<string, unknown>;
+  link_signers: LinkSigner[];
+  provider_document_id: string | null;
 };
 
 export function boldSignProviderFailureResponse(
@@ -63,7 +71,13 @@ export async function handleBoldSignSend(req: Request): Promise<Response> {
   const user = { id: actor.userId };
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  let body: { contract_id?: string; template_id?: string; disable_emails?: boolean; get_embedded_links?: boolean };
+  let body: {
+    contract_id?: string;
+    template_id?: string;
+    disable_emails?: boolean;
+    get_embedded_links?: boolean;
+    idempotency_key?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -83,21 +97,6 @@ export async function handleBoldSignSend(req: Request): Promise<Response> {
     !actor.accessibleFacilityIds.includes(contract.facility_id)
   ) return jsonResponse({ error: "Forbidden" }, 403, origin);
   if (contract.provider !== "boldsign") return jsonResponse({ error: "Contract provider is not boldsign" }, 400, origin);
-  if (!["draft", "ready_to_send"].includes(contract.status)) {
-    return jsonResponse({ error: `Contract status must be draft/ready_to_send, got ${contract.status}` }, 409, origin);
-  }
-
-  const { data: signers, error: signersErr } = await admin
-    .from("resident_contract_signers")
-    .select("id, signer_name, signer_email, signer_role, routing_order")
-    .eq("contract_id", contract.id)
-    .is("deleted_at", null)
-    .order("routing_order", { ascending: true });
-  if (signersErr) return jsonResponse({ error: signersErr.message }, 500, origin);
-  const signerRows = (signers ?? []) as SignerRow[];
-  if (signerRows.length === 0) return jsonResponse({ error: "At least one signer is required" }, 400, origin);
-  const missingEmail = signerRows.find((signer) => !signer.signer_email);
-  if (missingEmail) return jsonResponse({ error: `Signer ${missingEmail.signer_name} is missing signer_email` }, 400, origin);
 
   let templateId: string;
   try {
@@ -107,100 +106,182 @@ export async function handleBoldSignSend(req: Request): Promise<Response> {
   }
 
   const disableEmails = body.disable_emails ?? true;
-  const enableSigningOrder = signerRows.length > 1;
-  const payload = {
-    title: contract.title,
-    message: "Please review and sign this Circle of Life resident agreement.",
-    roles: signerRows.map((signer, index) => ({
-      roleIndex: index + 1,
-      signerName: signer.signer_name,
-      signerEmail: signer.signer_email,
-      signerOrder: signer.routing_order,
-      signerType: "Signer",
-      signerRole: signer.signer_role,
-      locale: "EN",
-    })),
-    enableSigningOrder,
-    disableEmails,
-  };
-
-  let sendResponse: Response;
-  try {
-    sendResponse = await withCurrentActorRevalidation(
-      actorAuth,
-      () => boldSignFetch(`/v1/template/send?templateId=${encodeURIComponent(templateId)}`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
-      contract.facility_id,
-    );
-  } catch (error) {
-    return boldSignProviderFailureResponse(error, origin);
+  const requestId = body.idempotency_key ?? contract.id;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)) {
+    return jsonResponse({ error: "idempotency_key must be a UUID" }, 400, origin);
   }
-  const sendJson = await sendResponse.json().catch(() => ({}));
-  if (!sendResponse.ok) {
-    try {
-      await actorAuth.revalidate(contract.facility_id);
-    } catch (error) {
-      return currentActorErrorResponse(error, getCorsHeaders(origin));
-    }
-    await admin.from("resident_contract_events").insert({
-      organization_id: contract.organization_id,
-      facility_id: contract.facility_id,
-      contract_id: contract.id,
-      resident_id: contract.resident_id,
-      provider: "boldsign",
-      event_type: "SendFailed",
-      event_status: "failed",
-      raw_payload: sendJson,
-      metadata: { http_status: sendResponse.status },
-    });
-    return jsonResponse({ error: "BoldSign send failed" }, 502, origin);
-  }
-
-  const documentId = sendJson.documentId ?? sendJson.documentID ?? sendJson.id;
-  if (!documentId || typeof documentId !== "string") {
-    return jsonResponse({ error: "BoldSign response did not include documentId" }, 502, origin);
-  }
+  const providerEnvironment = (Deno.env.get("BOLDSIGN_ENVIRONMENT") ?? "live")
+    .trim()
+    .toLowerCase();
 
   try {
     await actorAuth.revalidate(contract.facility_id);
   } catch (error) {
     return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
-  const now = new Date().toISOString();
-  await admin.from("resident_contracts").update({
-    provider_template_id: templateId,
-    provider_document_id: documentId,
-    status: "sent",
-    sent_at: now,
-    updated_by: user.id,
-    metadata: { ...(contract.metadata ?? {}), boldsign_send_response: sendJson, disable_emails: disableEmails },
-  }).eq("id", contract.id);
 
-  await admin.from("resident_contract_signers").update({ status: "sent", sent_at: now, updated_by: user.id }).eq("contract_id", contract.id);
+  const { data: preparedData, error: prepareError } = await admin.rpc(
+    "prepare_boldsign_contract_send",
+    {
+      p_contract_id: contract.id,
+      p_request_id: requestId,
+      p_actor_id: user.id,
+      p_organization_id: contract.organization_id,
+      p_facility_id: contract.facility_id,
+      p_template_id: templateId,
+      p_disable_emails: disableEmails,
+      p_provider_environment: providerEnvironment,
+    },
+  );
+  if (prepareError) {
+    const status = prepareError.code === "P0409" || prepareError.code === "23505"
+      ? 409
+      : prepareError.code === "22023"
+      ? 400
+      : 500;
+    return jsonResponse({ error: prepareError.message || "Unable to prepare BoldSign send" }, status, origin);
+  }
+  const prepared = preparedData as SendClaimResult;
+  if (!prepared || !prepared.action || !prepared.request_sha256 || !prepared.generation) {
+    return jsonResponse({ error: "Unable to prepare BoldSign send" }, 503, origin);
+  }
+  if (prepared.action === "reconcile") {
+    return jsonResponse(
+      { error: "BoldSign send outcome requires reconciliation" },
+      409,
+      origin,
+    );
+  }
+  if (prepared.action === "rejected") {
+    return jsonResponse(
+      { error: "Previous BoldSign send was rejected; use a new idempotency_key to retry" },
+      409,
+      origin,
+    );
+  }
 
-  await admin.from("resident_contract_events").insert({
-    organization_id: contract.organization_id,
-    facility_id: contract.facility_id,
-    contract_id: contract.id,
-    resident_id: contract.resident_id,
-    provider: "boldsign",
-    provider_document_id: documentId,
-    event_type: "Sent",
-    event_status: "sent",
-    raw_payload: sendJson,
-    metadata: { sent_by: user.id, template_id: templateId, disable_emails: disableEmails },
-  });
+  let documentId = prepared.provider_document_id;
+  let linkSigners = prepared.link_signers ?? [];
+
+  if (prepared.action === "send") {
+    let sendResponse: Response;
+    try {
+      sendResponse = await withCurrentActorRevalidation(
+        actorAuth,
+        () => boldSignFetch(`/v1/template/send?templateId=${encodeURIComponent(templateId)}`, {
+          method: "POST",
+          body: JSON.stringify(prepared.provider_payload),
+        }),
+        contract.facility_id,
+      );
+    } catch (error) {
+      const { error: failureRecordError } = await admin.rpc("fail_boldsign_contract_send", {
+        p_contract_id: contract.id,
+        p_request_id: requestId,
+        p_request_sha256: prepared.request_sha256,
+        p_generation: prepared.generation,
+        p_definite: false,
+        p_failure_code: "provider_transport_unknown",
+        p_provider_payload: {},
+      });
+      if (failureRecordError) {
+        return jsonResponse({ error: "BoldSign outcome could not be recorded" }, 503, origin);
+      }
+      return boldSignProviderFailureResponse(error, origin);
+    }
+    const parsedSendJson: unknown = await sendResponse.json().catch(() => ({}));
+    const sendJson = parsedSendJson && typeof parsedSendJson === "object" &&
+        !Array.isArray(parsedSendJson)
+      ? parsedSendJson as Record<string, unknown>
+      : { malformed_provider_response: true };
+    if (!sendResponse.ok) {
+      const definite = [400, 401, 403, 404, 422].includes(sendResponse.status);
+      const { error: failureRecordError } = await admin.rpc(
+        "fail_boldsign_contract_send",
+        {
+          p_contract_id: contract.id,
+          p_request_id: requestId,
+          p_request_sha256: prepared.request_sha256,
+          p_generation: prepared.generation,
+          p_definite: definite,
+          p_failure_code: `provider_http_${sendResponse.status}`,
+          p_provider_payload: sendJson,
+        },
+      );
+      if (failureRecordError) {
+        return jsonResponse({ error: "BoldSign outcome could not be recorded" }, 503, origin);
+      }
+      return jsonResponse({ error: "BoldSign send failed" }, 502, origin);
+    }
+
+    const providerDocumentId = sendJson.documentId ?? sendJson.documentID ?? sendJson.id;
+    if (!providerDocumentId || typeof providerDocumentId !== "string") {
+      const { error: failureRecordError } = await admin.rpc("fail_boldsign_contract_send", {
+        p_contract_id: contract.id,
+        p_request_id: requestId,
+        p_request_sha256: prepared.request_sha256,
+        p_generation: prepared.generation,
+        p_definite: false,
+        p_failure_code: "provider_success_without_document_id",
+        p_provider_payload: sendJson,
+      });
+      if (failureRecordError) {
+        return jsonResponse({ error: "BoldSign outcome could not be recorded" }, 503, origin);
+      }
+      return jsonResponse({ error: "BoldSign send outcome requires reconciliation" }, 502, origin);
+    }
+
+    const { data: commitData, error: commitError } = await admin.rpc(
+      "commit_boldsign_contract_send",
+      {
+        p_contract_id: contract.id,
+        p_request_id: requestId,
+        p_request_sha256: prepared.request_sha256,
+        p_generation: prepared.generation,
+        p_provider_document_id: providerDocumentId,
+        p_provider_response: sendJson,
+        p_provider_sent_at: new Date().toISOString(),
+      },
+    );
+    if (commitError) {
+      return jsonResponse(
+        { error: "BoldSign send was accepted but local reconciliation is required" },
+        503,
+        origin,
+      );
+    }
+    const committed = commitData as SendClaimResult;
+    if (committed.action === "reconcile") {
+      return jsonResponse(
+        { error: "BoldSign send was accepted but local reconciliation is required" },
+        503,
+        origin,
+      );
+    }
+    documentId = committed.provider_document_id;
+    linkSigners = committed.link_signers ?? linkSigners;
+  }
+
+  if (!documentId) {
+    return jsonResponse({ error: "BoldSign send outcome requires reconciliation" }, 409, origin);
+  }
+
+  // Persist provider truth before this disclosure check. Revocation can withhold
+  // every identifier/link without orphaning an already-created provider document.
+  try {
+    await actorAuth.revalidate(contract.facility_id);
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
 
   const links: Record<string, string> = {};
   if (body.get_embedded_links ?? disableEmails) {
-    for (const signer of signerRows) {
+    for (const signer of linkSigners) {
       let linkResponse: Response;
       try {
         linkResponse = await withCurrentActorRevalidation(
           actorAuth,
-          () => boldSignFetch(`/v1/document/getEmbeddedSignLink?documentId=${encodeURIComponent(documentId)}&signerEmail=${encodeURIComponent(signer.signer_email!)}`),
+          () => boldSignFetch(`/v1/document/getEmbeddedSignLink?documentId=${encodeURIComponent(documentId)}&signerEmail=${encodeURIComponent(signer.email)}`),
           contract.facility_id,
         );
       } catch (error) {

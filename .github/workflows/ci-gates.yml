@@ -41,9 +41,9 @@ jobs:
       - name: Smart Rounding Edge Function tests
         run: npm run test:edge
 
-      - name: Signing link authorization regression tests
+      - name: Signing authorization and delivery idempotency regression tests
         # Synthetic transport only: no live provider or database credentials.
-        run: deno test --allow-env --no-lock supabase/functions/boldsign-send-contract-handler.test.ts supabase/functions/_shared/current-actor.test.ts
+        run: deno test --allow-env --no-lock supabase/functions/boldsign-send-contract-handler.test.ts supabase/functions/boldsign-webhook-handler.test.ts supabase/functions/_shared/current-actor.test.ts
 
       - name: Officer catalog Edge Function tests
         # Not gated behind HAVEN_UI_GATES_ENABLED: the verifier must be proven

@@ -79,7 +79,6 @@ export function normalizeBoldSignEventToStatus(eventType: string): string | null
   if (event === "declined") return "declined";
   if (event === "revoked") return "voided";
   if (event === "expired") return "expired";
-  if (event === "sendfailed" || event === "deliveryfailed" || event === "templatesendfailed") return "draft";
   return null;
 }
 
