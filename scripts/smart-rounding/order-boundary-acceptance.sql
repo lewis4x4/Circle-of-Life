@@ -242,14 +242,39 @@ WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
 -- ---------------------------------------------------------------------------
 -- 2. The shift the generator would be writing, and its windows, read from the
 --    projection. Nothing below names a clock time.
+--
+--    Tick is yesterday 16:00 America/New_York so "next shift" is night and the
+--    day shift's last window (afternoon) has already closed. Two wall-clock
+--    traps, same class as escalation-ladder M10:
+--
+--      midnight ET  current=night still holds overnight; next=day's first is
+--                   shift_change_am. observation_windows_under_monitoring_order
+--                   (migration 433) reads current+next with closes >= tick, so
+--                   an order ending at shift_change_am's close also covers
+--                   overnight → Covered: overnight, shift_change_am.
+--      15:00 ET     current=day still holds afternoon (closes exactly 15:00);
+--                   next=night's first is shift_change_pm. Same overlap →
+--                   Covered: afternoon, shift_change_pm.
+--
+--    16:00 is still inside day (ends 18:00), after afternoon grace (closes
+--    15:00), so current contributes no still-open window and the ends-early
+--    order covers only shift_change_pm.
 -- ---------------------------------------------------------------------------
+CREATE TEMP TABLE su_tick AS
+SELECT
+  (
+    date_trunc('day', (now() AT TIME ZONE 'America/New_York'))
+    - interval '1 day'
+    + time '16:00'
+  ) AT TIME ZONE 'America/New_York' AS tick;
+
 CREATE TEMP TABLE su_next_windows AS
 SELECT
   row_number() OVER (ORDER BY w.due_at_utc) AS position,
   count(*) OVER () AS window_count,
   w.*
 FROM
-  public.facility_next_shift_observation_windows ('50990000-0000-4000-8000-000000000003', now()) w;
+  public.facility_next_shift_observation_windows ('50990000-0000-4000-8000-000000000003', (SELECT tick FROM su_tick)) w;
 
 DO $$
 BEGIN
@@ -309,21 +334,38 @@ BEGIN
     -- this test prove nothing.
     (v_org, v_entity, v_facility, v_ends_early, 30, v_first.window_opens_at_utc - interval '2 days', v_first.window_closes_at_utc, NULL, 'facility_nurse', 'Ordering party', 'verbal', 'post_hospital_return', 'Ends when the first window of the shift closes.', v_admin, 'active');
 
+  -- Scope to the next-shift windows under test. Migration 433's coverage read
+  -- is current+next (closes >= tick); a multi-day order can legitimately cover
+  -- a still-open current-shift window, which is not what cases 1–2 claim.
   SELECT
     array_agg(c.window_key ORDER BY c.window_key) INTO v_covered_later
   FROM
-    public.observation_windows_under_monitoring_order (v_facility, now()) c
+    public.observation_windows_under_monitoring_order (v_facility, (SELECT tick FROM su_tick)) c
   WHERE
     c.resident_id = v_starts_later
-    AND EXISTS(SELECT 1 FROM su_next_windows w WHERE w.window_key=c.window_key AND w.service_date=c.service_date);
+    AND EXISTS (
+      SELECT
+        1
+      FROM
+        su_next_windows n
+      WHERE
+        n.window_key = c.window_key
+        AND n.service_date = c.service_date);
 
   SELECT
     array_agg(c.window_key ORDER BY c.window_key) INTO v_covered_early
   FROM
-    public.observation_windows_under_monitoring_order (v_facility, now()) c
+    public.observation_windows_under_monitoring_order (v_facility, (SELECT tick FROM su_tick)) c
   WHERE
     c.resident_id = v_ends_early
-    AND EXISTS(SELECT 1 FROM su_next_windows w WHERE w.window_key=c.window_key AND w.service_date=c.service_date);
+    AND EXISTS (
+      SELECT
+        1
+      FROM
+        su_next_windows n
+      WHERE
+        n.window_key = c.window_key
+        AND n.service_date = c.service_date);
 
   PERFORM
     pg_temp.su_assert (v_covered_later = ARRAY[v_last.window_key], format('an order starting at the last window of the shift should suppress that window and no other. Covered: %s. The old per resident test suppressed all %s.', COALESCE(array_to_string(v_covered_later, ', '), '<none>'), v_count));
@@ -398,7 +440,7 @@ BEGIN
       SELECT
         1
       FROM
-        public.observation_windows_under_monitoring_order (v_facility, now()) c
+        public.observation_windows_under_monitoring_order (v_facility, (SELECT tick FROM su_tick)) c
       WHERE
         c.resident_id = r.id
         AND c.window_key = w.window_key
