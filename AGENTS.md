@@ -15,6 +15,10 @@ Read this block before the first Haven builder action. It does **not** replace t
 House rules for any coding agent in this repo. Read before the first action.
 Overrides defaults. Distilled from fleet standing directives + field practice.
 
+## Package manager
+
+Haven supports `npm ci` with the tracked root `package-lock.json` only. Do not run pnpm, Yarn, or Bun in this repository, and never commit their lockfiles. Deno's lockfiles remain valid for the Edge Function runtime.
+
 ## The one rule
 
 **Verification is the job. Writing code is the easy part.**

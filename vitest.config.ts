@@ -8,7 +8,11 @@ export default defineConfig({
     environment: "happy-dom",
     globals: true,
     setupFiles: ["./src/test-setup.ts"],
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    include: [
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+      "scripts/check-package-manager.test.mjs",
+    ],
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
