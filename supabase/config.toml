@@ -382,6 +382,15 @@ verify_jwt = true
 [functions."boldsign-send-contract"]
 verify_jwt = true
 
+[functions."care-event-prefill"]
+verify_jwt = true
+
+[functions."compliance-doc-check"]
+verify_jwt = true
+
+[functions."daily-census-log"]
+verify_jwt = true
+
 [functions."exec-nlq-executor"]
 verify_jwt = true
 
