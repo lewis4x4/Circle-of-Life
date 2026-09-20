@@ -210,13 +210,24 @@ export async function handleBoldSignSend(req: Request): Promise<Response> {
           "BoldSign link request failed",
         );
       }
-      if (linkResponse.ok) {
-        const linkJson = await linkResponse.json().catch(() => ({}));
-        if (typeof linkJson.signLink === "string") links[signer.id] = linkJson.signLink;
+      const linkJson = linkResponse.ok
+        ? await linkResponse.json().catch(() => ({}))
+        : {};
+      // Provider I/O (including reading the body) can outlive facility access.
+      try {
+        await actorAuth.revalidate(contract.facility_id);
+      } catch (error) {
+        return currentActorErrorResponse(error, getCorsHeaders(origin));
       }
+      if (typeof linkJson.signLink === "string") links[signer.id] = linkJson.signLink;
     }
   }
 
+  try {
+    await actorAuth.revalidate(contract.facility_id);
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
   return jsonResponse({ success: true, contract_id: contract.id, document_id: documentId, embedded_links: links }, 200, origin);
 }
 
