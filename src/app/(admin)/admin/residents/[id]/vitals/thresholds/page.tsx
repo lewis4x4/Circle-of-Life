@@ -10,10 +10,7 @@ import type { Database } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  RecordDetailHeader,
-  RecordDetailSection,
-} from "@/design-system/components/record-detail";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 export default function VitalThresholdsPage() {
   const params = useParams<{ id: string }>();
@@ -121,13 +118,19 @@ export default function VitalThresholdsPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
-      <RecordDetailHeader
-        title="Alert thresholds"
-        backLink={{ label: "Vitals", href: `/admin/residents/${residentId}/vitals` }}
-      />
+      {/* COL-432: the resident <h1> comes from AdminResidentDetailShell. This
+          route is not in the tab strip, so the link back to Vitals is kept —
+          but as a plain anchor, not a second RecordDetailHeader <h1>. */}
+      <a
+        href={`/admin/residents/${residentId}/vitals`}
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] hover:text-foreground"
+      >
+        <span aria-hidden="true">←</span>
+        Vitals
+      </a>
 
       <RecordDetailSection
-        title="Per-resident limits"
+        title="Alert thresholds"
         description="When vitals exceed these values, alerts are generated after save (server evaluation)."
       >
         <div className="space-y-4">

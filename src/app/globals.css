@@ -164,7 +164,7 @@
   --destructive: 8 56% 48%;
   --destructive-foreground: 0 0% 100%;
   --success: 88 25% 38%;
-  --warning: 30 70% 36%;
+  --warning: 30 70% 32%;
   --info: 204 26% 45%;
   --border: 30 8% 82%;
   --input: 30 8% 82%;
@@ -182,7 +182,7 @@
   /* Charts — deepened for AA contrast on warm paper */
   --chart-1: 205 27% 42%;
   --chart-2: 88 25% 38%;
-  --chart-3: 30 70% 36%;
+  --chart-3: 30 70% 32%;
   --chart-4: 8 56% 48%;
   --chart-5: 204 26% 45%;
 
@@ -216,7 +216,7 @@
   --emar-held: #6E4FD1;
   --emar-unavailable: #BA503F;
   --compliance-good: #5F7A4A;
-  --compliance-warning: #9C5C1C;
+  --compliance-warning: #8B5218;
   --compliance-critical: #BA503F;
 
   /* Quiet Operator extension tokens — light-mode equivalents. Same semantic
@@ -282,7 +282,7 @@
   --destructive: 8 56% 48%;
   --destructive-foreground: 0 0% 100%;
   --success: 88 25% 38%;
-  --warning: 30 70% 36%;
+  --warning: 30 70% 32%;
   --info: 204 26% 45%;
   --border: 30 8% 82%;
   --input: 30 8% 82%;
@@ -296,7 +296,7 @@
 
   --chart-1: 205 27% 42%;
   --chart-2: 88 25% 38%;
-  --chart-3: 30 70% 36%;
+  --chart-3: 30 70% 32%;
   --chart-4: 8 56% 48%;
   --chart-5: 204 26% 45%;
 
@@ -326,7 +326,7 @@
   --emar-held: #6E4FD1;
   --emar-unavailable: #BA503F;
   --compliance-good: #5F7A4A;
-  --compliance-warning: #9C5C1C;
+  --compliance-warning: #8B5218;
   --compliance-critical: #BA503F;
 
   --surface: rgba(255, 252, 247, 0.7);

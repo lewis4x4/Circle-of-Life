@@ -17,10 +17,7 @@ import {
 } from "@/lib/clinical/medications-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import {
-  RecordDetailHeader,
-  RecordDetailSection,
-} from "@/design-system/components/record-detail";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 type Med = {
   id: string;
@@ -43,7 +40,6 @@ export default function AdminResidentMedicationsPage() {
   const [tab, setTab] = useState<"active" | "discontinued" | "all">("active");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [residentName, setResidentName] = useState<string>("");
   const [rows, setRows] = useState<Med[]>([]);
 
   const load = useCallback(async () => {
@@ -51,16 +47,8 @@ export default function AdminResidentMedicationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await supabase
-        .from("residents")
-        .select("first_name, last_name")
-        .eq("id", residentId)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (r.data) {
-        setResidentName([r.data.first_name, r.data.last_name].filter(Boolean).join(" ") || "Resident");
-      }
-
+      // The resident's name is rendered once, by the shell header — this tab
+      // no longer queries for it (COL-432).
       const q = supabase
         .from("resident_medications")
         .select(
@@ -94,19 +82,17 @@ export default function AdminResidentMedicationsPage() {
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-[var(--motion-duration)]">
-        <RecordDetailHeader
-          title="Medications"
-          subtitle={`Current prescriptions and active orders${residentName ? ` · ${residentName}` : ""}`}
-          backLink={{ label: "Back to profile", href: `/admin/residents/${residentId}` }}
-          actions={
-            <Link
-              href="/admin/medications/verbal-orders/new"
-              className={cn(buttonVariants({ size: "sm" }), "font-medium")}
-            >
-              New verbal order
-            </Link>
-          }
-        />
+        {/* COL-432: the resident <h1> comes from AdminResidentDetailShell; this
+            tab adds a toolbar row plus an <h2> section, not a second <h1>. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">Current prescriptions and active orders</p>
+          <Link
+            href="/admin/medications/verbal-orders/new"
+            className={cn(buttonVariants({ size: "sm" }), "font-medium")}
+          >
+            New verbal order
+          </Link>
+        </div>
 
         <MedicationOrderEditor key={`new:${residentId}`} residentId={residentId} onSaved={() => void load()} />
         <div className="flex gap-2">

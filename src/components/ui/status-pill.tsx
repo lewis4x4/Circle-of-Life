@@ -101,6 +101,11 @@ const pillVariants = cva(
         // Default — no color, just neutral chrome + gray dot.
         muted: "border-border bg-transparent text-muted-foreground",
         // Colored — soft tint at /10 bg + /30 border (Quiet Operator policy).
+        // The /10 tint is painted *under* the same-token text, so the readable
+        // contrast here is lower than the token's contrast on bare
+        // --background. `src/app/warning-token-contrast.test.ts` pins that
+        // composited ratio (COL-432) — if this /10 changes, update the
+        // STATUS_PILL_TINT constant there to match.
         success: "border-success/30 bg-success/10 text-success",
         warning: "border-warning/30 bg-warning/10 text-warning",
         danger: "border-destructive/30 bg-destructive/10 text-destructive",
