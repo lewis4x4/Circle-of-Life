@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen, within } from "@testing-library/react";
+import axe from "axe-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -163,5 +164,34 @@ describe("AdminShell Site work navigation (COL-148 / HFO-10)", () => {
 
     expect(siteWorkLinks()).toHaveLength(0);
     expect(within(primaryNav()).getByRole("link", { name: "Incident queue" })).toBeInTheDocument();
+  });
+});
+
+describe("AdminShell keyboard scrolling (COL-468)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    authMock.loading = false;
+    authMock.user = { id: "user-1" };
+  });
+
+  it("keeps an overflowing page region keyboard reachable", async () => {
+    renderShellForRole("facility_admin");
+
+    const main = screen.getByRole("main");
+    main.style.overflowY = "auto";
+    Object.defineProperties(main, {
+      clientHeight: { configurable: true, value: 400 },
+      scrollHeight: { configurable: true, value: 1_200 },
+    });
+
+    expect(main).toHaveAttribute("tabindex", "0");
+    expect(main).toHaveAccessibleName("Page content");
+    expect(main.className).toContain("focus-visible:ring-2");
+
+    const result = await axe.run(main.ownerDocument, {
+      runOnly: { type: "rule", values: ["scrollable-region-focusable"] },
+    });
+
+    expect(result.violations).toEqual([]);
   });
 });
