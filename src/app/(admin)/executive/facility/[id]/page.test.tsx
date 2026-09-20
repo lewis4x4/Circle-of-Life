@@ -24,6 +24,7 @@ const fetchExecutiveKpiSnapshotMock = vi.hoisted(() => vi.fn());
 const computeTotalCostOfRiskMock = vi.hoisted(() => vi.fn());
 const fetchHeatMapMock = vi.hoisted(() => vi.fn());
 const fetchTrendMock = vi.hoisted(() => vi.fn());
+const fetchFacilityComplianceMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: routeMock.id }),
@@ -92,6 +93,10 @@ vi.mock("@/lib/insurance/compute-tcor", () => ({
 vi.mock("@/lib/resident-assurance/command-center-brief", () => ({
   fetchResidentAssuranceFacilityHeatMap: fetchHeatMapMock,
   fetchResidentAssuranceFacilityTrendSeries: fetchTrendMock,
+}));
+
+vi.mock("@/lib/executive/facility-rounding-compliance", () => ({
+  fetchExecutiveFacilityCompliance: fetchFacilityComplianceMock,
 }));
 
 vi.mock("../../executive-hub-nav", () => ({
@@ -173,6 +178,36 @@ function tcorSnapshot(overrides: Record<string, number> = {}) {
   };
 }
 
+function complianceSummary(
+  overrides: Partial<{
+    expected: number;
+    satisfied: number;
+    unconfigured: number;
+    absorbed: number;
+    withTask: number;
+    onTime: number;
+    late: number;
+  }> = {},
+) {
+  return {
+    from: "2026-09-08",
+    to: "2026-09-14",
+    totals: {
+      expected: 12,
+      satisfied: 9,
+      unconfigured: 0,
+      absorbed: 0,
+      withTask: 12,
+      onTime: 9,
+      late: 0,
+      ...overrides,
+    },
+    byShift: [],
+    byHall: [],
+    byStaff: [],
+  };
+}
+
 function resetStore(selectedFacilityId: string | null) {
   useFacilityStore.setState({
     selectedFacilityId,
@@ -197,6 +232,8 @@ beforeEach(() => {
   fetchHeatMapMock.mockResolvedValue([rollup()]);
   fetchTrendMock.mockReset();
   fetchTrendMock.mockResolvedValue([trendRow(0)]);
+  fetchFacilityComplianceMock.mockReset();
+  fetchFacilityComplianceMock.mockResolvedValue(complianceSummary());
   resetStore(OTHER_FACILITY_ID);
   document.cookie = "haven_selected_facility=; Max-Age=0; Path=/";
 });
@@ -398,7 +435,7 @@ describe("ExecutiveFacilityDetailPage rounding", () => {
     expect(days).not.toHaveTextContent("Low");
     expect(days.querySelectorAll("li")).toHaveLength(7);
     expect(screen.getByText("No rounding observations recorded")).toBeInTheDocument();
-    expect(screen.getByText("Haven records rounding findings, not a rounding schedule, so completed-versus-expected rounds cannot be shown here.")).toBeInTheDocument();
+    expect(screen.getByText(/Finding bands are separate from completion compliance/)).toBeInTheDocument();
   });
 
   it("shows bands only on days something was recorded, with the band rule spelled out", async () => {
@@ -419,6 +456,85 @@ describe("ExecutiveFacilityDetailPage rounding", () => {
     expect(screen.getByText(/a watch start counts 1, an integrity flag 2, an escalation 3/)).toBeInTheDocument();
     expect(screen.getByText("2 of 7 days recorded")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^1 open escalations$/ })).toHaveAttribute("href", "/admin/rounding?filter=escalated");
+  });
+
+  it("shows seven-day completed, missed and configuration-gap counts from historical compliance", async () => {
+    fetchFacilityComplianceMock.mockResolvedValue(
+      complianceSummary({ expected: 12, satisfied: 9, unconfigured: 2 }),
+    );
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    const compliance = await screen.findByRole("region", { name: "Seven-day rounding compliance" });
+    expect(compliance).toHaveTextContent("Sep 8–14, 2026 · America/New_York");
+    expect(compliance).toHaveTextContent("Completed9");
+    expect(compliance).toHaveTextContent("Missed3");
+    expect(compliance).toHaveTextContent("Configuration gaps2");
+    expect(compliance).toHaveTextContent("75% of 12 expected windows completed");
+  });
+
+  it("names a successful empty compliance read without rendering favorable zeroes", async () => {
+    fetchFacilityComplianceMock.mockResolvedValue(
+      complianceSummary({ expected: 0, satisfied: 0, unconfigured: 0, withTask: 0, onTime: 0 }),
+    );
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    const compliance = await screen.findByRole("region", { name: "Seven-day rounding compliance" });
+    expect(compliance).toHaveTextContent("No compliance expectations returned for this range");
+    expect(compliance).not.toHaveTextContent("Completed0");
+    expect(compliance).not.toHaveTextContent("Missed0");
+  });
+
+  it("names a cadence gap without presenting it as zero completed or zero missed", async () => {
+    fetchFacilityComplianceMock.mockResolvedValue(
+      complianceSummary({ expected: 0, satisfied: 0, unconfigured: 4, withTask: 0, onTime: 0 }),
+    );
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    const compliance = await screen.findByRole("region", { name: "Seven-day rounding compliance" });
+    expect(compliance).toHaveTextContent("Configuration gap");
+    expect(compliance).toHaveTextContent("4 expected windows had no cadence in force");
+    expect(compliance).not.toHaveTextContent("Completed0");
+    expect(compliance).not.toHaveTextContent("Missed0");
+  });
+
+  it("keeps recorded findings visible when historical compliance fails", async () => {
+    fetchHeatMapMock.mockResolvedValue([
+      rollup({ observed: true, heatScore: 3, heatBand: "watch", lastObservedAt: "2026-09-15T10:00:00Z" }),
+    ]);
+    fetchTrendMock.mockResolvedValue([trendRow(2)]);
+    fetchFacilityComplianceMock.mockRejectedValue(new Error("Historical compliance unavailable."));
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    expect(await screen.findByText("Historical compliance unavailable.")).toBeInTheDocument();
+    const roundingSection = screen.getByRole("heading", { name: "Rounding assurance" }).closest("section");
+    expect(roundingSection).toHaveTextContent("Current bandWatch");
+    expect(roundingSection).toHaveTextContent("2 of 7 days recorded");
+  });
+
+  it("shows a named compliance loading state without favorable placeholder counts", async () => {
+    fetchFacilityComplianceMock.mockReturnValue(new Promise(() => undefined));
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    const compliance = await screen.findByRole("region", { name: "Seven-day rounding compliance" });
+    expect(compliance).toHaveTextContent("Loading seven-day compliance…");
+    expect(compliance).not.toHaveTextContent("Completed0");
+    expect(compliance).not.toHaveTextContent("Missed0");
+  });
+
+  it("keeps historical compliance visible when the findings read fails", async () => {
+    fetchHeatMapMock.mockRejectedValue(new Error("Rounding findings unavailable."));
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    expect((await screen.findAllByText("Rounding findings unavailable.")).length).toBeGreaterThan(0);
+    const compliance = screen.getByRole("region", { name: "Seven-day rounding compliance" });
+    expect(compliance).toHaveTextContent("Completed9");
+    expect(compliance).toHaveTextContent("Missed3");
   });
 });
 

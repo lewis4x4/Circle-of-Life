@@ -17,6 +17,7 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
+import { fetchExecutiveFacilityCompliance } from "@/lib/executive/facility-rounding-compliance";
 import {
   FACILITY_ROUTES,
   INSURANCE_ENTITY_SCOPE_COPY,
@@ -26,10 +27,12 @@ import {
   buildFacilityCoverageGaps,
   buildFacilitySnapshotTiles,
   buildInsuranceCostDisplay,
+  buildRoundingComplianceDisplay,
   buildRoundingSummary,
   entityRoute,
   failedSection,
   settledSection,
+  roundingComplianceRangeLabel,
   updatedAtLine,
   type RoundingDayCell,
   type SectionState,
@@ -42,6 +45,7 @@ import {
   type ResidentAssuranceFacilityRollup,
   type ResidentAssuranceFacilityTrendRow,
 } from "@/lib/resident-assurance/command-center-brief";
+import type { ComplianceSummary } from "@/lib/rounding/observation-compliance-summary";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +53,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export const FACILITY_OVERVIEW_KPI_READ_FAILED = "Facility figures could not be read.";
 export const FACILITY_OVERVIEW_ROUNDING_READ_FAILED = "Rounding records could not be read.";
+export const FACILITY_OVERVIEW_COMPLIANCE_READ_FAILED = "Seven-day rounding compliance could not be read.";
 export const FACILITY_OVERVIEW_INSURANCE_READ_FAILED = "Insurance figures could not be read.";
 
 type RoundingData = {
@@ -120,6 +125,7 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
   const [entityName, setEntityName] = useState<string | null>(null);
   const [kpi, setKpi] = useState<SectionState<ExecKpiPayload> | null>(null);
   const [rounding, setRounding] = useState<SectionState<RoundingData> | null>(null);
+  const [compliance, setCompliance] = useState<SectionState<ComplianceSummary> | null>(null);
   const [insurance, setInsurance] = useState<SectionState<TcorSnapshot> | null>(null);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const [selectorHeld, setSelectorHeld] = useState(false);
@@ -172,6 +178,7 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
         setEntityName(null);
         setKpi(null);
         setRounding(null);
+        setCompliance(null);
         setInsurance(null);
         return;
       }
@@ -185,6 +192,10 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
 
       // Every part loads on its own. A failed read shows as failed in its own
       // section instead of blanking the parts that did load.
+      const complianceResultPromise = fetchExecutiveFacilityCompliance(facilityId).then(
+        (value): PromiseFulfilledResult<ComplianceSummary> => ({ status: "fulfilled", value }),
+        (reason): PromiseRejectedResult => ({ status: "rejected", reason }),
+      );
       const [kpiResult, heatMapResult, trendResult, tcorResult] = await Promise.allSettled([
         fetchExecutiveKpiSnapshot(supabase, organizationId, facilityId),
         fetchResidentAssuranceFacilityHeatMap(supabase, organizationId),
@@ -218,11 +229,15 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
       }
 
       setLoadedAt(new Date());
+      setCompliance(
+        settledSection(await complianceResultPromise, FACILITY_OVERVIEW_COMPLIANCE_READ_FAILED),
+      );
     } catch (e) {
       setFetchError(e instanceof Error ? e.message : "Unable to load facility.");
       setFacilityName(null);
       setKpi(null);
       setRounding(null);
+      setCompliance(null);
       setInsurance(null);
     } finally {
       setFetching(false);
@@ -239,6 +254,7 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
   const refresh = useCallback(() => {
     setFetching(true);
     setFetchError(null);
+    setCompliance(null);
     void load();
   }, [load]);
 
@@ -273,14 +289,22 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
     rounding: roundingRollup,
     insurance: insuranceData,
   });
-  const failedCount = [kpi, rounding, insurance].filter((section) => section?.status === "failed").length;
+  const failedCount = [kpi, rounding, compliance, insurance].filter((section) => section?.status === "failed").length;
   const snapshotTiles = kpiData ? buildFacilitySnapshotTiles(kpiData, facilityId) : [];
   const roundingSummary = roundingRollup
     ? buildRoundingSummary(roundingRollup, rounding?.status === "loaded" ? rounding.data.trend : null)
     : null;
+  const complianceDisplay =
+    compliance?.status === "loaded" ? buildRoundingComplianceDisplay(compliance.data) : null;
   const insuranceDisplay = insuranceData ? buildInsuranceCostDisplay(insuranceData) : null;
 
-  const ready = !loading && !fetchErrorBannerMessage && !organizationGapMessage && Boolean(facilityName);
+  const coreSectionsLoaded = Boolean(kpi && rounding && insurance);
+  const ready =
+    !authLoading &&
+    !fetchErrorBannerMessage &&
+    !organizationGapMessage &&
+    Boolean(facilityName) &&
+    coreSectionsLoaded;
   const headingName = facilityName ?? "Facility";
 
   return (
@@ -487,6 +511,80 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
               </SectionHeading>
               <Card>
                 <CardContent className="space-y-4 p-4">
+                  <div
+                    role="region"
+                    aria-labelledby="facility-rounding-compliance"
+                    className="space-y-3 rounded-md border border-border p-3"
+                  >
+                    <div>
+                      <h3 id="facility-rounding-compliance" className="text-sm font-semibold text-foreground">
+                        Seven-day rounding compliance
+                      </h3>
+                      {complianceDisplay ? (
+                        <p className="text-xs text-muted-foreground">
+                          {roundingComplianceRangeLabel(complianceDisplay.from, complianceDisplay.to)}
+                        </p>
+                      ) : null}
+                    </div>
+                    {compliance?.status === "failed" ? (
+                      <FailedLine message={compliance.message} onRetry={refresh} />
+                    ) : null}
+                    {!compliance ? (
+                      <p role="status" className="text-sm text-muted-foreground">
+                        Loading seven-day compliance…
+                      </p>
+                    ) : null}
+                    {complianceDisplay?.state === "successful-empty" ? (
+                      <div className="rounded-md border border-dashed border-border bg-muted/30 p-3">
+                        <p className="text-sm font-medium text-foreground">
+                          No compliance expectations returned for this range
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          The historical compliance read succeeded, but there were no resident windows to measure.
+                        </p>
+                      </div>
+                    ) : null}
+                    {complianceDisplay?.state === "configuration-gap" ? (
+                      <div className="rounded-md border border-warning/40 bg-warning/10 p-3">
+                        <p className="text-sm font-semibold text-foreground">Configuration gap</p>
+                        <p className="text-sm text-foreground">
+                          {complianceDisplay.configurationGaps} expected windows had no cadence in force.
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          These are configuration gaps, not missed checks, so no completion rate is shown.
+                        </p>
+                      </div>
+                    ) : null}
+                    {complianceDisplay?.state === "recorded" ? (
+                      <>
+                        <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3">
+                          <div className="bg-card p-3">
+                            <dt className="text-xs font-medium text-muted-foreground">Completed</dt>
+                            <dd className="text-lg font-semibold tabular-nums text-foreground">
+                              {complianceDisplay.completed}
+                            </dd>
+                          </div>
+                          <div className="bg-card p-3">
+                            <dt className="text-xs font-medium text-muted-foreground">Missed</dt>
+                            <dd className="text-lg font-semibold tabular-nums text-foreground">
+                              {complianceDisplay.missed}
+                            </dd>
+                          </div>
+                          <div className="bg-card p-3">
+                            <dt className="text-xs font-medium text-muted-foreground">Configuration gaps</dt>
+                            <dd className="text-lg font-semibold tabular-nums text-foreground">
+                              {complianceDisplay.configurationGaps}
+                            </dd>
+                          </div>
+                        </dl>
+                        <p className="text-xs text-muted-foreground">
+                          {complianceDisplay.rateLabel} of {complianceDisplay.expected} expected windows completed.
+                          Configuration gaps stay outside this rate.
+                        </p>
+                      </>
+                    ) : null}
+                  </div>
+
                   {rounding?.status === "failed" ? (
                     <FailedLine message={rounding.message} onRetry={refresh} />
                   ) : null}

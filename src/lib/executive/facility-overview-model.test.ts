@@ -7,6 +7,7 @@ import {
   buildFacilityCoverageGaps,
   buildFacilitySnapshotTiles,
   buildInsuranceCostDisplay,
+  buildRoundingComplianceDisplay,
   buildRoundingSummary,
   longDateLabel,
   roundingDayBreakdown,
@@ -14,6 +15,7 @@ import {
   shortDayLabel,
   updatedAtLine,
 } from "@/lib/executive/facility-overview-model";
+import type { ComplianceSummary } from "@/lib/rounding/observation-compliance-summary";
 import type {
   ResidentAssuranceFacilityRollup,
   ResidentAssuranceFacilityTrendPoint,
@@ -64,6 +66,28 @@ function point(overrides: Partial<ResidentAssuranceFacilityTrendPoint> = {}): Re
     heatBand: "stable",
     observed: false,
     ...overrides,
+  };
+}
+
+function complianceSummary(
+  overrides: Partial<ComplianceSummary["totals"]> = {},
+): ComplianceSummary {
+  return {
+    from: "2026-09-09",
+    to: "2026-09-15",
+    totals: {
+      expected: 0,
+      satisfied: 0,
+      unconfigured: 0,
+      absorbed: 0,
+      withTask: 0,
+      onTime: 0,
+      late: 0,
+      ...overrides,
+    },
+    byShift: [],
+    byHall: [],
+    byStaff: [],
   };
 }
 
@@ -199,6 +223,44 @@ describe("buildRoundingSummary", () => {
     expect(summary.lastObservedLine).toBe("Nothing recorded yet");
     expect(summary.coverageLine).toBe("No days in range");
     expect(summary.days).toEqual([]);
+  });
+});
+
+describe("buildRoundingComplianceDisplay", () => {
+  it("reports completed, missed and configuration-gap windows without combining their denominators", () => {
+    expect(
+      buildRoundingComplianceDisplay(
+        complianceSummary({ expected: 12, satisfied: 9, unconfigured: 2 }),
+      ),
+    ).toEqual({
+      state: "recorded",
+      from: "2026-09-09",
+      to: "2026-09-15",
+      completed: 9,
+      missed: 3,
+      expected: 12,
+      configurationGaps: 2,
+      rateLabel: "75%",
+    });
+  });
+
+  it("names a successful empty read instead of presenting favorable zeroes", () => {
+    expect(buildRoundingComplianceDisplay(complianceSummary())).toEqual({
+      state: "successful-empty",
+      from: "2026-09-09",
+      to: "2026-09-15",
+    });
+  });
+
+  it("names configuration-only rows as a gap rather than zero completed and zero missed", () => {
+    expect(
+      buildRoundingComplianceDisplay(complianceSummary({ unconfigured: 4 })),
+    ).toEqual({
+      state: "configuration-gap",
+      from: "2026-09-09",
+      to: "2026-09-15",
+      configurationGaps: 4,
+    });
   });
 });
 
