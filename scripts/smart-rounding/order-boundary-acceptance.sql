@@ -242,14 +242,27 @@ WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
 -- ---------------------------------------------------------------------------
 -- 2. The shift the generator would be writing, and its windows, read from the
 --    projection. Nothing below names a clock time.
+--
+--    Tick is yesterday 15:00 America/New_York so "next shift" is a normal
+--    daytime span. Around midnight ET the overnight/shift_change boundary made
+--    an order ending at the "first" window also cover overnight + shift_change_am
+--    (same class of wall-clock flake as escalation-ladder M10).
 -- ---------------------------------------------------------------------------
+CREATE TEMP TABLE su_tick AS
+SELECT
+  (
+    date_trunc('day', (now() AT TIME ZONE 'America/New_York'))
+    - interval '1 day'
+    + time '15:00'
+  ) AT TIME ZONE 'America/New_York' AS tick;
+
 CREATE TEMP TABLE su_next_windows AS
 SELECT
   row_number() OVER (ORDER BY w.due_at_utc) AS position,
   count(*) OVER () AS window_count,
   w.*
 FROM
-  public.facility_next_shift_observation_windows ('50990000-0000-4000-8000-000000000003', now()) w;
+  public.facility_next_shift_observation_windows ('50990000-0000-4000-8000-000000000003', (SELECT tick FROM su_tick)) w;
 
 DO $$
 BEGIN
@@ -312,14 +325,14 @@ BEGIN
   SELECT
     array_agg(c.window_key ORDER BY c.window_key) INTO v_covered_later
   FROM
-    public.observation_windows_under_monitoring_order (v_facility, now()) c
+    public.observation_windows_under_monitoring_order (v_facility, (SELECT tick FROM su_tick)) c
   WHERE
     c.resident_id = v_starts_later;
 
   SELECT
     array_agg(c.window_key ORDER BY c.window_key) INTO v_covered_early
   FROM
-    public.observation_windows_under_monitoring_order (v_facility, now()) c
+    public.observation_windows_under_monitoring_order (v_facility, (SELECT tick FROM su_tick)) c
   WHERE
     c.resident_id = v_ends_early;
 
@@ -396,7 +409,7 @@ BEGIN
       SELECT
         1
       FROM
-        public.observation_windows_under_monitoring_order (v_facility, now()) c
+        public.observation_windows_under_monitoring_order (v_facility, (SELECT tick FROM su_tick)) c
       WHERE
         c.resident_id = r.id
         AND c.window_key = w.window_key
