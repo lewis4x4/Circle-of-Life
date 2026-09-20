@@ -1189,19 +1189,21 @@ BEGIN
   -- Same time-stable pattern as earlier blocks: a past service day whose
   -- windows have already closed relative to now(). Wall-clock "today" fails
   -- around midnight ET when no window has closed yet (CI ~00:00–early morning).
-  v_service_date := ((now() - interval '2 days') AT TIME ZONE 'America/New_York')::date;
+  -- Use day-3 + mid_morning so we do not collide with day-2 fixtures that
+  -- already occupy late_evening/afternoon/mid_morning for this resident
+  -- (idx_obs_tasks_window_occurrence).
+  v_service_date := ((now() - interval '3 days') AT TIME ZONE 'America/New_York')::date;
 
   SELECT
     w.* INTO v_window
   FROM
     public.facility_observation_windows_for_version (v_facility, v_cadence, v_service_date) w
   WHERE
-    w.window_closes_at_utc < now()
-  ORDER BY
-    w.due_at_utc DESC
-  LIMIT 1;
+    w.window_key = 'mid_morning';
   PERFORM
-    pg_temp.esc_assert (v_window.window_key IS NOT NULL, 'the fixture needs a projected window whose grace has already closed on the past service day');
+    pg_temp.esc_assert (v_window.window_key IS NOT NULL, 'the mid_morning window did not project for the past service day');
+  PERFORM
+    pg_temp.esc_assert (v_window.window_closes_at_utc < now(), 'the past-service mid_morning window must already be closed relative to now()');
 
   -- A pool task: nobody assigned and no assignment row, which is what the
   -- generator writes when nobody is on the schedule.
