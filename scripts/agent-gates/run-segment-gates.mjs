@@ -329,6 +329,15 @@ async function main() {
 
   // --- Hygiene & security (automated) ---
   await executeCommandCheck(checks, advisoryCheckIds, {
+    id: "hygiene.package-manager",
+    command: "npm run check:package-manager",
+    invoke: () =>
+      npmRun("check:package-manager", root, {
+        label: "hygiene.package-manager",
+      }),
+  });
+
+  await executeCommandCheck(checks, advisoryCheckIds, {
     id: "hygiene.env-example",
     command: "node scripts/check-env-example.mjs",
     invoke: () =>

@@ -29,7 +29,6 @@ const EXT_ALLOW = new Set([
 
 const PATH_DENY = [
   /^package-lock\.json$/i,
-  /^pnpm-lock\.yaml$/i,
   /^yarn\.lock$/i,
   /^test-results\//,
   /^\.next\//,
