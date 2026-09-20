@@ -55,6 +55,7 @@ const SCOPE = [
   "src/app/api/rounding",
   "src/app/api/admin/rounding",
   "src/components/rounding",
+  "src/components/layout/CaregiverShell.tsx",
   "src/lib/rounding",
   "src/hooks/useLiveBoardData.ts",
   "src/hooks/useObservationCadenceSettings.ts",

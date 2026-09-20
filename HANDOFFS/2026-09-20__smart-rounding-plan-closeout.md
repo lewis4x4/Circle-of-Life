@@ -79,3 +79,11 @@ Spec section 11 clinical/operating decisions remain explicit in COL-490. No staf
 ## Generated schema follow-up
 
 Regenerated public types from verified staging438 and copied the four affected table declarations: cadence/escalation proposal IDs, full configuration snapshots, baseline storage, and template overrides. The independent reviewer confirmed exact agreement with generated output. [Follow-up gate PASS](../test-results/agent-gates/2026-09-20T05-04-41-362Z-SMART-ROUNDING-TYPEGEN-20260920.json); typecheck passes. This changes declarations only, with no runtime JavaScript or SQL change.
+
+## Authenticated staging and caregiver recovery
+
+The real staging browser proved separate-session proposal creation, visible owner review and activation. A real configured-window generation call inserted one task and its retry inserted zero. An actual caregiver rescue claim and capture returned200; compliance changed from unsatisfied to satisfied and the stored chips/narrative matched. Synthetic fixture provisioning initially omitted Auth user metadata (the normal admin provisioning contract); correcting only those synthetic identities resolved login. No global Auth setting changed.
+
+This rehearsal also reproduced React418 on hard navigation to caregiver rounding: Netlify Node exposes navigator without onLine, yielding server Offline versus client Synced. The follow-up makes the initial snapshot deterministic, shows checking until queue state resolves, displays unavailable rather than success on failed reads, and preserves the last known queue. The header now reads the configured facility shift instead of the retired three-daypart model; the policy scanner includes it. Failing-first hydration, error/cache and boundary tests pass. Independent follow-up review approved.
+
+[Caregiver recovery gate PASS](../test-results/agent-gates/2026-09-20T05-18-52-581Z-SMART-ROUNDING-CAREGIVER-RECOVERY-20260920.json). Full suite:818 files,6400 passed,2 skipped. Final uninstrumented hosted reload checks must pass on the updated preview before production release. Preview-only Netlify review-toolbar CSP refusals are recorded separately; application CSP is not weakened for the toolbar.

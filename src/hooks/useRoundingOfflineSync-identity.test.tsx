@@ -23,3 +23,22 @@ it("clears displayed Outbox on sign-out and ignores the old operator's pending r
  expect(result.current.items).toBeUndefined();
  unmount();
 });
+
+it("retains the same actor's cached queue when a refresh returns only a failure snapshot", async () => {
+ mocks.auth.mockImplementation(() => ({ data: { subscription: { unsubscribe: vi.fn() } } }));
+ const good = { pendingCount: 1, queuedTaskIds: ["retained-task"], isSyncing: false, lastSyncedAt: null, lastError: null, online: true, supported: true, items: [{ id: "retained-observation" }] };
+ mocks.request.mockResolvedValue(good);
+ const { result, unmount } = renderHook(() => useRoundingOfflineSync());
+ await waitFor(() => expect(result.current.pendingCount).toBe(1));
+ mocks.request.mockResolvedValue({ pendingCount: 0, queuedTaskIds: [], isSyncing: false, lastSyncedAt: null, lastError: "Outbox read unavailable", online: true, supported: true });
+ await act(async () => { await result.current.refresh(); });
+ expect(result.current.pendingCount).toBe(1);
+ expect(result.current.queuedTaskIdSet.has("retained-task")).toBe(true);
+ expect(result.current.items).toEqual(good.items);
+ expect(result.current.lastError).toBe("Outbox read unavailable");
+ expect(result.current.ready).toBe(true);
+ mocks.request.mockResolvedValue({ ...good, pendingCount: 0, queuedTaskIds: [], items: [] });
+ await act(async () => { await result.current.refresh(); });
+ expect(result.current.pendingCount).toBe(0); expect(result.current.items).toEqual([]);
+ unmount();
+});
