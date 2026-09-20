@@ -186,9 +186,9 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="flex min-w-0 flex-1 flex-col md:ml-20 md:border-l md:border-border">
-          <header className="haven-chrome-topnav sticky top-0 z-40 flex items-center justify-between border-b border-border px-4 py-3 md:px-8 md:py-4">
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
+          <header className="haven-chrome-topnav sticky top-0 z-40 flex flex-col items-stretch gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8 md:py-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="break-words text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
                 {facilityName}
                 {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
               </h1>
@@ -196,7 +196,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
                 {shiftLabel}
               </p> : null}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
               <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
               <Link href="/caregiver/acknowledgments" className="text-xs underline">Required reading</Link>
               <PilotFeedbackLauncher shellKind="caregiver" compact />
@@ -206,7 +206,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
                 className="tap-responsive rounded-full haven-chrome-tw-ring-offset-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 aria-label="Sync queued caregiver rounds"
               >
-                <StatusPill variant={syncState.variant} dot pulsing={syncState.pulsing}>
+                <StatusPill variant={syncState.variant} dot pulsing={syncState.pulsing} className="text-chrome-foreground">
                   {syncState.label}
                 </StatusPill>
               </button>
@@ -221,7 +221,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Mobile bottom tab bar */}
-        <BottomNav aria-label="Caregiver navigation" className="md:hidden">
+        <BottomNav aria-label="Caregiver navigation" className="md:hidden [&_[data-state=active]>span:last-child]:text-chrome-foreground">
           {primaryItems.map((item) => (
             <BottomNavItem
               key={item.href}

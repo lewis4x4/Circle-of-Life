@@ -1,0 +1,20 @@
+{
+  "before_satisfied": false,
+  "after_satisfied": true,
+  "task_id": "0dccd603-68c6-4f9b-80f2-0d5fcf798764",
+  "log_id": "0b250544-2aa9-4cfe-8ae7-264a3edf23b9",
+  "observations": [
+    {
+      "id": "0b250544-2aa9-4cfe-8ae7-264a3edf23b9",
+      "task_id": "0dccd603-68c6-4f9b-80f2-0d5fcf798764",
+      "chip_selections": {
+        "mood_state": [
+          "synthetic_calm"
+        ]
+      },
+      "composed_summary": "Calm and comfortable. Awake, Resting comfortably. In Synthetic room.",
+      "staff_id": "98e57748-2dcd-40dd-b38d-e53eda080d5d"
+    }
+  ],
+  "synthetic_data_only": true
+}
