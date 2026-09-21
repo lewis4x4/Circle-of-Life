@@ -21,6 +21,8 @@ import {
 } from "@/lib/reports/metric-presentation";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { executeReportTemplate, type ReportExecutionResult } from "@/lib/reports/executors";
+import { classifyReportRunSource } from "@/lib/reports/report-run-route";
+import { resolveSavedViewForRun } from "@/lib/reports/resolve-saved-view-for-run";
 import { runTemplateAndPersist, finishReportRun, failReportRun } from "@/lib/reports/run-persistence";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
@@ -33,9 +35,6 @@ function buildFullCsv(result: ReportExecutionResult): string {
   if (result.rows.length === 0) return summaryPart;
   return `${summaryPart}\n\n${detailRowsToCsv(result.rows)}`;
 }
-
-const PACK_UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function extractSheetHtml(printDoc: string): string {
   const m = printDoc.match(/<div class="sheet">[\s\S]*?<\/div>\s*<\/body>/i);
@@ -54,7 +53,25 @@ type PackSlice = {
   error?: string;
 };
 
-function TemplateReportRun({ slug }: { slug: string }) {
+type TemplateReportRunProps = {
+  slug: string;
+  titleOverride?: string;
+  sourceType?: "template" | "saved_view";
+  sourceId?: string;
+  templateVersionId?: string | null;
+  backHref?: string;
+  backLabel?: string;
+};
+
+function TemplateReportRun({
+  slug,
+  titleOverride,
+  sourceType = "template",
+  sourceId,
+  templateVersionId,
+  backHref = "/admin/reports/templates",
+  backLabel = "Back to templates",
+}: TemplateReportRunProps) {
   const supabase = createClient();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const storeFacilities = useFacilityStore((s) => s.availableFacilities);
@@ -133,8 +150,17 @@ function TemplateReportRun({ slug }: { slug: string }) {
           ? scopeFacilityId
           : null;
 
-      const run = await runTemplateAndPersist({ supabase, organizationId: orgId, slug,
-        title: template?.name ?? slug, facilityId: scopedFacilityId, scopeLabel });
+      const run = await runTemplateAndPersist({
+        supabase,
+        organizationId: orgId,
+        slug,
+        title: titleOverride ?? template?.name ?? slug,
+        facilityId: scopedFacilityId,
+        scopeLabel,
+        sourceType,
+        sourceId,
+        templateVersionId,
+      });
       setResult(run.result);
       setLastRunId(run.runId);
       setResultScope({ facilityId: scopedFacilityId, label: run.snapshot.scopeLabel });
@@ -143,7 +169,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
     } finally {
       setRunning(false);
     }
-  }, [orgId, orgWide, scopeFacilityId, scopeLabel, slug, supabase, template?.name]);
+  }, [orgId, orgWide, scopeFacilityId, scopeLabel, slug, supabase, template?.name, titleOverride, sourceType, sourceId, templateVersionId]);
 
   const onExportCsv = useCallback(async () => {
     if (!result || !orgId || !lastRunId) return;
@@ -167,7 +193,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
 
   const onPrint = useCallback(async () => {
     if (!result || !orgId || !lastRunId) return;
-    const reportTitle = template?.name ?? slug;
+    const reportTitle = titleOverride ?? template?.name ?? slug;
     const html = buildReportPrintHtml({
       reportTitle,
       templateLabel: template?.name ?? slug,
@@ -203,15 +229,15 @@ function TemplateReportRun({ slug }: { slug: string }) {
       export_format: "pdf",
       file_name: `report-${slug}.pdf`,
     });
-  }, [lastRunId, orgId, result, resultScope, scopeLabel, slug, supabase, template?.name]);
+  }, [lastRunId, orgId, result, resultScope, scopeLabel, slug, supabase, template?.name, titleOverride]);
 
   return (
     <div className="space-y-6">
       <ReportsHubNav />
       <RecordDetailHeader
-        title={`Run report: ${template?.name ?? slug}`}
+        title={`Run report: ${titleOverride ?? template?.name ?? slug}`}
         subtitle="Single template run"
-        backLink={{ label: "Back to templates", href: "/admin/reports/templates" }}
+        backLink={{ label: backLabel, href: backHref }}
       />
 
       {error ? (
@@ -649,28 +675,133 @@ function PackReportRun({ packId }: { packId: string }) {
   );
 }
 
-export default function ReportRunPage() {
-  const params = useParams<{ sourceType: string; id: string }>();
-  const sourceType = params.sourceType ?? "template";
-  const sourceId = params.id ?? "";
+function SavedViewReportRun({ viewId }: { viewId: string }) {
+  const supabase = createClient();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [resolved, setResolved] = useState<{
+    slug: string;
+    title: string;
+    viewId: string;
+    templateVersionId: string;
+  } | null>(null);
 
-  if (sourceType === "pack") {
-    if (!PACK_UUID_RE.test(sourceId)) {
-      return (
-        <div className="space-y-6 px-4 py-8">
-          <ReportsHubNav />
-          <p className="text-sm text-destructive">Invalid pack reference.</p>
-          <Link
-            href="/admin/reports/packs"
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-          >
-            Back to packs
-          </Link>
-        </div>
-      );
-    }
-    return <PackReportRun key={sourceId} packId={sourceId} />;
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      const ctx = await loadReportsRoleContext(supabase);
+      if (!ctx.ok) {
+        if (!cancelled) {
+          setError(ctx.error);
+          setLoading(false);
+        }
+        return;
+      }
+      const result = await resolveSavedViewForRun(supabase, {
+        organizationId: ctx.ctx.organizationId,
+        viewId,
+      });
+      if (cancelled) return;
+      if (!result.ok) {
+        setError(result.error);
+        setResolved(null);
+        setLoading(false);
+        return;
+      }
+      setResolved({
+        slug: result.slug,
+        title: result.title,
+        viewId: result.viewId,
+        templateVersionId: result.templateVersionId,
+      });
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, viewId]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 px-4 py-8">
+        <ReportsHubNav />
+        <p className="text-sm text-muted-foreground">Loading saved report…</p>
+      </div>
+    );
   }
 
-  return <TemplateReportRun key={sourceId} slug={sourceId} />;
+  if (error || !resolved) {
+    return (
+      <div className="space-y-6 px-4 py-8">
+        <ReportsHubNav />
+        <p className="text-sm text-destructive">{error ?? "Saved report not found."}</p>
+        <Link
+          href="/admin/reports/saved"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          Back to saved reports
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <TemplateReportRun
+      key={resolved.viewId}
+      slug={resolved.slug}
+      titleOverride={resolved.title}
+      sourceType="saved_view"
+      sourceId={resolved.viewId}
+      templateVersionId={resolved.templateVersionId}
+      backHref="/admin/reports/saved"
+      backLabel="Back to saved reports"
+    />
+  );
+}
+
+export default function ReportRunPage() {
+  const params = useParams<{ sourceType: string; id: string }>();
+  const classified = classifyReportRunSource(params.sourceType ?? "template", params.id ?? "");
+
+  if (classified.kind === "invalid_pack") {
+    return (
+      <div className="space-y-6 px-4 py-8">
+        <ReportsHubNav />
+        <p className="text-sm text-destructive">Invalid pack reference.</p>
+        <Link
+          href="/admin/reports/packs"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          Back to packs
+        </Link>
+      </div>
+    );
+  }
+
+  if (classified.kind === "pack") {
+    return <PackReportRun key={classified.packId} packId={classified.packId} />;
+  }
+
+  if (classified.kind === "invalid_saved_view") {
+    return (
+      <div className="space-y-6 px-4 py-8">
+        <ReportsHubNav />
+        <p className="text-sm text-destructive">Invalid saved report reference.</p>
+        <Link
+          href="/admin/reports/saved"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          Back to saved reports
+        </Link>
+      </div>
+    );
+  }
+
+  if (classified.kind === "saved_view") {
+    return <SavedViewReportRun key={classified.viewId} viewId={classified.viewId} />;
+  }
+
+  return <TemplateReportRun key={classified.slug} slug={classified.slug} />;
 }
