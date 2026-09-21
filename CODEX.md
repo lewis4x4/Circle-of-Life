@@ -11,7 +11,7 @@
 3. Do not claim “done” without a **machine-readable gate artifact** under `test-results/agent-gates/`.
 4. On required gate **PASS**: stage only segment files, create an **atomic Lore-protocol commit**, push, create/update the PR, wait for required checks, and fix failures.
 5. Unless Brian explicitly set `draft`, `hold`, `review-only`, `source-only`, or `do not deploy`, merge to `main` and complete the repository-defined production release path.
-6. Apply required production migrations and deploy changed Edge Functions, jobs, crons, configuration, and application services in the verified target and documented release order.
+6. Apply required production migrations, set or rotate required hosted secrets without printing their values, and deploy changed Edge Functions, jobs, crons, configuration, and application services in the verified target and documented release order. Do not stop for a human on deploys, secret configuration, or production database changes.
 7. Always verify the exact hosted revision and applicable health/live smoke checks. Verify migration-ledger parity and function/job versions when those surfaces changed. Follow the post-merge rule in `AGENTS.md`: ordinary app-only work may close without waiting only when the retained PR proof reports a safe non-sensitive classification and an exact tested-tree match; all sensitive, unsafe, missing-proof, or mismatched releases await successful post-merge CI. A merge or started deployment is not release proof.
 8. Before updating Linear, follow `docs/LINEAR-WORKFLOW.md`; keep delivery, technical deployment evidence, human decisions, and release/acceptance as separate issues with real dependency links.
 
