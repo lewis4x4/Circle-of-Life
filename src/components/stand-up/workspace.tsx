@@ -101,6 +101,9 @@ function StandUpSession({ userId }: { userId: string }) {
     workspace.current_week, openWeek, ...workspace.reports.map(report => report.week_start),
   ].filter(Boolean))].sort().reverse() : [];
   const late = !!workspace && workspace.facilities.some(facility => reportDeadlineState(currentReports.find(report => report.facility_id === facility.id), week, workspace.current_week, now) === 'past_target');
+  const google = workspace?.google_connection;
+  const googleLastChecked = google?.last_checked_at ? Date.parse(google.last_checked_at) : Number.NaN;
+  const googleDelayed = google?.state === 'connected' && (!Number.isFinite(googleLastChecked) || now.getTime() - googleLastChecked > 5 * 60_000);
   return <div className="mx-auto max-w-6xl space-y-6 p-4 pb-12 md:p-6">
     <header className="flex flex-wrap items-start justify-between gap-4">
       {/* Tier 1: when this report opens, when it is due, when the call is. The
@@ -108,6 +111,8 @@ function StandUpSession({ userId }: { userId: string }) {
       <div><h1 className="text-2xl font-semibold">Weekly Stand Up</h1><p className="mt-1 text-base font-medium">{entryWindowLine(selected?.entry_open_lead_minutes)}</p></div>
       {workspace && <Button variant="outline" disabled={loading || routePending} onClick={() => { if (guard.current()) void reload(false); }}>Refresh reports</Button>}
     </header>
+    {google?.state === 'reconnect_required' && <section role="alert" className="space-y-2 rounded border border-destructive bg-destructive/5 p-4"><h2 className="font-semibold">Google workbook disconnected</h2><p className="text-sm">Drive changes are not reaching Haven. Reconnect the dedicated Stand Up account before relying on workbook figures.</p>{google.last_success_at && <p className="text-xs text-muted-foreground">Last successful workbook synchronization: {easternTime(google.last_success_at)}.</p>}</section>}
+    {googleDelayed && <section role="alert" className="space-y-2 rounded border border-warning bg-warning/5 p-4"><h2 className="font-semibold">Google workbook synchronization is delayed</h2><p className="text-sm">The connector has not completed within five minutes. Drive may be newer than Haven; check the connection before using these figures.</p>{google?.last_checked_at && <p className="text-xs text-muted-foreground">Last connector check: {easternTime(google.last_checked_at)}.</p>}</section>}
     {error && workspace && <p role="alert" className="rounded border border-destructive p-3 text-sm">{error} Your current entries are retained.</p>}
     {loading ? <p role="status">Loading your permitted facilities and reports…</p> : error && !workspace ? <section role="alert" className="space-y-3 rounded border border-destructive p-4"><p>{error}</p><Button onClick={() => void reload(true)}>Check access and reload</Button></section> : workspace && <>
       {workspace.facilities.length === 0 ? <section className="rounded border border-border p-5"><h2 className="font-semibold">No facility assignment</h2><p className="mt-2 text-sm">Ask your company administrator to assign your Haven account to the ALF you report for. Entry stays unavailable until access is assigned.</p></section> : <>

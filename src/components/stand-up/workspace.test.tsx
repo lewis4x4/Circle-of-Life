@@ -560,6 +560,44 @@ describe('Stand Up empty draft reserves nothing', () => {
   });
 });
 describe('Friendly spreadsheet recovery', () => {
+  it('makes an expired Google workbook credential visible before reports are trusted', async () => {
+    mocks.request.mockResolvedValueOnce({
+      ...workspace,
+      google_connection: {
+        state: 'reconnect_required',
+        last_success_at: '2026-09-11T12:00:00Z',
+        last_checked_at: '2026-09-18T13:30:00Z',
+        last_outcome: 'failed',
+        last_error_code: 'google_auth_reconnect_required',
+      },
+    });
+
+    await start();
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('Google workbook disconnected');
+    expect(alert).toHaveTextContent('Drive changes are not reaching Haven');
+    expect(alert).toHaveTextContent('Last successful workbook synchronization');
+  });
+
+  it('warns when a connected workbook has not completed within five minutes', async () => {
+    mocks.request.mockResolvedValueOnce({
+      ...workspace,
+      server_now: '2026-09-14T12:30:00Z',
+      google_connection: {
+        state: 'connected',
+        last_success_at: '2026-09-14T12:20:00Z',
+        last_checked_at: '2026-09-14T12:20:00Z',
+        last_outcome: 'synchronized',
+        last_error_code: null,
+      },
+    });
+
+    await start();
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Google workbook synchronization is delayed');
+  });
+
   it('requires a deliberate blank confirmation for spreadsheet clears and sends corrected dollars as cents', async () => {
     const values = { ...emptyValues(), monthly_rent_roll_cents: 100000, current_total_census: 20 };
     const preview = { facility_id: 'a', week_start: '2026-09-14', preview_id: 'p', expected_version: 1, current: values, incoming: { ...values, current_total_census: null }, merged: values, conflicts: ['monthly_rent_roll_cents'], clears: ['current_total_census'] };

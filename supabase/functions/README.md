@@ -46,6 +46,13 @@ Function credentials live in Edge Function secrets. Scheduler credentials live i
 
 The Google worker synchronizes both directions for the current reporting week. A Haven revision is staged durably, patched only into the 16 mapped input cells, and uploaded with the strong Drive ETag observed during the stable download. The common baseline advances only after the uploaded revision is downloaded, checksummed, parsed, and matched to the staged Haven values. A stale ETag, an unresolved workbook edit, a formula in a mapped input, or an ambiguous readback stops the write and preserves review evidence; the worker never chooses a winner for concurrent changes. The workbook ZIP, formulas, styles, drawings, and unrelated cells remain outside the writable field boundary.
 
+After installing the three schedules, run
+`scripts/stand-up/instrument-hosted-jobs.sql` against the verified Haven
+production target. It registers the actual pg_net HTTP outcomes with the
+existing scheduled-job monitor. A pg_cron `succeeded` row proves only that the
+request was enqueued; a non-2xx connector response remains a failure and must
+alert through the configured private monitor route.
+
 ## `generate-monthly-invoices` — request body
 
 **Auth header:** `x-cron-secret: <GENERATE_MONTHLY_INVOICES_SECRET>`  
