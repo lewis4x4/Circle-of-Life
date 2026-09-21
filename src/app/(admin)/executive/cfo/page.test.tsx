@@ -12,10 +12,14 @@ const authMock = vi.hoisted(() => ({
 const execRoleKpisMock = vi.hoisted(() => ({
   kpis: null,
   alerts: [],
-  facilities: [],
+  facilities: [] as Array<{ id: string; name: string }>,
   loading: true,
   error: null as string | null,
   refetch: vi.fn(),
+}));
+
+const facilityStoreMock = vi.hoisted(() => ({
+  selectedFacilityId: null as string | null,
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -30,7 +34,7 @@ vi.mock("@/hooks/useExecRoleKpis", () => ({
 }));
 
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({ selectedFacilityId: null }),
+  useFacilityStore: () => ({ selectedFacilityId: facilityStoreMock.selectedFacilityId }),
 }));
 
 vi.mock("@/components/executive/executive-nav-v2", () => ({
@@ -41,6 +45,8 @@ describe("CfoDashboardPage auth hydration", () => {
   beforeEach(() => {
     execRoleKpisMock.error = null;
     execRoleKpisMock.loading = true;
+    execRoleKpisMock.facilities = [];
+    facilityStoreMock.selectedFacilityId = null;
   });
 
   it("does not show the legacy org crash banner while auth is hydrating", () => {
@@ -85,5 +91,34 @@ describe("CfoDashboardPage auth hydration", () => {
 
     expect(screen.getAllByText("Unable to reach KPI snapshot.").length).toBeGreaterThan(0);
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
+  });
+
+  it("names the facility gap when an id is selected but the name map misses", () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    execRoleKpisMock.loading = false;
+    facilityStoreMock.selectedFacilityId = "11111111-1111-1111-1111-111111111111";
+    execRoleKpisMock.facilities = [];
+
+    render(<CfoDashboardPage />);
+
+    expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/This facility — CFO finance board \(facility name not loaded\), not a portfolio roll-up\./),
+    ).toBeInTheDocument();
+  });
+
+  it("names the selected facility in the subtitle when the name map has it", () => {
+    const facilityId = "11111111-1111-1111-1111-111111111111";
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    execRoleKpisMock.loading = false;
+    facilityStoreMock.selectedFacilityId = facilityId;
+    execRoleKpisMock.facilities = [{ id: facilityId, name: "Demo ALF" }];
+
+    render(<CfoDashboardPage />);
+
+    expect(screen.getByText(/This facility — CFO finance board for Demo ALF, not a portfolio roll-up\./)).toBeInTheDocument();
+    expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
   });
 });
