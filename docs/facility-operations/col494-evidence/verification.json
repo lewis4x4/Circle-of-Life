@@ -1,0 +1,45 @@
+{
+  "result": "PASS",
+  "runtimeRunnerSha": "2fadb9b3a636f241ca6d735d48392367abd6e120",
+  "target": "iwcnajanvjvynolltflw",
+  "run": "col494-9041a22898a0",
+  "inventory": {
+    "catalogSourceRows": 91,
+    "catalogComponents": 110,
+    "dailyWeeklySourceRows": 27,
+    "dailyWeeklyComponents": 35,
+    "generatedTasks": 34,
+    "subjectUnknownWithoutTask": ["AL-D15"]
+  },
+  "browser": {
+    "scenarioGroupsPassed": 10,
+    "viewports": ["1280x800", "768x1024", "375x812"],
+    "unexpectedPageConsoleHttpFailures": 0,
+    "axeViolations": 0,
+    "refusedOutboundOrigins": 0
+  },
+  "focusedTests": {
+    "filesPassed": 15,
+    "testsPassed": 220
+  },
+  "segmentGate": {
+    "verdict": "PASS",
+    "artifact": "test-results/agent-gates/2026-09-21T12-29-18-678Z-COL-494-DAILY-WEEKLY.json",
+    "migrationFiles": 442,
+    "sqlProbes": 84,
+    "acceptanceSuites": 7,
+    "careEventParityCases": 105
+  },
+  "cleanup": {
+    "result": "PASS",
+    "activeProfiles": 0,
+    "activeSiteGrants": 0,
+    "activeSubjectGrants": 0,
+    "activeSites": 0,
+    "organizationRetired": true
+  },
+  "missionAlignment": {
+    "result": "pass",
+    "note": "The proof shows simple attributable staff work, truthful source boundaries, corporate history, failure follow-up and site isolation while keeping human operating approval separate."
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "target": "iwcnajanvjvynolltflw",
+  "sourceSha": "2fadb9b3a636f241ca6d735d48392367abd6e120",
+  "run": "col494-9041a22898a0",
+  "readbackAt": "2026-09-21T12:28:39.119Z",
+  "targetIds": {
+    "organizationId": "a6ad29b4-b111-4c31-bc7b-17ce064dbe95",
+    "facilityIds": [
+      "19100320-cd9b-46e2-865e-8e0bdf056de7",
+      "e7d5d282-f956-422f-a8ca-165e80054ff1"
+    ],
+    "userIds": [
+      "67073ef1-61a7-446d-a938-49975a0eed11",
+      "876105e5-4f4b-46b2-b8f7-b3d5a1fe0d28",
+      "195948dc-bfe5-4de8-8f45-9fcdd0d5fb61",
+      "12f40d52-8d09-430a-9f3d-836cbc43ac54",
+      "8c66d337-5597-45c1-95da-a93fbfdd0378"
+    ]
+  },
+  "syntheticUsersBanned": true,
+  "activeProfiles": 0,
+  "activeSiteGrants": 0,
+  "activeSubjectGrants": 0,
+  "activeSites": 0,
+  "organizationRetired": true,
+  "syntheticHistoryRetained": true,
+  "homewoodRulesChanged": false,
+  "productionChanged": false
+}

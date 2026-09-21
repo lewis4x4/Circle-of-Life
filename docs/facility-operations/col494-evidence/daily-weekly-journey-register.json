@@ -1,0 +1,1141 @@
+{
+  "generated_at": "2026-09-21T12:28:29.562Z",
+  "source_sha": "2fadb9b3a636f241ca6d735d48392367abd6e120",
+  "counts": {
+    "source_rows": 27,
+    "components": 35,
+    "supported_path": 17,
+    "explicit_unresolved_gap": 10,
+    "attributable_na": 0,
+    "browser_observed_components": 6,
+    "actual_homewood_configured": 0,
+    "staff_accepted": 0,
+    "paper_retired": 0
+  },
+  "rows": [
+    {
+      "source_id": "AL-D01",
+      "sheet": "Daily",
+      "cell": "A2",
+      "source_text": "Marketing calls complete",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "The day's marketing-call scope, required outcomes and final source record remain Q28 decisions; the current human path does not equate one outreach row with the day's duty.",
+      "questions": [
+        "Q28"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d01-01",
+          "activity_id": "e6fd329d-97ad-4ef0-a094-81bfbee9e83c",
+          "label": "Record marketing calls",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": true,
+          "observed_scenarios": [
+            "routineRecovery",
+            "correction"
+          ],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D02",
+      "sheet": "Daily",
+      "cell": "A3",
+      "source_text": "Update referral & maintenace logs",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q28",
+        "Q14"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d02-01",
+          "activity_id": "73a5af51-9f79-43cc-b7be-91ebe77b565e",
+          "label": "Update referral log",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        },
+        {
+          "activity_key": "hfo-al-d02-02",
+          "activity_id": "d5fca692-4d4d-48bb-b298-72726907b985",
+          "label": "Update maintenance log",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D03",
+      "sheet": "Daily",
+      "cell": "A4",
+      "source_text": "Check for mail and deliver to residents",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q04",
+        "Q28"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d03-01",
+          "activity_id": "4e8d28fd-c459-4395-bbee-249f059413e1",
+          "label": "Check for mail",
+          "kind": "attestation",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Synthetic photo rule proved performed-missing-evidence → finalized evidence → satisfied",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": true,
+          "observed_scenarios": [
+            "conditionalEvidence",
+            "helpAndCoverage"
+          ],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        },
+        {
+          "activity_key": "hfo-al-d03-02",
+          "activity_id": "2f0c5491-d4cb-44a8-8505-728f9854c166",
+          "label": "Deliver resident mail",
+          "kind": "attestation",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D04",
+      "sheet": "Daily",
+      "cell": "A5",
+      "source_text": "Make deposits - Scan copies ",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "Payment context is not a bank deposit, scanned-copy finality or accounting acknowledgment. Q16/Q17 remain open.",
+      "questions": [
+        "Q16",
+        "Q17"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d04-01",
+          "activity_id": "7d9687c2-ccab-4d96-a13d-8cc28e4901d3",
+          "label": "Record deposit",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Finance and census source context",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        },
+        {
+          "activity_key": "hfo-al-d04-02",
+          "activity_id": "5d4defcf-5559-46dc-9e26-d15c598825fa",
+          "label": "Scan deposit copies",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D05",
+      "sheet": "Daily",
+      "cell": "A6",
+      "source_text": "Personally observe all residents for hygiene, health, and psychological status",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q13"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d05-01",
+          "activity_id": "2b1b061a-b738-4198-87b3-e713971c82f6",
+          "label": "Observe hygiene, health and psychological status",
+          "kind": "structured_observation",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D06",
+      "sheet": "Daily",
+      "cell": "A7",
+      "source_text": "Note residents who are not complying with Hygiene Standards for further followed up",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q13"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d06-01",
+          "activity_id": "19e78f26-5b81-4fff-a800-164d4aae1be1",
+          "label": "Record hygiene concern and follow-up",
+          "kind": "linked_domain_action",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D07",
+      "sheet": "Daily",
+      "cell": "A8",
+      "source_text": "Review observation logs",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q13"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d07-01",
+          "activity_id": "831e44c4-1cbb-4331-8179-2f165d70b7b4",
+          "label": "Review observation logs",
+          "kind": "record_review",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D08",
+      "sheet": "Daily",
+      "cell": "A9",
+      "source_text": "Review Med Pass for Issues",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "The medication-platform reader/export and administrative review population are unresolved. Haven must not manufacture a dose or issue-free attestation.",
+      "questions": [
+        "Q13"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d08-01",
+          "activity_id": "a0624feb-471a-477a-8efd-cc9404a728d2",
+          "label": "Review Med Pass for issues",
+          "kind": "record_review",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D09",
+      "sheet": "Daily",
+      "cell": "A10",
+      "source_text": "Review refused Med list - Follow up with residents & doctor to find solution",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "The refused-medication source is unresolved; review and the resident/provider follow-up are separate components and neither infers contact or resolution.",
+      "questions": [
+        "Q13",
+        "Q24"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d09-01",
+          "activity_id": "2a75d885-0262-47a2-af07-351a5a2cabce",
+          "label": "Review refused Med list",
+          "kind": "record_review",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        },
+        {
+          "activity_key": "hfo-al-d09-02",
+          "activity_id": "0e710315-274e-4242-bd2d-4d85f54a4feb",
+          "label": "Follow up with resident and doctor",
+          "kind": "linked_domain_action",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D10",
+      "sheet": "Daily",
+      "cell": "A11",
+      "source_text": "Review Daily Shift Report",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "The authoritative shift-report source and version are unresolved; a different resident log cannot be renamed as the shift report.",
+      "questions": [
+        "Q13"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d10-01",
+          "activity_id": "b740b36a-26d7-4957-a6c1-326189f12478",
+          "label": "Review daily shift report",
+          "kind": "record_review",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D11",
+      "sheet": "Daily",
+      "cell": "A12",
+      "source_text": "Review Daily Sanitation Log",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q13",
+        "Q14"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d11-01",
+          "activity_id": "380ba1ab-b69a-4b08-958d-8cb2b50a09dc",
+          "label": "Review daily sanitation log",
+          "kind": "record_review",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D12",
+      "sheet": "Daily",
+      "cell": "A13",
+      "source_text": "Review  Residents Temp & 02 Log",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "The meaning of '02' and the exact source log remain Q11/Q13 decisions. The synthetic proof demonstrates an oxygen-saturation source without adopting that interpretation for Homewood.",
+      "questions": [
+        "Q11",
+        "Q13"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d12-01",
+          "activity_id": "65c70899-f5ef-452d-9c5b-2a95305b8d3b",
+          "label": "Review Residents Temp & 02 Log",
+          "kind": "record_review",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": true,
+          "observed_scenarios": [
+            "residentSourceReview"
+          ],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D13",
+      "sheet": "Daily",
+      "cell": "A14",
+      "source_text": "Review Staff temperature & screening log",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q13",
+        "Q20"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d13-01",
+          "activity_id": "7940618f-f22e-4f3a-8367-c1e4473b5ff3",
+          "label": "Review staff temperature and screening log",
+          "kind": "record_review",
+          "subject_kind": "employee",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Employee File source context",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D14",
+      "sheet": "Daily",
+      "cell": "A15",
+      "source_text": "DNR's are updated and in front of Resident Binder",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q13",
+        "Q23"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d14-01",
+          "activity_id": "994566c9-e0ad-4b0d-b4d9-f56d2a490955",
+          "label": "Review DNR currency",
+          "kind": "record_review",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        },
+        {
+          "activity_key": "hfo-al-d14-02",
+          "activity_id": "2356eef8-00cc-476d-bc7a-7cd567f0e7ff",
+          "label": "Verify DNR in resident binder",
+          "kind": "attestation",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D15",
+      "sheet": "Daily",
+      "cell": "A16",
+      "source_text": "Attendance Calendar is Updated",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "Attendance Calendar subject, system and counting rules are unresolved. No task subject, deadline or employment action is fabricated.",
+      "questions": [
+        "Q11",
+        "Q22"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d15-01",
+          "activity_id": "399a6077-449d-405d-99c7-f1c34743e46f",
+          "label": "Update Attendance Calendar",
+          "kind": "linked_domain_action",
+          "subject_kind": null,
+          "staff_screen": "/admin/operations/profile — needs confirmation; no task generated",
+          "source_or_input_surface": "Employee File source context",
+          "completion_action": "Unavailable until subject/system is confirmed",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": false,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D16",
+      "sheet": "Daily",
+      "cell": "A17",
+      "source_text": "Social Media sent ",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "Destination, content reference and completion receipt remain Q28 decisions. Haven records a human statement; it does not publish social content.",
+      "questions": [
+        "Q28"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d16-01",
+          "activity_id": "b441182f-6a04-43fd-8e8b-3869d755ebab",
+          "label": "Record social media sent",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D17",
+      "sheet": "Daily",
+      "cell": "A18",
+      "source_text": "Census is update",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q18"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d17-01",
+          "activity_id": "6dbd5b5b-48a9-4414-bf48-7b4d6f8b7de1",
+          "label": "Update census",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Finance and census source context",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": true,
+          "observed_scenarios": [
+            "censusContext"
+          ],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D18",
+      "sheet": "Daily",
+      "cell": "A19",
+      "source_text": "All orders are followed up on and complete",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q13",
+        "Q24"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d18-01",
+          "activity_id": "244ba5e8-3dea-4366-a69a-f0774cf77b21",
+          "label": "Follow up on orders and record completion",
+          "kind": "linked_domain_action",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-D19",
+      "sheet": "Daily",
+      "cell": "A20",
+      "source_text": "Admit & Discharge Log is updated",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q15",
+        "Q18"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-d19-01",
+          "activity_id": "914b1dba-087a-44d7-abbf-49eebc9a13bb",
+          "label": "Update admission and discharge log",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Finance and census source context",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-W01",
+      "sheet": "Weekly",
+      "cell": "B1",
+      "source_text": "Generator Log/Carbon Monoxide Log",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q14"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-w01-01",
+          "activity_id": "e27fce0c-bace-4a06-8a1c-090a56fc8f8e",
+          "label": "Record generator test",
+          "kind": "structured_observation",
+          "subject_kind": "asset",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Observation source record",
+          "completion_action": "Record named-asset staff observation",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": true,
+          "observed_scenarios": [
+            "generatorFailure",
+            "sourceVoid"
+          ],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        },
+        {
+          "activity_key": "hfo-al-w01-02",
+          "activity_id": "3b3c3faa-27bd-4933-aed0-801b8e811b09",
+          "label": "Record carbon monoxide check",
+          "kind": "structured_observation",
+          "subject_kind": "asset",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Observation source record",
+          "completion_action": "Record named-asset staff observation",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-W02",
+      "sheet": "Weekly",
+      "cell": "C1",
+      "source_text": "Update AHCA Website Roster",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "AHCA roster integration is unavailable. Manual submission evidence cannot prove external acceptance; Q21 remains open.",
+      "questions": [
+        "Q21"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-w02-01",
+          "activity_id": "429e9fd4-c718-47b8-b44f-683320bae571",
+          "label": "Update AHCA website roster",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Employee File source context",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-W03",
+      "sheet": "Weekly",
+      "cell": "D1",
+      "source_text": "Update Company Calendar",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q28"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-w03-01",
+          "activity_id": "af4acc94-4829-417e-8f0e-03807c802f07",
+          "label": "Update company calendar",
+          "kind": "linked_domain_action",
+          "subject_kind": "facility",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-W04",
+      "sheet": "Weekly",
+      "cell": "E1",
+      "source_text": "AED machine is working and all equipment current",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q14"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-w04-01",
+          "activity_id": "ec77bb60-06b9-49e0-a466-ad5c4f913794",
+          "label": "Check AED operation",
+          "kind": "structured_observation",
+          "subject_kind": "asset",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        },
+        {
+          "activity_key": "hfo-al-w04-02",
+          "activity_id": "40e494bf-a0d8-48f9-9481-2f8fb5646070",
+          "label": "Check AED equipment currency",
+          "kind": "structured_observation",
+          "subject_kind": "asset",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Generic Site work recording path",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-W05",
+      "sheet": "Weekly",
+      "cell": "F1",
+      "source_text": "Orders have been audited for completion",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q13"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-w05-01",
+          "activity_id": "84345246-df3a-4b57-a623-a722697279f1",
+          "label": "Audit order completion",
+          "kind": "record_review",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-W06",
+      "sheet": "Weekly",
+      "cell": "G1",
+      "source_text": "Employee Files are up to date including inservices",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q20"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-w06-01",
+          "activity_id": "f40c9077-f0ab-4089-a5d9-ab5709964a64",
+          "label": "Review employee file currency",
+          "kind": "record_review",
+          "subject_kind": "employee",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Employee File source context",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": true,
+          "observed_scenarios": [
+            "employeeFileContext"
+          ],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        },
+        {
+          "activity_key": "hfo-al-w06-02",
+          "activity_id": "ce9166b0-3bbf-4d52-9a54-620e3de96f8c",
+          "label": "Review inservice currency",
+          "kind": "record_review",
+          "subject_kind": "employee",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Employee File source context",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-W07",
+      "sheet": "Weekly",
+      "cell": "I1",
+      "source_text": "Resident Emergency Packets are complete ",
+      "disposition": "supported_path",
+      "gap_reason": null,
+      "questions": [
+        "Q23",
+        "Q25"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-w07-01",
+          "activity_id": "711e594b-0ab1-4ce3-9081-e7c20837c589",
+          "label": "Review resident emergency packet completeness",
+          "kind": "record_review",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Resident/employee source context plus manual review where eligible",
+          "completion_action": "Record explicit review; connected source supports but does not replace it",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    },
+    {
+      "source_id": "AL-W08",
+      "sheet": "Weekly",
+      "cell": "J1",
+      "source_text": "DCF Notify Letter for Admits and DC",
+      "disposition": "explicit_unresolved_gap",
+      "gap_reason": "Admission/discharge context is not a DCF sent/delivered acknowledgment. Recipient, channel and receipt remain Q21 decisions.",
+      "questions": [
+        "Q21"
+      ],
+      "actual_homewood_configured": false,
+      "staff_accepted": false,
+      "paper_retired": false,
+      "components": [
+        {
+          "activity_key": "hfo-al-w08-01",
+          "activity_id": "bcaf8a16-f059-4a90-b2ad-6f2b678b87f1",
+          "label": "Record DCF admission or discharge notice",
+          "kind": "linked_domain_action",
+          "subject_kind": "resident",
+          "staff_screen": "/admin/operations/work",
+          "source_or_input_surface": "Finance and census source context",
+          "completion_action": "Record unscheduled work under synthetic unknown-schedule proof",
+          "evidence_behavior": "Rule-controlled; no universal attachment or note",
+          "corporate_history": "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
+          "follow_up": "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
+          "browser_observed": false,
+          "observed_scenarios": [],
+          "synthetic_configured": true,
+          "actual_homewood_configured": false,
+          "staff_accepted": false,
+          "paper_retired": false
+        }
+      ]
+    }
+  ]
+}

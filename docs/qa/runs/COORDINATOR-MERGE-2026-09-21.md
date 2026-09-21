@@ -18,7 +18,7 @@ The Daily/Weekly engineering demonstration is ready for technical closeout on th
 
 | Check | Status |
 |---|---|
-| Exact runner/application revision | PASS — recorded in `browser-proof.json` |
+| Exact runner/application revision | PASS — `2fadb9b3a636f241ca6d735d48392367abd6e120` |
 | HFO staging identity | PASS — `iwcnajanvjvynolltflw` |
 | Full profile contract | PASS — 91 source items / 110 components |
 | Daily/Weekly fixture | PASS — 27 source rows / 35 components / 34 tasks / AL-D15 withheld |
@@ -64,6 +64,7 @@ None.
 | Exact source and environment recorded | Yes |
 | Fixture retired | Yes |
 | Independent review findings resolved | Yes |
+| Required segment gate | Yes — `2026-09-21T12-29-18-678Z-COL-494-DAILY-WEEKLY.json` |
 | Homewood/release/staff boundaries retained | Yes |
 
 ## Next actions
