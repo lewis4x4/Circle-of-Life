@@ -301,9 +301,8 @@ export function DischargeMedRecHubClient({
     !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
 
   const facilityName = useMemo(() => {
-    if (noFacility) return "the selected facility";
-    const name = availableFacilities.find((f) => f.id === selectedFacilityId)?.name;
-    return name ?? selectedFacilityId;
+    if (noFacility) return null;
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
   }, [availableFacilities, noFacility, selectedFacilityId]);
 
   const planningRows = useMemo(
@@ -451,8 +450,14 @@ export function DischargeMedRecHubClient({
           title="Medication reconciliation"
           subtitle={
             <>
-              Queue and workflow for{" "}
-              <span className="text-foreground">{facilityName}</span>.
+              Queue and workflow
+              {facilityName ? (
+                <>
+                  {" for "}
+                  <span className="text-foreground">{facilityName}</span>
+                </>
+              ) : null}
+              .
             </>
           }
           actions={
@@ -493,6 +498,15 @@ export function DischargeMedRecHubClient({
             </div>
           }
         />
+
+        {noFacility ? (
+          <div
+            role="status"
+            className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+          >
+            Select a facility in the header to load medication reconciliation for that site.
+          </div>
+        ) : null}
 
         <section className="space-y-3">
             {/* FOLLOW-UP(ISSUE): Per-record pharmacist email/export handoff when no in-app pharmacist role exists. */}
