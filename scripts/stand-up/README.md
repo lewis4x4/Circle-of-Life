@@ -62,6 +62,13 @@ not activate synchronization. Google external Testing refresh tokens expire
 after seven days for this scope; resolve publishing/identity ownership before
 treating the connector as permanent unattended infrastructure.
 
+Production must not keep the OAuth app in External / Testing. Before minting
+the hosted credential, publish compliant public app information, move the
+Google Auth audience to In production, and only then authorize the dedicated
+account. A token minted before the publishing-status change still carries the
+seven-day Testing lifetime. Keep the narrow `drive.file` scope and the selected
+workbook boundary; do not broaden Drive access to solve credential lifetime.
+
 For the separate Haven operator session, start with `--haven-config` pointing to
 an owned private JSON containing the fixed Haven `url` and public `anon_key`,
 and `--facility-map` pointing to the reviewed mapping. Open `/haven` on the local

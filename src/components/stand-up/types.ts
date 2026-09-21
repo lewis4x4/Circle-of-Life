@@ -19,6 +19,11 @@ export type StandUpWorkspaceData = {
   pending_recoveries?: RecoveryPreview[]; facilities: StandUpFacility[];
   reports: StandUpReport[]; current_week: string; can_import: boolean;
   server_now?: string; actor_role?: string;
+  google_connection?: {
+    state: 'unconfigured' | 'connected' | 'reconnect_required';
+    last_success_at?: string | null; last_checked_at?: string | null;
+    last_outcome?: string | null; last_error_code?: string | null;
+  };
 };
 export type StandUpEntryWindowSaved = {
   facility_id: string; entry_open_lead_minutes: number | null; open_week: string; entry_opens_at: string;

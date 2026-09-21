@@ -15,12 +15,27 @@ DO $$ BEGIN
   IF has_function_privilege('anon','public.stand_up_publisher_acquire(uuid,integer)','EXECUTE')
      OR has_function_privilege('authenticated','public.stand_up_google_bridge(text,jsonb)','EXECUTE')
      OR has_function_privilege('authenticated','public.stand_up_google_export_bridge(text,jsonb)','EXECUTE')
+     OR has_function_privilege('authenticated','haven.stand_up_google_health(uuid)','EXECUTE')
      OR NOT has_function_privilege('service_role','public.stand_up_history_publisher_acquire(uuid,integer)','EXECUTE')
      OR NOT has_function_privilege('service_role','public.stand_up_google_complete_export(jsonb)','EXECUTE')
      OR has_table_privilege('service_role','haven.stand_up_publisher_state','SELECT')
      OR has_table_privilege('service_role','haven.stand_up_google_exports','SELECT') THEN
     RAISE EXCEPTION 'Hosted Stand Up grant posture failed';
   END IF;
+END $$;
+
+-- The authorized workspace may include redacted connection health, but the
+-- helper itself is not callable and the payload never exposes connector
+-- credentials, workbook identity, Drive metadata, or report figures.
+UPDATE haven.stand_up_google_state SET connection_state='reconnect_required',last_outcome='failed',
+  last_error_code='google_auth_reconnect_required',last_connected_at='2026-09-18T13:29:01Z',last_completed_at='2026-09-18T13:30:02Z'
+WHERE singleton;
+DO $$ DECLARE health jsonb; BEGIN
+ health:=haven.stand_up_google_health('00000000-0000-0000-0000-000000000001');
+ IF health->>'state'<>'reconnect_required' OR health->>'last_error_code'<>'google_auth_reconnect_required'
+    OR health ?| ARRAY['credential_fingerprint','workbook_id','last_drive_metadata','values'] THEN
+  RAISE EXCEPTION 'Google health was missing or disclosed private connector state: %',health;
+ END IF;
 END $$;
 
 SELECT set_config('request.jwt.claims','{"role":"service_role"}',true);
