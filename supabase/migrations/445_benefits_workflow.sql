@@ -224,7 +224,7 @@ DECLARE a jsonb:=haven.benefits_actor(); c public.benefits_cases; old public.ben
  PERFORM haven.benefits_lock_authority(c.facility_id);
  PERFORM 1 FROM public.residents WHERE id=c.resident_id FOR SHARE;
  c:=haven.benefits_assert_case(p_case_id,mode);
- IF c.revision<>p_expected_revision THEN RAISE EXCEPTION 'Case changed; refresh and retry' USING ERRCODE='40001'; END IF;
+ IF c.revision<>p_expected_revision THEN RAISE EXCEPTION 'Case changed; refresh and retry' USING ERRCODE='P0409'; END IF;
  IF c.status='closed' AND p_action<>'update_case' THEN RAISE EXCEPTION 'Reopen the case before modifying' USING ERRCODE='22023'; END IF;
  IF p_payload ? 'assigned_to' AND p_payload->>'assigned_to' IS NOT NULL AND NOT haven.benefits_staff((p_payload->>'assigned_to')::uuid,c.organization_id,c.facility_id) THEN RAISE EXCEPTION 'Assignee unavailable' USING ERRCODE='22023'; END IF;
  FOR k IN SELECT jsonb_object_keys(p_payload) LOOP

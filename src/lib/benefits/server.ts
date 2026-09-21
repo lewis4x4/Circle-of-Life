@@ -45,7 +45,7 @@ export function benefitsFailure(status = 503, message = "Benefits information co
 }
 function rpcFailure(error: { code?: string }) {
   if (error.code === "42501" || error.code === "P0002") return benefitsFailure(404, "Benefits case or access is unavailable.");
-  if (["23505", "40001", "P0001", "23514"].includes(error.code ?? "")) return benefitsFailure(409, "This action conflicts with the current case or its evidence. Refresh and review the requirements.");
+  if (["23505", "P0409", "P0001", "23514"].includes(error.code ?? "")) return benefitsFailure(409, "This action conflicts with the current case or its evidence. Refresh and review the requirements.");
   if (["22023", "22P02", "22007", "22008"].includes(error.code ?? "")) return benefitsFailure(400, "Some benefits fields are invalid.");
   return benefitsFailure();
 }

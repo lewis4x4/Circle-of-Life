@@ -24,7 +24,7 @@ const targetSchema = z.object({ document: benefitsDocumentRowSchema, object: z.o
 
 function failure(error: { code?: string }) {
   if (["42501", "P0002"].includes(error.code ?? "")) return benefitsFailure(404, "This document request is unavailable.");
-  if (["23505", "40001", "55000"].includes(error.code ?? "")) return benefitsFailure(409, "The request changed or upload could not be verified. Refresh and retry.");
+  if (["23505", "P0409", "55000"].includes(error.code ?? "")) return benefitsFailure(409, "The request changed or upload could not be verified. Refresh and retry.");
   if (["22023", "23514", "23502", "22P02", "22007", "22008"].includes(error.code ?? "")) return benefitsFailure(400, "Review the document request and required fields.");
   return benefitsFailure();
 }

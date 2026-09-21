@@ -61,7 +61,7 @@ DECLARE a jsonb:=haven.benefits_actor(); c public.benefits_cases; r public.benef
  RETURN old.result; END IF;
  SELECT * INTO c FROM public.benefits_cases WHERE id=p_case_id FOR UPDATE;
  PERFORM haven.benefits_assert_case(c.id,'write');
- IF c.revision<>p_expected_revision THEN RAISE EXCEPTION 'Case changed' USING ERRCODE='40001'; END IF;
+ IF c.revision<>p_expected_revision THEN RAISE EXCEPTION 'Case changed' USING ERRCODE='P0409'; END IF;
  IF c.status='closed' THEN RAISE EXCEPTION 'Case closed' USING ERRCODE='22023'; END IF;
  IF p_action='assign' THEN
   PERFORM haven.benefits_keys(p_payload,ARRAY['requirement_id','family_user_id','expires_at']);
@@ -115,7 +115,7 @@ DECLARE a jsonb:=haven.benefits_family_actor(); q public.benefits_collection_req
  SELECT * INTO c FROM public.benefits_cases WHERE id=q.case_id FOR UPDATE;
  q:=haven.benefits_family_assert(p_collection_id);
  SELECT * INTO r FROM public.benefits_requirements WHERE id=q.requirement_id AND case_id=c.id FOR UPDATE;
- IF c.revision<>p_expected_revision THEN RAISE EXCEPTION 'Case changed' USING ERRCODE='40001'; END IF;
+ IF c.revision<>p_expected_revision THEN RAISE EXCEPTION 'Case changed' USING ERRCODE='P0409'; END IF;
  IF q.received_at IS NOT NULL OR r.status IN ('accepted','not_applicable') THEN RAISE EXCEPTION 'Collection completed' USING ERRCODE='22023'; END IF;
  IF p_action='prepare' THEN
   PERFORM haven.benefits_keys(p_payload,ARRAY['filename','mime_type','size_bytes','sha256']);

@@ -46,7 +46,7 @@ SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('update_case','{"screening":{"m
 SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('record_event','{"agency":"dcf","event_type":"eligibility","outcome":"approved","occurred_on":"2026-09-21","formal_decision":true}')$q$,'22023');
 SELECT pg_temp.bcommand('update_case','{"screening":{"income_cents":999999999,"income_basis":"unknown","married":"unknown"},"next_action":"Confirm financial facts"}');
 SELECT pg_temp.bassert((public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)#>>'{case,status}')='open','screening automatically rejected case');
-SELECT pg_temp.berror($q$SELECT public.benefits_case_command((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,'update_case','{}',1,gen_random_uuid())$q$,'40001');
+SELECT pg_temp.berror($q$SELECT public.benefits_case_command((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,'update_case','{}',1,gen_random_uuid())$q$,'P0409');
 INSERT INTO br SELECT 'upload',pg_temp.bcommand('prepare_document',jsonb_build_object('filename','evidence.pdf','mime_type','application/pdf','size_bytes',12,'sha256',repeat('a',64),'document_type','bank_statement'));
 SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('finalize_document',jsonb_build_object('document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload')))$q$,'55000');
 RESET ROLE;

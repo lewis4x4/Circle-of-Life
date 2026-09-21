@@ -56,7 +56,7 @@ describe("benefits API authority and evidence", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it("passes revision and request identity to the atomic command and surfaces conflicts", async () => {
-    mocks.rpc.mockResolvedValue({ data: null, error: { code: "40001" } });
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: "P0409" } });
     const response = await commandBenefitsCase(request({ action: "update_case", payload: { next_action: "Request current bank statement" }, expected_revision: 7, request_id: requestId }), caseId);
     expect(response.status).toBe(409);
     expect(mocks.rpc).toHaveBeenCalledWith("benefits_case_command", expect.objectContaining({ p_case_id: caseId, p_expected_revision: 7, p_request_id: requestId }));
