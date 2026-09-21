@@ -85,8 +85,3 @@ a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic
 # Exact historical fingerprints only; the generic-api-key detector remains active.
 3220f1cbea4feb0e498911360e592c369ebdcf27:src/lib/referrals/public-referral.test.ts:generic-api-key:4
 3220f1cbea4feb0e498911360e592c369ebdcf27:src/app/api/public/referrals/route.test.ts:generic-api-key:9
-
-# efc16bd7 (COL-497, PR #641) - insurance seed "key" fields are policy slugs (cgl-nsc101045-…), not credentials.
-# CI checks out every ref (fetch-depth 0), so an open branch's commit fails gitleaks for every PR until ignored here.
-efc16bd78fed7bc2b9e001c5ada3bae9d8f29e0d:scripts/insurance/col497-seed-data.json:generic-api-key:31
-efc16bd78fed7bc2b9e001c5ada3bae9d8f29e0d:scripts/insurance/col497-seed-data.json:generic-api-key:48
