@@ -9,13 +9,13 @@
 -- logs and cannot write one; a revoked grant reads nothing; an unheld site and
 -- a nonexistent one are indistinguishable through the route's gate, which is
 -- the 404 contract the route states; and, named rather than assumed, the two
--- authorities do NOT agree — public.haven_operation_facility_access (the route
--- gate, migration 348) additionally honours user_facility_access
--- .operation_expires_at, while the drill_log policy's
--- haven.accessible_facility_ids() (migration 220's policy, function redefined
--- by 326) does not. An expired operations grant is therefore refused by the
--- route and still passes row-level security, so any session read of drill_log
--- that does not call the gate first is wider than the route. Rolls back.
+-- authorities now agree on an expired operations grant — the route gate
+-- public.haven_operation_facility_access (348) honours user_facility_access
+-- .operation_expires_at, and since migration 443 (COL-291) a RESTRICTIVE
+-- policy on drill_log ANDs that same gate onto 220's
+-- haven.accessible_facility_ids() policy. An expired operations grant is
+-- refused by the route and by row-level security alike, so a session read of
+-- drill_log that skips the gate is no wider than the route. Rolls back.
 BEGIN;
 ALTER ROLE service_role BYPASSRLS;
 GRANT USAGE ON SCHEMA auth TO authenticated,service_role;
@@ -120,37 +120,41 @@ SELECT pg_temp.c_assert((SELECT count(*)=0 FROM public.drill_log),'a revoked gra
 SELECT pg_temp.c_assert(NOT public.haven_operation_facility_access((SELECT site_a FROM lf)),'the route gate admits a revoked grant');
 RESET ROLE;
 
--- 5. The divergence, asserted rather than assumed. The route gate honours
---    operation_expires_at (348); haven.accessible_facility_ids(), which the
---    220 drill_log policy calls, checks only revoked_at (326). An expired
---    operations grant is therefore refused by the route and admitted by
---    row-level security.
---
---    This is not reachable through GET /api/admin/operations/drill-logs, which
---    calls the gate before it builds the query. It means the reader's own
---    claim that reading "through the session" makes current site authority
---    govern every row is wider than it sounds: the session alone is the laxer
---    of the two authorities, and any future server component, list surface or
---    direct query that skips the gate inherits the laxer one. Tracked as
---    COL-291. If that issue closes by tightening the RLS path, the two
---    assertions below are the ones that must flip, and this comment with them.
+-- 5. The convergence, asserted rather than assumed (COL-291, migration 443).
+--    The route gate honours operation_expires_at (348). haven
+--    .accessible_facility_ids(), which the 220 drill_log policy calls, still
+--    checks only revoked_at (326) — by ruling, because it backs row-level
+--    security across the whole domain and spec 27 says operation_expires_at
+--    "limits operations coverage without changing unrelated domain access".
+--    What changed is drill_log itself: the RESTRICTIVE policy
+--    operation_drill_log_current_scope ANDs the operations gate onto 220's
+--    policy, so an expired operations grant is refused by the route and by
+--    row-level security alike. A session read that skips the gate is no
+--    longer wider than the route. Reopening the divergence (dropping the
+--    policy) flips the second and fifth assertions below.
 SELECT pg_temp.c_login('expired');
 SET ROLE authenticated;
 SELECT pg_temp.c_assert(NOT public.haven_operation_facility_access((SELECT site_a FROM lf)),'the route gate ignores operation_expires_at');
-SELECT pg_temp.c_assert((SELECT count(*)=1 FROM public.drill_log WHERE id=(SELECT log_a FROM lf)),
- 'row-level security now honours operation_expires_at — the reader and the gate have converged, so update COL-291 and this probe together');
-SELECT pg_temp.c_assert((SELECT site_a FROM lf) IN (SELECT haven.accessible_facility_ids()),'accessible_facility_ids no longer admits an expired operations grant');
+SELECT pg_temp.c_assert((SELECT count(*)=0 FROM public.drill_log WHERE id=(SELECT log_a FROM lf)),
+ 'row-level security admits an expired operations grant to a drill log — the COL-291 restrictive policy is missing or bypassed');
+SELECT pg_temp.c_assert((SELECT site_a FROM lf) IN (SELECT haven.accessible_facility_ids()),
+ 'accessible_facility_ids no longer admits an expired operations grant — the domain authority changed, which COL-291 ruled against; re-derive the blast radius');
 SELECT pg_temp.c_assert((SELECT site_a FROM lf) NOT IN (SELECT public.haven_operation_accessible_facility_ids()),'the operations accessible list admits an expired grant');
+-- Denied to read is denied to write: the same policy carries WITH CHECK.
+SELECT pg_temp.c_denied($q$INSERT INTO public.drill_log(organization_id,facility_id,drill_type,drill_date,drill_time) SELECT org,site_a,'fire',(back)::date,(back)::time FROM lf$q$);
 RESET ROLE;
 
--- 6. The two authorities are two different functions, and the drill_log policy
---    calls the laxer one. Stated as schema fact so a future rewrite of either
---    cannot quietly make this probe vacuous.
+-- 6. The shape that makes section 5 true, stated as schema fact so a future
+--    rewrite of either policy cannot quietly make this probe vacuous: 220's
+--    permissive policy still reads through accessible_facility_ids, and the
+--    443 RESTRICTIVE policy calls the operations gate for reads and writes.
 SELECT pg_temp.c_assert((SELECT count(*)=1 FROM pg_policies WHERE schemaname='public' AND tablename='drill_log' AND policyname='drill_log_access'),'the drill_log policy is not the 220 policy');
 SELECT pg_temp.c_assert((SELECT qual LIKE '%accessible_facility_ids%' FROM pg_policies WHERE schemaname='public' AND tablename='drill_log' AND policyname='drill_log_access'),
  'the drill_log policy no longer reads through accessible_facility_ids — re-derive which authority governs this table');
-SELECT pg_temp.c_assert((SELECT count(*)=0 FROM pg_policies WHERE schemaname='public' AND tablename='drill_log' AND qual LIKE '%operation_facility_access%'),
- 'a policy on drill_log now calls the operations gate — the divergence in section 5 may be closed');
+SELECT pg_temp.c_assert((SELECT count(*)=1 FROM pg_policies WHERE schemaname='public' AND tablename='drill_log' AND policyname='operation_drill_log_current_scope'
+  AND permissive='RESTRICTIVE' AND cmd='ALL' AND 'authenticated'=ANY(roles)
+  AND qual LIKE '%operation_facility_access(facility_id)%' AND with_check LIKE '%operation_facility_access(facility_id)%'),
+ 'drill_log has no RESTRICTIVE operations-gate policy for reads and writes — migration 443 (COL-291) is missing or was rewritten');
 
 SELECT 'COL-282 drill log reader authority PASS' result;
 ROLLBACK;
