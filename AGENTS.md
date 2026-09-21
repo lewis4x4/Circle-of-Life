@@ -28,11 +28,11 @@ After the required focused and repository gates pass, continue through every app
 1. Stage only the intended files and create an atomic Lore-protocol commit.
 2. Push the branch, create or update the PR, wait for required checks, and fix failures.
 3. Merge to `main` and complete any repository-defined release promotion.
-4. In the verified production target and repository-defined order, apply pending migrations and deploy changed Edge Functions, jobs, crons, configuration, and application services.
+4. In the verified production target and repository-defined order, apply pending migrations, set or rotate the hosted secrets that release needs, and deploy changed Edge Functions, jobs, crons, configuration, and application services.
 5. Always verify the exact hosted revision and applicable health/live smoke checks. Verify migration-ledger parity and function/job versions when those surfaces changed. Apply the post-merge CI rule below.
 6. Record commit, PR, CI, migration, function, deployment, and hosted evidence; report staff/provider/clinical/customer acceptance separately.
 
-Do not stop at local completion, a commit, a pushed branch, an open or merged PR, green pre-merge CI, or a deployment that merely started. Routine, recoverable production release operations within the requested scope are standing-authorized. This does not authorize secret disclosure, purchases/payments, external communications, destructive data loss without a recovery path, or claims of human acceptance without dated evidence.
+Do not stop at local completion, a commit, a pushed branch, an open or merged PR, green pre-merge CI, or a deployment that merely started. Deploys, hosted secret configuration, and production database changes required by the requested work are standing-authorized. Do not stop and ask a human before doing them. Never print, paste, log, or commit secret values. This does not authorize purchases/payments, external communications, destructive data loss without a recovery path, or claims of human acceptance without dated evidence.
 
 ### Post-merge CI rule
 
@@ -78,11 +78,11 @@ A PR with no proof is a draft. Also state: what changed and why; what you delibe
 
 ## Fleet gates (non-negotiable)
 
-- **Draft-and-hold** for external mail/publication, purchases or payments, secret rotation/disclosure, and destructive or irreversible data loss without a verified recovery path. Routine technical production releases follow the standing contract above.
+- **Draft-and-hold** for external mail/publication, purchases or payments, and destructive or irreversible data loss without a verified recovery path. Deploys, hosted secrets, and production database changes are not holds.
 - **GATE PASS + required CI** before merge. Then merge to `main`, complete release promotion, deploy all applicable technical artifacts, and verify the hosted revision unless Brian explicitly set a current task-specific HOLD.
 - **Harness routing:** Opus / Claude / Codex / Sol → Lewi → harness bots only. **Never** Cursor cloud agents for those models. Cloud agents = Composer / Cursor-model builds only.
 - **Haven coding default:** Sol (Codex) unless Brian names Opus. Analysis/plans → Claude Opus 5 Max via Lewi.
-- **Standing release authority:** Auth/permission code, forward migrations, Edge Functions, deploys, and production database changes inside the approved implementation scope may ship after their required security, replay, rollback, and release gates pass. Human decisions and human acceptance remain separate issues.
+- **Standing release authority:** Auth/permission code, forward migrations, Edge Functions, deploys, hosted secret create/update/rotation, and production database changes inside the requested scope ship after their required security, replay, rollback, and release gates pass. Do not pause for a human on those steps. Never disclose secret values. Human acceptance remains a separate issue.
 
 ## Anti-sprawl
 
@@ -104,13 +104,13 @@ Good: “Never reuse a prior day’s artifact as today’s proof; regenerate or 
 
 ## When to stop
 
-Two failed attempts on the same approach → stop repeating that approach, inspect the evidence, and try a materially different safe path. Ask only when an external credential, destructive ambiguity, or human decision truly blocks further progress.
+Two failed attempts on the same approach → stop repeating that approach, inspect the evidence, and try a materially different safe path. Do not ask before a deploy, hosted secret change, or production database change you can perform. Ask only when a required credential cannot be provisioned, the only remaining path destroys data with no recovery, or the open question is human acceptance rather than the technical release.
 Do not loop or manufacture status when nothing changed.
 
 ## Short version
 
 > Reproduce it. Run it. Prove it. Fix the cause.
-> Principles, not incident stories. Lean roster. Brian gates blast radius.
+> Principles, not incident stories. Lean roster. Ship deploys, secrets, and production database changes end to end. Leave human acceptance separate.
 
 ---
 # Haven — App Builder System Prompt
