@@ -18,6 +18,7 @@ create function net.http_post(url text,body jsonb default '{}'::jsonb,params jso
     return nextval('net.request_ids'); end $$;
 create table net._http_response(id bigint,status_code integer,timed_out boolean,error_msg text,content text);
 \ir ../../supabase/migrations/382_scheduled_job_monitoring.sql
+\ir ../../supabase/migrations/441_col253_scheduler_platform_compatibility.sql
 
 insert into cron.job values(1,'test','select net.http_post(url := ''https://example.invalid/functions/v1/ar-aging-check'', body := ''{}''::jsonb);','postgres','* * * * *',true);
 select job_monitor.instrument(1);
@@ -70,9 +71,19 @@ do $$ begin
   begin perform job_monitor.instrument(2); raise exception 'Positional command was rewritten';
   exception when others then if sqlerrm <> 'Unsupported scheduler owner or HTTP command' then raise; end if; end;
 end $$;
+insert into cron.job values(3,'native','select 1;','postgres','20 7,8 * * *',true);
+select job_monitor.register_native(3);
+do $$ begin
+  if not exists(select 1 from job_monitor.jobs where jobid=3 and original_command=instrumented_command)
+    then raise exception 'Native job was not registered'; end if;
+  begin perform job_monitor.restore(3); raise exception 'Native restore unexpectedly rewrote the job';
+  exception when others then if sqlerrm <> 'Native jobs are registered, not rewritten' then raise; end if; end;
+  if has_function_privilege('authenticated','job_monitor.register_native(bigint)','EXECUTE')
+    then raise exception 'Unsafe native registration ACL'; end if;
+end $$;
 do $$ begin
   if (select command from cron.job where jobid=1)<>(select original_command from job_monitor.jobs where jobid=1)
     then raise exception 'Restore did not preserve original'; end if;
   if (select count(*) from job_monitor.runs)<>11 then raise exception 'Restore removed evidence'; end if;
 end $$;
-select 'PASS: request capture, outcome classification, PHI-safe columns, ACLs, concurrent edit and evidence-preserving restore' result;
+select 'PASS: request capture, native registration, outcome classification, PHI-safe columns, ACLs, concurrent edit and evidence-preserving restore' result;
