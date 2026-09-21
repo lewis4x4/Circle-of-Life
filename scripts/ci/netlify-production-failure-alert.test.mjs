@@ -554,8 +554,8 @@ test("review: 501 historical SHAs do not consume verification budget before a ne
   githubRequests = 0;
   const boot = await collectProvider({ provider, github, state: state(), now: NOW, repository: REPOSITORY });
   assert.equal(boot.complete, true);
-  assert.equal(providerPages, 6, "bootstrap still discovers old pending records across every metadata page");
-  assert.ok(githubRequests <= 4, "bootstrap does not verify 501 irrelevant historical SHAs");
+  assert.equal(providerPages, 1, "bootstrap stops at the current published baseline instead of rate-limiting on lifetime history");
+  assert.ok(githubRequests <= 4, "bootstrap does not verify 501 recovered historical SHAs");
 });
 
 test("review: incremental discovery directly revisits pending attempts older than its boundary", async () => {
