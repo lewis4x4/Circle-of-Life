@@ -482,8 +482,8 @@ export async function replayLifecycle({ adapter, runId, now }) {
   if (existing?.deliveryComplete && existing.phase === 'healthy') {
     const issue = await adapter.findIssue(`<!-- haven-netlify-replay:${runId} -->`);
     const comments = await adapter.listComments(issue.number);
-    ensure(issue.state === 'closed' && assigned(issue, repository.split('/')[0]) && comments.filter((c) => c.body.includes(':effect:failure:')).length === 2 && comments.some((c) => c.body.includes(':effect:recovery:')), 'replay-readback');
-    return { success: true, counts: [1, 1, 2], issueNumber: issue.number };
+    ensure(issue.state === 'closed' && assigned(issue, repository.split('/')[0]) && comments.filter((c) => c.body.includes(':effect:failure:')).length === 2 && comments.some((c) => c.body.includes(':effect:recovery:')) && comments.some((c) => c.body.includes(':preview-ignore -->')), 'replay-readback');
+    return { success: true, counts: [1, 1, 2], previewIgnored: true, issueNumber: issue.number };
   }
   const counts = [];
   const id = (n) => n.toString(16).padStart(24, '0');
@@ -495,13 +495,26 @@ export async function replayLifecycle({ adapter, runId, now }) {
     counts.push(event.id === id(1) ? 1 : state.failureIds.length);
   }
   ensure(counts.join(',') === '1,1,2', 'replay-count');
+  const preview = classifyDeploy({
+    site_id: SITE_ID, id: id(9), state: 'error', context: 'deploy-preview', branch: 'synthetic-preview',
+    commit_ref: 'a'.repeat(40), draft: false, created_at: utc(millis(now) - 30_000), updated_at: now,
+  }, { site: { id: SITE_ID, name: SITE_NAME, admin_url: ADMIN_URL },
+    commit: { sha: 'a'.repeat(40), exists: true, onMain: false, message: 'Synthetic preview' }, now });
+  ensure(preview.kind === 'ignored' && preview.reason === 'non-production', 'replay-preview-exclusion');
+  const ignored = reduceObservation(state, { deploys: [preview], site, now, complete: true });
+  ensure(ignored.effects.length === 0 && ignored.state.failureIds.length === 2 && ignored.state.phase === 'incident', 'replay-preview-mutation');
+  state = (await reconcileEffects(ignored, adapter)).state;
+  const previewMarker = `<!-- haven-netlify-replay:${runId}:preview-ignore -->`;
+  if (!(await adapter.listComments(state.issueNumber)).some((comment) => comment.body?.includes(previewMarker))) {
+    await adapter.createComment(state.issueNumber, { body: `${previewMarker}\nSynthetic deploy-preview failure exclusion verified; the production incident count remained 2.` });
+  }
   const published = { ...make(3), kind: 'published', providerState: 'ready', createdAt: utc(millis(now) + 60_000), providerUpdatedAt: utc(millis(now) + 120_000), publishedAt: utc(millis(now) + 120_000) };
   const recovery = reduceObservation(state, { deploys: [published], site: { ...site, published_deploy: { id: published.id } }, now: utc(millis(now) + 180_000), complete: true });
   const done = await reconcileEffects(recovery, adapter);
   const issue = await adapter.getIssue(done.issueNumber);
   const comments = await adapter.listComments(done.issueNumber);
-  ensure(issue.state === 'closed' && assigned(issue, repository.split('/')[0]) && comments.filter((c) => c.body.includes(':effect:failure:')).length === 2 && comments.some((c) => c.body.includes(':effect:recovery:')), 'replay-readback');
-  return { success: true, counts, issueNumber: issue.number };
+  ensure(issue.state === 'closed' && assigned(issue, repository.split('/')[0]) && comments.filter((c) => c.body.includes(':effect:failure:')).length === 2 && comments.some((c) => c.body.includes(':effect:recovery:')) && comments.some((c) => c.body.includes(':preview-ignore -->')), 'replay-readback');
+  return { success: true, counts, previewIgnored: true, issueNumber: issue.number };
 }
 export async function finalizeReplay({ adapter, runId, outcome }) {
   ensure(/^\d+$/.test(runId), 'replay-identity');
@@ -625,6 +638,7 @@ export async function collectProvider({ provider, github, state, now, repository
   let lastCreated = Infinity;
   let ordered = true;
   let exhausted = false;
+  let baselineFound = false;
   let discoveryAnchorId;
   for (let page = 1; page <= 100; page++) {
     const values = await provider.request(`/sites/${SITE_ID}/deploys?production=true&branch=main&per_page=100&page=${page}`);
@@ -632,6 +646,7 @@ export async function collectProvider({ provider, github, state, now, repository
     for (const record of values) {
       ensure(DEPLOY.test(record.id ?? '') && instant(record.created_at, now), 'provider-discovery-identity');
       discoveryAnchorId ??= record.id;
+      if (record.id === baseline.id) baselineFound = true;
       if (record.id === state.discoveryAnchorId) anchorFound = true;
       const created = millis(record.created_at);
       if (created > lastCreated) ordered = false;
@@ -640,12 +655,16 @@ export async function collectProvider({ provider, github, state, now, repository
       rows.set(record.id, record);
     }
     if (values.length < 100) { exhausted = true; break; }
+    // Bootstrap needs the complete unresolved window, not the site's lifetime
+    // history. The current published deploy is the recovery baseline; anything
+    // older is already superseded by that verified publication.
+    if (bootstrap && baselineFound && ordered) { exhausted = true; break; }
     // Netlify returns newest-created deployments first. Validate that ordering
     // through the retained anchor and ten-minute overlap; observed disorder
     // disables the early exit and requires API exhaustion instead.
     if (!bootstrap && state.discoveryAnchorId && anchorFound && ordered && lastCreated < cutoff) { exhausted = true; break; }
   }
-  ensure(exhausted && anchorFound, 'provider-discovery-boundary-incomplete');
+  ensure(exhausted && anchorFound && (!bootstrap || baselineFound), 'provider-discovery-boundary-incomplete');
   const pendingIds = new Set(state.pendingDeploys.map((pending) => pending.id));
   for (const pending of state.pendingDeploys) {
     // Re-read retained IDs independently of the discovery window, including
@@ -869,7 +888,8 @@ export async function main(argv = process.argv.slice(2)) {
       if (result.state.publication?.sha === process.env.GITHUB_SHA || result.state.failures.some((e) => e.sha === process.env.GITHUB_SHA)) break;
     }
   }
-  const summary = { outcome: 'complete', mode, source: source ?? null, issueNumber: result?.issueNumber ?? null, requests: github.stats.requests, remaining: github.stats.remaining };
+  const summary = { outcome: 'complete', mode, source: source ?? null, issueNumber: result?.issueNumber ?? null,
+    ...(result?.previewIgnored === true ? { previewIgnored: true } : {}), requests: github.stats.requests, remaining: github.stats.remaining };
   console.log(JSON.stringify(summary));
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n\`\`\`json\n${JSON.stringify(summary)}\n\`\`\`\n`);
   return result;
