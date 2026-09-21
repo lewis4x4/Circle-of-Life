@@ -169,7 +169,12 @@ DO $$ DECLARE f record; admission uuid; fixture_bed uuid:=gen_random_uuid(); roo
  INSERT INTO admission_case_rate_terms(admission_case_id,accommodation_type,quoted_base_rate_cents,created_by) VALUES(admission,'private',10000,f.actor);
  BEGIN PERFORM confirm_admission_arrival_review(admission,f.actor,f.business_today+1); RAISE EXCEPTION 'Future arrival accepted'; EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Choose an actual arrival date, not a future date' THEN RAISE; END IF; END;
  IF EXISTS(SELECT 1 FROM admission_cases WHERE id=admission AND actual_arrival_at IS NOT NULL) THEN RAISE EXCEPTION 'Rejected future arrival changed admission'; END IF;
+ -- This RPC is service-only in production; preserve the validated business
+ -- actor argument while exercising arrival without an end-user JWT.
+ PERFORM set_config('request.jwt.claims','{}',true);
  PERFORM confirm_admission_arrival_review(admission,f.actor,f.business_today);
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
+   'role','authenticated','auth_claim_version',(SELECT auth_claim_version FROM user_profiles WHERE id=f.actor))::text,true);
  IF NOT EXISTS(SELECT 1 FROM residents WHERE id=f.resident2 AND status='active' AND residents.bed_id=fixture_bed) OR NOT EXISTS(SELECT 1 FROM beds b WHERE b.id=fixture_bed AND b.status='occupied' AND b.current_resident_id=f.resident2) THEN RAISE EXCEPTION 'Arrival did not atomically activate census and bed'; END IF;
 END $$;
 

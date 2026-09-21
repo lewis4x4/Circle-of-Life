@@ -15,6 +15,7 @@ export type { ResidencyStatus };
 
 export type ResidentRow = {
   id: string;
+  facilityId?: string | null;
   name: string;
   initials: string;
   room: string;
@@ -123,6 +124,7 @@ export async function fetchResidentsFromSupabase(
 
     return {
       id: resident.id,
+      facilityId: resident.facility_id,
       name: fullName,
       initials,
       room: room?.room_number ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}` : RESIDENT_NO_BED_COPY,

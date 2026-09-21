@@ -13,6 +13,7 @@ import {
   AdminOperationalListPanel,
 } from "@/components/common/admin-list-patterns";
 import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
+import { ChangeBedAction } from "@/components/residents/ChangeBedAction";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Select,
@@ -601,6 +602,8 @@ export function AdminResidentsPageClient({
     setSelectedIds(new Set(flatRowsForBulk.map((r) => r.id)));
   };
 
+  const residentToMove = selectedIds.size === 1 ? flatRowsForBulk.find((row) => selectedIds.has(row.id)) : null;
+
   const exportSelectedCsv = () => {
     const chosen = flatRowsForBulk.filter((r) => selectedIds.has(r.id));
     if (chosen.length === 0) return;
@@ -1072,6 +1075,18 @@ export function AdminResidentsPageClient({
               <strong className="tabular-nums">{selectedIds.size}</strong> resident{selectedIds.size === 1 ? "" : "s"} selected
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
+              {residentToMove?.facilityId ? (
+                <ChangeBedAction
+                  key={residentToMove.id}
+                  residentId={residentToMove.id}
+                  residentName={residentToMove.name}
+                  facilityId={residentToMove.facilityId}
+                  currentBedLabel={residentToMove.room}
+                  onDone={() => { setSelectedIds(new Set()); void loadResidents(); }}
+                />
+              ) : selectedIds.size > 1 ? (
+                <span className="text-xs text-muted-foreground">Select one resident to change beds</span>
+              ) : null}
               <Button type="button" variant="outline" size="sm" className="h-8 text-[12px]" onClick={exportSelectedCsv}>
                 Export selected (CSV)
               </Button>

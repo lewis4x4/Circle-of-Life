@@ -509,7 +509,7 @@ RESET ROLE;
 
 -- A half-undone offboard: employment ended, sign-in restored.
 UPDATE user_profiles SET is_active=TRUE WHERE id=(SELECT shared_auth_user FROM fx);
--- A resident holding no bed, and then two residents on one bed.
+-- A resident holding no bed, then a conflicting assignment attempt.
 UPDATE residents SET bed_id=NULL WHERE id=(SELECT res_b FROM fx);
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE h record; BEGIN
@@ -520,12 +520,18 @@ DO $$ DECLARE h record; BEGIN
     RAISE EXCEPTION 'inactive staff still able to sign in: expected 2, got %', h.staff_inactive_can_still_sign_in; END IF;
 END $$;
 RESET ROLE;
-UPDATE residents SET bed_id=(SELECT bed_match FROM fx) WHERE id=(SELECT res_b FROM fx);
+DO $$ BEGIN
+  BEGIN
+    UPDATE residents SET bed_id=(SELECT bed_match FROM fx) WHERE id=(SELECT res_b FROM fx);
+    RAISE EXCEPTION 'two live residents were assigned to one bed';
+  EXCEPTION WHEN unique_violation THEN NULL;
+  END;
+END $$;
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE h record; BEGIN
   SELECT * INTO h FROM facility_data_health((SELECT fac FROM fx));
-  IF h.beds_with_two_residents <> 1 THEN
-    RAISE EXCEPTION 'beds with two residents: expected 1, got %', h.beds_with_two_residents; END IF;
+  IF h.beds_with_two_residents <> 0 OR h.residents_holding_no_bed <> 1 THEN
+    RAISE EXCEPTION 'rejected duplicate assignment changed Data Health: duplicate %, unassigned %', h.beds_with_two_residents,h.residents_holding_no_bed; END IF;
 END $$;
 RESET ROLE;
 

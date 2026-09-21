@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Brain, FileText, NotebookPen, Stethoscope, User } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
@@ -18,6 +18,7 @@ import { ResidentDetailTabStrip, type ResidentDetailHrefConfig } from "@/compone
 import { ResidentPresenceControl } from "@/components/residents/ResidentPresenceControl";
 import { HoldDeclineReturnButton } from "@/components/residents/HoldDeclineReturnButton";
 import { RecordDischargeAction } from "@/components/residents/RecordDischargeAction";
+import { ChangeBedAction } from "@/components/residents/ChangeBedAction";
 import { MonitoringOrderAction } from "@/components/rounding/MonitoringOrderAction";
 import { ResidentMonitoringOrderBand } from "@/components/rounding/ResidentMonitoringOrderBand";
 import { ResidentIntakeLinks } from "@/components/resident-intake";
@@ -284,6 +285,7 @@ export function ResidentDetailOverviewClient({
   initialFacilityId,
 }: ResidentDetailOverviewClientProps) {
   const params = useParams();
+  const searchParams = useSearchParams();
   const rawId = params?.id;
   const residentId = typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : "";
 
@@ -512,6 +514,15 @@ export function ResidentDetailOverviewClient({
               <>
                 <ResidentPresenceControl residentId={detail.id} status={detail.status} onChanged={onAfterLog} />
                 <HoldDeclineReturnButton residentId={detail.id} status={detail.status} onDone={onAfterLog} />
+                <ChangeBedAction
+                  key={detail.id}
+                  residentId={detail.id}
+                  residentName={detail.fullName}
+                  facilityId={detail.facilityId}
+                  currentBedLabel={detail.roomLabel}
+                  initiallyOpen={searchParams.get("changeBed") === "1"}
+                  onDone={onAfterLog}
+                />
                 {/* Ending a residency is a lifecycle change, so it is its own
                     confirmed action rather than an option in the presence
                     picker. It is also the event that frees the bed (COL-418). */}
