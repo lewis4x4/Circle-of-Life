@@ -874,19 +874,17 @@ export async function main(argv = process.argv.slice(2)) {
     const adapter = createGithubAdapter({ transport: github, marker: `<!-- haven-netlify-replay:${runId} -->`, validatePublication: async () => true });
     result = mode === 'replay' ? await replayLifecycle({ adapter, runId, now }) : await finalizeReplay({ adapter, runId, outcome: process.env.REPLAY_OUTCOME });
   } else {
-    const passes = process.env.GITHUB_EVENT_NAME === 'push' ? 11 : 1;
-    for (let pass = 0; pass < passes; pass++) {
-      if (pass) await new Promise((resolve) => setTimeout(resolve, 60_000));
-      const provider = createTransport({ token: process.env.NETLIFY_AUTH_TOKEN, provider: 'netlify' });
-      const passGithub = createTransport({ token: process.env.GITHUB_TOKEN, maxRequests: 1000 });
-      const adapter = createGithubAdapter({ transport: passGithub, marker: '<!-- haven-netlify-production-alert -->', validatePublication: async (effect, state) => {
-        const fresh = await collectProvider({ provider, github: passGithub, state, now: new Date().toISOString() });
-        return fresh.site.published_deploy?.id === effect.deployId && fresh.deploys.every((d) => d.kind !== 'invalid' && (d.kind !== 'failure' || state.seenFailureIds.includes(d.id) || state.historicalExcludedIds.includes(d.id))) && fresh.deploys.some((d) => d.kind === 'published' && d.id === effect.deployId);
-      } });
-      result = await observeOnce({ provider, github: passGithub, adapter, now: new Date().toISOString() });
-      github.stats.requests += passGithub.stats.requests;
-      if (result.state.publication?.sha === process.env.GITHUB_SHA || result.state.failures.some((e) => e.sha === process.env.GITHUB_SHA)) break;
-    }
+    // A main push gets one immediate observation. The five-minute schedule owns
+    // follow-up reconciliation so a single workflow cannot exhaust provider
+    // quota while a normal production build is still pending.
+    const provider = createTransport({ token: process.env.NETLIFY_AUTH_TOKEN, provider: 'netlify' });
+    const passGithub = createTransport({ token: process.env.GITHUB_TOKEN, maxRequests: 1000 });
+    const adapter = createGithubAdapter({ transport: passGithub, marker: '<!-- haven-netlify-production-alert -->', validatePublication: async (effect, state) => {
+      const fresh = await collectProvider({ provider, github: passGithub, state, now: new Date().toISOString() });
+      return fresh.site.published_deploy?.id === effect.deployId && fresh.deploys.every((d) => d.kind !== 'invalid' && (d.kind !== 'failure' || state.seenFailureIds.includes(d.id) || state.historicalExcludedIds.includes(d.id))) && fresh.deploys.some((d) => d.kind === 'published' && d.id === effect.deployId);
+    } });
+    result = await observeOnce({ provider, github: passGithub, adapter, now: new Date().toISOString() });
+    github.stats.requests += passGithub.stats.requests;
   }
   const summary = { outcome: 'complete', mode, source: source ?? null, issueNumber: result?.issueNumber ?? null,
     ...(result?.previewIgnored === true ? { previewIgnored: true } : {}), requests: github.stats.requests, remaining: github.stats.remaining };
