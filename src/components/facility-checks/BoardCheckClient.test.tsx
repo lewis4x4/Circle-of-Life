@@ -94,6 +94,10 @@ afterEach(() => {
 });
 
 describe("recording a result", () => {
+  it("opens the resident bed-change workflow for a different occupant", () => {
+    renderCheck([row({ haven_resident_id: "resident-1", latest_result: "different_occupant", unmarked: false, fix_open: true })]);
+    expect(screen.getByRole("link", { name: /move/i })).toHaveAttribute("href", "/admin/residents/resident-1?changeBed=1");
+  });
   it.each([
     ["Matches board", "match"],
     ["Board empty", "board_empty_haven_occupied"],

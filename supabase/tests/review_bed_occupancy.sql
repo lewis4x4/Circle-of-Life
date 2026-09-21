@@ -79,11 +79,31 @@ DO $$ BEGIN
     RAISE EXCEPTION 'a maintenance bed was overwritten'; END IF;
 END $$;
 
--- An assignment never overrides maintenance or offline.
-UPDATE residents SET deleted_at=NULL, status='active', bed_id=(SELECT bed_maint FROM bo) WHERE id=(SELECT res FROM bo);
+-- New assignments to maintenance are rejected; a subsequent operational
+-- decision on an occupied bed is preserved when its resident leaves.
 DO $$ BEGIN
-  IF (SELECT status FROM beds WHERE id=(SELECT bed_maint FROM bo)) <> 'maintenance'::bed_status THEN
-    RAISE EXCEPTION 'assigning a resident overrode a maintenance bed'; END IF;
+  BEGIN
+    UPDATE residents SET deleted_at=NULL, status='active', bed_id=(SELECT bed_maint FROM bo) WHERE id=(SELECT res FROM bo);
+    RAISE EXCEPTION 'maintenance assignment unexpectedly succeeded';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+END $$;
+UPDATE residents SET deleted_at=NULL,status='active',bed_id=(SELECT bed_a FROM bo) WHERE id=(SELECT res FROM bo);
+UPDATE beds SET status='maintenance' WHERE id=(SELECT bed_a FROM bo);
+UPDATE residents SET status='discharged',bed_id=NULL WHERE id=(SELECT res FROM bo);
+DO $$ BEGIN
+  IF (SELECT status FROM beds WHERE id=(SELECT bed_a FROM bo)) <> 'maintenance'::bed_status
+    OR (SELECT current_resident_id FROM beds WHERE id=(SELECT bed_a FROM bo)) IS NOT NULL THEN
+    RAISE EXCEPTION 'releasing a resident lost maintenance state or retained its pointer'; END IF;
+END $$;
+
+UPDATE residents SET status='active',bed_id=(SELECT bed_b FROM bo) WHERE id=(SELECT res FROM bo);
+UPDATE beds SET status='offline' WHERE id=(SELECT bed_b FROM bo);
+UPDATE residents SET status='discharged',bed_id=NULL WHERE id=(SELECT res FROM bo);
+DO $$ BEGIN
+  IF (SELECT status FROM beds WHERE id=(SELECT bed_b FROM bo)) <> 'offline'::bed_status
+    OR (SELECT current_resident_id FROM beds WHERE id=(SELECT bed_b FROM bo)) IS NOT NULL THEN
+    RAISE EXCEPTION 'releasing a resident lost offline state or retained its pointer'; END IF;
 END $$;
 
 -- No bed anywhere is left occupied with nobody holding it.

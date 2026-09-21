@@ -339,7 +339,7 @@ export function BoardCheckClient({
                   <Link
                     href={
                       row.haven_resident_id
-                        ? `${residentsHref}/${row.haven_resident_id}`
+                        ? `${residentsHref}/${row.haven_resident_id}${action.kind === "move" ? "?changeBed=1" : ""}`
                         : residentsHref
                     }
                     className="inline-block text-sm text-foreground underline underline-offset-4"
