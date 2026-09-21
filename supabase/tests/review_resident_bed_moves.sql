@@ -237,6 +237,20 @@ BEGIN
    PERFORM change_resident_bed((SELECT resident FROM bm),(SELECT id FROM bm_beds WHERE label='target'),(SELECT id FROM bm_beds WHERE label='empty'));
  END LOOP;
 END $$;
+-- COL-508: the refusal above is about the disagreement, not the bed. Once an
+-- orphaned pointer is cleared the same bed accepts a move, so the repair
+-- migration restores capacity without weakening any check.
+RESET ROLE;
+SELECT set_config('request.jwt.claims','{}',true);
+UPDATE beds SET current_resident_id=NULL WHERE id=(SELECT id FROM bm_beds WHERE label='pointer');
+SELECT pg_temp.bm_login('owner');
+SELECT change_resident_bed((SELECT resident FROM bm),(SELECT id FROM bm_beds WHERE label='pointer'),(SELECT id FROM bm_beds WHERE label='target'));
+SELECT pg_temp.bm_assert((SELECT status='occupied' AND current_resident_id=(SELECT resident FROM bm)
+  FROM beds WHERE id=(SELECT id FROM bm_beds WHERE label='pointer')),'repaired bed refused an otherwise valid move');
+SELECT pg_temp.bm_assert((SELECT status='available' AND current_resident_id IS NULL
+  FROM beds WHERE id=(SELECT id FROM bm_beds WHERE label='target')),'move off the previous bed did not release it');
+SELECT change_resident_bed((SELECT resident FROM bm),(SELECT id FROM bm_beds WHERE label='target'),(SELECT id FROM bm_beds WHERE label='pointer'));
+
 SELECT pg_temp.bm_assert(NOT has_function_privilege('anon','public.change_resident_bed(uuid,uuid,uuid)','EXECUTE')
   AND NOT has_function_privilege('service_role','public.change_resident_bed(uuid,uuid,uuid)','EXECUTE')
   AND has_function_privilege('authenticated','public.change_resident_bed(uuid,uuid,uuid)','EXECUTE'),'RPC grants changed');
