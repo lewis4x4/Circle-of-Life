@@ -9,6 +9,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { FACILITIES } from "@/lib/data/facilities-data";
+import { PUBLIC_TOUR_TIMES, type PublicReferral } from "@/lib/referrals/public-referral";
+import { usePublicReferral } from "@/lib/referrals/use-public-referral";
 
 interface TourSchedulerModalProps {
   isOpen: boolean;
@@ -25,21 +27,25 @@ export function TourSchedulerModal({
     defaultFacilityId || FACILITIES[0].id
   );
   const [tourDate, setTourDate] = useState<string>("");
-  const [tourTime, setTourTime] = useState<string>("11:30 AM (Lunch Included)");
+  const [tourTime, setTourTime] = useState<string>(PUBLIC_TOUR_TIMES[1]);
   const [lunchOption, setLunchOption] = useState<string>("yes-2");
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const { submit, pending, error } = usePublicReferral();
 
   if (!isOpen) return null;
 
   const targetFacility =
     FACILITIES.find((f) => f.id === selectedFacility) || FACILITIES[0];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (await submit({ kind: "tour", facility: selectedFacility as PublicReferral["facility"], name, phone, email,
+      tourDate, tourTime: tourTime as typeof PUBLIC_TOUR_TIMES[number], lunchOption: lunchOption as "yes-2" | "coffee" | "tour-only" })) {
+      setSubmitted(true);
+    }
   };
 
   const handleReset = () => {
@@ -53,13 +59,16 @@ export function TourSchedulerModal({
         {/* Close Button */}
         <button
           onClick={onClose}
+          aria-label="Close tour request"
+          disabled={pending}
           className="absolute top-5 right-5 p-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
         {!submitted ? (
-          <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
+          <form onSubmit={handleSubmit} className="p-6 sm:p-8">
+            <fieldset disabled={pending} className="space-y-6">
             {/* Header */}
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#c86d51]/10 text-[#c86d51] text-xs font-bold uppercase tracking-wider mb-2">
@@ -67,7 +76,7 @@ export function TourSchedulerModal({
                 <span>The VIP Family Tour Experience</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-[#1e2b24] font-serif">
-                Schedule a Private Visit & Chef&apos;s Lunch
+                Request a Private Visit & Chef&apos;s Lunch
                                             </h2>
               <p className="text-xs sm:text-sm text-stone-600 mt-1">
                 Experience a day in the life. Meet our on-site Administrator, explore available private
@@ -113,6 +122,7 @@ export function TourSchedulerModal({
                 </label>
                 <input
                   type="date"
+                  aria-label="Preferred Date"
                   required
                   value={tourDate}
                   onChange={(e) => setTourDate(e.target.value)}
@@ -125,15 +135,12 @@ export function TourSchedulerModal({
                   3. Preferred Time
                 </label>
                 <select
+                  aria-label="Preferred Time"
                   value={tourTime}
                   onChange={(e) => setTourTime(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs bg-stone-50 focus:outline-none focus:ring-2 focus:ring-[#3d5a4c]"
                 >
-                  <option>10:00 AM (Morning Coffee & Porch)</option>
-                  <option>11:30 AM (Lunch with Residents Included)</option>
-                  <option>02:00 PM (Afternoon Activities & Tea)</option>
-                  <option>04:30 PM (Evening Tour)</option>
-                  <option>Saturday 11:00 AM (Weekend Family Tour)</option>
+                  {PUBLIC_TOUR_TIMES.map((time) => <option key={time}>{time}</option>)}
                 </select>
               </div>
             </div>
@@ -187,6 +194,8 @@ export function TourSchedulerModal({
                 <label className="text-xs font-bold text-stone-600 block mb-1">Your Full Name</label>
                 <input
                   type="text"
+                  aria-label="Your Full Name"
+                  maxLength={160}
                   required
                   placeholder="Sarah Thornton"
                   value={name}
@@ -199,6 +208,8 @@ export function TourSchedulerModal({
                 <label className="text-xs font-bold text-stone-600 block mb-1">Mobile Phone (for SMS)</label>
                 <input
                   type="tel"
+                  aria-label="Mobile Phone"
+                  maxLength={40}
                   required
                   placeholder="(386) 555-0199"
                   value={phone}
@@ -211,6 +222,8 @@ export function TourSchedulerModal({
                 <label className="text-xs font-bold text-stone-600 block mb-1">Email Address</label>
                 <input
                   type="email"
+                  aria-label="Email Address"
+                  maxLength={254}
                   required
                   placeholder="sarah@example.com"
                   value={email}
@@ -221,13 +234,16 @@ export function TourSchedulerModal({
             </div>
 
             {/* Submit CTA */}
+            {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
             <button
               type="submit"
+              disabled={pending}
               className="w-full py-4 rounded-2xl bg-[#c86d51] hover:bg-[#b55e43] text-white font-bold text-sm shadow-xl shadow-[#c86d51]/30 transition-all flex items-center justify-center gap-2"
             >
               <Calendar className="w-4 h-4 text-amber-200" />
-              <span>Confirm VIP Tour & Complimentary Lunch</span>
+              <span>{pending ? "Sending Tour Request…" : "Request Tour & Complimentary Lunch"}</span>
             </button>
+            </fieldset>
           </form>
         ) : (
           /* Confirmation Success Screen */
@@ -238,14 +254,14 @@ export function TourSchedulerModal({
 
             <div>
               <div className="text-xs font-bold uppercase tracking-wider text-[#3d5a4c]">
-                Tour Confirmed with Southern Hospitality
+                Tour Request Received
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-[#1e2b24] font-serif mt-1">
-                We Can’t Wait to Welcome You, {name || "Friend"}!
+                Thank You, {name || "Friend"}!
               </h2>
               <p className="text-sm text-stone-600 mt-2 max-w-lg mx-auto leading-relaxed">
-                Your VIP Visit to <strong className="text-[#1e2b24]">{targetFacility.name}</strong> is
-                scheduled for <strong className="text-[#1e2b24]">{tourDate || "this week"}</strong> at{" "}
+                You requested a visit to <strong className="text-[#1e2b24]">{targetFacility.name}</strong> for
+                <strong className="text-[#1e2b24]"> {tourDate}</strong> at{" "}
                 <strong className="text-[#1e2b24]">{tourTime}</strong>.
               </p>
             </div>
@@ -267,7 +283,7 @@ export function TourSchedulerModal({
             </div>
 
             <p className="text-xs text-stone-600">
-              An SMS confirmation with GPS driving directions and the Chef&apos;s daily menu has been sent to your phone.
+              Our team will contact you to confirm availability, the visit time and any lunch arrangements. No tour is booked yet.
                                           </p>
 
             <button

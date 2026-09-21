@@ -456,8 +456,16 @@
       "id": "SUP-001",
       "severity": "P2",
       "title": "Public inquiry and tour forms confirm work that was never sent or saved",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "src/app/api/public/referrals/route.ts",
+        "src/app/contact/page.tsx",
+        "src/components/web/tour-scheduler-modal.tsx",
+        "supabase/migrations/442_public_referral_intake.sql",
+        "supabase/tests/review_public_referral_intake.sql",
+        "docs/remediation/2026-09-review/COL-314-PUBLIC-REFERRAL-INTAKE.md"
+      ],
+      "notes": "Both public forms wait for a durable, audited referral-triage receipt; retries are idempotent, changed uncertain requests fail closed, anonymous writes are server-only and bounded, and tour copy no longer claims booking or SMS delivery. Focused tests, a full Vitest baseline plus isolated retry of unrelated contended failures, typecheck, migration/static gates, and independent code/security review passed. Production migration, deployment, hosted denial/write/readback, post-merge CI, and all provider/staff/customer acceptance remain unclaimed."
     },
     {
       "id": "SUP-002",

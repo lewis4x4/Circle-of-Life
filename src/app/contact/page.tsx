@@ -7,6 +7,8 @@ import { StickyCareConcierge } from "@/components/web/sticky-care-concierge";
 import { Phone, CheckCircle2, Clock } from "lucide-react";
 import { FACILITIES } from "@/lib/data/facilities-data";
 import Image from "next/image";
+import { usePublicReferral } from "@/lib/referrals/use-public-referral";
+import type { PublicReferral } from "@/lib/referrals/public-referral";
 
 export default function ContactPage() {
   const [name, setName] = useState("");
@@ -15,10 +17,13 @@ export default function ContactPage() {
   const [locationPreference, setLocationPreference] = useState(FACILITIES[0].id);
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const { submit, pending, error } = usePublicReferral();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (await submit({ kind: "inquiry", facility: locationPreference as PublicReferral["facility"], name, phone, email, message })) {
+      setSubmitted(true);
+    }
   };
 
   return (
@@ -100,11 +105,12 @@ export default function ContactPage() {
             {/* Right: Message Form (7 cols) */}
             <div className="lg:col-span-7 bg-white rounded-3xl p-8 sm:p-12 border-2 border-stone-200 shadow-xl">
               {!submitted ? (
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit}>
+                  <fieldset disabled={pending} className="space-y-6">
                   <div>
                     <h2 className="text-2xl sm:text-3xl font-bold text-[#1C2822] font-serif">Send Us a Gentle Note</h2>
                     <p className="text-xs sm:text-sm text-stone-500 mt-1">
-                      A local administrator will review your message and reach out with compassion within 2 hours.
+                      Send your request to our admissions team for review and follow-up.
                     </p>
                   </div>
 
@@ -113,6 +119,8 @@ export default function ContactPage() {
                       <label className="text-xs font-bold text-stone-700 block mb-1.5">Your Full Name</label>
                       <input
                         type="text"
+                        aria-label="Your Full Name"
+                        maxLength={160}
                         required
                         placeholder="Sarah Thornton"
                         value={name}
@@ -125,6 +133,8 @@ export default function ContactPage() {
                       <label className="text-xs font-bold text-stone-700 block mb-1.5">Phone Number</label>
                       <input
                         type="tel"
+                        aria-label="Phone Number"
+                        maxLength={40}
                         required
                         placeholder="(386) 555-0199"
                         value={phone}
@@ -139,6 +149,8 @@ export default function ContactPage() {
                       <label className="text-xs font-bold text-stone-700 block mb-1.5">Email Address</label>
                       <input
                         type="email"
+                        aria-label="Email Address"
+                        maxLength={254}
                         required
                         placeholder="sarah@example.com"
                         value={email}
@@ -150,6 +162,7 @@ export default function ContactPage() {
                     <div>
                       <label className="text-xs font-bold text-stone-700 block mb-1.5">Preferred Community</label>
                       <select
+                        aria-label="Preferred Community"
                         value={locationPreference}
                         onChange={(e) => setLocationPreference(e.target.value)}
                         className="w-full px-4 py-3 rounded-xl border border-stone-300 text-xs bg-[#FAF7F2] focus:outline-none focus:ring-2 focus:ring-[#C85A32]"
@@ -166,6 +179,8 @@ export default function ContactPage() {
                   <div>
                     <label className="text-xs font-bold text-stone-700 block mb-1.5">How can we help your family?</label>
                     <textarea
+                      aria-label="How can we help your family?"
+                      maxLength={4000}
                       rows={4}
                       required
                       placeholder="Tell us about mom or dad's current situation, any medication needs, or preferred timeline..."
@@ -175,12 +190,15 @@ export default function ContactPage() {
                     />
                   </div>
 
+                  {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
                   <button
                     type="submit"
+                    disabled={pending}
                     className="w-full py-4.5 rounded-2xl bg-gradient-to-r from-[#C85A32] to-[#B34E28] text-white font-bold text-sm shadow-xl shadow-[#C85A32]/30 hover:scale-[1.01] transition-all"
                   >
-                    Send Confidential Inquiry
+                    {pending ? "Sending Inquiry…" : "Send Confidential Inquiry"}
                   </button>
+                  </fieldset>
                 </form>
               ) : (
                 <div className="py-16 text-center space-y-4 animate-in fade-in duration-200">
@@ -189,7 +207,7 @@ export default function ContactPage() {
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-[#1C2822] font-serif">Message Received, {name}!</h3>
                   <p className="text-sm text-stone-600 max-w-md mx-auto leading-relaxed">
-                    Thank you for reaching out. An Executive Director from our team will call you shortly to assist your family.
+                    Your inquiry has been received for review. Our team will follow up using the contact details you provided.
                   </p>
                 </div>
               )}

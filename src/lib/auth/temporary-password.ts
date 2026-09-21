@@ -8,7 +8,7 @@
 
 /** Ambiguous glyphs (I, l, 1, O, 0) are excluded — these get read over the phone. */
 const UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-const LOWER = "abcdefghijkmnopqrstuvwxyz";
+const LOWER = "abcdefghjkmnpqrstuvwxyz";
 const DIGIT = "23456789";
 const SYMBOL = "!@#$%";
 const ALPHABET = `${UPPER}${LOWER}${DIGIT}${SYMBOL}`;
