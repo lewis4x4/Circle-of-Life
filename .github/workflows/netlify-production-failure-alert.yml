@@ -1,0 +1,70 @@
+name: Netlify production failure alert
+
+on:
+  schedule:
+    - cron: '2-57/5 * * * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Observe the production site or run an isolated synthetic lifecycle
+        type: choice
+        required: true
+        default: observe
+        options: [observe, replay]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  observe:
+    name: Observe production
+    if: github.repository == 'lewis4x4/Circle-of-Life' && github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'observe')
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ github.event_name == 'push' && 12 || 5 }}
+    concurrency:
+      group: netlify-production-observer
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Observe production and reconcile assigned incident
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: node scripts/ci/netlify-production-failure-alert.mjs observe
+
+  replay:
+    name: Synthetic lifecycle replay
+    if: github.repository == 'lewis4x4/Circle-of-Life' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.mode == 'replay'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: netlify-replay-${{ github.run_id }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exercise synthetic issue lifecycle
+        id: replay
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/netlify-production-failure-alert.mjs replay
+      - name: Finalize only this synthetic replay
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPLAY_OUTCOME: ${{ steps.replay.outcome }}
+        run: node scripts/ci/netlify-production-failure-alert.mjs finalize-replay

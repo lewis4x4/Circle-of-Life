@@ -164,14 +164,75 @@ test("successful PR gates retain exact merge-tree proof for conditional closeout
 test("failed main CI opens one escalating human-visible alert and later success resolves it", () => {
   const workflow = readFileSync(path.join(root, ".github/workflows/main-ci-failure-alert.yml"), "utf8");
   assert.match(workflow, /workflow_run:/);
-  assert.match(workflow, /workflows: \["CI — segment gates"\]/);
-  assert.match(workflow, /head_branch == 'main'/);
+  assert.match(workflow, /CI — segment gates/);
+  assert.match(workflow, /Netlify production failure alert/);
   assert.match(workflow, /issues: write/);
-  assert.match(workflow, /main-ci-failure-count|haven-main-ci-alert-count/);
-  assert.match(workflow, /main-ci-failure-repeated/);
-  assert.match(workflow, /assignees: \[owner\]/);
-  assert.match(workflow, /state: 'closed'/);
-  assert.match(workflow, /if \(!alertConclusions\.has\(run\.conclusion\)\) return/);
+  assert.match(workflow, /actions: read/);
+  assert.match(workflow, /netlify-production-failure-alert\.mjs/);
+  assert.match(workflow, /main-ci/);
+  assert.match(workflow, /observer/);
+  // Routing behavior is tested through the shared module, not an inline script.
+});
+
+test("WF01/WF02: production observer has finite dispatch, five-minute cadence, and bounded push", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/netlify-production-failure-alert.yml"), "utf8");
+  assert.match(workflow, /name: Netlify production failure alert/);
+  assert.match(workflow, /cron: ["']2-57\/5 \* \* \* \*["']/);
+  assert.match(workflow, /push:\s*\n\s+branches: (?:\[main\]|\n\s+- main)/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /type: choice/);
+  assert.match(workflow, /options: (?:\[observe, replay\]|\n\s+- observe\n\s+- replay)/);
+  assert.match(workflow, /github\.repository == 'lewis4x4\/Circle-of-Life'/);
+  assert.match(workflow, /github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /timeout-minutes:.*12/);
+  assert.match(workflow, /timeout-minutes:.*5|\? 12 : 5|&& 12 \|\| 5/);
+  assert.doesNotMatch(workflow, /while true|while :/);
+});
+
+test("WF03/WF04: live and replay jobs isolate credentials, serialization, and finalization", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/netlify-production-failure-alert.yml"), "utf8");
+  assert.match(workflow, /contents: read/);
+  assert.match(workflow, /issues: write/);
+  assert.doesNotMatch(workflow, /write-all|contents: write|pull_request_target/);
+  assert.match(workflow, /cancel-in-progress: false/);
+  assert.match(workflow, /group:.*netlify.*production/);
+  assert.match(workflow, /group:.*replay.*github\.run_id/);
+  assert.match(workflow, /if:.*always\(\)/);
+  assert.match(workflow, /finalize-replay/);
+  const jobs = [...workflow.matchAll(/^  ([a-z][a-z0-9_-]*):\s*\n([\s\S]*?)(?=^  [a-z][a-z0-9_-]*:\s*\n|$(?![\s\S]))/gm)]
+    .map((match) => ({ name: match[1], body: match[2] }));
+  const replay = jobs.find((job) => job.name === "replay");
+  assert.ok(replay, "replay has an independently bounded job");
+  assert.doesNotMatch(replay.body, /NETLIFY_AUTH_TOKEN|secrets\.NETLIFY/);
+  const live = jobs.filter((job) => /NETLIFY_AUTH_TOKEN/.test(job.body));
+  assert.equal(live.length, 1, "only the live observer receives the provider credential");
+  assert.match(live[0].body, /secrets\.NETLIFY_AUTH_TOKEN/);
+  for (const step of workflow.split(/\n\s+- (?:name:|uses:)/)) {
+    if (/run:\s*(?:\||>)/.test(step)) assert.doesNotMatch(step.split(/run:\s*(?:\||>)/)[1], /\$\{\{\s*(?:inputs\.|github\.event\.inputs\.)/);
+  }
+  assert.match(workflow, /ref: (?:main|\$\{\{ github\.sha \}\})/);
+});
+
+test("WF03/WF06: observer-health catch-up runs every five minutes with isolated source writers", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/main-ci-failure-alert.yml"), "utf8");
+  assert.match(workflow, /schedule:/);
+  assert.match(workflow, /cron: ["'][^"']*\/5 \* \* \* \*["']/);
+  assert.match(workflow, /group:.*main-ci/);
+  assert.match(workflow, /group:.*netlify-observer-health/);
+  assert.equal([...workflow.matchAll(/cancel-in-progress: false/g)].length, 2);
+  assert.match(workflow, /github\.repository == 'lewis4x4\/Circle-of-Life'/);
+  assert.match(workflow, /ref: main/);
+  assert.doesNotMatch(workflow, /NETLIFY_AUTH_TOKEN/);
+});
+
+test("WF05: always-run required gate invokes production observer behavior regressions", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  const step = workflow.split("      - name: Gate failure regression tests")[1]?.split("      - ")[0];
+  assert.ok(step);
+  assert.match(step, /node --test/);
+  assert.match(step, /scripts\/ci\/netlify-production-failure-alert\.test\.mjs/);
+  assert.match(step, /scripts\/review-gates\.test\.mjs/);
+  assert.doesNotMatch(step, /if:/);
 });
 
 test("missing or invalid classifier outputs cannot silently skip sensitive gates", () => {
