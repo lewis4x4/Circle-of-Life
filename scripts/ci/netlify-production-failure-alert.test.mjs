@@ -469,6 +469,26 @@ test("review: canonical issues and dedup comments require a trusted author", asy
   await assert.rejects(() => onlySpoof.getIssue(42), /trusted|identity|owner/);
 });
 
+test("review: newly created canonical issue is confirmed by direct read despite list indexing lag", async () => {
+  const marker = "<!-- haven-netlify-production-alert -->";
+  const created = { number: 625, state: "open", user: { login: "github-actions[bot]", type: "Bot" }, body: renderIncident(state()).body, assignees: [], labels: [] };
+  const calls = [];
+  const transport = {
+    pages: async () => [],
+    request: async (path, options = {}) => {
+      calls.push({ path, method: options.method ?? "GET" });
+      if (path.endsWith("/issues") && options.method === "POST") return created;
+      if (path.endsWith("/issues/625")) return created;
+      if (path.includes("/labels/")) return { name: path.split("/").at(-1) };
+      throw new Error(`unexpected request ${path}`);
+    },
+  };
+  const adapter = createGithubAdapter({ transport, repository: REPOSITORY, marker });
+  await adapter.createIssue(renderIncident(state()));
+  assert.equal((await adapter.findIssue()).number, 625);
+  assert.ok(calls.some((call) => call.path.endsWith("/issues/625") && call.method === "GET"));
+});
+
 test("review: PR and fork successes cannot recover either trusted source", () => {
   for (const source of sources) {
     const failed = audit(state(), source, [run(source)]);
