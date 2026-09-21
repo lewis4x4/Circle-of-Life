@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { productionProject } from "./check-deploy-schema.mjs";
+import { ledgerExitCode, reconcile } from "./check-migration-ledger.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const claims = path.join(root, "scripts/check-migration-claims.mjs");
@@ -199,6 +200,75 @@ test("edge deployment can recover after a schema-gated push", () => {
   assert.match(workflow, /full_reconciliation=true/);
   assert.match(workflow, /Verify deployed function inventory/);
   assert.match(workflow, /edge-functions-production-deploy/);
+});
+
+test("migration ledger mismatch blocks an edge deploy and does not guess ambiguous names", () => {
+  const local = [
+    { version: "401", name: "alpha", file: "401_alpha.sql" },
+    { version: "402", name: "beta", file: "402_beta.sql" },
+  ];
+  const applied = reconcile(local, [
+    { version: "401", name: "alpha" },
+    { version: "20260921120000", name: "beta" },
+  ]);
+  assert.equal(ledgerExitCode(applied), 0);
+  assert.deepEqual(applied.unapplied, []);
+  assert.equal(applied.renumbered[0]?.file, "402_beta.sql");
+
+  const missing = reconcile(local, [{ version: "401", name: "alpha" }]);
+  assert.equal(ledgerExitCode(missing), 1);
+  assert.deepEqual(missing.unapplied.map((row) => row.file), ["402_beta.sql"]);
+
+  const ambiguous = reconcile(
+    [{ version: "500", name: "same", file: "500_same.sql" }],
+    [{ version: "1", name: "same" }, { version: "2", name: "same" }],
+  );
+  assert.equal(ledgerExitCode(ambiguous), 2);
+  assert.equal(ambiguous.ambiguous.length, 1);
+  assert.deepEqual(ambiguous.unapplied, []);
+});
+
+test("edge deploy runs the ledger gate before deploy and selects only _shared importers", (t) => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/edge-functions-deploy.yml"), "utf8");
+  const ledgerAt = workflow.indexOf('node scripts/check-migration-ledger.mjs --project "$SUPABASE_PROJECT_REF"');
+  const deployAt = workflow.indexOf("name: Deploy changed functions");
+  const verifyAt = workflow.indexOf("name: Verify deployed function inventory");
+  assert.ok(ledgerAt > 0 && deployAt > ledgerAt && verifyAt > deployAt);
+  const ledgerStep = workflow.slice(workflow.lastIndexOf("- name:", ledgerAt), deployAt);
+  assert.doesNotMatch(ledgerStep, /continue-on-error/);
+  assert.match(workflow, /if \[\[ "\$failures" -gt 0 \]\]; then/);
+  assert.match(workflow, /exit 1/);
+  assert.match(workflow, /!contains\(github\.event\.head_commit\.message, '\[skip deploy\]'\)/);
+  assert.match(workflow, /github\.event_name != 'pull_request'/);
+
+  assert.match(workflow, /if \[\[ "\$shared_changed" == "true" \]\]; then/);
+  const start = workflow.indexOf("find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name _shared");
+  const sortAt = workflow.indexOf("| sort -u", start);
+  assert.ok(start > 0 && sortAt > start);
+  const pipeline = workflow.slice(start, sortAt + "| sort -u".length);
+  assert.match(pipeline, /_shared/);
+
+  const cwd = mkdtempSync(path.join(os.tmpdir(), "haven-edge-select-"));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const functions = path.join(cwd, "supabase/functions");
+  mkdirSync(path.join(functions, "_shared"), { recursive: true });
+  mkdirSync(path.join(functions, "imports-shared"), { recursive: true });
+  mkdirSync(path.join(functions, "slash-shared"), { recursive: true });
+  mkdirSync(path.join(functions, "standalone"), { recursive: true });
+  writeFileSync(path.join(functions, "_shared/util.ts"), "export const n = 1;\n");
+  writeFileSync(path.join(functions, "imports-shared/index.ts"), 'import { n } from "../_shared/util.ts";\n');
+  writeFileSync(path.join(functions, "slash-shared/index.ts"), 'import { n } from "/_shared/util.ts";\n');
+  writeFileSync(path.join(functions, "standalone/index.ts"), "export const local = true;\n");
+
+  const run = spawnSync("bash", ["-c", pipeline], {
+    cwd,
+    encoding: "utf8",
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(
+    run.stdout.split("\n").map((line) => line.trim()).filter(Boolean),
+    ["imports-shared", "slash-shared"],
+  );
 });
 
 test("every deployable edge function declares its gateway JWT policy", () => {

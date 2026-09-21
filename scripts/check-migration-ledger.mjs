@@ -38,6 +38,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 
 // Resolved explicitly rather than from `supabase/.temp/project-ref`: the linked
 // project follows whatever was last rehearsed (it is Haven HFO Staging right
@@ -143,7 +144,7 @@ function localMigrations() {
  * the files applied under a different version, the ambiguous name matches, and
  * the ledger rows no file on this branch accounts for.
  */
-function reconcile(local, rows) {
+export function reconcile(local, rows) {
   const unconsumed = new Map(rows.map((row) => [row.version, row]));
   const unapplied = [];
   const renumbered = [];
@@ -172,6 +173,13 @@ function reconcile(local, rows) {
   return { unapplied, renumbered, ambiguous, untracked: [...unconsumed.values()] };
 }
 
+/** Exit status the production deploy gate uses. Ambiguous matches are not guessed. */
+export function ledgerExitCode({ unapplied, ambiguous }) {
+  if (ambiguous.length > 0) return 2;
+  if (unapplied.length > 0) return 1;
+  return 0;
+}
+
 async function main() {
   const target = resolveTarget(process.argv.slice(2));
   const local = localMigrations();
@@ -180,6 +188,7 @@ async function main() {
 
   const rows = await ledgerRows(target.ref, resolveToken());
   const { unapplied, renumbered, ambiguous, untracked } = reconcile(local, rows);
+  const code = ledgerExitCode({ unapplied, ambiguous });
 
   if (renumbered.length > 0) {
     console.log(
@@ -198,15 +207,15 @@ async function main() {
     console.log("  (expected on a feature branch behind main; investigate on main)");
   }
 
-  if (ambiguous.length > 0) {
+  if (code === 2) {
     console.error(`\n[migrations:ledger] FAIL: ${ambiguous.length} file(s) match more than one ledger row by name:\n`);
     for (const m of ambiguous) {
       console.error(`  ${m.file} — candidates ${m.versions.join(", ")}`);
     }
-    fail("cannot tell applied from unapplied; reconcile these rows by hand", 2);
+    fail("cannot tell applied from unapplied; reconcile these rows by hand", code);
   }
 
-  if (unapplied.length === 0) {
+  if (code === 0) {
     console.log(
       `\n[migrations:ledger] PASS: every migration on this branch is applied to ${target.label}`,
     );
@@ -229,7 +238,9 @@ async function main() {
   console.error(
     "\nThen `NOTIFY pgrst, 'reload schema';` if the API surface changed, and insert the ledger row.",
   );
-  process.exit(1);
+  process.exit(code);
 }
 
-await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}
