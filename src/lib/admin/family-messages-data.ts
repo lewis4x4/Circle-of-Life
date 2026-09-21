@@ -4,6 +4,7 @@ import {
   formatFamilyMessagesResidentLabel,
   formatFamilyMessagesRoomLabel,
 } from "@/lib/admin/family-messages-display-copy";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
 export type StaffMessageThread = {
@@ -294,33 +295,49 @@ export async function fetchStaffMessagesForResident(
   return { ok: true, messages, residentName: rn };
 }
 
+const RESIDENT_LEFT_FACILITY_ERROR =
+  "This resident is not an active resident of the selected facility. The note was not posted.";
+
 export async function postStaffMessage(
   supabase: SupabaseClient<Database>,
   residentId: string,
   body: string,
   deliveryMethod: FamilyDeliveryMethod,
+  facilityId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const trimmed = body.trim();
   if (!trimmed) return { ok: false, error: "Message cannot be empty." };
   if (trimmed.length > 8000) return { ok: false, error: "Message is too long (max 8000 characters)." };
+  if (!isValidFacilityIdForQuery(facilityId)) {
+    return { ok: false, error: "Select a facility before posting this note." };
+  }
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not authenticated." };
 
   const { data: res, error: resErr } = await supabase
     .from("residents")
-    .select("facility_id, organization_id")
+    .select("facility_id, organization_id, status")
     .eq("id", residentId)
+    .eq("facility_id", facilityId)
+    .eq("status", "active")
     .is("deleted_at", null)
     .maybeSingle();
 
   if (resErr) return { ok: false, error: resErr.message };
-  if (!res) return { ok: false, error: "Resident not found." };
-  const r = res as unknown as { facility_id: string; organization_id: string };
+  const resident = res as { facility_id: string; organization_id: string; status: string } | null;
+  if (
+    !resident ||
+    resident.facility_id !== facilityId ||
+    resident.status !== "active" ||
+    !resident.organization_id
+  ) {
+    return { ok: false, error: RESIDENT_LEFT_FACILITY_ERROR };
+  }
 
   const { error: insErr } = await supabase.from("family_portal_messages").insert({
-    organization_id: r.organization_id,
-    facility_id: r.facility_id,
+    organization_id: resident.organization_id,
+    facility_id: resident.facility_id,
     resident_id: residentId,
     author_user_id: user.id,
     author_kind: "staff" as const,

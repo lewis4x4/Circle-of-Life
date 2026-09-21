@@ -160,8 +160,18 @@
       "id": "FL-003",
       "severity": "P1",
       "title": "A family bulletin draft can follow the operator to a different resident",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "src/lib/admin/family-bulletin-draft.ts",
+        "src/lib/admin/family-bulletin-draft.test.ts",
+        "src/lib/admin/family-messages-data.ts",
+        "src/lib/admin/family-messages-data.post.test.ts",
+        "src/app/(admin)/admin/family-messages/page.tsx",
+        "src/app/(admin)/admin/family-messages/page.test.tsx",
+        "src/components/family-portal/StaffFamilyBulletinSection.tsx",
+        "src/components/family-portal/StaffFamilyNoteComposer.tsx"
+      ],
+      "notes": "Drafts are stored per resident id. Switching residents restores that draft or starts empty, and the recipient is named beside Post. Opening another resident clears the previous name and notes immediately; a failed load does not leave the previous resident's notes on screen. Submission re-reads the active resident in the facility selected at post time before insert. A denied read or failed insert keeps the draft. No migration. Linear COL-310 stays blocked by COL-302 and is not Done. Hosted staff acceptance is not claimed."
     },
     {
       "id": "FL-004",
