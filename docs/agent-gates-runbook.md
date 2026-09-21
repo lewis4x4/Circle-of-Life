@@ -80,9 +80,10 @@ to the constructed deploy-log URL. Recognized exact provider stage signatures
 map to fixed categories. Commit subjects are constrained, length-bounded, and
 withheld when credential-like; commit bodies are not retained.
 
-Bootstrap enumerates deploy metadata to exhaustion to find older unfinished
-attempts, but verifies commits only for relevant pending/failure/publication
-records. Later scans use a retained deploy anchor and ten-minute overlap, with
+Bootstrap enumerates the complete unresolved window through the currently
+published production deploy, which is the verified recovery baseline; it does
+not walk recovered lifetime history and consume the provider rate limit. Later
+scans use a retained deploy anchor and ten-minute overlap, with
 direct reads for every unresolved ID. The adapter checks newest-created order
 through the anchor; observed disorder disables its early pagination exit.
 Historical completed SHAs and acknowledged failures are not reverified on each

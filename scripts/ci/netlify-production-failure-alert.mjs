@@ -625,6 +625,7 @@ export async function collectProvider({ provider, github, state, now, repository
   let lastCreated = Infinity;
   let ordered = true;
   let exhausted = false;
+  let baselineFound = false;
   let discoveryAnchorId;
   for (let page = 1; page <= 100; page++) {
     const values = await provider.request(`/sites/${SITE_ID}/deploys?production=true&branch=main&per_page=100&page=${page}`);
@@ -632,6 +633,7 @@ export async function collectProvider({ provider, github, state, now, repository
     for (const record of values) {
       ensure(DEPLOY.test(record.id ?? '') && instant(record.created_at, now), 'provider-discovery-identity');
       discoveryAnchorId ??= record.id;
+      if (record.id === baseline.id) baselineFound = true;
       if (record.id === state.discoveryAnchorId) anchorFound = true;
       const created = millis(record.created_at);
       if (created > lastCreated) ordered = false;
@@ -640,12 +642,16 @@ export async function collectProvider({ provider, github, state, now, repository
       rows.set(record.id, record);
     }
     if (values.length < 100) { exhausted = true; break; }
+    // Bootstrap needs the complete unresolved window, not the site's lifetime
+    // history. The current published deploy is the recovery baseline; anything
+    // older is already superseded by that verified publication.
+    if (bootstrap && baselineFound && ordered) { exhausted = true; break; }
     // Netlify returns newest-created deployments first. Validate that ordering
     // through the retained anchor and ten-minute overlap; observed disorder
     // disables the early exit and requires API exhaustion instead.
     if (!bootstrap && state.discoveryAnchorId && anchorFound && ordered && lastCreated < cutoff) { exhausted = true; break; }
   }
-  ensure(exhausted && anchorFound, 'provider-discovery-boundary-incomplete');
+  ensure(exhausted && anchorFound && (!bootstrap || baselineFound), 'provider-discovery-boundary-incomplete');
   const pendingIds = new Set(state.pendingDeploys.map((pending) => pending.id));
   for (const pending of state.pendingDeploys) {
     // Re-read retained IDs independently of the discovery window, including
