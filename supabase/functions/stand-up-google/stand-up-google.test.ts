@@ -149,6 +149,7 @@ function fixture(
     formula?: boolean;
     week?: string;
     missingCell?: string;
+    duplicateOutreach?: string;
   } = {},
 ): Uint8Array {
   const week = options.week ?? "2026-09-14";
@@ -194,6 +195,15 @@ function fixture(
       }</row>`,
     );
   });
+  if (options.duplicateOutreach !== undefined) {
+    rows.push(
+      `<row r="19"><c r="A19" t="inlineStr"><is><t>outreach &amp; engagements (providers, facilities, events)</t></is></c>${
+        "BCDEF".split("").map((column) =>
+          `<c r="${column}19"><v>${options.duplicateOutreach}</v></c>`
+        ).join("")
+      }</row>`,
+    );
+  }
   const ns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
   return storedZip({
     "xl/workbook.xml":
@@ -225,6 +235,58 @@ Deno.test("XLSX parser maps the reviewed five-facility schema and cents exactly"
   assert(
     parsed.records[0].values.monthly_rent_roll_cents === 10025,
     "rent must convert to cents",
+  );
+});
+
+Deno.test("identical duplicate inputs stay synchronized while conflicting duplicates stop", async () => {
+  const raw = fixture({ duplicateOutreach: "0" });
+  const parsed = await parseWorkbook(
+    raw,
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  equals(
+    parsed.issues,
+    [],
+    "identical duplicate input rows are one reported value",
+  );
+  const identity = `${map.Homewood}:2026-09-14`;
+  equals(parsed.locations[identity].duplicateCells?.outreach_engagements, [
+    "B19",
+  ], "duplicate cell is retained for two-way writes");
+  const values = {
+    ...parsed.records.find((record) => record.facility_id === map.Homewood)!
+      .values,
+    outreach_engagements: 2,
+  };
+  const patched = await patchWorkbook(raw, parsed, { [identity]: values });
+  const readback = await parseWorkbook(
+    patched,
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  equals(readback.issues, [], "both identical cells are patched together");
+  assert(
+    readback.records.find((record) => record.facility_id === map.Homewood)
+      ?.values.outreach_engagements === 2,
+    "patched duplicate value reads back exactly",
+  );
+
+  const conflict = await parseWorkbook(
+    fixture({ duplicateOutreach: "1" }),
+    map,
+    "approved-file",
+    "Stand Up.xlsx",
+    ["2026-09-14"],
+  );
+  assert(
+    conflict.issues.length === 5 &&
+      conflict.issues.every((issue) => issue.code === "duplicate_label"),
+    "conflicting duplicate inputs remain blocked for all facilities",
   );
 });
 

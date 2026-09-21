@@ -707,7 +707,12 @@ export type ParsedWorkbook = {
   issues: WorkbookIssue[];
   locations: Record<
     string,
-    { sheet: string; path: string; cells: Record<string, string> }
+    {
+      sheet: string;
+      path: string;
+      cells: Record<string, string>;
+      duplicateCells?: Partial<Record<StandUpKey, string[]>>;
+    }
   >;
 };
 
@@ -799,6 +804,7 @@ export async function parseWorkbook(
           KEYS.map((key) => [key, null]),
         ) as StandUpValues;
         const mapped: Record<string, string> = {};
+        const duplicateCells: Partial<Record<StandUpKey, string[]>> = {};
         const localIssues: WorkbookIssue[] = [];
         let populated = false;
         for (const [row, label] of labels) {
@@ -811,12 +817,10 @@ export async function parseWorkbook(
             ? LABELS.get(label)
             : undefined;
           if (key) {
-            if (key in mapped) {
-              localIssues.push({ code: "duplicate_label", message: label });
-            }
-            mapped[key] = cell?.address ?? address(column, row);
+            const cellAddress = cell?.address ?? address(column, row);
+            let parsedValue: number | null;
             try {
-              values[key] = cellNumber(cell, key);
+              parsedValue = cellNumber(cell, key);
             } catch (error) {
               localIssues.push({
                 code: "invalid_input",
@@ -826,6 +830,21 @@ export async function parseWorkbook(
                   ? error.message
                   : "Invalid input",
               });
+              if (!(key in mapped)) mapped[key] = cellAddress;
+              continue;
+            }
+            if (key in mapped) {
+              if (values[key] !== parsedValue) {
+                localIssues.push({ code: "duplicate_label", message: label });
+              } else {
+                duplicateCells[key] = [
+                  ...(duplicateCells[key] ?? []),
+                  cellAddress,
+                ];
+              }
+            } else {
+              mapped[key] = cellAddress;
+              values[key] = parsedValue;
             }
           } else if (hasValue) {
             localIssues.push({
@@ -863,6 +882,7 @@ export async function parseWorkbook(
               sheet: sheet.name,
               path: sheet.path,
               cells: mapped,
+              ...(Object.keys(duplicateCells).length ? { duplicateCells } : {}),
             };
           } else if (localIssues.length) delete locations[identity];
           continue;
@@ -911,6 +931,7 @@ export async function parseWorkbook(
           sheet: sheet.name,
           path: sheet.path,
           cells: mapped,
+          ...(Object.keys(duplicateCells).length ? { duplicateCells } : {}),
         };
       }
     }
@@ -1095,11 +1116,13 @@ export async function patchWorkbook(
     let worksheet = changed.get(location.path) ??
       decoder.decode(await zip.read(location.path));
     for (const key of KEYS) {
-      worksheet = patchCell(
-        worksheet,
-        location.cells[key],
-        cellPatchNumber(key, values[key]),
-      );
+      const value = cellPatchNumber(key, values[key]);
+      for (
+        const cellAddress of [
+          location.cells[key],
+          ...(location.duplicateCells?.[key] ?? []),
+        ]
+      ) worksheet = patchCell(worksheet, cellAddress, value);
     }
     changed.set(location.path, worksheet);
   }
