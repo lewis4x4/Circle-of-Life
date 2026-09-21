@@ -97,8 +97,11 @@ try {
     if (!profileResponse || profileResponse.status() !== 200) throw new Error(`${viewport.name} profile route returned ${profileResponse?.status()}`);
     await profilePage.getByRole("heading", { name: "Facility profile" }).waitFor();
     await profilePage.getByText("Loading facility profile…", { exact: true }).waitFor({ state: "hidden", timeout: 60_000 });
-    const profileText = await profilePage.locator("main").innerText();
-    if (!profileText.includes("Source items: 91 · Checklist components: 110") || !profileText.includes("AL-D15: Attendance Calendar is Updated") || !profileText.includes("Unconfirmed timing has no due or overdue judgment")) throw new Error("Daily/Weekly profile coverage is incomplete or overstates unknown timing");
+    await profilePage.getByText("Source items: 91 · Checklist components: 110", { exact: true }).waitFor();
+    await profilePage.getByText(/Unconfirmed timing has no due or overdue judgment/).waitFor();
+    const profileApi = await profilePage.evaluate(async (facility) => { const response = await fetch(`/api/admin/operations/facility-profile?facility_id=${facility}`, { credentials: "same-origin", cache: "no-store" }); return { status: response.status, body: await response.json() }; }, HOMEWOOD);
+    const d15 = profileApi.body.entries?.find((entry) => entry.source_id === "AL-D15");
+    if (profileApi.status !== 200 || profileApi.body.coverage?.source_count !== 91 || profileApi.body.coverage?.component_count !== 110 || d15?.source_text !== "Attendance Calendar is Updated" || d15.components?.[0]?.subject_kind !== null || profileApi.body.summary?.approved_rule_count !== 0) throw new Error("Daily/Weekly profile coverage is incomplete or overstates unknown timing");
     const profileShot = path.join(path.dirname(output), `profile-${viewport.name}.png`);
     await profilePage.screenshot({ path: profileShot, fullPage: true });
     row.profileScreenshot = path.relative(ROOT, profileShot);
