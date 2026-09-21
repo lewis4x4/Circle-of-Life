@@ -49,6 +49,7 @@ const releaseRules = [
   ...financeRules,
   (file) => file.startsWith("supabase/functions/"),
   (file) => file.startsWith(".github/"),
+  (file) => file === ".gitleaksignore",
   (file) => ["AGENTS.md", "CLAUDE.md", "CODEX.md", "docs/agent-gates-runbook.md", "docs/LINEAR-WORKFLOW.md"].includes(file),
   (file) => file.startsWith("netlify/"),
   (file) => file === "netlify.toml",
@@ -64,6 +65,7 @@ const releaseRules = [
 
 const policyOnlyRules = [
   (file) => file.startsWith(".github/workflows/"),
+  (file) => file === ".gitleaksignore",
   (file) => file.startsWith("scripts/ci/"),
   (file) => file === "scripts/review-gates.test.mjs",
   (file) => ["AGENTS.md", "CODEX.md", "docs/agent-gates-runbook.md"].includes(file),
