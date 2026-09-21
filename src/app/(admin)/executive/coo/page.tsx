@@ -37,12 +37,14 @@ export default function CooDashboardPage() {
   const { kpis, alerts, facilities, loading, error, refetch } = useExecRoleKpis(selectedFacilityId);
   const facilityNameById = useFacilityNameMap(facilities);
 
-  const scopeLabel = selectedFacilityId
-    ? facilityNameById.get(selectedFacilityId) ?? "the selected facility"
-    : "all facilities in your organization";
+  const facilityName = selectedFacilityId
+    ? facilityNameById.get(selectedFacilityId) ?? null
+    : null;
   const subtitle = selectedFacilityId
-    ? `This facility — COO operations board for ${scopeLabel}, not a portfolio roll-up.`
-    : `COO operations board — ${scopeLabel}, not the enterprise portfolio roll-up.`;
+    ? facilityName
+      ? `This facility — COO operations board for ${facilityName}, not a portfolio roll-up.`
+      : "This facility — COO operations board (facility name not loaded), not a portfolio roll-up."
+    : "COO operations board — all facilities in your organization, not the enterprise portfolio roll-up.";
 
   const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
     authLoading,
