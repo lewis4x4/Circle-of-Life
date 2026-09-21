@@ -10,6 +10,8 @@ test("ordinary application code does not request database or finance replay", ()
   const result = classifyPaths(["src/components/residents/ResidentCard.tsx"]);
   assert.equal(result.databaseSensitive, false);
   assert.equal(result.financeSensitive, false);
+  assert.equal(result.releaseSensitive, false);
+  assert.equal(result.policyOnly, false);
 });
 
 test("application routes retain the separate UI signal without requesting database replay", () => {
@@ -51,10 +53,46 @@ test("every direct finance-suite source requests finance verification", () => {
   }
 });
 
-test("CI policy changes exercise both risk-sensitive gates", () => {
-  const result = classifyPaths([".github/workflows/ci-gates.yml"]);
+test("CI policy changes use the narrow policy lane without weakening release sensitivity", () => {
+  const result = classifyPaths([
+    ".github/workflows/ci-gates.yml",
+    "scripts/ci/release-tree-proof.mjs",
+    "scripts/review-gates.test.mjs",
+    "AGENTS.md",
+    "CODEX.md",
+    "docs/agent-gates-runbook.md",
+  ]);
+  assert.equal(result.databaseSensitive, false);
+  assert.equal(result.financeSensitive, false);
+  assert.equal(result.releaseSensitive, true);
+  assert.equal(result.policyOnly, true);
+});
+
+test("one non-policy file forces the full application lane", () => {
+  const result = classifyPaths([".github/workflows/ci-gates.yml", "src/components/residents/ResidentCard.tsx"]);
+  assert.equal(result.policyOnly, false);
+});
+
+test("database-sensitive workflow policy cannot enter the narrow policy lane", () => {
+  const result = classifyPaths([".github/workflows/ci-nightly.yml"]);
   assert.equal(result.databaseSensitive, true);
-  assert.equal(result.financeSensitive, true);
+  assert.equal(result.policyOnly, false);
+});
+
+test("release-sensitive surfaces always require post-merge CI", () => {
+  for (const file of [
+    "supabase/functions/care-event-dispatcher/index.ts",
+    "src/lib/auth/current-actor.ts",
+    "src/proxy.ts",
+    "scripts/scheduled-jobs/check.mjs",
+    "netlify.toml",
+    "package-lock.json",
+    "public/service-worker.js",
+    "AGENTS.md",
+    "docs/agent-gates-runbook.md",
+  ]) {
+    assert.equal(classifyPaths([file]).releaseSensitive, true, file);
+  }
 });
 
 test("unsafe classification fails closed", () => {
@@ -62,6 +100,8 @@ test("unsafe classification fails closed", () => {
   assert.equal(result.databaseSensitive, true);
   assert.equal(result.financeSensitive, true);
   assert.equal(result.uiSensitive, true);
+  assert.equal(result.releaseSensitive, true);
+  assert.equal(result.policyOnly, false);
 });
 
 test("NUL-safe status parser preserves both sides of renames and copies", () => {

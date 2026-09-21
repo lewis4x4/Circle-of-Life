@@ -17,13 +17,8 @@ const databaseRules = [
   (file) => file === "src/lib/care-events/level-cases.json",
   (file) => file.startsWith("scripts/smart-rounding/") && file.endsWith("-acceptance.sql"),
   (file) => file === "scripts/agent-gates/run-segment-gates.mjs",
-  (file) => file === "scripts/ci/classify-changes.mjs",
-  (file) => file === "scripts/ci/classify-changes.test.mjs",
-  (file) => file === "scripts/review-gates.test.mjs",
-  (file) => file === ".github/workflows/ci-gates.yml",
   (file) => file === ".github/workflows/ci-nightly.yml",
   (file) => file === ".github/workflows/finance-integration.yml",
-  (file) => file === "package.json",
 ];
 
 const financeRules = [
@@ -41,16 +36,37 @@ const financeRules = [
   (file) => file.startsWith("supabase/functions/_shared/billing/"),
   (file) => file.startsWith("supabase/functions/generate-monthly-invoices/"),
   (file) => file.startsWith("supabase/functions/export-audit-log/"),
-  (file) => file === "scripts/ci/classify-changes.mjs",
-  (file) => file === "scripts/ci/classify-changes.test.mjs",
-  (file) => file === "scripts/review-gates.test.mjs",
-  (file) => file === ".github/workflows/ci-gates.yml",
   (file) => file === ".github/workflows/finance-integration.yml",
-  (file) => file === "package.json" || file === "package-lock.json",
+  (file) => file === "package-lock.json",
 ];
 
 const uiRules = [
   (file) => file.startsWith("src/app/"),
+];
+
+const releaseRules = [
+  ...databaseRules,
+  ...financeRules,
+  (file) => file.startsWith("supabase/functions/"),
+  (file) => file.startsWith(".github/"),
+  (file) => ["AGENTS.md", "CLAUDE.md", "CODEX.md", "docs/agent-gates-runbook.md", "docs/LINEAR-WORKFLOW.md"].includes(file),
+  (file) => file.startsWith("netlify/"),
+  (file) => file === "netlify.toml",
+  (file) => file.startsWith("scripts/scheduled-jobs/"),
+  (file) => /^scripts\/(apply-pending|check-deploy|deploy|release|verify-remote)/.test(file),
+  (file) => /(^|[/._-])(auth|authorization|permission|role|rls|current-actor)([/._-]|$)/i.test(file),
+  (file) => /(^|\/)(proxy|middleware)\.[cm]?[jt]sx?$/.test(file),
+  (file) => /(service-worker|workbox|(^|\/)sw\.[cm]?[jt]s$)/i.test(file),
+  (file) => /^(next\.config|package(-lock)?\.json|tsconfig|eslint\.config)/.test(file),
+  (file) => file === "scripts/ci/release-tree-proof.mjs",
+  (file) => file === "scripts/ci/release-tree-proof.test.mjs",
+];
+
+const policyOnlyRules = [
+  (file) => file.startsWith(".github/workflows/"),
+  (file) => file.startsWith("scripts/ci/"),
+  (file) => file === "scripts/review-gates.test.mjs",
+  (file) => ["AGENTS.md", "CODEX.md", "docs/agent-gates-runbook.md"].includes(file),
 ];
 
 function matching(files, rules) {
@@ -63,6 +79,9 @@ export function classifyPaths(files, { forceFull = false, safe = true } = {}) {
   const databasePaths = force ? normalized : matching(normalized, databaseRules);
   const financePaths = force ? normalized : matching(normalized, financeRules);
   const uiPaths = force ? normalized : matching(normalized, uiRules);
+  const releasePaths = force ? normalized : matching(normalized, releaseRules);
+  const policyPaths = force ? [] : matching(normalized, policyOnlyRules);
+  const policyOnly = safe && !force && databasePaths.length === 0 && financePaths.length === 0 && normalized.length > 0 && policyPaths.length === normalized.length;
 
   return {
     safe,
@@ -71,9 +90,13 @@ export function classifyPaths(files, { forceFull = false, safe = true } = {}) {
     databaseSensitive: force || databasePaths.length > 0,
     financeSensitive: force || financePaths.length > 0,
     uiSensitive: force || uiPaths.length > 0,
+    releaseSensitive: force || releasePaths.length > 0,
+    policyOnly,
     databasePaths,
     financePaths,
     uiPaths,
+    releasePaths,
+    policyPaths,
   };
 }
 
@@ -154,9 +177,12 @@ function main() {
   writeOutput("database_sensitive", result.databaseSensitive);
   writeOutput("finance_sensitive", result.financeSensitive);
   writeOutput("ui_sensitive", result.uiSensitive);
+  writeOutput("release_sensitive", result.releaseSensitive);
+  writeOutput("policy_only", result.policyOnly);
   writeOutput("changed_files", JSON.stringify(result.files));
   writeOutput("database_paths", JSON.stringify(result.databasePaths));
   writeOutput("finance_paths", JSON.stringify(result.financePaths));
+  writeOutput("release_paths", JSON.stringify(result.releasePaths));
 
   const summary = process.env.GITHUB_STEP_SUMMARY;
   if (summary) {
@@ -169,6 +195,8 @@ function main() {
         `- Full database replay: ${result.databaseSensitive}`,
         `- Finance-specific suite: ${result.financeSensitive}`,
         `- UI-sensitive: ${result.uiSensitive}`,
+        `- Must await post-merge CI: ${result.releaseSensitive}`,
+        `- Policy-only lane: ${result.policyOnly}`,
         `- Changed files: ${result.files.length}`,
         "",
       ].join("\n"),
