@@ -75,6 +75,7 @@ export function EntityCombobox({
         <PopoverTrigger
           id={id}
           type="button"
+          role="combobox"
           disabled={disabled || loading}
           data-testid={dataTestId}
           aria-required={required}

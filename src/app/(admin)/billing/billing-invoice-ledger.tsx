@@ -1360,6 +1360,14 @@ function BillingInvoiceLedgerInner({
               >
                 Generate invoices
               </Link>
+              {isInvoicesHub ? (
+                <Link
+                  href="/admin/billing/invoices/opening-balance"
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex h-8 items-center px-3 text-[12px]")}
+                >
+                  Enter opening balance
+                </Link>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"

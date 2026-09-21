@@ -17,7 +17,7 @@ export function FormLabel({ className, children, required, ...props }: FormLabel
       {...props}
     >
       {children}
-      {required ? <span className="font-semibold text-destructive"> *</span> : null}
+      {required ? <span aria-hidden="true" className="font-semibold text-destructive"> *</span> : null}
     </Label>
   );
 }

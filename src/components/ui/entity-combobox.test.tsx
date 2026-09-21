@@ -9,7 +9,7 @@ afterEach(cleanup);
 function Picker() {
   const [value, setValue] = useState("");
   return <>
-    <EntityCombobox id="resident" label="Resident" placeholder="Select resident"
+    <EntityCombobox id="resident" label="Resident" placeholder="Select resident" required
       searchPlaceholder="Search residents" value={value} onChange={setValue}
       options={[
         { id: "one", label: "Resident One", keywords: "Resident One" },
@@ -23,7 +23,8 @@ describe("EntityCombobox dismissal", () => {
   it("stays closed after selecting a resident and can reopen", async () => {
     const user = userEvent.setup();
     render(<Picker />);
-    const trigger = screen.getByRole("button", { name: "Resident" });
+    const trigger = screen.getByRole("combobox", { name: "Resident" });
+    expect(trigger).toHaveAttribute("aria-required", "true");
     await user.click(trigger);
     await user.click(await screen.findByRole("option", { name: "Resident Two" }));
     await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
@@ -36,7 +37,7 @@ describe("EntityCombobox dismissal", () => {
   it("supports keyboard opening and selection without reopening on returned focus", async () => {
     const user = userEvent.setup();
     render(<Picker />);
-    const trigger = screen.getByRole("button", { name: "Resident" });
+    const trigger = screen.getByRole("combobox", { name: "Resident" });
     await user.tab();
     expect(trigger).toHaveFocus();
     expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -50,7 +51,7 @@ describe("EntityCombobox dismissal", () => {
   it("stays closed after Escape or an outside click", async () => {
     const user = userEvent.setup();
     render(<Picker />);
-    const trigger = screen.getByRole("button", { name: "Resident" });
+    const trigger = screen.getByRole("combobox", { name: "Resident" });
     await user.click(trigger);
     await screen.findByPlaceholderText("Search residents");
     await user.keyboard("{Escape}");
