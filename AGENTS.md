@@ -29,10 +29,19 @@ After the required focused and repository gates pass, continue through every app
 2. Push the branch, create or update the PR, wait for required checks, and fix failures.
 3. Merge to `main` and complete any repository-defined release promotion.
 4. In the verified production target and repository-defined order, apply pending migrations and deploy changed Edge Functions, jobs, crons, configuration, and application services.
-5. Verify post-merge CI, the exact hosted revision, migration-ledger parity, relevant function versions, health checks, and applicable live smoke tests.
+5. Always verify the exact hosted revision and applicable health/live smoke checks. Verify migration-ledger parity and function/job versions when those surfaces changed. Apply the post-merge CI rule below.
 6. Record commit, PR, CI, migration, function, deployment, and hosted evidence; report staff/provider/clinical/customer acceptance separately.
 
 Do not stop at local completion, a commit, a pushed branch, an open or merged PR, green pre-merge CI, or a deployment that merely started. Routine, recoverable production release operations within the requested scope are standing-authorized. This does not authorize secret disclosure, purchases/payments, external communications, destructive data loss without a recovery path, or claims of human acceptance without dated evidence.
+
+### Post-merge CI rule
+
+- Required PR CI must pass against the current base through the protected `Required CI summary` check.
+- PR CI records the exact tested merge tree in the `release-tree-proof` artifact. After merge, use `node scripts/ci/release-tree-proof.mjs verify --proof <artifact-json> --revision <merged-sha>`.
+- An ordinary application-only delivery may close without waiting for the duplicate post-merge run only when the proof exists, classification was safe and not release-sensitive, the tested and merged Git tree IDs match exactly, production serves the merged revision, applicable hosted smoke checks pass, and there is no open `main-ci-failure` alert.
+- Wait for successful post-merge CI before closeout whenever proof is missing, trees differ, classification is unsafe, or the change touches migrations/schema/RLS/SQL, authentication/authorization, Edge Functions, finance/integrity logic, infrastructure, dependencies/build configuration, scheduled/background work, deployment configuration, or release automation.
+- Post-merge CI always continues asynchronously. `.github/workflows/main-ci-failure-alert.yml` opens or escalates a human-visible GitHub issue on failure and closes it after recovery. A later failure blocks subsequent release claims and requires reopening the related Linear delivery issue when applicable.
+- Do not repeat a full local gate after required CI has passed on the identical tree unless investigating a failure. Poll CI with concise JSON summaries; do not repeatedly stream unchanged `gh run watch` output. Inspect full logs only on failure or meaningful state change.
 
 ## The one rule
 

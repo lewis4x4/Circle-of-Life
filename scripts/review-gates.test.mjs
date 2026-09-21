@@ -82,6 +82,36 @@ test("segment CI runs core gates regardless of the hosted UI toggle", () => {
   assert.doesNotMatch(step, /if:.*HAVEN_UI_GATES_ENABLED/);
 });
 
+test("segment CI installs the checksum-verified scanner instead of relying on Docker luck", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  const install = workflow.split("      - name: Install verified Gitleaks binary")[1]?.split("      - name:")[0];
+  assert.ok(install, "verified Gitleaks install exists");
+  assert.match(install, /gitleaks\/releases\/download\/v8\.30\.1/);
+  assert.match(install, /551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb/);
+  assert.match(install, /sha256sum --check --strict/);
+  assert.match(install, /GITHUB_PATH/);
+});
+
+test("policy-only changes skip unrelated application, database, domain, stress, and browser suites", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  assert.match(workflow, /policy_only: \$\{\{ steps\.risk\.outputs\.policy_only \}\}/);
+  assert.match(workflow, /name: Policy hygiene and secret scan/);
+  assert.match(workflow, /if: needs\.classify\.outputs\.policy_only == 'true'/);
+  for (const name of [
+    "TypeScript and application tests",
+    "Smart Rounding Edge Function tests",
+    "Stand Up regression contracts",
+    "Migrations can apply to a hosted project",
+    "Segment gates (security, lint, migrations, build, stress)",
+    "Install Playwright Chromium",
+    "Smart Rounding component browser regressions",
+  ]) {
+    const step = workflow.split(`      - name: ${name}`)[1]?.split("      - ")[0];
+    assert.ok(step, `${name} exists`);
+    assert.match(step, /if: needs\.classify\.outputs\.policy_only != 'true'/, name);
+  }
+});
+
 test("segment CI has one path-sensitive database replay owner", () => {
   const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
   assert.doesNotMatch(workflow, /run: npm run migrations:verify:pg/);
@@ -118,13 +148,38 @@ test("CI exposes an always-present required summary and retains nightly database
   assert.doesNotMatch(nightly, /SKIP_PG_VERIFY: "1"/);
 });
 
+test("successful PR gates retain exact merge-tree proof for conditional closeout", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
+  assert.match(workflow, /release_sensitive: \$\{\{ steps\.risk\.outputs\.release_sensitive \}\}/);
+  assert.match(workflow, /name: Record tested merge tree/);
+  assert.match(workflow, /node scripts\/ci\/release-tree-proof\.mjs record/);
+  assert.match(workflow, /name: Upload tested merge tree proof/);
+  assert.match(workflow, /name: release-tree-proof/);
+  assert.match(workflow, /retention-days: 30/);
+  assert.match(workflow, /RELEASE_SENSITIVE:.*release_sensitive/);
+  assert.match(workflow, /POLICY_ONLY:.*policy_only/);
+});
+
+test("failed main CI opens one escalating human-visible alert and later success resolves it", () => {
+  const workflow = readFileSync(path.join(root, ".github/workflows/main-ci-failure-alert.yml"), "utf8");
+  assert.match(workflow, /workflow_run:/);
+  assert.match(workflow, /workflows: \["CI — segment gates"\]/);
+  assert.match(workflow, /head_branch == 'main'/);
+  assert.match(workflow, /issues: write/);
+  assert.match(workflow, /main-ci-failure-count|haven-main-ci-alert-count/);
+  assert.match(workflow, /main-ci-failure-repeated/);
+  assert.match(workflow, /assignees: \[owner\]/);
+  assert.match(workflow, /state: 'closed'/);
+  assert.match(workflow, /if \(!alertConclusions\.has\(run\.conclusion\)\) return/);
+});
+
 test("missing or invalid classifier outputs cannot silently skip sensitive gates", () => {
   const workflow = readFileSync(path.join(root, ".github/workflows/ci-gates.yml"), "utf8");
   assert.match(workflow, /classification_safe: \$\{\{ steps\.risk\.outputs\.classification_safe \}\}/);
   assert.match(workflow, /REQUIRE_PG_VERIFY:.*database_sensitive != 'false'/);
   assert.match(workflow, /finance_sensitive != 'false'/);
   assert.match(workflow, /CLASSIFICATION_SAFE:.*classification_safe/);
-  assert.match(workflow, /for value in "\$CLASSIFICATION_SAFE" "\$DATABASE_SENSITIVE" "\$FINANCE_SENSITIVE" "\$UI_SENSITIVE"/);
+  assert.match(workflow, /for value in "\$CLASSIFICATION_SAFE" "\$DATABASE_SENSITIVE" "\$FINANCE_SENSITIVE" "\$UI_SENSITIVE" "\$RELEASE_SENSITIVE" "\$POLICY_ONLY"/);
   assert.match(workflow, /test "\$value" = "true" \|\| test "\$value" = "false"/);
 });
 

@@ -19,6 +19,8 @@ jobs:
       database_sensitive: ${{ steps.risk.outputs.database_sensitive }}
       finance_sensitive: ${{ steps.risk.outputs.finance_sensitive }}
       ui_sensitive: ${{ steps.risk.outputs.ui_sensitive }}
+      release_sensitive: ${{ steps.risk.outputs.release_sensitive }}
+      policy_only: ${{ steps.risk.outputs.policy_only }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,29 +53,35 @@ jobs:
         run: npm ci
 
       - name: Gate failure regression tests
-        run: npm run ci:classify:test && node --test scripts/review-gates.test.mjs
+        run: node --test scripts/ci/classify-changes.test.mjs scripts/ci/release-tree-proof.test.mjs scripts/review-gates.test.mjs
 
       - name: TypeScript and application tests
+        if: needs.classify.outputs.policy_only != 'true'
         run: npm run typecheck && npm test
 
       - uses: denoland/setup-deno@v2
+        if: needs.classify.outputs.policy_only != 'true'
         with:
           deno-version: v2.x
 
       - name: Smart Rounding policy source checks
+        if: needs.classify.outputs.policy_only != 'true'
         run: |
           node --test scripts/smart-rounding/sql-policy-literals.test.mjs
           npm run smart-rounding:literals
           node scripts/smart-rounding/sql-policy-literals.mjs
 
       - name: Smart Rounding Edge Function tests
+        if: needs.classify.outputs.policy_only != 'true'
         run: npm run test:edge
 
       - name: Signing authorization and delivery idempotency regression tests
+        if: needs.classify.outputs.policy_only != 'true'
         # Synthetic transport only: no live provider or database credentials.
         run: deno test --allow-env --no-lock supabase/functions/boldsign-send-contract-handler.test.ts supabase/functions/boldsign-webhook-handler.test.ts supabase/functions/_shared/current-actor.test.ts
 
       - name: Officer catalog Edge Function tests
+        if: needs.classify.outputs.policy_only != 'true'
         # Not gated behind HAVEN_UI_GATES_ENABLED: the verifier must be proven
         # on every push and pull request (signing bytes, cross-target refusal,
         # tampered body, malformed headers, refusal-recording gate).
@@ -83,6 +91,7 @@ jobs:
           deno test --allow-env --allow-net=example.invalid officer-catalog-handler.test.ts officer-catalog/signature.test.ts care-event-dispatcher/
 
       - name: Compliance document triage routing
+        if: needs.classify.outputs.policy_only != 'true'
         # Not gated behind HAVEN_UI_GATES_ENABLED. These cover what Haven tells
         # an insurance agent: that a confirmed missing HUD 232 party blocks, that
         # an uncertain reading goes to a person instead, and that generic
@@ -95,6 +104,7 @@ jobs:
           deno test --allow-env compliance-doc-check-handler.test.ts
 
       - name: Care event voice prefill
+        if: needs.classify.outputs.policy_only != 'true'
         # Not gated behind HAVEN_UI_GATES_ENABLED, for the same reason as the
         # step above: these cover what Haven puts on a caregiver's screen over a
         # resident on the floor. That silence is never read as "nobody saw the
@@ -108,11 +118,13 @@ jobs:
           deno test --allow-env care-event-prefill-handler.test.ts
 
       - name: Stand Up regression contracts
+        if: needs.classify.outputs.policy_only != 'true'
         run: |
           python3 -B -m unittest discover -s scripts/stand-up -p 'test_*.py'
           npx vitest run src/lib/stand-up src/components/stand-up src/app/api/stand-up
 
       - name: Migrations can apply to a hosted project
+        if: needs.classify.outputs.policy_only != 'true'
         # Not gated behind HAVEN_UI_GATES_ENABLED. Migration 380 called
         # public.gen_random_uuid() in 22 places and could never have applied
         # hosted, yet it passed review and passed the local replay (COL-370).
@@ -120,6 +132,7 @@ jobs:
         run: npm run migrations:check:hosted
 
       - name: Migration number is not already claimed
+        if: needs.classify.outputs.policy_only != 'true'
         # `migrations:check` only sees one working tree, so it catches a
         # duplicate number after both branches have merged — which is how main
         # spent twenty minutes failing its own sequence check on 2026-09-16,
@@ -131,6 +144,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install verified Gitleaks binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          scanner_dir="$RUNNER_TEMP/haven-gitleaks-8.30.1"
+          mkdir -p "$scanner_dir"
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
+            --output "$scanner_dir/gitleaks.tar.gz"
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $scanner_dir/gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf "$scanner_dir/gitleaks.tar.gz" -C "$scanner_dir" gitleaks
+          "$scanner_dir/gitleaks" version
+          echo "$scanner_dir" >> "$GITHUB_PATH"
+
+      - name: Policy hygiene and secret scan
+        if: needs.classify.outputs.policy_only == 'true'
+        run: |
+          npm run check:package-manager
+          npm run check:env-example
+          npm run check:secrets
+          npm run audit:ci
+          npm run secrets:gitleaks
+
       - name: Seed roster auth verify
         # Authenticates every account in `scripts/seed/canonical-roster.mjs`
         # against the pilot Supabase project. Pre-launch this gate is
@@ -138,7 +174,7 @@ jobs:
         # Flip the repo variable to enable. Once enabled, ANY roster auth
         # failure fails the build before expensive work runs.
         # See docs/ui-audit/SEED_DRIFT.md for the ledger + repair plan.
-        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
+        if: needs.classify.outputs.policy_only != 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run seed:verify
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
@@ -152,7 +188,7 @@ jobs:
         # that check could only pass by holding their credentials or by putting
         # test identities on the live launch facility (COL-443). Same dormant
         # pattern as the seed verify above — gated on `vars.HAVEN_UI_GATES_ENABLED`.
-        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
+        if: needs.classify.outputs.policy_only != 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run homewood:verify-auth
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
@@ -164,6 +200,7 @@ jobs:
           HOMEWOOD_LAUNCH_PASSWORD: ${{ secrets.HOMEWOOD_LAUNCH_PASSWORD }}
 
       - name: Segment gates (security, lint, migrations, build, stress)
+        if: needs.classify.outputs.policy_only != 'true'
         # Core checks must run even when credentialed browser tests are dormant.
         run: npm run segment:gates -- --segment "ci-${{ github.run_id }}"
         env:
@@ -175,14 +212,16 @@ jobs:
           SKIP_PG_VERIFY: ${{ needs.classify.outputs.database_sensitive == 'false' && '1' || '0' }}
 
       - name: Install Playwright Chromium
+        if: needs.classify.outputs.policy_only != 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Smart Rounding component browser regressions
+        if: needs.classify.outputs.policy_only != 'true'
         # Synthetic component requests need no hosted identity or credentials.
         run: npx playwright test --config=playwright.smart-rounding-fixture.config.ts
 
       - name: Upload gate and synthetic browser evidence
-        if: always()
+        if: always() && needs.classify.outputs.policy_only != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: smart-rounding-regressions
@@ -191,7 +230,7 @@ jobs:
             test-results/smart-rounding-fixture/
 
       - name: Route probe + auth smoke
-        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
+        if: needs.classify.outputs.policy_only != 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: |
           npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven-next-start.log 2>&1 &
           server_pid=$!
@@ -221,7 +260,7 @@ jobs:
         run: echo "ui_changed=${{ needs.classify.outputs.ui_sensitive == 'false' && 'false' || 'true' }}" >> "$GITHUB_OUTPUT"
 
       - name: UI gates (conditional)
-        if: steps.ui_changes.outputs.ui_changed == 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
+        if: needs.classify.outputs.policy_only != 'true' && steps.ui_changes.outputs.ui_changed == 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: npm run segment:gates -- --segment "ci-ui-${{ github.run_id }}" --ui --no-chaos --design-advisory
         env:
           CI: true
@@ -231,10 +270,33 @@ jobs:
       - name: Bundle size snapshot
         # Depends on `.next/static/` produced by the core Segment-gates build.
         # The dedicated bundle-size workflow also checks every PR.
-        if: vars.HAVEN_UI_GATES_ENABLED == 'true'
+        if: needs.classify.outputs.policy_only != 'true' && vars.HAVEN_UI_GATES_ENABLED == 'true'
         run: node scripts/bundle-size-check.mjs
         env:
           CI: true
+
+      - name: Record tested merge tree
+        if: github.event_name == 'pull_request'
+        run: node scripts/ci/release-tree-proof.mjs record
+        env:
+          CLASSIFICATION_SAFE: ${{ needs.classify.outputs.classification_safe }}
+          DATABASE_SENSITIVE: ${{ needs.classify.outputs.database_sensitive }}
+          FINANCE_SENSITIVE: ${{ needs.classify.outputs.finance_sensitive }}
+          UI_SENSITIVE: ${{ needs.classify.outputs.ui_sensitive }}
+          RELEASE_SENSITIVE: ${{ needs.classify.outputs.release_sensitive }}
+          POLICY_ONLY: ${{ needs.classify.outputs.policy_only }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: Upload tested merge tree proof
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-tree-proof
+          path: test-results/ci-release-proof/release-tree-proof.json
+          if-no-files-found: error
+          retention-days: 30
 
   finance:
     name: Finance-specific tests
@@ -290,10 +352,12 @@ jobs:
           DATABASE_SENSITIVE: ${{ needs.classify.outputs.database_sensitive }}
           FINANCE_SENSITIVE: ${{ needs.classify.outputs.finance_sensitive }}
           UI_SENSITIVE: ${{ needs.classify.outputs.ui_sensitive }}
+          RELEASE_SENSITIVE: ${{ needs.classify.outputs.release_sensitive }}
+          POLICY_ONLY: ${{ needs.classify.outputs.policy_only }}
         run: |
           test "$CLASSIFY_RESULT" = "success"
           test "$GATES_RESULT" = "success"
           test "$FINANCE_RESULT" = "success" || test "$FINANCE_RESULT" = "skipped"
-          for value in "$CLASSIFICATION_SAFE" "$DATABASE_SENSITIVE" "$FINANCE_SENSITIVE" "$UI_SENSITIVE"; do
+          for value in "$CLASSIFICATION_SAFE" "$DATABASE_SENSITIVE" "$FINANCE_SENSITIVE" "$UI_SENSITIVE" "$RELEASE_SENSITIVE" "$POLICY_ONLY"; do
             test "$value" = "true" || test "$value" = "false"
           done

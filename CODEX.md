@@ -12,8 +12,10 @@
 4. On required gate **PASS**: stage only segment files, create an **atomic Lore-protocol commit**, push, create/update the PR, wait for required checks, and fix failures.
 5. Unless Brian explicitly set `draft`, `hold`, `review-only`, `source-only`, or `do not deploy`, merge to `main` and complete the repository-defined production release path.
 6. Apply required production migrations and deploy changed Edge Functions, jobs, crons, configuration, and application services in the verified target and documented release order.
-7. Verify post-merge CI, migration-ledger parity, relevant function versions, the exact hosted revision, health checks, and applicable live smoke tests. A merge or started deployment is not release proof.
+7. Always verify the exact hosted revision and applicable health/live smoke checks. Verify migration-ledger parity and function/job versions when those surfaces changed. Follow the post-merge rule in `AGENTS.md`: ordinary app-only work may close without waiting only when the retained PR proof reports a safe non-sensitive classification and an exact tested-tree match; all sensitive, unsafe, missing-proof, or mismatched releases await successful post-merge CI. A merge or started deployment is not release proof.
 8. Before updating Linear, follow `docs/LINEAR-WORKFLOW.md`; keep delivery, technical deployment evidence, human decisions, and release/acceptance as separate issues with real dependency links.
+
+Use concise `gh run view --json ...` polling. Do not repeatedly stream unchanged `gh run watch` output or rerun full local gates for a tree already proven by required CI.
 
 ## Form primitives (operator-facing defaults)
 

@@ -53,6 +53,42 @@ Checks stream prefixed output live. Quiet commands emit a 30-second `still runni
 
 GitHub Actions: `.github/workflows/ci-gates.yml` always runs the application/platform gates with `CI=true`. `scripts/ci/classify-changes.mjs` selects exactly one of `REQUIRE_PG_VERIFY=1` or `SKIP_PG_VERIFY=1`; unknown diff state requires the replay. `.github/workflows/ci-nightly.yml` always requires the full replay.
 
+Changes confined to the explicit CI-policy allowlist (`.github/workflows/**`, `scripts/ci/**`, the gate contract test, and the release-contract/runbook mirrors) use `policy_only=true`. That lane runs only the targeted classifier/proof/workflow regressions plus package/environment checks, dependency audit, tracked-secret scan, and checksum-pinned Gitleaks. It skips application/typecheck, domain Edge suites, SQL replay, build, stress, and browser fixtures. One changed path outside the allowlist—or any unsafe classification—fails closed to the normal lane. Policy-only remains release-sensitive and therefore still awaits post-merge CI.
+
+## Tested-tree release proof
+
+Every successful pull-request gate uploads `release-tree-proof`, containing the exact merge tree checked out by Actions and the fail-closed change classification. Strict `Required CI summary` branch protection establishes that this proof came from current-base required CI.
+
+After merge, download the artifact into a run-owned scratch directory and compare it with the actual merged revision:
+
+```bash
+gh run download "$PR_RUN_ID" --name release-tree-proof --dir "$RUN_OWNED_SCRATCH/release-tree-proof"
+node scripts/ci/release-tree-proof.mjs verify \
+  --proof "$RUN_OWNED_SCRATCH/release-tree-proof/release-tree-proof.json" \
+  --revision "$MERGED_SHA"
+```
+
+The verifier reports `tree_matches`, `app_only_eligible`, and `post_merge_wait_required`. It fails on a tree mismatch. Treat missing/invalid proof as a mandatory post-merge wait.
+
+An app-only release can close without waiting for the still-running main CI only when all of the following are true:
+
+1. Protected current-base `Required CI summary` passed.
+2. `post_merge_wait_required=false` and `tree_matches=true`.
+3. The verified production target serves the exact merged revision.
+4. Applicable hosted smoke checks pass.
+5. `gh issue list --state open --label main-ci-failure` returns no alert.
+
+Post-merge waiting remains mandatory for release-sensitive paths, unsafe classification, missing proof, or mismatched trees. Post-merge CI always continues. `.github/workflows/main-ci-failure-alert.yml` assigns a GitHub issue to the repository owner on failure, escalates consecutive failures on the same open issue, and closes it after a successful main run. An open alert blocks later release claims and requires reopening the related Linear delivery issue when applicable.
+
+For status, prefer compact state-change polling:
+
+```bash
+gh run view "$RUN_ID" --json status,conclusion,jobs \
+  --jq '{status,conclusion,jobs:[.jobs[]|{name,status,conclusion}]}'
+```
+
+Read full logs only after failure or another meaningful transition. Do not repeatedly stream unchanged `gh run watch` output, and do not rerun a full local gate for an identical tree already covered by required CI.
+
 ## Known npm audit moderates
 
 - `postcss <8.5.10` remains through `next@16.2.6`'s nested `postcss@8.4.31` copy.
@@ -109,6 +145,7 @@ See `docs/Autonomous.md` RECORD **schema-drift-250-288-repair** (2026-06-28).
 ## Artifacts
 
 - Gate reports: `test-results/agent-gates/<iso-timestamp>-<segment>.json`
+- PR tested-tree proof: `test-results/ci-release-proof/release-tree-proof.json`
 - Design report: `test-results/design-review/report.json`
 - Screenshots: `test-results/design-review/screenshots/`
 

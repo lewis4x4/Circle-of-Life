@@ -1,0 +1,127 @@
+name: Main CI failure alert
+
+on:
+  workflow_run:
+    workflows: ["CI — segment gates"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  alert:
+    if: github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Open, escalate, or resolve the main CI alert
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const marker = '<!-- haven-main-ci-alert -->';
+            const countPattern = /<!-- haven-main-ci-alert-count:(\d+) -->/;
+            const alertConclusions = new Set(['failure', 'timed_out', 'action_required', 'startup_failure']);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = issues.find((issue) => !issue.pull_request && issue.body?.includes(marker));
+
+            if (run.conclusion === 'success') {
+              if (existing) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  body: `Recovered: required main CI passed for \`${run.head_sha}\`.\n\nRun: ${run.html_url}`,
+                });
+                await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'closed' });
+              }
+              return;
+            }
+
+            // A concurrency cancellation is superseded by a newer main run and is
+            // not itself a failure. The newer run will either pass or alert.
+            if (!alertConclusions.has(run.conclusion)) return;
+
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner,
+              repo,
+              run_id: run.id,
+              per_page: 100,
+            });
+            const failedStages = jobs
+              .filter((job) => !['success', 'skipped', 'cancelled'].includes(job.conclusion))
+              .map((job) => `- ${job.name}: ${job.conclusion}`);
+            const stageText = failedStages.length ? failedStages.join('\n') : `- workflow: ${run.conclusion}`;
+            const nextCount = existing ? Number(existing.body?.match(countPattern)?.[1] || 1) + 1 : 1;
+            const title = nextCount > 1
+              ? `[Main CI] repeated production verification failure (${nextCount})`
+              : '[Main CI] production verification failed';
+            const occurrence = [
+              `Commit: \`${run.head_sha}\``,
+              `Conclusion: **${run.conclusion}**`,
+              `Run: ${run.html_url}`,
+              '',
+              'Failing stage(s):',
+              stageText,
+            ].join('\n');
+
+            for (const label of [
+              { name: 'main-ci-failure', color: 'B60205', description: 'Open failure on main production verification' },
+              ...(nextCount > 1 ? [{ name: 'main-ci-failure-repeated', color: '7A0000', description: 'Consecutive main CI failures require escalation' }] : []),
+            ]) {
+              try {
+                await github.rest.issues.createLabel({ owner, repo, ...label });
+              } catch (error) {
+                if (error.status !== 422) throw error;
+              }
+            }
+
+            if (existing) {
+              const body = existing.body
+                .replace(countPattern, `<!-- haven-main-ci-alert-count:${nextCount} -->`)
+                .replace(/## Latest failure[\s\S]*$/, `## Latest failure\n\n${occurrence}`);
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: existing.number,
+                title,
+                body,
+                labels: nextCount > 1 ? ['main-ci-failure', 'main-ci-failure-repeated'] : ['main-ci-failure'],
+              });
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: existing.number,
+                body: `Consecutive failure ${nextCount}.\n\n${occurrence}`,
+              });
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              assignees: [owner],
+              labels: ['main-ci-failure'],
+              body: [
+                marker,
+                `<!-- haven-main-ci-alert-count:${nextCount} -->`,
+                'A required production verification run failed after merge. This issue blocks subsequent technical release claims until a later main run passes or the failure is resolved with evidence.',
+                '',
+                'Reopen the related Linear delivery issue when the failed revision was already closed.',
+                '',
+                '## Latest failure',
+                '',
+                occurrence,
+              ].join('\n'),
+            });
