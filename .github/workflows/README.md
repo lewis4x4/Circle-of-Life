@@ -3,7 +3,8 @@
 | Workflow file | Purpose |
 | --- | --- |
 | `ci-gates.yml` | Runs required application/platform checks on every push/PR, one full PostgreSQL replay only for database-sensitive changes, and finance-specific tests only for finance-sensitive changes. Its `Required CI summary` job is the stable branch-protection check. |
-| `main-ci-failure-alert.yml` | Opens or escalates an assigned GitHub issue when `main` CI fails and closes it after a successful recovery run. |
+| `main-ci-failure-alert.yml` | Preserves established main-CI incident routing; an independent observer-health job performs five-minute catch-up, audits old reruns, and retains unfinished runs. |
+| `netlify-production-failure-alert.yml` | Observes the exact Haven production site every five minutes and on main pushes; maintains one assigned production incident with distinct-deploy escalation and publication-backed recovery. Finite dispatch supports isolated synthetic replay. |
 | `ci-nightly.yml` | Runs nightly extended CI (full gate suite + server route probe). |
 | `ci-ui-gates.yml` | Runs UI-specific quality gates (bundle budget, a11y, visual regression and related checks). |
 | `homewood-launch-tests.yml` | Runs Homewood launch workflow Playwright tests (gated by UI-gates repo variable). |
@@ -32,3 +33,18 @@ CI-policy-only changes use a narrow lane: targeted workflow/proof regressions,
 package/environment hygiene, audit, tracked-secret scanning, and checksum-pinned
 Gitleaks. Application, domain, database, build, stress, and browser suites do
 not run unless any changed path falls outside the explicit policy allowlist.
+
+## Production observation
+
+The provider observer runs at `2-57/5`; the independent watcher catches up at
+`4-59/5`. Main pushes have immediate observation and at most ten minute-spaced
+follow-ups, with a twelve-minute job limit. Other runs have a five-minute limit.
+GitHub can delay or drop scheduled jobs: these are healthy-platform detection
+budgets, not an absolute delivery SLA. See the agent gates runbook for recovery
+proof, durable state, credential ownership, and audit limits.
+
+Only the live observer receives `NETLIFY_AUTH_TOKEN`. Replay and watcher jobs use
+GitHub permissions only. The issue writers use trusted main code, separate
+concurrency groups, and assignment/effect readback. A successful CI run cannot
+resolve a provider incident or observer-health issue. Synthetic replay uses a
+run-specific issue marker and retains the closed issue as evidence.
