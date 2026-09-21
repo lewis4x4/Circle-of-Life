@@ -386,10 +386,12 @@ test("SEC04/RP01–RP04: finite replay uses the routing adapter without touching
   assert.equal(providerCalls, 0);
   assert.equal(result.success, true);
   assert.deepEqual(result.counts, [1, 1, 2]);
+  assert.equal(result.previewIgnored, true);
   assert.match(fixture.issue.title, /^\[SYNTHETIC\]/);
   assert.match(fixture.issue.body, /987654/);
   assert.equal(fixture.issue.state, "closed");
   assert.equal(fixture.comments.filter((value) => value.body.includes("failure:")).length, 2);
+  assert.equal(fixture.comments.filter((value) => value.body.includes(":preview-ignore -->")).length, 1);
   assert.ok(fixture.comments.some((value) => value.body.includes("recovery:")));
 });
 
