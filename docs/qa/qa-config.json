@@ -1,0 +1,39 @@
+{
+  "$comment": "COL-494 discovery completed 2026-09-21. Brian's request and the repository Linear workflow confirm Linear as the tracker. Tracker writes remain attributable and bounded.",
+  "version": 1,
+  "issueTracker": {
+    "type": "linear",
+    "project": "Haven Rollout",
+    "phaseIssue": "COL-494",
+    "syncOnFile": false,
+    "pull": {
+      "onBRBStart": true,
+      "onReTest": true,
+      "window": "since-last-sync",
+      "createLocalForUntracked": "ask"
+    }
+  },
+  "triage": {
+    "runHeuristicsOnBRBStart": true,
+    "runHeuristicsOnFile": false
+  },
+  "report": {
+    "outputDir": "docs/qa/report",
+    "title": "Haven COL-494 Daily and Weekly QA"
+  },
+  "platforms": {
+    "web": {
+      "deviceModes": {
+        "mobile": "375x812",
+        "tablet": "768x1024",
+        "desktop": "1280x800"
+      },
+      "primary": "tablet",
+      "primarySource": "Homewood facility staff use shared/enrolled tablet-class devices; desktop remains the corporate-review surface."
+    },
+    "ios": {
+      "enabled": false
+    }
+  }
+}
+

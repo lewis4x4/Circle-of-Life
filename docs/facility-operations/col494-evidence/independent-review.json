@@ -1,0 +1,27 @@
+{
+  "result": "[PROOF PASS — CLEAN]",
+  "independent": true,
+  "reviewedAt": "2026-09-21",
+  "sourceSha": "2fadb9b3a636f241ca6d735d48392367abd6e120",
+  "target": "iwcnajanvjvynolltflw",
+  "scope": "COL-494 bounded Daily/Weekly engineering demonstration",
+  "findingsResolved": [
+    "PASS can only be emitted for all ten scenarios, all three viewports and clean recorded browser, axe and outbound results",
+    "inspection mode is not PASS",
+    "browser-observed register flags depend on matching successful scenarios",
+    "lost-response proof reads exactly one original performance receipt",
+    "correction proof reads a linked two-receipt chain that retains the original",
+    "evidence proof reads performed_missing_evidence before upload and completed evidence on the same receipt after finalization",
+    "profile proof reads current-session 91/110 coverage, null AL-D15 subject and zero approved rules",
+    "cleanup verifies private state and exact synthetic database provenance before retiring exact users and sites",
+    "QA coordinator and HTML artifacts contain the final engineering-only verdict"
+  ],
+  "openP0": [],
+  "openP1": [],
+  "limitations": [
+    "Homewood operating rules were not activated",
+    "No Homewood staff acceptance or paper retirement was performed",
+    "Profile uses explicit response, content, current-session API and axe proof; the full work-page telemetry listeners are scoped to the work-page context",
+    "Production and provider acceptance remain separate"
+  ]
+}
