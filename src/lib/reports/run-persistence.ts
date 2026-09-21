@@ -23,12 +23,24 @@ export async function failReportRun(supabase: SupabaseClient<Database>, organiza
 export async function runTemplateAndPersist(params: {
   supabase: SupabaseClient<Database>; organizationId: string; slug: string; title: string;
   facilityId: string | null; scopeLabel: string; userId?: string; scheduleId?: string; scheduledFor?: string;
+  /** When running from a saved variant link (COL-296 / NAV-004). */
+  sourceType?: "template" | "saved_view";
+  /** Saved view UUID when sourceType is saved_view; otherwise template id is used. */
+  sourceId?: string;
+  templateVersionId?: string | null;
 }) {
   const {supabase,organizationId,slug,facilityId,scopeLabel,title}=params;
   const resolved=await resolveReportTemplateIdBySlug(supabase,slug,organizationId);
   if ("error" in resolved) throw new Error(resolved.error);
+  const sourceType = params.sourceType ?? "template";
+  const sourceId =
+    sourceType === "saved_view" && params.sourceId
+      ? params.sourceId
+      : resolved.id;
   const {data:run,error}=await supabase.from("report_runs").insert({
-    organization_id:organizationId,source_type:"template",source_id:resolved.id,template_id:resolved.id,status:"running",
+    organization_id:organizationId,source_type:sourceType,source_id:sourceId,template_id:resolved.id,
+    template_version_id:params.templateVersionId ?? null,
+    status:"running",
     generated_by_user_id:params.userId,run_scope_json:{facility_id:facilityId,scope_label:scopeLabel},
     schedule_id:params.scheduleId,scheduled_for:params.scheduledFor,runtime_classification:params.scheduleId?"scheduled":"manual",
   }).select("id").single();
