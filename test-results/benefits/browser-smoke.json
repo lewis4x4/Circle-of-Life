@@ -1,0 +1,108 @@
+{
+  "evidence": "Real production React/CSS in Chromium with synthetic APIs. No hosted authentication, RLS, storage transport or provider submission proof.",
+  "states": [
+    {
+      "width": 1440,
+      "name": "overview",
+      "overflow": 1440,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "name": "conflict",
+      "overflow": 1440,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "name": "evidence",
+      "overflow": 1440,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "name": "agency",
+      "overflow": 1440,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "name": "submissions",
+      "overflow": 1440,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "name": "funding",
+      "overflow": 1440,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "name": "queue",
+      "overflow": 1440,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "name": "access-denied",
+      "overflow": 1440,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "name": "overview",
+      "overflow": 390,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "name": "conflict",
+      "overflow": 390,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "name": "evidence",
+      "overflow": 390,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "name": "agency",
+      "overflow": 390,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "name": "submissions",
+      "overflow": 390,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "name": "funding",
+      "overflow": 390,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "name": "queue",
+      "overflow": 390,
+      "violations": []
+    },
+    {
+      "width": 390,
+      "name": "access-denied",
+      "overflow": 390,
+      "violations": []
+    }
+  ],
+  "unexpected": [],
+  "status": "passed",
+  "cleanup": {
+    "validated": true,
+    "removed": 45,
+    "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/benefits-browser-1790024706940/manifest.json"
+  }
+}

@@ -572,6 +572,7 @@ export default function AdminAdmissionCaseDetailPage() {
               description="Admission documents stay available here after resident matching and review."
             >
               <ResidentIntakeLinks admissionCaseId={row.id} residentId={row.resident_id} />
+              {row.resident_id && <Link href={`/admin/benefits?resident_id=${encodeURIComponent(row.resident_id)}&admission_case_id=${encodeURIComponent(row.id)}`} className="inline-flex min-h-11 items-center text-sm underline">Open Medicaid &amp; Benefits cases</Link>}
             </RecordDetailSection>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

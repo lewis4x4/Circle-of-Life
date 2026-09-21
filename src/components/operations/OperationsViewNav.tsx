@@ -14,6 +14,7 @@ type OperationsNavLink = {
 };
 
 const LINKS: readonly OperationsNavLink[] = [
+  { href: "/admin/benefits", label: "Medicaid & Benefits" },
   { href: "/admin/operations", label: "Today" },
   { href: "/admin/operations/week", label: "Week" },
   { href: "/admin/operations/month", label: "Month" },

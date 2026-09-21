@@ -109,6 +109,7 @@ export const PILLARS: Pillar[] = [
     items: [
       { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", icon: UserPlus },
       { key: "admissions", href: "/admin/admissions", label: "Admissions overview", icon: Home },
+      { key: "benefits", href: "/admin/benefits", label: "Medicaid & benefits", icon: ClipboardCheck },
       { key: "discharge", href: "/admin/discharge", label: "Medication reconciliation", icon: DoorOpen },
       { key: "family-messages", href: "/admin/family-messages", label: "Family notes", icon: Megaphone },
     ],
