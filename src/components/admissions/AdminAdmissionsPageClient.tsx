@@ -516,11 +516,9 @@ export function AdminAdmissionsPageClient({
   }, [admissions]);
 
   const hubFacilityLabel = useMemo(() => {
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      return "the selected facility";
-    }
-    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? selectedFacilityId;
-  }, [availableFacilities, selectedFacilityId]);
+    if (noFacility) return null;
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
+  }, [availableFacilities, noFacility, selectedFacilityId]);
 
   const workflowQuietLinkClass = cn(buttonVariants({ variant: "ghost", size: "sm" }));
 
@@ -539,8 +537,14 @@ export function AdminAdmissionsPageClient({
         title="Admissions overview"
         subtitle={
           <>
-            Intake and discharge pipeline for <span className="text-foreground">{hubFacilityLabel}</span>. For clinical care during residency,
-            see the Clinical tab.
+            Intake and discharge pipeline
+            {hubFacilityLabel ? (
+              <>
+                {" for "}
+                <span className="text-foreground">{hubFacilityLabel}</span>
+              </>
+            ) : null}
+            . For clinical care during residency, see the Clinical tab.
           </>
         }
         actions={
