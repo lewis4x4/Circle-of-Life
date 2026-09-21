@@ -209,7 +209,7 @@ export default function InsurancePoliciesPage() {
             <>
               <TableRowHeader>
                 <span className="w-[110px] shrink-0">Status</span>
-                <span className="flex-[2] min-w-0">Carrier</span>
+                <span className="flex-[2] min-w-0">Carrier / policy no.</span>
                 <span className="flex-1 min-w-0">Type</span>
                 <span className="flex-1 min-w-0">Entity</span>
                 <span className="w-[110px] shrink-0">Expires (ET)</span>
@@ -229,8 +229,13 @@ export default function InsurancePoliciesPage() {
                             {r.status.replace(/_/g, " ")}
                           </StatusPill>
                         </div>
-                        <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
-                          {r.carrier_name}
+                        <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground">
+                          <span className="block truncate">{r.carrier_name}</span>
+                          {/* COL-527: the policy number is the natural lookup key for an
+                              insurance library and was not rendered anywhere on this list. */}
+                          <span className="block truncate font-mono text-[11px] font-normal text-muted-foreground">
+                            {r.policy_number}
+                          </span>
                         </span>
                         <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
                           {r.policy_type.replace(/_/g, " ")}
