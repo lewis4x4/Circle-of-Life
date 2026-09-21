@@ -37,8 +37,9 @@ not run unless any changed path falls outside the explicit policy allowlist.
 ## Production observation
 
 The provider observer runs at `2-57/5`; the independent watcher catches up at
-`4-59/5`. Main pushes have immediate observation and at most ten minute-spaced
-follow-ups, with a twelve-minute job limit. Other runs have a five-minute limit.
+`4-59/5`. Main pushes add one immediate observation, while the schedule owns
+follow-up reconciliation so a single run cannot consume the provider quota.
+Push jobs retain a twelve-minute ceiling; other runs have a five-minute limit.
 GitHub can delay or drop scheduled jobs: these are healthy-platform detection
 budgets, not an absolute delivery SLA. See the agent gates runbook for recovery
 proof, durable state, credential ownership, and audit limits.

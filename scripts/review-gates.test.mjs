@@ -187,6 +187,8 @@ test("WF01/WF02: production observer has finite dispatch, five-minute cadence, a
   assert.match(workflow, /timeout-minutes:.*12/);
   assert.match(workflow, /timeout-minutes:.*5|\? 12 : 5|&& 12 \|\| 5/);
   assert.doesNotMatch(workflow, /while true|while :/);
+  const observer = readFileSync(path.join(root, "scripts/ci/netlify-production-failure-alert.mjs"), "utf8");
+  assert.doesNotMatch(observer, /setTimeout\([^\n]*60_000/);
 });
 
 test("WF03/WF04: live and replay jobs isolate credentials, serialization, and finalization", () => {
