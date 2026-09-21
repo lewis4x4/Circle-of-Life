@@ -30,6 +30,22 @@ Audit CSV export reads session-visible identifiers through complete keyset pages
 
 These are material integration changes. Do not apply migration 337 alone to a live operating site without reconciling existing task classifications, required scoped commands and dependent consumers. A zero-row classified list is not proof of no outstanding legacy work.
 
+## Ruling — COL-291: one authority per operations record (2026-09-21)
+
+Two authorities existed for a session read of an operations record. The route gate `haven.operation_facility_access` honours `operation_expires_at` and the operations role list; `haven.accessible_facility_ids()`, which backs row-level security across the domain, checks only `revoked_at` and admits owner/org_admin org-wide. An expired operations grant was refused by `GET /api/admin/operations/drill-logs` and admitted by any session read of `drill_log` that skipped the gate.
+
+Ruling: **the operations authority governs operations records at the database, not only at the route.** `haven.accessible_facility_ids()` is not tightened — it governs unrelated domain access and this section already says `operation_expires_at` "limits operations coverage without changing unrelated domain access". Instead, every site-scoped table an operations route reads carries a RESTRICTIVE policy that calls the operations gate (the 348 pattern used for assets, staffing and risk snapshots), or every permissive read policy on it does. Migration 443 applies this to `drill_log`, the one such table that was still governed by the domain authority alone.
+
+The rule is enforced, not remembered:
+
+- `supabase/tests/review_hfo_operations_reader_authority.sql` names the governed tables and asserts each carries a gate policy. Tables an operations route reads but which are shared domain records (the facility row, identity, vendor and document directories, org-level catalogue rows, the grant table itself) are named as **exceptions with a written reason**; an excepted table that later gains a gate policy fails the probe until it is moved.
+- `src/lib/operations/reader-authority.test.ts` scans every operations route and helper for the tables it reads and fails on any table in neither list. A new reader cannot inherit the laxer authority by accident.
+- A route that reads an excepted table must call the gate first; the exception records that the database will not.
+
+Blast radius accepted: roles outside the operations list (caregiver, med_tech, family) and corporate users without a site grant lose `drill_log`; no surface of theirs writes one, and production held no drill logs at the time. Existing rows are untouched. Rollback is dropping the 443 policy, which reopens the divergence and flips `review_hfo_drill_log_reader.sql` section 5 with it.
+
+Filed from a post-merge code review (COL-282) and ruled in a Brian session. Not a facility acceptance.
+
 ## Migration, verification and rollback
 
 Migration `337_hfo_current_authority.sql` follows this branch's unapplied catalog migration 336. Other active branches reuse these numbers. Reconcile against current main and hosted ledger before integration; never rewrite installed history or create gap migrations. Deploy session APIs only after their schema/RPCs are installed, as one coordinated release.

@@ -7,15 +7,15 @@ import { DRILL_LOG_SELECT, SOURCE_RECORD_ROLES, listDrillLogsQuerySchema } from 
 import { logError } from "@/lib/observability/logger";
 
 /**
- * Drill logs at one site (COL-241). Two authorities apply and they are not the
- * same authority: `actorCanAccessFacility` below is the operations gate, which
- * honours `user_facility_access.operation_expires_at` (348), and the row-level
- * policy on `drill_log` is 220's, which reads `haven.accessible_facility_ids()`
- * and checks only `revoked_at` (326). The gate is the narrower of the two, so
- * it is called before the query is built and an expired operations grant never
- * reaches a row. Reading "through the session" alone would be wider than this
- * route; `supabase/tests/review_hfo_drill_log_reader.sql` holds both halves to
- * that, and COL-291 tracks the divergence itself.
+ * Drill logs at one site (COL-241). `actorCanAccessFacility` below is the
+ * operations gate, which honours `user_facility_access.operation_expires_at`
+ * (348), and it is called before the query is built so an unheld site answers
+ * 404 rather than an empty list. Since migration 443 (COL-291) the database
+ * agrees with it: a RESTRICTIVE policy on `drill_log` ANDs the same gate onto
+ * 220's `haven.accessible_facility_ids()` policy, so a session read that skips
+ * this route is no wider than it. `supabase/tests/review_hfo_drill_log_reader.sql`
+ * proves both halves, and `review_hfo_operations_reader_authority.sql` holds
+ * every other operations reader to the same rule.
  *
  * This reader exists because the finalize,
  * correct and void commands address one drill log by id: a person cannot act
