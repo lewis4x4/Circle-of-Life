@@ -1,12 +1,21 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ClipboardList } from "lucide-react";
 import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
 import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
+import {
+  claimBulletinPost,
+  clearPostedResidentDraft,
+  draftForResident,
+  isCurrentAsyncGeneration,
+  writeResidentDraft,
+  type BulletinPostClaim,
+  type FamilyBulletinDraftStore,
+} from "@/lib/admin/family-bulletin-draft";
 import type {
   FamilyDeliveryMethod,
   StaffMessageRow,
@@ -23,6 +32,8 @@ import {
 } from "@/lib/admin/family-messages-copy";
 import { ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
@@ -56,6 +67,7 @@ function bulletinItemsFromMessages(messages: StaffMessageRow[]) {
 export default function StaffFamilyMessagesPage() {
   const { user } = useHavenAuth();
   const searchParams = useSearchParams();
+  const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
   const [threads, setThreads] = useState<StaffMessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,9 +79,20 @@ export default function StaffFamilyMessagesPage() {
   const [msgLoading, setMsgLoading] = useState(false);
   const [msgError, setMsgError] = useState<string | null>(null);
 
-  const [draft, setDraft] = useState("");
-  const [deliveryMethod, setDeliveryMethod] = useState<FamilyDeliveryMethod>("portal_only");
+  const [drafts, setDrafts] = useState<FamilyBulletinDraftStore>({});
   const [posting, setPosting] = useState(false);
+  const threadGeneration = useRef(0);
+  const logGeneration = useRef(0);
+  const postGeneration = useRef(0);
+  const inFlightPost = useRef<BulletinPostClaim | null>(null);
+  const visibleLogResident = useRef<string | null>(null);
+  const draftsRef = useRef(drafts);
+  const threadsRef = useRef(threads);
+  const activeResidentRef = useRef("");
+  const facilityRef = useRef(selectedFacilityId);
+  draftsRef.current = drafts;
+  threadsRef.current = threads;
+  facilityRef.current = selectedFacilityId;
   const [residentFilter, setResidentFilter] = useState<"all" | "triage">("all");
   const [triageActionLoading, setTriageActionLoading] = useState<string | null>(null);
   const [triageActionError, setTriageActionError] = useState<string | null>(null);
@@ -85,69 +108,176 @@ export default function StaffFamilyMessagesPage() {
   }, [requestedFilter]);
 
   const loadThreads = useCallback(async () => {
+    const generation = ++threadGeneration.current;
     setLoading(true);
     setError(null);
     try {
       const supabase = createClient();
       const result = await fetchStaffMessageThreads(supabase);
+      if (!isCurrentAsyncGeneration(generation, threadGeneration.current)) return;
       if (!result.ok) setError(formatLiveDataLoadError(result.error, "Failed to load bulletin notes"));
       else setThreads(result.threads);
     } catch (err) {
+      if (!isCurrentAsyncGeneration(generation, threadGeneration.current)) return;
       setError(formatLiveDataLoadError(err, "Failed to load bulletin notes"));
     } finally {
-      setLoading(false);
+      if (isCurrentAsyncGeneration(generation, threadGeneration.current)) setLoading(false);
     }
   }, []);
 
   const openResidentLog = useCallback(async (residentId: string) => {
+    const generation = ++logGeneration.current;
+    const knownName =
+      threadsRef.current.find((thread) => thread.residentId === residentId)?.residentName ?? "";
+    visibleLogResident.current = residentId;
     setSelectedResidentId(residentId);
     setComposeResidentId(residentId);
+    setResidentName(knownName);
+    setMessages([]);
     setMsgLoading(true);
     setMsgError(null);
     try {
       const supabase = createClient();
       const result = await fetchStaffMessagesForResident(supabase, residentId);
+      if (
+        !isCurrentAsyncGeneration(generation, logGeneration.current) ||
+        visibleLogResident.current !== residentId
+      ) {
+        return;
+      }
       if (!result.ok) {
+        setMessages([]);
         setMsgError(formatLiveDataLoadError(result.error, "Failed to load posted updates"));
       } else {
         setMessages(result.messages);
         setResidentName(result.residentName);
       }
     } catch (err) {
+      if (
+        !isCurrentAsyncGeneration(generation, logGeneration.current) ||
+        visibleLogResident.current !== residentId
+      ) {
+        return;
+      }
       setMsgError(formatLiveDataLoadError(err, "Failed to load posted updates"));
     } finally {
-      setMsgLoading(false);
+      if (
+        isCurrentAsyncGeneration(generation, logGeneration.current) &&
+        visibleLogResident.current === residentId
+      ) {
+        setMsgLoading(false);
+      }
     }
   }, []);
 
   const activeComposeResidentId = selectedResidentId ?? composeResidentId;
+  activeResidentRef.current = activeComposeResidentId;
+  const activeDraft = draftForResident(drafts, activeComposeResidentId);
+
+  const handleComposeResidentChange = useCallback((residentId: string) => {
+    if (inFlightPost.current && residentId) return;
+    setComposeResidentId(residentId);
+    setMsgError(null);
+  }, []);
+
+  const handleDraftChange = useCallback((body: string) => {
+    const residentId = activeResidentRef.current;
+    if (!residentId || inFlightPost.current?.residentId === residentId) return;
+    setDrafts((store) =>
+      writeResidentDraft(store, residentId, {
+        body,
+        deliveryMethod: draftForResident(store, residentId).deliveryMethod,
+      }),
+    );
+  }, []);
+
+  const handleDeliveryMethodChange = useCallback((deliveryMethod: FamilyDeliveryMethod) => {
+    const residentId = activeResidentRef.current;
+    if (!residentId || inFlightPost.current?.residentId === residentId) return;
+    setDrafts((store) =>
+      writeResidentDraft(store, residentId, {
+        body: draftForResident(store, residentId).body,
+        deliveryMethod,
+      }),
+    );
+  }, []);
 
   const handlePost = useCallback(async () => {
-    if (!activeComposeResidentId || !draft.trim() || posting) return;
+    const residentId = activeResidentRef.current;
+    const facilityId = facilityRef.current ?? "";
+    const snapshot = draftForResident(draftsRef.current, residentId);
+    const generation = postGeneration.current + 1;
+    const claimed = claimBulletinPost(inFlightPost.current, {
+      generation,
+      residentId,
+      facilityId,
+      body: snapshot.body,
+    });
+    if (!claimed.ok) return;
+    if (!isValidFacilityIdForQuery(facilityId)) {
+      setMsgError("Select a facility before posting this note.");
+      return;
+    }
+
+    postGeneration.current = generation;
+    inFlightPost.current = claimed.claim;
     setPosting(true);
     setMsgError(null);
     try {
       const supabase = createClient();
-      const result = await postStaffMessage(supabase, activeComposeResidentId, draft, deliveryMethod);
-      if (!result.ok) {
-        setMsgError(result.error);
-      } else {
-        setDraft("");
-        if (selectedResidentId) {
-          await openResidentLog(selectedResidentId);
-        }
-        await loadThreads();
+      const result = await postStaffMessage(
+        supabase,
+        residentId,
+        snapshot.body,
+        snapshot.deliveryMethod,
+        facilityId,
+      );
+      if (
+        !isCurrentAsyncGeneration(generation, postGeneration.current) ||
+        inFlightPost.current?.residentId !== residentId
+      ) {
+        return;
       }
+      if (!result.ok) {
+        if (activeResidentRef.current === residentId || activeResidentRef.current === "") {
+          setMsgError(result.error);
+        }
+        return;
+      }
+      setDrafts((store) => clearPostedResidentDraft(store, residentId, snapshot.body));
+      if (visibleLogResident.current === residentId) {
+        await openResidentLog(residentId);
+      }
+      await loadThreads();
     } catch (err) {
-      setMsgError(err instanceof Error ? err.message : "Failed to post bulletin note");
+      if (isCurrentAsyncGeneration(generation, postGeneration.current)) {
+        setMsgError(err instanceof Error ? err.message : "Failed to post bulletin note");
+      }
     } finally {
-      setPosting(false);
+      if (inFlightPost.current?.generation === generation) {
+        inFlightPost.current = null;
+        setPosting(false);
+      }
     }
-  }, [activeComposeResidentId, draft, deliveryMethod, posting, openResidentLog, selectedResidentId, loadThreads]);
+  }, [loadThreads, openResidentLog]);
 
   useEffect(() => {
     void loadThreads();
   }, [loadThreads]);
+
+  const draftAuthorId = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const nextAuthorId = user?.id ?? null;
+    if (draftAuthorId.current !== undefined && draftAuthorId.current !== nextAuthorId) {
+      setDrafts({});
+    }
+    draftAuthorId.current = nextAuthorId;
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!posting) return;
+    return useFacilityStore.getState().registerFacilityChangeGuard(() => false);
+  }, [posting]);
 
   const visibleThreads = threads.filter((thread) => {
     if (residentFilter === "triage") {
@@ -232,12 +362,18 @@ export default function StaffFamilyMessagesPage() {
           <div className="flex items-start gap-4">
             <button
               type="button"
+              disabled={posting}
               onClick={() => {
+                if (inFlightPost.current) return;
+                visibleLogResident.current = null;
+                logGeneration.current += 1;
                 setSelectedResidentId(null);
+                setResidentName("");
                 setMessages([]);
+                setMsgLoading(false);
                 void loadThreads();
               }}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Back to bulletin notes"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -245,7 +381,7 @@ export default function StaffFamilyMessagesPage() {
             <div>
               <p className="text-xs text-muted-foreground">Family portal bulletin log</p>
               <h2 className="text-2xl font-medium tracking-tight text-foreground">
-                {residentName}
+                {selectedThread?.residentName || residentName || "Resident"}
               </h2>
               {selectedThread?.triageStatus ? (
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -349,13 +485,14 @@ export default function StaffFamilyMessagesPage() {
 
         <StaffFamilyBulletinSection
           residentId={selectedResidentId}
+          recipientLabel={selectedThread?.residentName || residentName || null}
           lastPostedAtIso={selectedThread?.lastMessageAtIso ?? null}
-          draft={draft}
-          deliveryMethod={deliveryMethod}
+          draft={activeDraft.body}
+          deliveryMethod={activeDraft.deliveryMethod}
           posting={posting}
           error={msgError}
-          onDraftChange={setDraft}
-          onDeliveryMethodChange={setDeliveryMethod}
+          onDraftChange={handleDraftChange}
+          onDeliveryMethodChange={handleDeliveryMethodChange}
           onPost={() => { void handlePost(); }}
         />
 
@@ -391,17 +528,14 @@ export default function StaffFamilyMessagesPage() {
 
       <StaffFamilyBulletinSection
         residentId={composeResidentId}
-        onResidentChange={(residentId) => {
-          setComposeResidentId(residentId);
-          setMsgError(null);
-        }}
+        onResidentChange={handleComposeResidentChange}
         lastPostedAtIso={composeThread?.lastMessageAtIso ?? null}
-        draft={draft}
-        deliveryMethod={deliveryMethod}
+        draft={activeDraft.body}
+        deliveryMethod={activeDraft.deliveryMethod}
         posting={posting}
         error={msgError}
-        onDraftChange={setDraft}
-        onDeliveryMethodChange={setDeliveryMethod}
+        onDraftChange={handleDraftChange}
+        onDeliveryMethodChange={handleDeliveryMethodChange}
         onPost={() => { void handlePost(); }}
       />
 
@@ -475,8 +609,12 @@ export default function StaffFamilyMessagesPage() {
                 <MotionItem key={thread.residentId}>
                   <button
                     type="button"
-                    className="group w-full rounded-lg border border-border bg-card p-6 text-left shadow-sm transition-colors hover:bg-muted/40"
-                    onClick={() => { void openResidentLog(thread.residentId); }}
+                    disabled={posting}
+                    className="group w-full rounded-lg border border-border bg-card p-6 text-left shadow-sm transition-colors hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => {
+                      if (inFlightPost.current) return;
+                      void openResidentLog(thread.residentId);
+                    }}
                   >
                     <div className="mb-4 flex items-start justify-between gap-4">
                       <div className="space-y-1">

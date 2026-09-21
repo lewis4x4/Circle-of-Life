@@ -47,6 +47,7 @@ describe("<StaffFamilyNoteComposer />", () => {
       />,
     );
 
+    expect(screen.getByText("Recipient: none selected")).toBeInTheDocument();
     expect(screen.getByText(/post an update/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /post update/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^send$/i })).not.toBeInTheDocument();

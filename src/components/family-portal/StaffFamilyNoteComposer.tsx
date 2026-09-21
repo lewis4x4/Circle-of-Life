@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 export type StaffFamilyNoteComposerProps = {
   draft: string;
   deliveryMethod: FamilyDeliveryMethod;
+  recipientLabel?: string | null;
   posting?: boolean;
   disabled?: boolean;
   error?: string | null;
@@ -24,6 +25,7 @@ export type StaffFamilyNoteComposerProps = {
 export function StaffFamilyNoteComposer({
   draft,
   deliveryMethod,
+  recipientLabel = null,
   posting = false,
   disabled = false,
   error,
@@ -91,6 +93,10 @@ export function StaffFamilyNoteComposer({
           }}
         />
 
+        <p id="family-note-recipient" className="text-sm font-medium text-foreground">
+          {recipientLabel ? `Recipient: ${recipientLabel}` : "Recipient: none selected"}
+        </p>
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             {draft.length}/8000 · Cmd+Enter to post
@@ -100,6 +106,7 @@ export function StaffFamilyNoteComposer({
             variant="outline"
             size="sm"
             disabled={!canPost}
+            aria-describedby="family-note-recipient"
             onClick={onPost}
           >
             {posting ? (
