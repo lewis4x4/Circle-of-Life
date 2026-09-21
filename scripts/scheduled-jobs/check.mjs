@@ -27,12 +27,15 @@ async function api(path,body) {
 const sql=query=>api('database/query',{query});
 try {
   const jobs=await sql(`select j.jobid,j.jobname,j.schedule,j.active,
-    substring(j.command from '/functions/v1/([a-z0-9-]+)') endpoint,
+    substring(j.command from '(?:/functions/v1/|\\.functions\\.supabase\\.co/)([a-z0-9-]+)') endpoint,
     array(select m[1] from regexp_matches(j.command,'name\\s*=\\s*''([^'']+)''','g') m) vault_names,
-    (select substring(v.decrypted_secret from '^https://([a-z]{20})\\.supabase\\.co/?$')
+    coalesce(
+      substring(j.command from 'https://([a-z]{20})\\.functions\\.supabase\\.co/'),
+      substring(j.command from 'https://([a-z]{20})\\.supabase\\.co/functions/v1/'),
+      (select substring(v.decrypted_secret from '^https://([a-z]{20})\\.supabase\\.co/?$')
       from vault.decrypted_secrets v where v.name in
       (select m[1] from regexp_matches(j.command,'name\\s*=\\s*''([^'']+)''','g') m)
-      and (v.name='project_url' or v.name like '%\\_project\\_url')) target_project_ref
+      and (v.name='project_url' or v.name like '%\\_project\\_url'))) target_project_ref
     from cron.job j order by j.jobid`);
   const edge=await api('secrets');
   const vault=await sql(`select name,case when length(decrypted_secret)>0 then
@@ -50,10 +53,13 @@ try {
     await sql('select job_monitor.collect()');
     const records=await sql(`select coalesce(j.jobid,m.jobid) jobid,m.installed_at,
       coalesce(j.jobname,m.jobname) jobname,j.jobid is null removed,
-      substring(m.original_command from '/functions/v1/([a-z0-9-]+)') endpoint,
+      substring(m.original_command from '(?:/functions/v1/|\\.functions\\.supabase\\.co/)([a-z0-9-]+)') endpoint,
       j.command=m.instrumented_command command_matches,
+      case when m.original_command ~ 'net\\.http_post\\s*\\(' then 'http' else 'cron' end monitoring_mode,
       coalesce((select jsonb_agg(r) from (select request_id,requested_at,http_status,outcome,governance_refusal
         from job_monitor.runs where jobid=coalesce(j.jobid,m.jobid) order by requested_at desc limit 100) r),'[]') runs
+      ,coalesce((select jsonb_agg(r) from (select start_time,end_time,status
+        from cron.job_run_details where jobid=coalesce(j.jobid,m.jobid) order by start_time desc limit 100) r),'[]') cron_runs
       from cron.job j full outer join job_monitor.jobs m on m.jobid=j.jobid`);
     outcomes=records.map(record=>assessJob({...record,...jobs.find(j=>j.jobid===record.jobid)}));
     report.jobs=outcomes;
