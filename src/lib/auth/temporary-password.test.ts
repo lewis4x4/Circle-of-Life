@@ -18,8 +18,9 @@ describe("generateSecurePassword", () => {
   });
 
   it("excludes glyphs that are ambiguous when read aloud", () => {
+    expect(TEMPORARY_PASSWORD_ALPHABET).not.toMatch(/[Iil1Oo0]/);
     for (let i = 0; i < 200; i += 1) {
-      expect(generateSecurePassword()).not.toMatch(/[Il1O0]/);
+      expect(generateSecurePassword()).not.toMatch(/[Iil1Oo0]/);
     }
   });
 
