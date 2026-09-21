@@ -135,7 +135,7 @@ try {
       if (correctionResponse.status() !== 200) throw new Error(`Correction failed: ${correctionResponse.status()}`);
       const correctedChain = await page.evaluate(async (task) => { const response = await fetch(`/api/admin/operations/occurrences/${task}/receipts`, { credentials: "same-origin", cache: "no-store" }); return { status: response.status, body: await response.json() }; }, state.tasks["hfo-al-d01-01"]);
       const first = correctedChain.body.receipts?.[0], second = correctedChain.body.receipts?.[1];
-      if (correctedChain.status !== 200 || correctedChain.body.receipts?.length !== 2 || first?.id !== original.id || second?.receipt_kind !== "correction" || second?.corrects_receipt_id !== first.id || first?.superseded_by_receipt_id !== second.id || correctedChain.body.occurrence?.effective_receipt_id !== second.id) throw new Error("Correction chain did not preserve and supersede the original receipt exactly");
+      if (correctedChain.status !== 200 || correctedChain.body.receipts?.length !== 2 || first?.id !== original.id || second?.id === first.id || second?.corrects_receipt_id !== first.id || second?.correction_seq !== 1 || first?.superseded_by_receipt_id !== second.id || correctedChain.body.occurrence?.effective_receipt_id !== second.id) throw new Error("Correction chain did not preserve and supersede the original receipt exactly");
       report.scenarios.correction = { status: "PASS", task: "hfo-al-d01-01", httpStatus: correctionResponse.status(), receiptCount: 2, originalReceiptId: first.id, correctionReceiptId: second.id, originalPreserved: true };
 
       const mail = taskRow(page, "Check for mail");
