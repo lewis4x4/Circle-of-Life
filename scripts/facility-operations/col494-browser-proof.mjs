@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { spawnSync } from "node:child_process";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const args = Object.fromEntries(process.argv.slice(2).reduce((rows, value, index, all) => value.startsWith("--") ? [...rows, [value.slice(2), all[index + 1]]] : rows, []));
@@ -13,9 +14,10 @@ const HOMEWOOD = "00000000-0000-0000-0002-000000000003";
 const state = JSON.parse(fs.readFileSync(statePath, "utf8"));
 if (!state.setupComplete || state.cleaned || state.target !== "iwcnajanvjvynolltflw") throw new Error("Fresh staging fixture required");
 if ((fs.statSync(statePath).mode & 0o077) !== 0) throw new Error("Private state permissions changed");
-const sourceSha = fs.readFileSync(path.join(ROOT, ".git"), "utf8").startsWith("gitdir:")
-  ? process.env.COL494_SOURCE_SHA ?? state.sourceSha
-  : state.sourceSha;
+const sourceSha = spawnSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).stdout.trim();
+if (!/^[a-f0-9]{40}$/.test(sourceSha) || state.sourceSha !== sourceSha) throw new Error("Fixture and current source revision differ");
+const dirtySource = spawnSync("git", ["status", "--porcelain", "--untracked-files=all", "--", "src", "supabase", "scripts/facility-operations/col494-browser-proof.mjs", "scripts/facility-operations/col494-staging-fixture.mjs", "scripts/facility-operations/col494-build-journey-register.mjs", "package.json", "package-lock.json", "next.config.ts", "tsconfig.json", "tsconfig.typecheck.json"], { cwd: ROOT, encoding: "utf8" }).stdout.trim();
+if (dirtySource) throw new Error(`Runtime or proof source is not committed: ${dirtySource.split(/\r?\n/)[0]}`);
 
 const require = createRequire(path.join(ROOT, "package.json"));
 const { chromium } = require("playwright");
@@ -120,7 +122,10 @@ try {
       for (let attempt = 0; !droppedRecord && attempt < 200; attempt += 1) await new Promise((resolve) => setTimeout(resolve, 25));
       if (!droppedRecord) throw new Error("Lost-response proof did not capture the committed answer");
       await marketing.getByText("Saved", { exact: true }).waitFor({ timeout: 30_000 });
-      report.scenarios.routineRecovery = { status: "PASS", task: "hfo-al-d01-01", firstReplyDroppedAfterCommit: true, automaticReadbackReconciled: true, reconciledReceiptId: droppedRecord.responseBody.receipt?.id ?? null };
+      const recovered = await page.evaluate(async (task) => { const response = await fetch(`/api/admin/operations/occurrences/${task}/receipts`, { credentials: "same-origin", cache: "no-store" }); return { status: response.status, body: await response.json() }; }, state.tasks["hfo-al-d01-01"]);
+      const original = recovered.body.receipts?.[0];
+      if (recovered.status !== 200 || recovered.body.receipts?.length !== 1 || original?.id !== recovered.body.occurrence?.effective_receipt_id || original?.receipt_kind !== "performance") throw new Error("Lost-response recovery did not reconcile exactly one original performance receipt");
+      report.scenarios.routineRecovery = { status: "PASS", task: "hfo-al-d01-01", firstReplyDroppedAfterCommit: true, automaticReadbackReconciled: true, receiptCount: 1, originalReceiptId: original.id };
 
       const correction = page.waitForResponse((response) => response.request().method() === "POST" && new URL(response.url()).pathname.endsWith(`/occurrences/${state.tasks["hfo-al-d01-01"]}/correct`));
       await marketing.getByRole("button", { name: "Correct", exact: true }).click();
@@ -128,13 +133,19 @@ try {
       await marketing.getByRole("button", { name: "Save correction", exact: true }).click();
       const correctionResponse = await correction;
       if (correctionResponse.status() !== 200) throw new Error(`Correction failed: ${correctionResponse.status()}`);
-      report.scenarios.correction = { status: "PASS", task: "hfo-al-d01-01", httpStatus: correctionResponse.status() };
+      const correctedChain = await page.evaluate(async (task) => { const response = await fetch(`/api/admin/operations/occurrences/${task}/receipts`, { credentials: "same-origin", cache: "no-store" }); return { status: response.status, body: await response.json() }; }, state.tasks["hfo-al-d01-01"]);
+      const first = correctedChain.body.receipts?.[0], second = correctedChain.body.receipts?.[1];
+      if (correctedChain.status !== 200 || correctedChain.body.receipts?.length !== 2 || first?.id !== original.id || second?.receipt_kind !== "correction" || second?.corrects_receipt_id !== first.id || first?.superseded_by_receipt_id !== second.id || correctedChain.body.occurrence?.effective_receipt_id !== second.id) throw new Error("Correction chain did not preserve and supersede the original receipt exactly");
+      report.scenarios.correction = { status: "PASS", task: "hfo-al-d01-01", httpStatus: correctionResponse.status(), receiptCount: 2, originalReceiptId: first.id, correctionReceiptId: second.id, originalPreserved: true };
 
       const mail = taskRow(page, "Check for mail");
       await mail.getByRole("button", { name: "Record unscheduled work", exact: true }).click();
       const mailRecord = page.waitForResponse((response) => response.request().method() === "POST" && new URL(response.url()).pathname.endsWith(`/occurrences/${state.tasks["hfo-al-d03-01"]}/record`));
       await mail.getByRole("button", { name: "Save work", exact: true }).click();
       if ((await mailRecord).status() !== 200) throw new Error("Evidence-gated work did not record");
+      const beforeEvidence = await page.evaluate(async (task) => { const response = await fetch(`/api/admin/operations/occurrences/${task}/receipts`, { credentials: "same-origin", cache: "no-store" }); return { status: response.status, body: await response.json() }; }, state.tasks["hfo-al-d03-01"]);
+      const heldReceipt = beforeEvidence.body.receipts?.[0];
+      if (beforeEvidence.status !== 200 || beforeEvidence.body.receipts?.length !== 1 || heldReceipt?.completion_state !== "performed_missing_evidence" || beforeEvidence.body.occurrence?.status === "completed") throw new Error("Missing-evidence work was incorrectly treated as completed before upload");
       const evidenceFile = path.join(ROOT, "public/assets/grace-png/grace-thinking.png");
       await mail.getByLabel("File for Synthetic mail-room evidence", { exact: true }).setInputFiles(evidenceFile);
       const evidenceFinal = page.waitForResponse((response) => response.request().method() === "POST" && new URL(response.url()).pathname.endsWith("/finalize"));
@@ -142,7 +153,10 @@ try {
       const evidenceResponse = await evidenceFinal;
       const evidenceBody = await evidenceResponse.json();
       if (evidenceResponse.status() !== 200 || evidenceBody.evidence?.state !== "finalized") throw new Error(`Evidence finalization failed: ${evidenceResponse.status()}`);
-      report.scenarios.conditionalEvidence = { status: "PASS", task: "hfo-al-d03-01", upload: "prepare-put-uploaded-finalize", productionContent: false };
+      const afterEvidence = await page.evaluate(async (task) => { const response = await fetch(`/api/admin/operations/occurrences/${task}/receipts`, { credentials: "same-origin", cache: "no-store" }); return { status: response.status, body: await response.json() }; }, state.tasks["hfo-al-d03-01"]);
+      const satisfiedReceipt = afterEvidence.body.receipts?.[0];
+      if (afterEvidence.status !== 200 || afterEvidence.body.receipts?.length !== 1 || satisfiedReceipt?.id !== heldReceipt.id || satisfiedReceipt?.evidence_status_current !== "complete" || afterEvidence.body.occurrence?.status !== "completed") throw new Error("Finalized evidence did not satisfy the same original performance receipt");
+      report.scenarios.conditionalEvidence = { status: "PASS", task: "hfo-al-d03-01", upload: "prepare-put-uploaded-finalize", before: { receiptId: heldReceipt.id, completionState: heldReceipt.completion_state, occurrenceStatus: beforeEvidence.body.occurrence.status }, after: { sameReceipt: true, evidenceStatus: satisfiedReceipt.evidence_status_current, occurrenceStatus: afterEvidence.body.occurrence.status }, productionContent: false };
 
       const helpData = await page.evaluate(async ({ activity, facility, occurrence }) => {
         const query = new URLSearchParams({ activity_id: activity, facility_id: facility, occurrence_id: occurrence });
@@ -244,11 +258,18 @@ try {
 }
 if (report.scenarios.routineRecovery?.status === "PASS") {
   for (const row of report.viewports) {
-    const expected = row.consoleErrors.filter((message) => message.includes("net::ERR_FAILED"));
+    const expected = row.name === "desktop" ? row.consoleErrors.filter((message) => message.includes("net::ERR_FAILED")).slice(0, 1) : [];
     row.expectedConsoleErrors.push(...expected.map((message) => ({ message, reason: "Intentional dropped response after the server committed; automatic readback reconciliation passed." })));
-    row.consoleErrors = row.consoleErrors.filter((message) => !message.includes("net::ERR_FAILED"));
+    let consumed = expected.length;
+    row.consoleErrors = row.consoleErrors.filter((message) => !(consumed > 0 && message.includes("net::ERR_FAILED") && consumed--));
   }
 }
+const expectedScenarios = ["routineRecovery", "correction", "conditionalEvidence", "helpAndCoverage", "generatorFailure", "censusContext", "residentSourceReview", "employeeFileContext", "corporate", "secondSiteDenial"];
+const completeViewports = ["desktop", "tablet", "mobile"].every((name) => report.viewports.some((row) => row.name === name));
+const cleanBrowser = report.viewports.every((row) => row.pageErrors.length === 0 && row.consoleErrors.length === 0 && row.httpFailures.length === 0 && row.axeViolations.length === 0) && report.refusedOutbound.length === 0;
+const completeScenarios = expectedScenarios.every((name) => report.scenarios[name]?.status === "PASS");
+const finalResult = args.inspect === "true" || args["inspect-generator"] === "true" ? "INSPECT" : completeViewports && cleanBrowser && completeScenarios ? "PASS" : "FAIL";
 fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`);
-console.log(JSON.stringify({ result: "PASS", output, taskCounts: report.viewports.map((row) => [row.name, row.taskCount]), axeViolations: report.viewports.flatMap((row) => row.axeViolations) }));
+console.log(JSON.stringify({ result: finalResult, output, taskCounts: report.viewports.map((row) => [row.name, row.taskCount]), scenarios: expectedScenarios.map((name) => [name, report.scenarios[name]?.status ?? "missing"]), unexpectedErrors: report.viewports.flatMap((row) => [...row.pageErrors, ...row.consoleErrors, ...row.httpFailures]), axeViolations: report.viewports.flatMap((row) => row.axeViolations), refusedOutbound: report.refusedOutbound.length }));
+if (finalResult === "FAIL") process.exitCode = 1;

@@ -305,7 +305,15 @@ async function refresh() {
 
 async function cleanup() {
   const state = JSON.parse(fs.readFileSync(statePath, "utf8"));
-  requireFact(state.target === TARGET && !state.cleaned, "Wrong or already retired fixture");
+  requireFact((fs.statSync(statePath).mode & 0o077) === 0, "Private fixture state permissions changed");
+  requireFact(state.target === TARGET && typeof state.run === "string" && state.run.startsWith("col494-") && !state.cleaned, "Wrong or already retired fixture");
+  requireFact(["owner", "admin", "otherAdmin", "manager", "profileOwner"].every((name) => state.users?.[name]?.id && state.users[name]?.email === `${state.run}-${name}@example.invalid`), "Synthetic user provenance changed");
+  const before = JSON.parse(psql(`SELECT json_build_object(
+    'organization_name',(SELECT name FROM public.organizations WHERE id=${sqlText(state.ids.org)}),
+    'synthetic_profile_count',(SELECT count(*) FROM public.user_profiles WHERE id IN(${Object.values(state.users).map((user) => sqlText(user.id)).join(",")})),
+    'foreign_fixture_email_count',(SELECT count(*) FROM public.user_profiles WHERE id IN(${Object.values(state.users).map((user) => sqlText(user.id)).join(",")}) AND email NOT LIKE ${sqlText(`${state.run}-%@example.invalid`)})
+  )`));
+  requireFact(before.organization_name === state.run && before.synthetic_profile_count === 5 && before.foreign_fixture_email_count === 0, "Fixture database provenance changed");
   for (const user of Object.values(state.users)) {
     const { error } = await service.auth.admin.updateUserById(user.id, { ban_duration: "876000h" });
     if (error) throw new Error(`Could not ban fixture user: ${error.message}`);
@@ -329,6 +337,7 @@ COMMIT;`);
   requireFact(facts.active_profiles === 0 && facts.active_site_grants === 0 && facts.active_subject_grants === 0 && facts.active_sites === 0 && facts.org_retired === true, "Fixture retirement incomplete");
   state.cleaned = true;
   state.cleanedAt = new Date().toISOString();
+  state.cleanupTargetIds = { organizationId: state.ids.org, facilityIds: [state.ids.site, state.ids.otherSite], userIds: Object.values(state.users).map((user) => user.id) };
   state.cleanupFacts = facts;
   for (const user of Object.values(state.users)) delete user.password;
   state.sessions = {};

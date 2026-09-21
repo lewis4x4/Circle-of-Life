@@ -28,6 +28,13 @@ const observed = {
   "hfo-al-d12-01": "residentSourceReview",
   "hfo-al-w06-01": "employeeFileContext",
 };
+function observedPassed(componentKey) {
+  const names = observed[componentKey]?.split(", ") ?? [];
+  return names.length > 0 && names.every((name) => {
+    if (name === "sourceVoid") return browser.scenarios?.generatorFailure?.status === "PASS" && browser.scenarios.generatorFailure.sourceVoid === "invalidated";
+    return browser.scenarios?.[name]?.status === "PASS";
+  });
+}
 function panel(component) {
   if (component.key.startsWith("hfo-al-w01-")) return "Observation source record";
   if (["hfo-al-d04-01", "hfo-al-d17-01", "hfo-al-d19-01", "hfo-al-w08-01"].includes(component.key)) return "Finance and census source context";
@@ -58,7 +65,7 @@ const rows = entries.map((entry) => ({
     evidence_behavior: component.key === "hfo-al-d03-01" ? "Synthetic photo rule proved performed-missing-evidence → finalized evidence → satisfied" : "Rule-controlled; no universal attachment or note",
     corporate_history: "/admin/operations/history — occurrence, immutable receipts, corrections and evidence under current authority",
     follow_up: "/admin/operations/attention and linked operation issue; a failed check remains open after source invalidation",
-    browser_observed: Boolean(observed[component.key]),
+    browser_observed: observedPassed(component.key),
     observed_scenarios: observed[component.key]?.split(", ") ?? [],
     synthetic_configured: component.subjectKind !== null,
     actual_homewood_configured: false,
