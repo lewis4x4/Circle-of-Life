@@ -4,7 +4,7 @@ title = "Circle of Life — Haven"
 [extend]
 useDefault = true
 
-[allowlist]
+[[allowlists]]
 description = "Generated and third-party noise"
 paths = [
   '''package-lock\.json''',
@@ -13,3 +13,18 @@ paths = [
   '''test-results/''',
   '''\.next/''',
 ]
+
+# The insurance program seed names each policy with a slug — auto-plantation,
+# wc-normandy, cgl-nsc101045-plantation. The ones built from a carrier policy
+# number carry enough digits for generic-api-key, an entropy heuristic, to read
+# them as a credential.
+#
+# Exempt the slug, not the file. A `paths` entry would be the obvious way to
+# write this and would be wrong: gitleaks skips an allowlisted path before it
+# reads the contents, so a real credential added to that file later would never
+# be reported — `condition = "AND"` does not change that. Matching the line
+# shape instead keeps every other line in every file scanned.
+[[allowlists]]
+description = "JSON slug identifiers read as entropy (COL-528)"
+regexTarget = "line"
+regexes = ['''"key"\s*:\s*"[a-z][a-z0-9]*(?:-[a-z0-9]+)*"\s*,?\s*$''']
