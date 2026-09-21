@@ -1,0 +1,145 @@
+{
+  "packet_version": 1,
+  "created_at": "2026-09-09T12:00:13.708028+00:00",
+  "origin_worktree": "/Users/rocky/insureflow-ops",
+  "origin_branch": "feat/floor-v1-spine",
+  "context_head": "0fe071965db6391cd795c3c4fb101df47522f944",
+  "implementation_commit": null,
+  "recipient_context_head": "155b5bfda78064f4a3b53db73c57b8a9c6ea364d",
+  "standalone_repository": false,
+  "source_files": [
+    {
+      "path": "src/components/haven/HavenPolicySharingPanel.tsx",
+      "bytes": 19119,
+      "sha256": "0ad6ff8f990686a17b07a03fdf904fb55a88284952b6aae2996d32e4b6f6b39f",
+      "git_state": "untracked"
+    },
+    {
+      "path": "src/components/haven/HavenPolicySharingPanel.test.tsx",
+      "bytes": 7336,
+      "sha256": "1c4ad4f7c874ee95b4dbe1c164defc8b28e5dd158425c591369324385380a5b2",
+      "git_state": "untracked"
+    },
+    {
+      "path": "src/hooks/useHavenPolicySharing.ts",
+      "bytes": 1738,
+      "sha256": "6909c8a696d0e2a44ff4dafd021d3f8ebceaf78b5c9da10bb788421cd6b82888",
+      "git_state": "untracked"
+    },
+    {
+      "path": "src/integrations/haven/types.ts",
+      "bytes": 1163,
+      "sha256": "ccfeac6bfe224268a310f8d7ee005dbd0b4a0ba062148f31ad068c2aa6aa26cf",
+      "git_state": "untracked"
+    },
+    {
+      "path": "supabase/functions/_shared/haven-sharing-core.ts",
+      "bytes": 7519,
+      "sha256": "46dcc995670e83b3e75340f713880fa2edabe75be3ea9a3b4f34443c573379ed",
+      "git_state": "untracked"
+    },
+    {
+      "path": "supabase/functions/_shared/haven-sharing-core.test.ts",
+      "bytes": 5608,
+      "sha256": "de309ec9e0703d0781cade3b24a0a5f7680ca1141b1e9bae50e7db0f2c2591f4",
+      "git_state": "untracked"
+    },
+    {
+      "path": "supabase/functions/haven-policy-sharing/index.ts",
+      "bytes": 893,
+      "sha256": "1f567894d7e232f7c882867333d44c0d4bce7fd102ac3fa29a61a542d79973b3",
+      "git_state": "untracked"
+    },
+    {
+      "path": "supabase/functions/haven-policy-feed/index.ts",
+      "bytes": 757,
+      "sha256": "41ee6683fd5116b682c7d34affac321876b634781a0bdb738892d7c12e4d304b",
+      "git_state": "untracked"
+    },
+    {
+      "path": "supabase/migrations/20260909000100_haven_policy_sharing.sql",
+      "bytes": 16819,
+      "sha256": "dca7d0569fc213f6acc065d26e075946da0bded9ed9dba0e77685f05b0b2ea71",
+      "git_state": "untracked"
+    },
+    {
+      "path": "supabase/tests/haven_policy_sharing.test.mjs",
+      "bytes": 12666,
+      "sha256": "e4fca07fc346a6be883309ba32c12598220f503ccd9be0587f96865a9db52e83",
+      "git_state": "untracked"
+    },
+    {
+      "path": "docs/Astra Review/Haven Policy Sharing - Developer Integration Guide.md",
+      "bytes": 14205,
+      "sha256": "1cd4eb52268d45824a4e5fb2fa218378bc047c35609325fc874678aa18bf0d8a",
+      "git_state": "untracked"
+    },
+    {
+      "path": "docs/Astra Review/Haven Integration - Response to Discovery.md",
+      "bytes": 16210,
+      "sha256": "d01edd718ece93418e443935356a6556ef55f6dd514d527e108ee881af038716",
+      "git_state": "untracked"
+    },
+    {
+      "path": "docs/Astra Review/Haven Policy Feed - Synthetic Fixtures.json",
+      "bytes": 24387,
+      "sha256": "575aed6ab4e5b9c70e4bfcfdaed1ee26c3e21b5d8f6c9117483e952f6958ccea",
+      "git_state": "untracked"
+    },
+    {
+      "path": "docs/Astra Review/Haven Builder Clarifications - Source Location and Mixed Validity.md",
+      "bytes": 5497,
+      "sha256": "2397b75ebb38da4251053984de5fee0af1005039bf06499fca7f9c86d3f3418e",
+      "git_state": "untracked"
+    }
+  ],
+  "support_files": [
+    {
+      "path": "patches/PolicyDetail.base-0fe0719.patch",
+      "bytes": 1554,
+      "sha256": "983a3f3145f21d14da03adb62f6c9340f55da7fe880420fc9c3866cf4d68d9b2"
+    },
+    {
+      "path": "patches/PolicyDetail.recipient-155b5bfd.patch",
+      "bytes": 1144,
+      "sha256": "17c8582aec8e886d1e86abcc7869ddaf7ff2c1f03983efa105b979189787f07b"
+    },
+    {
+      "path": "README-FIRST.md",
+      "bytes": 6290,
+      "sha256": "7e953be3e4e6cbd6903a47e636fef43043804f55275e0df45130346e48c56396"
+    }
+  ],
+  "patch_verification": [
+    {
+      "patch": "patches/PolicyDetail.base-0fe0719.patch",
+      "before_sha256": "191c5b978a20a8294a15ca8221524b0609bf3e3581b975cd6bab27768d9d5f5c",
+      "after_sha256": "d78c5d3d830cb00a85cf0870b6f4f44b89914c803bfd4be23aced6bac781c06f",
+      "apply_check": "passed in isolated temporary repository",
+      "scope": "Haven import/action only; source-base patch also adds account workspace selection"
+    },
+    {
+      "patch": "patches/PolicyDetail.recipient-155b5bfd.patch",
+      "before_sha256": "76d3afc12a89fcef52869eb9d22e5322e7ddc6e218bbd251f366fb59e8b005d3",
+      "after_sha256": "c3de6f40531505f4419212eb1005ac14dae59656196c7f0cb333afe14fa27f7c",
+      "apply_check": "passed in isolated temporary repository",
+      "scope": "Haven import/action only; source-base patch also adds account workspace selection"
+    }
+  ],
+  "executed_checks": {
+    "date": "2026-09-09",
+    "frontend_ui_tests_passed": 7,
+    "deno_transport_tests_passed": 10,
+    "isolated_postgresql_scenarios_passed": 16,
+    "recipient_validation": "patch apply only; no recipient full app build or hosted validation"
+  },
+  "excluded": [
+    "unrelated working-tree changes",
+    "complete PolicyDetail replacement",
+    "environment/secrets",
+    "Supabase temp metadata",
+    "node_modules",
+    "lockfiles",
+    "client documents"
+  ]
+}

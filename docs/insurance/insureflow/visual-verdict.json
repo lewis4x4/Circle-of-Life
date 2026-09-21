@@ -1,0 +1,8 @@
+{
+  "score": 94,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [],
+  "suggestions": [],
+  "reasoning": "The agency summary view follows the existing Haven insurance navigation, rounded panels, restrained colors and readable field hierarchy. Synthetic status, source wording and release provenance are visually distinct; browser checks separately confirm mobile containment and hiding on expiry/offline."
+}
