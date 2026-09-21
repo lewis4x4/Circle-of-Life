@@ -80,3 +80,8 @@ a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic
 9bfc5e27e76fffeeab1535c9bd69409a6e1e1f35:src/lib/resident-intake/schemas.test.ts:generic-api-key:5
 9bfc5e27e76fffeeab1535c9bd69409a6e1e1f35:src/lib/resident-intake/source-finalize.test.ts:generic-api-key:20
 9bfc5e27e76fffeeab1535c9bd69409a6e1e1f35:src/lib/resident-intake/source-prepare.test.ts:generic-api-key:20
+
+# 3220f1cb (COL-314) - public-referral tests use synthetic request-key fixtures.
+# Exact historical fingerprints only; the generic-api-key detector remains active.
+3220f1cbea4feb0e498911360e592c369ebdcf27:src/lib/referrals/public-referral.test.ts:generic-api-key:4
+3220f1cbea4feb0e498911360e592c369ebdcf27:src/app/api/public/referrals/route.test.ts:generic-api-key:9
