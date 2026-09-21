@@ -569,6 +569,10 @@ export function createGithubAdapter({ transport, repository = REPOSITORY, marker
   };
   const findIssue = async (expected = marker) => {
     ensure(expected === marker, 'state-marker-identity');
+    // Issue-list search can lag immediately after creation. Once the exact
+    // created issue is known, read it directly so delivery confirmation does
+    // not depend on eventual list indexing.
+    if (cachedIssue?.body?.includes(expected)) return getIssue(cachedIssue.number);
     const matches = (await transport.pages(`${root}/issues?state=all`)).filter((i) => !i.pull_request && trustedAuthor(i, repository) && i.body?.includes(expected));
     ensure(matches.length <= 1, 'state-duplicate-canonical-repair');
     cachedIssue = matches[0] ?? null;
