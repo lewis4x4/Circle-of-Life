@@ -56,6 +56,7 @@ test("every direct finance-suite source requests finance verification", () => {
 test("CI policy changes use the narrow policy lane without weakening release sensitivity", () => {
   const result = classifyPaths([
     ".github/workflows/ci-gates.yml",
+    ".gitleaksignore",
     "scripts/ci/release-tree-proof.mjs",
     "scripts/review-gates.test.mjs",
     "AGENTS.md",
