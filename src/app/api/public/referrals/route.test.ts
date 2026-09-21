@@ -31,6 +31,14 @@ describe("public referral receipt", () => {
     expect((await POST(request({ ...payload, message: "x".repeat(17000) })))).toMatchObject({ status: 413 });
     expect(rpc).not.toHaveBeenCalled();
   });
+  it("accepts the public Host when Netlify rewrites the internal request URL", async () => {
+    const response = await POST(request(payload, {
+      host: "circleoflifealf.com",
+      origin: "https://circleoflifealf.com",
+    }));
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
   it.each([["42501", 403], ["23505", 409], ["XX000", 503]])("does not claim receipt on database failure %s", async (code, status) => {
     rpc.mockResolvedValue({ data: null, error: { code, message: "Sensitive database details" } });
     const response = await POST(request());

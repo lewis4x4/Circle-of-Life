@@ -21,7 +21,11 @@ const reply = (body: object, status: number, headers: Record<string, string> = {
 
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
-  if ((origin && origin !== new URL(request.url).origin) || request.headers.get("sec-fetch-site") === "cross-site") {
+  const requestUrl = new URL(request.url);
+  const expectedHost = request.headers.get("host")?.trim() || requestUrl.host;
+  const originUrl = origin ? new URL(origin) : null;
+  if ((originUrl && (originUrl.protocol !== requestUrl.protocol || originUrl.host !== expectedHost))
+      || request.headers.get("sec-fetch-site") === "cross-site") {
     return reply({ error: "This submission is not allowed." }, 403);
   }
   if (!request.headers.get("content-type")?.startsWith("application/json")) {
