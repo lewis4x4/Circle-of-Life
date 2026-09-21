@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import {
   parseTraceSampleRate,
+  scrubErrorEvent,
   scrubPerformanceEvent,
 } from "./src/lib/observability/sentry-performance";
 
@@ -17,15 +18,6 @@ if (dsn) {
     tracesSampleRate: traceSampleRate,
     sendDefaultPii: false,
     beforeSendTransaction: scrubPerformanceEvent,
-    beforeSend(event) {
-      if (event.user) {
-        event.user = { id: event.user.id };
-      }
-      if (event.request?.headers) {
-        delete event.request.headers.authorization;
-        delete event.request.headers.cookie;
-      }
-      return event;
-    },
+    beforeSend: scrubErrorEvent,
   });
 }

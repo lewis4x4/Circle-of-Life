@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseTraceSampleRate,
+  scrubErrorEvent,
   scrubPerformanceEvent,
 } from "./sentry-performance";
 
@@ -45,5 +46,49 @@ describe("Sentry performance privacy", () => {
       "GET https://api.test/residents/[id]",
     );
     expect(scrubbed.spans?.[0]?.data?.url).toBe("https://api.test/residents");
+  });
+
+  it("removes connection identity and request payloads from error events", () => {
+    const event = scrubErrorEvent({
+      user: { id: "safe-user", email: "resident@example.com", ip_address: "192.0.2.20" },
+      request: {
+        url: "https://haven.test/api/public/referrals?email=resident@example.com",
+        headers: {
+          Authorization: "Bearer secret",
+          Cookie: "session=secret",
+          "Content-Type": "application/json",
+          "X-Nf-Client-Connection-Ip": "192.0.2.21",
+          "X-Forwarded-For": "192.0.2.22",
+          "X-Real-Ip": "192.0.2.23",
+        },
+        cookies: { session: "secret" },
+        query_string: "email=resident@example.com",
+        data: { email: "resident@example.com", phone: "3865550199" },
+      },
+    });
+
+    expect(event.user).toEqual({ id: "safe-user" });
+    expect(event.request).toEqual({
+      url: "https://haven.test/api/public/referrals",
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(JSON.stringify(event)).not.toMatch(/192\.0\.2\.|resident@example\.com|3865550199|secret/);
+  });
+
+  it("also removes connection headers from transaction request context", () => {
+    const event = scrubPerformanceEvent({
+      type: "transaction",
+      transaction: "POST /api/public/referrals",
+      request: {
+        url: "https://haven.test/api/public/referrals?source=public",
+        headers: { "x-nf-client-connection-ip": "192.0.2.24" },
+        data: { phone: "3865550199" },
+      },
+    });
+
+    expect(event.request).toEqual({
+      url: "https://haven.test/api/public/referrals",
+      headers: {},
+    });
   });
 });
