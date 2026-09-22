@@ -6,7 +6,7 @@ import { fetchHomeOnTap, type HomeOnTapPayload } from "@/lib/home/on-tap";
 import { fetchLiveBoardEscalations, fetchLiveBoardTasks } from "@/lib/rounding/live-board-fetch";
 import { deriveLiveBoardCounts } from "@/lib/rounding/live-board-state";
 import { liveBoardStatusCopy } from "@/lib/rounding/live-board-display-copy";
-import type { Database } from "@/types/database";
+import type { Database, Json } from "@/types/database";
 
 export type HomeRoundingSummary = {
   available: boolean;
@@ -32,19 +32,33 @@ export type HomeInitialData = {
 
 const EMPTY_ROUNDING: HomeRoundingSummary = { available: false, missedToday: 0, openEscalations: 0, lastEntryAt: null, lastEntryBy: null };
 
+/**
+ * The latest Stand Up census figure for one facility, from the workspace's own
+ * `stand_up_command('list')` payload (newest week first). stand_up_reports has
+ * no browser grants, so a direct table read always came back empty (COL-603).
+ */
+export function latestStandUpCensus(data: unknown, facilityId: string): { value: number; weekStart: string } | null {
+  const reports = (data as { reports?: unknown } | null)?.reports;
+  if (!Array.isArray(reports)) return null;
+  const rows = reports
+    .filter((row): row is { facility_id: string; week_start: string; values?: Record<string, unknown> | null } =>
+      Boolean(row) && typeof row === "object" && (row as { facility_id?: unknown }).facility_id === facilityId
+      && typeof (row as { week_start?: unknown }).week_start === "string")
+    .sort((left, right) => right.week_start.localeCompare(left.week_start));
+  for (const row of rows) {
+    const raw = row.values?.current_total_census;
+    if (typeof raw === "number" && Number.isFinite(raw)) return { value: raw, weekStart: row.week_start };
+  }
+  return null;
+}
+
 async function loadStandUpCensus(supabase: SupabaseClient<Database>, facilityId: string) {
-  const { data, error } = await supabase
-    .from("stand_up_reports" as never)
-    .select("week_start, values")
-    .eq("facility_id", facilityId)
-    .order("week_start", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error || !data) return null;
-  const row = data as unknown as { week_start: string; values: Record<string, unknown> | null };
-  const raw = row.values?.current_total_census;
-  const value = typeof raw === "number" ? raw : Number(raw);
-  return Number.isFinite(value) ? { value, weekStart: row.week_start } : null;
+  // Migration-owned RPC is intentionally additive to the generated schema (see lib/stand-up/server.ts).
+  // Answers for owner, org_admin and facility_admin with facility access; anyone else is refused and the tile shows nothing extra.
+  const rpc = supabase.rpc.bind(supabase) as unknown as (name: string, args: { p_action: string; p_payload: Json }) => Promise<{ data: unknown; error: unknown }>;
+  const { data, error } = await rpc("stand_up_command", { p_action: "list", p_payload: { facility_id: facilityId } });
+  if (error) return null;
+  return latestStandUpCensus(data, facilityId);
 }
 
 async function loadRounding(supabase: SupabaseClient<Database>, facilityId: string, localDate: string): Promise<HomeRoundingSummary> {
