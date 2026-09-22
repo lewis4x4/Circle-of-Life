@@ -235,7 +235,7 @@ export default function AdminTrainingNewDemonstrationPage() {
       ) : null}
 
       {!facilityReady && !authLoading ? (
-        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
+        <p className="text-sm text-warning">Select a facility first.</p>
       ) : null}
 
       {fetchErrorBannerMessage ? (
