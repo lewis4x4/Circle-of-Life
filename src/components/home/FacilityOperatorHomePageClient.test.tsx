@@ -165,7 +165,7 @@ describe("FacilityOperatorHomePageClient", () => {
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
   });
 
-  it("keeps Record payment dark until it is released for this facility, then opens it (COL-594)", () => {
+  it("keeps Record payment dark until it is released for this facility, then opens it (COL-594)", async () => {
     const { unmount } = render(
       <FacilityOperatorHomePageClient initial={initial()} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
     );
@@ -180,10 +180,10 @@ describe("FacilityOperatorHomePageClient", () => {
     expect(live).not.toHaveTextContent("Week 2");
     expect(screen.getByRole("button", { name: /Quick note/ })).toBeDisabled();
     fireEvent.click(live);
-    expect(screen.getByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
   });
 
-  it("shows past-due rent only once released: count and total first, names after a tap, and a prefilled Record payment (COL-594)", () => {
+  it("shows past-due rent only once released: count and total first, names after a tap, and a prefilled Record payment (COL-594)", async () => {
     const pastDue = {
       configured: true, localDate: "2026-09-22", graceDays: 5, defaultDueDay: 5,
       residents: [
@@ -201,7 +201,7 @@ describe("FacilityOperatorHomePageClient", () => {
     render(
       <FacilityOperatorHomePageClient initial={initial({ pastDue, releasedModules: ["past_due", "record_payment"] })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
     );
-    const strip = screen.getByTestId("past-due-strip");
+    const strip = await screen.findByTestId("past-due-strip");
     expect(strip).toHaveTextContent("2 residents · $4,200.00 open");
     expect(within(strip).queryByText(/Probe, Ada/)).toBeNull();
     expect(screen.getByTestId("glance-rent")).toHaveTextContent("2");
@@ -209,10 +209,10 @@ describe("FacilityOperatorHomePageClient", () => {
     fireEvent.click(within(strip).getByRole("button", { name: "Show names" }));
     expect(within(strip).getByText(/Probe, Ada/)).toBeInTheDocument();
     fireEvent.click(within(strip).getAllByRole("button", { name: "Record payment" })[0]);
-    expect(screen.getByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
   });
 
-  it("says rent terms are not set rather than showing nobody past due (COL-594)", () => {
+  it("says rent terms are not set rather than showing nobody past due (COL-594)", async () => {
     render(
       <FacilityOperatorHomePageClient
         initial={initial({ pastDue: { configured: false, localDate: "2026-09-22", residents: [] }, releasedModules: ["past_due"] })}
@@ -221,7 +221,7 @@ describe("FacilityOperatorHomePageClient", () => {
         fullName={null}
       />,
     );
-    expect(screen.getByTestId("past-due-unconfigured")).toHaveTextContent("not set for this building");
+    expect(await screen.findByTestId("past-due-unconfigured")).toHaveTextContent("not set for this building");
     expect(screen.queryByText(/past due on rent/)).toBeNull();
   });
 
