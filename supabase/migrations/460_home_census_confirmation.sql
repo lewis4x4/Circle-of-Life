@@ -1,4 +1,4 @@
--- 463: Facility Operator Home — monthly census confirmation on tap (COL-569, COL-593 Cut 1).
+-- 460: Facility Operator Home — monthly census confirmation on tap (COL-569, COL-593 Cut 1).
 --
 -- On the first business day of a month the facility operator confirms last
 -- month's census from Home. The row composes reads that already exist — the

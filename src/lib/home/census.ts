@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
 /**
- * Monthly census confirmation on Home (COL-569, migration 463). On the
+ * Monthly census confirmation on Home (COL-569, migration 460). On the
  * facility's first business day the operator confirms last month's census, or
  * says what is wrong and keeps it open. Counts only. No schema library here:
  * the writer ships in the client bundle next to the claim RPC.

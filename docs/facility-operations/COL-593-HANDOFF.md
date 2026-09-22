@@ -25,7 +25,7 @@
   - App: `/admin` renders `FacilityOperatorHomePageClient` for `facility_admin` and
     `manager`; owners/org admins unchanged. Completion route accepts `outcome` and
     requires a note on `did_not_run`. Executive overview gains "Escalated to you".
-  - Census (COL-569, Cut 1 per Brian lock §9.5): migration `463_home_census_confirmation.sql`.
+  - Census (COL-569, Cut 1 per Brian lock §9.5): migration `460_home_census_confirmation.sql`.
     On the facility's first business day (Mon–Fri; no holiday calendar exists yet) Home
     shows "Confirm census for {prior month}" with counts from `census_daily_log` and the
     Stand Up roster. **Confirm** freezes a server-computed snapshot, stamps the actor and
