@@ -4,6 +4,7 @@ import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/
 import { EMPTY_PRESENCE_CENSUS, fetchPresenceCensus, type PresenceCensus } from "@/lib/executive/presence-census";
 import { fetchHomeCensus, type HomeCensusOnTap } from "@/lib/home/census";
 import { fetchHomeOnTap, type HomeOnTapPayload } from "@/lib/home/on-tap";
+import { fetchHomePastDue, type HomePastDue } from "@/lib/home/past-due";
 import { fetchLiveBoardEscalations, fetchLiveBoardTasks } from "@/lib/rounding/live-board-fetch";
 import { deriveLiveBoardCounts } from "@/lib/rounding/live-board-state";
 import { liveBoardStatusCopy } from "@/lib/rounding/live-board-display-copy";
@@ -31,6 +32,13 @@ export type HomeInitialData = {
   facilityOptions: HomeFacilityOption[];
   /** Monthly census confirmation (COL-569); null when the read is unavailable. */
   census: HomeCensusOnTap | null;
+  /** Home modules switched on for this facility (COL-594); empty when the read fails, so nothing unreleased appears. */
+  releasedModules: string[];
+  /**
+   * Past-due rent, read only when past_due is released for the facility so no
+   * balance reaches the page before then; null when unreleased or unavailable.
+   */
+  pastDue: HomePastDue | null;
 };
 
 const EMPTY_ROUNDING: HomeRoundingSummary = { available: false, missedToday: 0, openEscalations: 0, lastEntryAt: null, lastEntryBy: null };
@@ -62,6 +70,13 @@ async function loadStandUpCensus(supabase: SupabaseClient<Database>, facilityId:
   const { data, error } = await rpc("stand_up_command", { p_action: "list", p_payload: { facility_id: facilityId } });
   if (error) return null;
   return latestStandUpCensus(data, facilityId);
+}
+
+async function loadReleasedModules(supabase: SupabaseClient<Database>, facilityId: string): Promise<string[]> {
+  const rpc = supabase.rpc.bind(supabase) as unknown as (name: string, args: { p_facility_id: string }) => Promise<{ data: unknown; error: unknown }>;
+  const { data, error } = await rpc("home_released_modules", { p_facility_id: facilityId });
+  if (error || !Array.isArray(data)) return [];
+  return data.filter((value): value is string => typeof value === "string");
 }
 
 async function loadRounding(supabase: SupabaseClient<Database>, facilityId: string, localDate: string): Promise<HomeRoundingSummary> {
@@ -107,14 +122,19 @@ export async function loadHome(
   args: { facilityId: string; organizationId: string; now?: Date },
 ): Promise<HomeInitialData> {
   const feed = await fetchHomeOnTap(supabase, args.facilityId, args.now);
-  const [snapshot, presence, standUp, rounding, facilityOptions, census] = await Promise.allSettled([
+  const [snapshot, presence, standUp, rounding, facilityOptions, census, releasedModules] = await Promise.allSettled([
     fetchAdminDashboardSnapshot(args.facilityId, supabase),
     fetchPresenceCensus(supabase, args.organizationId, args.facilityId),
     loadStandUpCensus(supabase, args.facilityId),
     loadRounding(supabase, args.facilityId, feed.localDate),
     loadFacilityOptions(supabase),
     fetchHomeCensus(supabase, args.facilityId, args.now),
+    loadReleasedModules(supabase, args.facilityId),
   ]);
+  const released = releasedModules.status === "fulfilled" ? releasedModules.value : [];
+  const pastDue = released.includes("past_due")
+    ? await fetchHomePastDue(supabase as unknown as SupabaseClient, args.facilityId).catch(() => null)
+    : null;
   return {
     feed,
     snapshot: snapshot.status === "fulfilled" ? snapshot.value : null,
@@ -124,5 +144,7 @@ export async function loadHome(
     rounding: rounding.status === "fulfilled" ? rounding.value : EMPTY_ROUNDING,
     facilityOptions: facilityOptions.status === "fulfilled" ? facilityOptions.value : [],
     census: census.status === "fulfilled" ? census.value : null,
+    releasedModules: released,
+    pastDue,
   };
 }

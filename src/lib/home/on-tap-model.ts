@@ -1,6 +1,7 @@
 import type { AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
 import type { HomeCensusOnTap } from "@/lib/home/census";
 import type { HomeOnTapPayload, HomeOnTapRow } from "@/lib/home/on-tap";
+import type { HomePastDue } from "@/lib/home/past-due";
 
 /**
  * Pure model for the Facility Operator Home (COL-593). Everything here is
@@ -363,6 +364,32 @@ export function buildFyiRows(queues: AdminDashboardSnapshot["workflowQueues"]): 
   return rows;
 }
 
+/**
+ * One On-tap row for rent, ranked right after regulatory items (COL-594). It
+ * carries a count, never a name: names are one tap away on the past-due strip.
+ */
+export function buildRentRows(pastDue: HomePastDue | null): HomeRowView[] {
+  if (!pastDue?.configured || pastDue.residents.length === 0) return [];
+  const oldest = Math.max(...pastDue.residents.map((resident) => resident.daysPastDue));
+  return [{
+    id: "rent:past-due",
+    bucket: "rent",
+    rank: BUCKET_RANK.rent,
+    title: `${plural(pastDue.residents.length, "resident")} past due on rent`,
+    meta: [`Oldest ${plural(oldest, "day")} past due`, "Record the payment or log the contact"],
+    tags: [{ label: "Rent", tone: "rent" }],
+    dueAt: null,
+    dueLabel: null,
+    owner: null,
+    actions: [{ key: "open", label: "See who", tone: "default", href: "#past-due" }],
+    href: "#past-due",
+    instanceId: null,
+    clearTarget: null,
+    catalogKey: null,
+    assignedShiftDate: null,
+  }];
+}
+
 export type RankedOnTap = {
   rows: HomeRowView[];
   later: HomeRowView[];
@@ -381,11 +408,16 @@ export function rankOnTap(args: {
   currentUserId: string | null;
   cap?: number;
   census?: HomeCensusOnTap | null;
+  /** Rent rows from buildRentRows, present only when past_due is released. */
+  rent?: HomeRowView[];
+  /** Residents past due, for the glance strip. */
+  rentResidents?: number;
 }): RankedOnTap {
   const cap = args.cap ?? HOME_VISIBLE_ROW_CAP;
   const ctx = { now: args.now, timeZone: args.feed.timezone, localDate: args.feed.localDate, currentUserId: args.currentUserId };
   const candidates: HomeRowView[] = [
     ...args.feed.rows.map((row) => toRowView(row, ctx)),
+    ...(args.rent ?? []),
     ...args.fyi.map(toFyiRowView),
   ];
   const censusRow = toCensusRowView(args.census, { executiveName: args.feed.escalatesTo?.displayName ?? null });
@@ -405,7 +437,7 @@ export function rankOnTap(args: {
     later,
     counts: {
       regulatory: args.feed.counts.regulatory,
-      rent: 0,
+      rent: args.rentResidents ?? 0,
       assigned: args.feed.counts.assigned + (censusRow ? 1 : 0),
       fyi: args.fyi.length,
       clearedToday: args.feed.counts.clearedToday + (censusClearedRow(args.census) ? 1 : 0),
