@@ -21,7 +21,7 @@ const CAREGIVER_ROOT_ALIAS_PREFIXES = [
 
 /**
  * The "Something happened" flow (spec 07A). The seven capture roles below may
- * open it (the legacy nurse and caregiver roles were folded into med_tech by migration 464),
+ * open it (the legacy nurse and caregiver roles were folded into med_tech by migration 468),
  * which is how the admin shell's "Report incident" button lands here;
  * the RPC still decides who may submit.
  */
@@ -41,7 +41,7 @@ export function isCaregiverReportPath(pathname: string): boolean {
 }
 
 /**
- * The capture roles that migration 401 (as amended by 464) lets report a care event may open
+ * The capture roles that migration 401 (as amended by 468) lets report a care event may open
  * the report flow (spec 07A §6.3). Family, onboarding, broker, dietary,
  * maintenance and housekeeper roles never reach the census on the Who step.
  */

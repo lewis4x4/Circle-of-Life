@@ -22,7 +22,7 @@ type AccountJoin = {
   organization_id: string;
 };
 
-// Marketing works reviews too (owner ruling 2026-09-22; migration 464 grants reputation_replies).
+// Marketing works reviews too (owner ruling 2026-09-22; migration 468 grants reputation_replies).
 const GOOGLE_REPLY_ROLES = ["owner", "org_admin", "facility_admin", "med_tech", "marketing"] as const;
 
 async function revalidateReplyAccess(

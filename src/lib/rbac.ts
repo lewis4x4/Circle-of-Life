@@ -21,7 +21,7 @@ export const ROLE_HIERARCHY: Record<string, number> = {
   broker: 30,
   housekeeper: 30,
   family: 10,
-  // Retired (owner rulings 2026-09-22, migration 464): nobody holds these; tiers kept to
+  // Retired (owner rulings 2026-09-22, migration 468): nobody holds these; tiers kept to
   // mirror haven.role_tier() so an old value still sorts. nurse + caregiver -> med_tech,
   // dietary + dietary_aide -> cook.
   nurse: 50,
@@ -52,7 +52,7 @@ export type AppRole = (typeof ALL_APP_ROLES)[number];
 
 // ── Admin-shell eligible roles ────────────────────────────────────
 // All roles that may access the admin shell. Excludes family, housekeeper.
-// Retired roles are not listed: migration 464 folded nurse/caregiver into med_tech and
+// Retired roles are not listed: migration 468 folded nurse/caregiver into med_tech and
 // dietary/dietary_aide into cook. Marketing is admin-eligible but its admin nav is limited
 // to referrals / pipeline / reputation (see dashboard-routing.ts).
 
@@ -113,7 +113,7 @@ export function isAtLeast(role: string, minTier: number): boolean {
 // ── Static permission map (mirrors role_permissions seed) ─────────
 // Format: feature → role → permission level
 // med_tech holds the widest level any of nurse / caregiver / med_tech held, and cook the
-// widest of dietary / dietary_aide (migration 464 folded role_permissions the same way).
+// widest of dietary / dietary_aide (migration 468 folded role_permissions the same way).
 // marketing has no entry: none of these features cover referrals / pipeline / reputation,
 // which are gated per route.
 
@@ -261,7 +261,7 @@ export const ROLE_LABELS: Record<string, string> = {
   marketing: "Marketing",
   family: "Family Member",
   broker: "Broker",
-  // Legacy display only (history rows) — retired 2026-09-22, migration 464.
+  // Legacy display only (history rows) — retired 2026-09-22, migration 468.
   nurse: "Medication Manager",
   caregiver: "Caregiver / Resident Aide",
   dietary: "Lead Cook / Dietary",

@@ -67,7 +67,7 @@ const MAX_STREAM_ANSWER_TOKENS = 1200;
 
 // Keep this as the intersection with public.app_role enum values only.
 // Role aliases belong at the caller boundary, not in router authorization.
-// Owner ruling 2026-09-22: caregiver is folded into med_tech (migration 464).
+// Owner ruling 2026-09-22: caregiver is folded into med_tech (migration 468).
 const ALLOWED_ROLES = ["owner", "org_admin", "med_tech", "family"];
 
 const SPECULATIVE_DISPATCH_THRESHOLD = 0.7;

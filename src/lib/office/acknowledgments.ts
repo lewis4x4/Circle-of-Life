@@ -45,7 +45,7 @@ export const ACK_ROLES: { id: string; label: string }[] = [
   { id: "marketing", label: "Marketing" },
 ];
 
-/** Retired roles (2026-09-22, migration 464) — labels for requirement rows written before the fold. */
+/** Retired roles (2026-09-22, migration 468) — labels for requirement rows written before the fold. */
 const LEGACY_ACK_ROLE_LABELS: Record<string, string> = {
   nurse: "Nurse (retired)",
   caregiver: "Caregiver (retired)",

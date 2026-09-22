@@ -1,4 +1,4 @@
--- Role consolidation (Brian, 2026-09-22), migration 464. Fails the replay if a later
+-- Role consolidation (Brian, 2026-09-22), migration 468. Fails the replay if a later
 -- migration grants a retired role again:
 --   nurse, caregiver -> med_tech        dietary, dietary_aide -> cook        + marketing
 -- Retired literals may remain only inside exclusion lists (NOT IN / <> ALL), where they

@@ -131,7 +131,7 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     },
   },
   // Owner ruling 2026-09-22: Lead Cook / Dietary and Dietary Aide are retired and
-  // folded into Cook (migration 464). Cook's home is the dietary app.
+  // folded into Cook (migration 468). Cook's home is the dietary app.
   cook: {
     route: "/dietary",
     shell: "dietary",

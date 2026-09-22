@@ -11,7 +11,7 @@ const uuidStringSchema = z.string().refine((value) => UUID_STRING_RE.test(value)
   message: "Invalid UUID",
 });
 
-// Owner rulings 2026-09-22 (migration 464): nurse and caregiver are retired and folded
+// Owner rulings 2026-09-22 (migration 468): nurse and caregiver are retired and folded
 // into med_tech; dietary and dietary_aide into cook; marketing is new. Retired values are
 // not assignable.
 const appRoleEnum = z.enum([

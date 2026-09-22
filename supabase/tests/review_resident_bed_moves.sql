@@ -131,7 +131,7 @@ SELECT pg_temp.bm_denied('SELECT change_resident_bed(deleted_resident,(SELECT id
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''other_fac'') WHERE id=(SELECT inactive FROM bm)','unavailable in this facility');
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''foreign_org'') WHERE id=(SELECT inactive FROM bm)','unavailable in this facility');
 
--- 2026-09-22: caregiver is retired and folded into med_tech (migration 464). A
+-- 2026-09-22: caregiver is retired and folded into med_tech (migration 468). A
 -- leftover caregiver token changes nothing on a resident, clinical or bed.
 SELECT pg_temp.bm_login('caregiver');
 UPDATE residents SET diet_order='Synthetic unrelated update' WHERE id=(SELECT resident FROM bm);
