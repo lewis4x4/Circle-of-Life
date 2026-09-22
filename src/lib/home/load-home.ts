@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
 import { EMPTY_PRESENCE_CENSUS, fetchPresenceCensus, type PresenceCensus } from "@/lib/executive/presence-census";
+import { fetchHomeCensus, type HomeCensusOnTap } from "@/lib/home/census";
 import { fetchHomeOnTap, type HomeOnTapPayload } from "@/lib/home/on-tap";
 import { fetchLiveBoardEscalations, fetchLiveBoardTasks } from "@/lib/rounding/live-board-fetch";
 import { deriveLiveBoardCounts } from "@/lib/rounding/live-board-state";
@@ -28,6 +29,8 @@ export type HomeInitialData = {
   standUpCensus: { value: number; weekStart: string } | null;
   rounding: HomeRoundingSummary;
   facilityOptions: HomeFacilityOption[];
+  /** Monthly census confirmation (COL-569); null when the read is unavailable. */
+  census: HomeCensusOnTap | null;
 };
 
 const EMPTY_ROUNDING: HomeRoundingSummary = { available: false, missedToday: 0, openEscalations: 0, lastEntryAt: null, lastEntryBy: null };
@@ -82,7 +85,7 @@ async function loadFacilityOptions(supabase: SupabaseClient<Database>): Promise<
 
 /**
  * Everything Home composes, in parallel. The feed is required; the presence,
- * Stand Up, rounding and Command Center reads degrade to "unavailable" so one
+ * Stand Up, rounding, census and Command Center reads degrade to "unavailable" so one
  * engine's outage never blanks the queue an operator came here to clear.
  */
 export async function loadHome(
@@ -90,12 +93,13 @@ export async function loadHome(
   args: { facilityId: string; organizationId: string; now?: Date },
 ): Promise<HomeInitialData> {
   const feed = await fetchHomeOnTap(supabase, args.facilityId, args.now);
-  const [snapshot, presence, standUp, rounding, facilityOptions] = await Promise.allSettled([
+  const [snapshot, presence, standUp, rounding, facilityOptions, census] = await Promise.allSettled([
     fetchAdminDashboardSnapshot(args.facilityId, supabase),
     fetchPresenceCensus(supabase, args.organizationId, args.facilityId),
     loadStandUpCensus(supabase, args.facilityId),
     loadRounding(supabase, args.facilityId, feed.localDate),
     loadFacilityOptions(supabase),
+    fetchHomeCensus(supabase, args.facilityId, args.now),
   ]);
   return {
     feed,
@@ -105,5 +109,6 @@ export async function loadHome(
     standUpCensus: standUp.status === "fulfilled" ? standUp.value : null,
     rounding: rounding.status === "fulfilled" ? rounding.value : EMPTY_ROUNDING,
     facilityOptions: facilityOptions.status === "fulfilled" ? facilityOptions.value : [],
+    census: census.status === "fulfilled" ? census.value : null,
   };
 }

@@ -21685,6 +21685,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      home_census_on_tap: {
+        Args: { p_facility_id: string; p_as_of?: string }
+        Returns: Json
+      }
+      home_record_census: {
+        Args: { p_facility_id: string; p_census_month: string; p_outcome: string; p_note?: string }
+        Returns: Json
+      }
+      home_census_notices_for_executive: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       allocate_incident_number: {
         Args: { p_facility_id: string }
         Returns: string
