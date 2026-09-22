@@ -12,6 +12,7 @@ export function AdmissionsHubNav() {
     (pathname.startsWith("/admin/admissions/") && !pathname.startsWith("/admin/admissions/new"));
 
   const links = [
+    { href: "/admin/benefits", label: "Medicaid & Benefits", active: pathname.startsWith("/admin/benefits") },
     { href: "/admin/admissions", label: "Pipeline", active: isPipeline },
     { href: "/admin/admissions/new", label: "New case", active: pathname.startsWith("/admin/admissions/new") },
   ] as const;
