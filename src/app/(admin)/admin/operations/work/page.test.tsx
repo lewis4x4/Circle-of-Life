@@ -286,6 +286,41 @@ describe("Site work", () => {
     ).toBeVisible();
     expect(screen.getByLabelText("File for Entrance photo")).toBeVisible();
   });
+  it("opens the task a Home link names: marked, in view, focused, never auto-completed (COL-604)", async () => {
+    env.query = `facility_id=${facility}&view=today&instance=${task}`;
+    render(<SiteWorkPage />);
+    const button = await screen.findByRole("button", { name: "Complete" });
+    const row = button.closest("li");
+    expect(row).toHaveAttribute("id", `task-${task}`);
+    expect(row).toHaveAttribute("aria-current", "true");
+    await waitFor(() => expect(button).toHaveFocus());
+    expect(network.mock.calls.filter(([url]) => url.endsWith("/record"))).toHaveLength(0);
+    expect(screen.queryByText(/linked task is not in this view/)).toBeNull();
+  });
+  it("opens a linked legacy task, such as the generator check (COL-604)", async () => {
+    const legacyId = "66666666-6666-4666-8666-666666666666";
+    env.query = `facility_id=${facility}&view=today&instance=${legacyId}`;
+    snapshot = {
+      ...reply([]),
+      groups: {
+        due_today: [],
+        outstanding: [],
+        unknown_schedule: [],
+        legacy: [{ id: legacyId, template_name: "Generator weekly run", status: "pending" } as never],
+      },
+    };
+    render(<SiteWorkPage />);
+    const button = await screen.findByRole("button", { name: "Complete legacy task" });
+    expect(button.closest("li")).toHaveAttribute("aria-current", "true");
+    await waitFor(() => expect(button).toHaveFocus());
+    expect(network.mock.calls.filter(([url]) => url.includes("/complete"))).toHaveLength(0);
+  });
+  it("says so when the linked task is not in this view (COL-604)", async () => {
+    env.query = `facility_id=${facility}&view=today&instance=77777777-7777-4777-8777-777777777777`;
+    render(<SiteWorkPage />);
+    expect(await screen.findByText(/linked task is not in this view/)).toBeVisible();
+    expect((await screen.findByRole("button", { name: "Complete" })).closest("li")).not.toHaveAttribute("aria-current");
+  });
   it("keeps old outstanding and unknown schedule work visible", async () => {
     const old = item("Old overdue");
     old.occurrence.id = "old";

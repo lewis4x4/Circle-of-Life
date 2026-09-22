@@ -98,11 +98,41 @@ export type FacilityCoverageGap = {
   linkLabel: string;
 };
 
+/** Operator-queue rows escalated to the viewer for this facility (COL-593, COL-602). */
+export type FacilityOperatorEscalations = {
+  facilityId: string;
+  didNotRun: number;
+  uncleared: number;
+};
+
 export function buildFacilityAttentionItems(
   kpi: ExecKpiPayload | null,
   rounding: ResidentAssuranceFacilityRollup | null,
+  operator: FacilityOperatorEscalations | null = null,
 ): FacilityAttentionItem[] {
   const items: FacilityAttentionItem[] = [];
+
+  if (operator) {
+    const href = `/admin/operations/work?facility_id=${operator.facilityId}`;
+    if (operator.didNotRun > 0) {
+      items.push({
+        key: "operator-did-not-run",
+        label: plural(operator.didNotRun, "check") + " recorded as did not run",
+        detail: "Escalated to you when the building recorded it, with the operator's note.",
+        href,
+        linkLabel: "Open Operations",
+      });
+    }
+    if (operator.uncleared > 0) {
+      items.push({
+        key: "operator-uncleared",
+        label: plural(operator.uncleared, "operator row") + " not cleared by end of day",
+        detail: "Still open after the building's operator day closed.",
+        href,
+        linkLabel: "Open Operations",
+      });
+    }
+  }
 
   if (kpi) {
     if (kpi.clinical.openIncidents > 0) {

@@ -9,7 +9,9 @@
 --   * claim / release move ownership without duplicating the row, and a
 --     stranger cannot claim;
 --   * the end-of-day sweep escalates once, and only the named Facility
---     Executive reads it.
+--     Executive reads it;
+--   * "Did not run" escalates with the completion, reaches the executive with
+--     its note, and the sweep does not escalate it again (COL-602).
 --
 -- Rollback-only fixture. Mirrors review_rounding_completion_receipts.sql.
 BEGIN;
@@ -174,6 +176,56 @@ DO $$ DECLARE got jsonb; BEGIN
  PERFORM pg_temp.as_admin_b();
  SELECT public.home_escalations_for_executive() INTO got;
  PERFORM pg_temp.c_assert(jsonb_array_length(got)=0,'the other building reads no escalations');
+END $$;
+
+-- 6. COL-602: "Did not run" escalates in the same transaction as the
+-- completion, reaches the executive with its reason and note, and the
+-- end-of-day sweep does not escalate it again.
+RESET ROLE;
+SELECT set_config('request.jwt.claims','',true);
+CREATE TEMP TABLE fx2 AS SELECT gen_random_uuid() task_dnr;
+GRANT SELECT ON fx2 TO authenticated,service_role;
+INSERT INTO public.operation_task_instances(id,organization_id,facility_id,template_id,template_name,template_category,template_cadence_type,priority,assigned_shift_date,assigned_shift,assigned_role,status,due_at,subject_id,authority_class)
+SELECT fx2.task_dnr,organization,facility_a,template,'Generator weekly run','safety','weekly','high',shift_date,'evening','facility_admin','pending','2026-09-22T14:00:00Z'::timestamptz,
+       (SELECT id FROM public.operation_activity_subjects WHERE asset_id=fx.asset),'asset' FROM fx, fx2;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE st text; got jsonb; row_ public.operation_task_instances; BEGIN
+ PERFORM pg_temp.as_admin_b();
+ BEGIN PERFORM public.home_record_did_not_run((SELECT task_dnr FROM fx2),'no'); RAISE EXCEPTION 'COL-602 operator at B recorded a check at A';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM pg_temp.as_admin_a();
+ BEGIN PERFORM public.home_record_did_not_run((SELECT task_dnr FROM fx2),'  '); RAISE EXCEPTION 'COL-602 blank note accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ SELECT public.home_record_did_not_run((SELECT task_dnr FROM fx2),'Outcome: did not run. Transfer switch stuck') INTO st;
+ PERFORM pg_temp.c_assert(st='completed','did-not-run completes the check, got '||coalesce(st,'null'));
+ RESET ROLE;
+ SELECT * INTO row_ FROM public.operation_task_instances WHERE id=(SELECT task_dnr FROM fx2);
+ PERFORM pg_temp.c_assert(row_.current_escalation_level=1,'did-not-run is escalated to level 1');
+ PERFORM pg_temp.c_assert(row_.escalation_history->0->>'reason'='did_not_run','history names did_not_run');
+ PERFORM pg_temp.c_assert((row_.escalation_history->0->>'to')::uuid=(SELECT exec FROM fx),'escalation names the facility executive');
+ PERFORM pg_temp.c_assert(row_.completed_at IS NOT NULL AND row_.signed_by=(SELECT admin_a FROM fx),'completion keeps the actor');
+ PERFORM pg_temp.c_assert(EXISTS(SELECT 1 FROM public.operation_audit_log WHERE task_instance_id=row_.id AND event_type='completed'),'completion audit row written');
+ SET LOCAL ROLE authenticated;
+ PERFORM pg_temp.as_admin_a();
+ SELECT public.home_record_did_not_run((SELECT task_dnr FROM fx2),'again') INTO st;
+ PERFORM pg_temp.c_assert(st='completed','a repeat is idempotent');
+ RESET ROLE;
+ PERFORM pg_temp.c_assert((SELECT jsonb_array_length(escalation_history) FROM public.operation_task_instances WHERE id=(SELECT task_dnr FROM fx2))=1,'a repeat does not escalate twice');
+ SET LOCAL ROLE authenticated;
+ PERFORM pg_temp.as_exec();
+ SELECT public.home_escalations_for_executive() INTO got;
+ SELECT e INTO got FROM jsonb_array_elements(got) e WHERE e->>'instanceId'=(SELECT task_dnr::text FROM fx2);
+ PERFORM pg_temp.c_assert(got->>'reason'='did_not_run' AND got->>'status'='completed','executive reads the completed did-not-run row, got '||coalesce(got::text,'null'));
+ PERFORM pg_temp.c_assert(got->>'note' LIKE '%Transfer switch stuck%','executive reads the operator note');
+ PERFORM pg_temp.as_admin_a();
+ PERFORM pg_temp.c_assert(jsonb_array_length(public.home_escalations_for_executive())=0,'a non-executive still reads no escalations');
+END $$;
+RESET ROLE;
+SELECT set_config('request.jwt.claims','',true);
+DO $$ DECLARE n int; BEGIN
+ SELECT public.home_escalate_uncleared(facility_a,after_five+interval '1 minute') INTO n FROM fx;
+ PERFORM pg_temp.c_assert(n=0,'the sweep does not re-escalate a did-not-run check, got '||n);
+ PERFORM pg_temp.c_assert((SELECT jsonb_array_length(escalation_history) FROM public.operation_task_instances WHERE id=(SELECT task_dnr FROM fx2))=1,'sweep leaves did-not-run history alone');
 END $$;
 
 ROLLBACK;
