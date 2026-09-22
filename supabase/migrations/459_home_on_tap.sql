@@ -214,6 +214,9 @@ END $$;
 REVOKE ALL ON FUNCTION public.home_claim_task(uuid, boolean) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.home_claim_task(uuid, boolean) TO authenticated;
 
+COMMENT ON FUNCTION public.home_claim_task(uuid, boolean) IS
+  'COL-37 ruling: definer required — browser DML on operation_task_instances is revoked (348); the function re-checks the caller''s role and haven.operation_task_mutable before writing only assigned_to/assigned_at/assigned_by on one row, and the row guards still lock the caller''s authority (COL-593).';
+
 -- ---------------------------------------------------------------------------
 -- 6. The feed
 -- ---------------------------------------------------------------------------
