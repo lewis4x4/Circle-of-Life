@@ -18,6 +18,12 @@ export type TcorSnapshot = {
   /** premiums + incurred (simple TCoR proxy; not GAAP). */
   tcorCents: number;
   policyRows: number;
+  /**
+   * How many of `policyRows` actually state a premium. A policy with no recorded
+   * premium contributes nothing to `premiumsCents` but still counts in
+   * `policyRows`, so without this the two read as though one describes the other.
+   */
+  policiesWithStatedPremium: number;
   claimRows: number;
 };
 
@@ -58,8 +64,12 @@ export async function computeTotalCostOfRisk(
   if (pErr) return { ok: false, error: pErr.message };
 
   let premiumsCents = 0;
+  let policiesWithStatedPremium = 0;
   for (const p of policies ?? []) {
     const pc = p.premium_cents;
+    // A recorded zero is a statement about the premium; a null is the absence
+    // of one. Only the null case is a gap worth disclosing.
+    if (pc != null) policiesWithStatedPremium += 1;
     if (pc != null && pc > 0) premiumsCents += pc;
   }
 
@@ -94,6 +104,7 @@ export async function computeTotalCostOfRisk(
       incurredLossesCents,
       tcorCents,
       policyRows: (policies ?? []).length,
+      policiesWithStatedPremium,
       claimRows,
     },
   };
