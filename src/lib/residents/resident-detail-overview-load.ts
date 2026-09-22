@@ -16,6 +16,7 @@ import {
 } from "@/lib/residents/resident-overview-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
 import { parseDocumentedAcuityLevel } from "@/lib/residents/resident-acuity-display";
+import { responsiblePartyContact } from "@/lib/residents/resident-responsible-party";
 import { RESIDENT_NO_BED_COPY, RESIDENT_NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
 
@@ -641,7 +642,28 @@ export async function loadResidentOverviewDetail(
     }
   }
 
-  const contactsView = contactsViewFromTable.length > 0 ? contactsViewFromTable : legacyContacts;
+  // COL-599: the last rung. A record can carry a responsible party in its own
+  // columns and no emergency contact at all — four fields this loader already
+  // reads and the card never showed, so the resident read as having nobody.
+  // A maintained contact row, then a legacy emergency contact, then this.
+  const responsibleParty =
+    contactsViewFromTable.length === 0 && legacyContacts.length === 0
+      ? responsiblePartyContact({
+          responsiblePartyName: resident.responsible_party_name,
+          responsiblePartyRelationship: resident.responsible_party_relationship,
+          responsiblePartyPhone: resident.responsible_party_phone,
+          responsiblePartyEmail: resident.responsible_party_email,
+        })
+      : null;
+
+  const contactsView =
+    contactsViewFromTable.length > 0
+      ? contactsViewFromTable
+      : legacyContacts.length > 0
+        ? legacyContacts
+        : responsibleParty
+          ? [responsibleParty.row]
+          : [];
 
   return {
     id: resident.id,
