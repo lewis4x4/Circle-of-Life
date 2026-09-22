@@ -3,7 +3,7 @@ import { z } from "zod";
 
 /**
  * Past-due rent for Home W2 (COL-594), as `public.home_past_due` returns it
- * (migration 466). Due day and grace are facility configuration; a facility
+ * (migration 461). Due day and grace are facility configuration; a facility
  * with none in effect is "not configured", never "nobody owes".
  */
 
