@@ -134,7 +134,7 @@ BEGIN
  RAISE NOTICE 'PASS: unclaimed refusal, explicit idempotent rescue, legacy chip bypass refusal, immutable completion replay';
 END $$;
 
-DO $$ DECLARE f record; sw record; sch uuid; ord uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); n integer; first_count integer; interval_minutes integer;
+DO $$ DECLARE f record; sw record; sw_next record; sch uuid; ord uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); n integer; first_count integer; interval_minutes integer;
 BEGIN
  SELECT * INTO f FROM closeout_fixture;
  SELECT * INTO sw FROM public.facility_shift_window_at(f.fac,now());
@@ -143,6 +143,15 @@ BEGIN
  SELECT id INTO sch FROM public.schedules WHERE facility_id=f.fac AND week_start_date=date_trunc('week',now())::date AND deleted_at IS NULL;
  INSERT INTO public.shift_assignments(id,schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids)
  VALUES(assignment,sch,f.aide_staff,f.fac,f.org,sw.shift_service_date,sw.roster_shift_type,ARRAY[f.resident]);
+ -- The generation horizon below is an hour wide, so for the hour before every
+ -- shift change it lands in the next shift. Staffing only the current shift
+ -- made this assertion pass by clock luck and fail twice a day; roster the
+ -- shift the horizon actually reaches as well.
+ SELECT * INTO sw_next FROM public.facility_shift_window_at(f.fac,now()+interval '1 hour');
+ IF (sw_next.shift_service_date,sw_next.roster_shift_type) IS DISTINCT FROM (sw.shift_service_date,sw.roster_shift_type) THEN
+  INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids)
+  VALUES(sch,f.aide_staff,f.fac,f.org,sw_next.shift_service_date,sw_next.roster_shift_type,ARRAY[f.resident]);
+ END IF;
  SELECT monitoring_order_interval_presets[1] INTO interval_minutes FROM public.facility_observation_thresholds WHERE facility_id=f.fac;
  INSERT INTO public.resident_monitoring_orders(id,organization_id,facility_id,resident_id,interval_minutes,starts_at,ends_at,review_due_at,ordered_by_type,ordered_by_name,order_received_as,reason_category,reason_note,entered_by,status)
  VALUES(ord,f.org,f.fac,f.resident,interval_minutes,now(),now()+interval '1 hour',now()+interval '1 day','facility_admin','Synthetic order authority','verbal','other','Synthetic ownership probe',f.aide,'active');
