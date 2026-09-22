@@ -22,7 +22,11 @@ CREATE FUNCTION pg_temp.receiver_config(c jsonb,p_enabled boolean,m jsonb) RETUR
 SELECT pg_temp.receiver_actor();
 SET LOCAL ROLE service_role;
 INSERT INTO receiver_values SELECT 'create_input',jsonb_build_object('id',connection_id,'organization_id',organization_id,'actor_id',actor_id,'name','Synthetic agency feed','provider_instance','synthetic:local','source_integration_id',integration_id,'ttl_seconds',60,'enabled',false,'mappings',pg_temp.receiver_mapping()) FROM receiver_probe;
-SELECT pg_temp.receiver_expect(format('SELECT public.insureflow_receiver_service(''create'',%L)',(SELECT value||'{"mode":"live"}'::jsonb FROM receiver_values WHERE name='create_input')),'Only synthetic');
+-- COL-546 decision 5: live mode is now a ruled, supported mode, so asserting it
+-- is rejected would assert the opposite of the decision. What must still be
+-- rejected is a mode outside {synthetic, live} — the check that actually stops a
+-- caller inventing a transport the receiver has no admission rules for.
+SELECT pg_temp.receiver_expect(format('SELECT public.insureflow_receiver_service(''create'',%L)',(SELECT value||'{"mode":"direct"}'::jsonb FROM receiver_values WHERE name='create_input')),'Receiver mode must be synthetic or live');
 SELECT pg_temp.receiver_expect(format('SELECT public.insureflow_receiver_service(''create'',%L)',(SELECT value||jsonb_build_object('mappings',jsonb_build_array(jsonb_build_object('account_id',account_id,'entity_id',other_entity_id,'approved',true))) FROM receiver_values CROSS JOIN receiver_probe WHERE name='create_input')),'Mapping entity must be current');
 INSERT INTO receiver_values SELECT 'connection',public.insureflow_receiver_service('create',value) FROM receiver_values WHERE name='create_input';
 SELECT pg_temp.receiver_expect('SELECT pg_temp.receiver_claim()','disabled');
@@ -66,8 +70,20 @@ DO $$DECLARE view jsonb;summary jsonb;BEGIN
  IF view->'live_connection_enabled'<>'false'::jsonb OR jsonb_array_length(view->'connections'->0->'summaries')<>1 OR summary->>'source_sequence'<>'9007199254740993' OR summary->'summary'->>'premium'<>'12500.25' OR summary->'summary'?'account_id' OR summary?'hash' OR summary?'snapshot' THEN RAISE EXCEPTION 'Safe summary projection invalid';END IF;
 END$$;
 SELECT pg_temp.receiver_expect('SELECT public.insureflow_receiver_read(''list'',''{"organization_id":"00000000-0000-4000-8000-000000000000"}'')','Invalid receiver read command');
+-- COL-546 decision 2: a facility administrator is no longer refused outright.
+-- They may read, and see only entities they hold a facility for. The probe's
+-- facility actor holds no facility for the mapped entity, so the correct
+-- assertion is now an empty result rather than an authority error.
 SELECT pg_temp.receiver_actor(true);
-SELECT pg_temp.receiver_expect('SELECT public.insureflow_receiver_read(''list'',''{}'')','manager access');
+-- Two properties, and only these two. The read must not refuse a facility
+-- administrator, and it must expose no summary for an entity they hold no
+-- facility for. The connection list length is not asserted: it is organisation
+-- scoped by a separate predicate and is not what decision 2 changed.
+DO $$DECLARE view jsonb;leaked integer;BEGIN
+ view:=public.insureflow_receiver_read('list','{}');
+ SELECT coalesce(sum(jsonb_array_length(value->'summaries')),0) INTO leaked FROM jsonb_array_elements(view->'connections');
+ IF leaked<>0 THEN RAISE EXCEPTION 'Facility administrator saw % summary row(s) for an entity it holds no facility for',leaked;END IF;
+END$$;
 SELECT pg_temp.receiver_actor();
 RESET ROLE;
 -- Read-time TTL hides data without requiring another poll or browser timer.

@@ -8,7 +8,7 @@ import {
   validateFeedPage,
   type ReceiverState,
 } from "./receiver";
-import { FeedTransportError, type SyntheticFeedTransport } from "./transport";
+import { FeedTransportError, liveTransportEnabled, type SyntheticFeedTransport } from "./transport";
 
 export type ReceiverMapping = { account_id: string; entity_id: string; approved: boolean };
 export type ReceiverConnection = {
@@ -16,7 +16,7 @@ export type ReceiverConnection = {
   organization_id: string;
   source_integration_id: string;
   provider_instance: string;
-  mode: "synthetic";
+  mode: "synthetic" | "live";
   enabled: boolean;
   ttl_seconds: number;
   mappings: ReceiverMapping[];
@@ -78,7 +78,7 @@ export function createReceiverStore(client: ReceiverServiceRpcClient): ReceiverS
 }
 
 export type SyntheticWorkerOptions = {
-  mode: "synthetic";
+  mode: "synthetic" | "live";
   connectionId: string;
   organizationId: string;
   providerInstance: string;
@@ -95,13 +95,25 @@ function isFenceError(error: unknown): boolean {
   return error instanceof ReceiverStoreError && error.code === "40001";
 }
 
-/** Bounded synthetic harness only. There is no deployed worker or live polling entry point. */
+/**
+ * One bounded polling pass over a single connection.
+ *
+ * Synthetic keeps the reviewed admission rules exactly: test runtime only.
+ * Live (COL-546 decision 5) runs on a server with the kill switch on. Everything
+ * after admission — the lease, the fence, the failure translation, the recovery
+ * handoff — is identical, so live cannot take a shortcut synthetic does not have.
+ */
 export async function runSyntheticReceiver(options: SyntheticWorkerOptions): Promise<SyntheticWorkerResult> {
-  if (options.mode !== "synthetic" || process.env.NODE_ENV !== "test" || typeof window !== "undefined" || options.transport.mode !== "synthetic") {
-    throw new FeedTransportError("live_disabled");
-  }
+  const live = options.mode === "live";
+  const admitted = live
+    ? liveTransportEnabled() && typeof window === "undefined" && options.transport.mode === "live"
+    : process.env.NODE_ENV === "test" && typeof window === "undefined" && options.transport.mode === "synthetic";
+  if (!admitted) throw new FeedTransportError("live_disabled");
   const maxPages = options.maxPages ?? 10;
-  if (!Number.isInteger(maxPages) || maxPages < 1 || maxPages > 20 || !/^synthetic:[a-z0-9][a-z0-9_-]{0,63}$/.test(options.providerInstance)) {
+  const instancePattern = live
+    ? /^live:[a-z0-9][a-z0-9_-]{0,63}$/
+    : /^synthetic:[a-z0-9][a-z0-9_-]{0,63}$/;
+  if (!Number.isInteger(maxPages) || maxPages < 1 || maxPages > 20 || !instancePattern.test(options.providerInstance)) {
     throw new FeedTransportError("invalid_configuration");
   }
   const now = options.now ?? (() => new Date().toISOString());
@@ -144,7 +156,8 @@ export async function runSyntheticReceiver(options: SyntheticWorkerOptions): Pro
       }
       return { status: code === "http_401" ? "credential_rejected" : "failed", pagesCommitted };
     };
-    if (connection.mode !== "synthetic" || !connection.enabled
+    // The stored connection must agree with the mode we were asked to run.
+    if (connection.mode !== options.mode || !connection.enabled
       || connection.provider_instance !== options.providerInstance
       || connection.source_integration_id !== options.transport.integrationId) {
       return fail("configuration_mismatch");
