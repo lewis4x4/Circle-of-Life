@@ -16,10 +16,10 @@ import {
 } from "@/components/residents/resident-clinical-overview-widgets";
 import { ResidentDetailTabStrip, type ResidentDetailHrefConfig } from "@/components/residents/ResidentDetailTabStrip";
 import { ResidentPresenceControl } from "@/components/residents/ResidentPresenceControl";
-import { HoldDeclineReturnButton } from "@/components/residents/HoldDeclineReturnButton";
-import { RecordDischargeAction } from "@/components/residents/RecordDischargeAction";
-import { ChangeBedAction } from "@/components/residents/ChangeBedAction";
-import { MonitoringOrderAction } from "@/components/rounding/MonitoringOrderAction";
+import {
+  ResidentDocumentationActions,
+  ResidentLifecycleMenu,
+} from "@/components/residents/ResidentHeaderActions";
 import { ResidentMonitoringOrderBand } from "@/components/rounding/ResidentMonitoringOrderBand";
 import { ResidentIntakeLinks } from "@/components/resident-intake";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -456,33 +456,25 @@ export function ResidentDetailOverviewClient({
   const acuity = acuityDisplay(detail.acuityLevel);
 
   const logActions = (
-    <>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => setBehaviorModalOpen(true)}
-        className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
-      >
-        <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => setConditionModalOpen(true)}
-        className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
-      >
-        <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => setGeneralNoteModalOpen(true)}
-        className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
-      >
-        <FileText className="mr-1.5 size-4" aria-hidden /> General note
-      </Button>
-    </>
+    <ResidentDocumentationActions
+      onLogBehavior={() => setBehaviorModalOpen(true)}
+      onLogCondition={() => setConditionModalOpen(true)}
+      onGeneralNote={() => setGeneralNoteModalOpen(true)}
+    />
   );
+
+  const lifecycleMenu = isPresenceStatus(detail.rawStatus) ? (
+    <ResidentLifecycleMenu
+      residentId={detail.id}
+      residentName={detail.fullName}
+      facilityId={detail.facilityId}
+      currentBedLabel={detail.roomLabel}
+      status={detail.status}
+      initialDialog={searchParams.get("changeBed") === "1" ? "bed" : null}
+      onDone={onAfterLog}
+      onMonitoringOrderDone={onMonitoringOrderChanged}
+    />
+  ) : null;
 
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-4 pt-2">
@@ -505,51 +497,42 @@ export function ResidentDetailOverviewClient({
       </Dialog>
 
       <RecordDetailHeader
+        className="mb-0"
         title={detail.fullName}
         subtitle={subtitleLine}
         backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
+        // Chips state what the resident *is*. Actions moved out of this slot in
+        // COL-582: mixing a 44px button, a 32px button and bare text between the
+        // name and the acuity is what made the header read as a toolbar.
         statusChips={
           <>
             {isPresenceStatus(detail.rawStatus) ? (
-              <>
-                <ResidentPresenceControl residentId={detail.id} status={detail.status} onChanged={onAfterLog} />
-                <HoldDeclineReturnButton residentId={detail.id} status={detail.status} onDone={onAfterLog} />
-                <ChangeBedAction
-                  key={detail.id}
-                  residentId={detail.id}
-                  residentName={detail.fullName}
-                  facilityId={detail.facilityId}
-                  currentBedLabel={detail.roomLabel}
-                  initiallyOpen={searchParams.get("changeBed") === "1"}
-                  onDone={onAfterLog}
-                />
-                {/* Ending a residency is a lifecycle change, so it is its own
-                    confirmed action rather than an option in the presence
-                    picker. It is also the event that frees the bed (COL-418). */}
-                <RecordDischargeAction residentId={detail.id} residentName={detail.fullName} onDone={onAfterLog} />
-                {/* Monitoring Order lives here rather than inside Smart
-                    Rounding: the person holding the discharge paperwork opens
-                    the resident, not a module. */}
-                <MonitoringOrderAction
-                  residentId={detail.id}
-                  residentName={detail.fullName}
-                  facilityId={detail.facilityId}
-                  onDone={onMonitoringOrderChanged}
-                />
-              </>
+              <ResidentPresenceControl residentId={detail.id} status={detail.status} onChanged={onAfterLog} />
             ) : (
               <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
             )}
-            <AcuityChip acuityLevel={detail.acuityLevel} />
-            <DobReveal dobLabel={detail.dobLabel} visible={dobVisible} onToggle={() => setDobVisible((v) => !v)} />
+            {/* Only when acuity is actually posted. "No acuity posted" as bare
+                grey text beside the name is what made the identity row read as
+                unfinished; the care-summary strip below still states the gap
+                and links to the assessments that would close it. */}
+            {acuity.tone === "gap" ? null : <AcuityChip acuityLevel={detail.acuityLevel} />}
           </>
         }
-        actions={<div className="hidden items-center gap-2 md:flex">{logActions}</div>}
+        subtitleTrailing={
+          <DobReveal dobLabel={detail.dobLabel} visible={dobVisible} onToggle={() => setDobVisible((v) => !v)} />
+        }
+        actions={
+          <div className="hidden items-center gap-2 md:flex">
+            {logActions}
+            {lifecycleMenu}
+          </div>
+        }
       />
 
-      {/* Narrow screens: the same three actions as a full-width row under the identity block. */}
-      <div className="-mt-3 grid grid-cols-3 gap-2 md:hidden" aria-label="Documentation actions">
+      {/* Narrow screens: the same actions as a full-width row under the identity block. */}
+      <div className="-mt-1 grid grid-cols-2 gap-2 md:hidden" aria-label="Resident actions">
         {logActions}
+        {lifecycleMenu}
       </div>
 
       <ResidentMonitoringOrderBand residentId={detail.id} reloadToken={monitoringOrderToken} />
@@ -779,7 +762,14 @@ export function ResidentDetailOverviewClient({
                   Behavior logs, condition changes, ADL refusals and general notes recorded for {detail.fullName} appear
                   here. Nothing recorded in this period does not confirm an uneventful period.
                 </p>
-                <div className="flex flex-wrap items-center gap-2">{logActions}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <ResidentDocumentationActions
+                    compact
+                    onLogBehavior={() => setBehaviorModalOpen(true)}
+                    onLogCondition={() => setConditionModalOpen(true)}
+                    onGeneralNote={() => setGeneralNoteModalOpen(true)}
+                  />
+                </div>
               </div>
             ) : feedState === "filtered-empty" ? (
               <div className="flex flex-col items-start gap-3 py-2" role="status">
@@ -935,7 +925,7 @@ export function ResidentDetailOverviewClient({
 
 function DobReveal({ dobLabel, visible, onToggle }: { dobLabel: string; visible: boolean; onToggle: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[12px]">
+    <span className="inline-flex items-center gap-1.5">
       {visible ? (
         <span id="resident-dob" className="tabular-nums text-foreground">
           DOB {dobLabel}

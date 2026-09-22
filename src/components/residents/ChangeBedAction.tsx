@@ -8,17 +8,33 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { createClient } from "@/lib/supabase/client";
 import { bedMoveErrorMessage, loadBedMoveSnapshot, type BedMoveSnapshot } from "@/lib/residents/bed-move";
 
-export function ChangeBedAction({ residentId, residentName, facilityId, currentBedLabel, initiallyOpen = false, onDone }: {
+/** Roles that may move a resident between beds. Exported so a caller can decide
+ *  whether to offer the action at all rather than offering one that renders
+ *  nothing. */
+export const BED_MOVE_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+
+export function ChangeBedAction({ residentId, residentName, facilityId, currentBedLabel, initiallyOpen = false, onDone, open: controlledOpen, onOpenChange, hideTrigger = false }: {
   residentId: string;
   residentName: string;
   facilityId: string;
   currentBedLabel: string;
   initiallyOpen?: boolean;
   onDone?: () => void;
+  /** Controlled open state. Supply with `hideTrigger` when the trigger lives in
+   *  a shared menu — a dialog cannot live inside Radix menu content, which
+   *  unmounts the moment the menu closes. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
   const { appRole, loading: authLoading } = useHavenAuth();
-  const permitted = !authLoading && ["owner", "org_admin", "facility_admin", "nurse"].includes(appRole);
-  const [open, setOpen] = useState(initiallyOpen);
+  const permitted = !authLoading && (BED_MOVE_ROLES as readonly string[]).includes(appRole);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(initiallyOpen);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = useCallback((next: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  }, [controlledOpen, onOpenChange]);
   const [snapshot, setSnapshot] = useState<BedMoveSnapshot | null>(null);
   const [target, setTarget] = useState("");
   const [loading, setLoading] = useState(false);
@@ -73,7 +89,7 @@ export function ChangeBedAction({ residentId, residentName, facilityId, currentB
 
   if (!permitted) return null;
   return <>
-    <Button type="button" variant="outline" size="sm" onClick={() => { setProblem(null); setOpen(true); }}>Change bed</Button>
+    {hideTrigger ? null : <Button type="button" variant="outline" size="sm" onClick={() => { setProblem(null); setOpen(true); }}>Change bed</Button>}
     <Dialog open={open} onOpenChange={(next) => { if (!saving) { setOpen(next); setProblem(null); } }}>
       <DialogContent className="max-w-xl">
         <DialogHeader>

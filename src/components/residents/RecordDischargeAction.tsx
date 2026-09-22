@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,12 +40,26 @@ export function RecordDischargeAction({
   residentId,
   residentName,
   onDone,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   residentId: string;
   residentName: string;
   onDone?: () => void;
+  /** Controlled open state. Supply with `hideTrigger` when the trigger lives in
+   *  a shared menu — a dialog cannot live inside Radix menu content, which
+   *  unmounts the moment the menu closes. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = useCallback((next: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  }, [controlledOpen, onOpenChange]);
   const [saving, setSaving] = useState(false);
   const [date, setDate] = useState("");
   const [reason, setReason] = useState<DischargeReason | "">("");
@@ -103,15 +117,16 @@ export function RecordDischargeAction({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="text-[12px]"
-        onClick={() => setOpen(true)}
-      >
-        Record discharge
-      </Button>
+      {hideTrigger ? null : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setOpen(true)}
+        >
+          Record discharge
+        </Button>
+      )}
       <Dialog
         open={open}
         onOpenChange={(next) => {

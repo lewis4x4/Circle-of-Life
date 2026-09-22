@@ -46,6 +46,9 @@ export function MonitoringOrderAction({
   residentName,
   facilityId,
   onDone,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   residentId: string;
   residentName: string;
@@ -56,8 +59,19 @@ export function MonitoringOrderAction({
    */
   facilityId: string;
   onDone?: () => void;
+  /** Controlled open state. Supply with `hideTrigger` when the trigger lives in
+   *  a shared menu — a dialog cannot live inside Radix menu content, which
+   *  unmounts the moment the menu closes. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = useCallback((next: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  }, [controlledOpen, onOpenChange]);
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState<IntervalOptions | null>(null);
   const [draft, setDraft] = useState<MonitoringOrderDraft | null>(null);
@@ -147,15 +161,16 @@ export function MonitoringOrderAction({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="min-h-[44px] text-[12px]"
-        onClick={() => setOpen(true)}
-      >
-        Monitoring Order
-      </Button>
+      {hideTrigger ? null : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setOpen(true)}
+        >
+          Monitoring Order
+        </Button>
+      )}
       <Dialog
         open={open}
         onOpenChange={(next) => {
