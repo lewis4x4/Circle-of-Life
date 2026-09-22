@@ -14,6 +14,7 @@ import {
   greetingLine,
   rankOnTap,
   scheduleMeta,
+  taskHref,
   titleFor,
   toCensusRowView,
 } from "./on-tap-model";
@@ -222,5 +223,15 @@ describe("monthly census on tap (COL-569)", () => {
     expect(parsed).toMatchObject({ due: true, status: "open", canRecord: true, confirmed: null, lastFlag: null });
     expect(parsed?.snapshot?.rosterCensus).toBe(12);
     expect(parseHomeCensusOnTap({ nope: true })).toBeNull();
+  });
+});
+
+describe("taskHref (COL-604)", () => {
+  it("points an operations row at its single task", () => {
+    expect(taskHref("/admin/operations/work?facility_id=f-1", "i-1")).toBe("/admin/operations/work?facility_id=f-1&instance=i-1");
+  });
+  it("leaves rows without a task, or outside operations, alone", () => {
+    expect(taskHref("/admin/operations/work?facility_id=f-1", null)).toBe("/admin/operations/work?facility_id=f-1");
+    expect(taskHref("/admin/referrals", "i-1")).toBe("/admin/referrals");
   });
 });

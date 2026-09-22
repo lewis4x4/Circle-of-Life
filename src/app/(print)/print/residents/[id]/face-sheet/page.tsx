@@ -19,6 +19,7 @@ import {
   type ResidentContactRowView,
   type ResidentOverviewDetail,
 } from "@/lib/residents/resident-detail-overview-load";
+import { dnhLabel, feedingTubeLabel } from "@/lib/residents/resident-record-edit";
 import { recordedDiagnoses } from "@/lib/residents/resident-diagnosis-display";
 import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
 import { presenceSinceSummary, presenceStatusLabel } from "@/lib/residents/resident-presence-history";
@@ -224,6 +225,11 @@ export default function ResidentFaceSheetPage() {
             </Field>
             <Field label="POLST / MOLST">{polstMolstFriendly(detail.polstMolstRawStatus)}</Field>
             <Field label="Hospice">{hospiceElectionPhrase(detail.hospiceStatus)}</Field>
+            <Field label="DNH (Do Not Hospitalize)">{dnhLabel(detail.doNotHospitalize ?? null)}</Field>
+            <Field label="Feeding tube">
+              {feedingTubeLabel(detail.feedingTube ?? null)}
+              {detail.feedingTubeNotes ? <span className="block text-xs">{detail.feedingTubeNotes}</span> : null}
+            </Field>
             <Field label="Advance directive">
               {detail.advanceDirectiveType ?? "Type not recorded"}
               {detail.advanceDirectiveOnFile ? " · on file" : " · not on file"}

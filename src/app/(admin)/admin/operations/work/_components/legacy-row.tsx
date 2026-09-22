@@ -7,21 +7,30 @@ import { CONTROL } from "./work-inputs";
 export function LegacyRow({
   task,
   actorName,
+  targeted = false,
 }: {
   task: OperationTask;
   actorName: string;
+  /** Named by the page's `instance` link (COL-604): scrolled to, marked and focused. */
+  targeted?: boolean;
 }) {
   const [status, setStatus] = useState<string>(task.status);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const active = useRef(true);
   const complete = useRef<HTMLButtonElement>(null);
+  const row = useRef<HTMLLIElement>(null);
   useEffect(() => {
     active.current = true;
     return () => {
       active.current = false;
     };
   }, []);
+  useEffect(() => {
+    if (!targeted) return;
+    row.current?.scrollIntoView?.({ block: "center" });
+    complete.current?.focus({ preventScroll: true });
+  }, [targeted]);
   async function run(action: "start" | "complete") {
     if (busy || status === "completed") return;
     setBusy(true);
@@ -60,7 +69,12 @@ export function LegacyRow({
     }
   }
   return (
-    <li className="space-y-2 rounded-md border border-border p-4">
+    <li
+      ref={row}
+      id={`task-${task.id}`}
+      aria-current={targeted ? "true" : undefined}
+      className={`space-y-2 rounded-md border p-4 ${targeted ? "border-primary ring-2 ring-primary/40" : "border-border"}`}
+    >
       <h3 className="font-semibold">{task.template_name}</h3>
       <p>Status: {status}</p>
       <p>Current person: {actorName}</p>
