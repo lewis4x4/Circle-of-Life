@@ -1,0 +1,25 @@
+{
+  "verdict": "APPROVE",
+  "scope": "Parent review of independently authored transport, worker and read API/UI; local synthetic only",
+  "findings_resolved": [
+    "Late fetch response now cancels without consuming body after transport deadline",
+    "Transport/provider identity validation aligned with provider and database contract",
+    "Authority loss unmounts displayed read state; restoration must refetch"
+  ],
+  "evidence": [
+    "43 transport/worker tests",
+    "25 API/UI tests",
+    "Actual worker and scoped SQL projection integration",
+    "Seven Chromium checks with mocked auth/navigation/API; zero axe violations"
+  ],
+  "files": {
+    "src/lib/insurance/insureflow/transport.ts": "e56ac69e687947ceb03a42757e8c8b724fa16d0af33bc5d8f4996c8931e4f586",
+    "src/lib/insurance/insureflow/server.ts": "647e3c69c242d4b499657db6401734033df840fd19fe5dd92ebb68f19bf3ebd3",
+    "src/app/api/insurance/agency-summaries/route.ts": "ce6db8ab9f09f4554339eb77d1afe4ae5c08b003159c6a3064f5cf0e5272412a",
+    "src/components/insurance/agency-summaries.tsx": "902c65c081d653721c1e6d8239e9d06792d3a4702a6de80c3244f121b19e147f"
+  },
+  "limitations": [
+    "No live provider or hosted acceptance",
+    "No newly approved reader, freshness or retention policy"
+  ]
+}
