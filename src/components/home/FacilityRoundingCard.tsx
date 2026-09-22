@@ -42,7 +42,9 @@ export function FacilityRoundingCard({ facilityId, facilityName, timeZone, round
   }, [facilityId]);
 
   const missedTone = rounding.missedToday > 0 ? "text-warning" : "text-success";
-  const escalationTone = rounding.openEscalations > 0 ? "text-destructive" : "";
+  // Dark-theme destructive text sits under 4.5:1 on the card, so severity is
+  // carried by weight plus a dot rather than by the number's colour.
+  const escalationTone = rounding.openEscalations > 0 ? "font-semibold" : "";
   const lastEntry = rounding.lastEntryAt
     ? `${formatTime(rounding.lastEntryAt, timeZone)}${rounding.lastEntryBy ? ` · ${rounding.lastEntryBy}` : ""}`
     : "Nothing recorded yet";
@@ -64,7 +66,10 @@ export function FacilityRoundingCard({ facilityId, facilityName, timeZone, round
         <dt className="text-muted-foreground">On time, last 7 days</dt>
         <dd className="text-right font-medium tabular-nums" aria-live="polite">{sevenDay.label}</dd>
         <dt className="text-muted-foreground">Open escalations</dt>
-        <dd className={cn("text-right font-medium tabular-nums", rounding.available ? escalationTone : "text-muted-foreground")}>{rounding.available ? rounding.openEscalations : "Unavailable"}</dd>
+        <dd className={cn("inline-flex items-center justify-end gap-1.5 text-right font-medium tabular-nums", rounding.available ? escalationTone : "text-muted-foreground")}>
+          {rounding.available && rounding.openEscalations > 0 ? <span className="size-1.5 rounded-full bg-destructive" aria-hidden /> : null}
+          {rounding.available ? rounding.openEscalations : "Unavailable"}
+        </dd>
         <dt className="text-muted-foreground">Last entry</dt>
         <dd className="text-right font-medium tabular-nums">{rounding.available ? lastEntry : "Unavailable"}</dd>
       </dl>
