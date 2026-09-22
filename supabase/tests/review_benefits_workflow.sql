@@ -155,9 +155,9 @@ SELECT pg_temp.bassert((SELECT count(*) FROM jsonb_array_elements(public.benefit
 SELECT pg_temp.bassert((SELECT value->>'document_id' IS NULL AND value->>'status' IN ('missing','expired') FROM jsonb_array_elements(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)->'requirements') WHERE value->>'id'=(SELECT reply->>'record_id' FROM br WHERE label='requirement')),'voided evidence still attached to a requirement');
 SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('void_document',jsonb_build_object('document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload'),'reason','twice'))$q$,'22023');
 SELECT pg_temp.berror($q$SELECT public.benefits_document_access((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,(SELECT reply#>>'{document,id}' FROM br WHERE label='upload')::uuid,'download')$q$,'42501');
-SELECT pg_temp.bassert((SELECT value->>'assignee_active'='true' FROM jsonb_array_elements(public.benefits_case_list()->'cases') LIMIT 1),'assignee authority not reported');
+SELECT pg_temp.bassert((SELECT value->>'assignee_active'='true' FROM jsonb_array_elements(public.benefits_case_list()->'cases') WHERE value->>'id'=(SELECT reply->>'case_id' FROM br WHERE label='case')),'assignee authority not reported');
 SELECT public.benefits_access_set(jsonb_build_object('facility_id',site,'user_id',(SELECT id FROM ba WHERE role='manager'),'can_write',true,'can_review',false,'expires_at',now()+interval '1 day','revoked',true,'reason','Synthetic revocation for 453')) FROM bf;
-SELECT pg_temp.bassert((SELECT value->>'assignee_active'='false' FROM jsonb_array_elements(public.benefits_case_list()->'cases') LIMIT 1),'lost assignee authority not flagged');
+SELECT pg_temp.bassert((SELECT value->>'assignee_active'='false' FROM jsonb_array_elements(public.benefits_case_list()->'cases') WHERE value->>'id'=(SELECT reply->>'case_id' FROM br WHERE label='case')),'lost assignee authority not flagged');
 RESET ROLE;
 -- A moved resident: the case stays readable and flagged, cannot be written, and a reviewed rebind follows the resident.
 UPDATE public.residents SET facility_id=(SELECT other_site FROM bf) WHERE id=(SELECT resident FROM bf);
