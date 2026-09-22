@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { HomeCensusOnTap } from "@/lib/home/census";
 import type { HomeInitialData } from "@/lib/home/load-home";
 import type { HomeOnTapPayload, HomeOnTapRow } from "@/lib/home/on-tap";
 
@@ -61,6 +62,7 @@ function initial(overrides: Partial<HomeInitialData> = {}): HomeInitialData {
     standUpCensus: { value: 35, weekStart: "2026-09-21" },
     rounding: { available: true, missedToday: 1, openEscalations: 0, lastEntryAt: "2026-09-22T13:04:00Z", lastEntryBy: "Taylor" },
     facilityOptions: [{ id: FACILITY, name: "Sample Lodge" }],
+    census: null,
     ...overrides,
   };
 }
@@ -187,5 +189,67 @@ describe("FacilityOperatorHomePageClient", () => {
     expect(screen.getByTestId("presence-active")).toHaveTextContent("29");
     expect(screen.getByRole("link", { name: /Hospital: 2/ })).toHaveAttribute("href", "/admin/residents?status=hospital");
     expect(screen.getByRole("note")).toHaveTextContent("Weekly Stand Up reported 35 for the week of 2026-09-21; the roster shows 33.");
+  });
+  it("shows the quick links in the locked order with later weeks badged and disabled", () => {
+    render(
+      <FacilityOperatorHomePageClient initial={initial()} initialFacilityId={FACILITY} currentUserId="me" fullName="Charlene Example" />,
+    );
+    const strip = screen.getByLabelText("Quick actions");
+    const labels = Array.from(strip.querySelectorAll("a, button")).map((node) => node.textContent?.replace(/Week \d/, "").trim());
+    expect(labels).toEqual(["Open Stand Up", "Referrals", "My facility", "EMP", "Report incident", "Record payment", "Call-out", "Quick note"]);
+    expect(within(strip).getByRole("link", { name: /My facility/ })).toHaveAttribute("href", `/admin/facilities/${FACILITY}`);
+    expect(within(strip).getByRole("button", { name: /Record payment/ })).toBeDisabled();
+    expect(within(strip).queryByText(/Maintenance ticket/)).not.toBeInTheDocument();
+  });
+
+  it("puts the monthly census on tap on the first business day and confirms it through the census RPC", async () => {
+    const census: HomeCensusOnTap = {
+      due: true,
+      censusMonth: "2026-09-01",
+      firstBusinessDay: "2026-10-01",
+      status: "open",
+      canRecord: true,
+      snapshot: { daysInMonth: 30, daysLogged: 30, averageOccupied: 46.2, monthEndOccupied: 47, rosterCensus: 48 },
+      confirmed: null,
+      lastFlag: null,
+    };
+    render(
+      <FacilityOperatorHomePageClient
+        initial={initial({ feed: feed({ localDate: "2026-10-01", counts: { regulatory: 0, assigned: 0, clearedToday: 0, later: 0 } }), census })}
+        initialFacilityId={FACILITY}
+        currentUserId="me"
+        fullName="Charlene Example"
+      />,
+    );
+    expect(screen.getByText("Confirm census for September 2026")).toBeInTheDocument();
+    expect(screen.getByText("Roster 48 · Month-end 47 · Avg 46.2 · 30/30 days logged")).toBeInTheDocument();
+    expect(screen.getByText("Confirming notifies Pat Example")).toBeInTheDocument();
+    expect(screen.getByTestId("on-tap-count")).toHaveTextContent("1 on tap");
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    await waitFor(() =>
+      expect(rpc).toHaveBeenCalledWith("home_record_census", { p_facility_id: FACILITY, p_census_month: "2026-09-01", p_outcome: "confirmed" }),
+    );
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("asks for a note before recording Something wrong on the census", async () => {
+    const census: HomeCensusOnTap = {
+      due: true, censusMonth: "2026-09-01", firstBusinessDay: "2026-10-01", status: "open", canRecord: true,
+      snapshot: null, confirmed: null, lastFlag: null,
+    };
+    render(
+      <FacilityOperatorHomePageClient initial={initial({ census })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Something wrong" }));
+    const record = screen.getByRole("button", { name: /Record “Something wrong”/ });
+    expect(record).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/A note is required/), { target: { value: "Two move-outs not yet entered." } });
+    fireEvent.click(record);
+    await waitFor(() =>
+      expect(rpc).toHaveBeenCalledWith("home_record_census", {
+        p_facility_id: FACILITY, p_census_month: "2026-09-01", p_outcome: "flagged", p_note: "Two move-outs not yet entered.",
+      }),
+    );
   });
 });

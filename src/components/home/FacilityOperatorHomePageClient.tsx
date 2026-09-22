@@ -7,9 +7,12 @@ import { Activity, ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import type { HomeInitialData } from "@/lib/home/load-home";
+import { recordHomeCensus } from "@/lib/home/census";
 import { claimHomeTask } from "@/lib/home/claim";
 import {
   buildFyiRows,
+  CENSUS_CLEAR_PREFIX,
+  censusClearedRow,
   coOperatorLine,
   dueBeforeYouLeaveCount,
   escalationFooter,
@@ -79,7 +82,11 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   }, [router]);
 
   const fyi = useMemo(() => (data.snapshot ? buildFyiRows(data.snapshot.workflowQueues) : []), [data.snapshot]);
-  const ranked = useMemo(() => rankOnTap({ feed: data.feed, fyi, now, currentUserId }), [data.feed, fyi, now, currentUserId]);
+  const ranked = useMemo(
+    () => rankOnTap({ feed: data.feed, fyi, now, currentUserId, census: data.census }),
+    [data.feed, fyi, now, currentUserId, data.census],
+  );
+  const censusCleared = censusClearedRow(data.census);
   const dueCount = dueBeforeYouLeaveCount(ranked);
   const feed = data.feed;
   const coLine = coOperatorLine(feed);
@@ -103,9 +110,22 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
     }
   }, [refresh]);
 
-  const onClear = useCallback(async (instanceId: string, action: HomeRowAction, note: string) => {
-    setBusyRow(instanceId);
+  const onClear = useCallback(async (clearTarget: string, action: HomeRowAction, note: string) => {
+    setBusyRow(clearTarget);
     try {
+      if (clearTarget.startsWith(CENSUS_CLEAR_PREFIX)) {
+        // COL-569: the server freezes the counts, stamps the actor and names the executive it notifies.
+        await recordHomeCensus(supabase(), {
+          facilityId,
+          censusMonth: clearTarget.slice(CENSUS_CLEAR_PREFIX.length),
+          outcome: action.key === "census_flag" ? "flagged" : "confirmed",
+          note,
+        });
+        setError(null);
+        refresh();
+        return;
+      }
+      const instanceId = clearTarget;
       const body: Record<string, string> = {};
       if (action.key === "ran" || action.key === "did_not_run") body.outcome = action.key;
       if (note) body.completion_notes = note;
@@ -125,7 +145,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
     } finally {
       setBusyRow(null);
     }
-  }, [refresh]);
+  }, [facilityId, refresh]);
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-6 sm:px-6 lg:px-8" data-testid="facility-operator-home">
@@ -156,7 +176,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
         ) : null}
       </header>
 
-      <QuickActions />
+      <QuickActions facilityId={facilityId} />
 
       <GlanceStrip
         counts={ranked.counts}
@@ -203,7 +223,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
                   row={row}
                   position={index + 1}
                   currentUserId={currentUserId}
-                  busy={busyRow === row.instanceId}
+                  busy={busyRow !== null && (busyRow === row.instanceId || busyRow === row.clearTarget)}
                   onClaim={onClaim}
                   onClear={onClear}
                 />
@@ -211,8 +231,17 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
             </ol>
           )}
 
-          {feed.cleared.length > 0 ? (
+          {feed.cleared.length > 0 || censusCleared ? (
             <ul className="list-none border-t border-border/60" aria-label="Cleared today">
+              {censusCleared ? (
+                <ClearedRow
+                  title={censusCleared.title}
+                  meta={[
+                    `Confirmed ${formatTime(censusCleared.confirmedAt, feed.timezone)}${censusCleared.by ? ` · ${censusCleared.by}` : ""}`,
+                    ...(censusCleared.meta ? [censusCleared.meta] : []),
+                  ]}
+                />
+              ) : null}
               {feed.cleared.map((row) => (
                 <ClearedRow
                   key={row.id}

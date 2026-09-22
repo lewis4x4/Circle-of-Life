@@ -15,7 +15,8 @@ export type OnTapRowProps = {
   currentUserId: string | null;
   busy: boolean;
   onClaim: (instanceId: string, claim: boolean) => void;
-  onClear: (instanceId: string, action: HomeRowAction, note: string) => void;
+  /** Called with the row's clear target: a task instance id, or `census:<month>`. */
+  onClear: (clearTarget: string, action: HomeRowAction, note: string) => void;
 };
 
 /**
@@ -52,8 +53,8 @@ export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear 
             className="mt-2 flex flex-col gap-2"
             onSubmit={(event) => {
               event.preventDefault();
-              if (!row.instanceId || note.trim().length === 0) return;
-              onClear(row.instanceId, noteFor, note.trim());
+              if (!row.clearTarget || note.trim().length === 0) return;
+              onClear(row.clearTarget, noteFor, note.trim());
               setNoteFor(null);
               setNote("");
             }}
@@ -66,7 +67,7 @@ export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear 
               className="min-h-16 rounded-md border border-border bg-background px-2.5 py-2 text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="No sound at the scheduled time. Vendor called."
+              placeholder={noteFor.key === "census_flag" ? "Counts only, no names: two move-outs not yet entered." : "No sound at the scheduled time. Vendor called."}
               required
             />
             <div className="flex justify-end gap-2">
@@ -113,12 +114,12 @@ export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear 
               className={cn(action.tone === "danger" && "border-destructive/40 text-destructive hover:bg-destructive/10")}
               disabled={busy || noteFor !== null}
               onClick={() => {
-                if (!row.instanceId) return;
+                if (!row.clearTarget) return;
                 if (action.requiresNote) {
                   setNoteFor(action);
                   return;
                 }
-                onClear(row.instanceId, action, "");
+                onClear(row.clearTarget, action, "");
               }}
             >
               {action.label}
