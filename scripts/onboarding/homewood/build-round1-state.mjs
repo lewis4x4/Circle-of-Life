@@ -5,7 +5,6 @@ import { scoreFacility } from '../../../facility-launch-center/src/scoring.js';
 import { listNormalizedArtifacts, readManifest, root, writeJson } from './ingestion-lib.mjs';
 
 const outPath = resolve(root, 'facility-launch-center/data/homewood-round1-state.json');
-const publicOutPath = resolve(root, 'public/facility-launch-static/data/homewood-round1-state.json');
 const summaryPath = resolve(root, '.omx/artifacts/homewood-ingestion/HOMEWOOD-ROUND-1-STATE-SUMMARY.md');
 const durableSummaryPath = resolve(root, 'docs/specs/HOMEWOOD-ROUND-1-STATE-SUMMARY-2026-05-13.md');
 
@@ -427,7 +426,6 @@ state.gates = [
 assertNoDemoContamination(state);
 const readiness = scoreFacility(state);
 writeJson(outPath, state);
-writeJson(publicOutPath, state);
 
 const lines = [
   '# Homewood Round 1 Hydrated State Summary',
@@ -457,7 +455,6 @@ writeFileSync(summaryPath, `${lines.join('\n')}\n`);
 writeFileSync(durableSummaryPath, `${lines.join('\n')}\n`);
 
 console.log(`Wrote ${outPath}`);
-console.log(`Wrote ${publicOutPath}`);
 console.log(`Wrote ${summaryPath}`);
 console.log(`Wrote ${durableSummaryPath}`);
 console.log(`Round 1 hydrated state: readiness=${readiness.facilityReadinessScore}, reviews=${state.ingestionReviewQueue.length}, gaps=${state.ingestionGaps.length}, docs=${state.documents.length}, rooms=${state.mvpData.M3.rooms.length}`);

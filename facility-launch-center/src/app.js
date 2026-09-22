@@ -48,7 +48,9 @@ const viewEl = document.getElementById("view");
 const decisionLogEl = document.getElementById("decision-log");
 const resetButton = document.getElementById("reset-demo");
 const loadRound1Button = document.getElementById("load-round1-state");
-const ROUND1_STATE_URL = new URL("../data/homewood-round1-state.json", import.meta.url);
+// Inside Haven the Round 1 state is internal data served by an authenticated route, named on
+// the button; the standalone canonical app falls back to its local data/ copy.
+const ROUND1_STATE_URL = loadRound1Button?.dataset.stateUrl || new URL("../data/homewood-round1-state.json", import.meta.url);
 
 const MODULE_STATUSES = ["not_started", "assigned", "in_progress", "ready_for_review", "signed", "blocked"];
 const SCOPE_STATUSES = ["in", "out", "tbd"];

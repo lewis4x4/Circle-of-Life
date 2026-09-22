@@ -26,7 +26,7 @@ export default function FacilityLaunchPage() {
         <section className="panel">
           <div className="row-between">
             <h3>Decision Log (latest)</h3>
-            <button id="load-round1-state" type="button">Load Round 1 Import</button>
+            <button id="load-round1-state" type="button" data-state-url="/api/admin/facility-launch/round1-state">Load Round 1 Import</button>
             <button id="reset-demo" type="button">Reset Onboarding Shell</button>
           </div>
           <ul id="decision-log" />
