@@ -83,6 +83,11 @@ type LifecycleDialog = "bed" | "discharge" | "monitoring" | null;
  * an item would close with it. `?changeBed=1` still opens the bed dialog on
  * arrival through `initialDialog`.
  */
+/** The resident face sheet print route (COL-599). */
+export function residentFaceSheetHref(residentId: string): string {
+  return `/print/residents/${residentId}/face-sheet`;
+}
+
 export function ResidentLifecycleMenu({
   residentId,
   residentName,
@@ -140,6 +145,13 @@ export function ResidentLifecycleMenu({
           <DropdownMenuGroup>
             <DropdownMenuLabel>Resident record</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {/* COL-599: one page for an EMS transport, a hospital handoff or a
+                surveyor. Opens outside the shell so the sheet is the document. */}
+            <DropdownMenuItem
+              onClick={() => window.open(residentFaceSheetHref(residentId), "_blank", "noopener")}
+            >
+              Print face sheet
+            </DropdownMenuItem>
             {canMoveBed ? (
               <DropdownMenuItem onClick={() => openDialog("bed")}>Change bed…</DropdownMenuItem>
             ) : null}

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ACTIVITY_FEED_ROW_CAP,
   activityFeedEmptyCopy,
+  activityFeedPeriodLabel,
+  activityFeedQueryBounds,
+  activityFeedTruncatedCopy,
+  isActivityFeedPeriod,
   activityFeedFilteredEmptyCopy,
   activityFeedWindow,
   isWithinActivityWindow,
@@ -51,6 +56,34 @@ describe("activity feed state machine", () => {
     expect(copy.toLowerCase()).not.toContain("quiet");
     expect(activityFeedFilteredEmptyCopy("behavior", window)).toBe(
       "No behavior recorded for Aug 17 – Sep 15, 2026. Other entry types were recorded in this period.",
+    );
+  });
+});
+
+describe("COL-599: the operator chooses the period", () => {
+  const now = new Date("2026-09-16T01:30:00.000Z");
+
+  it("widens the window to the chosen span and labels it", () => {
+    const window = activityFeedWindow(now, 90);
+    expect(window.endDay).toBe("2026-09-15");
+    expect(window.startDay).toBe("2026-06-18");
+    expect(activityFeedPeriodLabel(90)).toBe("Last 90 days");
+    expect(activityFeedPeriodLabel(365)).toBe("Last 12 months");
+    expect(isActivityFeedPeriod(90)).toBe(true);
+    expect(isActivityFeedPeriod(45)).toBe(false);
+  });
+
+  it("queries from a day before the window so no late-evening entry is lost", () => {
+    const bounds = activityFeedQueryBounds(30, now);
+    const window = activityFeedWindow(now, 30);
+    expect(bounds.sinceDay < window.startDay).toBe(true);
+    expect(new Date(bounds.sinceIso).getTime()).toBe(now.getTime() - 30 * 86_400_000);
+  });
+
+  it("says when a kind was clipped at the row cap, and says nothing otherwise", () => {
+    expect(activityFeedTruncatedCopy([])).toBeNull();
+    expect(activityFeedTruncatedCopy(["behavior"])).toBe(
+      `Showing the most recent ${ACTIVITY_FEED_ROW_CAP} behavior for this period. The Timeline tab has every entry.`,
     );
   });
 });
