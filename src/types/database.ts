@@ -21697,6 +21697,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      home_record_did_not_run: {
+        Args: { p_notes: string; p_task_id: string }
+        Returns: string
+      }
       allocate_incident_number: {
         Args: { p_facility_id: string }
         Returns: string

@@ -94,7 +94,12 @@ export async function PATCH(
     return NextResponse.json({ error: "Not authorized to complete this task" }, { status: 403 });
   }
 
-  const result = await currentActor.currentActor.client.rpc("complete_operation_task_review" as never, { p_task_id: id, p_actor_id: currentActor.id, p_actor_role: currentActor.appRole, p_notes: completionNotes, p_evidence: body.completion_evidence_paths ?? [] } as never);
+  // COL-602: "Did not run" escalates to the Facility Executive in the same
+  // transaction as the completion, so it reaches them the same day instead of
+  // never (a completed row is invisible to the end-of-day sweep).
+  const result = outcome === "did_not_run"
+    ? await currentActor.currentActor.client.rpc("home_record_did_not_run" as never, { p_task_id: id, p_notes: completionNotes } as never)
+    : await currentActor.currentActor.client.rpc("complete_operation_task_review" as never, { p_task_id: id, p_actor_id: currentActor.id, p_actor_role: currentActor.appRole, p_notes: completionNotes, p_evidence: body.completion_evidence_paths ?? [] } as never);
   if (result.error) {
     logError("admin.operations.tasks.complete", result.error, {
       action: "rpc",
