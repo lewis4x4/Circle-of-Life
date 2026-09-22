@@ -57,7 +57,7 @@ export function isManagerOrAbove(role: string): boolean {
 /**
  * Med-Tech role — dedicated /med-tech cockpit for medication technicians.
  * Owner ruling 2026-09-22: the legacy `nurse` app role is not used; Med-Tech holds
- * everything nurse had (migration 462 converted every nurse user to med_tech).
+ * everything nurse had (migration 464 converted every nurse user to med_tech).
  */
 export function isMedTechRole(role: string): boolean {
   return role === "med_tech";
@@ -66,7 +66,7 @@ export function isMedTechRole(role: string): boolean {
 /**
  * Dietary role — dedicated /dietary command deck for Cooks.
  * Owner ruling 2026-09-22: `dietary` (Lead Cook) and `dietary_aide` are retired and folded
- * into `cook` (migration 462); the legacy values are still accepted so a stale token routes sanely.
+ * into `cook` (migration 464); the legacy values are still accepted so a stale token routes sanely.
  */
 export function isDietaryRole(role: string): boolean {
   return role === "cook" || role === "dietary" || role === "dietary_aide";

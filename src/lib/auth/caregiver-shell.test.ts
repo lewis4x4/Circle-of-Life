@@ -34,7 +34,7 @@ describe("isCaregiverShellPath", () => {
 });
 
 describe("isStaffRoleAllowedOnReportPath", () => {
-  it("allows the seven capture roles that migrations 401 and 462 let report a care event", () => {
+  it("allows the seven capture roles that migrations 401 and 464 let report a care event", () => {
     for (const role of ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"]) {
       expect(isStaffRoleAllowedOnReportPath(role)).toBe(true);
     }

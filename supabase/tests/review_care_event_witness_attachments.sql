@@ -215,7 +215,7 @@ DO $$ DECLARE v_task uuid; BEGIN
     'given by the person it was assigned to');
 END $$;
 
--- 2026-09-22: caregivers are med-techs now (migration 462), and med_tech holds what the
+-- 2026-09-22: caregivers are med-techs now (migration 464), and med_tech holds what the
 -- nurse held — including the follow-up supervision RLS gives it. So B's direct UPDATE of
 -- C's follow-up is allowed through RLS; the witness function above still refuses it.
 -- The row is put back so the rest of this probe sees C's task open.

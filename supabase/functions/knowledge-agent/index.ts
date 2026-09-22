@@ -525,7 +525,7 @@ const REFERRAL_READ_ROLES = new Set<string>([
   "admin_assistant",
   "coordinator",
   "med_tech",
-  // Owner ruling 2026-09-22: marketing reads referrals (migration 462 lead_read).
+  // Owner ruling 2026-09-22: marketing reads referrals (migration 464 lead_read).
   "marketing",
 ]);
 
