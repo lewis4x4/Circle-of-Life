@@ -9,7 +9,7 @@ import { logError } from "@/lib/observability/logger";
 import type { AppRole } from "@/lib/rbac";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
-const ROUNDING_MANAGER_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const satisfies readonly AppRole[];
+const ROUNDING_MANAGER_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const satisfies readonly AppRole[];
 
 export type RoundingRequestContext = {
   actor: CurrentApiActor;

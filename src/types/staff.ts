@@ -42,7 +42,9 @@ export type StaffRole =
   | 'resident_aide'
   | 'dietary_aide'
   | 'activity_aide'
-  | 'resident_services_coordinator';
+  | 'resident_services_coordinator'
+  // ── Owner ruling 2026-09-22 (migration 467) ──
+  | 'cook';
 
 /** New values only — use for the ALTER TYPE migration */
 export const NEW_STAFF_ROLES = [

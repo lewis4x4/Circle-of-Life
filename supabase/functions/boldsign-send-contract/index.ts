@@ -10,7 +10,7 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ALLOWED_ROLES = new Set(["owner", "org_admin", "facility_admin", "manager", "nurse"]);
+const ALLOWED_ROLES = new Set(["owner", "org_admin", "facility_admin", "manager", "med_tech"]);
 
 type ContractRow = {
   id: string;

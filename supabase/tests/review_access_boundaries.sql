@@ -23,18 +23,18 @@ SELECT gen_random_uuid() actor, gen_random_uuid() actor_session, gen_random_uuid
   f.id facility, f.organization_id org, gen_random_uuid() definition FROM public.facilities f WHERE f.deleted_at IS NULL LIMIT 1;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM access_fixture) THEN RAISE EXCEPTION 'Local replay seed facility required'; END IF; END $$;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
-SELECT actor,actor||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','caregiver'),jsonb_build_object('full_name','Review actor') FROM access_fixture
+SELECT actor,actor||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','med_tech'),jsonb_build_object('full_name','Review actor') FROM access_fixture
 UNION ALL SELECT manager,manager||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','manager'),jsonb_build_object('full_name','Review manager') FROM access_fixture;
 INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active)
-SELECT actor,actor||'@review.invalid','Review actor','caregiver'::public.app_role,org,true FROM access_fixture
+SELECT actor,actor||'@review.invalid','Review actor','med_tech'::public.app_role,org,true FROM access_fixture
 UNION ALL SELECT manager,manager||'@review.invalid','Review manager','manager'::public.app_role,org,true FROM access_fixture
 ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT actor,facility,org FROM access_fixture;
 INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM access_fixture;
 SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
   'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
-  'role','authenticated','app_role','caregiver','organization_id',f.org,
-  'app_metadata',jsonb_build_object('app_role','caregiver','organization_id',f.org))::text,true)
+  'role','authenticated','app_role','med_tech','organization_id',f.org,
+  'app_metadata',jsonb_build_object('app_role','med_tech','organization_id',f.org))::text,true)
 FROM access_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 GRANT SELECT ON access_fixture TO authenticated;
 SET LOCAL ROLE authenticated;
@@ -112,8 +112,8 @@ DO $$ DECLARE f record; witness uuid:=gen_random_uuid(); med uuid; first_count u
  SELECT * INTO f FROM access_fixture;
  SELECT id INTO med FROM public.resident_medications WHERE facility_id=f.facility AND organization_id=f.org AND deleted_at IS NULL LIMIT 1;
  IF med IS NULL THEN RAISE EXCEPTION 'Local seed medication required'; END IF;
- INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) VALUES(witness,witness||'@review.invalid',jsonb_build_object('organization_id',f.org,'app_role','nurse'),jsonb_build_object('full_name','Review witness'));
- INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active) VALUES(witness,witness||'@review.invalid','Review witness','nurse',f.org,true)
+ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) VALUES(witness,witness||'@review.invalid',jsonb_build_object('organization_id',f.org,'app_role','med_tech'),jsonb_build_object('full_name','Review witness'));
+ INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active) VALUES(witness,witness||'@review.invalid','Review witness','med_tech',f.org,true)
    ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
  INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) VALUES(witness,f.facility,f.org);
  INSERT INTO public.controlled_substance_counts(id,resident_medication_id,facility_id,organization_id,count_date,shift,expected_count,actual_count,outgoing_staff_id)

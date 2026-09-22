@@ -147,7 +147,7 @@ function getRoleHomeLabel(
       return "Front desk home";
     case "coordinator":
       return "Coordinator home";
-    case "nurse":
+    case "med_tech":
       return "Medication home";
     default:
       return `${roleLabel} home`;

@@ -146,7 +146,7 @@ function occurrence(overrides: Partial<OccurrenceRow> & { id: string }): Occurre
   };
 }
 
-const version = { id: versionId, allowed_recorder_roles: ["nurse", "facility_admin"], review_required: false, required_inputs: [{ key: "weight_lb", label: "Weight", type: "number", required: true, unit: "lb" }], required_evidence: [] };
+const version = { id: versionId, allowed_recorder_roles: ["med_tech", "facility_admin"], review_required: false, required_inputs: [{ key: "weight_lb", label: "Weight", type: "number", required: true, unit: "lb" }], required_evidence: [] };
 const facilityRule = { id: facilityRuleId, local_allowed_recorder_roles: null, local_required_inputs: null, local_required_evidence: null };
 
 function actorFor(client: ReturnType<typeof fakeClient>, appRole = "facility_admin"): OperationsActor {
@@ -243,7 +243,7 @@ describe("governing rules", () => {
   it("coalesces local over central as 341 does: a present local list wins even when empty, an absent one falls back", () => {
     const rules = resolveRules(version, { id: facilityRuleId, local_allowed_recorder_roles: [], local_required_inputs: null, local_required_evidence: [{ kind: "photo", label: "Scale", min_count: 1, when: "on_success" }] });
     expect(rules).toEqual({ inputs: version.required_inputs, evidence: [{ kind: "photo", label: "Scale", min_count: 1, when: "on_success" }], recorder_roles: [], review_required: false });
-    expect(resolveRules(version, null)).toEqual({ inputs: version.required_inputs, evidence: [], recorder_roles: ["nurse", "facility_admin"], review_required: false });
+    expect(resolveRules(version, null)).toEqual({ inputs: version.required_inputs, evidence: [], recorder_roles: ["med_tech", "facility_admin"], review_required: false });
   });
 
   it.each(["version", "local", "no-version"])("fails closed when the pinned %s rule is unavailable", async (missing) => {
@@ -264,13 +264,13 @@ describe("governing rules", () => {
     const otherVersion = uuid(70);
     const client = fakeClient({
       managed: [occurrence({ id: uuid(1) }), occurrence({ id: uuid(2), requirement_version_id: otherVersion, facility_requirement_id: null })],
-      versions: [version, { id: otherVersion, allowed_recorder_roles: ["nurse"], review_required: true, required_inputs: [], required_evidence: [{ kind: "document", label: "Log", min_count: 1, when: "always" }] }],
+      versions: [version, { id: otherVersion, allowed_recorder_roles: ["med_tech"], review_required: true, required_inputs: [], required_evidence: [{ kind: "document", label: "Log", min_count: 1, when: "always" }] }],
       facility_rules: [{ ...facilityRule, local_allowed_recorder_roles: ["facility_admin"] }],
     });
     const groups = todayGroups(await compose(client));
     const byId = new Map(groups.due_today.map((item) => [item.occurrence.id, item]));
     expect(byId.get(uuid(1))?.rules).toEqual({ inputs: version.required_inputs, evidence: [], recorder_roles: ["facility_admin"], review_required: false, can_record: true });
-    expect(byId.get(uuid(2))?.rules).toEqual({ inputs: [], evidence: [{ kind: "document", label: "Log", min_count: 1, when: "always" }], recorder_roles: ["nurse"], review_required: true, can_record: false });
+    expect(byId.get(uuid(2))?.rules).toEqual({ inputs: [], evidence: [{ kind: "document", label: "Log", min_count: 1, when: "always" }], recorder_roles: ["med_tech"], review_required: true, can_record: false });
     expect(byId.get(uuid(2))?.evidence_summary).toEqual({ required_rules: 1, satisfied: false });
     expect(client.reads.versions?.find((call) => call.method === "in")?.args).toEqual(["id", [versionId, otherVersion]]);
     expect(client.reads.facility_rules?.find((call) => call.method === "in")?.args).toEqual(["id", [facilityRuleId]]);
@@ -280,25 +280,25 @@ describe("governing rules", () => {
 describe("mine narrowing", () => {
   const item = (id: string, recorder_roles: string[] | null): WorkspaceItem => ({
     occurrence: { id } as WorkspaceItem["occurrence"],
-    rules: recorder_roles ? { inputs: [], evidence: [], recorder_roles, review_required: false, can_record: recorder_roles.includes("nurse") } : null,
+    rules: recorder_roles ? { inputs: [], evidence: [], recorder_roles, review_required: false, can_record: recorder_roles.includes("med_tech") } : null,
     receipt: null,
     open_issues: 0,
     evidence_summary: null,
   });
 
   it("keeps rows naming the actor's role, unassigned rows and rows whose rules could not be read", () => {
-    const kept = narrowToMine([item("mine", ["nurse"]), item("theirs", ["dietary"]), item("unassigned", []), item("unknown", null)], "nurse");
+    const kept = narrowToMine([item("mine", ["med_tech"]), item("theirs", ["cook"]), item("unassigned", []), item("unknown", null)], "med_tech");
     expect(kept.map((entry) => entry.occurrence.id)).toEqual(["mine", "unassigned", "unknown"]);
   });
 
   it("keeps unassigned legacy tasks and the actor's own", () => {
     const task = (id: string, assigned_to: string | null, assigned_role: string | null) => ({ id, assigned_to, assigned_role }) as Parameters<typeof narrowLegacyToMine>[0][number];
-    const kept = narrowLegacyToMine([task("own", "actor", null), task("other-person", "someone", null), task("own-role", null, "nurse"), task("other-role", null, "dietary"), task("unassigned", null, null)], { id: "actor", appRole: "nurse" });
+    const kept = narrowLegacyToMine([task("own", "actor", null), task("other-person", "someone", null), task("own-role", null, "med_tech"), task("other-role", null, "cook"), task("unassigned", null, null)], { id: "actor", appRole: "med_tech" });
     expect(kept.map((entry) => entry.id)).toEqual(["own", "own-role", "unassigned"]);
   });
 
   it("never narrows unless asked", async () => {
-    const client = fakeClient({ managed: [occurrence({ id: uuid(1) })], versions: [{ ...version, allowed_recorder_roles: ["dietary"] }], facility_rules: [facilityRule] });
+    const client = fakeClient({ managed: [occurrence({ id: uuid(1) })], versions: [{ ...version, allowed_recorder_roles: ["cook"] }], facility_rules: [facilityRule] });
     expect(todayGroups(await compose(client)).due_today).toHaveLength(1);
     expect(todayGroups(await compose(client, { mine: true })).due_today).toHaveLength(0);
   });

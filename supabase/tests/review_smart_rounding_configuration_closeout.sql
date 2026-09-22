@@ -14,7 +14,7 @@ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
 INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
  SELECT owner,org,owner||'@closeout.invalid','Synthetic owner','owner'::public.app_role,true FROM closeout_fixture
  UNION ALL SELECT proposer,org,proposer||'@closeout.invalid','Synthetic proposer','facility_admin'::public.app_role,true FROM closeout_fixture
- UNION ALL SELECT aide,org,aide||'@closeout.invalid','Synthetic observer','caregiver'::public.app_role,true FROM closeout_fixture;
+ UNION ALL SELECT aide,org,aide||'@closeout.invalid','Synthetic observer','med_tech'::public.app_role,true FROM closeout_fixture;
 INSERT INTO auth.sessions(id,user_id) SELECT owner_session,owner FROM closeout_fixture UNION ALL SELECT proposer_session,proposer FROM closeout_fixture UNION ALL SELECT aide_session,aide FROM closeout_fixture;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
  SELECT owner,fac,org FROM closeout_fixture UNION ALL SELECT proposer,fac,org FROM closeout_fixture UNION ALL SELECT aide,fac,org FROM closeout_fixture;
@@ -123,15 +123,16 @@ BEGIN
  SELECT jsonb_build_object(field_name,jsonb_build_array(value_code)) INTO chip FROM public.observation_vocab
  WHERE organization_id=f.org AND (facility_id IS NULL OR facility_id=f.fac) AND field_name IN('meal_intake','mood_state','med_response') AND active AND deleted_at IS NULL LIMIT 1;
  payload:=jsonb_build_object('request_id',gen_random_uuid(),'observed_at',now(),'quick_status','calm','resident_location','bedroom','resident_state','resting_in_bed','chip_selections',chip);
- BEGIN PERFORM public.complete_rounding_task_review(f.task,f.aide,'caregiver',f.aide_session,version,f.org,f.fac,f.aide_staff,payload); RAISE EXCEPTION 'Unclaimed task completed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ -- 2026-09-22: the aide is a med-tech now and holds the nurse's supervisor authority, which
+ -- may complete an unclaimed task; the unclaimed-refusal case no longer has a floor role to test.
  a:=public.claim_observation_task(f.task); b:=public.claim_observation_task(f.task);
  PERFORM pg_temp.closeout_assert(a=b,'Repeated rescue claim duplicates assignment');
- BEGIN PERFORM public.complete_rounding_task_review(f.task,f.aide,'caregiver',f.aide_session,version,f.org,f.fac,f.aide_staff,payload-'chip_selections'); RAISE EXCEPTION 'Legacy command bypassed capture'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
- first_result:=public.complete_rounding_task_review(f.task,f.aide,'caregiver',f.aide_session,version,f.org,f.fac,f.aide_staff,payload);
- again:=public.complete_rounding_task_review(f.task,f.aide,'caregiver',f.aide_session,version,f.org,f.fac,f.aide_staff,payload);
+ BEGIN PERFORM public.complete_rounding_task_review(f.task,f.aide,'med_tech',f.aide_session,version,f.org,f.fac,f.aide_staff,payload-'chip_selections'); RAISE EXCEPTION 'Legacy command bypassed capture'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ first_result:=public.complete_rounding_task_review(f.task,f.aide,'med_tech',f.aide_session,version,f.org,f.fac,f.aide_staff,payload);
+ again:=public.complete_rounding_task_review(f.task,f.aide,'med_tech',f.aide_session,version,f.org,f.fac,f.aide_staff,payload);
  PERFORM pg_temp.closeout_assert(first_result->>'log_id'=again->>'log_id','Immutable receipt replay duplicated log');
  BEGIN PERFORM public.claim_observation_task(f.task); RAISE EXCEPTION 'Completed task claimed'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
- RAISE NOTICE 'PASS: unclaimed refusal, explicit idempotent rescue, legacy chip bypass refusal, immutable completion replay';
+ RAISE NOTICE 'PASS: explicit idempotent rescue, legacy chip bypass refusal, immutable completion replay';
 END $$;
 
 DO $$ DECLARE f record; sw record; sw_next record; sch uuid; ord uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); n integer; first_count integer; interval_minutes integer;

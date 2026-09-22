@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 const ROLES_MANAGE_SESSION = new Set(["owner", "org_admin", "facility_admin"]);
-const ROLES_LOG_ACCESS = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
+const ROLES_LOG_ACCESS = new Set(["owner", "org_admin", "facility_admin", "med_tech"]);
 
 type SurveyVisitAuthContext = {
   userId: string | null;

@@ -68,7 +68,7 @@ SELECT owner_user, owner_user || '@col328.invalid', '{}'::jsonb, '{}'::jsonb
 FROM referral_authority_fixture;
 
 INSERT INTO public.user_profiles (id, organization_id, email, full_name, app_role)
-SELECT nurse_user, organization, nurse_user || '@col328.invalid', 'COL-328 nurse', 'nurse'::public.app_role
+SELECT nurse_user, organization, nurse_user || '@col328.invalid', 'COL-328 nurse', 'med_tech'::public.app_role
 FROM referral_authority_fixture
 UNION ALL
 SELECT coordinator_user, organization, coordinator_user || '@col328.invalid', 'COL-328 coordinator', 'coordinator'::public.app_role

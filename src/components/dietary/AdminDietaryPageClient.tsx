@@ -407,7 +407,7 @@ export function AdminDietaryPageClient({
   }, [facilityReady, organizationId, selectedFacilityId, snackForm, supabase, load]);
 
   const { appRole } = useHavenAuth();
-  const canActivateOrder = ["owner", "org_admin", "facility_admin", "nurse"].includes(appRole ?? "");
+  const canActivateOrder = ["owner", "org_admin", "facility_admin", "med_tech"].includes(appRole ?? "");
   const [activatingId, setActivatingId] = useState<string | null>(null);
   async function activateOrder(row: DietRow) {
     if (!canActivateOrder || !globalThis.confirm("I have reviewed this diet order against the prescriber's instructions, IDDSI levels and allergies. Activate it and supersede the resident's previous active order?")) return;

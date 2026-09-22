@@ -34,14 +34,14 @@ describe("isCaregiverShellPath", () => {
 });
 
 describe("isStaffRoleAllowedOnReportPath", () => {
-  it("allows the nine capture roles that migration 401 lets report a care event", () => {
-    for (const role of ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "nurse", "med_tech", "caregiver"]) {
+  it("allows the seven capture roles that migrations 401 and 468 let report a care event", () => {
+    for (const role of ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"]) {
       expect(isStaffRoleAllowedOnReportPath(role)).toBe(true);
     }
   });
 
-  it("keeps family, onboarding, housekeeper, broker, dietary, maintenance, and unknown roles out", () => {
-    for (const role of ["family", "onboarding", "housekeeper", "broker", "dietary", "dietary_aide", "maintenance_role", ""]) {
+  it("keeps family, onboarding, housekeeper, broker, cook, marketing, maintenance, retired, and unknown roles out", () => {
+    for (const role of ["family", "onboarding", "housekeeper", "broker", "cook", "marketing", "dietary", "dietary_aide", "maintenance_role", "nurse", "caregiver", ""]) {
       expect(isStaffRoleAllowedOnReportPath(role)).toBe(false);
     }
   });
@@ -56,9 +56,14 @@ describe("caregiverShellAccessRedirect", () => {
     expect(location.searchParams.get("next")).toBe("/caregiver/report?resident=abc");
   });
 
-  it("lets caregivers through everywhere in the shell", () => {
-    expect(redirectTarget("/caregiver", "caregiver")).toBeNull();
-    expect(redirectTarget("/caregiver/report", "caregiver")).toBeNull();
+  it("lets med-techs (who absorbed the retired caregiver role) through everywhere in the shell", () => {
+    for (const path of ["/caregiver", "/caregiver/report", "/caregiver/tasks", "/caregiver/rounds", "/caregiver/meds", "/tasks"]) {
+      expect(redirectTarget(path, "med_tech")).toBeNull();
+    }
+  });
+
+  it("turns a leftover caregiver token away", () => {
+    expect(redirectTarget("/caregiver", "caregiver")).toBe("/login");
   });
 
   it("still redirects admin-eligible roles away from the caregiver home", () => {
@@ -72,7 +77,7 @@ describe("caregiverShellAccessRedirect", () => {
     expect(redirectTarget("/caregiver/report", "owner")).toBeNull();
     expect(redirectTarget("/caregiver/report", "admin_assistant")).toBeNull();
     expect(redirectTarget("/caregiver/report", "med_tech")).toBeNull();
-    expect(redirectTarget("/caregiver/report/3f2b0c1e-1111-4222-8333-444455556666", "nurse")).toBeNull();
+    expect(redirectTarget("/caregiver/report/3f2b0c1e-1111-4222-8333-444455556666", "med_tech")).toBeNull();
   });
 
   it("keeps family out of the report flow", () => {

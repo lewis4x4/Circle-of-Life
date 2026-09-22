@@ -36,7 +36,7 @@ describe("resident intake PHI policy gate", () => {
     const policy = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
     policy.select.mockReturnValue(policy);
     policy.eq.mockReturnValue(policy);
-    const actor = { id: "2383b30f-73cf-4d97-886c-31af8b505346", organizationId: "0a35a335-f0a6-4ae8-84ad-2adb0986168f", appRole: "nurse", client: { rpc }, admin: { from: vi.fn().mockReturnValue(policy) } };
+    const actor = { id: "2383b30f-73cf-4d97-886c-31af8b505346", organizationId: "0a35a335-f0a6-4ae8-84ad-2adb0986168f", appRole: "med_tech", client: { rpc }, admin: { from: vi.fn().mockReturnValue(policy) } };
     mocks.requireActor.mockResolvedValue({ actor });
     mocks.revalidateActor.mockResolvedValue({ actor });
     mocks.readSnapshot.mockResolvedValue({ snapshot: { sources: [{ id: sourceId, revision, original_filename: "resident.pdf", declared_mime: "application/pdf", preflight_state: "safe" }] } });
@@ -55,7 +55,7 @@ describe("resident intake PHI policy gate", () => {
     const policy = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { allow_phi: true, baa_reference: null, baa_verified_at: null, default_provider: "anthropic", routing_json: { resident_record_intake: { provider: "anthropic", enabled: true } } }, error: null }) };
     policy.select.mockReturnValue(policy);
     policy.eq.mockReturnValue(policy);
-    const actor = { id: "2383b30f-73cf-4d97-886c-31af8b505346", organizationId: "0a35a335-f0a6-4ae8-84ad-2adb0986168f", appRole: "nurse", client: { rpc }, admin: { from: vi.fn().mockReturnValue(policy) } };
+    const actor = { id: "2383b30f-73cf-4d97-886c-31af8b505346", organizationId: "0a35a335-f0a6-4ae8-84ad-2adb0986168f", appRole: "med_tech", client: { rpc }, admin: { from: vi.fn().mockReturnValue(policy) } };
     mocks.requireActor.mockResolvedValue({ actor });
     mocks.revalidateActor.mockResolvedValue({ actor });
     mocks.readSnapshot.mockResolvedValue({ snapshot: { sources: [{ id: sourceId, revision, original_filename: "resident.pdf", declared_mime: "application/pdf", preflight_state: "safe" }] } });
@@ -74,7 +74,7 @@ describe("resident intake PHI policy gate", () => {
     const policy = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { allow_phi: true, default_provider: "anthropic", routing_json: {} }, error: null }) };
     policy.select.mockReturnValue(policy);
     policy.eq.mockReturnValue(policy);
-    const actor = { id: "2383b30f-73cf-4d97-886c-31af8b505346", organizationId: "0a35a335-f0a6-4ae8-84ad-2adb0986168f", appRole: "nurse", client: { rpc }, admin: { from: vi.fn().mockReturnValue(policy) } };
+    const actor = { id: "2383b30f-73cf-4d97-886c-31af8b505346", organizationId: "0a35a335-f0a6-4ae8-84ad-2adb0986168f", appRole: "med_tech", client: { rpc }, admin: { from: vi.fn().mockReturnValue(policy) } };
     mocks.requireActor.mockResolvedValue({ actor });
     mocks.revalidateActor.mockResolvedValue({ actor });
     mocks.readSnapshot.mockResolvedValue({ snapshot: { sources: [{ id: sourceId, revision, original_filename: "resident.pdf", declared_mime: "application/pdf", preflight_state: "safe" }] } });

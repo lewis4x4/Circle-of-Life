@@ -42,7 +42,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 /** Who may draft a version — the same roles `create_care_plan_revision_review` accepts. */
-export const CARE_PLAN_AUTHOR_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+export const CARE_PLAN_AUTHOR_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const;
 
 type DraftLine = CarePlanDraftNeed & { key: string };
 

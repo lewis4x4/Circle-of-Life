@@ -54,7 +54,7 @@ type DynamicSupabase = {
 const UNRESOLVED_FACILITY_LABEL = "Assigned facility";
 
 const EMPTY_BAR = {
-  cook_name: "Lead Cook",
+  cook_name: "Cook",
   cook_initials: "LC",
   facility_name: UNRESOLVED_FACILITY_LABEL,
   meal_period: "Lunch",
@@ -172,7 +172,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
       const { data: profRows } = await q("user_profiles", "full_name", {
         id: user.id, _limit: 1,
       });
-      const fullName = (profRows?.[0]?.full_name as string | undefined) ?? "Lead Cook";
+      const fullName = (profRows?.[0]?.full_name as string | undefined) ?? "Cook";
       const initials = residentInitials(fullName);
 
       // Today's date (facility timezone)

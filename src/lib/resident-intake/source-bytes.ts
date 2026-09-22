@@ -20,7 +20,7 @@ import {
   residentIntakeSourceRowSchema,
 } from "./schemas";
 
-export const RESIDENT_INTAKE_VIEW_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+export const RESIDENT_INTAKE_VIEW_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const;
 
 const storageObjectSchema = z.object({
   id: z.string().min(1),

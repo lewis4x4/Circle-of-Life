@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CarePlanAuthor } from "./CarePlanAuthor";
 
-const authMock = vi.hoisted(() => ({ appRole: "nurse", user: { id: "nurse-1" } }));
+const authMock = vi.hoisted(() => ({ appRole: "med_tech", user: { id: "nurse-1" } }));
 const rpcMock = vi.hoisted(() => ({
   calls: [] as Array<{ fn: string; args: Record<string, unknown> }>,
   error: null as string | null,
@@ -62,7 +62,7 @@ function fillNeed(index = 0) {
 
 describe("<CarePlanAuthor />", () => {
   beforeEach(() => {
-    authMock.appRole = "nurse";
+    authMock.appRole = "med_tech";
     rpcMock.calls = [];
     rpcMock.error = null;
     guardMock.guards = [];

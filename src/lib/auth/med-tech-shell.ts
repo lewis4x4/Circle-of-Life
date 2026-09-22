@@ -11,7 +11,7 @@ export function isMedTechShellPath(pathname: string): boolean {
 }
 
 /**
- * Med-Tech UI requires a session and a medication role (`med_tech` or `nurse`).
+ * Med-Tech UI requires a session and the medication role (`med_tech`).
  * Other known roles redirect to their shells.
  */
 export function medTechShellAccessRedirect(
@@ -31,7 +31,7 @@ export function medTechShellAccessRedirect(
   if (isMedTechRole(role)) {
     return null;
   }
-  if (role === "caregiver" || role === "housekeeper") {
+  if (role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (role === "family") {

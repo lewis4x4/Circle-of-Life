@@ -12,9 +12,9 @@ SELECT gen_random_uuid() actor, gen_random_uuid() session, gen_random_uuid() res
 FROM public.facilities f WHERE f.deleted_at IS NULL LIMIT 1;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM src_fixture) THEN RAISE EXCEPTION 'Local replay seed facility required'; END IF; END $$;
 INSERT INTO auth.users(id, email, raw_app_meta_data, raw_user_meta_data)
-SELECT actor, actor||'@review.invalid', jsonb_build_object('organization_id', org, 'app_role', 'nurse'), '{}'::jsonb FROM src_fixture;
+SELECT actor, actor||'@review.invalid', jsonb_build_object('organization_id', org, 'app_role', 'med_tech'), '{}'::jsonb FROM src_fixture;
 INSERT INTO public.user_profiles(id, organization_id, full_name, email, app_role, is_active)
-SELECT actor, org, 'Synthetic nurse', actor||'@review.invalid', 'nurse', true FROM src_fixture;
+SELECT actor, org, 'Synthetic nurse', actor||'@review.invalid', 'med_tech', true FROM src_fixture;
 INSERT INTO auth.sessions(id, user_id) SELECT session, actor FROM src_fixture;
 INSERT INTO public.user_facility_access(user_id, facility_id, organization_id) SELECT actor, facility, org FROM src_fixture ON CONFLICT DO NOTHING;
 INSERT INTO public.residents(id, facility_id, organization_id, first_name, last_name, date_of_birth, gender)
@@ -29,7 +29,7 @@ CREATE FUNCTION pg_temp.src_error(stmt text, code text) RETURNS void LANGUAGE pl
 CREATE FUNCTION pg_temp.src_assert(ok boolean, msg text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN IF ok IS NOT TRUE THEN RAISE EXCEPTION '%', msg; END IF; END $$;
 GRANT ALL ON FUNCTION pg_temp.src_error(text, text) TO authenticated;
 GRANT ALL ON FUNCTION pg_temp.src_assert(boolean, text) TO authenticated;
-SELECT set_config('request.jwt.claims', jsonb_build_object('sub', a.actor, 'session_id', a.session, 'role', 'authenticated', 'app_role', 'nurse', 'organization_id', a.org, 'auth_claim_version', p.auth_claim_version, 'iat', extract(epoch FROM clock_timestamp())::bigint)::text, true) FROM src_fixture a JOIN public.user_profiles p ON p.id = a.actor;
+SELECT set_config('request.jwt.claims', jsonb_build_object('sub', a.actor, 'session_id', a.session, 'role', 'authenticated', 'app_role', 'med_tech', 'organization_id', a.org, 'auth_claim_version', p.auth_claim_version, 'iat', extract(epoch FROM clock_timestamp())::bigint)::text, true) FROM src_fixture a JOIN public.user_profiles p ON p.id = a.actor;
 SET LOCAL ROLE authenticated;
 
 -- One need drafted from the 1823.

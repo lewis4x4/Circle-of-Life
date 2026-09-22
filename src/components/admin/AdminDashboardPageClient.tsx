@@ -91,7 +91,7 @@ export function AdminDashboardPageClient({
     setError(null);
     const config = getRoleDashboardConfig(appRole);
 
-    if (appRole === "caregiver" || appRole === "housekeeper" || appRole === "family") {
+    if (appRole === "housekeeper" || appRole === "family") {
       router.replace(config.route);
       setIsLoading(false);
       return;

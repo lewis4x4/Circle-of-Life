@@ -180,10 +180,10 @@ describe("walk order", () => {
 
 describe("who may run a board check", () => {
   it("matches the roles that can admit and discharge", () => {
-    for (const role of ["owner", "org_admin", "facility_admin", "nurse"]) {
+    for (const role of ["owner", "org_admin", "facility_admin", "med_tech"]) {
       expect(canRunBoardCheck(role)).toBe(true);
     }
-    for (const role of ["caregiver", "dietary", "maintenance_role", "family", "broker"]) {
+    for (const role of ["caregiver", "cook", "dietary", "maintenance_role", "family", "broker", "nurse"]) {
       expect(canRunBoardCheck(role)).toBe(false);
     }
   });

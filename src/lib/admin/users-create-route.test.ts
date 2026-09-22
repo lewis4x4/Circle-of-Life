@@ -78,7 +78,7 @@ function createRequest(body: Record<string, unknown> = {}) {
     body: JSON.stringify({
       email: "new@example.test",
       full_name: "New User",
-      app_role: "caregiver",
+      app_role: "housekeeper",
       send_invite: true,
       facilities: [{ facility_id: facilityId, is_primary: true }],
       ...body,

@@ -15,12 +15,12 @@ CREATE TEMP TABLE employee_fixture AS SELECT gen_random_uuid() admin,gen_random_
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  SELECT admin,admin||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','owner'),'{"full_name":"File manager"}'::jsonb FROM employee_fixture
  UNION ALL SELECT worker,worker||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','caregiver'),'{"full_name":"File employee"}'::jsonb FROM employee_fixture
- UNION ALL SELECT nurse,nurse||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','nurse'),'{"full_name":"File nurse"}'::jsonb FROM employee_fixture
+ UNION ALL SELECT nurse,nurse||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','med_tech'),'{"full_name":"File nurse"}'::jsonb FROM employee_fixture
  UNION ALL SELECT manager,manager||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','manager'),'{"full_name":"File supervisor"}'::jsonb FROM employee_fixture;
 INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active)
  SELECT admin,admin||'@review.invalid','File manager','owner'::public.app_role,org,true FROM employee_fixture
  UNION ALL SELECT worker,worker||'@review.invalid','File employee','caregiver'::public.app_role,org,true FROM employee_fixture
-  UNION ALL SELECT nurse,nurse||'@review.invalid','File nurse','nurse'::public.app_role,org,true FROM employee_fixture
+  UNION ALL SELECT nurse,nurse||'@review.invalid','File nurse','med_tech'::public.app_role,org,true FROM employee_fixture
   UNION ALL SELECT manager,manager||'@review.invalid','File supervisor','manager'::public.app_role,org,true FROM employee_fixture
  ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT admin,facility,org FROM employee_fixture UNION ALL SELECT worker,facility,org FROM employee_fixture UNION ALL SELECT nurse,facility,org FROM employee_fixture UNION ALL SELECT manager,facility,org FROM employee_fixture;

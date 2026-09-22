@@ -21,7 +21,7 @@ describe("canOffboardStaff", () => {
     expect(canOffboardStaff("org_admin")).toBe(true);
     expect(canOffboardStaff("facility_admin")).toBe(true);
     expect(canOffboardStaff("manager")).toBe(false);
-    expect(canOffboardStaff("nurse")).toBe(false);
+    expect(canOffboardStaff("med_tech")).toBe(false);
   });
 });
 

@@ -17,10 +17,10 @@ describe("lifecycle request recovery", () => {
   it("retains 202 payload and prevents another operation from replacing it", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 202 }));
     const client = new LifecycleRequestClient(vi.fn(), fetcher);
-    await client.request("/user", { method: "PATCH", body: '{"app_role":"nurse"}' });
+    await client.request("/user", { method: "PATCH", body: '{"app_role":"med_tech"}' });
     await expect(client.request("/user", { method: "PATCH", body: '{"app_role":"caregiver"}' })).rejects.toThrow("pending");
     expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(client.pending?.body).toContain("nurse");
+    expect(client.pending?.body).toContain("med_tech");
   });
   it("permits correcting a definitively rejected payload", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 422 }));

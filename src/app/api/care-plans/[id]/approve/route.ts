@@ -10,7 +10,7 @@ type Body = {
 };
 
 const APPROVEABLE_STATUSES = new Set(["draft", "under_review"]);
-const APPROVER_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+const APPROVER_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const;
 
 export async function POST(
   request: Request,

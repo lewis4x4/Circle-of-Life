@@ -114,7 +114,7 @@ export default function AdminScheduleWeekDetailPage() {
   const { selectedFacilityId } = useFacilityStore();
 
   const { appRole } = useHavenAuth();
-  const canEdit = ["owner", "org_admin", "facility_admin", "nurse"].includes(appRole ?? "");
+  const canEdit = ["owner", "org_admin", "facility_admin", "med_tech"].includes(appRole ?? "");
   const [staffOptions, setStaffOptions] = useState<SupabaseStaffMini[]>([]);
   const [shiftStaff, setShiftStaff] = useState("");
   const [shiftDate, setShiftDate] = useState("");

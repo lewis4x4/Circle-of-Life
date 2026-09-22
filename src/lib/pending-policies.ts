@@ -14,9 +14,8 @@ const STAFF_ROLES = new Set([
   "owner",
   "org_admin",
   "facility_admin",
-  "nurse",
-  "caregiver",
-  "dietary",
+  "med_tech",
+  "cook",
   "maintenance_role",
 ]);
 

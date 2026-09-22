@@ -11,7 +11,7 @@ import { BottomNav, BottomNavItem } from "@/components/ui/bottom-nav";
 import { StatusPill } from "@/components/ui/status-pill";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isMedTechRole } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
 import { loadCaregiverFacilityContextForUser } from "@/lib/caregiver/facility-context";
 import { fetchLiveBoardShifts } from "@/lib/rounding/live-board-fetch";
@@ -64,6 +64,8 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const [shiftLabel, setShiftLabel] = useState<string | null>(null);
   const effectiveRole = getAppRoleFromClaims(user) || appRole;
   const isHousekeeper = effectiveRole === "housekeeper";
+  // Med-techs hold both apps (owner ruling 2026-09-22): the cockpit is their home.
+  const isMedTech = isMedTechRole(effectiveRole);
   const roundingSync = useRoundingOfflineSync();
   const syncState = useMemo(
     () =>
@@ -197,6 +199,9 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
               </p> : null}
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
+              {isMedTech ? (
+                <Link href="/med-tech" className="mr-3 text-sm underline">Med-Tech app</Link>
+              ) : null}
               <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
               <Link href="/caregiver/acknowledgments" className="text-xs underline">Required reading</Link>
               <PilotFeedbackLauncher shellKind="caregiver" compact />

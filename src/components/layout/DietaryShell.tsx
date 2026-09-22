@@ -7,7 +7,7 @@ import { WorkingFacilitySelector } from "@/components/caregiver/WorkingFacilityS
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { getAppRoleFromClaims, isDietaryRole, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isDietaryRole, isAdminEligibleAppRole, isMarketingRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -19,7 +19,7 @@ import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
  * Chromeless layout: no sidebar, no top nav. The cockpit owns all chrome.
  * This shell handles:
  *  1. Dark theme enforcement
- *  2. Role guard (dietary, dietary_aide, and admin-eligible roles allowed)
+ *  2. Role guard (cook, dietary, dietary_aide, and admin-eligible roles allowed)
  *  3. Full-viewport container
  */
 export function DietaryShell({ children }: { children: React.ReactNode }) {
@@ -47,16 +47,14 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
     const role = getAppRoleFromClaims(user);
 
     // Dietary staff and any admin-eligible role can access
-    if (isDietaryRole(role) || isAdminEligibleAppRole(role)) {
+    if (isDietaryRole(role) || (isAdminEligibleAppRole(role) && !isMarketingRole(role))) {
       setAuthorized(true);
       setChecking(false);
       return;
     }
 
     // Redirect non-dietary roles to their shells
-    if (role === "med_tech") {
-      router.replace("/med-tech");
-    } else if (role === "caregiver" || role === "housekeeper") {
+    if (role === "housekeeper" || isMarketingRole(role)) {
       router.replace(getDashboardRouteForRole(role));
     } else if (role === "family") {
       router.replace("/family");

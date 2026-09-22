@@ -10,7 +10,7 @@ const STAFF_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const FACILITY_ID = "11111111-1111-1111-1111-111111111111";
 
 const mocks = vi.hoisted(() => ({
-  appRole: "nurse" as string,
+  appRole: "med_tech" as string,
   userId: "user-editor-1" as string | null,
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
   lastUpdatePatch: null as Record<string, unknown> | null,
@@ -132,14 +132,14 @@ vi.mock("@/lib/supabase/client", () => ({
 
 describe("AdminStaffDetailPage profile edit", () => {
   beforeEach(() => {
-    mocks.appRole = "nurse";
+    mocks.appRole = "med_tech";
     mocks.userId = "user-editor-1";
     mocks.selectedFacilityId = FACILITY_ID;
     mocks.lastUpdatePatch = null;
     vi.clearAllMocks();
   });
 
-  it("hides Edit actions for nurse app role", async () => {
+  it("hides Edit actions for med_tech app role", async () => {
     render(<AdminStaffDetailPage />);
     expect(await screen.findByText("Harbor Example")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^edit$/i })).not.toBeInTheDocument();

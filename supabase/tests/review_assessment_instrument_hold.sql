@@ -54,7 +54,7 @@ INSERT INTO auth.sessions (id, user_id)
 INSERT INTO user_profiles (id, organization_id, email, full_name, app_role, is_active)
   SELECT owner_user, org, 'review.owner@example.invalid', 'Test Owner', 'owner'::app_role, TRUE FROM fx
   UNION ALL SELECT orgadmin_user, org, 'review.orgadmin@example.invalid', 'Test OrgAdmin', 'org_admin'::app_role, TRUE FROM fx
-  UNION ALL SELECT nurse_user, org, 'review.nurse@example.invalid', 'Test Nurse', 'nurse'::app_role, TRUE FROM fx
+  UNION ALL SELECT nurse_user, org, 'review.nurse@example.invalid', 'Test Nurse', 'med_tech'::app_role, TRUE FROM fx
   UNION ALL SELECT caregiver_user, org, 'review.caregiver@example.invalid', 'Test Caregiver', 'caregiver'::app_role, TRUE FROM fx;
 INSERT INTO user_facility_access (user_id, facility_id, organization_id, granted_by)
   SELECT nurse_user, fac, org, nurse_user FROM fx
@@ -109,7 +109,7 @@ BEGIN
   FOR r IN
     SELECT 'owner' role, owner_user u, owner_session s FROM fx
     UNION ALL SELECT 'org_admin', orgadmin_user, orgadmin_session FROM fx
-    UNION ALL SELECT 'nurse', nurse_user, nurse_session FROM fx
+    UNION ALL SELECT 'med_tech', nurse_user, nurse_session FROM fx
     UNION ALL SELECT 'caregiver', caregiver_user, caregiver_session FROM fx
   LOOP
     PERFORM pg_temp.sign_in(r.u, r.s, r.role);
@@ -149,7 +149,7 @@ DECLARE
   t text;
   v_recorded int := 0;
 BEGIN
-  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'nurse');
+  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'med_tech');
   FOREACH t IN ARRAY ARRAY['braden','morse_fall','katz_adl'] LOOP
     SET LOCAL ROLE authenticated;
     INSERT INTO assessments (resident_id, facility_id, organization_id, assessment_type,
@@ -165,7 +165,7 @@ END $$;
 -- The PHQ-9 already on record is untouched and still readable
 -- ===========================================================================
 DO $$ DECLARE v_total numeric; v_seen int; BEGIN
-  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'nurse');
+  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'med_tech');
   SET LOCAL ROLE authenticated;
   SELECT count(*), max(total_score) INTO v_seen, v_total
     FROM assessments WHERE id=(SELECT legacy_phq9 FROM fx);
@@ -179,7 +179,7 @@ END $$;
 -- ===========================================================================
 DO $$ DECLARE v_ok boolean := FALSE; BEGIN
   UPDATE assessment_templates SET held_reason=NULL WHERE assessment_type='phq9';
-  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'nurse');
+  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'med_tech');
   SET LOCAL ROLE authenticated;
   INSERT INTO assessments (resident_id, facility_id, organization_id, assessment_type,
                            assessment_date, total_score, risk_level, scores, assessed_by)
@@ -196,7 +196,7 @@ END $$;
 -- ===========================================================================
 DO $$ DECLARE v_inserted_without_trigger boolean := FALSE; BEGIN
   DROP TRIGGER tr_assessments_reject_held_instrument ON assessments;
-  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'nurse');
+  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'med_tech');
   BEGIN
     SET LOCAL ROLE authenticated;
     INSERT INTO assessments (resident_id, facility_id, organization_id, assessment_type,
@@ -220,7 +220,7 @@ END $$;
 
 -- ...and refused again now that it is restored.
 DO $$ DECLARE v_message text; BEGIN
-  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'nurse');
+  PERFORM pg_temp.sign_in((SELECT nurse_user FROM fx), (SELECT nurse_session FROM fx), 'med_tech');
   BEGIN
     SET LOCAL ROLE authenticated;
     INSERT INTO assessments (resident_id, facility_id, organization_id, assessment_type,

@@ -54,7 +54,7 @@ describe("resident intake source prepare revision contract", () => {
     const actor = {
       id: actorId,
       organizationId: orgId,
-      appRole: "nurse",
+      appRole: "med_tech",
       client: { rpc, auth: {}, storage: { from: vi.fn().mockReturnValue({ createSignedUploadUrl }) } },
       admin: {},
     };

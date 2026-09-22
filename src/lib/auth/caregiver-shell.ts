@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isOnboardingAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole, isOnboardingAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
@@ -20,8 +20,9 @@ const CAREGIVER_ROOT_ALIAS_PREFIXES = [
 ] as const;
 
 /**
- * The "Something happened" flow (spec 07A). The nine capture roles below may
- * open it, which is how the admin shell's "Report incident" button lands here;
+ * The "Something happened" flow (spec 07A). The seven capture roles below may
+ * open it (the legacy nurse and caregiver roles were folded into med_tech by migration 468),
+ * which is how the admin shell's "Report incident" button lands here;
  * the RPC still decides who may submit.
  */
 const REPORT_PATH_PREFIX = "/caregiver/report";
@@ -40,7 +41,7 @@ export function isCaregiverReportPath(pathname: string): boolean {
 }
 
 /**
- * The nine capture roles that migration 401 lets report a care event may open
+ * The capture roles that migration 401 (as amended by 468) lets report a care event may open
  * the report flow (spec 07A §6.3). Family, onboarding, broker, dietary,
  * maintenance and housekeeper roles never reach the census on the Who step.
  */
@@ -51,8 +52,6 @@ const REPORT_PATH_ROLES: ReadonlySet<string> = new Set([
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
-  "caregiver",
   "med_tech",
 ]);
 
@@ -64,9 +63,11 @@ export function isStaffRoleAllowedOnReportPath(role: string): boolean {
 }
 
 /**
- * Caregiver UI requires a session and a floor role (`caregiver` or `housekeeper`).
+ * Caregiver floor UI requires a session and a floor role (`med_tech` or `housekeeper`).
+ * Owner ruling 2026-09-22: the `caregiver` login role is retired and folded into
+ * `med_tech`, so med-techs use both the /med-tech cockpit (their home) and this app.
  * Other known roles go to their shells, except on `/caregiver/report` where the
- * nine capture roles in REPORT_PATH_ROLES are allowed (spec 07A §6.3).
+ * capture roles in REPORT_PATH_ROLES are allowed (spec 07A §6.3).
  */
 export function caregiverShellAccessRedirect(request: NextRequest, user: AuthClaimUser | null): NextResponse | null {
   const nextUrl = request.nextUrl;
@@ -79,7 +80,7 @@ export function caregiverShellAccessRedirect(request: NextRequest, user: AuthCla
   }
 
   const role = getAppRoleFromClaims(user);
-  if (role === "caregiver" || role === "housekeeper") {
+  if (isMedTechRole(role) || role === "housekeeper") {
     if (role === "housekeeper" && !isHousekeeperAllowedPath(nextUrl.pathname)) {
       return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
     }

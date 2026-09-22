@@ -15,7 +15,7 @@ describe("executive nav access", () => {
       expect(applyExecutiveCommandNavToItems(items, role, false)).toEqual(items);
       expect(canOpenExecutiveHubHref(role, "/admin/stand-up")).toBe(true);
     }
-    expect(applyExecutiveCommandNavToItems(items, "nurse", false)).toEqual([]);
+    expect(applyExecutiveCommandNavToItems(items, "med_tech", false)).toEqual([]);
     expect(applyExecutiveCommandNavToItems(items, "owner", true)).toEqual([]);
   });
   it("keeps overview and standup for owner / org admin", () => {
@@ -52,9 +52,9 @@ describe("executive nav access", () => {
   });
 
   it("hides executive command nav for roles that cannot open standup or overview", () => {
-    expect(resolveExecutiveCommandNav("nurse")).toBeNull();
-    expect(canOpenExecutiveStandup("nurse")).toBe(false);
-    expect(canOpenExecutiveHubHref("nurse", "/admin/executive/standup")).toBe(false);
+    expect(resolveExecutiveCommandNav("med_tech")).toBeNull();
+    expect(canOpenExecutiveStandup("med_tech")).toBe(false);
+    expect(canOpenExecutiveHubHref("med_tech", "/admin/executive/standup")).toBe(false);
   });
 
   it("rewrites Command Executive items for the live AppShell role", () => {
@@ -69,7 +69,7 @@ describe("executive nav access", () => {
     expect(applyExecutiveCommandNavToItems(items, "facility_admin", false)).toEqual([
       { key: "owner-home", href: "/admin", label: "Owner home" },
     ]);
-    expect(applyExecutiveCommandNavToItems(items, "nurse", false)).toEqual([
+    expect(applyExecutiveCommandNavToItems(items, "med_tech", false)).toEqual([
       { key: "owner-home", href: "/admin", label: "Owner home" },
     ]);
     expect(applyExecutiveCommandNavToItems(items, "facility_admin", true)).toEqual([

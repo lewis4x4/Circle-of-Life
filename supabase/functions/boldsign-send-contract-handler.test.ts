@@ -54,7 +54,7 @@ type RequestDoubleOptions = {
 };
 
 function actor(
-  role = "nurse",
+  role = "med_tech",
   accessibleFacilityIds: string[] = [IDS.facility],
 ): ActorPayload {
   return {
@@ -384,7 +384,7 @@ actualHandlerTest("actual signing handler denies cross-organization and disjoint
       contractOrganization: IDS.otherOrganization,
       contractFacility: IDS.facility,
     },
-    ...["facility_admin", "manager", "nurse"].map((role) => ({
+    ...["facility_admin", "manager", "med_tech"].map((role) => ({
       label: `${role} disjoint facility`,
       actor: actor(role, [IDS.otherFacility]),
       contractOrganization: IDS.organization,
@@ -413,7 +413,7 @@ actualHandlerTest("actual signing handler denies cross-organization and disjoint
 
 actualHandlerTest("actual signing handler blocks provider send when facility access is revoked during pre-send revalidation", async () => {
   const double = installRequestDouble({
-    actorAt: (rpcCall) => rpcCall === 1 ? actor() : actor("nurse", []),
+    actorAt: (rpcCall) => rpcCall === 1 ? actor() : actor("med_tech", []),
   });
   try {
     const response = await handleBoldSignSend(signingRequest());
@@ -429,7 +429,7 @@ actualHandlerTest("actual signing handler blocks provider send when facility acc
 
 actualHandlerTest("actual signing handler blocks embedded-link provider work when access is revoked before the link request", async () => {
   const double = installRequestDouble({
-    actorAt: (rpcCall) => rpcCall < 4 ? actor() : actor("nurse", []),
+    actorAt: (rpcCall) => rpcCall < 4 ? actor() : actor("med_tech", []),
   });
   try {
     const response = await handleBoldSignSend(signingRequest());
@@ -443,8 +443,8 @@ actualHandlerTest("actual signing handler blocks embedded-link provider work whe
   }
 });
 
-actualHandlerTest("actual signing handler preserves an authorized multi-site nurse send and embedded-link response", async () => {
-  const allowed = actor("nurse", [IDS.otherFacility, IDS.facility]);
+actualHandlerTest("actual signing handler preserves an authorized multi-site med-tech send and embedded-link response", async () => {
+  const allowed = actor("med_tech", [IDS.otherFacility, IDS.facility]);
   const double = installRequestDouble({ actorAt: () => allowed });
   try {
     const response = await handleBoldSignSend(signingRequest());
@@ -476,7 +476,7 @@ actualHandlerTest("actual signing handler denies links if access changes while t
   const double = installRequestDouble({
     actorAt: () => liveActor,
     onLinkRequest: () => {
-      liveActor = actor("nurse", []);
+      liveActor = actor("med_tech", []);
     },
   });
   try {
@@ -491,7 +491,7 @@ actualHandlerTest("actual signing handler denies links if access changes while t
 });
 
 actualHandlerTest("actual signing handler denies accumulated links when authority changes during a later link response body", async () => {
-  for (const revokedActor of [actor("nurse", []), actor("caregiver"), null]) {
+  for (const revokedActor of [actor("med_tech", []), actor("caregiver"), null]) {
     let liveActor: ActorPayload | null = actor();
     let linkRequests = 0;
     const double = installRequestDouble({
@@ -529,7 +529,7 @@ actualHandlerTest("actual signing handler denies a failed final link response af
   let liveActor = actor();
   const double = installRequestDouble({
     actorAt: () => liveActor,
-    onLinkRequest: () => { liveActor = actor("nurse", []); },
+    onLinkRequest: () => { liveActor = actor("med_tech", []); },
     linkResponse: () => json({ error: "Provider failure" }, 502),
   });
   try {
@@ -544,7 +544,7 @@ actualHandlerTest("actual signing handler denies a failed final link response af
 
 actualHandlerTest("actual signing handler rechecks authority before returning accumulated links", async () => {
   const double = installRequestDouble({
-    actorAt: (rpcCall) => rpcCall < 6 ? actor() : actor("nurse", []),
+    actorAt: (rpcCall) => rpcCall < 6 ? actor() : actor("med_tech", []),
   });
   try {
     const response = await handleBoldSignSend(signingRequest());

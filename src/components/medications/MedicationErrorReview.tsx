@@ -35,6 +35,6 @@ export function MedicationErrorReview({ id, onSaved }: {
     finally {
         setBusy(false);
     } }
-    if (!["owner", "org_admin", "facility_admin", "nurse"].includes(appRole ?? "")) return null;
+    if (!["owner", "org_admin", "facility_admin", "med_tech"].includes(appRole ?? "")) return null;
     return <div><fieldset disabled={busy} className="contents">{error && <p role="alert">{error}</p>}{open ? <div className="space-y-2 rounded border p-3"><p className="whitespace-pre-wrap">{description}</p><label>Root cause<textarea value={cause} onChange={e => setCause(e.target.value)} className="block w-full rounded border p-2"/></label><label>Corrective actions<textarea value={actions} onChange={e => setActions(e.target.value)} className="block w-full rounded border p-2"/></label><Button disabled={busy || !cause.trim() || !actions.trim()} onClick={() => void save()}>Sign clinical review</Button></div> : <Button variant="outline" onClick={() => void begin()}>Review medication error</Button>}</fieldset></div>;
 }

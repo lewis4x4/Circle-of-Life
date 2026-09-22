@@ -11,7 +11,7 @@ import { logError } from "@/lib/observability/logger";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 // Same roles the table's INSERT policy names (395).
-const ACK_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+const ACK_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const;
 const MAX_TEXT = 500;
 const MAX_SIGNATURE_BYTES = 200_000;
 

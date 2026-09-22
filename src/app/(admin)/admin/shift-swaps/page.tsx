@@ -110,7 +110,7 @@ const DEFAULT_FILTERS = { search: "", status: "all" };
 export default function AdminShiftSwapsPage() {
   const supabase = createClient();
   const { user, appRole } = useHavenAuth();
-  const canManage = ["owner", "org_admin", "facility_admin", "nurse"].includes(appRole ?? "");
+  const canManage = ["owner", "org_admin", "facility_admin", "med_tech"].includes(appRole ?? "");
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<SwapUiRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);

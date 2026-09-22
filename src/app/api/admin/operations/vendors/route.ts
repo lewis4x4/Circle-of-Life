@@ -10,8 +10,8 @@ const VIEW_ROLES: readonly AppRole[] = [
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
-  "dietary",
+  "med_tech",
+  "cook",
   "maintenance_role",
 ];
 

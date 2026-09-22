@@ -33,7 +33,7 @@ const from = vi.fn(() => {
   query.maybeSingle = maybeSingle;
   return query;
 });
-const actor = { id: "actor", organizationId: "org", appRole: "dietary", currentActor: { client: { rpc, from } } };
+const actor = { id: "actor", organizationId: "org", appRole: "cook", currentActor: { client: { rpc, from } } };
 const facilityId = "33333333-3333-4333-8333-333333333333";
 const recordId = "88888888-8888-4888-8888-888888888888";
 const key = "diet:2026-09-10:0001";

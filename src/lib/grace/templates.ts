@@ -38,7 +38,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Shield,
     title: "Open incidents",
     subtitle: "Unresolved incidents and follow-ups",
-    roles: ["nurse", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "List open or unresolved safety or clinical incidents I should know about, newest first. Prefer {facilityName} when my header facility applies; mention if data is org-wide.",
@@ -49,7 +49,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Users,
     title: "Resident count",
     subtitle: "How many residents by site (live census)",
-    roles: ["caregiver", "nurse", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "How many active residents do we have right now at {facilityName}? If I asked about a different site by name, answer for that site using live census tools.",
@@ -60,7 +60,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Heart,
     title: "Who needs attention",
     subtitle: "Residents with alerts, tasks, or follow-ups",
-    roles: ["caregiver", "nurse", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "At {facilityName}, which residents have care alerts, open tasks, or follow-ups I should review soon? Summarize briefly per resident.",
@@ -71,7 +71,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Users,
     title: "New leads",
     subtitle: "Recent inquiries and pipeline activity",
-    roles: ["admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["admin_assistant", "coordinator", "marketing", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "At {facilityName}, do we have any new leads in the past week? Give me the count, active pipeline count, and top lead names with status.",
@@ -93,7 +93,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Pill,
     title: "Medications due soon",
     subtitle: "High-risk meds and due/overdue passes",
-    roles: ["nurse", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "For {facilityName}, what medication passes are due soon or overdue? Call out high-risk meds and any missed doses if the data is available.",
@@ -104,7 +104,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Shield,
     title: "Expiring credentials",
     subtitle: "Training and certification watchlist",
-    roles: ["nurse", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "At {facilityName}, which certifications or training completions expire in the next 30 days?",
@@ -115,7 +115,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Users,
     title: "Who's on shift",
     subtitle: "Current staff and roles",
-    roles: ["nurse", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase: "Who is on shift right now at {facilityName}? Include roles or assignments if available.",
     action: "send_knowledge",
@@ -136,7 +136,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Phone,
     title: "Family & emergency contacts",
     subtitle: "How to look up contacts for a resident",
-    roles: ["caregiver", "nurse", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "How do I find emergency contacts and responsible parties for a resident at {facilityName}? If you need a resident name to query, ask me for it.",
@@ -157,7 +157,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: BookOpen,
     title: "Find a protocol",
     subtitle: "SOPs and policy excerpts",
-    roles: ["caregiver", "nurse", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "Search our uploaded policies and SOPs for infection prevention and hand hygiene expectations. Cite document titles when possible.",
@@ -212,7 +212,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: FileText,
     title: "Log a daily note",
     subtitle: "Structured daily care note",
-    roles: ["caregiver", "nurse", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
     type: "flow",
     phrase: "I want to log a daily care note for a resident.",
     flow_slug: "log_daily_note",
@@ -223,7 +223,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: AlertTriangle,
     title: "Report an incident",
     subtitle: "Fall, med error, or safety event",
-    roles: ["caregiver", "nurse", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
     type: "flow",
     phrase: "I need to report a safety or clinical incident.",
     flow_slug: "report_incident",
@@ -234,7 +234,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: ClipboardCheck,
     title: "Schedule an assessment",
     subtitle: "Care plan review or evaluation",
-    roles: ["nurse", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "manager", "facility_admin", "org_admin", "owner"],
     type: "flow",
     phrase: "I need to schedule a resident assessment or care plan review.",
     flow_slug: "schedule_assessment",
@@ -245,7 +245,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: MessageCircle,
     title: "Ask anything",
     subtitle: "Type your own question",
-    roles: ["caregiver", "nurse", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["med_tech", "admin_assistant", "coordinator", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase: "",
     action: "focus_only",
@@ -265,7 +265,8 @@ const SAFE_PILOT_TEMPLATE_IDS = new Set([
 ]);
 
 export function filterGraceTemplates(role: string | null | undefined): GraceTemplate[] {
-  const safeRole = role ?? "caregiver";
+  // Unknown role: fall back to the floor role (was caregiver; folded into med_tech 2026-09-22).
+  const safeRole = role ?? "med_tech";
   return GRACE_TEMPLATES.filter(
     (template) => template.roles.includes(safeRole) && SAFE_PILOT_TEMPLATE_IDS.has(template.id),
   );

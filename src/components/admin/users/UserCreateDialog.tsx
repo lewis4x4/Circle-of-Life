@@ -240,7 +240,7 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
                   id="new-user-job-title"
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
-                  placeholder="Med-Tech, Lead Cook, etc."
+                  placeholder="Med-Tech, Cook, etc."
                 />
               </div>
             </div>

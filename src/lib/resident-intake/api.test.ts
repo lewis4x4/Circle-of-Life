@@ -25,7 +25,7 @@ const ids = {
 
 describe("resident intake API RPC contracts", () => {
   const rpc = vi.fn();
-  const actor = { id: ids.actor, organizationId: ids.org, appRole: "nurse", client: { rpc }, admin: {} };
+  const actor = { id: ids.actor, organizationId: ids.org, appRole: "med_tech", client: { rpc }, admin: {} };
 
   beforeEach(() => {
     vi.resetAllMocks();

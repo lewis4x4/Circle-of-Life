@@ -7,7 +7,7 @@ GRANT SELECT,INSERT ON storage.objects TO authenticated;
 REVOKE UPDATE,DELETE ON storage.objects FROM authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 CREATE TEMP TABLE pp AS SELECT gen_random_uuid() org,gen_random_uuid() entity,gen_random_uuid() site,gen_random_uuid() other_site,gen_random_uuid() resident,gen_random_uuid() other_resident,gen_random_uuid() activity,gen_random_uuid() subject,NULL::uuid task,NULL::uuid contact,NULL::uuid expectation,NULL::uuid version,NULL::uuid revision;
-CREATE TEMP TABLE pa AS SELECT role,gen_random_uuid() id,gen_random_uuid() session FROM unnest(ARRAY['owner','nurse','manager','housekeeper','dietary','maintenance_role']) role;
+CREATE TEMP TABLE pa AS SELECT role,gen_random_uuid() id,gen_random_uuid() session FROM unnest(ARRAY['owner','nurse','manager','housekeeper','cook','maintenance_role']) role;
 CREATE TEMP TABLE pr(label text PRIMARY KEY,reply jsonb);GRANT ALL ON pp,pa,pr TO authenticated,service_role;
 INSERT INTO public.organizations(id,name) SELECT org,'COL158 synthetic' FROM pp;
 INSERT INTO public.entities(id,organization_id,name) SELECT entity,org,'COL158 synthetic' FROM pp;
@@ -95,7 +95,7 @@ SELECT pg_temp.pp_assert((SELECT public.provider_report_snapshot(task2)->>'can_m
 SELECT pg_temp.pp_error($q$SELECT public.create_provider_contact(task2,'col158-denied-contact','Not allowed','provider') FROM pp$q$,'Current native and HFO');
 RESET ROLE;SELECT pg_temp.pp_login('housekeeper');SET LOCAL ROLE authenticated;
 SELECT pg_temp.pp_assert((SELECT public.provider_report_snapshot(task2)->>'availability'='available' FROM pp),'native housekeeper read was unnecessarily narrowed');
-RESET ROLE;SELECT pg_temp.pp_login('dietary');SET LOCAL ROLE authenticated;
+RESET ROLE;SELECT pg_temp.pp_login('cook');SET LOCAL ROLE authenticated;
 SELECT pg_temp.pp_error($q$SELECT public.provider_report_snapshot(task2) FROM pp$q$,'Current native and HFO');
 RESET ROLE;SELECT pg_temp.pp_login('maintenance_role');SET LOCAL ROLE authenticated;
 SELECT pg_temp.pp_error($q$SELECT public.provider_report_snapshot(task2) FROM pp$q$,'Current native and HFO');

@@ -8,15 +8,15 @@ import { proxy } from "./proxy";
 
 beforeEach(() => vi.clearAllMocks());
 
-it("denies the admin shell when a stale owner JWT resolves to a current caregiver", async () => {
+it("denies the admin shell when a stale owner JWT resolves to a current housekeeper", async () => {
   state.updateSession.mockResolvedValue({
     response: NextResponse.next(),
-    user: { app_metadata: { app_role: "caregiver", organization_id: "org-1", auth_claim_version: 9 } },
+    user: { app_metadata: { app_role: "housekeeper", organization_id: "org-1", auth_claim_version: 9 } },
   });
 
   const response = await proxy(new NextRequest("http://localhost/admin/settings/users"));
   expect(response.status).toBe(307);
-  expect(response.headers.get("location")).toBe("http://localhost/caregiver");
+  expect(response.headers.get("location")).toBe("http://localhost/caregiver/housekeeper");
 });
 
 it("sends an inactive or revoked current actor to login", async () => {

@@ -21815,6 +21815,8 @@ export type Database = {
         | "housekeeper"
         | "family"
         | "broker"
+        | "cook"
+        | "marketing"
       assistance_level:
         | "independent"
         | "supervision"
@@ -22250,6 +22252,7 @@ export type Database = {
         | "dietary_aide"
         | "activity_aide"
         | "resident_services_coordinator"
+        | "cook"
       training_delivery_method: "in_person" | "external" | "online" | "hybrid"
       training_frequency:
         | "at_hire"
@@ -22453,6 +22456,8 @@ export const Constants = {
         "housekeeper",
         "family",
         "broker",
+        "cook",
+        "marketing",
       ],
       assistance_level: [
         "independent",
@@ -22936,6 +22941,7 @@ export const Constants = {
         "dietary_aide",
         "activity_aide",
         "resident_services_coordinator",
+        "cook",
       ],
       training_delivery_method: ["in_person", "external", "online", "hybrid"],
       training_frequency: [

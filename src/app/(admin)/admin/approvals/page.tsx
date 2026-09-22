@@ -78,7 +78,7 @@ type StaffMini = {
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
-const MILEAGE_APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
+const MILEAGE_APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "med_tech"]);
 
 function formatDateTime(iso: string): string {
   const d = new Date(iso);

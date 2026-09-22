@@ -144,7 +144,7 @@ BEGIN
     (v_admin_session, v_admin);
 
   INSERT INTO public.user_profiles (id, organization_id, email, full_name, app_role, is_active)
-    VALUES (v_aide, v_org, 'synthetic-aide@haven.test', 'Synthetic Aide', 'caregiver', TRUE),
+    VALUES (v_aide, v_org, 'synthetic-aide@haven.test', 'Synthetic Aide', 'med_tech', TRUE),
     (v_admin, v_org, 'synthetic-admin@haven.test', 'Synthetic Administrator', 'facility_admin', TRUE);
   INSERT INTO public.user_facility_access (user_id, facility_id, organization_id, is_primary)
     VALUES (v_aide, v_facility, v_org, TRUE),
@@ -244,7 +244,7 @@ DECLARE
   v_still_generating integer;
 BEGIN
   PERFORM
-    pg_temp.mo_assert (haven.app_role ()::text = 'caregiver', 'the fixture caller should resolve as caregiver, got ' || COALESCE(haven.app_role ()::text, 'null'));
+    pg_temp.mo_assert (haven.app_role ()::text = 'med_tech', 'the fixture caller should resolve as med_tech, got ' || COALESCE(haven.app_role ()::text, 'null'));
 
   -- A standard window already on the board for this resident, so the test can
   -- prove the order takes it off.

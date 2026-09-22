@@ -71,7 +71,7 @@ SELECT owner_user, organization_id, owner_user || '@col329.invalid',
 FROM referral_episode_fixture
 UNION ALL
 SELECT backup_user, organization_id, backup_user || '@col329.invalid',
-  'COL-329 backup', 'nurse'::public.app_role, true
+  'COL-329 backup', 'med_tech'::public.app_role, true
 FROM referral_episode_fixture
 UNION ALL
 SELECT admissions_user, organization_id, admissions_user || '@col329.invalid',
@@ -79,7 +79,7 @@ SELECT admissions_user, organization_id, admissions_user || '@col329.invalid',
 FROM referral_episode_fixture
 UNION ALL
 SELECT inactive_user, organization_id, inactive_user || '@col329.invalid',
-  'COL-329 inactive', 'nurse'::public.app_role, false
+  'COL-329 inactive', 'med_tech'::public.app_role, false
 FROM referral_episode_fixture;
 
 INSERT INTO auth.sessions (id, user_id)

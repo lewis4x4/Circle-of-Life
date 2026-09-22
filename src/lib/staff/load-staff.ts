@@ -263,6 +263,7 @@ function mapDbStaffRoleToUi(role: string): StaffRole {
     role === "housekeeping" ||
     role === "driver" ||
     role === "dietary_aide" ||
+    role === "cook" ||
     role === "activity_aide" ||
     role === "marketing_consultant" ||
     role === "other"

@@ -9,10 +9,10 @@ GRANT INSERT,UPDATE ON daily_logs,resident_medications,care_plans,care_plan_item
 CREATE TEMP TABLE clinical_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,gen_random_uuid() witness,gen_random_uuid() witness_session,gen_random_uuid() resident,gen_random_uuid() resident2,gen_random_uuid() med,gen_random_uuid() shift_id,gen_random_uuid() pass_id,gen_random_uuid() task_id,gen_random_uuid() checklist_id,gen_random_uuid() ticket_id,f.id facility,f.organization_id org,coalesce(f.timezone,'America/New_York') facility_timezone,(now() AT TIME ZONE coalesce(f.timezone,'America/New_York'))::date business_today FROM facilities f WHERE deleted_at IS NULL LIMIT 1;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  SELECT actor,actor||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','owner'),'{"full_name":"Clinical reviewer"}'::jsonb FROM clinical_fixture
- UNION ALL SELECT witness,witness||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','nurse'),'{"full_name":"Clinical witness"}'::jsonb FROM clinical_fixture;
+ UNION ALL SELECT witness,witness||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','med_tech'),'{"full_name":"Clinical witness"}'::jsonb FROM clinical_fixture;
 INSERT INTO user_profiles(id,email,full_name,app_role,organization_id,is_active)
  SELECT actor,actor||'@review.invalid','Clinical reviewer','owner'::app_role,org,true FROM clinical_fixture
- UNION ALL SELECT witness,witness||'@review.invalid','Clinical witness','nurse'::app_role,org,true FROM clinical_fixture
+ UNION ALL SELECT witness,witness||'@review.invalid','Clinical witness','med_tech'::app_role,org,true FROM clinical_fixture
  ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
 INSERT INTO user_facility_access(user_id,facility_id,organization_id) SELECT actor,facility,org FROM clinical_fixture UNION ALL SELECT witness,facility,org FROM clinical_fixture;
 INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM clinical_fixture UNION ALL SELECT witness_session,witness FROM clinical_fixture;
@@ -87,11 +87,11 @@ DO $$ DECLARE f record; BEGIN
  IF complete_operation_task_review(f.task_id,f.actor,'owner','Performed task','{}')<>'awaiting_verification' THEN RAISE EXCEPTION 'Dual task falsely completed'; END IF;
  BEGIN PERFORM complete_operation_task_review(f.task_id,f.actor,'owner','Self verify','{}'); RAISE EXCEPTION 'Self verification accepted'; EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'A different authorized staff member must verify this task' THEN RAISE; END IF; END;
  -- A witness must authenticate as themselves; actor arguments cannot impersonate them.
- BEGIN PERFORM complete_operation_task_review(f.task_id,f.witness,'nurse','Forged witness','{}');
+ BEGIN PERFORM complete_operation_task_review(f.task_id,f.witness,'med_tech','Forged witness','{}');
  RAISE EXCEPTION 'Witness actor argument impersonated identity'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',f.witness,'session_id',f.witness_session,
  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=f.witness),'role','authenticated')::text,true);
- IF complete_operation_task_review(f.task_id,f.witness,'nurse','Verified task','{}')<>'completed' THEN RAISE EXCEPTION 'Independent verification failed'; END IF;
+ IF complete_operation_task_review(f.task_id,f.witness,'med_tech','Verified task','{}')<>'completed' THEN RAISE EXCEPTION 'Independent verification failed'; END IF;
 END $$;
 
 SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,

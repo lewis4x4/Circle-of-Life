@@ -23,7 +23,8 @@ type SettingsCard = {
   roles: string[];
 };
 
-const ADMIN_ELIGIBLE_ROLES = Array.from(ADMIN_ELIGIBLE_APP_ROLES);
+// Marketing is admin-eligible but has no settings access (owner ruling 2026-09-22).
+const ADMIN_ELIGIBLE_ROLES = Array.from(ADMIN_ELIGIBLE_APP_ROLES).filter((role) => role !== "marketing");
 
 const SETTINGS_CARDS: SettingsCard[] = [
   {
@@ -74,7 +75,7 @@ const SETTINGS_CARDS: SettingsCard[] = [
       "facility_admin",
       "manager",
       "coordinator",
-      "nurse",
+      "med_tech",
       "admin_assistant",
     ],
   },

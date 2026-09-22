@@ -170,7 +170,7 @@ BEGIN
     ('e5ca0000-0000-4000-8000-00000000000c', v_admin_user);
 
   INSERT INTO public.user_profiles (id, organization_id, email, full_name, app_role, is_active, phone)
-    VALUES (v_aide_user, v_org, 'synthetic-esc-aide@haven.test', 'Synthetic Aide', 'caregiver', TRUE, '+15550000001'),
+    VALUES (v_aide_user, v_org, 'synthetic-esc-aide@haven.test', 'Synthetic Aide', 'med_tech', TRUE, '+15550000001'),
     (v_admin_user, v_org, 'synthetic-esc-admin@haven.test', 'Synthetic Administrator', 'facility_admin', TRUE, '+15550000002');
   INSERT INTO public.user_facility_access (user_id, facility_id, organization_id, is_primary)
     VALUES (v_aide_user, v_facility, v_org, TRUE),
