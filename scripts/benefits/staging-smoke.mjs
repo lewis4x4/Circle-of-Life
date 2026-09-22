@@ -215,6 +215,49 @@ try {
   assert(res.status() === 200 && body.collection_id, "owner: collection request assigned to authorized family", { status: res.status(), body });
   const collectionId = body.collection_id; if (res.status() === 200) revision = body.revision;
 
+  // ---- operating rules: readable, owner-changeable, effective-dated, never back-dated
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/rules`); body = await json(res);
+  assert(res.status() === 200 && body.can_manage === true && body.rules?.length === 6 && body.rules.find((r) => r.rule_key === "checklist.smmc_ltc")?.value?.length === 18, "owner: rules list with seeded checklist", { status: res.status(), keys: body.rules?.map((r) => r.rule_key) });
+  const todayIso = new Date().toISOString().slice(0, 10);
+  res = await post(o.api, "/api/admin/benefits/rules", { rule_key: "renewal.warning_days", value: 400, effective_from: todayIso, reason: "smoke: too long" });
+  assert(res.status() === 400, "owner: out-of-range rule refused", res.status());
+  res = await post(o.api, "/api/admin/benefits/rules", { rule_key: "renewal.warning_days", value: 30, effective_from: "2026-01-01", reason: "smoke: back-dated" });
+  assert(res.status() === 400 || res.status() === 409, "owner: back-dated rule refused", res.status());
+  res = await post(o.api, "/api/admin/benefits/rules", { rule_key: "renewal.warning_days", value: 120, effective_from: todayIso, reason: `smoke ${run}: widen the renewal warning` }); body = await json(res);
+  assert(res.status() === 201 && body.rule_key === "renewal.warning_days", "owner: renewal window rule recorded", { status: res.status(), body });
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/rules`); body = await json(res);
+  assert(body.rules?.find((r) => r.rule_key === "renewal.warning_days")?.value === 120, "owner: recorded rule is in force today", body.rules?.find((r) => r.rule_key === "renewal.warning_days")?.value);
+  // ---- queue ordering and Medicaid residents without a case
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/cases?facility_id=${FACILITY}`); body = await json(res);
+  const dues = (body.cases ?? []).map((c) => c.due_date ?? "9999-12-31");
+  assert(res.status() === 200 && dues.every((d, i) => i === 0 || d >= dues[i - 1]) && body.cases?.[0]?.due_date === "2026-10-05", "owner: queue orders soonest due first, undated last", dues);
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/options?facility_id=${FACILITY}`); body = await json(res);
+  assert(res.status() === 200 && Array.isArray(body.uncased_medicaid_residents), "owner: options list Medicaid payers without a case", { count: body.uncased_medicaid_residents?.length });
+  // ---- evidence access is recorded in the history
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res);
+  assert(detail.history?.some((h) => h.action === "document_download" && h.payload?.document_id === documentId) && detail.history?.some((h) => h.action === "document_packet"), "owner: download and packet export recorded in case history", detail.history?.filter((h) => h.action.startsWith("document_")).map((h) => h.action));
+  // ---- resident moves facilities: case stays readable and flagged, writes refused, reviewed rebind follows the resident
+  const moved = await admin.from("residents").update({ facility_id: OTHER_FACILITY }).eq("id", RESIDENT);
+  assert(!moved.error, "setup: synthetic resident moved to facility 0004", moved.error?.message);
+  try {
+    res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res);
+    assert(res.status() === 200 && detail.case?.needs_rebind === true && detail.case?.resident_facility_id === OTHER_FACILITY, "owner: moved resident's case still readable and flagged", { status: res.status(), needs_rebind: detail.case?.needs_rebind });
+    res = await command(o.api, "update_case", { next_action: "write while moved" }, detail.case.revision);
+    assert(res.status() === 404, "owner: writes refused until rebind", res.status());
+    res = await post(o.api, `/api/admin/benefits/cases/${caseId}/rebind`, { request_id: randomUUID() }); body = await json(res);
+    assert(res.status() === 200 && body.facility_id === OTHER_FACILITY, "owner: rebind moved the case with the resident", { status: res.status(), body });
+    res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res);
+    assert(detail.case?.needs_rebind === false && detail.case?.facility_id === OTHER_FACILITY && detail.history?.[0]?.action === "rebind_facility", "owner: rebind recorded and flag cleared", { history: detail.history?.[0]?.action });
+    // back home so the rest of the smoke runs against facility 0003
+    const back = await admin.from("residents").update({ facility_id: FACILITY }).eq("id", RESIDENT);
+    assert(!back.error, "setup: resident returned to facility 0003", back.error?.message);
+    res = await post(o.api, `/api/admin/benefits/cases/${caseId}/rebind`, { request_id: randomUUID() }); body = await json(res);
+    assert(res.status() === 200 && body.facility_id === FACILITY, "owner: rebind back to facility 0003", { status: res.status(), body });
+    res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res); revision = detail.case.revision;
+  } finally {
+    await admin.from("residents").update({ facility_id: FACILITY }).eq("id", RESIDENT);
+  }
+
   // ---- owner UI captures
   for (const [width, label] of [[1440, "1440"], [390, "390"]]) {
     await o.page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });

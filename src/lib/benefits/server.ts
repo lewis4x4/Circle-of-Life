@@ -8,7 +8,7 @@ import {
   BENEFITS_BUCKET, BENEFITS_MAX_FILE_BYTES, BENEFITS_MIME_TYPES, BENEFITS_PROGRAMS, BENEFITS_STATUSES,
   benefitsAccessSchema, benefitsCommandSchema, benefitsEventSchema, benefitsFundingSchema,
   benefitsReceiptSchema, benefitsRequirementSchema, benefitsScreeningSchema, benefitsSubmissionSchema,
-  createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument,
+  createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
 } from "./contracts";
 
 export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "nurse"] as const;
@@ -20,6 +20,8 @@ const caseSchema = z.object({
   next_action: z.string().nullable(), assigned_to: uuid.nullable(), due_date: z.string().nullable(), closure_reason: z.string().nullable(),
   screening: benefitsScreeningSchema, funding: benefitsFundingSchema, created_at: z.string(), updated_at: z.string(),
   created_by: uuid, resident_name: z.string(), facility_name: z.string(), assignee_name: z.string().nullable(),
+  resident_status: z.string().nullable().optional(), resident_facility_id: uuid.nullable().optional(), resident_facility_name: z.string().nullable().optional(),
+  needs_rebind: z.boolean().optional(), renewal_date: z.string().nullable().optional(),
 }).passthrough();
 export const benefitsDocumentRowSchema = z.object({
   id: uuid, case_id: uuid, filename: z.string().min(1).max(255), mime_type: z.enum(BENEFITS_MIME_TYPES),
@@ -130,8 +132,38 @@ export async function getBenefitsOptions(request: Request) {
   const result = await rpc(auth.actor, "benefits_options", { p_facility_id: query.data.facility_id ?? null, p_query: query.data.query || query.data.resident_id || "" });
   if (result.error) return rpcFailure(result.error);
   const named = z.object({ id: uuid, name: z.string() });
-  const parsed = z.object({ facilities: z.array(named), residents: z.array(named.extend({ facility_id: uuid })), assignees: z.array(named.extend({ facility_id: uuid })), can_manage_access: z.boolean() }).safeParse(result.data);
+  const parsed = z.object({ facilities: z.array(named), residents: z.array(named.extend({ facility_id: uuid })), assignees: z.array(named.extend({ facility_id: uuid })), can_manage_access: z.boolean(),
+    uncased_medicaid_residents: z.array(named.extend({ facility_id: uuid, payer_type: z.string(), suggested_program: z.enum(BENEFITS_PROGRAMS), medicaid_authorization_end: z.string().nullable() })).default([]) }).safeParse(result.data);
   return parsed.success ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+const ruleRowSchema = z.object({ id: uuid, organization_id: uuid, rule_key: z.enum(BENEFITS_RULE_KEYS), value: z.unknown(), effective_from: z.string(), reason: z.string(), created_by: uuid.nullable(), created_at: z.string() });
+export async function getBenefitsRules() {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const result = await rpc(auth.actor, "benefits_rules_list"); if (result.error) return rpcFailure(result.error);
+  const parsed = z.object({ can_manage: z.boolean(), as_of: z.string(), rules: z.array(z.object({ rule_key: z.enum(BENEFITS_RULE_KEYS), current: ruleRowSchema.nullable(), value: z.unknown(), scheduled: z.array(ruleRowSchema), history_count: z.number().int() })) }).safeParse(result.data);
+  return parsed.success ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+export async function setBenefitsRule(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = benefitsRuleSetSchema.safeParse(await readBody(request)); if (!parsed.success) return benefitsFailure(400, "Provide the rule, its new value, the date it takes effect and a reason.");
+  const result = await rpc(auth.actor, "benefits_rule_set", { p_payload: parsed.data });
+  if (result.error) return rpcFailure(result.error);
+  const reply = ruleRowSchema.safeParse(result.data); if (!reply.success) return benefitsFailure();
+  return NextResponse.json(reply.data, { status: 201, headers: noStore });
+}
+export async function rebindBenefitsCase(request: Request, id: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const body = z.object({ request_id: uuid }).strict().safeParse(await readBody(request));
+  if (!uuid.safeParse(id).success || !body.success) return benefitsFailure(400, "Invalid rebind request.");
+  const result = await rpc(auth.actor, "benefits_case_rebind", { p_case_id: id, p_request_id: body.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = z.object({ case_id: uuid, revision: z.number().int().positive(), facility_id: uuid }).safeParse(result.data);
+  return reply.success && reply.data.case_id === id ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
+}
+/** Reading private financial evidence is recorded in the case history before any bytes leave the server. */
+export async function recordBenefitsDocumentAccess(actor: CurrentApiActor, caseId: string, documentId: string, kind: "download" | "packet"): Promise<NextResponse | null> {
+  const result = await rpc(actor, "benefits_document_access", { p_case_id: caseId, p_document_id: documentId, p_kind: kind });
+  return result.error ? rpcFailure(result.error) : null;
 }
 export async function getBenefitsAccess() {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
@@ -224,6 +256,7 @@ export async function finalizeBenefitsDocument(request: Request, caseId: string,
 export async function downloadBenefitsDocument(_request: Request, caseId: string, documentId: string) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
   const verified = await getVerifiedBenefitsDocument(auth.actor, caseId, documentId); if ("response" in verified) return verified.response;
+  const recorded = await recordBenefitsDocumentAccess(auth.actor, caseId, documentId, "download"); if (recorded) return recorded;
   const filename = encodeURIComponent(verified.document.filename).replace(/'/g, "%27");
   return new Response(new Blob([Buffer.from(verified.bytes)]).stream(), { headers: { ...noStore, "Content-Type": verified.document.mime_type, "Content-Length": String(verified.bytes.length), "Content-Disposition": `attachment; filename="benefits-document"; filename*=UTF-8''${filename}` } });
 }

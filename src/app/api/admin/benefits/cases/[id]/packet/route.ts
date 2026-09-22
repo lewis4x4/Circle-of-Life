@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { BenefitsPacketError, buildBenefitsPacket, packetRequestSchema, selectPacketDocuments } from "@/lib/benefits/packet";
-import { getVerifiedBenefitsDocument, loadBenefitsDetail, requireBenefitsActor, revalidateBenefitsActor } from "@/lib/benefits/server";
+import { getVerifiedBenefitsDocument, loadBenefitsDetail, recordBenefitsDocumentAccess, requireBenefitsActor, revalidateBenefitsActor } from "@/lib/benefits/server";
 
 export const runtime = "nodejs";
 
@@ -40,6 +40,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       const verified = await getVerifiedBenefitsDocument(authorized.actor, id, document.id);
       if ("response" in verified) return verified.response;
       verifiedBytes.set(document.id, verified.bytes);
+      const recorded = await recordBenefitsDocumentAccess(authorized.actor, id, document.id, "packet");
+      if (recorded) return recorded;
     }
     const current = await revalidateBenefitsActor(authorized.actor);
     if ("response" in current) return current.response;

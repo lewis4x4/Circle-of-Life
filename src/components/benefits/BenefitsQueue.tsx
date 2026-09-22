@@ -10,9 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   BENEFITS_PROGRAMS,
+  type BenefitsCase,
   type BenefitsCaseList,
   type BenefitsOptions,
+  type BenefitsRulesList,
 } from "@/lib/benefits/contracts";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import {
   ActionForm,
   benefitsFetch,
@@ -37,6 +40,28 @@ export const statusChoices: Choice[] = [
   { value: "waiting", label: "Waiting on external response" },
   { value: "closed", label: "Closed" },
 ];
+/** Days until a calendar date from the facility's today; negative when past. */
+export function daysUntil(date: string | null | undefined, today: string) {
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  return Math.round((Date.parse(date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86_400_000);
+}
+export function renewalWarningDays(rules: BenefitsRulesList | null | undefined) {
+  const value = rules?.rules?.find((rule) => rule.rule_key === "renewal.warning_days")?.value;
+  return typeof value === "number" ? value : null;
+}
+/** What Jessica needs at a glance: is this case overdue, coming up for renewal, or attached to a resident who moved or left. */
+export function caseFlags(item: BenefitsCase, today: string, warningDays: number | null) {
+  const flags: Array<{ key: string; label: string; tone: "urgent" | "warn" | "info" }> = [];
+  const due = daysUntil(item.due_date, today);
+  if (item.status !== "closed" && due !== null && due < 0) flags.push({ key: "overdue", label: `Overdue by ${-due} day${due === -1 ? "" : "s"}`, tone: "urgent" });
+  else if (item.status !== "closed" && due !== null && due <= 3) flags.push({ key: "due-soon", label: due === 0 ? "Due today" : `Due in ${due} day${due === 1 ? "" : "s"}`, tone: "warn" });
+  const renewal = daysUntil(item.renewal_date, today);
+  if (item.status !== "closed" && renewal !== null && warningDays !== null && renewal <= warningDays) flags.push({ key: "renewal", label: renewal < 0 ? `Renewal date passed ${-renewal} day${renewal === -1 ? "" : "s"} ago` : `Renewal due in ${renewal} day${renewal === 1 ? "" : "s"}`, tone: renewal < 0 ? "urgent" : "warn" });
+  if (item.needs_rebind) flags.push({ key: "moved", label: `Resident moved to ${item.resident_facility_name || "another facility"}`, tone: "warn" });
+  if (item.resident_status && !["active", "hospital_hold", "loa"].includes(item.resident_status)) flags.push({ key: "resident", label: `Resident ${item.resident_status.replace(/_/g, " ")}`, tone: "info" });
+  return flags;
+}
+const toneClass = { urgent: "border-destructive text-destructive", warn: "border-foreground/40 text-foreground", info: "text-muted-foreground" } as const;
 export function BenefitsQueue({
   residentId = "",
   admissionId = "",
@@ -55,6 +80,11 @@ export function BenefitsQueue({
   const [error, setError] = useState<string | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rules, setRules] = useState<BenefitsRulesList | null>(null);
+  const [starting, setStarting] = useState<string | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
+  const today = todayFacilityDateIso();
+  const warningDays = renewalWarningDays(rules);
   const sequence = useRef(0);
   const load = useCallback(
     async (before?: string) => {
@@ -95,6 +125,43 @@ export function BenefitsQueue({
     };
     return invalidate;
   }, [load]);
+  useEffect(() => {
+    let live = true;
+    void benefitsFetch<BenefitsRulesList>("/api/admin/benefits/rules")
+      .then((data) => {
+        if (live) setRules(data && Array.isArray(data.rules) ? data : null);
+      })
+      .catch(() => {
+        if (live) setRules(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+  const startCase = async (residentIdToStart: string, program: string) => {
+    setStarting(residentIdToStart);
+    setStartError(null);
+    try {
+      const created = await benefitsFetch<{ case_id: string }>(
+        "/api/admin/benefits/cases",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            resident_id: residentIdToStart,
+            program,
+            request_id: crypto.randomUUID(),
+          }),
+        },
+      );
+      if (!created.case_id)
+        throw new Error("The saved case could not be confirmed. Refresh before trying again.");
+      router.push(`/admin/benefits/${created.case_id}`);
+    } catch (caught) {
+      setStartError(caught instanceof Error ? caught.message : "Unable to start the case.");
+    } finally {
+      setStarting(null);
+    }
+  };
   useEffect(() => {
     let live = true;
     setOptions(null);
@@ -151,7 +218,7 @@ export function BenefitsQueue({
       </header>
       <Panel
         title="Case queue"
-        description="Each case shows its current next action. Agency outcomes and funding evidence are reviewed within the case."
+        description="Soonest due first; cases without a due date last. Each case shows its current next action; agency outcomes and funding evidence are reviewed within the case."
       >
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-2">
@@ -235,6 +302,15 @@ export function BenefitsQueue({
                       )?.label
                     }
                   </Badge>
+                  {caseFlags(item, today, warningDays).map((flag) => (
+                    <Badge
+                      key={flag.key}
+                      variant="outline"
+                      className={`block w-fit ${toneClass[flag.tone]}`}
+                    >
+                      {flag.label}
+                    </Badge>
+                  ))}
                   <p className="text-xs text-muted-foreground">
                     Updated {dateLabel(item.updated_at)}
                   </p>
@@ -254,6 +330,48 @@ export function BenefitsQueue({
           </Button>
         )}
       </Panel>
+      {options && (options.uncased_medicaid_residents?.length ?? 0) > 0 && (
+        <Panel
+          title="Medicaid residents without a benefits case"
+          description="These residents already have a Medicaid payer on file but no active case, so their renewals and authorizations are not being tracked here yet."
+        >
+          <ErrorNotice error={startError} />
+          <ul className="divide-y divide-border">
+            {options.uncased_medicaid_residents!.map((resident) => (
+              <li
+                key={resident.id}
+                className="flex flex-wrap items-center justify-between gap-3 py-3"
+              >
+                <div>
+                  <Link
+                    className="font-medium underline underline-offset-4"
+                    href={`/admin/residents/${resident.id}`}
+                  >
+                    {resident.name}
+                  </Link>
+                  <p className="text-sm text-muted-foreground">
+                    {options.facilities.find((f) => f.id === resident.facility_id)?.name ?? "Facility"} ·{" "}
+                    {resident.payer_type.replace(/_/g, " ")}
+                    {resident.medicaid_authorization_end
+                      ? ` · authorization ends ${resident.medicaid_authorization_end}`
+                      : " · no authorization end date on file"}
+                  </p>
+                </div>
+                <Button
+                  className="min-h-11"
+                  variant="outline"
+                  disabled={starting !== null}
+                  onClick={() => void startCase(resident.id, resident.suggested_program)}
+                >
+                  {starting === resident.id
+                    ? "Starting…"
+                    : `Start ${programChoices.find((c) => c.value === resident.suggested_program)?.label ?? "benefits"} case`}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
       <section className="space-y-4" aria-label="Start a benefits case">
         <div className="max-w-md space-y-2">
           <FormLabel htmlFor="resident-search">Find resident by name</FormLabel>

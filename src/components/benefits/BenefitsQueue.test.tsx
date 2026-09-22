@@ -40,7 +40,8 @@ describe("BenefitsQueue", () => {
     );
     await screen.findByRole("heading", { name: "Start a benefits case" });
     for (const call of fetch.mock.calls)
-      expect(String(call[0])).toContain(`facility_id=${mocks.facilityId}`);
+      if (!String(call[0]).includes("/rules"))
+        expect(String(call[0])).toContain(`facility_id=${mocks.facilityId}`);
   });
   it("does not represent permission failure as no cases", async () => {
     vi.stubGlobal(

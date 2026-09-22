@@ -117,8 +117,34 @@ UPDATE storage.objects SET version='v2' WHERE id=(SELECT id FROM bo);
 SELECT pg_temp.blogin('owner'); SET LOCAL ROLE authenticated;
 SELECT pg_temp.berror($q$SELECT public.benefits_document_target((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,(SELECT reply#>>'{document,id}' FROM br WHERE label='upload')::uuid)$q$,'55000');
 RESET ROLE;
+UPDATE storage.objects SET version='v1' WHERE id=(SELECT id FROM bo);
+-- Operating rules: readable by any benefits actor, changed only by owners/org admins, validated, never back-dated.
+SELECT pg_temp.blogin('owner'); SET LOCAL ROLE authenticated;
+SELECT pg_temp.bassert(jsonb_array_length(public.benefits_rules_list()->'rules')=6,'rules list incomplete');
+SELECT pg_temp.bassert((SELECT jsonb_array_length(value->'value') FROM jsonb_array_elements(public.benefits_rules_list()->'rules') WHERE value->>'rule_key'='checklist.smmc_ltc')=18,'default checklist not exposed');
+SELECT pg_temp.berror($q$SELECT public.benefits_rule_set('{"rule_key":"family_collection.max_days","value":400,"effective_from":"2026-09-22","reason":"too long"}')$q$,'22023');
+SELECT pg_temp.berror($q$SELECT public.benefits_rule_set(jsonb_build_object('rule_key','renewal.warning_days','value',30,'effective_from',(current_date-1)::text,'reason','back-dated'))$q$,'22023');
+SELECT pg_temp.berror($q$SELECT public.benefits_rule_set(jsonb_build_object('rule_key','checklist.oss','value','[{"title":"x","stage":"nowhere"}]'::jsonb,'effective_from',current_date::text,'reason','bad stage'))$q$,'22023');
+SELECT public.benefits_rule_set(jsonb_build_object('rule_key','checklist.oss','value','[{"title":"Signed OSS application","stage":"application","signature_status":"pending"},{"title":"Income verification","stage":"application"}]'::jsonb,'effective_from',current_date::text,'reason','Synthetic OSS checklist'));
+INSERT INTO br SELECT 'oss_case',public.benefits_case_create(other_resident,NULL,'oss',gen_random_uuid()) FROM bf;
+SELECT pg_temp.bassert(jsonb_array_length(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='oss_case')::uuid)->'requirements')=2,'rule-driven OSS checklist not applied');
+-- Reading financial evidence is itself recorded.
+SELECT public.benefits_document_access((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,(SELECT reply#>>'{document,id}' FROM br WHERE label='upload')::uuid,'download');
+SELECT pg_temp.bassert((SELECT count(*) FROM jsonb_array_elements(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)->'history') WHERE value->>'action'='document_download')=1,'download not recorded');
+RESET ROLE; SELECT pg_temp.blogin('manager'); SET LOCAL ROLE authenticated;
+SELECT pg_temp.berror($q$SELECT public.benefits_rule_set('{"rule_key":"renewal.warning_days","value":30,"effective_from":"2099-01-01","reason":"not mine to set"}')$q$,'42501');
+RESET ROLE;
+-- A moved resident: the case stays readable and flagged, cannot be written, and a reviewed rebind follows the resident.
 UPDATE public.residents SET facility_id=(SELECT other_site FROM bf) WHERE id=(SELECT resident FROM bf);
 SELECT pg_temp.blogin('owner'); SET LOCAL ROLE authenticated;
-SELECT pg_temp.berror($q$SELECT public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)$q$,'42501');
+SELECT pg_temp.bassert((public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)#>>'{case,needs_rebind}')='true','moved resident not flagged');
+SELECT pg_temp.bassert((SELECT count(*) FROM jsonb_array_elements(public.benefits_case_list()->'cases') WHERE value->>'needs_rebind'='true')=1,'moved case vanished from the queue');
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('update_case','{"next_action":"write while moved"}')$q$,'42501');
+INSERT INTO br SELECT 'rebind_args',jsonb_build_object('request_id',gen_random_uuid());
+INSERT INTO br SELECT 'rebind',public.benefits_case_rebind((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,(SELECT reply->>'request_id' FROM br WHERE label='rebind_args')::uuid);
+SELECT pg_temp.bassert((SELECT reply->>'facility_id' FROM br WHERE label='rebind')=(SELECT other_site::text FROM bf),'rebind did not follow the resident');
+SELECT pg_temp.bassert(public.benefits_case_rebind((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,(SELECT reply->>'request_id' FROM br WHERE label='rebind_args')::uuid)=(SELECT reply FROM br WHERE label='rebind'),'rebind replay changed result');
+SELECT pg_temp.berror($q$SELECT public.benefits_case_rebind((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,gen_random_uuid())$q$,'22023');
+SELECT pg_temp.bassert((public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)#>>'{case,needs_rebind}')='false','rebind flag not cleared');
 RESET ROLE;
 ROLLBACK;

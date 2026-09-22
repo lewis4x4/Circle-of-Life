@@ -14,6 +14,8 @@ import {
   type BenefitsDetail,
   type BenefitsOptions,
   type BenefitsRequirement,
+  type BenefitsRulesList,
+  type ScreeningStandard,
 } from "@/lib/benefits/contracts";
 import {
   ActionForm,
@@ -31,6 +33,32 @@ import { BenefitsCollectionRequests } from "./BenefitsCollectionRequests";
 import { BenefitsSubmissions } from "./BenefitsSubmissions";
 import { benefitsScreeningReview } from "@/lib/benefits/screening";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+
+export function screeningStandardFromRules(
+  rules: BenefitsRulesList | null | undefined,
+): ScreeningStandard | null {
+  const entry = rules?.rules?.find(
+    (rule) => rule.rule_key === "screening.standard_individual",
+  );
+  const value = entry?.value as
+    | { income_cents?: unknown; assets_cents?: unknown; label?: unknown; source?: unknown }
+    | null
+    | undefined;
+  if (
+    !value ||
+    typeof value.income_cents !== "number" ||
+    typeof value.assets_cents !== "number" ||
+    typeof value.label !== "string"
+  )
+    return null;
+  return {
+    income_cents: value.income_cents,
+    assets_cents: value.assets_cents,
+    label: value.label,
+    source: typeof value.source === "string" ? value.source : undefined,
+    effective_from: entry?.current?.effective_from ?? null,
+  };
+}
 
 type Command = (
   action: BenefitsCommand["action"],
@@ -58,6 +86,7 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [mutating, setMutating] = useState(false);
+  const [standard, setStandard] = useState<ScreeningStandard | null>(null);
   const selectedFacilityId = useFacilityStore(
     (state) => state.selectedFacilityId,
   );
@@ -90,6 +119,19 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
     };
     return invalidate;
   }, [refresh, selectedFacilityId]);
+  useEffect(() => {
+    let live = true;
+    void benefitsFetch<BenefitsRulesList>("/api/admin/benefits/rules")
+      .then((rules) => {
+        if (live) setStandard(screeningStandardFromRules(rules));
+      })
+      .catch(() => {
+        if (live) setStandard(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [id]);
   const facilityId = detail?.case.facility_id;
   useEffect(() => {
     if (!facilityId) return;
@@ -181,7 +223,12 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
     item.program,
     item.screening,
     todayFacilityDateIso(),
+    standard,
   );
+  const residentAway =
+    item.resident_status && !["active", "hospital_hold", "loa"].includes(item.resident_status)
+      ? item.resident_status
+      : null;
   const sectionTabs = [
     "Overview",
     "Requirements & evidence",
@@ -250,6 +297,37 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
       <ErrorNotice error={error} />
       <ErrorNotice error={optionsError} />
       {loading && <p role="status">Refreshing case…</p>}
+      {item.needs_rebind && (
+        <Panel title="Resident has moved facilities">
+          <p className="text-sm">
+            {item.resident_name} is now at{" "}
+            {item.resident_facility_name || "another facility"}, but this case
+            is still filed under {item.facility_name}. The case stays readable
+            and cannot be changed until someone with review authority on both
+            facilities moves it with the resident.
+          </p>
+          <ActionForm
+            title="Move the case with the resident"
+            submitLabel="Rebind case to the resident’s facility"
+            disabled={mutating || !permissions.can_review}
+            fields={[]}
+            onSubmit={async (_payload, requestId) => {
+              await benefitsFetch(base + "/rebind", {
+                method: "POST",
+                body: JSON.stringify({ request_id: requestId }),
+              });
+              await refresh();
+            }}
+          />
+        </Panel>
+      )}
+      {residentAway && (
+        <p className="rounded-[var(--radius)] border border-border bg-muted/30 p-3 text-sm">
+          Resident record status is <strong>{label(residentAway)}</strong>.
+          Decide whether this case should be closed with a reason or kept open
+          for a pending decision, appeal or final funding.
+        </p>
+      )}
       {!permissions.can_write && (
         <p className="text-sm text-muted-foreground">
           You have read access. A staff member with benefits write access can
@@ -361,16 +439,29 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
             <p className="text-sm text-muted-foreground">
               {screeningReview.explanation}
             </p>
-            <a
-              className="inline-flex min-h-11 items-center text-sm underline"
-              href={screeningReview.rule.source}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {screeningReview.rule.label} (effective{" "}
-              {screeningReview.rule.effectiveFrom} through{" "}
-              {screeningReview.rule.effectiveThrough})
-            </a>
+            {screeningReview.rule ? (
+              screeningReview.rule.source ? (
+                <a
+                  className="inline-flex min-h-11 items-center text-sm underline"
+                  href={screeningReview.rule.source}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {screeningReview.rule.label} (in force from{" "}
+                  {screeningReview.rule.effective_from ?? "the default"})
+                </a>
+              ) : (
+                <p className="text-sm">
+                  {screeningReview.rule.label} (in force from{" "}
+                  {screeningReview.rule.effective_from ?? "the default"})
+                </p>
+              )
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No financial screening standard is recorded. An owner can record
+                one under Benefits access → Operating rules.
+              </p>
+            )}
           </Panel>
           <ActionForm
             title="Financial screening"
