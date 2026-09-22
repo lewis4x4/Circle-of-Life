@@ -1,6 +1,6 @@
 # Synthetic InsureFlow receiver database contract
 
-Migration `448_insureflow_synthetic_receiver.sql` is an isolated summary receiver, not an insurance-system write path. It never inserts or updates policies, claims, premiums, documents, search, AI, exports, or offline records. Provider withdrawals remove disclosure; they do not cancel a Haven policy.
+Migration `446_insureflow_synthetic_receiver.sql` is an isolated summary receiver, not an insurance-system write path. It never inserts or updates policies, claims, premiums, documents, search, AI, exports, or offline records. Provider withdrawals remove disclosure; they do not cancel a Haven policy.
 
 ## Persistence and authority
 
