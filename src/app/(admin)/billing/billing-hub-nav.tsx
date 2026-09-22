@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 const DEST_LINKS = [
   { href: "/admin/billing", label: "Overview" },
   { href: "/admin/billing/invoices", label: "Invoices" },
-  { href: "/admin/billing/invoices/opening-balance", label: "Opening balance" },
   { href: "/admin/billing/ar-aging", label: "AR aging" },
   { href: "/admin/billing/rates", label: "Rate library" },
   { href: "/admin/billing/concessions", label: "Concessions" },
@@ -22,7 +21,7 @@ export function BillingHubNav() {
 
   return (
     <nav
-      className="flex flex-wrap gap-1 rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-card)] ring-1 ring-border/60"
+      className="flex flex-nowrap gap-1 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-card)] ring-1 ring-border/60"
       aria-label="Billing sections"
     >
       {DEST_LINKS.map((item) => {
