@@ -12,13 +12,20 @@ const rowSchema = z.object({
   legacy_balance_cents: z.number().int().nullable(), legacy_entry_count: z.number().int().nonnegative(),
   ledger_entry_count: z.number().int().nonnegative(), last_entry_at: z.string().nullable(),
   legacy_review_required: z.boolean(), ledger_matches_balance: z.boolean(),
+  // COL-556: what the ledger of record holds for this resident, reported beside
+  // the trust account rather than summed into it.
+  record_of_trust_balance_cents: z.string(), record_of_entry_count: z.number().int().nonnegative(),
+  record_of_matches_account: z.boolean(),
 });
-export const residentMoneySchema = z.object({ as_of: z.string(), canonical_ledger: z.literal("resident_trust_transactions"), external_reconciliation: z.literal("NOT_VERIFIED"), rows: z.array(rowSchema) });
+export const residentMoneySchema = z.object({ as_of: z.string(), canonical_ledger: z.literal("resident_ledger_entries"), external_reconciliation: z.literal("NOT_VERIFIED"), rows: z.array(rowSchema) });
 export type ResidentMoneySnapshot = z.infer<typeof residentMoneySchema>;
 export async function loadResidentMoneySnapshot(supabase: SupabaseClient<Database>, organizationId: string, facilityId: string | null): Promise<ResidentMoneySnapshot> {
   const { data, error } = await supabase.rpc("resident_money_snapshot", { p_organization_id: organizationId, p_facility_id: facilityId });
   if (error) throw error;
   const snapshot = residentMoneySchema.parse(data);
-  for (const row of snapshot.rows) cents(row.ledger_movement_cents);
+  for (const row of snapshot.rows) {
+    cents(row.ledger_movement_cents);
+    cents(row.record_of_trust_balance_cents);
+  }
   return snapshot;
 }
