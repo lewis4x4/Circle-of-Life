@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CalendarHeart,
   CreditCard,
+  FileText,
   HeartPulse,
   Loader2,
   LogOut,
@@ -96,6 +97,12 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
         label: "Updates",
         icon: <Megaphone className="h-5 w-5" aria-hidden />,
         active: pathname.startsWith("/family/messages"),
+      },
+      {
+        href: "/family/benefits",
+        label: "Documents",
+        icon: <FileText className="h-5 w-5" aria-hidden />,
+        active: pathname.startsWith("/family/benefits"),
       },
       {
         href: "/family/billing",
