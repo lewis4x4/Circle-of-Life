@@ -36,6 +36,9 @@ const ADMIN_SHELL_SEGMENTS = [
   "/admin/settings/users",
   // Print sheets live in src/app/(print)/ — no shell, same session and role requirement.
   "/print",
+  // The Facility Launch Center lives in src/app/facility-launch/ — no shell (its static
+  // app carries global styles), same session requirement, owner / org_admin only.
+  "/facility-launch",
 ] as const;
 
 export function isAdminShellPath(pathname: string): boolean {
@@ -92,6 +95,11 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
   if (isExecutiveStandupPath && !(isFacilityOperatorRole(role) || isOrgAdminAppRole(role))) {
+    return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
+  }
+  const isFacilityLaunchPath =
+    nextUrl.pathname === "/facility-launch" || nextUrl.pathname.startsWith("/facility-launch/");
+  if (isFacilityLaunchPath && !isOrgAdminAppRole(role)) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
 

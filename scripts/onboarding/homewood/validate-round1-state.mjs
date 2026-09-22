@@ -1,13 +1,15 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { scoreFacility } from '../../../facility-launch-center/src/scoring.js';
 import { root } from './ingestion-lib.mjs';
 
 const statePath = resolve(root, 'facility-launch-center/data/homewood-round1-state.json');
+// The state is internal Homewood data. It is served only through the authenticated
+// /api/admin/facility-launch/round1-state route and must never reappear under public/,
+// which Netlify serves straight from the CDN with no auth in front of it.
 const publicStatePath = resolve(root, 'public/facility-launch-static/data/homewood-round1-state.json');
 const summaryPath = resolve(root, 'docs/specs/HOMEWOOD-ROUND-1-STATE-SUMMARY-2026-05-13.md');
 const stateText = readFileSync(statePath, 'utf8');
-const publicStateText = readFileSync(publicStatePath, 'utf8');
 const state = JSON.parse(stateText);
 const errors = [];
 
@@ -15,9 +17,9 @@ function failUnless(condition, message) {
   if (!condition) errors.push(message);
 }
 
-failUnless(stateText === publicStateText, 'Canonical and public Round 1 state JSON outputs must be byte-identical');
+failUnless(!existsSync(publicStatePath), 'Round 1 state JSON must not be published under public/ (serve it through the authenticated route)');
 const serialized = JSON.stringify(state);
-const fullPublicPayload = `${stateText}\n${publicStateText}\n${readFileSync(summaryPath, 'utf8')}`;
+const fullPublicPayload = `${stateText}\n${readFileSync(summaryPath, 'utf8')}`;
 for (const marker of ['dec-seed-1', 'Seeded Homewood pilot fixture', 'HOMEWOOD GL CERT 2.pdf', 'HOMEWOOD PROPERTY POLICY 2.pdf']) {
   failUnless(!serialized.includes(marker), `Round 1 state contains forbidden demo/duplicate marker: ${marker}`);
 }

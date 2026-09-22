@@ -186,6 +186,7 @@ describe("the proxy matcher reaches every path the shells claim", () => {
     "/admin/settings/users",
     "/print",
     "/print/resident-face-sheet",
+    "/facility-launch",
     "/clinical",
     "/billing",
     "/finance",
