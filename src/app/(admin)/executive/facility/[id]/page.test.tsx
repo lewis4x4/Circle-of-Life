@@ -25,6 +25,7 @@ const computeTotalCostOfRiskMock = vi.hoisted(() => vi.fn());
 const fetchHeatMapMock = vi.hoisted(() => vi.fn());
 const fetchTrendMock = vi.hoisted(() => vi.fn());
 const fetchFacilityComplianceMock = vi.hoisted(() => vi.fn());
+const rpcMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: routeMock.id }),
@@ -40,6 +41,7 @@ vi.mock("@/contexts/haven-auth-context", () => ({
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
+    rpc: rpcMock,
     from: (table: string) => {
       if (table === "facilities") {
         return {
@@ -234,6 +236,8 @@ beforeEach(() => {
   fetchTrendMock.mockResolvedValue([trendRow(0)]);
   fetchFacilityComplianceMock.mockReset();
   fetchFacilityComplianceMock.mockResolvedValue(complianceSummary());
+  rpcMock.mockReset();
+  rpcMock.mockResolvedValue({ data: [], error: null });
   resetStore(OTHER_FACILITY_ID);
   document.cookie = "haven_selected_facility=; Max-Age=0; Path=/";
 });
@@ -390,6 +394,22 @@ describe("ExecutiveFacilityDetailPage attention and snapshot states", () => {
     expect(attention).toHaveTextContent("Open the record for severity, owner, and next action.");
     expect(screen.getByRole("link", { name: /^View incident$/ })).toHaveAttribute("href", "/admin/incidents?scope=open");
     expect(screen.queryByText(/severity: /i)).not.toBeInTheDocument();
+  });
+
+  it("lists a check the building recorded as did not run, escalated to this executive (COL-602)", async () => {
+    rpcMock.mockResolvedValue({
+      data: [
+        { instanceId: "i-1", facilityId: FACILITY_ID, facilityName: "Anon Facility", title: "Generator weekly run", assignedShiftDate: "2026-09-22", status: "completed", reason: "did_not_run", note: "Outcome: did not run. Stuck.", owner: { kind: "queue" }, href: "/admin/operations/work" },
+        { instanceId: "i-2", facilityId: OTHER_FACILITY_ID, facilityName: "Other", title: "Generator weekly run", assignedShiftDate: "2026-09-22", status: "completed", reason: "did_not_run", owner: { kind: "queue" }, href: "/admin/operations/work" },
+      ],
+      error: null,
+    });
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    const attention = (await screen.findByRole("heading", { name: "Needs attention" })).closest("section");
+    await waitFor(() => expect(attention).toHaveTextContent("1 check recorded as did not run"));
+    expect(rpcMock).toHaveBeenCalledWith("home_escalations_for_executive");
   });
 
   it("does not claim an all-clear while measures are unrecorded", async () => {

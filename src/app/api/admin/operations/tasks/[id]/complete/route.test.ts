@@ -77,7 +77,18 @@ describe("operation task completion error boundary", () => {
       { params: Promise.resolve({ id: task.id }) },
     );
     expect(recorded.status).toBe(200);
-    expect(rpc).toHaveBeenCalledWith("complete_operation_task_review", expect.objectContaining({ p_task_id: task.id, p_notes: "Outcome: did not run. No sound at 10:00; vendor called." }));
+    // COL-602: the escalation and the completion are one database transaction.
+    expect(rpc).toHaveBeenCalledWith("home_record_did_not_run", { p_task_id: task.id, p_notes: "Outcome: did not run. No sound at 10:00; vendor called." });
+    expect(rpc).not.toHaveBeenCalledWith("complete_operation_task_review", expect.anything());
+
+    rpc.mockClear();
+    rpc.mockResolvedValueOnce({ data: "completed", error: null });
+    const ran = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: JSON.stringify({ outcome: "ran", completion_notes: "Ran 30 minutes." }) }) as never,
+      { params: Promise.resolve({ id: task.id }) },
+    );
+    expect(ran.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith("complete_operation_task_review", expect.objectContaining({ p_task_id: task.id, p_notes: "Outcome: ran. Ran 30 minutes." }));
   });
 
   it("does not confirm completion without a server completion status", async () => {

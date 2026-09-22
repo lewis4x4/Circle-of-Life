@@ -24,6 +24,10 @@ import {
   type ActivityFeedPeriodDays,
 } from "@/lib/residents/resident-activity-feed";
 import { PRESENCE_HISTORY_LIMIT } from "@/lib/residents/resident-presence-history";
+import {
+  parseResidentRecordFieldStates,
+  type ResidentRecordFieldStates,
+} from "@/lib/residents/resident-record-edit";
 import { responsiblePartyContact } from "@/lib/residents/resident-responsible-party";
 import { RESIDENT_NO_BED_COPY, RESIDENT_NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
@@ -207,6 +211,23 @@ export type ResidentOverviewDetail = {
   form1823?: ResidentForm1823Clock | null;
   /** COL-599: incident follow-ups on this resident that are not completed, soonest first. */
   openIncidentFollowups: ResidentIncidentFollowupClock[];
+  /**
+   * COL-597: `residents.updated_at` exactly as PostgREST returned it — the
+   * version an in-place edit must match. Kept as the string: a JS Date would
+   * drop the microseconds and every save would read as a conflict.
+   */
+  updatedAt?: string | null;
+  /** COL-597: Do Not Hospitalize; null = not recorded. */
+  doNotHospitalize?: boolean | null;
+  /** COL-597: feeding tube type (`none` = recorded as no tube); null = not recorded. */
+  feedingTube?: string | null;
+  feedingTubeNotes?: string | null;
+  /**
+   * COL-597: per field, whether the signed-in person may record it here and
+   * where the current value came from. Null when unavailable — the record then
+   * offers no editor rather than one that will be refused.
+   */
+  fieldStates?: ResidentRecordFieldStates | null;
 };
 
 export type ResidentForm1823Clock = {
@@ -278,6 +299,10 @@ type SupabaseResidentRow = {
   allergy_list_reviewed_by: string | null;
   primary_diagnosis_reviewed_at: string | null;
   primary_diagnosis_reviewed_by: string | null;
+  updated_at: string | null;
+  do_not_hospitalize: boolean | null;
+  feeding_tube: string | null;
+  feeding_tube_notes: string | null;
   bed_by_id: SupabaseBedJoin | null;
   beds: SupabaseBedJoin[] | null;
 };
@@ -436,6 +461,10 @@ export async function loadResidentOverviewDetail(
     "allergy_list_reviewed_by",
     "primary_diagnosis_reviewed_at",
     "primary_diagnosis_reviewed_by",
+    "updated_at",
+    "do_not_hospitalize",
+    "feeding_tube",
+    "feeding_tube_notes",
     "bed_by_id: beds!residents_bed_id_fkey ( id, bed_label, room_id, rooms ( id, room_number, unit_id, units ( id, name ) ) )",
     "beds!fk_beds_resident ( id, bed_label, room_id, rooms ( id, room_number, unit_id, units ( id, name ) ) )",
   ].join(",");
@@ -487,6 +516,7 @@ export async function loadResidentOverviewDetail(
     presenceHistoryResult,
     form1823Result,
     followupResult,
+    fieldStatesResult,
   ] = await Promise.all([
     // The feed shows daily logs only when they carry a general note, and ADL
     // entries only when refused — so read exactly those, not the newest rows
@@ -592,6 +622,9 @@ export async function loadResidentOverviewDetail(
       .is("deleted_at", null)
       .order("due_at", { ascending: true })
       .limit(OPEN_FOLLOWUP_LIMIT),
+    supabase.rpc("resident_record_field_sources" as never, { p_resident_id: residentId } as never) as unknown as Promise<
+      QueryResult<unknown>
+    >,
   ]);
 
   if (
@@ -904,5 +937,10 @@ export async function loadResidentOverviewDetail(
     presenceHistory,
     form1823,
     openIncidentFollowups,
+    updatedAt: resident.updated_at,
+    doNotHospitalize: resident.do_not_hospitalize,
+    feedingTube: resident.feeding_tube,
+    feedingTubeNotes: resident.feeding_tube_notes,
+    fieldStates: fieldStatesResult.error ? null : parseResidentRecordFieldStates(fieldStatesResult.data),
   };
 }

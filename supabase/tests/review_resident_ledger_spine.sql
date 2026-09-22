@@ -324,4 +324,42 @@ DO $$ DECLARE v jsonb; BEGIN
 END $$;
 RESET ROLE;
 
+-- COL-567: a balance is either correct or refused, never a silent zero.
+-- (a) A resident rule that misses the mapped account is refused, naming both.
+SELECT pg_temp.rl_fail(
+  format('INSERT INTO public.gl_posting_rules(organization_id,entity_id,event_type,debit_gl_account_id,credit_gl_account_id) VALUES (%L,%L,''resident_refund'',%L,%L)',
+         org, entity, cash_account, revenue_account),
+  'entity_gl_settings.accounts_receivable_id is') FROM rl_fixture;
+SELECT pg_temp.rl_fail(
+  format('INSERT INTO public.gl_posting_rules(organization_id,entity_id,event_type,debit_gl_account_id,credit_gl_account_id) VALUES (%L,%L,''trust_withdrawal'',%L,%L)',
+         org, entity, cash_account, ar_account),
+  'entity_gl_settings.trust_liability_id is') FROM rl_fixture;
+-- A non-resident event type is not this guard's business.
+INSERT INTO public.gl_posting_rules(organization_id,entity_id,event_type,debit_gl_account_id,credit_gl_account_id)
+  SELECT org, entity, 'vendor_bill', writeoff_account, cash_account FROM rl_fixture;
+-- (b) An entry written around the posting command with unmapped legs is refused.
+SELECT pg_temp.rl_fail(
+  format('INSERT INTO public.resident_ledger_entries(organization_id,entity_id,facility_id,resident_id,account_kind,entry_type,amount_cents,debit_gl_account_id,credit_gl_account_id,effective_date,gl_period_close_id,recorded_by,entry_group_id,request_id) SELECT organization_id,entity_id,facility_id,resident_id,''receivable'',''resident_charge'',100,%L,%L,effective_date,gl_period_close_id,recorded_by,gen_random_uuid(),gen_random_uuid() FROM public.resident_ledger_entries WHERE resident_id=%L LIMIT 1',
+         revenue_account, cash_account, resident),
+  'Exactly one leg must be that account') FROM rl_fixture;
+-- (c) With entries on the books, the mapping cannot be re-pointed, and an
+--     active rule cannot be left disagreeing with it.
+SELECT pg_temp.rl_fail(
+  format('UPDATE public.entity_gl_settings SET accounts_receivable_id=%L WHERE entity_id=%L', revenue_account, entity),
+  'accounts_receivable_id cannot change') FROM rl_fixture;
+SELECT pg_temp.rl_fail(
+  format('UPDATE public.entity_gl_settings SET trust_liability_id=%L WHERE entity_id=%L', writeoff_account, entity),
+  'trust_liability_id cannot change') FROM rl_fixture;
+SELECT pg_temp.rl_fail(
+  format('DELETE FROM public.entity_gl_settings WHERE entity_id=%L', entity),
+  'cannot be deleted') FROM rl_fixture;
+-- (d) The view names what it could not count; every entry here is mapped.
+DO $$ DECLARE v_unmapped bigint; BEGIN
+  SELECT sum(unmapped_entry_count) INTO v_unmapped
+  FROM public.resident_ledger_balances b JOIN rl_fixture f ON f.resident = b.resident_id;
+  IF v_unmapped IS DISTINCT FROM 0 THEN
+    RAISE EXCEPTION 'COL-567: % entries read as unmapped on a correctly mapped entity', v_unmapped;
+  END IF;
+END $$;
+
 ROLLBACK;
