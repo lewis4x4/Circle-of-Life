@@ -33,7 +33,7 @@
     in-app path as escalations); **Something wrong** requires a note and keeps it open.
     Writes are `facility_admin` / `manager` only through `home_record_census` (definer;
     browser DML revoked). Counts only.
-    Numbered 463 from `migrations:next` (460 is #670, 461–462 are #671); `migrations:check`
+    Numbered 460 (contiguous after main 459; #670/#671 renumbered upward).
     reports the 460–462 gap on this branch until those merge — renumber if they do not.
   - Quick links (locked): Stand Up · Referrals · My facility · EMP · Report incident live;
     Record payment (W2) · Call-out (W4) · Quick note (W3) week-badged and disabled.
