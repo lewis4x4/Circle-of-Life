@@ -158,7 +158,7 @@ One per confirmed figure, decided by the Haven server at save time, never by the
 | `entered_no_roster` | 2 | none | Haven holds no residents for the facility, so there was no suggestion; the figure was typed |
 | `overridden` | 3 | `override: {reason text}` | The saved figure differs from the roster suggestion and the administrator chose a reason |
 
-A figure saved blank records no source. A report saved without a roster confirmation (historical corrections, the hosted connector, imports, recovery) records no source and publishes no roster rows. A historical report shows the confirmation recorded at the time; the suggestion is never recomputed for a past meeting.
+A figure saved blank records no source. A historical correction or an import records no source and publishes no roster rows. A historical report shows the confirmation recorded at the time; the suggestion is never recomputed for a past meeting. On the open reporting period every save records a source, whether or not the client sent a roster block (section 12.7).
 
 ### 12.2 Override reason
 
@@ -196,3 +196,7 @@ Front Desk meeting table and facility detail, and the Haven all-facilities overv
 2. Haven: apply the roster census migration, deploy the application, then update the publisher runtime. The publisher starts sending roster rows on its next poll.
 
 If the publisher is updated first, the ingest endpoint refuses the batch because of the unknown metric names, exactly as in section 10, and accepts it on the next poll after the Front Office migration.
+
+### 12.7 Open-period enforcement (COL-553)
+
+The comparison is the server's, not the client's. On the open reporting period `stand_up_save` compares the census and hospital figures with the roster on every save; a payload with no `roster` block is treated as one carrying no reasons. A differing figure with no reason is refused with the same message as before. Outage recovery and import reversal for the open period follow the same rule and are refused until a reason is supplied or the roster is corrected. A deferred constraint trigger on `stand_up_revisions` refuses, at commit, any open-period revision with a figure and no confirmation row, so a write around `stand_up_save` fails instead of leaving a figure that silently disagrees with the roster. Historical corrections and imports are unchanged.

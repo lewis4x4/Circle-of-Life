@@ -74,8 +74,11 @@ END $$;
 SELECT pg_temp.ed_fail(format($q$SELECT public.stand_up_command('save',jsonb_build_object('facility_id',%L,'week_start',%L::date,'expected_version',0,'request_id',gen_random_uuid(),'status','draft','values',%L::jsonb))$q$,facility,week,invalid_duration),'Overtime requires hours and minutes') FROM ed_plan;
 
 -- 4. The first save that carries a figure creates the report at version 1.
+-- COL-553: the figure is a census on a facility that may hold residents, so the
+-- open-period save carries a reason in case it differs from the roster.
 INSERT INTO ed_results SELECT 'first_figure',public.stand_up_command('save',jsonb_build_object(
- 'facility_id',facility,'week_start',week,'expected_version',0,'request_id',gen_random_uuid(),'status','draft','values',one_figure)) FROM ed_plan;
+ 'facility_id',facility,'week_start',week,'expected_version',0,'request_id',gen_random_uuid(),'status','draft','values',one_figure,
+ 'roster',jsonb_build_object('current_total_census',jsonb_build_object('override_reason','other')))) FROM ed_plan;
 DO $$ DECLARE r jsonb; BEGIN
  SELECT value INTO r FROM ed_results WHERE name='first_figure';
  IF r->>'id' IS NULL OR (r->>'version')::int<>1 OR r->>'revision_id' IS NULL OR r ? 'not_started' THEN RAISE EXCEPTION 'The first figure did not create a Draft: %',r; END IF;
