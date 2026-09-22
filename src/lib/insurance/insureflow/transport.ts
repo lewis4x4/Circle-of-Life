@@ -1,5 +1,23 @@
-/** InsureFlow's live transport is intentionally unavailable in this delivery. */
-export const INSUREFLOW_LIVE_TRANSPORT_ENABLED = false;
+/**
+ * Transport to the InsureFlow policy feed.
+ *
+ * Two shapes, one implementation. The synthetic transport is the reviewed one:
+ * test runtime, injected fetch, HTTPS `.invalid` origin, used by the harness. The
+ * live transport talks to the real provider and exists because COL-546 decision 5
+ * authorised it. Everything that makes the read safe — no redirects, no browser
+ * credentials, no cache, the byte cap, the timeout, the JSON content-type check,
+ * the 401 that stops the reader claiming — is shared, so neither shape can drift
+ * into being the lenient one.
+ */
+
+/**
+ * Live polling is off unless the server says otherwise. This is a kill switch,
+ * read at call time rather than captured at import, so revoking it takes effect
+ * on the next poll instead of the next deploy.
+ */
+export function liveTransportEnabled(): boolean {
+  return process.env.INSUREFLOW_LIVE_TRANSPORT_ENABLED === "true";
+}
 export const SYNTHETIC_FEED_ORIGIN = "https://insureflow.synthetic.invalid";
 export const FEED_RESPONSE_BYTE_LIMIT = 3 * 1024 * 1024;
 export const FEED_TIMEOUT_MS = 30_000;
@@ -39,8 +57,9 @@ export class FeedTransportError extends Error {
 
 export type InjectedFeedFetch = (url: string, init: RequestInit) => Promise<Response>;
 export type FeedRequest = { after: string; limit?: number };
+export type FeedTransportMode = "synthetic" | "live";
 export type SyntheticFeedTransport = Readonly<{
-  mode: "synthetic";
+  mode: FeedTransportMode;
   origin: string;
   integrationId: string;
   read(request: FeedRequest): Promise<unknown>;
@@ -52,6 +71,14 @@ export type SyntheticFeedTransportConfiguration = {
   token: string;
   fetch: InjectedFeedFetch;
 };
+export type LiveFeedTransportConfiguration = {
+  mode: "live";
+  origin: string;
+  integrationId: string;
+  token: string;
+  /** Optional only so tests can drive the live path without a network. */
+  fetch?: InjectedFeedFetch;
+};
 
 function assertSyntheticRuntime(mode: string, injectedFetch: unknown) {
   if (mode !== "synthetic" || process.env.NODE_ENV !== "test" || typeof window !== "undefined" || typeof injectedFetch !== "function") {
@@ -59,15 +86,48 @@ function assertSyntheticRuntime(mode: string, injectedFetch: unknown) {
   }
 }
 
-/** No environment secret lookup, global fetch fallback, or runtime live switch. */
+/**
+ * The live equivalent. Still server-only — a browser must never hold the feed
+ * credential — but it runs outside a test and may use the platform fetch.
+ */
+function assertLiveRuntime(mode: string, injectedFetch: unknown) {
+  if (mode !== "live" || typeof window !== "undefined" || !liveTransportEnabled()
+    || (injectedFetch !== undefined && typeof injectedFetch !== "function")) {
+    throw new FeedTransportError("live_disabled");
+  }
+}
+
+/**
+ * Synthetic: no environment secret lookup, no global fetch fallback, no runtime
+ * live switch. Unchanged from the reviewed delivery.
+ */
 export function createSyntheticFeedTransport(configuration: SyntheticFeedTransportConfiguration): SyntheticFeedTransport {
-  assertSyntheticRuntime(configuration.mode, configuration.fetch);
+  return createFeedTransport(configuration);
+}
+
+/**
+ * Live: the real provider. Same read path, different admission rules — a genuine
+ * HTTPS origin instead of `.invalid`, and the kill switch must be on.
+ */
+export function createLiveFeedTransport(configuration: LiveFeedTransportConfiguration): SyntheticFeedTransport {
+  return createFeedTransport(configuration);
+}
+
+function createFeedTransport(
+  configuration: SyntheticFeedTransportConfiguration | LiveFeedTransportConfiguration,
+): SyntheticFeedTransport {
+  const live = configuration.mode === "live";
+  if (live) assertLiveRuntime(configuration.mode, configuration.fetch);
+  else assertSyntheticRuntime(configuration.mode, configuration.fetch);
   let origin: string;
   try {
     const url = new URL(configuration.origin);
-    if (url.protocol !== "https:" || !url.hostname.endsWith(".invalid") || url.username || url.password
+    // A synthetic transport may only ever reach `.invalid`; a live one may never
+    // reach it, so a misconfigured mode cannot quietly point at the wrong world.
+    const hostnameAllowed = live ? !url.hostname.endsWith(".invalid") : url.hostname.endsWith(".invalid");
+    if (url.protocol !== "https:" || !hostnameAllowed || url.username || url.password
       || url.pathname !== "/" || url.search || url.hash || (url.port && url.port !== "443")) {
-      throw new Error("Invalid synthetic origin");
+      throw new Error("Invalid feed origin");
     }
     origin = url.origin;
   } catch {
@@ -79,13 +139,16 @@ export function createSyntheticFeedTransport(configuration: SyntheticFeedTranspo
   // Capture the credentials and destination once; callers cannot override them per page.
   const integrationId = configuration.integrationId;
   const token = configuration.token;
-  const injectedFetch = configuration.fetch;
+  const injectedFetch: InjectedFeedFetch = configuration.fetch
+    ?? ((url, init) => fetch(url, init));
   return Object.freeze({
-    mode: "synthetic" as const,
+    mode: configuration.mode,
     origin,
     integrationId,
     async read(request: FeedRequest): Promise<unknown> {
-      assertSyntheticRuntime("synthetic", injectedFetch);
+      // Re-checked every read: the kill switch can be revoked mid-process.
+      if (live) assertLiveRuntime("live", configuration.fetch);
+      else assertSyntheticRuntime("synthetic", injectedFetch);
       const limit = request.limit ?? 100;
       if (Object.keys(request).some(key => key !== "after" && key !== "limit")
         || typeof request.after !== "string" || !/^(0|[1-9][0-9]{0,18})$/.test(request.after)
