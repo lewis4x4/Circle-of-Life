@@ -22,7 +22,9 @@ import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
-type Row = Database["public"]["Tables"]["certificates_of_insurance"]["Row"];
+type Row = Database["public"]["Tables"]["certificates_of_insurance"]["Row"] & {
+  entities: { name: string } | null;
+};
 
 export { INSURANCE_COI_LOADING_PROFILE_COPY };
 
@@ -103,6 +105,8 @@ export default function InsuranceCoiPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800">
+                <th className="py-2 pr-4 font-medium">Covers</th>
+                <th className="py-2 pr-4 font-medium">Policy</th>
                 <th className="py-2 pr-4 font-medium">Holder</th>
                 <th className="py-2 pr-4 font-medium">Type</th>
                 <th className="py-2 pr-4 font-medium">Carrier</th>
@@ -113,6 +117,8 @@ export default function InsuranceCoiPage() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
+                  <td className="py-2 pr-4 font-medium">{r.entities?.name ?? "Entity not recorded"}</td>
+                  <td className="py-2 pr-4 font-mono text-xs">{r.policy_number ?? "Not recorded"}</td>
                   <td className="py-2 pr-4">{r.holder_name}</td>
                   <td className="py-2 pr-4">{r.holder_type.replace(/_/g, " ")}</td>
                   <td className="py-2 pr-4">{r.carrier_name}</td>

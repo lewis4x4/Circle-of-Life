@@ -15,6 +15,7 @@ import {
 } from "@/lib/executive/executive-auth-page-state";
 import { createClient } from "@/lib/supabase/client";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
+import { resolveTcorPremiumCoverage } from "@/lib/insurance/tcor-premium-coverage";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { insuranceHubKpiTileValue } from "@/lib/insurance/hub-kpi-copy";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -120,6 +121,12 @@ export default function AdminInsuranceHubPage() {
   const renewalsInFlight = overview?.renewalsInFlight ?? null;
   const openClaims = overview?.openClaims ?? null;
   const tcorLoading = tcorPending;
+  // What the money total actually covers, so the figure is never read as a
+  // complete programme cost when most policies state no premium.
+  const premiumCoverage = resolveTcorPremiumCoverage({
+    policiesInWindow: tcor?.policyRows ?? 0,
+    policiesWithStatedPremium: tcor?.policiesWithStatedPremium ?? 0,
+  });
   const tcorErrorMessage = tcorError?.message ?? null;
   const kpiCtx = {
     organizationId: organizationId ?? null,
@@ -290,7 +297,9 @@ export default function AdminInsuranceHubPage() {
                 {tcor.policyRows}
               </p>
               <p>
-                <span className="text-muted-foreground">Premiums (stated):</span>{" "}
+                <span className="text-muted-foreground">
+                  Premiums (stated, {tcor.policiesWithStatedPremium} of {tcor.policyRows} policies):
+                </span>{" "}
                 <span className="font-semibold tabular-nums">{formatUsdFromCents(tcor.premiumsCents)}</span>
               </p>
               <p>
@@ -302,7 +311,24 @@ export default function AdminInsuranceHubPage() {
                 <span className="text-lg font-semibold tabular-nums text-foreground">
                   {formatUsdFromCents(tcor.tcorCents)}
                 </span>
+                {premiumCoverage.partial ? (
+                  <span className="ml-2 align-middle text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    partial
+                  </span>
+                ) : null}
               </p>
+              {premiumCoverage.disclosure ? (
+                <p
+                  className={
+                    premiumCoverage.partial
+                      ? "md:col-span-2 text-sm font-medium text-foreground"
+                      : "md:col-span-2 text-sm text-muted-foreground"
+                  }
+                  data-testid="tcor-premium-coverage"
+                >
+                  {premiumCoverage.disclosure}
+                </p>
+              ) : null}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No TCoR data.</p>

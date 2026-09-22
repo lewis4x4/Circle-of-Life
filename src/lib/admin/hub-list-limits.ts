@@ -6,11 +6,15 @@ export const VENDOR_HUB_LIST_LIMIT = 150;
 export const INSURANCE_CLAIMS_LIST_SELECT =
   "id, status, date_of_loss, incident_id, reserve_cents, paid_cents, claim_number, organization_id";
 
+// COL-527: the renewal and certificate lists rendered nothing that identified
+// which policy or which building a row belonged to, so five workers' comp
+// renewals across five legal entities and two carriers were indistinguishable.
+// The embedded policy and entity names are what make a row nameable.
 export const INSURANCE_RENEWALS_LIST_SELECT =
-  "id, status, target_effective_date, quoted_premium_cents, bound_premium_cents, insurance_policy_id, organization_id";
+  "id, status, target_effective_date, quoted_premium_cents, bound_premium_cents, insurance_policy_id, entity_id, organization_id, insurance_policies(policy_number, carrier_name, policy_type), entities(name)";
 
 export const INSURANCE_COI_LIST_SELECT =
-  "id, holder_name, holder_type, carrier_name, expiration_date, aggregate_limit_cents, organization_id";
+  "id, holder_name, holder_type, carrier_name, policy_number, expiration_date, aggregate_limit_cents, entity_id, organization_id, entities(name)";
 
 export const INSURANCE_LOSS_RUNS_LIST_SELECT =
   "id, period_start, period_end, total_claims_count, total_paid_cents, total_reserve_cents, organization_id";

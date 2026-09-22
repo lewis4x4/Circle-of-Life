@@ -11,7 +11,11 @@ import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
-import { formatInsuranceRenewalTargetDate } from "@/lib/insurance/renewals-display-copy";
+import {
+  formatInsuranceRenewalTargetDate,
+  insuranceRenewalScope,
+  insuranceRenewalSubject,
+} from "@/lib/insurance/renewals-display-copy";
 import {
   INSURANCE_RENEWALS_LOADING_LIST_COPY,
   INSURANCE_RENEWALS_LOADING_PROFILE_COPY,
@@ -24,9 +28,13 @@ import {
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 
-type Row = Database["public"]["Tables"]["insurance_renewals"]["Row"];
+type Row = Database["public"]["Tables"]["insurance_renewals"]["Row"] & {
+  insurance_policies: { policy_number: string; carrier_name: string; policy_type: string } | null;
+  entities: { name: string } | null;
+};
 
 export { INSURANCE_RENEWALS_LOADING_PROFILE_COPY, INSURANCE_RENEWALS_LOADING_LIST_COPY };
+
 
 export default function InsuranceRenewalsPage() {
   const supabase = createClient();
@@ -146,6 +154,11 @@ export default function InsuranceRenewalsPage() {
                            Effective {formattedDate}
                          </span>
                        </div>
+
+                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                         {insuranceRenewalSubject(r)}
+                       </p>
+                       <p className="text-xs text-slate-500 dark:text-slate-400">{insuranceRenewalScope(r)}</p>
                        
                        <div className="flex gap-6 mt-3">
                          <div>
