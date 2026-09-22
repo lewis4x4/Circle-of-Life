@@ -72,6 +72,39 @@ function runLevelParity(env) {
   return result.stderr || result.stdout || result.error?.message || `exited ${result.status}`;
 }
 
+/**
+ * The native path hands psql a filename, so `\ir` resolves against the script's
+ * own directory. The Docker path pipes the text in on stdin, where there is no
+ * script directory and psql falls back to the container's working directory —
+ * so a probe that loads a shared fixture passes the native replay and fails CI
+ * with "No such file or directory", pointing at the probe rather than at the
+ * transport. Expand the includes ourselves so both replays read the same SQL.
+ *
+ * `\ir` / `\include_relative` resolve against the including file; `\i` /
+ * `\include` resolve against the repository root, which is psql's own rule
+ * given where the runner starts.
+ */
+const PSQL_INCLUDE = /^\s*\\(ir|include_relative|i|include)\s+(\S+)\s*;?\s*$/;
+
+function readSqlWithIncludes(absPath, stack = []) {
+  if (stack.includes(absPath)) {
+    throw new Error(`circular \\include: ${[...stack, absPath].map((f) => path.basename(f)).join(" -> ")}`);
+  }
+  const dir = path.dirname(absPath);
+  return fs.readFileSync(absPath, "utf8").split("\n").map((line) => {
+    const match = line.match(PSQL_INCLUDE);
+    if (!match) return line;
+    const [, directive, rawTarget] = match;
+    const target = rawTarget.replace(/^['"]|['"]$/g, "");
+    const base = directive === "ir" || directive === "include_relative" ? dir : root;
+    const resolved = path.isAbsolute(target) ? target : path.resolve(base, target);
+    if (!fs.existsSync(resolved)) {
+      throw new Error(`${path.basename(absPath)}: \\${directive} ${target} does not resolve to a file`);
+    }
+    return readSqlWithIncludes(resolved, [...stack, absPath]);
+  }).join("\n");
+}
+
 function nativeVerification(socket) {
   // Only use the explicitly identified run-owned temporary cluster. Never
   // accept a normal application socket or a network database URL here.
@@ -202,7 +235,7 @@ async function main() {
     ];
 
     const runFile = (label, absPath) => {
-      const sql = fs.readFileSync(absPath, "utf8");
+      const sql = readSqlWithIncludes(absPath);
       const r = docker(psqlBase, {
         input: sql,
         stdio: ["pipe", "pipe", "pipe"],
