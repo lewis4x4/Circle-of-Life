@@ -1,6 +1,6 @@
 -- COL-595 (Home W3): Quick note that becomes a task, and the collections
 -- contact log on Home. Shipped dark: quick_note and collections_log are
--- switched on per facility through home_set_module_release (466).
+-- switched on per facility through home_set_module_release (464).
 --
 -- Why a new table instead of "the existing team-task engine": there is none
 -- that fits. operation_task_instances has no browser write path, no free title,
