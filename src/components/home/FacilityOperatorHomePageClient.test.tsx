@@ -65,6 +65,7 @@ function initial(overrides: Partial<HomeInitialData> = {}): HomeInitialData {
     census: null,
     releasedModules: [],
     pastDue: null,
+    notesOnTap: [],
     ...overrides,
   };
 }
@@ -223,6 +224,23 @@ describe("FacilityOperatorHomePageClient", () => {
     );
     expect(await screen.findByTestId("past-due-unconfigured")).toHaveTextContent("not set for this building");
     expect(screen.queryByText(/past due on rent/)).toBeNull();
+  });
+
+  it("puts a released note task in On tap and opens Quick note (COL-595)", async () => {
+    const notesOnTap = [{ noteId: "n-1", noteType: "maintenance", body: "Leak under sink in 12", followUpDate: "2026-09-22", overdue: false, assignee: { kind: "vendor" as const, vendorId: "v", displayName: "Probe Plumbing" }, residentId: null, updates: 0 }];
+    const { unmount } = render(
+      <FacilityOperatorHomePageClient initial={initial({ notesOnTap })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    expect(screen.queryByText("Leak under sink in 12")).toBeNull();
+    expect(screen.getByRole("button", { name: /Quick note/ })).toBeDisabled();
+    unmount();
+    render(
+      <FacilityOperatorHomePageClient initial={initial({ notesOnTap, releasedModules: ["quick_note"] })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    expect(screen.getAllByText("Leak under sink in 12").length).toBeGreaterThan(0);
+    expect(await screen.findByTestId("notes-panel")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("quick-action-quick_note"));
+    expect(await screen.findByRole("dialog", { name: "Quick note" })).toBeInTheDocument();
   });
 
   it("renders the weekend empty state with no queue rows", () => {

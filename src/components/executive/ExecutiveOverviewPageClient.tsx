@@ -30,6 +30,7 @@ import {
 } from "@/lib/executive/overview-model";
 import { AdminLiveDataFallbackNotice } from "@/components/common/AdminLiveDataFallbackNotice";
 import { CensusNoticesPanel } from "@/components/executive/CensusNoticesPanel";
+import { CollectionEscalationsPanel } from "@/components/executive/CollectionEscalationsPanel";
 import { EscalatedFromFacilitiesPanel } from "@/components/executive/EscalatedFromFacilitiesPanel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1704,6 +1705,7 @@ function ExecutiveDashboardBody({
       <EscalatedFromFacilitiesPanel />
       {/* COL-569: monthly census confirmations from the buildings this executive owns. */}
       <CensusNoticesPanel />
+      <CollectionEscalationsPanel />
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 lg:col-span-7">
