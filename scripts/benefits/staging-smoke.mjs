@@ -237,7 +237,10 @@ try {
   res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res);
   assert(detail.history?.some((h) => h.action === "document_download" && h.payload?.document_id === documentId) && detail.history?.some((h) => h.action === "document_packet"), "owner: download and packet export recorded in case history", detail.history?.filter((h) => h.action.startsWith("document_")).map((h) => h.action));
   // ---- resident moves facilities: case stays readable and flagged, writes refused, reviewed rebind follows the resident
-  const moved = await admin.from("residents").update({ facility_id: OTHER_FACILITY }).eq("id", RESIDENT);
+  // The bed guard (444) refuses a facility change while a bed is held, so the move releases the bed and the return restores it.
+  const before = await admin.from("residents").select("bed_id").eq("id", RESIDENT).single();
+  const heldBed = before.data?.bed_id ?? null;
+  const moved = await admin.from("residents").update({ facility_id: OTHER_FACILITY, bed_id: null }).eq("id", RESIDENT);
   assert(!moved.error, "setup: synthetic resident moved to facility 0004", moved.error?.message);
   try {
     res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res);
@@ -249,13 +252,13 @@ try {
     res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res);
     assert(detail.case?.needs_rebind === false && detail.case?.facility_id === OTHER_FACILITY && detail.history?.[0]?.action === "rebind_facility", "owner: rebind recorded and flag cleared", { history: detail.history?.[0]?.action });
     // back home so the rest of the smoke runs against facility 0003
-    const back = await admin.from("residents").update({ facility_id: FACILITY }).eq("id", RESIDENT);
+    const back = await admin.from("residents").update({ facility_id: FACILITY, bed_id: heldBed }).eq("id", RESIDENT);
     assert(!back.error, "setup: resident returned to facility 0003", back.error?.message);
     res = await post(o.api, `/api/admin/benefits/cases/${caseId}/rebind`, { request_id: randomUUID() }); body = await json(res);
     assert(res.status() === 200 && body.facility_id === FACILITY, "owner: rebind back to facility 0003", { status: res.status(), body });
     res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res); revision = detail.case.revision;
   } finally {
-    await admin.from("residents").update({ facility_id: FACILITY }).eq("id", RESIDENT);
+    await admin.from("residents").update({ facility_id: FACILITY, bed_id: heldBed }).eq("id", RESIDENT);
   }
 
   // ---- owner UI captures
