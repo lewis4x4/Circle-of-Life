@@ -12,7 +12,7 @@ const ALLOWED_ROLES = [
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
+  "med_tech",
 ] as const;
 
 type MedicaidPipelineStage = "prospect" | "app_requested" | "pending" | "approved" | "denied" | "waitlist";

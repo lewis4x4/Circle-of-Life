@@ -508,9 +508,10 @@ const ALL_APP_ROLES = [
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
+  "med_tech",
   "caregiver",
   "dietary",
+  "cook",
   "housekeeper",
   "maintenance_role",
   "family",
@@ -525,7 +526,7 @@ const REFERRAL_READ_ROLES = new Set<string>([
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
+  "med_tech",
 ]);
 
 export function canReadReferralPipeline(userRole: string): boolean {
@@ -540,7 +541,7 @@ const TIER_ALLOWED_ROLES: Record<ToolTier, Set<string>> = {
     "facility_admin",
     "manager",
     "coordinator",
-    "nurse",
+    "med_tech",
     "caregiver",
   ]),
   operational: new Set<string>([
@@ -550,7 +551,7 @@ const TIER_ALLOWED_ROLES: Record<ToolTier, Set<string>> = {
     "manager",
     "coordinator",
     "admin_assistant",
-    "nurse",
+    "med_tech",
   ]),
   financial: FINANCIAL_ROLES,
   payroll: FINANCIAL_ROLES,

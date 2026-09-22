@@ -12,7 +12,7 @@ GRANT SELECT ON public.residents TO authenticated;
 CREATE TEMP TABLE ed AS SELECT gen_random_uuid() org,gen_random_uuid() ent,gen_random_uuid() fac,
   gen_random_uuid() other_fac,gen_random_uuid() resident,gen_random_uuid() other_resident;
 CREATE TEMP TABLE ed_actors(role text PRIMARY KEY,id uuid DEFAULT gen_random_uuid(),session uuid DEFAULT gen_random_uuid());
-INSERT INTO ed_actors(role) VALUES ('owner'),('facility_admin'),('nurse'),('caregiver');
+INSERT INTO ed_actors(role) VALUES ('owner'),('facility_admin'),('med_tech'),('caregiver');
 INSERT INTO organizations(id,name) SELECT org,'Record edit review' FROM ed;
 INSERT INTO entities(id,organization_id,name) SELECT ent,org,'Review' FROM ed;
 INSERT INTO facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds)
@@ -78,7 +78,7 @@ SELECT pg_temp.ed_assert((SELECT primary_physician_name='Dr. Synthetic' AND prim
   'physician not written');
 
 -- The nurse records a code status unverified, then verifies it; each is logged with the person.
-SELECT pg_temp.ed_login('nurse');
+SELECT pg_temp.ed_login('med_tech');
 SET LOCAL ROLE authenticated;
 SELECT resident_record_field_save((SELECT resident FROM ed),'code_status','set','{"code_status":"dnr","verified":false}',
   pg_temp.ed_version((SELECT resident FROM ed)),'00000000-0000-4000-8000-000000000597'::uuid);
@@ -106,22 +106,22 @@ SELECT pg_temp.ed_denied(format('SELECT resident_record_field_save(%L,''primary_
   (SELECT resident FROM ed),pg_temp.ed_version((SELECT resident FROM ed))),'SSN');
 SELECT pg_temp.ed_assert((resident_record_field_sources((SELECT resident FROM ed))->'code_status'->'source'->>'kind')='person',
   'typed code status not reported as recorded by a person');
-SELECT pg_temp.ed_assert((resident_record_field_sources((SELECT resident FROM ed))->'code_status'->'source'->>'by_name')='Synthetic nurse',
+SELECT pg_temp.ed_assert((resident_record_field_sources((SELECT resident FROM ed))->'code_status'->'source'->>'by_name')='Synthetic med_tech',
   'typed code status not attributed');
 RESET ROLE;
 
-SELECT pg_temp.ed_assert((SELECT code_status_verified_by=(SELECT id FROM ed_actors WHERE role='nurse') AND code_status_verified_at IS NOT NULL
-  AND allergy_list=ARRAY['penicillin','sulfa'] AND allergy_list_reviewed_by=(SELECT id FROM ed_actors WHERE role='nurse')
+SELECT pg_temp.ed_assert((SELECT code_status_verified_by=(SELECT id FROM ed_actors WHERE role='med_tech') AND code_status_verified_at IS NOT NULL
+  AND allergy_list=ARRAY['penicillin','sulfa'] AND allergy_list_reviewed_by=(SELECT id FROM ed_actors WHERE role='med_tech')
   AND do_not_hospitalize IS TRUE FROM residents WHERE id=(SELECT resident FROM ed)),'nurse writes or stamps missing');
 SELECT pg_temp.ed_assert((SELECT count(*)=1 FROM advance_directive_documents WHERE resident_id=(SELECT resident FROM ed)
-  AND document_type='polst' AND polst_status='verified' AND verified_by=(SELECT id FROM ed_actors WHERE role='nurse')),'POLST row missing');
+  AND document_type='polst' AND polst_status='verified' AND verified_by=(SELECT id FROM ed_actors WHERE role='med_tech')),'POLST row missing');
 SELECT pg_temp.ed_assert((SELECT count(*)=6 FROM resident_record_field_edits WHERE resident_id=(SELECT resident FROM ed)),
   'expected exactly six provenance rows (retry must not add one)');
 SELECT pg_temp.ed_assert((SELECT previous_value->>'code_status' IS NULL AND new_value->>'code_status'='dnr' AND surface='resident_record'
-  AND recorded_by=(SELECT id FROM ed_actors WHERE role='nurse') FROM resident_record_field_edits
+  AND recorded_by=(SELECT id FROM ed_actors WHERE role='med_tech') FROM resident_record_field_edits
   WHERE resident_id=(SELECT resident FROM ed) AND field_code='code_status' AND action='set'),'set row lacks before/after/person/surface');
 SELECT pg_temp.ed_assert(EXISTS(SELECT 1 FROM audit_log WHERE table_name='residents' AND record_id=(SELECT resident FROM ed)
-  AND user_id=(SELECT id FROM ed_actors WHERE role='nurse') AND new_data->>'code_status'='dnr'),'resident audit row missing');
+  AND user_id=(SELECT id FROM ed_actors WHERE role='med_tech') AND new_data->>'code_status'='dnr'),'resident audit row missing');
 
 -- The log is read-only to request roles; the writer is the only way in.
 SELECT pg_temp.ed_login('owner');

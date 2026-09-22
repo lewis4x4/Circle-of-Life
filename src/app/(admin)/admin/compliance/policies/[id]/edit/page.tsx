@@ -86,9 +86,10 @@ export default function EditPolicyPage() {
           "owner",
           "org_admin",
           "facility_admin",
-          "nurse",
+          "med_tech",
           "caregiver",
           "dietary",
+          "cook",
           "maintenance_role",
         ]);
         eligible = (profiles ?? []).filter((p) => staffRoles.has(p.app_role as string)).length;

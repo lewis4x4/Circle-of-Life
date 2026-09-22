@@ -4,7 +4,7 @@ import { logError } from "@/lib/observability/logger";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 // Same roles the table's UPDATE policy names (035).
-const ALERT_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+const ALERT_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const;
 const DISMISS_NOTE_MIN = 3;
 
 type Body = { action?: unknown; notes?: unknown };

@@ -5,7 +5,7 @@ import { MedicationOrderEditor } from "./MedicationOrderEditor";
 import { CarePlanAuthor } from "@/components/care-plans/CarePlanAuthor";
 const rpc=vi.hoisted(()=>vi.fn());
 vi.mock("@/lib/supabase/client",()=>({createClient:()=>({rpc})}));
-vi.mock("@/contexts/haven-auth-context",()=>({useHavenAuth:()=>({appRole:"nurse"})}));
+vi.mock("@/contexts/haven-auth-context",()=>({useHavenAuth:()=>({appRole:"med_tech"})}));
 afterEach(()=>{cleanup();rpc.mockReset();});
 function pendingReceipt(){let resolve!:(value:{data:string;error:null})=>void;rpc.mockReturnValue(new Promise<{data:string;error:null}>(done=>{resolve=done;}));return async()=>{await act(async()=>{resolve({data:"saved-record",error:null});});};}
 it("locks a care-plan draft while its submitted version is being saved",async()=>{

@@ -50,7 +50,7 @@ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  UNION ALL SELECT admin_a,admin_a||'@receipt.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site A admin"}'::jsonb FROM rf
  UNION ALL SELECT admin_b,admin_b||'@receipt.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site B admin"}'::jsonb FROM rf
  UNION ALL SELECT maint,maint||'@receipt.invalid',jsonb_build_object('organization_id',org,'app_role','maintenance_role'),'{"full_name":"Maintenance"}'::jsonb FROM rf
- UNION ALL SELECT nurse,nurse||'@receipt.invalid',jsonb_build_object('organization_id',org,'app_role','nurse'),'{"full_name":"Nurse"}'::jsonb FROM rf
+ UNION ALL SELECT nurse,nurse||'@receipt.invalid',jsonb_build_object('organization_id',org,'app_role','med_tech'),'{"full_name":"Nurse"}'::jsonb FROM rf
  UNION ALL SELECT aide,aide||'@receipt.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Aide"}'::jsonb FROM rf
  UNION ALL SELECT former,former||'@receipt.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Former aide"}'::jsonb FROM rf
  UNION ALL SELECT mgr,mgr||'@receipt.invalid',jsonb_build_object('organization_id',org,'app_role','manager'),'{"full_name":"Manager"}'::jsonb FROM rf;
@@ -59,7 +59,7 @@ INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_
  UNION ALL SELECT admin_a,admin_a||'@receipt.invalid','Site A admin','facility_admin'::public.app_role,org,true FROM rf
  UNION ALL SELECT admin_b,admin_b||'@receipt.invalid','Site B admin','facility_admin'::public.app_role,org,true FROM rf
  UNION ALL SELECT maint,maint||'@receipt.invalid','Maintenance','maintenance_role'::public.app_role,org,true FROM rf
- UNION ALL SELECT nurse,nurse||'@receipt.invalid','Nurse','nurse'::public.app_role,org,true FROM rf
+ UNION ALL SELECT nurse,nurse||'@receipt.invalid','Nurse','med_tech'::public.app_role,org,true FROM rf
  UNION ALL SELECT aide,aide||'@receipt.invalid','Aide','housekeeper'::public.app_role,org,true FROM rf
  UNION ALL SELECT former,former||'@receipt.invalid','Former aide','housekeeper'::public.app_role,org,true FROM rf
  UNION ALL SELECT mgr,mgr||'@receipt.invalid','Manager','manager'::public.app_role,org,true FROM rf
@@ -96,7 +96,7 @@ CREATE FUNCTION pg_temp.r_login(p_kind text) RETURNS void LANGUAGE plpgsql AS $$
  ELSIF p_kind='maint' THEN u:=f.maint; sess:=f.maint_session; r:='maintenance_role';
  ELSIF p_kind='aide' THEN u:=f.aide; sess:=f.aide_session; r:='housekeeper';
  ELSIF p_kind='mgr' THEN u:=f.mgr; sess:=f.mgr_session; r:='manager';
- ELSE u:=f.nurse; sess:=f.nurse_session; r:='nurse'; END IF;
+ ELSE u:=f.nurse; sess:=f.nurse_session; r:='med_tech'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',sess,'iat',extract(epoch FROM clock_timestamp())::bigint,
   'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=u),'role','authenticated','app_role',r,'organization_id',f.org)::text,true);
 END $$;
@@ -123,7 +123,7 @@ INSERT INTO rf_results SELECT 'v_asset',public.save_operation_requirement_draft_
   jsonb_build_object('key','notes','label','Notes','type','text','required',false),jsonb_build_object('key','checked_at','label','Checked at','type','datetime','required',false)))) FROM rf;
 INSERT INTO rf_results SELECT 'v_fac',public.save_operation_requirement_draft_review(act_fac,jsonb_build_object('title','Generator weekly test','wording','Run the generator.','allowed_recorder_roles',jsonb_build_array('maintenance_role','facility_admin','housekeeper'),
  'required_evidence',jsonb_build_array(jsonb_build_object('kind','photo','label','Panel photo','min_count',1,'when','always')))) FROM rf;
-INSERT INTO rf_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('nurse','facility_admin'),
+INSERT INTO rf_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('med_tech','facility_admin'),
  'review_required',true,'allowed_reviewer_roles',jsonb_build_array('facility_admin','owner'),
  'required_evidence',jsonb_build_array(jsonb_build_object('kind','reading','label','Weight reading','min_count',1,'when','on_failure')))) FROM rf;
 INSERT INTO rf_results SELECT 'v_emp',public.save_operation_requirement_draft_review(act_emp,jsonb_build_object('title','Employee file review','wording','Review the personnel file.','allowed_recorder_roles',jsonb_build_array('facility_admin','owner'),
@@ -302,7 +302,7 @@ INSERT INTO rf_results SELECT 'rec_fac_d2',public.record_operation_work_review((
 SELECT pg_temp.r_assert((SELECT result->'receipt'->>'completion_state'='not_performed' AND result->'receipt'->>'evidence_status'='not_required' AND result->'occurrence'->>'status'='in_progress' FROM rf_results WHERE label='rec_fac_d2'),'not_performed did not record');
 RESET ROLE;
 -- Review-required work: performance waits for an independent verification; the verifier cannot be the recorder or the performer.
-SELECT pg_temp.r_login('nurse');
+SELECT pg_temp.r_login('med_tech');
 SET LOCAL ROLE authenticated;
 INSERT INTO rf_results SELECT 'rec_res',public.record_operation_work_review((SELECT id FROM rf_ids WHERE label='occ_res_d1'),pg_temp.k('res-000001'),'{"outcome":"performed","note":"Weight stable"}');
 SELECT pg_temp.r_assert((SELECT result->'receipt'->>'completion_state'='awaiting_verification' AND result->'receipt'->>'evidence_status'='not_required' AND result->'occurrence'->>'status'='in_progress' AND result->'occurrence'->>'execution_state'='awaiting_verification' FROM rf_results WHERE label='rec_res'),'review-required work did not wait for verification');
@@ -347,7 +347,7 @@ SET LOCAL ROLE authenticated;
 SELECT pg_temp.r_expect($q$SELECT public.cancel_operation_occurrence_review((SELECT id FROM rf_ids WHERE label='occ_a1_d1'),'Trying to hide it','cancel-a1d1-000001')$q$,'Occurrence has recorded work');
 SELECT pg_temp.r_expect($q$SELECT public.cancel_operation_occurrence_review((SELECT id FROM rf_ids WHERE label='occ_fac_d1'),'Trying to hide it','cancel-facd1-000001')$q$,'Occurrence has recorded work');
 RESET ROLE;
-SELECT pg_temp.r_login('nurse');
+SELECT pg_temp.r_login('med_tech');
 SET LOCAL ROLE authenticated;
 INSERT INTO rf_results SELECT 'rec_res_d3',public.record_operation_work_review((SELECT id FROM rf_ids WHERE label='occ_res_d3'),pg_temp.k('resd3-000001'),'{"outcome":"performed"}');
 SELECT pg_temp.r_assert((SELECT result->'occurrence'->>'execution_state'='awaiting_verification' FROM rf_results WHERE label='rec_res_d3'),'resident record did not wait for verification');
@@ -376,7 +376,7 @@ SELECT pg_temp.r_expect($q$SELECT public.report_operation_issue_review(pg_temp.k
 SELECT pg_temp.r_expect($q$SELECT public.report_operation_issue_review(pg_temp.k('iss-000002'),jsonb_build_object('task_instance_id',(SELECT id FROM rf_ids WHERE label='occ_a1_d4'),'kind','problem'))$q$,'issue summary must be text');
 SELECT pg_temp.r_expect($q$SELECT public.report_operation_issue_review(pg_temp.k('iss-000002'),jsonb_build_object('kind','problem','summary','No target'))$q$,'are required uuids');
 RESET ROLE;
-SELECT pg_temp.r_login('nurse');
+SELECT pg_temp.r_login('med_tech');
 SET LOCAL ROLE authenticated;
 INSERT INTO rf_results SELECT 'iss_res',public.report_operation_issue_review(pg_temp.k('iss-000003'),jsonb_build_object('activity_id',(SELECT act_res FROM rf),'facility_id',(SELECT site_a FROM rf),'subject_id',(SELECT subj_res1 FROM rf),'kind','problem','summary','Scale reads inconsistently'));
 SELECT pg_temp.r_assert((SELECT result->'issue'->>'authority_class'='resident' AND result->'issue'->>'task_instance_id' IS NULL FROM rf_results WHERE label='iss_res'),'subject-scoped issue not created');
@@ -440,7 +440,7 @@ SELECT pg_temp.r_assert((SELECT missed_at IS NOT NULL AND status='completed' AND
 RESET ROLE;
 -- Revoked recording authority and a revoked session deny before any row.
 UPDATE public.operation_subject_access SET revoked_at=clock_timestamp() WHERE user_id=(SELECT nurse FROM rf) AND scope='resident';
-SELECT pg_temp.r_login('nurse');
+SELECT pg_temp.r_login('med_tech');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.r_denied($q$SELECT public.record_operation_work_review((SELECT id FROM rf_ids WHERE label='occ_res_d2'),pg_temp.k('res-000003'),'{"outcome":"performed"}')$q$);
 RESET ROLE;

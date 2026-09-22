@@ -33,7 +33,7 @@ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  UNION ALL SELECT admin_a,admin_a||'@correction.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site A admin"}'::jsonb FROM cf
  UNION ALL SELECT admin_b,admin_b||'@correction.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site B admin"}'::jsonb FROM cf
  UNION ALL SELECT maint,maint||'@correction.invalid',jsonb_build_object('organization_id',org,'app_role','maintenance_role'),'{"full_name":"Maintenance"}'::jsonb FROM cf
- UNION ALL SELECT nurse,nurse||'@correction.invalid',jsonb_build_object('organization_id',org,'app_role','nurse'),'{"full_name":"Nurse"}'::jsonb FROM cf
+ UNION ALL SELECT nurse,nurse||'@correction.invalid',jsonb_build_object('organization_id',org,'app_role','med_tech'),'{"full_name":"Nurse"}'::jsonb FROM cf
  UNION ALL SELECT aide,aide||'@correction.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Aide"}'::jsonb FROM cf
  UNION ALL SELECT mgr,mgr||'@correction.invalid',jsonb_build_object('organization_id',org,'app_role','manager'),'{"full_name":"Manager"}'::jsonb FROM cf;
 INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active)
@@ -41,7 +41,7 @@ INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_
  UNION ALL SELECT admin_a,admin_a||'@correction.invalid','Site A admin','facility_admin'::public.app_role,org,true FROM cf
  UNION ALL SELECT admin_b,admin_b||'@correction.invalid','Site B admin','facility_admin'::public.app_role,org,true FROM cf
  UNION ALL SELECT maint,maint||'@correction.invalid','Maintenance','maintenance_role'::public.app_role,org,true FROM cf
- UNION ALL SELECT nurse,nurse||'@correction.invalid','Nurse','nurse'::public.app_role,org,true FROM cf
+ UNION ALL SELECT nurse,nurse||'@correction.invalid','Nurse','med_tech'::public.app_role,org,true FROM cf
  UNION ALL SELECT aide,aide||'@correction.invalid','Aide','housekeeper'::public.app_role,org,true FROM cf
  UNION ALL SELECT mgr,mgr||'@correction.invalid','Manager','manager'::public.app_role,org,true FROM cf
  ON CONFLICT(id) DO UPDATE SET app_role=excluded.app_role,organization_id=excluded.organization_id,is_active=true;
@@ -72,7 +72,7 @@ CREATE FUNCTION pg_temp.c_login(p_kind text) RETURNS void LANGUAGE plpgsql AS $$
  ELSIF p_kind='maint' THEN u:=f.maint; sess:=f.maint_session; r:='maintenance_role';
  ELSIF p_kind='aide' THEN u:=f.aide; sess:=f.aide_session; r:='housekeeper';
  ELSIF p_kind='mgr' THEN u:=f.mgr; sess:=f.mgr_session; r:='manager';
- ELSE u:=f.nurse; sess:=f.nurse_session; r:='nurse'; END IF;
+ ELSE u:=f.nurse; sess:=f.nurse_session; r:='med_tech'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',sess,'iat',extract(epoch FROM clock_timestamp())::bigint,
   'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=u),'role','authenticated','app_role',r,'organization_id',f.org)::text,true);
 END $$;
@@ -113,7 +113,7 @@ INSERT INTO cf_results SELECT 'v_asset',public.save_operation_requirement_draft_
  'required_inputs',jsonb_build_array(jsonb_build_object('key','pads_ok','label','Pads in date','type','boolean','required',true),jsonb_build_object('key','battery_pct','label','Battery','type','number','required',true,'min',0,'max',100)))) FROM cf;
 INSERT INTO cf_results SELECT 'v_fac',public.save_operation_requirement_draft_review(act_fac,jsonb_build_object('title','Generator weekly test','wording','Run the generator.','allowed_recorder_roles',jsonb_build_array('maintenance_role','facility_admin','housekeeper'),
  'required_evidence',jsonb_build_array(jsonb_build_object('kind','photo','label','Panel photo','min_count',1,'when','always')))) FROM cf;
-INSERT INTO cf_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('nurse','facility_admin'),
+INSERT INTO cf_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('med_tech','facility_admin'),
  'review_required',true,'allowed_reviewer_roles',jsonb_build_array('facility_admin','owner'))) FROM cf;
 INSERT INTO cf_ids SELECT label,(result->>'id')::uuid FROM cf_results WHERE label LIKE 'v\_%';
 INSERT INTO cf_results SELECT 'pub_'||label,public.publish_operation_requirement_review(id,(SELECT since FROM cf)) FROM cf_ids WHERE label LIKE 'v\_%';
@@ -168,7 +168,7 @@ INSERT INTO cf_ids SELECT 'r_'||substr(label,5),(result->'receipt'->>'id')::uuid
 
 
 RESET ROLE;
-SELECT pg_temp.c_login('nurse');
+SELECT pg_temp.c_login('med_tech');
 SET LOCAL ROLE authenticated;
 INSERT INTO cf_results SELECT 'rec_res1',public.record_operation_work_review(pg_temp.rid('occ_res_d1'),pg_temp.k('res1-000001'),'{"outcome":"performed","note":"Weight stable"}');
 INSERT INTO cf_ids SELECT 'r_res1',(result->'receipt'->>'id')::uuid FROM cf_results WHERE label='rec_res1';

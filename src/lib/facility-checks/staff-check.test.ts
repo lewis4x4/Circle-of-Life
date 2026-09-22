@@ -201,7 +201,7 @@ describe("who may run a staff check", () => {
     for (const role of ["owner", "org_admin", "facility_admin"]) {
       expect(canRunStaffCheck(role)).toBe(true);
     }
-    for (const role of ["nurse", "caregiver", "dietary", "family"]) {
+    for (const role of ["med_tech", "caregiver", "cook", "dietary", "family"]) {
       expect(canRunStaffCheck(role)).toBe(false);
     }
   });

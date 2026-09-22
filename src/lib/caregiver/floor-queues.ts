@@ -27,5 +27,5 @@ export function conditionChangeTypeLabel(value: string): string {
 /** Roles that may update any eMAR row per RLS (administered_by not required). */
 export function canUpdateAnyEmarRecord(appRole: string | null | undefined): boolean {
   if (!appRole) return false;
-  return ["owner", "org_admin", "facility_admin", "nurse"].includes(appRole);
+  return ["owner", "org_admin", "facility_admin", "med_tech"].includes(appRole);
 }

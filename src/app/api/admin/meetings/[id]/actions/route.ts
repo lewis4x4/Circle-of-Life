@@ -21,7 +21,7 @@ const actionSchema = z.object({
 }).strict();
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireOperationsActor({ allowedRoles: ['owner', 'org_admin', 'facility_admin', 'manager', 'coordinator', 'nurse'] });
+  const auth = await requireOperationsActor({ allowedRoles: ['owner', 'org_admin', 'facility_admin', 'manager', 'coordinator', 'med_tech'] });
   if ('response' in auth) return auth.response;
   const { actor } = auth;
   let submitted: unknown;

@@ -74,7 +74,7 @@ const SETTINGS_CARDS: SettingsCard[] = [
       "facility_admin",
       "manager",
       "coordinator",
-      "nurse",
+      "med_tech",
       "admin_assistant",
     ],
   },

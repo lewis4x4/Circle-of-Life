@@ -56,7 +56,7 @@ describe("canEditStaffProfile", () => {
     expect(canEditStaffProfile("owner")).toBe(true);
     expect(canEditStaffProfile("org_admin")).toBe(true);
     expect(canEditStaffProfile("facility_admin")).toBe(true);
-    expect(canEditStaffProfile("nurse")).toBe(false);
+    expect(canEditStaffProfile("med_tech")).toBe(false);
     expect(canEditStaffProfile("manager")).toBe(false);
     expect(canEditStaffProfile("")).toBe(false);
   });

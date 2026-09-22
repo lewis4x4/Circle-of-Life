@@ -52,7 +52,7 @@ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  UNION ALL SELECT admin_a,admin_a||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site A admin"}'::jsonb FROM ifx
  UNION ALL SELECT admin_b,admin_b||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site B admin"}'::jsonb FROM ifx
  UNION ALL SELECT maint,maint||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','maintenance_role'),'{"full_name":"Maintenance"}'::jsonb FROM ifx
- UNION ALL SELECT nurse,nurse||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','nurse'),'{"full_name":"Nurse"}'::jsonb FROM ifx
+ UNION ALL SELECT nurse,nurse||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','med_tech'),'{"full_name":"Nurse"}'::jsonb FROM ifx
  UNION ALL SELECT aide,aide||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Aide"}'::jsonb FROM ifx
  UNION ALL SELECT aide2,aide2||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Second aide"}'::jsonb FROM ifx
  UNION ALL SELECT former,former||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Former aide"}'::jsonb FROM ifx
@@ -64,7 +64,7 @@ INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_
  UNION ALL SELECT admin_a,admin_a||'@issue.invalid','Site A admin','facility_admin'::public.app_role,org,true FROM ifx
  UNION ALL SELECT admin_b,admin_b||'@issue.invalid','Site B admin','facility_admin'::public.app_role,org,true FROM ifx
  UNION ALL SELECT maint,maint||'@issue.invalid','Maintenance','maintenance_role'::public.app_role,org,true FROM ifx
- UNION ALL SELECT nurse,nurse||'@issue.invalid','Nurse','nurse'::public.app_role,org,true FROM ifx
+ UNION ALL SELECT nurse,nurse||'@issue.invalid','Nurse','med_tech'::public.app_role,org,true FROM ifx
  UNION ALL SELECT aide,aide||'@issue.invalid','Aide','housekeeper'::public.app_role,org,true FROM ifx
  UNION ALL SELECT aide2,aide2||'@issue.invalid','Second aide','housekeeper'::public.app_role,org,true FROM ifx
  UNION ALL SELECT former,former||'@issue.invalid','Former aide','housekeeper'::public.app_role,org,true FROM ifx
@@ -101,7 +101,7 @@ CREATE FUNCTION pg_temp.i_login(p_kind text) RETURNS void LANGUAGE plpgsql AS $$
  ELSIF p_kind='aide2' THEN u:=f.aide2; sess:=f.aide2_session; r:='housekeeper';
  ELSIF p_kind='mgr' THEN u:=f.mgr; sess:=f.mgr_session; r:='manager';
  ELSIF p_kind='mgr2' THEN u:=f.mgr2; sess:=f.mgr2_session; r:='manager';
- ELSE u:=f.nurse; sess:=f.nurse_session; r:='nurse'; END IF;
+ ELSE u:=f.nurse; sess:=f.nurse_session; r:='med_tech'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',sess,'iat',extract(epoch FROM clock_timestamp())::bigint,
   'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=u),'role','authenticated','app_role',r,'organization_id',f.org)::text,true);
 END $$;
@@ -125,7 +125,7 @@ GRANT ALL ON FUNCTION pg_temp.occ(date,text),pg_temp.run(text,date,date,uuid),pg
 SELECT pg_temp.i_login('owner');
 SET LOCAL ROLE authenticated;
 INSERT INTO ifx_results SELECT 'v_asset',public.save_operation_requirement_draft_review(act_asset,jsonb_build_object('title','AED monthly check','wording','Check the AED pads and battery.','allowed_recorder_roles',jsonb_build_array('maintenance_role','facility_admin'))) FROM ifx;
-INSERT INTO ifx_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('nurse','facility_admin'))) FROM ifx;
+INSERT INTO ifx_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('med_tech','facility_admin'))) FROM ifx;
 INSERT INTO ifx_ids SELECT label,(result->>'id')::uuid FROM ifx_results WHERE label LIKE 'v\_%';
 INSERT INTO ifx_results SELECT 'pub_'||label,public.publish_operation_requirement_review(id,clock_timestamp()) FROM ifx_ids WHERE label LIKE 'v\_%';
 SELECT pg_temp.i_assert((SELECT count(*)=2 FROM ifx_results WHERE label LIKE 'pub\_v%' AND result->>'status'='published'),'central versions not published');
@@ -172,7 +172,7 @@ INSERT INTO ifx_ids SELECT 'issue_help',(result->'issue'->>'id')::uuid FROM ifx_
 INSERT INTO ifx_results SELECT 'iss_cab',public.report_operation_issue_review(pg_temp.k('cab-000001'),jsonb_build_object('task_instance_id',pg_temp.iid('occ_a2_d3'),'kind','problem','summary','Cabinet latch loose on wing B'));
 INSERT INTO ifx_ids SELECT 'issue_cab',(result->'issue'->>'id')::uuid FROM ifx_results WHERE label='iss_cab';
 RESET ROLE;
-SELECT pg_temp.i_login('nurse');
+SELECT pg_temp.i_login('med_tech');
 SET LOCAL ROLE authenticated;
 INSERT INTO ifx_results SELECT 'iss_res',public.report_operation_issue_review(pg_temp.k('res-000001'),jsonb_build_object('activity_id',(SELECT act_res FROM ifx),'facility_id',(SELECT site_a FROM ifx),'subject_id',(SELECT subj_res1 FROM ifx),'kind','problem','summary','Scale reads inconsistently'));
 INSERT INTO ifx_ids SELECT 'issue_res',(result->'issue'->>'id')::uuid FROM ifx_results WHERE label='iss_res';
@@ -201,9 +201,9 @@ SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.i
 SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),jsonb_build_object('owner_user_id',(SELECT former FROM ifx)))$q$,'Owner is not current staff at this site');
 SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),jsonb_build_object('owner_user_id',(SELECT nurse FROM ifx),'backup_user_id',(SELECT admin_b FROM ifx)))$q$,'Backup is not current staff at this site');
 SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),jsonb_build_object('owner_user_id',(SELECT nurse FROM ifx),'backup_user_id',(SELECT nurse FROM ifx)))$q$,'Backup must differ from the owner');
-SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),'{"owner_role":"nurse","backup_role":"nurse"}')$q$,'Backup must differ from the owner');
+SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),'{"owner_role":"med_tech","backup_role":"med_tech"}')$q$,'Backup must differ from the owner');
 SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),'{"owner_role":"family"}')$q$,'Owner role must be an operations role');
-SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),'{"owner_role":"nurse","backup_role":"broker"}')$q$,'Backup role must be an operations role');
+SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),'{"owner_role":"med_tech","backup_role":"broker"}')$q$,'Backup role must be an operations role');
 SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),pg_temp.rev('issue_fail'),jsonb_build_object('owner_user_id',(SELECT fam FROM ifx)))$q$,'Owner is not current staff at this site');
 SELECT pg_temp.i_expect($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('as-000001'),repeat('0',64),jsonb_build_object('owner_user_id',(SELECT nurse FROM ifx)))$q$,'Issue changed since it was read');
 SELECT pg_temp.i_assert(NOT EXISTS(SELECT 1 FROM public.operation_issue_events),'a rejected assignment created an event');
@@ -240,7 +240,7 @@ SELECT pg_temp.i_login('mgr2');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.i_expect($q$SELECT public.accept_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('ac-000001'),pg_temp.rev('issue_fail'),'{}')$q$,'Covering for a current owner requires cover_reason');
 RESET ROLE;
-SELECT pg_temp.i_login('nurse');
+SELECT pg_temp.i_login('med_tech');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.i_denied($q$SELECT public.accept_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('ac-000002'),pg_temp.rev('issue_fail'),'{}')$q$);
 RESET ROLE;
@@ -321,7 +321,7 @@ SELECT pg_temp.i_assert((SELECT result->'issue'->>'status'='assigned' AND result
 SELECT pg_temp.i_expect($q$SELECT public.resume_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('rs-000002'),pg_temp.rev('issue_fail'),'{}')$q$,'Issue is not waiting');
 RESET ROLE;
 -- An unassigned issue may wait (manager) and resumes to open.
-SELECT pg_temp.i_login('nurse');
+SELECT pg_temp.i_login('med_tech');
 SET LOCAL ROLE authenticated;
 INSERT INTO ifx_results SELECT 'wa_res',public.wait_operation_issue_review(pg_temp.iid('issue_res'),pg_temp.k('wa-000010'),pg_temp.rev('issue_res'),jsonb_build_object('reason','Awaiting the scale vendor','follow_up_at',clock_timestamp()+interval '3 days'));
 SELECT pg_temp.i_assert((SELECT result->'issue'->>'status'='waiting' AND result->'event'->>'from_status'='open' FROM ifx_results WHERE label='wa_res'),'open issue could not wait');
@@ -424,7 +424,7 @@ SET LOCAL ROLE authenticated;
 SELECT pg_temp.i_denied($q$SELECT public.assign_operation_issue_review(pg_temp.iid('issue_fail'),pg_temp.k('b-000001'),repeat('0',64),jsonb_build_object('owner_user_id',(SELECT admin_b FROM ifx)))$q$);
 SELECT pg_temp.i_denied($q$SELECT public.resolve_operation_issue_review(gen_random_uuid(),pg_temp.k('b-000002'),repeat('0',64),'{"resolution_summary":"x"}')$q$);
 SELECT pg_temp.i_assert((SELECT count(*)=0 FROM public.operation_issues)AND(SELECT count(*)=0 FROM public.operation_issue_events)AND(SELECT count(*)=0 FROM public.operation_issue_backlog),'the other site can read issues, events or the backlog');
-SELECT pg_temp.i_assert((SELECT haven.operation_issue_user_current(aide,org,site_a) IS NULL AND haven.operation_issue_owner_current(NULL,'nurse',org,site_a) IS NULL FROM ifx),'currentness helper answered for another site');
+SELECT pg_temp.i_assert((SELECT haven.operation_issue_user_current(aide,org,site_a) IS NULL AND haven.operation_issue_owner_current(NULL,'med_tech',org,site_a) IS NULL FROM ifx),'currentness helper answered for another site');
 SELECT pg_temp.i_assert((SELECT haven.operation_issue_user_current(admin_b,org,site_b) FROM ifx),'currentness helper refused the caller''s own site');
 RESET ROLE;
 SELECT pg_temp.i_login('mgr2');

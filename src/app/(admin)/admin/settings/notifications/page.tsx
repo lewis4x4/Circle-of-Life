@@ -72,10 +72,11 @@ const ROLE_OPTIONS: Array<{ value: StaffRole; label: string }> = [
   { value: "maintenance_standby", label: "Maintenance standby" },
   { value: "activities_director", label: "Activities director" },
   { value: "activity_aide", label: "Activity aide" },
+  { value: "cook", label: "Cook" },
   { value: "dietary_manager", label: "Dietary manager" },
   { value: "dietary_staff", label: "Dietary staff" },
   { value: "dietary_aide", label: "Dietary aide" },
-  { value: "housekeeping", label: "Housekeeping" },
+  { value: "housekeeping", label: "Housekeeper" },
   { value: "driver", label: "Driver" },
   { value: "other", label: "Other" },
 ];

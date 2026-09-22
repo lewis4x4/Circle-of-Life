@@ -159,8 +159,8 @@ describe("AdminShell Site work navigation (COL-148 / HFO-10)", () => {
     expect(within(primaryNav()).getByRole("link", { name: "Resident roster" })).toBeInTheDocument();
   });
 
-  it("hides Site work for nurse, whose allowlist excludes it", () => {
-    renderShellForRole("nurse");
+  it("hides Site work for med_tech, whose allowlist excludes it", () => {
+    renderShellForRole("med_tech");
 
     expect(siteWorkLinks()).toHaveLength(0);
     expect(within(primaryNav()).getByRole("link", { name: "Incident queue" })).toBeInTheDocument();

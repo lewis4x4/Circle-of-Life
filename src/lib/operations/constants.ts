@@ -33,8 +33,9 @@ export const OPERATIONS_VIEW_ROLES = [
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
+  "med_tech",
   "dietary",
+  "cook",
   "maintenance_role",
 ] as const satisfies readonly AppRole[];
 
@@ -45,8 +46,9 @@ export const OPERATIONS_MUTATION_ADMIN_ROLES = [
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
+  "med_tech",
   "dietary",
+  "cook",
   "maintenance_role",
 ] as const satisfies readonly AppRole[];
 
@@ -106,11 +108,11 @@ export type OceTemplateAssigneeRole = (typeof OCE_TEMPLATE_ASSIGNEE_ROLES)[numbe
 export const OCE_ASSIGNEE_ROLE_CROSSWALK: Record<OceTemplateAssigneeRole, AppRole[]> = {
   coo: ["org_admin", "owner"],
   facility_administrator: ["facility_admin", "manager"],
-  don: ["nurse", "manager", "facility_admin"],
-  lpn_supervisor: ["nurse", "manager", "facility_admin"],
-  medication_aide: ["nurse", "caregiver"],
-  cna: ["caregiver", "nurse"],
-  dietary_manager: ["dietary", "dietary_aide", "manager"],
+  don: ["med_tech", "manager", "facility_admin"],
+  lpn_supervisor: ["med_tech", "manager", "facility_admin"],
+  medication_aide: ["med_tech", "caregiver"],
+  cna: ["caregiver", "med_tech"],
+  dietary_manager: ["dietary", "cook", "dietary_aide", "manager"],
   activities_director: ["coordinator", "manager"],
   maintenance: ["maintenance_role", "manager"],
   housekeeping: ["housekeeper", "maintenance_role"],

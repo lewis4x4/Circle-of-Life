@@ -6,7 +6,7 @@ vi.mock("@/lib/supabase/service-role-facility-access", () => ({ serviceRoleUserH
 import { POST } from "./route";
 let outgoingRole: string; let witnessRole: string; let countRows: Record<string, unknown>[]; let lastCountQuery: Record<string, ReturnType<typeof vi.fn>> | null;
 beforeEach(() => {
-  vi.clearAllMocks(); outgoingRole = "med_tech"; witnessRole = "nurse";
+  vi.clearAllMocks(); outgoingRole = "med_tech"; witnessRole = "med_tech";
   countRows = [{ id: "count", facility_id: "facility", organization_id: "org", outgoing_staff_id: "outgoing", incoming_staff_id: null }];
   lastCountQuery = null;
   mocks.facility.mockResolvedValue(true);
@@ -28,16 +28,16 @@ beforeEach(() => {
   mocks.revalidateActor.mockImplementation(async (actor) => ({ actor }));
 });
 const sign = () => POST(new Request("http://local/verify", { method: "POST", body: JSON.stringify({ countId: "count", facilityId: "facility", email: "witness@example.test", password: "temporary-test-input" }) }));
-it.each(["med_tech", "nurse", "caregiver"])("allows %s to originate a count with an authorized nurse witness", async (role) => {
+it.each(["med_tech", "caregiver"])("allows %s to originate a count with an authorized med-tech witness", async (role) => {
   outgoingRole = role; const response = await sign(); expect(response.status).toBe(200); expect(mocks.rpc).toHaveBeenCalledTimes(1);
 });
 it("preserves caregiver witness eligibility", async () => {
   witnessRole = "caregiver"; expect((await sign()).status).toBe(200);
 });
-it.each(["med_tech", "owner", "manager", "family"])("does not authorize %s as the incoming witness", async (role) => {
+it.each(["nurse", "owner", "manager", "family"])("does not authorize %s as the incoming witness", async (role) => {
   witnessRole = role; expect((await sign()).status).toBe(403); expect(mocks.rpc).not.toHaveBeenCalled();
 });
-it.each(["owner", "manager", "family"])("does not let %s perform the outgoing count", async (role) => {
+it.each(["nurse", "owner", "manager", "family"])("does not let %s perform the outgoing count", async (role) => {
   outgoingRole = role; expect((await sign()).status).toBe(403); expect(mocks.verify).not.toHaveBeenCalled();
 });
 it.each(["another organization", "another facility"])("does not verify a witness for a count in %s", async () => {

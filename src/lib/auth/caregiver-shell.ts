@@ -20,8 +20,9 @@ const CAREGIVER_ROOT_ALIAS_PREFIXES = [
 ] as const;
 
 /**
- * The "Something happened" flow (spec 07A). The nine capture roles below may
- * open it, which is how the admin shell's "Report incident" button lands here;
+ * The "Something happened" flow (spec 07A). The eight capture roles below may
+ * open it (the legacy nurse role was folded into med_tech by migration 462),
+ * which is how the admin shell's "Report incident" button lands here;
  * the RPC still decides who may submit.
  */
 const REPORT_PATH_PREFIX = "/caregiver/report";
@@ -40,7 +41,7 @@ export function isCaregiverReportPath(pathname: string): boolean {
 }
 
 /**
- * The nine capture roles that migration 401 lets report a care event may open
+ * The capture roles that migration 401 (as amended by 462) lets report a care event may open
  * the report flow (spec 07A §6.3). Family, onboarding, broker, dietary,
  * maintenance and housekeeper roles never reach the census on the Who step.
  */
@@ -51,7 +52,6 @@ const REPORT_PATH_ROLES: ReadonlySet<string> = new Set([
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
   "caregiver",
   "med_tech",
 ]);
@@ -66,7 +66,7 @@ export function isStaffRoleAllowedOnReportPath(role: string): boolean {
 /**
  * Caregiver UI requires a session and a floor role (`caregiver` or `housekeeper`).
  * Other known roles go to their shells, except on `/caregiver/report` where the
- * nine capture roles in REPORT_PATH_ROLES are allowed (spec 07A §6.3).
+ * capture roles in REPORT_PATH_ROLES are allowed (spec 07A §6.3).
  */
 export function caregiverShellAccessRedirect(request: NextRequest, user: AuthClaimUser | null): NextResponse | null {
   const nextUrl = request.nextUrl;

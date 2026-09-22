@@ -20,8 +20,9 @@ export const REQUIREMENT_VIEW_ROLES = [
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
+  "med_tech",
   "dietary",
+  "cook",
   "maintenance_role",
   "housekeeper",
 ] as const;

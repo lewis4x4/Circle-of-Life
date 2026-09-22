@@ -11,7 +11,7 @@ export function isMedTechShellPath(pathname: string): boolean {
 }
 
 /**
- * Med-Tech UI requires a session and a medication role (`med_tech` or `nurse`).
+ * Med-Tech UI requires a session and the medication role (`med_tech`).
  * Other known roles redirect to their shells.
  */
 export function medTechShellAccessRedirect(

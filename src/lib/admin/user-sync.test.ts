@@ -44,7 +44,7 @@ beforeEach(() => {
   });
   mocks.access.mockResolvedValue(true);
   mocks.restrict.mockResolvedValue(restricted);
-  mocks.expand.mockResolvedValue({ ...restricted, app_role: "nurse", is_active: true, deleted_at: null });
+  mocks.expand.mockResolvedValue({ ...restricted, app_role: "med_tech", is_active: true, deleted_at: null });
 });
 
 it("reports pending restriction synchronization without rolling back database authority", async () => {
@@ -80,7 +80,7 @@ it("returns pending sign-in sync after soft deletion", async () => {
 it("does not report a pending promotion as applied", async () => {
   mocks.expand.mockResolvedValue({ ...restricted, sync_status: "retry_required" });
   const response = await PATCH(
-    new NextRequest("http://localhost", { method: "PATCH", body: JSON.stringify({ app_role: "nurse" }) }),
+    new NextRequest("http://localhost", { method: "PATCH", body: JSON.stringify({ app_role: "med_tech" }) }),
     { params: Promise.resolve({ id: "target" }) },
   );
   expect(response.status).toBe(202);

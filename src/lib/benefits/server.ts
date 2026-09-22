@@ -11,7 +11,7 @@ import {
   createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
 } from "./contracts";
 
-export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "nurse"] as const;
+export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"] as const;
 const noStore = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
 const permissionSchema = z.object({ can_write: z.boolean(), can_review: z.boolean(), can_manage_access: z.boolean() });
 const caseSchema = z.object({

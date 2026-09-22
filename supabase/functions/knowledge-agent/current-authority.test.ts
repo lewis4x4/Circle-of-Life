@@ -17,7 +17,7 @@ Deno.test("referral pipeline roles match the database capability map", () => {
     "manager",
     "admin_assistant",
     "coordinator",
-    "nurse",
+    "med_tech",
   ]) {
     assertEquals(canReadReferralPipeline(role), true, role);
   }
@@ -85,7 +85,7 @@ Deno.test("referral route labels capped status evidence and uses an exact total"
     {
       admin: { from: () => builder },
       workspaceId: "00000000-0000-0000-0000-000000000101",
-      userRole: "nurse",
+      userRole: "med_tech",
       userId: "00000000-0000-0000-0000-000000000201",
       userEmail: null,
       accessibleFacilityIds: ["00000000-0000-0000-0000-000000000301"],
@@ -122,7 +122,7 @@ Deno.test("referral route fails closed when the service query fails", async () =
       {
         admin: { from: () => builder },
         workspaceId: "00000000-0000-0000-0000-000000000101",
-        userRole: "nurse",
+        userRole: "med_tech",
         userId: "00000000-0000-0000-0000-000000000201",
         userEmail: null,
         accessibleFacilityIds: ["00000000-0000-0000-0000-000000000301"],
@@ -168,7 +168,7 @@ Deno.test("referral route fails closed when an exact count is unavailable", asyn
       {
         admin: { from: () => builder },
         workspaceId: "00000000-0000-0000-0000-000000000101",
-        userRole: "nurse",
+        userRole: "med_tech",
         userId: "00000000-0000-0000-0000-000000000201",
         userEmail: null,
         accessibleFacilityIds: ["00000000-0000-0000-0000-000000000301"],

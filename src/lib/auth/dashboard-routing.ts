@@ -130,26 +130,22 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
       carePlans: true, assessments: true, familyMessages: true,
     },
   },
-  nurse: {
-    route: "/admin/nurse-dashboard",
-    shell: "admin",
-    roleLabel: "Nurse",
-    primaryTaskLanes: ["incidents", "clinical_follow_through", "watchlist"],
-    firstScreenPriority: ["urgent_now", "clinical_risk", "watchlist"],
-    suppressedSections: ["enterprise_rollup", "family_billing"],
-    mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Command", "Clinical Ops", "Quality & Risk"],
-    visibleItemKeys: ["residents", "med-tech", "medication-errors", "incidents-new", "incidents"],
-    sections: {
-      heroStats: true, quickActions: true, criticalUpdates: true,
-      compliance: true, financials: false, watchlist: true,
-      incidents: true,
-    },
-  },
   dietary: {
     route: "/dietary",
     shell: "dietary",
     roleLabel: "Dietary",
+    primaryTaskLanes: ["dietary"],
+    firstScreenPriority: ["diet_orders", "clinical_review", "service_readiness"],
+    suppressedSections: ["enterprise_rollup", "incident_backlog", "family_billing"],
+    mobileTabletExpectation: "desktop-first",
+    visibleGroups: [],
+    sections: {},
+  },
+  // Cook = dietary for access and routing (owner ruling 2026-09-22).
+  cook: {
+    route: "/dietary",
+    shell: "dietary",
+    roleLabel: "Cook",
     primaryTaskLanes: ["dietary"],
     firstScreenPriority: ["diet_orders", "clinical_review", "service_readiness"],
     suppressedSections: ["enterprise_rollup", "incident_backlog", "family_billing"],
@@ -227,8 +223,15 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     firstScreenPriority: ["medications_due_now", "resident_context", "controlled_substance_follow_through", "exceptions", "handoff"],
     suppressedSections: ["adl_documentation_breadth", "enterprise_rollup", "family_billing"],
     mobileTabletExpectation: "phone-and-tablet",
-    visibleGroups: [],
-    sections: {},
+    // Owner ruling 2026-09-22: the legacy nurse role is folded into med_tech, so a
+    // med-tech's admin-shell nav is the one nurse had (the home stays /med-tech).
+    visibleGroups: ["Command", "Clinical Ops", "Quality & Risk"],
+    visibleItemKeys: ["residents", "med-tech", "medication-errors", "incidents-new", "incidents"],
+    sections: {
+      heroStats: true, quickActions: true, criticalUpdates: true,
+      compliance: true, financials: false, watchlist: true,
+      incidents: true,
+    },
   },
 };
 

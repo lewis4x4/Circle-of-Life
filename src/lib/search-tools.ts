@@ -276,14 +276,14 @@ export const TIER_META: Record<
 // key = tool_name, value = set of roles that have access by default.
 
 export const DEFAULT_TOOL_ACCESS: Record<string, Set<string>> = {
-  semantic_kb_search: new Set(["caregiver", "nurse", "facility_admin", "owner", "org_admin", "manager", "coordinator", "admin_assistant"]),
-  resident_lookup: new Set(["caregiver", "nurse", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
-  daily_ops_search: new Set(["caregiver", "nurse", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
-  medication_search: new Set(["caregiver", "nurse", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
-  incident_search: new Set(["caregiver", "nurse", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
-  census_snapshot: new Set(["caregiver", "nurse", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
-  staff_directory: new Set(["nurse", "facility_admin", "owner", "org_admin", "manager", "coordinator", "admin_assistant"]),
-  compliance_search: new Set(["nurse", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
+  semantic_kb_search: new Set(["caregiver", "med_tech", "facility_admin", "owner", "org_admin", "manager", "coordinator", "admin_assistant"]),
+  resident_lookup: new Set(["caregiver", "med_tech", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
+  daily_ops_search: new Set(["caregiver", "med_tech", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
+  medication_search: new Set(["caregiver", "med_tech", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
+  incident_search: new Set(["caregiver", "med_tech", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
+  census_snapshot: new Set(["caregiver", "med_tech", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
+  staff_directory: new Set(["med_tech", "facility_admin", "owner", "org_admin", "manager", "coordinator", "admin_assistant"]),
+  compliance_search: new Set(["med_tech", "facility_admin", "owner", "org_admin", "manager", "coordinator"]),
   billing_search: new Set(["facility_admin", "owner", "org_admin"]),
   payroll_search: new Set(["facility_admin", "owner", "org_admin"]),
 };
@@ -293,7 +293,7 @@ export const DEFAULT_TOOL_ACCESS: Record<string, Set<string>> = {
 
 export const MATRIX_DISPLAY_ROLES = [
   "caregiver",
-  "nurse",
+  "med_tech",
   "coordinator",
   "manager",
   "admin_assistant",

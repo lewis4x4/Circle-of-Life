@@ -24,9 +24,6 @@ export function dietaryShellAccessRedirect(
   if (isDietaryRole(role) || isAdminEligibleAppRole(role)) {
     return null;
   }
-  if (role === "med_tech") {
-    return NextResponse.redirect(new URL("/med-tech", nextUrl.origin));
-  }
   if (role === "caregiver" || role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }

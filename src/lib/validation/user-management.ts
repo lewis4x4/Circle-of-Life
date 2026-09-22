@@ -11,6 +11,8 @@ const uuidStringSchema = z.string().refine((value) => UUID_STRING_RE.test(value)
   message: "Invalid UUID",
 });
 
+// Owner ruling 2026-09-22: nurse is not assignable (folded into med_tech by
+// migration 462); cook is a login role alongside dietary.
 const appRoleEnum = z.enum([
   "owner",
   "org_admin",
@@ -18,9 +20,9 @@ const appRoleEnum = z.enum([
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
   "med_tech",
   "caregiver",
+  "cook",
   "dietary",
   "dietary_aide",
   "housekeeper",

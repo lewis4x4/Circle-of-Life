@@ -112,8 +112,8 @@ DO $$ DECLARE f record; witness uuid:=gen_random_uuid(); med uuid; first_count u
  SELECT * INTO f FROM access_fixture;
  SELECT id INTO med FROM public.resident_medications WHERE facility_id=f.facility AND organization_id=f.org AND deleted_at IS NULL LIMIT 1;
  IF med IS NULL THEN RAISE EXCEPTION 'Local seed medication required'; END IF;
- INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) VALUES(witness,witness||'@review.invalid',jsonb_build_object('organization_id',f.org,'app_role','nurse'),jsonb_build_object('full_name','Review witness'));
- INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active) VALUES(witness,witness||'@review.invalid','Review witness','nurse',f.org,true)
+ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) VALUES(witness,witness||'@review.invalid',jsonb_build_object('organization_id',f.org,'app_role','med_tech'),jsonb_build_object('full_name','Review witness'));
+ INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active) VALUES(witness,witness||'@review.invalid','Review witness','med_tech',f.org,true)
    ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
  INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) VALUES(witness,f.facility,f.org);
  INSERT INTO public.controlled_substance_counts(id,resident_medication_id,facility_id,organization_id,count_date,shift,expected_count,actual_count,outgoing_staff_id)

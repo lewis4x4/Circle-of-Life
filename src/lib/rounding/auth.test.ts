@@ -46,7 +46,7 @@ function actor(options?: { appRole?: string; staffId?: string | null }) {
     value: {
       id: "user-1",
       organizationId: "org-1",
-      appRole: options?.appRole ?? "nurse",
+      appRole: options?.appRole ?? "med_tech",
       admin,
       client: {
         auth: {
@@ -96,7 +96,7 @@ describe("rounding current authority", () => {
     expect("context" in result && result.context).toMatchObject({
       userId: "user-1",
       organizationId: "org-1",
-      appRole: "nurse",
+      appRole: "med_tech",
       currentStaffId: "staff-1",
       sessionId: "session-1",
       authClaimVersion: 3,
@@ -141,7 +141,7 @@ describe("rounding current authority", () => {
 
     expect("response" in result && result.response.status).toBe(403);
     expect(mocks.revalidateActor).toHaveBeenCalledWith(current.value, expect.objectContaining({
-      allowedRoles: ["owner", "org_admin", "facility_admin", "nurse"],
+      allowedRoles: ["owner", "org_admin", "facility_admin", "med_tech"],
     }));
     expect(mocks.facilityAccess).not.toHaveBeenCalled();
   });
@@ -157,7 +157,7 @@ describe("rounding current authority", () => {
         admin: current.value.admin as never,
         userId: "user-1",
         organizationId: "org-1",
-        appRole: "nurse",
+        appRole: "med_tech",
         currentStaffId: "staff-1",
         sessionId: "session-1",
         authClaimVersion: 3,

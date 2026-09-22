@@ -68,7 +68,7 @@ describe("resident intake source finalization target contract", () => {
     const actor = {
       id: actorId,
       organizationId: orgId,
-      appRole: "nurse",
+      appRole: "med_tech",
       client: { rpc, auth: {}, storage: { from: vi.fn().mockReturnValue({ download: vi.fn().mockResolvedValue({ data: new Blob([bytes]), error: null }) }) } },
       admin: { rpc: attest, schema },
     };

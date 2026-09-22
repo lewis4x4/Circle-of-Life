@@ -160,7 +160,7 @@ describe("requirement management", () => {
     expect(client.rpc).toHaveBeenCalledWith("haven_employee_file_staff", { p_staff_id: STAFF });
     expect(admin.from).not.toHaveBeenCalled();
   });
-  it.each(["caregiver", "nurse", "coordinator"])("denies source catalog to %s even with employee-file access", async (appRole) => {
+  it.each(["caregiver", "med_tech", "coordinator"])("denies source catalog to %s even with employee-file access", async (appRole) => {
     role = appRole;
     const response = await sourceCatalog(new Request("http://localhost/catalog"), context());
     expect(response.status).toBe(403);
@@ -220,7 +220,7 @@ describe("restricted document download", () => {
 describe("reviewer roster and scoped training evidence", () => {
   it.each(["owner", "org_admin"])("allows %s to load active same-organization reviewer choices", async (appRole) => {
     role = appRole;
-    results.user_profiles.data = [{ id: USER, full_name: "Named Reviewer", app_role: "nurse" }];
+    results.user_profiles.data = [{ id: USER, full_name: "Named Reviewer", app_role: "med_tech" }];
     results.employee_medical_access.data = [{ id: "grant-1", user_id: USER }];
     const response = await reviewerRoster(new Request("http://localhost/requirements"), context());
     expect(response.status).toBe(200);
@@ -233,7 +233,7 @@ describe("reviewer roster and scoped training evidence", () => {
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(admin.from).not.toHaveBeenCalled();
   });
-  it.each(["manager", "facility_admin", "nurse", "coordinator", "caregiver"])("denies reviewer roster to %s before querying profiles", async (appRole) => {
+  it.each(["manager", "facility_admin", "med_tech", "coordinator", "caregiver"])("denies reviewer roster to %s before querying profiles", async (appRole) => {
     role = appRole;
     expect((await reviewerRoster(new Request("http://localhost/requirements"), context())).status).toBe(403);
     expect(queries.user_profiles.select).not.toHaveBeenCalled();
@@ -246,7 +246,7 @@ describe("reviewer roster and scoped training evidence", () => {
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: "Reviewer access could not be loaded." });
   });
-  it.each(["nurse", "coordinator"])("allows scoped %s countersign access without elevating management", async (appRole) => {
+  it.each(["med_tech", "coordinator"])("allows scoped %s countersign access without elevating management", async (appRole) => {
     role = appRole;
     results.staff.data = { ...(results.staff.data as object), user_id: "other-employee" };
     const response = await GET(new Request("http://localhost/employee-file"), context());

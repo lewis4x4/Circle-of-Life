@@ -56,14 +56,14 @@ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  UNION ALL SELECT admin_a,admin_a||'@draft.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site A admin"}'::jsonb FROM df
  UNION ALL SELECT admin_b,admin_b||'@draft.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site B admin"}'::jsonb FROM df
  UNION ALL SELECT maint,maint||'@draft.invalid',jsonb_build_object('organization_id',org,'app_role','maintenance_role'),'{"full_name":"Maintenance"}'::jsonb FROM df
- UNION ALL SELECT nurse,nurse||'@draft.invalid',jsonb_build_object('organization_id',org,'app_role','nurse'),'{"full_name":"Nurse"}'::jsonb FROM df
+ UNION ALL SELECT nurse,nurse||'@draft.invalid',jsonb_build_object('organization_id',org,'app_role','med_tech'),'{"full_name":"Nurse"}'::jsonb FROM df
  UNION ALL SELECT aide,aide||'@draft.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Aide"}'::jsonb FROM df;
 INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active)
  SELECT owner_actor,owner_actor||'@draft.invalid','Corporate','owner'::public.app_role,org,true FROM df
  UNION ALL SELECT admin_a,admin_a||'@draft.invalid','Site A admin','facility_admin'::public.app_role,org,true FROM df
  UNION ALL SELECT admin_b,admin_b||'@draft.invalid','Site B admin','facility_admin'::public.app_role,org,true FROM df
  UNION ALL SELECT maint,maint||'@draft.invalid','Maintenance','maintenance_role'::public.app_role,org,true FROM df
- UNION ALL SELECT nurse,nurse||'@draft.invalid','Nurse','nurse'::public.app_role,org,true FROM df
+ UNION ALL SELECT nurse,nurse||'@draft.invalid','Nurse','med_tech'::public.app_role,org,true FROM df
  UNION ALL SELECT aide,aide||'@draft.invalid','Aide','housekeeper'::public.app_role,org,true FROM df
  ON CONFLICT(id) DO UPDATE SET app_role=excluded.app_role,organization_id=excluded.organization_id,is_active=true;
 INSERT INTO auth.sessions(id,user_id) SELECT owner_session,owner_actor FROM df UNION ALL SELECT admin_a_session,admin_a FROM df UNION ALL SELECT admin_b_session,admin_b FROM df
@@ -89,7 +89,7 @@ CREATE FUNCTION pg_temp.d_login(p_kind text) RETURNS void LANGUAGE plpgsql AS $$
  ELSIF p_kind='admin_b' THEN u:=f.admin_b; sess:=f.admin_b_session; r:='facility_admin';
  ELSIF p_kind='maint' THEN u:=f.maint; sess:=f.maint_session; r:='maintenance_role';
  ELSIF p_kind='aide' THEN u:=f.aide; sess:=f.aide_session; r:='housekeeper';
- ELSE u:=f.nurse; sess:=f.nurse_session; r:='nurse'; END IF;
+ ELSE u:=f.nurse; sess:=f.nurse_session; r:='med_tech'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',sess,'iat',extract(epoch FROM clock_timestamp())::bigint,
   'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=u),'role','authenticated','app_role',r,'organization_id',f.org)::text,true);
 END $$;
@@ -127,7 +127,7 @@ SELECT pg_temp.d_login('owner');
 SET LOCAL ROLE authenticated;
 INSERT INTO df_results SELECT 'v_asset',public.save_operation_requirement_draft_review(act_asset,jsonb_build_object('title','AED monthly check','wording','Check the AED pads and battery.','allowed_recorder_roles',jsonb_build_array('maintenance_role','facility_admin'),
  'required_inputs',jsonb_build_array(jsonb_build_object('key','pads_ok','label','Pads in date','type','boolean','required',true),jsonb_build_object('key','battery_pct','label','Battery','type','number','required',true,'min',0,'max',100)))) FROM df;
-INSERT INTO df_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('nurse','facility_admin'),
+INSERT INTO df_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('med_tech','facility_admin'),
  'review_required',true,'allowed_reviewer_roles',jsonb_build_array('facility_admin','owner'))) FROM df;
 INSERT INTO df_ids SELECT label,(result->>'id')::uuid FROM df_results WHERE label LIKE 'v\_%';
 INSERT INTO df_results SELECT 'pub_'||label,public.publish_operation_requirement_review(id,(SELECT since FROM df)) FROM df_ids WHERE label LIKE 'v\_%';
@@ -216,7 +216,7 @@ SELECT pg_temp.d_assert((SELECT count(*)=1 FROM public.operation_command_drafts)
 RESET ROLE;
 SELECT pg_temp.d_assert((SELECT arguments_hash=haven.operation_command_draft_hash(actor_id,command,target_id,arguments) FROM public.operation_command_drafts WHERE id=pg_temp.rid('d1')),'fingerprint not derived from actor, command, target and arguments');
 -- Another actor: the key is unavailable, the draft is invisible, and reconcile, resume and discard are unavailable; an unknown id is absent.
-SELECT pg_temp.d_login('nurse');
+SELECT pg_temp.d_login('med_tech');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.d_denied($q$SELECT public.save_operation_command_draft_review(pg_temp.k('d1-000001'),pg_temp.draft('record_work',pg_temp.rid('occ_a1_d1'),pg_temp.rec(90,'Pads and battery fine')))$q$);
 SELECT pg_temp.d_assert((SELECT count(*)=0 FROM public.operation_command_drafts),'another actor can read the draft');
@@ -314,7 +314,7 @@ SELECT pg_temp.d_assert((SELECT status='pending' AND execution_state='none' FROM
 RESET ROLE;
 
 -- Verification: the recorder's own verify draft is refused by the command (42501, draft pending); an independent reviewer's draft resumes and reconciles.
-SELECT pg_temp.d_login('nurse');
+SELECT pg_temp.d_login('med_tech');
 SET LOCAL ROLE authenticated;
 INSERT INTO df_results SELECT 'rec_res1',public.record_operation_work_review(pg_temp.rid('occ_res_d1'),pg_temp.k('res1-000001'),'{"outcome":"performed","note":"Weight stable"}');
 INSERT INTO df_ids SELECT 'rr',(result->'receipt'->>'id')::uuid FROM df_results WHERE label='rec_res1';
@@ -367,7 +367,7 @@ SELECT pg_temp.d_assert((SELECT result->>'outcome'='saved' AND result->'record'=
  AND (SELECT reported_by=(SELECT maint FROM df) AND request_key=pg_temp.k('d10-000001') FROM public.operation_issues WHERE id=pg_temp.rid('i1')),'issue reconciliation wrong');
 SELECT pg_temp.d_assert((SELECT status='pending' AND execution_state='none' FROM public.operation_task_instances WHERE id=pg_temp.rid('occ_a2_d3')),'an issue draft performed the work');
 RESET ROLE;
-SELECT pg_temp.d_login('nurse');
+SELECT pg_temp.d_login('med_tech');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.save('d11','d11-000001',pg_temp.draft('report_issue',NULL,jsonb_build_object('payload',jsonb_build_object('activity_id',(SELECT act_res FROM df),'facility_id',(SELECT site_a FROM df),'subject_id',(SELECT subj_res1 FROM df),'kind','problem','summary','Scale reads inconsistently')))||jsonb_build_object('facility_id',(SELECT site_a FROM df)));
 SELECT pg_temp.d_assert((SELECT result->'draft'->>'target_id' IS NULL AND (result->'draft'->>'facility_id')::uuid=(SELECT site_a FROM df) AND result->'draft'->>'state'='pending' FROM df_results WHERE label='save_d11'),'scoped issue draft wrong');

@@ -6,7 +6,7 @@ type Body = {
   shiftId?: string;
 };
 
-const ALLOWED_ROLES = ["owner", "org_admin", "facility_admin", "nurse", "caregiver", "med_tech"] as const;
+const ALLOWED_ROLES = ["owner", "org_admin", "facility_admin", "caregiver", "med_tech"] as const;
 
 function incidentPrefix(facilityName: string, settings: Record<string, unknown> | null | undefined) {
   const fromSettings = typeof settings?.incident_report_prefix === "string" ? settings.incident_report_prefix.trim() : "";

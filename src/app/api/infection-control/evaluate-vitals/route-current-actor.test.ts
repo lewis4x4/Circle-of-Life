@@ -44,7 +44,7 @@ describe("evaluate-vitals fresh ownership authorization", () => {
 
   it("does not evaluate after a nurse is demoted to a non-owning caregiver", async () => {
     const admin = adminForLog();
-    const initialActor = { id: "actor-1", organizationId: "org-1", appRole: "nurse", admin };
+    const initialActor = { id: "actor-1", organizationId: "org-1", appRole: "med_tech", admin };
     const demotedActor = { ...initialActor, appRole: "caregiver" };
     mocks.requireActor.mockResolvedValue({ actor: initialActor });
     mocks.revalidateActor.mockResolvedValue({ actor: demotedActor });

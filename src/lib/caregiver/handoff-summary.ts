@@ -315,7 +315,7 @@ export function buildShiftHandoffInsert(
  * grouped by level word lands in `shift_handoffs.auto_summary`, so Level 1
  * notes reach the next shift without anyone re-typing them (spec 07A §6.3).
  * Inserts directly: the `staff_create_shift_handoffs` policy (019) admits
- * owner, org_admin, facility_admin, nurse and caregiver within their
+ * owner, org_admin, facility_admin, med_tech (462) and caregiver within their
  * accessible facilities. Returns the new row id and the summary written.
  */
 export async function recordShiftHandoff(

@@ -33,7 +33,7 @@ export type CarePlanAcknowledgementRow = {
   notes: string | null;
 };
 
-const RECORDER_ROLES = ["owner", "org_admin", "facility_admin", "nurse"];
+const RECORDER_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"];
 
 /**
  * Who, besides staff, has seen the signed plan. Rows are evidence: append-only,

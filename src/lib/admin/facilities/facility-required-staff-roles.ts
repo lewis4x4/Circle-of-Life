@@ -85,7 +85,7 @@ export const FACILITY_STAFF_TAXONOMY: readonly StaffTaxonomyRowDef[] = [
   {
     key: "dietary",
     label: "Cook / dietary",
-    matchRoles: ["dietary_staff", "dietary_manager", "dietary_aide"],
+    matchRoles: ["dietary_staff", "dietary_manager", "dietary_aide", "cook"],
     isRequired: (ctx) => ctx.providesMeals,
   },
   {

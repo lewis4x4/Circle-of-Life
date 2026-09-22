@@ -29,7 +29,7 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) SELECT actor,actor||'@section2.invalid','{}','{}' FROM qf;
-INSERT INTO user_profiles(id,organization_id,email,full_name,app_role,is_active) SELECT actor,organization,actor||'@section2.invalid','Section 2','nurse',true FROM qf;
+INSERT INTO user_profiles(id,organization_id,email,full_name,app_role,is_active) SELECT actor,organization,actor||'@section2.invalid','Section 2','med_tech',true FROM qf;
 INSERT INTO auth.sessions(id,user_id) SELECT session,actor FROM qf;
 INSERT INTO user_facility_access(user_id,facility_id,organization_id) SELECT actor,facility,organization FROM qf;
 SELECT set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','session_id',session,'auth_claim_version',(SELECT auth_claim_version FROM user_profiles WHERE id=qf.actor))::text,true) FROM qf;
@@ -48,17 +48,17 @@ DO $$ BEGIN IF (SELECT value_numeric FROM quality_latest_facility_measures WHERE
 UPDATE quality_measure_results SET deleted_at=now() WHERE id='ffffffff-ffff-ffff-ffff-ffffffffffff';
 DO $$ BEGIN IF (SELECT value_numeric FROM quality_latest_facility_measures WHERE facility_id=(SELECT facility FROM qf) AND quality_measure_id=(SELECT measure FROM qf))<>8 THEN RAISE EXCEPTION 'deleted correction selected'; END IF; END $$;
 DO $$ DECLARE r text; n integer; BEGIN
- FOREACH r IN ARRAY ARRAY['owner','org_admin','facility_admin','nurse','caregiver','family'] LOOP
+ FOREACH r IN ARRAY ARRAY['owner','org_admin','facility_admin','med_tech','caregiver','family'] LOOP
   UPDATE user_profiles SET app_role=r::app_role WHERE id=(SELECT actor FROM qf);
   PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'role','authenticated','session_id',f.session,'auth_claim_version',p.auth_claim_version)::text,true) FROM qf f JOIN user_profiles p ON p.id=f.actor;
   SET LOCAL ROLE authenticated;
   SELECT count(*) INTO n FROM quality_latest_facility_measures WHERE quality_measure_id=(SELECT measure FROM qf);
-  IF n<>(CASE WHEN r IN ('owner','org_admin') THEN 2 WHEN r IN ('facility_admin','nurse') THEN 1 ELSE 0 END) THEN RAISE EXCEPTION 'role % returned %',r,n; END IF;
+  IF n<>(CASE WHEN r IN ('owner','org_admin') THEN 2 WHEN r IN ('facility_admin','med_tech') THEN 1 ELSE 0 END) THEN RAISE EXCEPTION 'role % returned %',r,n; END IF;
   IF r IN ('caregiver','family') AND EXISTS(SELECT 1 FROM quality_measure_results WHERE quality_measure_id=(SELECT measure FROM qf)) THEN RAISE EXCEPTION 'base role bypass'; END IF;
   RESET ROLE;
  END LOOP;
 END $$;
-UPDATE user_profiles SET app_role='nurse' WHERE id=(SELECT actor FROM qf);
+UPDATE user_profiles SET app_role='med_tech' WHERE id=(SELECT actor FROM qf);
 SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'role','authenticated','session_id',f.session,'auth_claim_version',p.auth_claim_version)::text,true) FROM qf f JOIN user_profiles p ON p.id=f.actor;
 UPDATE user_facility_access SET revoked_at=now() WHERE user_id=(SELECT actor FROM qf);
 -- Use a fresh version too: grant denial must not depend only on stale-token rejection.

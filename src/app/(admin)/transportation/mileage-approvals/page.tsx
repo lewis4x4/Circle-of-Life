@@ -87,7 +87,7 @@ function buildMileageLogsCsv(rows: MileageExportRow[]): string {
   return [header, ...body].join("\r\n");
 }
 
-const APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
+const APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "med_tech"]);
 
 function formatUsd(cents: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);

@@ -6,7 +6,7 @@ import { logError } from "@/lib/observability/logger";
 
 const schema = z.object({ id: z.uuid(), facilityId: z.uuid(), item: z.string().trim().min(1).max(200), logType: z.enum(["hot_hold","cold_hold","cooking","cooling","reheating","receiving","fridge_temp","freezer_temp","dishmachine","sanitizer"]), temperature: z.number().finite().min(-100).max(500), minimum: z.number().finite().min(-100).max(500), maximum: z.number().finite().min(-100).max(500), correctiveAction: z.string().trim().max(2000) }).strict().refine((v) => v.minimum <= v.maximum, "Minimum must not exceed maximum");
 export async function POST(request: Request) {
-  const auth = await requireAdminApiActor({ allowedRoles: ["dietary", "dietary_aide", "manager", "owner", "org_admin", "facility_admin"] });
+  const auth = await requireAdminApiActor({ allowedRoles: ["dietary", "cook", "dietary_aide", "manager", "owner", "org_admin", "facility_admin"] });
   if ("response" in auth) return auth.response;
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Enter the item, measured temperature and approved limits." }, { status: 400 });

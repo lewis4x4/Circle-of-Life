@@ -52,7 +52,7 @@ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  UNION ALL SELECT admin_a,admin_a||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site A admin"}'::jsonb FROM ifx
  UNION ALL SELECT admin_b,admin_b||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site B admin"}'::jsonb FROM ifx
  UNION ALL SELECT maint,maint||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','maintenance_role'),'{"full_name":"Maintenance"}'::jsonb FROM ifx
- UNION ALL SELECT nurse,nurse||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','nurse'),'{"full_name":"Nurse"}'::jsonb FROM ifx
+ UNION ALL SELECT nurse,nurse||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','med_tech'),'{"full_name":"Nurse"}'::jsonb FROM ifx
  UNION ALL SELECT aide,aide||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Aide"}'::jsonb FROM ifx
  UNION ALL SELECT aide2,aide2||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Second aide"}'::jsonb FROM ifx
  UNION ALL SELECT former,former||'@issue.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Former aide"}'::jsonb FROM ifx
@@ -64,7 +64,7 @@ INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_
  UNION ALL SELECT admin_a,admin_a||'@issue.invalid','Site A admin','facility_admin'::public.app_role,org,true FROM ifx
  UNION ALL SELECT admin_b,admin_b||'@issue.invalid','Site B admin','facility_admin'::public.app_role,org,true FROM ifx
  UNION ALL SELECT maint,maint||'@issue.invalid','Maintenance','maintenance_role'::public.app_role,org,true FROM ifx
- UNION ALL SELECT nurse,nurse||'@issue.invalid','Nurse','nurse'::public.app_role,org,true FROM ifx
+ UNION ALL SELECT nurse,nurse||'@issue.invalid','Nurse','med_tech'::public.app_role,org,true FROM ifx
  UNION ALL SELECT aide,aide||'@issue.invalid','Aide','housekeeper'::public.app_role,org,true FROM ifx
  UNION ALL SELECT aide2,aide2||'@issue.invalid','Second aide','housekeeper'::public.app_role,org,true FROM ifx
  UNION ALL SELECT former,former||'@issue.invalid','Former aide','housekeeper'::public.app_role,org,true FROM ifx
@@ -101,7 +101,7 @@ CREATE FUNCTION pg_temp.i_login(p_kind text) RETURNS void LANGUAGE plpgsql AS $$
  ELSIF p_kind='aide2' THEN u:=f.aide2; sess:=f.aide2_session; r:='housekeeper';
  ELSIF p_kind='mgr' THEN u:=f.mgr; sess:=f.mgr_session; r:='manager';
  ELSIF p_kind='mgr2' THEN u:=f.mgr2; sess:=f.mgr2_session; r:='manager';
- ELSE u:=f.nurse; sess:=f.nurse_session; r:='nurse'; END IF;
+ ELSE u:=f.nurse; sess:=f.nurse_session; r:='med_tech'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',sess,'iat',extract(epoch FROM clock_timestamp())::bigint,
   'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=u),'role','authenticated','app_role',r,'organization_id',f.org)::text,true);
 END $$;
@@ -125,7 +125,7 @@ GRANT ALL ON FUNCTION pg_temp.occ(date,text),pg_temp.run(text,date,date,uuid),pg
 SELECT pg_temp.i_login('owner');
 SET LOCAL ROLE authenticated;
 INSERT INTO ifx_results SELECT 'v_asset',public.save_operation_requirement_draft_review(act_asset,jsonb_build_object('title','AED monthly check','wording','Check the AED pads and battery.','allowed_recorder_roles',jsonb_build_array('maintenance_role','facility_admin'))) FROM ifx;
-INSERT INTO ifx_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('nurse','facility_admin'))) FROM ifx;
+INSERT INTO ifx_results SELECT 'v_res',public.save_operation_requirement_draft_review(act_res,jsonb_build_object('title','Resident weight review','wording','Review the monthly weight.','allowed_recorder_roles',jsonb_build_array('med_tech','facility_admin'))) FROM ifx;
 INSERT INTO ifx_ids SELECT label,(result->>'id')::uuid FROM ifx_results WHERE label LIKE 'v\_%';
 INSERT INTO ifx_results SELECT 'pub_'||label,public.publish_operation_requirement_review(id,clock_timestamp()) FROM ifx_ids WHERE label LIKE 'v\_%';
 SELECT pg_temp.i_assert((SELECT count(*)=2 FROM ifx_results WHERE label LIKE 'pub\_v%' AND result->>'status'='published'),'central versions not published');

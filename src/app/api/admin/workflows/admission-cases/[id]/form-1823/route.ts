@@ -14,7 +14,7 @@ const ALLOWED_ROLES = [
   "facility_admin",
   "manager",
   "coordinator",
-  "nurse",
+  "med_tech",
 ] as const;
 
 type RequestBody = {

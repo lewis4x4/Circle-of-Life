@@ -34,14 +34,14 @@ describe("isCaregiverShellPath", () => {
 });
 
 describe("isStaffRoleAllowedOnReportPath", () => {
-  it("allows the nine capture roles that migration 401 lets report a care event", () => {
-    for (const role of ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "nurse", "med_tech", "caregiver"]) {
+  it("allows the eight capture roles that migrations 401 and 462 let report a care event", () => {
+    for (const role of ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech", "caregiver"]) {
       expect(isStaffRoleAllowedOnReportPath(role)).toBe(true);
     }
   });
 
-  it("keeps family, onboarding, housekeeper, broker, dietary, maintenance, and unknown roles out", () => {
-    for (const role of ["family", "onboarding", "housekeeper", "broker", "dietary", "dietary_aide", "maintenance_role", ""]) {
+  it("keeps family, onboarding, housekeeper, broker, cook, dietary, maintenance, legacy nurse, and unknown roles out", () => {
+    for (const role of ["family", "onboarding", "housekeeper", "broker", "cook", "dietary", "dietary_aide", "maintenance_role", "nurse", ""]) {
       expect(isStaffRoleAllowedOnReportPath(role)).toBe(false);
     }
   });
@@ -72,7 +72,7 @@ describe("caregiverShellAccessRedirect", () => {
     expect(redirectTarget("/caregiver/report", "owner")).toBeNull();
     expect(redirectTarget("/caregiver/report", "admin_assistant")).toBeNull();
     expect(redirectTarget("/caregiver/report", "med_tech")).toBeNull();
-    expect(redirectTarget("/caregiver/report/3f2b0c1e-1111-4222-8333-444455556666", "nurse")).toBeNull();
+    expect(redirectTarget("/caregiver/report/3f2b0c1e-1111-4222-8333-444455556666", "med_tech")).toBeNull();
   });
 
   it("keeps family out of the report flow", () => {

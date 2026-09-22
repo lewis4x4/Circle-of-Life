@@ -31,8 +31,8 @@ function makeSessionClient(options?: {
     data: {
       id: "user-1",
       organization_id: "org-1",
-      app_role: "nurse",
-      email: "nurse@example.test",
+      app_role: "med_tech",
+      email: "med-tech@example.test",
       full_name: "Current Nurse",
     },
     error: null,
@@ -136,7 +136,7 @@ describe("requireCurrentApiActor", () => {
       return { kind: "service" };
     });
 
-    const result = await requireCurrentApiActor({ allowedRoles: ["nurse"] });
+    const result = await requireCurrentApiActor({ allowedRoles: ["med_tech"] });
 
     expect(events).toEqual(["profile-resolved", "service-created"]);
     expect(sessionClient.query.eq).toHaveBeenCalledWith("is_active", true);
@@ -144,7 +144,7 @@ describe("requireCurrentApiActor", () => {
     expect("actor" in result && result.actor).toMatchObject({
       id: "user-1",
       organizationId: "org-1",
-      appRole: "nurse",
+      appRole: "med_tech",
     });
   });
 
@@ -170,7 +170,7 @@ describe("requireCurrentApiActor", () => {
     const sessionClient = makeSessionClient({
       profiles: [
         { data: { id: "user-1", organization_id: "org-1", app_role: "owner", email: null, full_name: null }, error: null },
-        { data: { id: "user-1", organization_id: "org-1", app_role: "nurse", email: null, full_name: null }, error: null },
+        { data: { id: "user-1", organization_id: "org-1", app_role: "med_tech", email: null, full_name: null }, error: null },
       ],
     });
     mocks.createClient.mockResolvedValue(sessionClient);
@@ -187,16 +187,16 @@ describe("requireCurrentApiActor", () => {
   it("revalidation rejects an actor disabled after initial authorization", async () => {
     const sessionClient = makeSessionClient({
       profiles: [
-        { data: { id: "user-1", organization_id: "org-1", app_role: "nurse", email: null, full_name: null }, error: null },
+        { data: { id: "user-1", organization_id: "org-1", app_role: "med_tech", email: null, full_name: null }, error: null },
         { data: null, error: null },
       ],
     });
     mocks.createClient.mockResolvedValue(sessionClient);
-    const initial = await requireCurrentApiActor({ allowedRoles: ["nurse"] });
+    const initial = await requireCurrentApiActor({ allowedRoles: ["med_tech"] });
     expect("actor" in initial).toBe(true);
     if (!("actor" in initial)) return;
 
-    const current = await revalidateCurrentApiActor(initial.actor, { allowedRoles: ["nurse"] });
+    const current = await revalidateCurrentApiActor(initial.actor, { allowedRoles: ["med_tech"] });
 
     expect("response" in current && current.response.status).toBe(403);
     expect(mocks.createServiceRoleClient).toHaveBeenCalledTimes(1);

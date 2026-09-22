@@ -10,7 +10,7 @@ const ALLOWED_ROLES = [
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
+  "med_tech",
 ] as const;
 
 type RequestBody = {

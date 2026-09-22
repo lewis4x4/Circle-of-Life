@@ -11,7 +11,7 @@ import { bedMoveErrorMessage, loadBedMoveSnapshot, type BedMoveSnapshot } from "
 /** Roles that may move a resident between beds. Exported so a caller can decide
  *  whether to offer the action at all rather than offering one that renders
  *  nothing. */
-export const BED_MOVE_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+export const BED_MOVE_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const;
 
 export function ChangeBedAction({ residentId, residentName, facilityId, currentBedLabel, initiallyOpen = false, onDone, open: controlledOpen, onOpenChange, hideTrigger = false }: {
   residentId: string;

@@ -12,7 +12,7 @@ import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-fa
 import { formatUploadedByProfile } from "@/lib/users/user-attribution";
 
 // Same roles that may author or approve a plan; a printout is the signed plan leaving the building.
-const PRINT_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+const PRINT_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const;
 
 type QueryError = { message: string };
 type SingleResult<T> = { data: T | null; error: QueryError | null };

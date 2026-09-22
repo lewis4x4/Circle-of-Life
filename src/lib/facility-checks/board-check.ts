@@ -213,7 +213,7 @@ export function canRunBoardCheck(appRole: string): boolean {
     appRole === "owner" ||
     appRole === "org_admin" ||
     appRole === "facility_admin" ||
-    appRole === "nurse"
+    appRole === "med_tech"
   );
 }
 

@@ -46,7 +46,6 @@ export function onboardingShellAccessRedirect(request: NextRequest, user: AuthCl
     role === "manager" ||
     role === "admin_assistant" ||
     role === "coordinator" ||
-    role === "nurse" ||
     role === "maintenance_role" ||
     role === "broker"
   ) {

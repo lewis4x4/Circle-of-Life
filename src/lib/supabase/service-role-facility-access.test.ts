@@ -43,7 +43,7 @@ describe("serviceRoleUserHasFacilityAccess", () => {
 
   it("requires a current nonrevoked grant for a facility-scoped role", async () => {
     const { client: admin, queries } = client({
-      profile: { app_role: "nurse" },
+      profile: { app_role: "med_tech" },
       facility: { id: "facility-1" },
       grant: null,
     });

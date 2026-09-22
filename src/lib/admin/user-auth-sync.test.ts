@@ -4,7 +4,7 @@ import type { Database } from "@/types/database";
 import { drainUserAuthSyncJobs, processUserAuthSyncJob } from "./user-auth-sync";
 
 const job = {
-  id: "job", target_user_id: "target", organization_id: "org", desired_app_role: "nurse",
+  id: "job", target_user_id: "target", organization_id: "org", desired_app_role: "med_tech",
   desired_claim_version: 9, direction: "expansive", operation: "promote", should_ban: false,
   phase: "pending_auth", lease_token: "lease",
 };
@@ -28,7 +28,7 @@ describe("leased Auth synchronization", () => {
     expect(rpc.mock.invocationCallOrder[1]).toBeLessThan(updateUserById.mock.invocationCallOrder[0]);
     expect(updateUserById.mock.invocationCallOrder[0]).toBeLessThan(rpc.mock.invocationCallOrder[3]);
     expect(updateUserById).toHaveBeenCalledWith("target", { app_metadata: {
-      app_role: "nurse", organization_id: "org", auth_claim_version: 9, haven_auth_sync_job_id: "job",
+      app_role: "med_tech", organization_id: "org", auth_claim_version: 9, haven_auth_sync_job_id: "job",
     } });
   });
   it("persists a bounded failure code and never finalizes when Auth fails", async () => {

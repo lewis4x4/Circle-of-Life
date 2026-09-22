@@ -60,7 +60,7 @@ describe("controlled-substance current actor gate", () => {
       actor: {
         id: "outgoing-1",
         organizationId: "org-1",
-        appRole: "nurse",
+        appRole: "med_tech",
         admin: {},
       },
     });
@@ -91,7 +91,7 @@ describe("controlled-substance current actor gate", () => {
   it("does not invoke the witness provider when the actor is disabled after the first check", async () => {
     const admin = countAdmin();
     mocks.requireActor.mockResolvedValue({
-      actor: { id: "outgoing-1", organizationId: "org-1", appRole: "nurse", admin },
+      actor: { id: "outgoing-1", organizationId: "org-1", appRole: "med_tech", admin },
     });
     mocks.facilityAccess.mockResolvedValue(true);
     mocks.revalidateActor.mockResolvedValue({
@@ -107,7 +107,7 @@ describe("controlled-substance current actor gate", () => {
 
   it("does not invoke the witness provider when facility access is revoked after revalidation", async () => {
     const admin = countAdmin();
-    const actor = { id: "outgoing-1", organizationId: "org-1", appRole: "nurse", admin };
+    const actor = { id: "outgoing-1", organizationId: "org-1", appRole: "med_tech", admin };
     mocks.requireActor.mockResolvedValue({ actor });
     mocks.revalidateActor.mockResolvedValue({ actor });
     mocks.facilityAccess.mockResolvedValueOnce(true).mockResolvedValueOnce(false);

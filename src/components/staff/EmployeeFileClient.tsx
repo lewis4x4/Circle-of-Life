@@ -131,8 +131,8 @@ function RecordCard({ record, data, endpoint, run, perform, busy }: ActionProps 
     if (purpose === "employee") return isSelf;
     if (purpose === "provider" || isSelf) return false;
     if (purpose === "supervisor" || purpose === "administrator") return data.canManage;
-    if (purpose === "trainer") return data.canManage || data.actorRole === "nurse";
-    return data.canManage || data.actorRole === "nurse" || data.actorRole === "coordinator";
+    if (purpose === "trainer") return data.canManage || data.actorRole === "med_tech";
+    return data.canManage || data.actorRole === "med_tech" || data.actorRole === "coordinator";
   });
   const canReview = requirement.category === "medical" ? data.canMedical && data.staff.user_id !== data.actorId : data.canManage && data.actorId !== data.staff.user_id;
   return <article className="space-y-3 rounded-md border p-4">
@@ -164,7 +164,7 @@ function LoadedRequirementManager({ data, run, perform, busy, packetTemplates }:
   const [selected, setSelected] = useState(packetTemplates[0].code);
   const template = packetTemplates.find((t) => t.code === selected)!;
   const nextVersion = Math.max(0, ...data.requirements.filter((r) => r.code === selected).map((r) => r.version)) + 1;
-  const staffRoles = [...new Set(["cna", "lpn", "rn", "administrator", "activities_director", "dietary_staff", "dietary_manager", "maintenance", "housekeeping", "driver", "other", ...NEW_STAFF_ROLES, data.staff.staff_role])];
+  const staffRoles = [...new Set(["cna", "lpn", "rn", "administrator", "activities_director", "dietary_staff", "dietary_manager", "cook", "maintenance", "housekeeping", "driver", "other", ...NEW_STAFF_ROLES, data.staff.staff_role])];
   return <>
     <Panel title="Create a requirement version"><p className="text-sm text-muted-foreground">Packet entries are source material. Confirm full content, applicable duties, and timing before approval. Adding a draft does not assign work or grant clearance.</p>
       <Field label="Packet source"><select value={selected} onChange={(e) => setSelected(e.target.value)} className={fieldClass}>{packetTemplates.map((t) => <option key={t.code} value={t.code}>{t.code} · {t.title}</option>)}</select></Field>

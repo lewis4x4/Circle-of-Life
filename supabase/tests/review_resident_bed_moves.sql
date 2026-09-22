@@ -23,7 +23,7 @@ INSERT INTO bm_beds(label) VALUES ('source'),('target'),('empty'),('occupied'),(
   ('hold'),('maintenance'),('offline'),('blocked'),('deleted'),('dead_room'),('other_fac'),('foreign_org'),
   ('pointer'),('reservation'),('arrival'),('bad_room_scope');
 CREATE TEMP TABLE bm_actors(role text PRIMARY KEY,id uuid DEFAULT gen_random_uuid(),session uuid DEFAULT gen_random_uuid());
-INSERT INTO bm_actors(role) VALUES ('owner'),('org_admin'),('facility_admin'),('nurse'),('caregiver'),('family');
+INSERT INTO bm_actors(role) VALUES ('owner'),('org_admin'),('facility_admin'),('med_tech'),('caregiver'),('family');
 INSERT INTO organizations(id,name) SELECT org,'Bed move review' FROM bm UNION ALL SELECT other_org,'Other bed review' FROM bm;
 INSERT INTO entities(id,organization_id,name) SELECT ent,org,'Review' FROM bm UNION ALL SELECT other_ent,other_org,'Other' FROM bm;
 INSERT INTO facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds)
@@ -96,7 +96,7 @@ BEGIN
 END $$;
 
 -- Fixture boundary used by the independent-session concurrency harness.
-SELECT pg_temp.bm_login('nurse');
+SELECT pg_temp.bm_login('med_tech');
 SET LOCAL ROLE authenticated;
 SELECT public.change_resident_bed(f.resident,b.id,(SELECT id FROM bm_beds WHERE label='source')) FROM bm f,bm_beds b WHERE b.label='target';
 RESET ROLE;
@@ -108,7 +108,7 @@ SELECT pg_temp.bm_assert((SELECT status='available' AND current_resident_id IS N
 SELECT pg_temp.bm_assert((SELECT status='occupied' AND current_resident_id=(SELECT resident FROM bm) FROM beds WHERE id=(SELECT id FROM bm_beds WHERE label='target')),
   'new bed was not claimed');
 SELECT pg_temp.bm_assert(EXISTS(SELECT 1 FROM audit_log WHERE table_name='residents' AND record_id=(SELECT resident FROM bm)
-  AND user_id=(SELECT id FROM bm_actors WHERE role='nurse') AND organization_id=(SELECT org FROM bm) AND facility_id=(SELECT fac FROM bm)
+  AND user_id=(SELECT id FROM bm_actors WHERE role='med_tech') AND organization_id=(SELECT org FROM bm) AND facility_id=(SELECT fac FROM bm)
   AND old_data->>'bed_id'=(SELECT id::text FROM bm_beds WHERE label='source')
   AND new_data->>'bed_id'=(SELECT id::text FROM bm_beds WHERE label='target')),'attributed old/new bed audit missing');
 SET LOCAL ROLE authenticated;
@@ -170,14 +170,14 @@ SELECT pg_temp.bm_login('caregiver');
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''empty'') WHERE id=(SELECT unassigned FROM bm)','authority required');
 SELECT pg_temp.bm_login('family');
 SELECT pg_temp.bm_denied('SELECT change_resident_bed(resident,(SELECT id FROM bm_beds WHERE label=''empty''),(SELECT id FROM bm_beds WHERE label=''target'')) FROM bm','authority required');
-SELECT pg_temp.bm_login('nurse');
+SELECT pg_temp.bm_login('med_tech');
 SELECT set_config('request.jwt.claims',(auth.jwt()||'{"exp":1}'::jsonb)::text,true);
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''empty'') WHERE id=(SELECT resident FROM bm)','authority required');
-SELECT pg_temp.bm_login('nurse');
+SELECT pg_temp.bm_login('med_tech');
 SELECT set_config('request.jwt.claims',(auth.jwt()||jsonb_build_object('session_id',gen_random_uuid()))::text,true);
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''empty'') WHERE id=(SELECT resident FROM bm)','authority required');
-SELECT pg_temp.bm_login('nurse');
-UPDATE user_facility_access SET revoked_at=now() WHERE user_id=(SELECT id FROM bm_actors WHERE role='nurse');
+SELECT pg_temp.bm_login('med_tech');
+UPDATE user_facility_access SET revoked_at=now() WHERE user_id=(SELECT id FROM bm_actors WHERE role='med_tech');
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''empty'') WHERE id=(SELECT resident FROM bm)','authority required');
 SELECT set_config('request.jwt.claims','{}',true);
 

@@ -309,7 +309,7 @@ describe("AppShell all-sections jump list", () => {
   });
 
   it("hides executive command nav for roles that cannot open standup or overview", async () => {
-    authMock.appRole = "nurse";
+    authMock.appRole = "med_tech";
     const user = userEvent.setup();
     renderAppShell();
 

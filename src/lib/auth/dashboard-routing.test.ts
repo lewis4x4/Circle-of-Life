@@ -115,7 +115,7 @@ describe("site work nav visibility (COL-148 / HFO-10)", () => {
   });
 
   it("does not add site-work to other allowlisted roles", () => {
-    for (const role of ["coordinator", "nurse", "maintenance_role", "broker"]) {
+    for (const role of ["coordinator", "med_tech", "maintenance_role", "broker"]) {
       expect(getRoleDashboardConfig(role).visibleItemKeys).not.toContain("site-work");
     }
   });

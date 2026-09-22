@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: {
         id: string;
     }>;
 }) {
-    const auth = await requireAdminApiActor({ allowedRoles: ["owner", "org_admin", "facility_admin", "manager", "nurse"] });
+    const auth = await requireAdminApiActor({ allowedRoles: ["owner", "org_admin", "facility_admin", "manager", "med_tech"] });
     if ("response" in auth)
         return auth.response;
     const { actor } = auth;

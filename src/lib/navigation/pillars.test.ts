@@ -56,8 +56,8 @@ describe("role navigation", () => {
     expect(items.map((i) => i.key)).not.toContain("residents");
     expect(items.map((i) => i.key)).not.toContain("payroll");
   });
-  it("applies nurse item restrictions within clinical and quality groups", () => {
-    const items = pillarsForRole(getRoleDashboardConfig("nurse")).flatMap((p) => p.items);
+  it("applies med_tech item restrictions within clinical and quality groups", () => {
+    const items = pillarsForRole(getRoleDashboardConfig("med_tech")).flatMap((p) => p.items);
     expect(items.map((i) => i.key)).toContain("residents");
     expect(items.map((i) => i.key)).not.toContain("transportation");
   });

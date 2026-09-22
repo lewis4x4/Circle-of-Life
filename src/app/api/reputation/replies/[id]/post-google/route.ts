@@ -22,7 +22,7 @@ type AccountJoin = {
   organization_id: string;
 };
 
-const GOOGLE_REPLY_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
+const GOOGLE_REPLY_ROLES = ["owner", "org_admin", "facility_admin", "med_tech"] as const;
 
 async function revalidateReplyAccess(
   actor: CurrentApiActor,

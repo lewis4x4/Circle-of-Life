@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChangeBedAction } from "./ChangeBedAction";
 
-const mocks = vi.hoisted(() => ({ role: "nurse", load: vi.fn(), rpc: vi.fn(), success: vi.fn() }));
+const mocks = vi.hoisted(() => ({ role: "med_tech", load: vi.fn(), rpc: vi.fn(), success: vi.fn() }));
 vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: mocks.role, loading: false }) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc: mocks.rpc }) }));
 vi.mock("sonner", () => ({ toast: { success: mocks.success } }));
@@ -20,7 +20,7 @@ function mount(extra = {}) {
 }
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.role = "nurse";
+  mocks.role = "med_tech";
   mocks.load.mockResolvedValue(snapshot);
   mocks.rpc.mockResolvedValue({ data: "free", error: null });
 });

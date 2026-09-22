@@ -10,7 +10,7 @@ export const ADMIN_ELIGIBLE_APP_ROLES = new Set<string>([
   "manager",
   "admin_assistant",
   "coordinator",
-  "nurse",
+  "med_tech",
   "maintenance_role",
   "broker",
 ]);
@@ -51,14 +51,18 @@ export function isManagerOrAbove(role: string): boolean {
   );
 }
 
-/** Med-Tech / Nurse roles — dedicated /med-tech cockpit for medication technicians and nurses. */
+/**
+ * Med-Tech role — dedicated /med-tech cockpit for medication technicians.
+ * Owner ruling 2026-09-22: the legacy `nurse` app role is not used; Med-Tech holds
+ * everything nurse had (migration 462 converted every nurse user to med_tech).
+ */
 export function isMedTechRole(role: string): boolean {
-  return role === "med_tech" || role === "nurse";
+  return role === "med_tech";
 }
 
-/** Dietary role — dedicated /dietary command deck for Lead Cooks and Dietary Aides. */
+/** Dietary role — dedicated /dietary command deck for Cooks, Lead Cooks and Dietary Aides. */
 export function isDietaryRole(role: string): boolean {
-  return role === "dietary" || role === "dietary_aide";
+  return role === "dietary" || role === "dietary_aide" || role === "cook";
 }
 
 /**

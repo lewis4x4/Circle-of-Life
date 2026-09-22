@@ -15,7 +15,7 @@ export async function employeeFileActor(staffId: string) {
   if (error) return { response: employeeFileResponse({ error: "Employee access could not be verified." }, 503) };
   const staff = data as EmployeeSummary | null;
   const canManage = (EMPLOYEE_MANAGERS as readonly string[]).includes(actor.appRole);
-  const canCountersign = ["nurse", "coordinator"].includes(actor.appRole);
+  const canCountersign = ["med_tech", "coordinator"].includes(actor.appRole);
   if (!staff) return { response: employeeFileResponse({ error: "Employee not found or access denied." }, 404) };
   if (!canManage && !canCountersign && staff.user_id !== actor.id) {
     const grant = await actor.client.from("employee_medical_access" as never).select("id").eq("user_id", actor.id).eq("facility_id", staff.facility_id).eq("organization_id", actor.organizationId).is("revoked_at", null);
