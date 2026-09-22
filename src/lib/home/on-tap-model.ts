@@ -1,6 +1,7 @@
 import type { AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
 import type { HomeCensusOnTap } from "@/lib/home/census";
 import type { HomeOnTapPayload, HomeOnTapRow } from "@/lib/home/on-tap";
+import type { HomeShiftsToday } from "@/lib/home/call-out";
 import type { HomeNoteOnTap } from "@/lib/home/notes";
 import type { HomePastDue } from "@/lib/home/past-due";
 
@@ -17,11 +18,13 @@ export const HOME_VISIBLE_ROW_CAP = 7;
 const BUCKET_RANK: Record<HomeBucket, number> = { regulatory: 1, rent: 2, assigned: 3, fyi: 4 };
 
 export type HomeRowAction = {
-  key: "ran" | "did_not_run" | "done" | "open" | "census_confirm" | "census_flag";
+  key: "ran" | "did_not_run" | "done" | "open" | "census_confirm" | "census_flag" | "cover";
   label: string;
   tone: "primary" | "danger" | "quiet" | "default";
   requiresNote?: boolean;
   href?: string;
+  /** For "cover": the called-out shift assignment. */
+  targetId?: string;
 };
 
 export type HomeRowView = {
@@ -422,6 +425,31 @@ export function buildNoteRows(notes: HomeNoteOnTap[], currentUserId: string | nu
   });
 }
 
+/**
+ * An uncovered shift (COL-596) is a staffing-safety item: it ranks with the
+ * regulatory rows and stays until someone covers it.
+ */
+export function buildUncoveredShiftRows(today: HomeShiftsToday | null): HomeRowView[] {
+  if (!today) return [];
+  return today.shifts.filter((shift) => shift.uncovered).map((shift) => ({
+    id: `shift:${shift.assignmentId}`,
+    bucket: "regulatory" as const,
+    rank: BUCKET_RANK.regulatory,
+    title: `Uncovered ${shift.shiftType === "custom" ? "" : `${shift.shiftType} `}shift — ${shift.staffName} ${shift.status === "no_show" ? "did not show" : "called out"}`,
+    meta: ["Staffing · stays here until covered"],
+    tags: [{ label: "Staffing", tone: "regulatory" as const }],
+    dueAt: null,
+    dueLabel: null,
+    owner: null,
+    actions: [{ key: "cover" as const, label: "Cover", tone: "primary" as const, targetId: shift.assignmentId }],
+    href: "#",
+    instanceId: null,
+    clearTarget: null,
+    catalogKey: null,
+    assignedShiftDate: today.localDate,
+  }));
+}
+
 export type RankedOnTap = {
   rows: HomeRowView[];
   later: HomeRowView[];
@@ -446,11 +474,14 @@ export function rankOnTap(args: {
   rentResidents?: number;
   /** Note tasks from buildNoteRows, present only when quick_note is released. */
   notes?: HomeRowView[];
+  /** Uncovered shifts from buildUncoveredShiftRows, present only when call_out is released. */
+  uncovered?: HomeRowView[];
 }): RankedOnTap {
   const cap = args.cap ?? HOME_VISIBLE_ROW_CAP;
   const ctx = { now: args.now, timeZone: args.feed.timezone, localDate: args.feed.localDate, currentUserId: args.currentUserId };
   const candidates: HomeRowView[] = [
     ...args.feed.rows.map((row) => toRowView(row, ctx)),
+    ...(args.uncovered ?? []),
     ...(args.rent ?? []),
     ...(args.notes ?? []),
     ...args.fyi.map(toFyiRowView),
@@ -471,7 +502,7 @@ export function rankOnTap(args: {
     rows: visible,
     later,
     counts: {
-      regulatory: args.feed.counts.regulatory,
+      regulatory: args.feed.counts.regulatory + (args.uncovered?.length ?? 0),
       rent: args.rentResidents ?? 0,
       assigned: args.feed.counts.assigned + (censusRow ? 1 : 0) + (args.notes?.length ?? 0),
       fyi: args.fyi.length,

@@ -4,6 +4,7 @@ import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/
 import { EMPTY_PRESENCE_CENSUS, fetchPresenceCensus, type PresenceCensus } from "@/lib/executive/presence-census";
 import { fetchHomeCensus, type HomeCensusOnTap } from "@/lib/home/census";
 import { fetchHomeOnTap, type HomeOnTapPayload } from "@/lib/home/on-tap";
+import { fetchShiftsToday, type HomeShiftsToday } from "@/lib/home/call-out";
 import { fetchNotesOnTap, type HomeNoteOnTap } from "@/lib/home/notes";
 import { fetchHomePastDue, type HomePastDue } from "@/lib/home/past-due";
 import { fetchLiveBoardEscalations, fetchLiveBoardTasks } from "@/lib/rounding/live-board-fetch";
@@ -42,6 +43,8 @@ export type HomeInitialData = {
   pastDue: HomePastDue | null;
   /** Note tasks on tap for the caller (COL-595); read only when quick_note is released. */
   notesOnTap: HomeNoteOnTap[];
+  /** Today's shifts and roster for call-out and cover (COL-596); only when call_out is released. */
+  shiftsToday: HomeShiftsToday | null;
 };
 
 const EMPTY_ROUNDING: HomeRoundingSummary = { available: false, missedToday: 0, openEscalations: 0, lastEntryAt: null, lastEntryBy: null };
@@ -135,13 +138,16 @@ export async function loadHome(
     loadReleasedModules(supabase, args.facilityId),
   ]);
   const released = releasedModules.status === "fulfilled" ? releasedModules.value : [];
-  const [pastDue, notesOnTap] = await Promise.all([
+  const [pastDue, notesOnTap, shiftsToday] = await Promise.all([
     released.includes("past_due")
       ? fetchHomePastDue(supabase as unknown as SupabaseClient, args.facilityId).catch(() => null)
       : Promise.resolve(null),
     released.includes("quick_note")
       ? fetchNotesOnTap(supabase as unknown as SupabaseClient, args.facilityId).catch(() => [] as HomeNoteOnTap[])
       : Promise.resolve([] as HomeNoteOnTap[]),
+    released.includes("call_out")
+      ? fetchShiftsToday(supabase as unknown as SupabaseClient, args.facilityId).catch(() => null)
+      : Promise.resolve(null),
   ]);
   return {
     feed,
@@ -155,5 +161,6 @@ export async function loadHome(
     releasedModules: released,
     pastDue,
     notesOnTap,
+    shiftsToday,
   };
 }

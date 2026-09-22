@@ -14,6 +14,7 @@ import {
   CENSUS_CLEAR_PREFIX,
   censusClearedRow,
   buildNoteRows,
+  buildUncoveredShiftRows,
   buildRentRows,
   coOperatorLine,
   dueBeforeYouLeaveCount,
@@ -69,6 +70,11 @@ const ContactLogDialog = dynamic(
   () => import("./ContactLogDialog").then((module) => module.ContactLogDialog),
   { ssr: false },
 );
+// W4 (call-out) ships dark too.
+const CallOutDialog = dynamic(
+  () => import("./CallOutDialog").then((module) => module.CallOutDialog),
+  { ssr: false },
+);
 
 function formatTime(iso: string, timeZone: string) {
   return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone }).format(new Date(iso));
@@ -92,6 +98,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentResident, setPaymentResident] = useState<string | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [callOut, setCallOut] = useState<{ cover: string | null } | null>(null);
   const [contactFor, setContactFor] = useState<{ id: string; name: string } | null>(null);
   const [now, setNow] = useState(() => new Date());
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
@@ -116,9 +123,11 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   const notesLive = data.releasedModules.includes("quick_note");
   const contactLive = data.releasedModules.includes("collections_log");
   const noteRows = useMemo(() => (notesLive ? buildNoteRows(data.notesOnTap, currentUserId) : []), [notesLive, data.notesOnTap, currentUserId]);
+  const callOutLive = data.releasedModules.includes("call_out");
+  const uncovered = useMemo(() => (callOutLive ? buildUncoveredShiftRows(data.shiftsToday) : []), [callOutLive, data.shiftsToday]);
   const ranked = useMemo(
-    () => rankOnTap({ feed: data.feed, fyi, now, currentUserId, census: data.census, rent, rentResidents: pastDueLive ? (data.pastDue?.residents.length ?? 0) : 0, notes: noteRows }),
-    [data.feed, fyi, now, currentUserId, data.census, rent, pastDueLive, data.pastDue, noteRows],
+    () => rankOnTap({ feed: data.feed, fyi, now, currentUserId, census: data.census, rent, rentResidents: pastDueLive ? (data.pastDue?.residents.length ?? 0) : 0, notes: noteRows, uncovered }),
+    [data.feed, fyi, now, currentUserId, data.census, rent, pastDueLive, data.pastDue, noteRows, uncovered],
   );
   const censusCleared = censusClearedRow(data.census);
   const dueCount = dueBeforeYouLeaveCount(ranked);
@@ -213,6 +222,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
       <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => {
           if (key === "record_payment") { setPaymentResident(null); setPaymentOpen(true); }
           if (key === "quick_note") setNoteOpen(true);
+          if (key === "call_out") setCallOut({ cover: null });
         }} />
       {paymentLive ? (
         <RecordPaymentDialog
@@ -237,6 +247,16 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
           pastDue={data.pastDue}
           onRecordPayment={paymentLive ? (residentId) => { setPaymentResident(residentId); setPaymentOpen(true); } : undefined}
           onLogContact={contactLive ? (id, name) => setContactFor({ id, name }) : undefined}
+        />
+      ) : null}
+      {callOutLive && callOut ? (
+        <CallOutDialog
+          key={callOut.cover ?? "new"}
+          open
+          onOpenChange={(open) => { if (!open) setCallOut(null); }}
+          facilityId={facilityId}
+          coverAssignmentId={callOut.cover}
+          onChanged={refresh}
         />
       ) : null}
       {notesLive ? (
@@ -295,6 +315,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
                   busy={busyRow !== null && (busyRow === row.instanceId || busyRow === row.clearTarget)}
                   onClaim={onClaim}
                   onClear={onClear}
+                  onCover={(id) => setCallOut({ cover: id })}
                 />
               ))}
             </ol>
@@ -339,9 +360,10 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
                     row={row}
                     position={ranked.rows.length + index + 1}
                     currentUserId={currentUserId}
-                    busy={busyRow === row.instanceId}
+                    busy={busyRow !== null && (busyRow === row.instanceId || busyRow === row.clearTarget)}
                     onClaim={onClaim}
                     onClear={onClear}
+                    onCover={(id) => setCallOut({ cover: id })}
                   />
                 ))}
               </ol>

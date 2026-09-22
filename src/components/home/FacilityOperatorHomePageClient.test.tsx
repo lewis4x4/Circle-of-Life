@@ -66,6 +66,7 @@ function initial(overrides: Partial<HomeInitialData> = {}): HomeInitialData {
     releasedModules: [],
     pastDue: null,
     notesOnTap: [],
+    shiftsToday: null,
     ...overrides,
   };
 }
@@ -241,6 +242,26 @@ describe("FacilityOperatorHomePageClient", () => {
     expect(await screen.findByTestId("notes-panel")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("quick-action-quick_note"));
     expect(await screen.findByRole("dialog", { name: "Quick note" })).toBeInTheDocument();
+  });
+
+  it("ranks an uncovered shift with regulatory items once call-out is released, and Cover opens the cover screen (COL-596)", async () => {
+    const shiftsToday = {
+      localDate: "2026-09-22",
+      shifts: [{ assignmentId: "sa-1", staffId: "s-1", staffName: "Probe, Ann", shiftType: "day", status: "called_out", uncovered: true }],
+      staff: [{ staffId: "s-1", staffName: "Probe, Ann" }, { staffId: "s-2", staffName: "Probe, Cy" }],
+    };
+    const { unmount } = render(
+      <FacilityOperatorHomePageClient initial={initial({ shiftsToday })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    expect(screen.queryByText(/Uncovered day shift/)).toBeNull();
+    unmount();
+    render(
+      <FacilityOperatorHomePageClient initial={initial({ shiftsToday, releasedModules: ["call_out"] })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    expect(screen.getByText("Uncovered day shift — Probe, Ann called out")).toBeInTheDocument();
+    expect(screen.getByTestId("quick-action-call_out")).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Cover" }));
+    expect(await screen.findByRole("dialog", { name: "Cover the shift" })).toBeInTheDocument();
   });
 
   it("renders the weekend empty state with no queue rows", () => {
