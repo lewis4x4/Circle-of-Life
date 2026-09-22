@@ -164,6 +164,11 @@ BEGIN
   END IF;
 END $$;
 
+-- The scheduler (service job) reads subjects to stamp the COL-133 classification
+-- on the rows it creates; without this grant every row it writes stays
+-- unclassified and therefore invisible to operators.
+GRANT SELECT ON public.operation_activity_subjects TO service_role;
+
 -- ---------------------------------------------------------------------------
 -- 5. Claim / release (ownership without duplication)
 -- ---------------------------------------------------------------------------
