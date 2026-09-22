@@ -198,7 +198,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
               <h2 id="on-tap-heading" className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground">
                 <Activity className="size-4 text-muted-foreground" aria-hidden />
                 On tap today
-                <span className="inline-flex h-5 items-center rounded border border-destructive/30 bg-destructive/10 px-1.5 text-[10px] font-medium text-destructive tabular-nums">
+                <span className="inline-flex h-5 items-center rounded border border-destructive/40 bg-card px-1.5 text-[11px] font-semibold text-destructive tabular-nums">
                   {dueCount} due
                 </span>
               </h2>

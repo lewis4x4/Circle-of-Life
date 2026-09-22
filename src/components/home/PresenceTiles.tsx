@@ -52,7 +52,7 @@ export function PresenceTiles({ presence, available, licensedBeds, standUpCensus
               {available ? tile.value : "—"}
             </span>
             <span className="text-xs text-muted-foreground">{tile.label}</span>
-            <span className="text-[11px] text-muted-foreground/70">{tile.sub}</span>
+            <span className="text-[11px] text-muted-foreground">{tile.sub}</span>
           </Link>
         ))}
       </div>
