@@ -92,6 +92,16 @@ function complianceSummary(
 }
 
 describe("buildFacilityAttentionItems", () => {
+  it("lists did-not-run checks and uncleared operator rows escalated to the viewer (COL-602)", () => {
+    const items = buildFacilityAttentionItems(null, null, { facilityId: "f-1", didNotRun: 1, uncleared: 2 });
+    expect(items.map((item) => item.label)).toEqual([
+      "1 check recorded as did not run",
+      "2 operator rows not cleared by end of day",
+    ]);
+    expect(items[0].href).toBe("/admin/operations/work?facility_id=f-1");
+    expect(buildFacilityAttentionItems(null, null, { facilityId: "f-1", didNotRun: 0, uncleared: 0 })).toEqual([]);
+  });
+
   it("lists only recorded open items, in record terms", () => {
     const items = buildFacilityAttentionItems(
       kpi({ clinical: { openIncidents: 2, medicationErrorsMtd: 1 }, workforce: { certificationsExpiring30d: 3 } }),

@@ -17,6 +17,7 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
+import { parseExecutiveEscalations } from "@/components/executive/EscalatedFromFacilitiesPanel";
 import { fetchExecutiveFacilityCompliance } from "@/lib/executive/facility-rounding-compliance";
 import {
   FACILITY_ROUTES,
@@ -34,6 +35,7 @@ import {
   settledSection,
   roundingComplianceRangeLabel,
   updatedAtLine,
+  type FacilityOperatorEscalations,
   type RoundingDayCell,
   type SectionState,
 } from "@/lib/executive/facility-overview-model";
@@ -127,6 +129,7 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
   const [rounding, setRounding] = useState<SectionState<RoundingData> | null>(null);
   const [compliance, setCompliance] = useState<SectionState<ComplianceSummary> | null>(null);
   const [insurance, setInsurance] = useState<SectionState<TcorSnapshot> | null>(null);
+  const [operatorEscalations, setOperatorEscalations] = useState<FacilityOperatorEscalations | null>(null);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const [selectorHeld, setSelectorHeld] = useState(false);
   /** Facility this page last aligned the global selector to. */
@@ -196,12 +199,30 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
         (value): PromiseFulfilledResult<ComplianceSummary> => ({ status: "fulfilled", value }),
         (reason): PromiseRejectedResult => ({ status: "rejected", reason }),
       );
-      const [kpiResult, heatMapResult, trendResult, tcorResult] = await Promise.allSettled([
+      const [kpiResult, heatMapResult, trendResult, tcorResult, escalationsResult] = await Promise.allSettled([
         fetchExecutiveKpiSnapshot(supabase, organizationId, facilityId),
         fetchResidentAssuranceFacilityHeatMap(supabase, organizationId),
         fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7),
         computeTotalCostOfRisk(supabase, { organizationId, entityId: fac.entity_id }),
+        supabase.rpc("home_escalations_for_executive"),
       ]);
+
+      // Answers only where the viewer is the named Facility Executive; anyone
+      // else reads an empty list, so nothing is added for them (COL-602).
+      const escalationRows =
+        escalationsResult.status === "fulfilled" && !escalationsResult.value.error
+          ? parseExecutiveEscalations(escalationsResult.value.data ?? [])
+          : null;
+      const forFacility = (escalationRows ?? []).filter((row) => row.facilityId === facilityId);
+      setOperatorEscalations(
+        escalationRows
+          ? {
+              facilityId,
+              didNotRun: forFacility.filter((row) => row.reason === "did_not_run").length,
+              uncleared: forFacility.filter((row) => row.reason !== "did_not_run").length,
+            }
+          : null,
+      );
 
       setKpi(settledSection(kpiResult, FACILITY_OVERVIEW_KPI_READ_FAILED));
 
@@ -282,7 +303,7 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
   const roundingRollup = rounding?.status === "loaded" ? rounding.data.rollup : null;
   const insuranceData = insurance?.status === "loaded" ? insurance.data : null;
 
-  const attentionItems = buildFacilityAttentionItems(kpiData, roundingRollup);
+  const attentionItems = buildFacilityAttentionItems(kpiData, roundingRollup, operatorEscalations);
   const coverageGaps = buildFacilityCoverageGaps({
     facilityId,
     kpi: kpiData,

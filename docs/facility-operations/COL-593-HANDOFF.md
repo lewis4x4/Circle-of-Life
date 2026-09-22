@@ -76,8 +76,10 @@
   `scripts/census/cron-schedules.sql`). The scheduler job is pinned to Homewood and to the
   `safety` category, which today holds exactly the generator template — one live
   behaviour per week (DEC-2026-09-21-11).
-- Follow-ups: COL-568 failure routing (a "did not run" completion should reach the
-  Facility Executive the same day); a deep link to a single task on
+- Follow-ups: COL-568 failure routing — done in COL-602 (migration 464,
+  `home_record_did_not_run`: "Did not run" escalates to level 1 in the same
+  transaction as the completion and shows on the executive panel and the executive
+  facility page's Needs attention list); a deep link to a single task on
   `/admin/operations/work`; W2–W4 as their own children.
 
 ## Verification
