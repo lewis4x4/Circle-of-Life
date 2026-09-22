@@ -14,6 +14,8 @@ export type PastDueStripProps = {
   pastDue: HomePastDue | null;
   /** When Record payment is also released, each name offers it directly. */
   onRecordPayment?: (residentId: string) => void;
+  /** When the collections contact log is released, each name offers it (COL-595). */
+  onLogContact?: (residentId: string, name: string) => void;
 };
 
 /**
@@ -21,7 +23,7 @@ export type PastDueStripProps = {
  * after a tap. Rendered only when the past_due module is released for the
  * facility; an unconfigured facility says so instead of reading as clear.
  */
-export function PastDueStrip({ pastDue, onRecordPayment }: PastDueStripProps) {
+export function PastDueStrip({ pastDue, onRecordPayment, onLogContact }: PastDueStripProps) {
   const [open, setOpen] = useState(false);
   if (!pastDue) {
     return (
@@ -67,9 +69,14 @@ export function PastDueStrip({ pastDue, onRecordPayment }: PastDueStripProps) {
                   {resident.daysPastDue} days · {formatCents(resident.openCents)}
                 </span>
               </span>
-              {onRecordPayment ? (
-                <Button type="button" variant="outline" size="sm" onClick={() => onRecordPayment(resident.residentId)}>Record payment</Button>
-              ) : null}
+              <span className="flex gap-1.5">
+                {onLogContact ? (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => onLogContact(resident.residentId, resident.name)}>Log contact</Button>
+                ) : null}
+                {onRecordPayment ? (
+                  <Button type="button" variant="outline" size="sm" onClick={() => onRecordPayment(resident.residentId)}>Record payment</Button>
+                ) : null}
+              </span>
             </li>
           ))}
         </ul>

@@ -7,6 +7,7 @@ import {
   buildFyiRows,
   censusClearedRow,
   censusCountsMeta,
+  buildNoteRows,
   buildRentRows,
   coOperatorLine,
   dueBeforeYouLeaveCount,
@@ -242,6 +243,20 @@ describe("buildRentRows (COL-594)", () => {
     expect(buildRentRows(null)).toEqual([]);
     expect(buildRentRows({ configured: false, residents: [] })).toEqual([]);
     expect(buildRentRows({ configured: true, residents: [] })).toEqual([]);
+  });
+});
+
+describe("buildNoteRows (COL-595)", () => {
+  it("puts note tasks in the assigned bucket and says whose they are", () => {
+    const rows = buildNoteRows([
+      { noteId: "a", noteType: "staffing", body: "Call Mo", followUpDate: "2026-09-22", overdue: true, assignee: { kind: "user", userId: "me", displayName: "Ada" } },
+      { noteId: "b", noteType: "maintenance", body: "Leak", followUpDate: null, assignee: { kind: "vendor", vendorId: "v", displayName: "Probe Plumbing" } },
+    ], "me");
+    expect(rows.map((r) => [r.bucket, r.rank, r.meta[0], r.href])).toEqual([
+      ["assigned", 3, "Yours", "#note-a"],
+      ["assigned", 3, "Vendor: Probe Plumbing", "#note-b"],
+    ]);
+    expect(rows[0].tags.map((t) => t.label)).toEqual(["Note", "Overdue"]);
   });
 });
 

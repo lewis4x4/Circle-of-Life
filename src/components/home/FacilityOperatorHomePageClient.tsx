@@ -13,6 +13,7 @@ import {
   buildFyiRows,
   CENSUS_CLEAR_PREFIX,
   censusClearedRow,
+  buildNoteRows,
   buildRentRows,
   coOperatorLine,
   dueBeforeYouLeaveCount,
@@ -56,6 +57,18 @@ const RecordPaymentDialog = dynamic(
   () => import("./RecordPaymentDialog").then((module) => module.RecordPaymentDialog),
   { ssr: false },
 );
+// W3 (notes, contact log) ships dark too; same first-load reasoning.
+const NotesPanel = dynamic(
+  () => import("./NotesPanel").then((module) => module.NotesPanel),
+);
+const QuickNoteDialog = dynamic(
+  () => import("./QuickNoteDialog").then((module) => module.QuickNoteDialog),
+  { ssr: false },
+);
+const ContactLogDialog = dynamic(
+  () => import("./ContactLogDialog").then((module) => module.ContactLogDialog),
+  { ssr: false },
+);
 
 function formatTime(iso: string, timeZone: string) {
   return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone }).format(new Date(iso));
@@ -78,6 +91,8 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   const [busyRow, setBusyRow] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentResident, setPaymentResident] = useState<string | null>(null);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [contactFor, setContactFor] = useState<{ id: string; name: string } | null>(null);
   const [now, setNow] = useState(() => new Date());
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
   const supabase = () => (supabaseRef.current ??= createClient());
@@ -98,9 +113,12 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   const pastDueLive = data.releasedModules.includes("past_due");
   const paymentLive = data.releasedModules.includes("record_payment");
   const rent = useMemo(() => (pastDueLive ? buildRentRows(data.pastDue) : []), [pastDueLive, data.pastDue]);
+  const notesLive = data.releasedModules.includes("quick_note");
+  const contactLive = data.releasedModules.includes("collections_log");
+  const noteRows = useMemo(() => (notesLive ? buildNoteRows(data.notesOnTap, currentUserId) : []), [notesLive, data.notesOnTap, currentUserId]);
   const ranked = useMemo(
-    () => rankOnTap({ feed: data.feed, fyi, now, currentUserId, census: data.census, rent, rentResidents: pastDueLive ? (data.pastDue?.residents.length ?? 0) : 0 }),
-    [data.feed, fyi, now, currentUserId, data.census, rent, pastDueLive, data.pastDue],
+    () => rankOnTap({ feed: data.feed, fyi, now, currentUserId, census: data.census, rent, rentResidents: pastDueLive ? (data.pastDue?.residents.length ?? 0) : 0, notes: noteRows }),
+    [data.feed, fyi, now, currentUserId, data.census, rent, pastDueLive, data.pastDue, noteRows],
   );
   const censusCleared = censusClearedRow(data.census);
   const dueCount = dueBeforeYouLeaveCount(ranked);
@@ -192,7 +210,10 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
         ) : null}
       </header>
 
-      <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => { if (key === "record_payment") { setPaymentResident(null); setPaymentOpen(true); } }} />
+      <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => {
+          if (key === "record_payment") { setPaymentResident(null); setPaymentOpen(true); }
+          if (key === "quick_note") setNoteOpen(true);
+        }} />
       {paymentLive ? (
         <RecordPaymentDialog
           key={paymentResident ?? "any"}
@@ -215,6 +236,20 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
         <PastDueStrip
           pastDue={data.pastDue}
           onRecordPayment={paymentLive ? (residentId) => { setPaymentResident(residentId); setPaymentOpen(true); } : undefined}
+          onLogContact={contactLive ? (id, name) => setContactFor({ id, name }) : undefined}
+        />
+      ) : null}
+      {notesLive ? (
+        <QuickNoteDialog open={noteOpen} onOpenChange={setNoteOpen} facilityId={facilityId} localDate={feed.localDate} onSaved={refresh} />
+      ) : null}
+      {contactLive && contactFor ? (
+        <ContactLogDialog
+          key={contactFor.id}
+          open
+          onOpenChange={(open) => { if (!open) setContactFor(null); }}
+          residentId={contactFor.id}
+          residentName={contactFor.name}
+          onLogged={refresh}
         />
       ) : null}
 
@@ -324,6 +359,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
             standUpCensus={data.standUpCensus}
           />
           <FacilityRoundingCard facilityId={facilityId} facilityName={feed.facilityName} timeZone={feed.timezone} rounding={data.rounding} />
+          {notesLive ? <NotesPanel facilityId={facilityId} currentUserId={currentUserId} onTap={data.notesOnTap} onChanged={refresh} /> : null}
         </div>
       </div>
     </div>
