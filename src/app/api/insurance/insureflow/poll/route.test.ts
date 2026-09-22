@@ -24,23 +24,20 @@ function request(headers: Record<string, string> = {}) {
   }) as never;
 }
 
-function clientReturning(rows: unknown[]) {
-  const limit = vi.fn().mockResolvedValue({ data: rows, error: null });
-  const order = vi.fn(() => ({ limit }));
-  const eq2 = vi.fn(() => ({ order }));
-  const eq1 = vi.fn(() => ({ eq: eq2 }));
-  const select = vi.fn(() => ({ eq: eq1 }));
-  const from = vi.fn(() => ({ select }));
-  const rpc = vi.fn().mockResolvedValue({ data: null, error: null });
-  return { from, rpc, _calls: { select, eq1, eq2 } };
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
   process.env = { ...ORIGINAL };
   process.env.INSUREFLOW_POLL_SECRET = SECRET;
   process.env.INSUREFLOW_FEED_ORIGIN = "https://lrqajzwcmdwahnjyidgv.supabase.co";
   process.env.INSUREFLOW_FEED_TOKEN = `hvn_${"a".repeat(64)}`;
+  process.env.INSUREFLOW_CONNECTIONS = JSON.stringify([
+    {
+      connection_id: "9f3c1d80-0000-4000-8000-000000000002",
+      organization_id: "00000000-0000-0000-0000-000000000001",
+      provider_instance: "live:insureflow-col",
+      integration_id: "7c9e1a20-0000-4000-8000-000000000001",
+    },
+  ]);
 });
 afterEach(() => {
   process.env = { ...ORIGINAL };
@@ -88,37 +85,44 @@ describe("POST /api/insurance/insureflow/poll", () => {
     expect(response.status).toBe(503);
   });
 
-  it("asks only for enabled live connections", async () => {
+  it("refuses to poll when the connection list is missing or malformed", async () => {
     process.env.INSUREFLOW_LIVE_TRANSPORT_ENABLED = "true";
-    const client = clientReturning([]);
-    vi.mocked(createServiceRoleClient).mockReturnValue(client as never);
-
-    const response = await POST(request({ "x-cron-secret": SECRET }));
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ status: "polled", polled: 0, results: [] });
-    expect(client._calls.eq1).toHaveBeenCalledWith("mode", "live");
-    expect(client._calls.eq2).toHaveBeenCalledWith("enabled", true);
+    for (const bad of [undefined, "", "not json", "{}", '[{"connection_id":"nope"}]']) {
+      if (bad === undefined) delete process.env.INSUREFLOW_CONNECTIONS;
+      else process.env.INSUREFLOW_CONNECTIONS = bad;
+      const response = await POST(request({ "x-cron-secret": SECRET }));
+      expect(response.status).toBe(503);
+    }
   });
 
-  it("records a bad connection configuration against that connection instead of failing the run", async () => {
+  // The projection is deliberately unreadable by service_role, so the route must
+  // never try to enumerate connections from the table.
+  it("never reads the connections table", async () => {
     process.env.INSUREFLOW_LIVE_TRANSPORT_ENABLED = "true";
-    const client = clientReturning([
-      {
-        id: "c0000000-0000-4000-8000-000000000001",
-        organization_id: "00000000-0000-0000-0000-000000000001",
-        // Not a uuid, so the transport refuses to be built for it.
-        source_integration_id: "not-a-uuid",
-        provider_instance: "live:insureflow",
-        mode: "live",
-        enabled: true,
-      },
-    ]);
-    vi.mocked(createServiceRoleClient).mockReturnValue(client as never);
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: { code: "40001" } });
+    const from = vi.fn(() => {
+      throw new Error("route must not query insureflow_receiver_connections");
+    });
+    vi.mocked(createServiceRoleClient).mockReturnValue({ from, rpc } as never);
 
     const response = await POST(request({ "x-cron-secret": SECRET }));
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { polled: number; results: Array<{ status: string }> };
-    expect(body.polled).toBe(1);
-    expect(body.results[0].status).toBe("invalid_configuration");
+    expect(from).not.toHaveBeenCalled();
+    // It reached the receiver, which is the only permitted path.
+    expect(rpc).toHaveBeenCalledWith("insureflow_receiver_service", expect.objectContaining({ p_action: "claim" }));
+  });
+
+  it("rejects a provider instance that is not a live one", async () => {
+    process.env.INSUREFLOW_LIVE_TRANSPORT_ENABLED = "true";
+    process.env.INSUREFLOW_CONNECTIONS = JSON.stringify([
+      {
+        connection_id: "9f3c1d80-0000-4000-8000-000000000002",
+        organization_id: "00000000-0000-0000-0000-000000000001",
+        provider_instance: "synthetic:local",
+        integration_id: "7c9e1a20-0000-4000-8000-000000000001",
+      },
+    ]);
+    const response = await POST(request({ "x-cron-secret": SECRET }));
+    expect(response.status).toBe(503);
   });
 });
