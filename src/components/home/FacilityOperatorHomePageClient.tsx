@@ -29,6 +29,7 @@ import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
 import { ClearedRow, OnTapRow } from "./OnTapRow";
 import { PresenceTiles } from "./PresenceTiles";
 import { QuickActions } from "./QuickActions";
+import { RecordPaymentDialog } from "./RecordPaymentDialog";
 
 export type FacilityOperatorHomePageClientProps = {
   initial: HomeInitialData;
@@ -65,6 +66,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   const facilityId = initialFacilityId;
   const [error, setError] = useState<string | null>(null);
   const [busyRow, setBusyRow] = useState<string | null>(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
   const supabase = () => (supabaseRef.current ??= createClient());
@@ -176,7 +178,10 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
         ) : null}
       </header>
 
-      <QuickActions facilityId={facilityId} />
+      <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => { if (key === "record_payment") setPaymentOpen(true); }} />
+      {data.releasedModules.includes("record_payment") ? (
+        <RecordPaymentDialog open={paymentOpen} onOpenChange={setPaymentOpen} facilityId={facilityId} localDate={feed.localDate} onRecorded={refresh} />
+      ) : null}
 
       <GlanceStrip
         counts={ranked.counts}

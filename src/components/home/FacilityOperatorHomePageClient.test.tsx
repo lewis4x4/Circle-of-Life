@@ -63,6 +63,7 @@ function initial(overrides: Partial<HomeInitialData> = {}): HomeInitialData {
     rounding: { available: true, missedToday: 1, openEscalations: 0, lastEntryAt: "2026-09-22T13:04:00Z", lastEntryBy: "Taylor" },
     facilityOptions: [{ id: FACILITY, name: "Sample Lodge" }],
     census: null,
+    releasedModules: [],
     ...overrides,
   };
 }
@@ -161,6 +162,24 @@ describe("FacilityOperatorHomePageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith("home_claim_task", { p_instance_id: "gen", p_claim: true }));
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+  });
+
+  it("keeps Record payment dark until it is released for this facility, then opens it (COL-594)", () => {
+    const { unmount } = render(
+      <FacilityOperatorHomePageClient initial={initial()} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    expect(screen.getByRole("button", { name: /Record payment/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Record payment/ })).toHaveTextContent("Week 2");
+    unmount();
+    render(
+      <FacilityOperatorHomePageClient initial={initial({ releasedModules: ["record_payment"] })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    const live = screen.getByTestId("quick-action-record_payment");
+    expect(live).toBeEnabled();
+    expect(live).not.toHaveTextContent("Week 2");
+    expect(screen.getByRole("button", { name: /Quick note/ })).toBeDisabled();
+    fireEvent.click(live);
+    expect(screen.getByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
   });
 
   it("renders the weekend empty state with no queue rows", () => {
