@@ -11,7 +11,8 @@
 --     the dual-sign rules are exactly the ones the completion route already uses.
 --     If the completion refuses, the escalation rolls back with it.
 --   * home_escalations_for_executive: also returns rows escalated as did_not_run
---     after they are completed, with the reason and the operator's note.
+--     after they are completed, with the reason and the operator's note, and
+--     links each row to its own task (COL-604's `instance` parameter).
 --
 -- The sweep only touches open rows at level 0, so it never escalates these a
 -- second time. No new tables. Rolls forward only; re-runnable.
@@ -86,7 +87,7 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = '' AS $$
       'note', CASE WHEN dnr.did_not_run THEN i.completion_notes END,
       'owner', CASE WHEN i.assigned_to IS NULL THEN jsonb_build_object('kind', 'queue')
                ELSE jsonb_build_object('kind', 'user', 'userId', i.assigned_to, 'displayName', p.full_name) END,
-      'href', '/admin/operations/work?facility_id=' || i.facility_id::text
+      'href', '/admin/operations/work?facility_id=' || i.facility_id::text || '&instance=' || i.id::text
     ) ORDER BY i.escalation_triggered_at DESC NULLS LAST, i.assigned_shift_date DESC), '[]'::jsonb)
   FROM public.operation_task_instances i
   CROSS JOIN LATERAL (
