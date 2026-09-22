@@ -1,0 +1,64 @@
+name: Auto-merge when green
+
+# `main` protection sets strict = true, so a pull request must be up to date
+# with main before it can merge, and enforce_admins = true, so --admin cannot
+# override it. With several sessions landing work, a branch that goes green
+# after a ~20 minute gate run is usually behind again by the time anyone tries
+# to merge it — the merge is refused, the branch is updated, and the gates run
+# from the top. On 2026-09-21 a single one-file fixture change took four of
+# those cycles to land (COL-515).
+#
+# Auto-merge is the mechanism GitHub provides for exactly this: it waits for
+# the required checks, updates the head branch when main moves, and merges the
+# moment the branch is both green and current. It has to be switched on per
+# pull request, though, which means remembering — so this turns it on.
+#
+# It does not merge anything that could not already be merged by hand: branch
+# protection still decides. It only removes the waiting.
+#
+# Opting out:
+#   - open the pull request as a draft, or
+#   - add the `no-auto-merge` label (before or after opening — removing and
+#     re-adding a different label re-triggers this job, and auto-merge can also
+#     be cancelled from the merge box at any time).
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, labeled, unlabeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable:
+    name: Enable auto-merge
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.base.ref == 'main' &&
+      !contains(github.event.pull_request.labels.*.name, 'no-auto-merge')
+    steps:
+      - name: Turn on auto-merge for this pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Already merged or closed between the event and this step.
+          state="$(gh pr view "$PR" --repo "$REPO" --json state --jq .state)"
+          if [ "$state" != "OPEN" ]; then
+            echo "[auto-merge] PR #$PR is $state — nothing to do"
+            exit 0
+          fi
+          if gh pr merge "$PR" --repo "$REPO" --squash --auto; then
+            echo "[auto-merge] armed for PR #$PR — it will merge once required checks pass and it is up to date with main"
+            exit 0
+          fi
+          # A pull request that is already mergeable has nothing to queue, and
+          # GitHub rejects --auto for it. That is not a failure.
+          echo "[auto-merge] could not arm auto-merge for PR #$PR."
+          echo "[auto-merge] This job never blocks a pull request: merge it by hand if this was unexpected."
+          exit 0
