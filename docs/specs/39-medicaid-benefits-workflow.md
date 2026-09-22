@@ -10,7 +10,7 @@ A persistent benefits case starts for an existing resident or admission and surv
 
 P0: current session/facility authority, explicit financial access grants, no direct anonymous data access, optimistic revision and idempotent commands, append-only history, private verified uploads/downloads, requirements and source-specific review, separate agency milestones, submission manifests and receipts, staff queue, resident/admission navigation, reviewed billing handoff, renewals and exceptions. P0 includes honest unknown/error/empty states. No automatic notices, resident admission, payer changes, retroactive dates or agency approval.
 
-P1: scoped family upload collection using existing family financial/decision authority; generated case cover sheet and reviewed packet export; exact form/template version tracking with manual signed-document return when provider configuration is unavailable. Existing BoldSign only for configured exact approved templates; default-template fallback must not send Medicaid releases.
+P1: scoped family upload collection using existing family financial/decision authority; generated case cover sheet and reviewed packet export; exact form/template version tracking with manual signed-document return when provider configuration is unavailable. E-signature: Haven has no BoldSign (or other) e-signature integration today, so signed documents come back as manual signed-document returns with `signature_status` reviewed and `signed_on` recorded by the reviewer; if an e-signature provider is ever configured, it may only send exact approved Medicaid templates, never a default template.
 
 AI extraction is optional and remains under the existing parser's provider/BAA policy. Manual classified input is fully supported; AI may not decide eligibility, sign, issue notices or change finances.
 
@@ -31,7 +31,7 @@ Owner/org admin may administer explicit benefits access for current staff with f
 - GET/POST /api/admin/benefits/access: owner administration, current facility staff only, expiry/revocation, no proxy approvers.
 - GET /api/admin/benefits/options: authorized facilities, residents and allowed assignees; queryable bounded resident selection.
 
-All routes require current authenticated actor, deny stale/disabled/password-change actors, return 400 invalid, 401 session, 403 role, 404 unavailable subject, 409 conflict, 503 unverified dependency. Lists/downloads are no-store. The database RPC repeats authority and subject checks; a service key does not supply staff identity for mutations.
+All routes require current authenticated actor, deny stale/disabled/password-change actors, return 400 invalid, 401 session, 403 role (from the session layer), 404 unavailable subject, 409 conflict, 503 unverified dependency. Deliberately, a missing benefits grant and an unknown case both answer 404 at the RPC layer so that case identifiers cannot be enumerated by an ungranted staff account; the UI distinguishes "no access" from "no cases" with its own copy. Lists/downloads are no-store. The database RPC repeats authority and subject checks; a service key does not supply staff identity for mutations.
 
 ## Data and invariants
 
@@ -51,7 +51,7 @@ Routes /admin/benefits and /admin/benefits/[id]. Shared Haven UI primitives; lap
 
 ## Rollout, verification and recovery
 
-Additive backward-compatible migration; existing admission Medicaid selector remains untouched until case migration is reviewed. No automatic migration of stage='approved' into approved evidence. Rollback disables new routes and revokes write RPCs while retaining case evidence; destructive DROP is not a production rollback. A down script may drop only an empty disposable verification database, never live evidence.
+Additive backward-compatible migration; the existing admission Medicaid selector (`admission_cases.medicaid_pipeline_stage`) remains untouched: production held zero admission cases on 2026-09-22, so there is nothing to migrate, and existing Medicaid residents enter through the queue's "Medicaid residents without a benefits case" list instead. Rollback = `scripts/benefits/rollback-write-rpcs.sql` (revokes the public write wrappers, keeps every table, bucket and history); destructive DROP is not a production rollback. A down script may drop only an empty disposable verification database, never live evidence.
 
 Verify SQL current-authority/grant revocation/cross-facility references/direct API bypass, optimistic concurrency and payload-bound replay; API malformed body/upload checks; UI happy/error/empty paths; real local browser sequence and a11y; segment gates; PR required CI; post-merge CI; production migration ledger and exact revision; hosted role/scoped smoke. Technical release is separate from Jessica/provider acceptance. Do not send resident data to third parties during synthetic verification.
 
@@ -82,4 +82,5 @@ Also from the review: the queue orders by due date (undated last) with a keyset 
 - 2026-09-21: isolated current-main worktree created; COL-504 active; architecture and existing access boundaries inspected.
 - 2026-09-22 00:39 UTC: shipped — PR #644 (`39a1a67a`), migrations 445/446 on staging and production, hosted 59-step smoke on staging, COL-504 Done.
 - 2026-09-22 02:17 UTC: review hardening — PR #649 (`6592c174`), migration 449: bounded lists, closed-case immutability, signature review, granted assignees; COL-539 Done.
+- 2026-09-22: review findings — migration 452: reviewed funding is a review fact; notice events need review + the notice document; requirements gain `expired` and `signed_on`; misfiled documents can be voided once with a reason; queue filters by assignee and flags assignees who lost authority; family collection stops for discharged/deceased residents.
 - 2026-09-22: quality review follow-up — migration 451: operating rules, due-date queue with flags, rebind for moved residents, evidence-access audit, Medicaid residents without a case.

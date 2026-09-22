@@ -212,6 +212,7 @@ export function BenefitsAccess() {
                         Revoke access
                       </summary>
                       <ActionForm
+                        bare
                         title={`Revoke ${grant.user_name}’s benefits access`}
                         fields={[
                           {

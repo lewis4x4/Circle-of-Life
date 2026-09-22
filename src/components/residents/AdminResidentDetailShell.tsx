@@ -224,7 +224,9 @@ export function AdminResidentDetailShell({
 
       <div className="w-full shrink-0">
         <ResidentDetailTabStrip hrefs={hrefs} active={activeTab} />
-        <Link href={`/admin/benefits?resident_id=${encodeURIComponent(residentId)}`} className="inline-flex min-h-11 items-center text-sm underline">Medicaid &amp; Benefits cases</Link>
+        <div className="mt-2">
+          <Link href={`/admin/benefits?resident_id=${encodeURIComponent(residentId)}`} className={buttonVariants({ variant: "outline", size: "sm", className: "min-h-11" })}>Medicaid &amp; Benefits cases</Link>
+        </div>
       </div>
 
       <div className="min-w-0">{children}</div>

@@ -103,7 +103,7 @@ SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('update_case','{"status":"open"
 SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('update_case','{"funding":{"notes":"Edited while closed"}}')$q$,'22023');
 SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('record_event','{"agency":"other","event_type":"note","outcome":"note","occurred_on":"2026-09-21"}')$q$,'22023');
 SELECT pg_temp.bcommand('update_case','{"status":"open"}');
-SELECT pg_temp.bcommand('upsert_requirement',(SELECT jsonb_build_object('id',value->>'id','title',value->>'title','stage',value->>'stage','status','received','signature_status','verified','document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload'),'review_reason','Synthetic signature verified') FROM jsonb_array_elements(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)->'requirements') WHERE value->>'signature_status'='pending' LIMIT 1));
+SELECT pg_temp.bcommand('upsert_requirement',(SELECT jsonb_build_object('id',value->>'id','title',value->>'title','stage',value->>'stage','status','received','signature_status','verified','signed_on','2026-09-20','document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload'),'review_reason','Synthetic signature verified') FROM jsonb_array_elements(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)->'requirements') WHERE value->>'signature_status'='pending' LIMIT 1));
 SELECT pg_temp.bassert((SELECT count(*) FROM jsonb_array_elements(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)->'requirements') WHERE value->>'signature_status'='verified' AND value->>'reviewed_by' IS NOT NULL)=1,'verified signature not stamped by reviewer');
 SELECT public.benefits_access_set(jsonb_build_object('facility_id',site,'user_id',(SELECT id FROM ba WHERE role='manager'),'can_write',true,'can_review',false,'expires_at',now()+interval '1 day','revoked',true,'reason','Synthetic revocation')) FROM bf;
 RESET ROLE; SELECT pg_temp.blogin('manager'); SET LOCAL ROLE authenticated;
@@ -133,6 +133,31 @@ SELECT public.benefits_document_access((SELECT reply->>'case_id' FROM br WHERE l
 SELECT pg_temp.bassert((SELECT count(*) FROM jsonb_array_elements(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)->'history') WHERE value->>'action'='document_download')=1,'download not recorded');
 RESET ROLE; SELECT pg_temp.blogin('manager'); SET LOCAL ROLE authenticated;
 SELECT pg_temp.berror($q$SELECT public.benefits_rule_set('{"rule_key":"renewal.warning_days","value":30,"effective_from":"2099-01-01","reason":"not mine to set"}')$q$,'42501');
+RESET ROLE;
+-- Review findings (452): reviewed funding cannot be rewritten by a write-only grantee; notices need evidence; expired + signed_on; void; assignee filter.
+SELECT pg_temp.blogin('owner'); SET LOCAL ROLE authenticated;
+SELECT public.benefits_access_set(jsonb_build_object('facility_id',site,'user_id',(SELECT id FROM ba WHERE role='manager'),'can_write',true,'can_review',false,'expires_at',now()+interval '1 day','reason','Synthetic re-grant for 453')) FROM bf;
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('record_event',jsonb_build_object('agency','other','event_type','notice_review','outcome','45-day notice considered','occurred_on','2026-09-21'))$q$,'22023');
+SELECT pg_temp.bcommand('record_event',jsonb_build_object('agency','other','event_type','notice_review','outcome','45-day notice considered','occurred_on','2026-09-21','document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload')));
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('upsert_requirement',jsonb_build_object('id',(SELECT reply->>'record_id' FROM br WHERE label='requirement'),'title','Bank statement','stage','application','status','accepted','signature_status','verified','document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload')))$q$,'22023');
+RESET ROLE; SELECT pg_temp.blogin('manager'); SET LOCAL ROLE authenticated;
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('update_case','{"funding":{"notes":"write-only rewrite of reviewed funding"}}')$q$,'42501');
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('record_event',jsonb_build_object('agency','other','event_type','notice_review','outcome','x','occurred_on','2026-09-21','document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload')))$q$,'42501');
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('upsert_requirement',jsonb_build_object('id',(SELECT reply->>'record_id' FROM br WHERE label='requirement'),'title','Bank statement','stage','application','status','expired','signature_status','not_required'))$q$,'42501');
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('void_document',jsonb_build_object('document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload'),'reason','wrong resident'))$q$,'42501');
+SELECT pg_temp.bassert(jsonb_array_length(public.benefits_case_list(jsonb_build_object('assigned_to',(SELECT id FROM ba WHERE role='manager')))->'cases')=1,'assignee filter missed the assigned case');
+SELECT pg_temp.bassert(jsonb_array_length(public.benefits_case_list(jsonb_build_object('assigned_to',(SELECT id FROM ba WHERE role='nurse')))->'cases')=0,'assignee filter leaked');
+RESET ROLE; SELECT pg_temp.blogin('owner'); SET LOCAL ROLE authenticated;
+SELECT pg_temp.bcommand('upsert_requirement',jsonb_build_object('id',(SELECT reply->>'record_id' FROM br WHERE label='requirement'),'title','Bank statement','stage','application','status','expired','signature_status','not_required','review_reason','Statements older than three months'));
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('record_submission',jsonb_build_object('stage','application','destination','Synthetic agency','method','portal','sent_at',now(),'document_ids',jsonb_build_array((SELECT reply#>>'{document,id}' FROM br WHERE label='upload'))))$q$,'22023');
+SELECT pg_temp.bcommand('void_document',jsonb_build_object('document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload'),'reason','Uploaded to the wrong resident'));
+SELECT pg_temp.bassert((SELECT count(*) FROM jsonb_array_elements(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)->'documents') WHERE value->>'voided_at' IS NOT NULL AND value->>'void_reason'='Uploaded to the wrong resident')=1,'void not recorded');
+SELECT pg_temp.bassert((SELECT value->>'document_id' IS NULL AND value->>'status' IN ('missing','expired') FROM jsonb_array_elements(public.benefits_case_detail((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid)->'requirements') WHERE value->>'id'=(SELECT reply->>'record_id' FROM br WHERE label='requirement')),'voided evidence still attached to a requirement');
+SELECT pg_temp.berror($q$SELECT pg_temp.bcommand('void_document',jsonb_build_object('document_id',(SELECT reply#>>'{document,id}' FROM br WHERE label='upload'),'reason','twice'))$q$,'22023');
+SELECT pg_temp.berror($q$SELECT public.benefits_document_access((SELECT reply->>'case_id' FROM br WHERE label='case')::uuid,(SELECT reply#>>'{document,id}' FROM br WHERE label='upload')::uuid,'download')$q$,'42501');
+SELECT pg_temp.bassert((SELECT value->>'assignee_active'='true' FROM jsonb_array_elements(public.benefits_case_list()->'cases') LIMIT 1),'assignee authority not reported');
+SELECT public.benefits_access_set(jsonb_build_object('facility_id',site,'user_id',(SELECT id FROM ba WHERE role='manager'),'can_write',true,'can_review',false,'expires_at',now()+interval '1 day','revoked',true,'reason','Synthetic revocation for 453')) FROM bf;
+SELECT pg_temp.bassert((SELECT value->>'assignee_active'='false' FROM jsonb_array_elements(public.benefits_case_list()->'cases') LIMIT 1),'lost assignee authority not flagged');
 RESET ROLE;
 -- A moved resident: the case stays readable and flagged, cannot be written, and a reviewed rebind follows the resident.
 UPDATE public.residents SET facility_id=(SELECT other_site FROM bf) WHERE id=(SELECT resident FROM bf);

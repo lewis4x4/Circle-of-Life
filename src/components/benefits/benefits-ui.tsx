@@ -1,4 +1,5 @@
 "use client";
+import type React from "react";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -40,12 +41,12 @@ export const fieldClass =
 export function label(value: string) {
   return value.replace(/_/g, " ").replace(/^./, (s) => s.toUpperCase());
 }
+const dateOnly = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+/** Calendar dates read as "Sep 21, 2026"; timestamps read in Eastern time. Renewal work spans years, so the year always shows. */
 export function dateLabel(value: string | null | undefined) {
-  return !value
-    ? "Not recorded"
-    : /^\d{4}-\d{2}-\d{2}$/.test(value)
-      ? value
-      : `${formatFacilityTimestampEt(value)} ET`;
+  if (!value) return "Not recorded";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return dateOnly.format(new Date(value + "T00:00:00Z"));
+  return `${formatFacilityTimestampEt(value)} ET`;
 }
 export class BenefitsRequestError extends Error {
   constructor(
@@ -193,6 +194,7 @@ export function ActionForm({
   onSubmit,
   disabled,
   description,
+  bare = false,
 }: {
   title: string;
   fields: Field[];
@@ -203,6 +205,8 @@ export function ActionForm({
   ) => Promise<void>;
   disabled?: boolean;
   description?: string;
+  /** Render without the Card wrapper when the form already sits inside a Panel or details block (no nested cards). */
+  bare?: boolean;
 }) {
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -230,8 +234,9 @@ export function ActionForm({
     );
   }, [sourceValues]);
   const request = useRef<{ fingerprint: string; id: string } | null>(null);
+  const Wrapper = bare ? BareSection : Panel;
   return (
-    <Panel title={title} description={description}>
+    <Wrapper title={title} description={description}>
       <form
         className="space-y-4"
         onSubmit={async (event) => {
@@ -305,6 +310,17 @@ export function ActionForm({
           {busy ? "Saving…" : submitLabel}
         </Button>
       </form>
-    </Panel>
+    </Wrapper>
+  );
+}
+function BareSection({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3" aria-label={title}>
+      <div>
+        <p className="font-medium">{title}</p>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+      </div>
+      {children}
+    </section>
   );
 }

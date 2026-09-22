@@ -480,6 +480,7 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 | 36 | `ai-C-family-risk.md` | Family Relationship Health | `family_engagement_signals`, `family_risk_scores` — **blocked on BAA or de-ID pipeline**. |
 | 37 | `ai-D-placement-optimizer.md` | Portfolio Placement Optimizer | `placement_constraints`, `placement_recommendations`; OR solver over census + staffing + payer mix. |
 | 38 | `26-ambient-intelligence.md` | Ambient Environment Intelligence | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
+| 39 | `39-medicaid-benefits-workflow.md` | Medicaid & Benefits case workflow (COL-504/539/549) | `benefits_cases`, `benefits_requirements`, `benefits_documents` (private bucket), `benefits_events`, `benefits_submissions`, `benefits_receipts`, `benefits_history`, `benefits_requests`, `benefits_access_grants`, `benefits_collection_requests`, `benefits_rules`; migrations 445/446/449/451+. Operating rules are effective-dated rows, never code constants. |
 
 ---
 

@@ -261,6 +261,45 @@ try {
     await admin.from("residents").update({ facility_id: FACILITY, bed_id: heldBed }).eq("id", RESIDENT);
   }
 
+  // ---- review findings (453): assignee filter, expired evidence, void, notice evidence, reviewed-funding guard, resume
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/options?facility_id=${FACILITY}`); body = await json(res);
+  assert(res.status() === 200 && body.actor_id === owner.id, "owner: options carry the actor id for 'assigned to me'", body.actor_id);
+  res = await command(o.api, "update_case", { assigned_to: owner.id }, revision); body = await json(res);
+  assert(res.status() === 200, "owner: case assigned to owner", { status: res.status(), body }); if (res.status() === 200) revision = body.revision;
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/cases?facility_id=${FACILITY}&assigned_to=${owner.id}`); body = await json(res);
+  assert(res.status() === 200 && body.cases?.length === 1 && body.cases[0].id === caseId && body.cases[0].assignee_active === true, "owner: 'assigned to me' filter returns the assigned case with active authority", { count: body.cases?.length, active: body.cases?.[0]?.assignee_active });
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/cases?facility_id=${FACILITY}&assigned_to=${nurse.id}`); body = await json(res);
+  assert(res.status() === 200 && body.cases?.length === 0, "owner: assignee filter excludes other people's cases", body.cases?.length);
+  res = await command(o.api, "record_event", { agency: "other", event_type: "notice_review", outcome: "45-day notice considered", occurred_on: "2026-09-18" }, revision);
+  assert(res.status() === 400, "owner: notice event without the notice document refused", res.status());
+  res = await command(o.api, "record_event", { agency: "other", event_type: "notice_review", outcome: "45-day notice considered", occurred_on: "2026-09-18", document_id: documentId }, revision); body = await json(res);
+  assert(res.status() === 200, "owner: notice event recorded against the notice document", { status: res.status(), body }); if (res.status() === 200) revision = body.revision;
+  res = await command(o.api, "upsert_requirement", { id: bankReq.id, title: bankReq.title, stage: "application", status: "accepted", document_id: documentId, review_reason: "verify with a signed date", signature_status: "verified" }, revision);
+  assert(res.status() === 400, "owner: verified signature without signed_on refused", res.status());
+  res = await command(o.api, "upsert_requirement", { id: bankReq.id, title: bankReq.title, stage: "application", status: "expired", review_reason: "Statements older than three months", signature_status: "not_required" }, revision); body = await json(res);
+  assert(res.status() === 200, "owner: requirement marked expired", { status: res.status(), body }); if (res.status() === 200) revision = body.revision;
+  res = await command(o.api, "record_submission", { stage: "application", destination: "DCF ACCESS (fax)", method: "fax", sent_at: new Date().toISOString(), document_ids: [documentId] }, revision);
+  assert(res.status() === 409 || res.status() === 400, "owner: submission refused while a stage requirement is expired", res.status());
+  res = await command(o.api, "void_document", { document_id: bigDoc, reason: "Uploaded to the wrong resident" }, revision); body = await json(res);
+  assert(res.status() === 200, "owner: misfiled document voided", { status: res.status(), body }); if (res.status() === 200) revision = body.revision;
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}/documents/${bigDoc}`);
+  assert(res.status() === 404, "owner: voided document no longer downloadable", res.status());
+  res = await o.api.get(`${baseUrl}/api/admin/benefits/cases/${caseId}`); detail = await json(res);
+  assert(detail.documents?.find((d) => d.id === bigDoc)?.void_reason === "Uploaded to the wrong resident" && detail.requirements?.find((r) => r.id === bankReq.id)?.assignee_name !== undefined, "owner: detail shows the void reason and requirement assignee names", { void: detail.documents?.find((d) => d.id === bigDoc)?.void_reason });
+  // resume a reserved upload with the same original file after "losing" browser state
+  const lostBytes = pngBytes(randomBytes(32)); const lostSha = createHash("sha256").update(lostBytes).digest("hex");
+  res = await post(o.api, `/api/admin/benefits/cases/${caseId}/documents`, { filename: `lost-${run}.png`, mime_type: "image/png", size_bytes: lostBytes.length, sha256: lostSha, document_type: "bank_statement", expected_revision: revision, request_id: randomUUID() }); body = await json(res);
+  assert(res.status() === 200 && body.document?.status === "reserved", "owner: reservation left unfinished", { status: res.status() });
+  const lostDoc = body.document?.id; if (body.document?.storage_path) createdDocuments.push(body.document.storage_path); revision = body.revision ?? revision;
+  res = await post(o.api, `/api/admin/benefits/cases/${caseId}/documents`, { filename: `lost-${run}.png`, mime_type: "image/png", size_bytes: lostBytes.length, sha256: "0".repeat(64), document_type: "bank_statement", expected_revision: revision, request_id: randomUUID(), resume_document_id: lostDoc });
+  assert(res.status() === 409, "owner: resume with a different file refused", res.status());
+  res = await post(o.api, `/api/admin/benefits/cases/${caseId}/documents`, { filename: `lost-${run}.png`, mime_type: "image/png", size_bytes: lostBytes.length, sha256: lostSha, document_type: "bank_statement", expected_revision: revision, request_id: randomUUID(), resume_document_id: lostDoc }); body = await json(res);
+  assert(res.status() === 200 && body.document?.id === lostDoc && body.upload?.token, "owner: resume returns the same document with a fresh upload link", { status: res.status(), same: body.document?.id === lostDoc });
+  const resumed = await anon.storage.from("benefits-documents").uploadToSignedUrl(body.upload.path, body.upload.token, lostBytes, { contentType: "image/png" });
+  assert(!resumed.error, "owner: resumed bytes uploaded", resumed.error?.message);
+  res = await post(o.api, `/api/admin/benefits/cases/${caseId}/documents/${lostDoc}/finalize`, { expected_revision: revision, request_id: randomUUID() }); body = await json(res);
+  assert(res.status() === 200 && body.document?.status === "ready", "owner: resumed upload finalized", { status: res.status() }); if (res.status() === 200) revision = body.revision;
+
   // ---- owner UI captures
   for (const [width, label] of [[1440, "1440"], [390, "390"]]) {
     await o.page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
@@ -320,6 +359,9 @@ try {
   revision = detail.case.revision;
   res = await command(n.api, "upsert_requirement", { id: signReq.id, title: signReq.title, stage: "application", status: "accepted", document_id: familyDoc, review_reason: "nurse trying to accept", signature_status: "verified" }, revision);
   assert(res.status() === 403 || res.status() === 404 || res.status() === 409, "nurse with write-only grant: acceptance refused", res.status());
+  res = await command(n.api, "update_case", { funding: { notes: "write-only rewrite" } }, revision);
+  assert(res.status() === 200, "nurse with write-only grant: unreviewed funding notes may be edited", res.status());
+  if (res.status() === 200) { body = await json(res); revision = body.revision; }
   res = await n.api.get(`${baseUrl}/api/admin/benefits/cases?facility_id=${OTHER_FACILITY}`); body = await json(res);
   assert(res.status() !== 200 || (body.cases?.length ?? 0) === 0, "nurse: other facility queue not visible", { status: res.status(), cases: body.cases?.length });
   // revoke and re-check
