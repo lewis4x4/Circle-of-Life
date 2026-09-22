@@ -3,7 +3,7 @@
  *
  * The overview used to name fourteen gaps and link every one of them back to
  * itself. Each gap now opens an editor that writes through
- * `public.resident_record_field_save` (migration 460). That function — not this
+ * `public.resident_record_field_save` (migration 461). That function — not this
  * file — decides who may record what: it applies the intake flow's own reviewer
  * rule, so nothing here restates a role list. The UI asks
  * `resident_record_field_sources` whether the caller may edit, and where each
@@ -107,7 +107,7 @@ export const CODE_STATUS_OPTIONS: SelectOption[] = [
   { value: "comfort_care", label: "Comfort care only" },
 ];
 
-/** Mirrors the `residents.feeding_tube` CHECK in migration 460. */
+/** Mirrors the `residents.feeding_tube` CHECK in migration 461. */
 export const FEEDING_TUBE_OPTIONS: SelectOption[] = [
   { value: "none", label: "No feeding tube" },
   { value: "g_tube", label: "G-tube" },
