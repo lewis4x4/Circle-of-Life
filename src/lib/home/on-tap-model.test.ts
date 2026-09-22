@@ -5,6 +5,8 @@ import type { HomeOnTapPayload, HomeOnTapRow } from "@/lib/home/on-tap";
 import {
   actionsFor,
   buildFyiRows,
+  censusClearedRow,
+  censusCountsMeta,
   coOperatorLine,
   dueBeforeYouLeaveCount,
   dueLabelFor,
@@ -13,7 +15,9 @@ import {
   rankOnTap,
   scheduleMeta,
   titleFor,
+  toCensusRowView,
 } from "./on-tap-model";
+import { parseHomeCensusOnTap, type HomeCensusOnTap } from "./census";
 import { parseHomeOnTapPayload } from "./on-tap";
 
 const NY = "America/New_York";
@@ -154,5 +158,69 @@ describe("payload validation", () => {
   it("refuses a payload that is not the feed", () => {
     expect(() => parseHomeOnTapPayload({ rows: [] })).toThrow(/unexpected payload/);
     expect(parseHomeOnTapPayload(feed()).facilityName).toBe("Sample Lodge");
+  });
+});
+
+describe("monthly census on tap (COL-569)", () => {
+  const due: HomeCensusOnTap = {
+    due: true,
+    censusMonth: "2026-09-01",
+    firstBusinessDay: "2026-10-01",
+    status: "open",
+    canRecord: true,
+    snapshot: { daysInMonth: 30, daysLogged: 28, averageOccupied: 46.2, monthEndOccupied: 47, rosterCensus: 48 },
+    confirmed: null,
+    lastFlag: null,
+  };
+
+  it("adds no row when the database says it is not the first business day", () => {
+    expect(toCensusRowView({ ...due, due: false, status: null, snapshot: null }, {})).toBeNull();
+    const ranked = rankOnTap({ feed: feed(), fyi: [], now: NOW, currentUserId: "me", census: { ...due, due: false } });
+    expect(ranked.rows).toHaveLength(0);
+    expect(dueBeforeYouLeaveCount(ranked)).toBe(0);
+  });
+
+  it("ranks an open month as an assigned row with Confirm and Something wrong", () => {
+    const ranked = rankOnTap({ feed: feed(), fyi: [], now: NOW, currentUserId: "me", census: due });
+    expect(ranked.rows.map((r) => r.id)).toEqual(["census:2026-09-01"]);
+    const view = ranked.rows[0];
+    expect(view.title).toBe("Confirm census for September 2026");
+    expect(view.clearTarget).toBe("census:2026-09-01");
+    expect(view.actions.map((a) => a.key)).toEqual(["census_flag", "census_confirm"]);
+    expect(view.actions[0].requiresNote).toBe(true);
+    expect(view.meta).toContain("Confirming notifies Pat Example");
+    expect(dueBeforeYouLeaveCount(ranked)).toBe(1);
+  });
+
+  it("keeps a flagged month open and shows who flagged it", () => {
+    const view = toCensusRowView({ ...due, status: "flagged", lastFlag: { at: "2026-10-01T14:00:00Z", by: "Ada Operator", note: "Two move-outs not entered" } }, {});
+    expect(view?.meta).toContain("Ada flagged: Two move-outs not entered");
+    expect(view?.tags.map((t) => t.label)).toEqual(["Census", "Open"]);
+  });
+
+  it("moves a confirmed month to cleared and off the queue", () => {
+    const confirmed = { ...due, status: "confirmed" as const, confirmed: { at: "2026-10-01T14:05:00Z", by: "Ada Operator" } };
+    expect(toCensusRowView(confirmed, {})).toBeNull();
+    expect(censusClearedRow(confirmed)).toMatchObject({ title: "Confirm census for September 2026", by: "Ada Operator" });
+    const ranked = rankOnTap({ feed: feed(), fyi: [], now: NOW, currentUserId: "me", census: confirmed });
+    expect(ranked.counts.clearedToday).toBe(1);
+  });
+
+  it("offers no clearance to a caller who cannot attest", () => {
+    const view = toCensusRowView({ ...due, canRecord: false }, {});
+    expect(view?.actions).toEqual([]);
+    expect(view?.clearTarget).toBeNull();
+    expect(view?.disabledReason).toBe("Administrator or manager confirms");
+  });
+
+  it("formats counts only and parses the database payload", () => {
+    expect(censusCountsMeta(due.snapshot)).toBe("Roster 48 · Month-end 47 · Avg 46.2 · 28/30 days logged");
+    const parsed = parseHomeCensusOnTap({
+      due: true, censusMonth: "2026-09-01", firstBusinessDay: "2026-10-01", status: "open", canRecord: true,
+      snapshot: { daysInMonth: 30, daysLogged: 0, averageOccupied: null, rosterCensus: 12 },
+    });
+    expect(parsed).toMatchObject({ due: true, status: "open", canRecord: true, confirmed: null, lastFlag: null });
+    expect(parsed?.snapshot?.rosterCensus).toBe(12);
+    expect(parseHomeCensusOnTap({ nope: true })).toBeNull();
   });
 });

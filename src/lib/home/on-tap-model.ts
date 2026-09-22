@@ -1,4 +1,5 @@
 import type { AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
+import type { HomeCensusOnTap } from "@/lib/home/census";
 import type { HomeOnTapPayload, HomeOnTapRow } from "@/lib/home/on-tap";
 
 /**
@@ -14,7 +15,7 @@ export const HOME_VISIBLE_ROW_CAP = 7;
 const BUCKET_RANK: Record<HomeBucket, number> = { regulatory: 1, rent: 2, assigned: 3, fyi: 4 };
 
 export type HomeRowAction = {
-  key: "ran" | "did_not_run" | "done" | "open";
+  key: "ran" | "did_not_run" | "done" | "open" | "census_confirm" | "census_flag";
   label: string;
   tone: "primary" | "danger" | "quiet" | "default";
   requiresNote?: boolean;
@@ -35,6 +36,8 @@ export type HomeRowView = {
   href: string;
   /** Present only for operation task rows (never for FYI). */
   instanceId: string | null;
+  /** What the clearance actions write against: the task instance, or `census:<month>`. */
+  clearTarget: string | null;
   catalogKey: string | null;
   /** Later rows keep their date so the list can say when they open. */
   assignedShiftDate: string | null;
@@ -174,6 +177,7 @@ export function toRowView(row: HomeOnTapRow, args: { now: Date; timeZone: string
     actions: actionsFor(row),
     href: row.href,
     instanceId: row.instanceId,
+    clearTarget: row.instanceId,
     catalogKey: row.catalogKey ?? null,
     assignedShiftDate: row.assignedShiftDate,
   };
@@ -206,8 +210,82 @@ export function toFyiRowView(row: HomeFyiRow): HomeRowView {
     actions: [{ key: "open", label: row.ctaLabel, tone: "default", href: row.href }],
     href: row.href,
     instanceId: null,
+    clearTarget: null,
     catalogKey: null,
     assignedShiftDate: null,
+  };
+}
+
+export const CENSUS_CLEAR_PREFIX = "census:";
+
+/** "September 2026" for a census month stored as its first day. */
+export function censusMonthLabel(censusMonth: string): string {
+  const [y, m] = censusMonth.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, (m ?? 1) - 1, 1, 12)));
+}
+
+/** "Roster 48 · Month-end 47 · Avg 46.2 · 30/30 days logged" — counts only. */
+export function censusCountsMeta(snapshot: HomeCensusOnTap["snapshot"]): string | null {
+  if (!snapshot) return null;
+  const parts: string[] = [];
+  if (snapshot.rosterCensus != null) parts.push(`Roster ${snapshot.rosterCensus}`);
+  if (snapshot.monthEndOccupied != null) parts.push(`Month-end ${snapshot.monthEndOccupied}`);
+  if (snapshot.averageOccupied != null) parts.push(`Avg ${snapshot.averageOccupied}`);
+  if (snapshot.daysInMonth != null) parts.push(`${snapshot.daysLogged ?? 0}/${snapshot.daysInMonth} days logged`);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/**
+ * The monthly census row (COL-569). Present only on the facility's first
+ * business day while the month is not yet confirmed; "Something wrong" keeps it
+ * here with the note until someone confirms.
+ */
+export function toCensusRowView(census: HomeCensusOnTap | null | undefined, args: { executiveName?: string | null }): HomeRowView | null {
+  if (!census?.due || census.status === "confirmed") return null;
+  const meta = ["Before you leave"];
+  const counts = censusCountsMeta(census.snapshot);
+  if (counts) meta.push(counts);
+  if (census.status === "flagged" && census.lastFlag) {
+    const who = greetingFirstName(census.lastFlag.by) ?? "Someone";
+    meta.push(`${who} flagged: ${census.lastFlag.note ?? "something is wrong"}`);
+  }
+  meta.push(`Confirming notifies ${args.executiveName ?? "the Facility Executive"}`);
+  const tags: HomeRowView["tags"] = [{ label: "Census", tone: "assigned" }];
+  if (census.status === "flagged") tags.push({ label: "Open", tone: "overdue" });
+  const target = `${CENSUS_CLEAR_PREFIX}${census.censusMonth}`;
+  return {
+    id: target,
+    bucket: "assigned",
+    rank: BUCKET_RANK.assigned,
+    title: `Confirm census for ${censusMonthLabel(census.censusMonth)}`,
+    meta,
+    tags,
+    dueAt: null,
+    dueLabel: "Before you leave",
+    owner: null,
+    actions: census.canRecord
+      ? [
+          { key: "census_flag", label: "Something wrong", tone: "danger", requiresNote: true },
+          { key: "census_confirm", label: "Confirm", tone: "primary" },
+        ]
+      : [],
+    href: "/admin/residents",
+    instanceId: null,
+    clearTarget: census.canRecord ? target : null,
+    catalogKey: null,
+    assignedShiftDate: census.firstBusinessDay || null,
+    ...(census.canRecord ? {} : { disabledReason: "Administrator or manager confirms" }),
+  };
+}
+
+/** The cleared line once the month is confirmed on its first business day. */
+export function censusClearedRow(census: HomeCensusOnTap | null | undefined): { title: string; confirmedAt: string; by: string | null; meta: string | null } | null {
+  if (!census?.due || census.status !== "confirmed" || !census.confirmed) return null;
+  return {
+    title: `Confirm census for ${censusMonthLabel(census.censusMonth)}`,
+    confirmedAt: census.confirmed.at,
+    by: census.confirmed.by,
+    meta: censusCountsMeta(census.snapshot),
   };
 }
 
@@ -296,6 +374,7 @@ export function rankOnTap(args: {
   now: Date;
   currentUserId: string | null;
   cap?: number;
+  census?: HomeCensusOnTap | null;
 }): RankedOnTap {
   const cap = args.cap ?? HOME_VISIBLE_ROW_CAP;
   const ctx = { now: args.now, timeZone: args.feed.timezone, localDate: args.feed.localDate, currentUserId: args.currentUserId };
@@ -303,6 +382,8 @@ export function rankOnTap(args: {
     ...args.feed.rows.map((row) => toRowView(row, ctx)),
     ...args.fyi.map(toFyiRowView),
   ];
+  const censusRow = toCensusRowView(args.census, { executiveName: args.feed.escalatesTo?.displayName ?? null });
+  if (censusRow) candidates.push(censusRow);
   candidates.sort((left, right) => {
     if (left.rank !== right.rank) return left.rank - right.rank;
     const leftDue = left.dueAt ? new Date(left.dueAt).getTime() : Number.POSITIVE_INFINITY;
@@ -319,9 +400,9 @@ export function rankOnTap(args: {
     counts: {
       regulatory: args.feed.counts.regulatory,
       rent: 0,
-      assigned: args.feed.counts.assigned,
+      assigned: args.feed.counts.assigned + (censusRow ? 1 : 0),
       fyi: args.fyi.length,
-      clearedToday: args.feed.counts.clearedToday,
+      clearedToday: args.feed.counts.clearedToday + (censusClearedRow(args.census) ? 1 : 0),
       later: later.length,
     },
   };

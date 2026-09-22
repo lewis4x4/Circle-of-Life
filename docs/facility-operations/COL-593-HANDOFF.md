@@ -25,12 +25,28 @@
   - App: `/admin` renders `FacilityOperatorHomePageClient` for `facility_admin` and
     `manager`; owners/org admins unchanged. Completion route accepts `outcome` and
     requires a note on `did_not_run`. Executive overview gains "Escalated to you".
+  - Census (COL-569, Cut 1 per Brian lock §9.5): migration `463_home_census_confirmation.sql`.
+    On the facility's first business day (Mon–Fri; no holiday calendar exists yet) Home
+    shows "Confirm census for {prior month}" with counts from `census_daily_log` and the
+    Stand Up roster. **Confirm** freezes a server-computed snapshot, stamps the actor and
+    the Facility Executive it notifies (executive overview "Monthly census" panel, same
+    in-app path as escalations); **Something wrong** requires a note and keeps it open.
+    Writes are `facility_admin` / `manager` only through `home_record_census` (definer;
+    browser DML revoked). Counts only.
+    Numbered 463 from `migrations:next` (460 is #670, 461–462 are #671); `migrations:check`
+    reports the 460–462 gap on this branch until those merge — renumber if they do not.
+  - Quick links (locked): Stand Up · Referrals · My facility · EMP · Report incident live;
+    Record payment (W2) · Call-out (W4) · Quick note (W3) week-badged and disabled.
+    Maintenance ticket dropped from the strip.
   - Ops: `scripts/operator-home/cron-schedules.sql` (Homewood scheduler daily, escalation
     sweep every 15 min); `scripts/operator-home/col-571-homewood-operator-profiles.sql`.
 - **Out of scope:** rent rows and Record payment (W2, COL-594), Quick note (W3, COL-595),
-  Call-out (W4, COL-596), maintenance ticket (COL-578), AHCA roster and census rows
-  (COL-570 / COL-569 have no form to open yet), push/email delivery of escalations
-  (COL-152), Undo on a cleared row (no reinstate exists for `completed`).
+  Call-out (W4, COL-596), maintenance ticket (COL-578), the AHCA roster row (COL-570),
+  push/email delivery of escalations and census notices (COL-152), Undo on a cleared row
+  (no reinstate exists for `completed`). Census gaps: an unconfirmed month does not carry
+  past the first business day or join the end-of-day sweep yet; facility holidays are
+  not modelled (`haven.first_business_day` is the seam); the bookkeeper is not notified
+  (no bookkeeper assignment exists — only `facility_executives`).
 
 ## Findings (production, 2026-09-22)
 
@@ -69,7 +85,11 @@
 - `npm run test`, `npm run lint`, `npm run typecheck` — see closeout.
 - `npm run migrations:verify:pg` on a native PG17 scratch cluster, including
   `supabase/tests/review_home_on_tap.sql` (RLS: A never reads B, caregiver refused,
-  weekend empty, night row hidden, claim/release, escalation once, executive-only read).
+  weekend empty, night row hidden, claim/release, escalation once, executive-only read)
+  and `supabase/tests/review_home_census_confirmation.sql` (first business day only,
+  weekend 1st and second business day empty, A never reads/writes B, caregiver and
+  org_admin refused, flag needs a note, confirm stamps actor + executive once, no direct
+  insert, executive-only notices).
 - `npm run segment:gates -- --segment "COL-593" --ui` — artifact under
   `test-results/agent-gates/`.
 - Playwright `tests/homewood-launch/11-operator-home-generator.spec.ts` (skips when no
@@ -78,3 +98,4 @@
 ## Commit
 
 - `feat(home): facility operator Home with the On-tap feed (COL-593, COL-571)`
+- `feat(home): monthly census confirmation on tap and locked quick links (COL-569, COL-593)`
