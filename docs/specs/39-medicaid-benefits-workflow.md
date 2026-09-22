@@ -55,14 +55,31 @@ Additive backward-compatible migration; existing admission Medicaid selector rem
 
 Verify SQL current-authority/grant revocation/cross-facility references/direct API bypass, optimistic concurrency and payload-bound replay; API malformed body/upload checks; UI happy/error/empty paths; real local browser sequence and a11y; segment gates; PR required CI; post-merge CI; production migration ledger and exact revision; hosted role/scoped smoke. Technical release is separate from Jessica/provider acceptance. Do not send resident data to third parties during synthetic verification.
 
+## Operating rules (COL-504 quality review, migration 451)
+
+No business value is fixed in code. `public.benefits_rules` holds effective-dated, append-only, organization-scoped rules an owner or org admin records with a reason under **Benefits access → Operating rules**; a change takes effect today or on a future date and never rewrites the past. Cases already open keep the requirements they were created with.
+
+| Rule | Meaning | Seeded value (source) |
+|---|---|---|
+| `checklist.smmc_ltc` / `checklist.oss` / `checklist.other` | Requirements seeded on a new case for that program | 18 items from Jessica's 2026-09-16 packet (also the built-in default for a new organization); OSS and other start empty |
+| `screening.standard_individual` | Review-aid income/asset limits shown beside saved screening facts; never an eligibility decision | DCF 2026 Appendix A-9 individual ICP/HCBS: $2,982 income, $2,000 assets, effective 2026-01-01 |
+| `family_collection.max_days` | Longest a family upload request stays open | 90 days |
+| `renewal.warning_days` | The queue flags a case this many days before its recorded renewal date | 60 days |
+
+Also from the review: the queue orders by due date (undated last) with a keyset cursor and flags overdue, due-soon, renewal-due, resident-moved and resident-departed cases; a case whose resident changed facilities stays readable and flagged and is moved by an explicit **rebind** requiring review authority on both facilities; every download or packet export of financial evidence is appended to the case history (`document_download`, `document_packet`) without moving the revision; residents who already carry a Medicaid payer but have no active case are listed on the queue so renewals for existing residents enter the workflow; reopening may state the next action in the same command.
+
 ## Decisions and open operational questions
 
 - Dedicated private benefits evidence storage prevents general-chart access leaking financial files; reuse the current byte validation and server download patterns.
 - Separate case lifetime from admission to cover existing private-pay residents, long review times and renewals.
 - Manual agency submission/confirmation is a supported complete workflow while APIs are unconfirmed. No invented integrations or silent successful delivery.
-- Exact current form acceptance/signature conventions, screening priority interpretation, financial-exposure approval policy, facility-specific packets, and Jessica's designated backup require attributable operating decisions before those particular automated actions are activated. Core case work remains available.
+- **Ruled 2026-09-22 (Brian):** the telephone assessment score is assigned by the agency assessors, not a Circle of Life rule of thumb; five or higher is the agency's own result that moves the resident forward, and Haven records it as the agency's reported outcome.
+- Still open: exact current form acceptance/signature conventions (undated ACCESS pages, signature image), financial-exposure approval policy for Medicaid-pending admissions, facility-specific master packets (only Grande Cypress supplied), and Jessica's designated backup. Questions sent to Jessica 2026-09-22. Core case work remains available.
 - Size: large, delivered through bounded independently verified changes; timing depends on CI, migration and hosted provider verification, not an invented hours estimate.
 
 ## Progress
 
-- 2026-09-21: isolated current-main worktree created; COL-504 active; architecture and existing access boundaries inspected. No feature release claimed.
+- 2026-09-21: isolated current-main worktree created; COL-504 active; architecture and existing access boundaries inspected.
+- 2026-09-22 00:39 UTC: shipped — PR #644 (`39a1a67a`), migrations 445/446 on staging and production, hosted 59-step smoke on staging, COL-504 Done.
+- 2026-09-22 02:17 UTC: review hardening — PR #649 (`6592c174`), migration 449: bounded lists, closed-case immutability, signature review, granted assignees; COL-539 Done.
+- 2026-09-22: quality review follow-up — migration 451: operating rules, due-date queue with flags, rebind for moved residents, evidence-access audit, Medicaid residents without a case.

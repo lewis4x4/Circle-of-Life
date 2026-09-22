@@ -4,7 +4,7 @@ import type { BenefitsDetail, BenefitsDocument } from "./contracts";
 import { MAX_PACKET_BYTES, buildBenefitsCoverPdf, buildBenefitsPacket, packetRequestSchema, selectPacketDocuments } from "./packet";
 import { POST } from "@/app/api/admin/benefits/cases/[id]/packet/route";
 
-const server = vi.hoisted(() => ({ requireBenefitsActor: vi.fn(), revalidateBenefitsActor: vi.fn(), loadBenefitsDetail: vi.fn(), getVerifiedBenefitsDocument: vi.fn() }));
+const server = vi.hoisted(() => ({ requireBenefitsActor: vi.fn(), revalidateBenefitsActor: vi.fn(), loadBenefitsDetail: vi.fn(), getVerifiedBenefitsDocument: vi.fn(), recordBenefitsDocumentAccess: vi.fn() }));
 vi.mock("@/lib/benefits/server", () => server);
 
 const caseId = "11111111-1111-4111-8111-111111111111";
@@ -151,6 +151,7 @@ describe("benefits packet route", () => {
   const request = () => new Request("https://haven.test/api/admin/benefits/cases/id/packet", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ document_ids: [docId], expected_revision: 4 }) });
   const context = { params: Promise.resolve({ id: caseId }) };
   beforeEach(() => {
+    server.recordBenefitsDocumentAccess.mockResolvedValue(null);
     vi.resetAllMocks();
     server.requireBenefitsActor.mockResolvedValue({ actor: { id: otherId } });
     server.revalidateBenefitsActor.mockResolvedValue({ actor: { id: otherId } });
@@ -158,7 +159,9 @@ describe("benefits packet route", () => {
     server.getVerifiedBenefitsDocument.mockResolvedValue({ bytes, document: fixture().documents[0] });
   });
   it("downloads a private archive after fresh actor and case checks", async () => {
+    server.recordBenefitsDocumentAccess.mockClear();
     const response = await POST(request(), context);
+    expect(server.recordBenefitsDocumentAccess).toHaveBeenCalledWith(expect.anything(), caseId, docId, "packet");
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("application/zip");
     expect(response.headers.get("cache-control")).toBe("private, no-store");

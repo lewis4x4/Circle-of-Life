@@ -42,4 +42,8 @@ ALTER TABLE public.benefits_access_history DISABLE TRIGGER benefits_immutable;
 DELETE FROM public.benefits_access_history WHERE grant_id IN (SELECT g.id FROM public.benefits_access_grants g JOIN public.user_profiles p ON p.id = g.user_id WHERE p.email LIKE 'col504-%@example.invalid');
 DELETE FROM public.benefits_access_grants g USING public.user_profiles p WHERE p.id = g.user_id AND p.email LIKE 'col504-%@example.invalid';
 ALTER TABLE public.benefits_access_history ENABLE TRIGGER benefits_immutable;
+-- Operating-rule rows recorded by the smoke carry a 'smoke ' reason prefix; retire them so staging rules stay meaningful.
+ALTER TABLE public.benefits_rules DISABLE TRIGGER benefits_immutable;
+DELETE FROM public.benefits_rules WHERE reason LIKE 'smoke %';
+ALTER TABLE public.benefits_rules ENABLE TRIGGER benefits_immutable;
 COMMIT;

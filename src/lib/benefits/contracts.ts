@@ -60,6 +60,23 @@ export const benefitsCommandSchema = z.discriminatedUnion("action", [
   z.object({ ...commandBase, action: z.literal("record_submission"), payload: benefitsSubmissionSchema }).strict(),
   z.object({ ...commandBase, action: z.literal("record_receipt"), payload: benefitsReceiptSchema }).strict(),
 ]);
+export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days"] as const;
+export type BenefitsRuleKey = typeof BENEFITS_RULE_KEYS[number];
+export const checklistRuleSchema = z.array(z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(BENEFITS_STAGES), signature_status: z.enum(["not_required", "pending"]).default("not_required") }).strict()).max(60);
+export const screeningStandardSchema = z.object({ income_cents: z.number().int().min(1).max(99_999_999), assets_cents: z.number().int().min(1).max(9_999_999_999), label: z.string().trim().min(1).max(200), source: z.string().max(500).optional() }).strict();
+export const dayWindowSchema = z.number().int().min(0).max(365);
+export const benefitsRuleSetSchema = z.discriminatedUnion("rule_key", [
+  z.object({ rule_key: z.literal("checklist.smmc_ltc"), value: checklistRuleSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("checklist.oss"), value: checklistRuleSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("checklist.other"), value: checklistRuleSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("screening.standard_individual"), value: screeningStandardSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("family_collection.max_days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("renewal.warning_days"), value: dayWindowSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+]);
+export interface BenefitsRuleRow { id: string; organization_id: string; rule_key: BenefitsRuleKey; value: unknown; effective_from: string; reason: string; created_by: string | null; created_at: string }
+export interface BenefitsRuleEntry { rule_key: BenefitsRuleKey; current: BenefitsRuleRow | null; value: unknown; scheduled: BenefitsRuleRow[]; history_count: number }
+export interface BenefitsRulesList { can_manage: boolean; as_of: string; rules: BenefitsRuleEntry[] }
+export type ScreeningStandard = z.infer<typeof screeningStandardSchema> & { effective_from: string | null };
 export const benefitsAccessSchema = z.object({ facility_id: uuid, user_id: uuid, can_write: z.boolean(), can_review: z.boolean(), expires_at: z.string().datetime({ offset: true }), revoked: z.boolean().default(false), reason: z.string().trim().min(1).max(2000) }).strict();
 export type BenefitsCommand = z.infer<typeof benefitsCommandSchema>;
 export type BenefitsScreening = z.infer<typeof benefitsScreeningSchema>;
@@ -67,7 +84,7 @@ export type BenefitsFunding = z.infer<typeof benefitsFundingSchema>;
 export type BenefitsProgram = typeof BENEFITS_PROGRAMS[number];
 export type BenefitsStatus = typeof BENEFITS_STATUSES[number];
 export interface BenefitsPermissions { can_write: boolean; can_review: boolean; can_manage_access: boolean }
-export interface BenefitsCase { id: string; organization_id: string; facility_id: string; resident_id: string; admission_case_id: string | null; program: BenefitsProgram; status: BenefitsStatus; revision: number; next_action: string | null; assigned_to: string | null; due_date: string | null; closure_reason: string | null; screening: BenefitsScreening; funding: BenefitsFunding; created_at: string; updated_at: string; created_by: string; resident_name: string; facility_name: string; assignee_name: string | null }
+export interface BenefitsCase { id: string; organization_id: string; facility_id: string; resident_id: string; admission_case_id: string | null; program: BenefitsProgram; status: BenefitsStatus; revision: number; next_action: string | null; assigned_to: string | null; due_date: string | null; closure_reason: string | null; screening: BenefitsScreening; funding: BenefitsFunding; created_at: string; updated_at: string; created_by: string; resident_name: string; facility_name: string; assignee_name: string | null; resident_status?: string | null; resident_facility_id?: string | null; resident_facility_name?: string | null; needs_rebind?: boolean; renewal_date?: string | null }
 export interface BenefitsRequirement extends z.infer<typeof benefitsRequirementSchema> { id: string; case_id: string; reviewed_by: string | null; reviewed_at: string | null; updated_at: string }
 export interface BenefitsDocument { id: string; case_id: string; filename: string; mime_type: string; size_bytes: number; sha256: string; storage_path: string; status: "reserved" | "ready"; document_type: string; template_version: string | null; created_at: string; created_by: string }
 export interface BenefitsEvent extends z.infer<typeof benefitsEventSchema> { id: string; case_id: string; created_at: string; created_by: string }
@@ -76,5 +93,6 @@ export interface BenefitsReceipt extends z.infer<typeof benefitsReceiptSchema> {
 export interface BenefitsAudit { id: string; case_id: string; action: string; payload: Record<string, unknown>; created_at: string; created_by: string; revision: number }
 export interface BenefitsDetail { case: BenefitsCase; permissions: BenefitsPermissions; requirements: BenefitsRequirement[]; documents: BenefitsDocument[]; events: BenefitsEvent[]; submissions: BenefitsSubmission[]; receipts: BenefitsReceipt[]; history: BenefitsAudit[]; history_has_more: boolean }
 export interface BenefitsCaseList { cases: BenefitsCase[]; next_cursor: string | null }
-export interface BenefitsOptions { facilities: Array<{id: string; name: string}>; residents: Array<{id: string; name: string; facility_id: string}>; assignees: Array<{id: string; name: string; facility_id: string}>; can_manage_access: boolean }
+export interface UncasedMedicaidResident { id: string; name: string; facility_id: string; payer_type: string; suggested_program: BenefitsProgram; medicaid_authorization_end: string | null }
+export interface BenefitsOptions { facilities: Array<{id: string; name: string}>; residents: Array<{id: string; name: string; facility_id: string}>; assignees: Array<{id: string; name: string; facility_id: string}>; can_manage_access: boolean; uncased_medicaid_residents?: UncasedMedicaidResident[] }
 export interface BenefitsAccessGrant { id: string; facility_id: string; user_id: string; can_write: boolean; can_review: boolean; expires_at: string; revoked_at: string | null; reason: string; granted_by: string; updated_at: string; user_name: string; facility_name: string }
