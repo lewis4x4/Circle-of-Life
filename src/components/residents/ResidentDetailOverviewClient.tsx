@@ -69,6 +69,10 @@ import {
   type ActivityFeedPeriodDays,
 } from "@/lib/residents/resident-activity-feed";
 import { presenceHistoryLines, presenceSinceSummary } from "@/lib/residents/resident-presence-history";
+import { dnhLabel, feedingTubeLabel, type ResidentRecordField } from "@/lib/residents/resident-record-edit";
+import { ResidentRecordFactDialog } from "@/components/residents/ResidentRecordFactDialog";
+import { ChangeBedAction } from "@/components/residents/ChangeBedAction";
+import { residentIntakeCreateHref } from "@/components/resident-intake/ResidentIntakeLinks";
 import {
   form1823TaskItems,
   incidentFollowupTaskItems,
@@ -214,7 +218,18 @@ export function buildTaskItems(
   return sortTaskItems(items);
 }
 
-type CompletenessItem = { id: string; label: string; href: string };
+/**
+ * Where a gap is closed. COL-597: every gap used to be an `href` to
+ * the v2 resident route — a re-export of this very page. A gap now either
+ * opens the in-place editor for its field, opens Change bed, or links to a
+ * different page that actually records it.
+ */
+export type GapAction =
+  | { kind: "editor"; field: ResidentRecordField }
+  | { kind: "bed" }
+  | { kind: "href"; href: string };
+
+type CompletenessItem = { id: string; label: string; action: GapAction };
 
 /** Items the record does not yet carry, each with where to record it. */
 export function buildRecordGaps(
@@ -229,24 +244,28 @@ export function buildRecordGaps(
     | "primaryPhysicianName"
     | "diagnosisRawList"
   >,
-  hrefs: { profileHref: string; carePlanHref: string; assessmentsHref: string },
+  hrefs: { carePlanHref: string; assessmentsHref: string },
   noUnitCopy: string,
 ): CompletenessItem[] {
   const gaps: CompletenessItem[] = [];
+  const editor = (field: ResidentRecordField): GapAction => ({ kind: "editor", field });
   if (acuityDisplay(detail.acuityLevel).level == null) {
-    gaps.push({ id: "acuity", label: "Acuity assessment", href: hrefs.assessmentsHref });
+    gaps.push({ id: "acuity", label: "Acuity assessment", action: { kind: "href", href: hrefs.assessmentsHref } });
   }
   const code = resolveCodeStatusPresentation(detail.codeStatusRaw);
   if (code.label === "Not on file") {
-    gaps.push({ id: "code", label: "Code status", href: hrefs.profileHref });
+    gaps.push({ id: "code", label: "Code status", action: editor("code_status") });
   } else if (!detail.codeStatusVerifiedAt) {
-    gaps.push({ id: "code-verify", label: "Code status verification", href: hrefs.profileHref });
+    gaps.push({ id: "code-verify", label: "Code status verification", action: editor("code_status") });
   }
-  if (!detail.allergyReviewedAt) gaps.push({ id: "allergy", label: "Allergy review", href: hrefs.profileHref });
-  if (detail.diagnosisRawList.length === 0) gaps.push({ id: "dx", label: "Diagnoses", href: hrefs.profileHref });
-  if (detail.carePlanVersion == null) gaps.push({ id: "plan", label: "Active care plan", href: hrefs.carePlanHref });
-  if (detail.unitName === noUnitCopy) gaps.push({ id: "unit", label: "Unit assignment", href: hrefs.profileHref });
-  if (!detail.primaryPhysicianName) gaps.push({ id: "pcp", label: "Primary care physician", href: hrefs.profileHref });
+  if (!detail.allergyReviewedAt) gaps.push({ id: "allergy", label: "Allergy review", action: editor("allergy_list") });
+  if (detail.diagnosisRawList.length === 0) gaps.push({ id: "dx", label: "Diagnoses", action: editor("diagnoses") });
+  if (detail.carePlanVersion == null) {
+    gaps.push({ id: "plan", label: "Active care plan", action: { kind: "href", href: hrefs.carePlanHref } });
+  }
+  // The unit is the bed's room's unit; the bed-assignment contract (migration 444) is its only writer.
+  if (detail.unitName === noUnitCopy) gaps.push({ id: "unit", label: "Unit assignment", action: { kind: "bed" } });
+  if (!detail.primaryPhysicianName) gaps.push({ id: "pcp", label: "Primary care physician", action: editor("primary_physician") });
   return gaps;
 }
 
@@ -335,6 +354,9 @@ export function ResidentDetailOverviewClient({
   );
   const [activityReloading, setActivityReloading] = useState(false);
   const [showAllTasks, setShowAllTasks] = useState(false);
+  // COL-597: the in-place editor for one field, and Change bed opened from the unit gap.
+  const [editorField, setEditorField] = useState<ResidentRecordField | null>(null);
+  const [bedGapOpen, setBedGapOpen] = useState(false);
   const benefitsTasks = useResidentBenefitsTasks(residentId);
 
   const hrefs = useMemo(() => residentHrefSet(residentId, workspace), [residentId, workspace]);
@@ -502,19 +524,28 @@ export function ResidentDetailOverviewClient({
   const carePlanAnnual =
     detail.carePlanAnnualDeltaDays != null ? classifyAnnualReview(detail.carePlanAnnualDeltaDays) : null;
 
-  const profileEditHref = `/admin/v2/residents/${residentId}`;
+  const openEditor = (field: ResidentRecordField) => setEditorField(field);
+  const contactIntakeHref = residentIntakeCreateHref(detail.id);
   const taskItems = buildTaskItems(detail, hrefs, new Date(), benefitsTasks);
   const recordGaps = buildRecordGaps(
     detail,
-    { profileHref: profileEditHref, carePlanHref: hrefs.carePlanHref, assessmentsHref: hrefs.assessmentsHref },
+    { carePlanHref: hrefs.carePlanHref, assessmentsHref: hrefs.assessmentsHref },
     NO_UNIT_COPY,
   );
 
   const polstMolst = polstMolstFriendly(detail.polstMolstRawStatus);
   const dietLower = detail.dietOrder?.toLowerCase() ?? "";
-  const tubeHint =
-    /tube|ng\s|gtube|peg|feeding\s+tube/i.test(dietLower) ? "Entered on diet orders" : "Not on file";
-  const dnhPhrase = detail.advanceDirectiveOnFile ? "Captured on file" : "Not on file";
+  // COL-597: both used to be inferred — the tube from a regex on the diet order,
+  // DNH from "an advance directive is on file". Each now has its own recorded
+  // value; the diet-order hint is kept only as a pointer while nothing is recorded.
+  const tubeRecorded = detail.feedingTube != null;
+  const tubeHint = tubeRecorded
+    ? feedingTubeLabel(detail.feedingTube ?? null)
+    : /tube|ng\s|gtube|peg|feeding\s+tube/i.test(dietLower)
+      ? "Not recorded — the diet order mentions a tube"
+      : "Not recorded";
+  const dnhRecorded = detail.doNotHospitalize != null;
+  const dnhPhrase = dnhLabel(detail.doNotHospitalize ?? null);
 
   const codeStatus = resolveCodeStatusPresentation(detail.codeStatusRaw);
   const codeVerified = verificationLabel("Verified", detail.codeStatusVerifiedAt, detail.codeStatusVerifiedByName);
@@ -628,11 +659,11 @@ export function ResidentDetailOverviewClient({
                     <span aria-hidden className="size-1.5 rounded-full bg-warning" />
                     Not verified
                   </span>
-                  <QuietLink href={profileEditHref} label="Verify" />
+                  <QuietButton onClick={() => openEditor("code_status")} label="Verify" />
                 </div>
               )
             ) : (
-              <QuietLink href={profileEditHref} label="Record code status" />
+              <QuietButton onClick={() => openEditor("code_status")} label="Record code status" />
             )}
           </SummaryCell>
 
@@ -649,7 +680,7 @@ export function ResidentDetailOverviewClient({
             {allergyReviewed ? (
               <p className="text-[11px] leading-snug text-muted-foreground">{allergyReviewed}</p>
             ) : (
-              <QuietLink href={profileEditHref} label="Record allergy review" />
+              <QuietButton onClick={() => openEditor("allergy_list")} label="Record allergy review" />
             )}
           </SummaryCell>
 
@@ -708,16 +739,19 @@ export function ResidentDetailOverviewClient({
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
                 {codeVerified ?? "Verification not recorded"}
               </p>
-              {!codeVerified ? <QuietLink href={profileEditHref} label="Verify in profile editor" /> : null}
+              <QuietButton onClick={() => openEditor("code_status")} label={codeVerified ? "Change" : codeStatus.label === "Not on file" ? "Record code status" : "Verify"} />
             </DirectiveRow>
-            <DirectiveRow label="DNH (Do Not Hospitalize)" value={dnhPhrase} muted={!detail.advanceDirectiveOnFile}>
-              {!detail.advanceDirectiveOnFile ? <QuietLink href={profileEditHref} label="+ Add DNH notation" /> : null}
+            <DirectiveRow label="DNH (Do Not Hospitalize)" value={dnhPhrase} muted={!dnhRecorded}>
+              <QuietButton onClick={() => openEditor("do_not_hospitalize")} label={dnhRecorded ? "Change" : "+ Record DNH"} />
             </DirectiveRow>
             <DirectiveRow label="POLST / MOLST" value={polstMolst} muted={polstMolst.startsWith("Not")}>
-              {polstMolst.startsWith("Not") ? <QuietLink href={profileEditHref} label="+ Add directive document" /> : null}
+              <QuietButton onClick={() => openEditor("polst_molst")} label={polstMolst.startsWith("Not") ? "+ Record POLST / MOLST" : "Record a newer form"} />
             </DirectiveRow>
-            <DirectiveRow label="Feeding tube" value={tubeHint} muted={tubeHint.includes("Not")}>
-              {tubeHint.includes("Not") ? <QuietLink href={profileEditHref} label="+ Add tube details" /> : null}
+            <DirectiveRow label="Feeding tube" value={tubeHint} muted={!tubeRecorded}>
+              {detail.feedingTubeNotes ? (
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{detail.feedingTubeNotes}</p>
+              ) : null}
+              <QuietButton onClick={() => openEditor("feeding_tube")} label={tubeRecorded ? "Change" : "+ Record feeding tube"} />
             </DirectiveRow>
             <DirectiveRow
               label="Hospice election"
@@ -732,9 +766,10 @@ export function ResidentDetailOverviewClient({
               }
               muted={detail.hospiceStatus !== "active"}
             >
-              {!detail.hospiceStatus || detail.hospiceStatus === "none" ? (
-                <QuietLink href={profileEditHref} label="+ Add hospice intake" />
-              ) : null}
+              <QuietButton
+                onClick={() => openEditor("hospice_status")}
+                label={!detail.hospiceStatus || detail.hospiceStatus === "none" ? "+ Record hospice election" : "Change"}
+              />
             </DirectiveRow>
             <DirectiveRow label="Advance directive type" value={detail.advanceDirectiveType ?? "Not recorded"} muted={!detail.advanceDirectiveType} />
           </div>
@@ -767,6 +802,10 @@ export function ResidentDetailOverviewClient({
             </div>
           )}
           <p className="mt-3 text-[11px] text-muted-foreground">{diagnosesReviewed ?? "Last update not recorded"}</p>
+          <QuietButton
+            onClick={() => openEditor("diagnoses")}
+            label={diagnoses.conditions.length === 0 ? "+ Record diagnoses" : "Edit diagnoses"}
+          />
         </Disclosure>
 
         <Disclosure title="Presence history">
@@ -963,22 +1002,22 @@ export function ResidentDetailOverviewClient({
               row={primaryContactRow}
               note={primaryContactNote}
               onOpen={() => primaryContactRow && setContactModal(primaryContactRow)}
-              emptyHref={profileEditHref}
-              emptyCopy="+ Add primary contact"
+              emptyHref={contactIntakeHref}
+              emptyCopy="+ Add primary contact (admission documents)"
             />
             <ContactBlock
               tier="Secondary contact"
               row={secondaryContactRow}
               onOpen={() => secondaryContactRow && setContactModal(secondaryContactRow)}
-              emptyHref={profileEditHref}
-              emptyCopy="+ Add secondary contact"
+              emptyHref={contactIntakeHref}
+              emptyCopy="+ Add secondary contact (admission documents)"
             />
             <ContactBlock
               tier="POA / healthcare proxy"
               row={poaPreferred}
               onOpen={() => poaPreferred && setContactModal(poaPreferred)}
-              emptyHref={profileEditHref}
-              emptyCopy="+ Add POA"
+              emptyHref={contactIntakeHref}
+              emptyCopy="+ Add POA (admission documents)"
             />
             <div>
               <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Primary care physician</p>
@@ -989,7 +1028,7 @@ export function ResidentDetailOverviewClient({
                   <span className="text-[11px] text-muted-foreground">{detail.primaryPhysicianPhone ?? "Phone not recorded"}</span>
                 </p>
               ) : (
-                <QuietLink href={profileEditHref} label="+ Add primary care physician" />
+                <QuietButton onClick={() => openEditor("primary_physician")} label="+ Add primary care physician" />
               )}
               <p className="mt-2 text-[11px] text-muted-foreground">
                 Specialist consults on file: <span className="font-semibold text-foreground">{detail.specialistConsultActiveCount}</span>
@@ -1007,13 +1046,12 @@ export function ResidentDetailOverviewClient({
                   {recordGaps.map((gap) => (
                     <li key={gap.id} className="flex items-center gap-2">
                       <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
-                      <Link
-                        prefetch={false}
-                        href={gap.href}
-                        className="rounded-sm text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {gap.label}
-                      </Link>
+                      <GapControl
+                        label={gap.label}
+                        action={gap.action}
+                        onEditor={openEditor}
+                        onBed={isPresenceStatus(detail.rawStatus) ? () => setBedGapOpen(true) : null}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -1030,6 +1068,24 @@ export function ResidentDetailOverviewClient({
         </div>
       </div>
 
+      <ResidentRecordFactDialog
+        field={editorField}
+        detail={detail}
+        onOpenChange={(open) => !open && setEditorField(null)}
+        onSaved={onAfterLog}
+      />
+      {isPresenceStatus(detail.rawStatus) ? (
+        <ChangeBedAction
+          residentId={detail.id}
+          residentName={detail.fullName}
+          facilityId={detail.facilityId}
+          currentBedLabel={detail.roomLabel}
+          hideTrigger
+          open={bedGapOpen}
+          onOpenChange={setBedGapOpen}
+          onDone={onAfterLog}
+        />
+      ) : null}
       <BehaviorLogModal
         open={behaviorModalOpen}
         onOpenChange={setBehaviorModalOpen}
@@ -1117,6 +1173,50 @@ function DirectiveRow(props: {
       <div className={cn("text-[13px] font-medium", muted && "text-muted-foreground")}>{value}</div>
       {children}
     </div>
+  );
+}
+
+function QuietButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-0.5 inline-flex rounded-sm text-left text-[11px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {label}
+    </button>
+  );
+}
+
+const GAP_CONTROL_CLASS =
+  "rounded-sm text-left text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+function GapControl({ label, action, onEditor, onBed }: {
+  label: string;
+  action: GapAction;
+  onEditor: (field: ResidentRecordField) => void;
+  onBed: (() => void) | null;
+}) {
+  if (action.kind === "href") {
+    return (
+      <Link prefetch={false} href={action.href} className={GAP_CONTROL_CLASS}>
+        {label}
+      </Link>
+    );
+  }
+  if (action.kind === "bed") {
+    // A discharged resident has no bed to assign; say the gap, offer nothing false.
+    if (!onBed) return <span className="text-foreground">{label}</span>;
+    return (
+      <button type="button" onClick={onBed} className={GAP_CONTROL_CLASS}>
+        {label} <span className="text-muted-foreground">— change bed</span>
+      </button>
+    );
+  }
+  return (
+    <button type="button" onClick={() => onEditor(action.field)} className={GAP_CONTROL_CLASS}>
+      {label}
+    </button>
   );
 }
 

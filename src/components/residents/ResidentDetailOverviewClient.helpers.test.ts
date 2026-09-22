@@ -7,7 +7,6 @@ import { buildFeedItems, buildRecordGaps, buildTaskItems } from "./ResidentDetai
 const HREFS = {
   carePlanHref: "/admin/residents/r1/care-plan",
   assessmentsHref: "/admin/residents/r1/assessments",
-  profileHref: "/admin/v2/residents/r1",
 };
 
 function detail(overrides: Partial<ResidentOverviewDetail> = {}): ResidentOverviewDetail {
@@ -137,6 +136,28 @@ describe("overview tasks come from recorded due dates only", () => {
       ["Annual Physical", "danger"],
       ["Fall Risk", "warning"],
     ]);
+  });
+});
+
+describe("COL-597: every gap the record names is a gap the record can close", () => {
+  const OVERVIEW_ROUTES = [/^\/admin\/residents\/r1\/?$/, /^\/admin\/v2\/residents\//, /^\/clinical\/residents\/r1\/?$/];
+
+  it("never links a gap back to the resident record itself", () => {
+    for (const gap of buildRecordGaps(detail(), HREFS, "No unit on file")) {
+      if (gap.action.kind !== "href") continue;
+      expect(OVERVIEW_ROUTES.some((re) => re.test(gap.action.kind === "href" ? gap.action.href : ""))).toBe(false);
+    }
+  });
+
+  it("opens the field's editor, Change bed, or another page that records it", () => {
+    const actions = Object.fromEntries(buildRecordGaps(detail(), HREFS, "No unit on file").map((g) => [g.id, g.action]));
+    expect(actions["code-verify"]).toEqual({ kind: "editor", field: "code_status" });
+    expect(actions.allergy).toEqual({ kind: "editor", field: "allergy_list" });
+    expect(actions.dx).toEqual({ kind: "editor", field: "diagnoses" });
+    expect(actions.pcp).toEqual({ kind: "editor", field: "primary_physician" });
+    expect(actions.unit).toEqual({ kind: "bed" });
+    expect(actions.acuity).toEqual({ kind: "href", href: HREFS.assessmentsHref });
+    expect(actions.plan).toEqual({ kind: "href", href: HREFS.carePlanHref });
   });
 });
 

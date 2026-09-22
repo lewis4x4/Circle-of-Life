@@ -94,10 +94,7 @@ export function ResidentIntakeLinks({ admissionCaseId = null, residentId = null,
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  const createParams = new URLSearchParams({ tab: "packet" });
-  if (admissionCaseId) createParams.set("case", admissionCaseId);
-  if (residentId) createParams.set("resident", residentId);
-  const createHref = `/admin/admissions/new?${createParams.toString()}`;
+  const createHref = residentIntakeCreateHref(residentId, admissionCaseId);
 
   if (state === "loading") return <div className="flex items-center gap-2 py-3 text-[12px] text-muted-foreground" role="status"><Loader2 className="size-4 animate-spin" aria-hidden />Loading packet reviews…</div>;
   if (state === "error") return <div className="space-y-3"><p role="alert" className="text-[12px] text-destructive">{message}</p><Button type="button" variant="outline" size="sm" onClick={() => void load()}><RefreshCcw className="mr-1.5 size-3.5" aria-hidden />Try again</Button></div>;
@@ -127,4 +124,12 @@ export function ResidentIntakeLinks({ admissionCaseId = null, residentId = null,
       </Link>
     </div>
   );
+}
+
+/** Where a new admission-documents packet for this resident starts. */
+export function residentIntakeCreateHref(residentId?: string | null, admissionCaseId?: string | null): string {
+  const createParams = new URLSearchParams({ tab: "packet" });
+  if (admissionCaseId) createParams.set("case", admissionCaseId);
+  if (residentId) createParams.set("resident", residentId);
+  return `/admin/admissions/new?${createParams.toString()}`;
 }
