@@ -27,6 +27,18 @@ INSERT INTO receiver_values SELECT 'create_input',jsonb_build_object('id',connec
 -- rejected is a mode outside {synthetic, live} — the check that actually stops a
 -- caller inventing a transport the receiver has no admission rules for.
 SELECT pg_temp.receiver_expect(format('SELECT public.insureflow_receiver_service(''create'',%L)',(SELECT value||'{"mode":"direct"}'::jsonb FROM receiver_values WHERE name='create_input')),'Receiver mode must be synthetic or live');
+-- COL-546 follow-up: a requested mode must actually be stored. 453 validated the
+-- key and then dropped it, so every connection came back synthetic regardless.
+DO $$DECLARE created jsonb;BEGIN
+ created:=public.insureflow_receiver_service('create',(SELECT value||jsonb_build_object('id',gen_random_uuid(),'provider_instance','live:mode-probe','mode','live') FROM receiver_values WHERE name='create_input'));
+ IF created->>'mode'<>'live' THEN RAISE EXCEPTION 'Requested mode was not persisted: got %',created->>'mode';END IF;
+ IF created->'enabled'<>'false'::jsonb THEN RAISE EXCEPTION 'Create must still force enabled=false';END IF;
+END$$;
+-- And the default is unchanged when no mode is asked for.
+DO $$DECLARE created jsonb;BEGIN
+ created:=public.insureflow_receiver_service('create',(SELECT value||jsonb_build_object('id',gen_random_uuid(),'provider_instance','synthetic:mode-default') FROM receiver_values WHERE name='create_input'));
+ IF created->>'mode'<>'synthetic' THEN RAISE EXCEPTION 'Default mode should be synthetic, got %',created->>'mode';END IF;
+END$$;
 SELECT pg_temp.receiver_expect(format('SELECT public.insureflow_receiver_service(''create'',%L)',(SELECT value||jsonb_build_object('mappings',jsonb_build_array(jsonb_build_object('account_id',account_id,'entity_id',other_entity_id,'approved',true))) FROM receiver_values CROSS JOIN receiver_probe WHERE name='create_input')),'Mapping entity must be current');
 INSERT INTO receiver_values SELECT 'connection',public.insureflow_receiver_service('create',value) FROM receiver_values WHERE name='create_input';
 SELECT pg_temp.receiver_expect('SELECT pg_temp.receiver_claim()','disabled');
