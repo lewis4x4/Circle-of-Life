@@ -16,6 +16,15 @@ import {
 } from "@/lib/residents/resident-overview-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
 import { parseDocumentedAcuityLevel } from "@/lib/residents/resident-acuity-display";
+import {
+  ACTIVITY_FEED_ROW_CAP,
+  ACTIVITY_FEED_WINDOW_DAYS,
+  activityFeedQueryBounds,
+  type ActivityFeedKind,
+  type ActivityFeedPeriodDays,
+} from "@/lib/residents/resident-activity-feed";
+import { PRESENCE_HISTORY_LIMIT } from "@/lib/residents/resident-presence-history";
+import { responsiblePartyContact } from "@/lib/residents/resident-responsible-party";
 import { RESIDENT_NO_BED_COPY, RESIDENT_NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
 
@@ -55,6 +64,19 @@ export type ResidentContactRowView = {
   isPowerOfAttorney: boolean;
   sortOrder: number;
   updatedAt: string | null;
+};
+
+/** One row of `resident_status_history`, as the record shows it. */
+export type ResidentPresenceHistoryEntry = {
+  id: string;
+  /** Raw `resident_status` value for the span. */
+  status: string;
+  effectiveFrom: string;
+  /** Null for the open (current) span. */
+  effectiveTo: string | null;
+  /** Who recorded the change; null when the history row carries no actor. */
+  recordedByName: string | null;
+  reason: string | null;
 };
 
 export type ResidentOverviewDetail = {
@@ -166,6 +188,49 @@ export type ResidentOverviewDetail = {
     loggedByLabel: string;
     nurseNotified: boolean;
   }>;
+  /** The period the activity rows above were read for. */
+  activityDays: ActivityFeedPeriodDays;
+  /** Kinds that reached `ACTIVITY_FEED_ROW_CAP` for the period, so the feed can say it is clipped. */
+  activityTruncatedKinds: ActivityFeedKind[];
+  /**
+   * COL-599: presence says what, and now since when and who. Newest first; the
+   * open span (effectiveTo null) is the current presence. Empty when the
+   * history table has no row for the resident — the record then says so rather
+   * than inventing a date.
+   */
+  presenceHistory: ResidentPresenceHistoryEntry[];
+  /**
+   * COL-599: the Form 1823 the record is working from — the `is_current` row,
+   * else the newest by exam date. `undefined` when `form_1823_records` could
+   * not be read, so the record never claims "none on file" on a failed read.
+   */
+  form1823?: ResidentForm1823Clock | null;
+  /** COL-599: incident follow-ups on this resident that are not completed, soonest first. */
+  openIncidentFollowups: ResidentIncidentFollowupClock[];
+};
+
+export type ResidentForm1823Clock = {
+  id: string;
+  /** `form_1823_status`: pending | received | expired | renewal_due. */
+  status: string;
+  examDate: string | null;
+  expirationDate: string | null;
+};
+
+export type ResidentIncidentFollowupClock = {
+  id: string;
+  incidentId: string;
+  taskType: string;
+  description: string;
+  dueAt: string;
+};
+
+/** Most open follow-ups the overview reads. A page-weight budget. */
+export const OPEN_FOLLOWUP_LIMIT = 20;
+
+export type LoadResidentOverviewOptions = {
+  /** Activity period in facility days; defaults to `ACTIVITY_FEED_WINDOW_DAYS`. */
+  activityDays?: ActivityFeedPeriodDays;
 };
 
 type QueryError = { message: string };
@@ -215,6 +280,24 @@ type SupabaseResidentRow = {
   primary_diagnosis_reviewed_by: string | null;
   bed_by_id: SupabaseBedJoin | null;
   beds: SupabaseBedJoin[] | null;
+};
+
+type PresenceHistoryRow = {
+  id: string;
+  status: string;
+  effective_from: string;
+  effective_to: string | null;
+  reason: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+type Form1823Row = {
+  id: string;
+  status: string;
+  exam_date: string | null;
+  expiration_date: string | null;
+  is_current: boolean | null;
 };
 
 type SupabaseUnitJoin = {
@@ -302,8 +385,14 @@ export async function loadResidentOverviewDetail(
   residentId: string,
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
+  options: LoadResidentOverviewOptions = {},
 ): Promise<ResidentOverviewDetail | null> {
   if (!UUID_STRING_RE.test(residentId)) return null;
+  const activityDays = options.activityDays ?? ACTIVITY_FEED_WINDOW_DAYS;
+  // COL-599: the activity reads are bounded by the period, not by a row count.
+  // They used to take the newest 8–12 rows of each kind, so even the fixed
+  // 30-day window could be silently short on a busy record.
+  const activityBounds = activityFeedQueryBounds(activityDays);
 
   const residentCols = [
     "id",
@@ -395,39 +484,51 @@ export async function loadResidentOverviewDetail(
     assessmentsResult,
     specialistCountResult,
     facilityResult,
+    presenceHistoryResult,
+    form1823Result,
+    followupResult,
   ] = await Promise.all([
+    // The feed shows daily logs only when they carry a general note, and ADL
+    // entries only when refused — so read exactly those, not the newest rows
+    // of every kind and then discard most of them.
     supabase
       .from("daily_logs")
       .select("id, log_date, shift, general_notes, logged_by")
       .eq("resident_id", residentId)
       .eq("facility_id", facilityId)
       .is("deleted_at", null)
+      .not("general_notes", "is", null)
+      .gte("log_date", activityBounds.sinceDay)
       .order("log_date", { ascending: false })
-      .limit(8),
+      .limit(ACTIVITY_FEED_ROW_CAP),
     supabase
       .from("adl_logs")
       .select("id, log_time, log_date, shift, adl_type, assistance_level, refused, notes, logged_by")
       .eq("resident_id", residentId)
       .eq("facility_id", facilityId)
       .is("deleted_at", null)
+      .eq("refused", true)
+      .gte("log_time", activityBounds.sinceIso)
       .order("log_time", { ascending: false })
-      .limit(12),
+      .limit(ACTIVITY_FEED_ROW_CAP),
     supabase
       .from("behavioral_logs")
       .select("id, occurred_at, shift, behavior_type, behavior, injury_occurred, notes, logged_by")
       .eq("resident_id", residentId)
       .eq("facility_id", facilityId)
       .is("deleted_at", null)
+      .gte("occurred_at", activityBounds.sinceIso)
       .order("occurred_at", { ascending: false })
-      .limit(10),
+      .limit(ACTIVITY_FEED_ROW_CAP),
     supabase
       .from("condition_changes")
       .select("id, reported_at, shift, change_type, description, severity, nurse_notified, reported_by")
       .eq("resident_id", residentId)
       .eq("facility_id", facilityId)
       .is("deleted_at", null)
+      .gte("reported_at", activityBounds.sinceIso)
       .order("reported_at", { ascending: false })
-      .limit(10),
+      .limit(ACTIVITY_FEED_ROW_CAP),
     supabase
       .from("care_plans")
       .select("version, effective_date, status")
@@ -468,6 +569,29 @@ export async function loadResidentOverviewDetail(
       .is("deleted_at", null)
       .ilike("assessment_type", "%consult%"),
     supabase.from("facilities").select("name").eq("id", facilityId).maybeSingle(),
+    supabase
+      .from("resident_status_history" as never)
+      .select("id, status, effective_from, effective_to, reason, created_by, updated_by")
+      .eq("resident_id", residentId)
+      .is("deleted_at", null)
+      .order("effective_from", { ascending: false })
+      .limit(PRESENCE_HISTORY_LIMIT) as unknown as Promise<QueryResult<PresenceHistoryRow[]>>,
+    supabase
+      .from("form_1823_records" as never)
+      .select("id, status, exam_date, expiration_date, is_current")
+      .eq("resident_id", residentId)
+      .is("deleted_at", null)
+      .order("exam_date", { ascending: false, nullsFirst: false })
+      .limit(10) as unknown as Promise<QueryResult<Form1823Row[]>>,
+    supabase
+      .from("incident_followups")
+      .select("id, incident_id, task_type, description, due_at")
+      .eq("resident_id", residentId)
+      .eq("facility_id", facilityId)
+      .is("completed_at", null)
+      .is("deleted_at", null)
+      .order("due_at", { ascending: true })
+      .limit(OPEN_FOLLOWUP_LIMIT),
   ]);
 
   if (
@@ -509,6 +633,33 @@ export async function loadResidentOverviewDetail(
     polstMolstRawStatus = String(directiveRowUnknown[0].polst_status);
   }
 
+  // Presence history is supporting context: an unreadable history leaves the
+  // record saying "not recorded", it does not take the whole page down.
+  const presenceRows = presenceHistoryResult.error ? [] : (presenceHistoryResult.data ?? []);
+
+  const form1823Rows = form1823Result.error ? null : (form1823Result.data ?? []);
+  const form1823Row = form1823Rows ? (form1823Rows.find((r) => r.is_current) ?? form1823Rows[0] ?? null) : undefined;
+  const form1823: ResidentForm1823Clock | null | undefined =
+    form1823Row === undefined
+      ? undefined
+      : form1823Row === null
+        ? null
+        : {
+            id: form1823Row.id,
+            status: form1823Row.status,
+            examDate: form1823Row.exam_date,
+            expirationDate: form1823Row.expiration_date,
+          };
+  const openIncidentFollowups: ResidentIncidentFollowupClock[] = followupResult.error
+    ? []
+    : (followupResult.data ?? []).map((r) => ({
+        id: r.id,
+        incidentId: r.incident_id,
+        taskType: r.task_type,
+        description: r.description,
+        dueAt: r.due_at,
+      }));
+
   const specialistConsultActiveCount =
     specialistCountResult.error ? 0 : specialistCountResult.count ?? 0;
 
@@ -521,6 +672,7 @@ export async function loadResidentOverviewDetail(
       ...adlRows.map((r) => r.logged_by),
       ...behaviorRows.map((r) => r.logged_by),
       ...conditionRows.map((r) => r.reported_by),
+      ...presenceRows.map((r) => r.created_by),
     ]),
   ].filter((x): x is string => typeof x === "string" && UUID_STRING_RE.test(x));
 
@@ -579,6 +731,24 @@ export async function loadResidentOverviewDetail(
     shift: r.shift,
     loggedByLabel: nameById.get(r.reported_by) ?? "Staff",
     nurseNotified: r.nurse_notified,
+  }));
+
+  const activityTruncatedKinds: ActivityFeedKind[] = [];
+  if (conditionRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("condition");
+  if (behaviorRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("behavior");
+  if (adlRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("adl");
+  if (dailyRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("note");
+
+  // The row that opened a span was written by whoever changed the status
+  // (`fn_resident_status_history_capture` sets created_by to the actor);
+  // updated_by on a closed span is whoever closed it, i.e. the next change.
+  const presenceHistory: ResidentPresenceHistoryEntry[] = presenceRows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    effectiveFrom: r.effective_from,
+    effectiveTo: r.effective_to,
+    recordedByName: r.created_by ? (nameById.get(r.created_by) ?? null) : null,
+    reason: r.reason?.trim() || null,
   }));
 
   const activePlan = carePlanRows[0] ?? null;
@@ -641,7 +811,28 @@ export async function loadResidentOverviewDetail(
     }
   }
 
-  const contactsView = contactsViewFromTable.length > 0 ? contactsViewFromTable : legacyContacts;
+  // COL-599: the last rung. A record can carry a responsible party in its own
+  // columns and no emergency contact at all — four fields this loader already
+  // reads and the card never showed, so the resident read as having nobody.
+  // A maintained contact row, then a legacy emergency contact, then this.
+  const responsibleParty =
+    contactsViewFromTable.length === 0 && legacyContacts.length === 0
+      ? responsiblePartyContact({
+          responsiblePartyName: resident.responsible_party_name,
+          responsiblePartyRelationship: resident.responsible_party_relationship,
+          responsiblePartyPhone: resident.responsible_party_phone,
+          responsiblePartyEmail: resident.responsible_party_email,
+        })
+      : null;
+
+  const contactsView =
+    contactsViewFromTable.length > 0
+      ? contactsViewFromTable
+      : legacyContacts.length > 0
+        ? legacyContacts
+        : responsibleParty
+          ? [responsibleParty.row]
+          : [];
 
   return {
     id: resident.id,
@@ -708,5 +899,10 @@ export async function loadResidentOverviewDetail(
     recentAdl,
     recentBehavior,
     recentConditionChanges,
+    activityDays,
+    activityTruncatedKinds,
+    presenceHistory,
+    form1823,
+    openIncidentFollowups,
   };
 }
