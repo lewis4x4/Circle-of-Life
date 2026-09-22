@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 
 import AdminRouteLoading from "@/components/layout/admin-route-loading";
 import { AdminDashboardPageClient } from "@/components/admin/AdminDashboardPageClient";
+import { FacilityOperatorHomePageClient } from "@/components/home/FacilityOperatorHomePageClient";
+import { isFacilityOperatorRole } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { getServerAuthContext } from "@/lib/auth/server-context";
 import {
   fetchAdminDashboardSnapshot,
   type AdminDashboardSnapshot,
@@ -13,7 +16,8 @@ import {
   SELECTED_FACILITY_COOKIE,
   parseSelectedFacilityCookieValue,
 } from "@/lib/facilities/selected-facility-cookie";
-import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
+import { loadHome } from "@/lib/home/load-home";
+import { resolveOperatorHomeFacility } from "@/lib/home/resolve-facility";
 import { createClient } from "@/lib/supabase/server";
 
 export default function AdminDashboardPage() {
@@ -25,19 +29,19 @@ export default function AdminDashboardPage() {
 }
 
 async function CommandCenterData() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const auth = await getServerAuthContext();
 
-  if (!roleContext.ok) {
+  if (!auth.ok) {
     return (
       <AdminDashboardPageClient
         initialSnapshot={null}
-        initialError={roleContext.error}
+        initialError={auth.error}
         initialFacilityId={null}
       />
     );
   }
 
-  const config = getRoleDashboardConfig(roleContext.ctx.appRole);
+  const config = getRoleDashboardConfig(auth.ctx.appRole);
   if (config.route !== "/admin") {
     redirect(config.route);
   }
@@ -48,6 +52,24 @@ async function CommandCenterData() {
   );
 
   const supabase = await createClient();
+
+  // COL-593: Administrator, Assistant Administrator and Manager land on the
+  // facility-scoped Home. Owners and org admins keep the Command Center path.
+  if (isFacilityOperatorRole(auth.ctx.appRole)) {
+    const facilityId = await resolveOperatorHomeFacility(supabase, auth.ctx.userId, initialFacilityId);
+    if (facilityId) {
+      const initial = await loadHome(supabase, { facilityId, organizationId: auth.ctx.organizationId });
+      return (
+        <FacilityOperatorHomePageClient
+          initial={initial}
+          initialFacilityId={facilityId}
+          currentUserId={auth.ctx.userId}
+          fullName={auth.ctx.fullName}
+        />
+      );
+    }
+  }
+
   let initialSnapshot: AdminDashboardSnapshot | null = null;
   let initialError: string | null = null;
 

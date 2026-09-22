@@ -55,6 +55,7 @@ import {
   type LucideIcon,
   Timer,
 } from "lucide-react";
+import { isFacilityOperatorRole } from "@/lib/auth/app-role";
 import type { DashboardConfig } from "@/lib/auth/dashboard-routing";
 import { filterStaffLaunchHiddenItems } from "@/lib/navigation/staff-launch-hidden";
 
@@ -310,4 +311,37 @@ export function pillarsForRole(config: DashboardConfig): Pillar[] {
       ),
     }))
     .filter((pillar) => pillar.items.length > 0);
+}
+
+export type FacilityOperatorNavFacility = { id: string; name: string };
+
+/**
+ * Facility operator rail (COL-593 / COL-571): Administrator, Assistant
+ * Administrator and Manager see one facility-scoped Command rail.
+ *
+ * - "Facilities" becomes "My facility" and opens the building directly when the
+ *   user has exactly one accessible facility. With more than one the catalog
+ *   entry stays a list.
+ * - The Med-Tech cockpit is never offered to these roles (COL-303: the proxy
+ *   bounces them straight back home).
+ *
+ * The Executive item is handled by `applyExecutiveCommandNavToItems`.
+ */
+export function applyFacilityOperatorNav(
+  pillars: Pillar[],
+  role: string | null,
+  facilities: ReadonlyArray<FacilityOperatorNavFacility>,
+): Pillar[] {
+  if (!role || !isFacilityOperatorRole(role)) return pillars;
+  const single = facilities.length === 1 ? facilities[0] : null;
+  return pillars.map((pillar) => ({
+    ...pillar,
+    items: pillar.items.flatMap((item) => {
+      if (item.key === "med-tech") return [];
+      if (item.key === "facilities" && single) {
+        return [{ ...item, label: "My facility", href: `/admin/facilities/${single.id}` }];
+      }
+      return [item];
+    }),
+  }));
 }

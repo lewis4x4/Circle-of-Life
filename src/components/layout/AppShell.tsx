@@ -74,10 +74,12 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
+import { isFacilityOperatorRole } from "@/lib/auth/app-role";
 import { applyExecutiveCommandNavToItems } from "@/lib/auth/executive-nav-access";
 import { getRoleDashboardConfig, getResolvedRoleLabel } from "@/lib/auth/dashboard-routing";
 import {
   AUXILIARY_ROUTES,
+  applyFacilityOperatorNav,
   pillarsForRole,
   REPORT_INCIDENT_HREF,
   findActivePillar,
@@ -188,7 +190,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     facilitiesFetchedAt != null &&
     availableFacilities.length > 0 &&
     Date.now() - facilitiesFetchedAt < FACILITY_LIST_TTL_MS;
-  const visibleFacilities = hasFreshOwnedFacilityCache ? availableFacilities : [];
+  const visibleFacilities = useMemo(
+    () => (hasFreshOwnedFacilityCache ? availableFacilities : []),
+    [hasFreshOwnedFacilityCache, availableFacilities],
+  );
   const selectedFacilityIsValid =
     selectedFacilityId == null ||
     visibleFacilities.some((facility) => facility.id === selectedFacilityId);
@@ -471,7 +476,28 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     />
   );
 
-  const renderFacilityScope = () => (
+  // COL-593: a facility operator with exactly one building gets a static chip
+  // that reads the building's name — there is nothing to switch to, and
+  // "All facilities" is not a scope Home can render for.
+  const singleOperatorFacility =
+    !facilityControlLoading && isFacilityOperatorRole(appRole) && visibleFacilities.length === 1
+      ? visibleFacilities[0]
+      : null;
+
+  const renderFacilityScope = () => singleOperatorFacility ? (
+    <span
+      data-testid="admin-facility-static-chip"
+      title={singleOperatorFacility.name}
+      className={cn(
+        WORKSPACE_WELL,
+        "flex min-h-9 min-w-0 w-[clamp(80px,25vw,140px)] md:w-auto md:max-w-[220px] items-center gap-1 md:gap-2 rounded-md px-1.5 md:px-2.5 py-1",
+        "text-[12px] font-medium",
+      )}
+    >
+      <Building2 className="hidden size-3.5 shrink-0 opacity-90 md:block" aria-hidden />
+      <span className="min-w-0 flex-1 truncate text-left leading-tight">{singleOperatorFacility.name}</span>
+    </span>
+  ) : (
     <DropdownMenu>
       <DropdownMenuTrigger
         data-testid="admin-facility-filter-trigger"
@@ -736,12 +762,12 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   // role config doesn't list anything (e.g. owner / facility_admin). Legacy
   // role configs use group names ("Clinical Ops") — map them to pillar ids.
   const visiblePillars = useMemo(() => {
-    const pillars = pillarsForRole(roleConfig);
+    const pillars = applyFacilityOperatorNav(pillarsForRole(roleConfig), appRole, visibleFacilities);
     return pillars.map((pillar) => ({
       ...pillar,
       items: applyExecutiveCommandNavToItems(pillar.items, appRole, authLoading),
     }));
-  }, [appRole, authLoading, roleConfig]);
+  }, [appRole, authLoading, roleConfig, visibleFacilities]);
 
   const visibleAuxiliary = useMemo(() => AUXILIARY_ROUTES.filter((item) =>
     !roleConfig.visibleItemKeys || roleConfig.visibleItemKeys.includes(item.key) || item.key === "pilot-feedback" || item.key === "settings-notifications"

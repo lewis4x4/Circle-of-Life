@@ -57,6 +57,29 @@ describe("operation task completion error boundary", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it("refuses a did-not-run outcome without a note and records the outcome in the notes (COL-593)", async () => {
+    const refused = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: JSON.stringify({ outcome: "did_not_run", completion_notes: "  " }) }) as never,
+      { params: Promise.resolve({ id: task.id }) },
+    );
+    expect(refused.status).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
+
+    const invalid = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: JSON.stringify({ outcome: "exploded" }) }) as never,
+      { params: Promise.resolve({ id: task.id }) },
+    );
+    expect(invalid.status).toBe(400);
+
+    rpc.mockResolvedValueOnce({ data: "completed", error: null });
+    const recorded = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: JSON.stringify({ outcome: "did_not_run", completion_notes: "No sound at 10:00; vendor called." }) }) as never,
+      { params: Promise.resolve({ id: task.id }) },
+    );
+    expect(recorded.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith("complete_operation_task_review", expect.objectContaining({ p_task_id: task.id, p_notes: "Outcome: did not run. No sound at 10:00; vendor called." }));
+  });
+
   it("does not confirm completion without a server completion status", async () => {
     rpc.mockResolvedValue({ data: null, error: null });
     const response = await PATCH(
