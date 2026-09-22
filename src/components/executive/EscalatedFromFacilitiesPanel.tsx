@@ -2,26 +2,45 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/client";
 
-const escalationSchema = z.object({
-  instanceId: z.string(),
-  facilityId: z.string(),
-  facilityName: z.string(),
-  title: z.string(),
-  assignedShiftDate: z.string(),
-  status: z.string(),
-  escalatedAt: z.string().nullable().optional(),
-  owner: z.union([
-    z.object({ kind: z.literal("queue") }),
-    z.object({ kind: z.literal("user"), userId: z.string(), displayName: z.string().nullable().optional() }),
-  ]),
-  href: z.string(),
-});
+export type ExecutiveEscalation = {
+  instanceId: string;
+  facilityId: string;
+  facilityName: string;
+  title: string;
+  assignedShiftDate: string;
+  status: string;
+  escalatedAt?: string | null;
+  owner: { kind: "queue" } | { kind: "user"; userId: string; displayName?: string | null };
+  href: string;
+};
 
-export type ExecutiveEscalation = z.infer<typeof escalationSchema>;
+function isString(value: unknown): value is string {
+  return typeof value === "string";
+}
+
+/** Hand-rolled guard: this panel sits on the executive route's first load, so no schema library here. */
+export function parseExecutiveEscalations(data: unknown): ExecutiveEscalation[] | null {
+  if (!Array.isArray(data)) return null;
+  const rows: ExecutiveEscalation[] = [];
+  for (const item of data) {
+    if (!item || typeof item !== "object") return null;
+    const row = item as Record<string, unknown>;
+    const owner = row.owner as Record<string, unknown> | undefined;
+    if (!isString(row.instanceId) || !isString(row.facilityId) || !isString(row.facilityName) || !isString(row.title)
+      || !isString(row.assignedShiftDate) || !isString(row.status) || !isString(row.href) || !owner) return null;
+    if (owner.kind === "queue") {
+      rows.push({ instanceId: row.instanceId, facilityId: row.facilityId, facilityName: row.facilityName, title: row.title, assignedShiftDate: row.assignedShiftDate, status: row.status, escalatedAt: isString(row.escalatedAt) ? row.escalatedAt : null, owner: { kind: "queue" }, href: row.href });
+    } else if (owner.kind === "user" && isString(owner.userId)) {
+      rows.push({ instanceId: row.instanceId, facilityId: row.facilityId, facilityName: row.facilityName, title: row.title, assignedShiftDate: row.assignedShiftDate, status: row.status, escalatedAt: isString(row.escalatedAt) ? row.escalatedAt : null, owner: { kind: "user", userId: owner.userId, displayName: isString(owner.displayName) ? owner.displayName : null }, href: row.href });
+    } else {
+      return null;
+    }
+  }
+  return rows;
+}
 
 type PanelState = { state: "loading" } | { state: "ready"; rows: ExecutiveEscalation[] } | { state: "unavailable" };
 
@@ -49,8 +68,8 @@ export function EscalatedFromFacilitiesPanel({ load }: { load?: () => Promise<un
     read()
       .then((data) => {
         if (cancelled) return;
-        const parsed = z.array(escalationSchema).safeParse(data ?? []);
-        setState(parsed.success ? { state: "ready", rows: parsed.data } : { state: "unavailable" });
+        const rows = parseExecutiveEscalations(data ?? []);
+        setState(rows ? { state: "ready", rows } : { state: "unavailable" });
       })
       .catch(() => {
         if (!cancelled) setState({ state: "unavailable" });

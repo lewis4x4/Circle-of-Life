@@ -7,19 +7,14 @@ import type { HomeOnTapPayload, HomeOnTapRow } from "@/lib/home/on-tap";
 
 import { FacilityOperatorHomePageClient } from "./FacilityOperatorHomePageClient";
 
-const authMock = vi.hoisted(() => ({ loading: false, organizationId: "org-1" }));
-const storeMock = vi.hoisted(() => ({ selectedFacilityId: null as string | null }));
 const rpc = vi.hoisted(() => vi.fn());
+const refresh = vi.hoisted(() => vi.fn());
 
-vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => authMock }));
-vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: (selector: (state: { selectedFacilityId: string | null }) => unknown) => selector(storeMock),
-}));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, push: vi.fn(), replace: vi.fn() }) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc }) }));
 vi.mock("@/lib/executive/facility-rounding-compliance", () => ({
   fetchExecutiveFacilityCompliance: vi.fn().mockResolvedValue({ totals: { withTask: 50, onTime: 47 } }),
 }));
-vi.mock("@/lib/home/load-home", () => ({ loadHome: vi.fn() }));
 
 const NY = "America/New_York";
 const FACILITY = "00000000-0000-0000-0002-000000000003";
@@ -82,8 +77,7 @@ const generator = row({
 describe("FacilityOperatorHomePageClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    storeMock.selectedFacilityId = null;
-    rpc.mockResolvedValue({ data: feed({ rows: [generator] }), error: null });
+    rpc.mockResolvedValue({ data: { success: true, assignedTo: "me", assignedAt: "2026-09-22T13:20:00Z" }, error: null });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, status: "completed" }) }));
   });
 
@@ -109,7 +103,7 @@ describe("FacilityOperatorHomePageClient", () => {
     expect(screen.queryByText(/triage/i)).not.toBeInTheDocument();
   });
 
-  it("shows who claimed a row and clears the generator through the completion route in one tap", async () => {
+  it("shows who claimed a row and clears the generator through the completion route in one tap, then refreshes from the server", async () => {
     const claimed = { ...generator, owner: { kind: "user" as const, userId: "co", displayName: "Morgan Example", claimedAt: "2026-09-22T12:41:00Z" } };
     render(
       <FacilityOperatorHomePageClient
@@ -128,7 +122,8 @@ describe("FacilityOperatorHomePageClient", () => {
     expect(url).toBe("/api/admin/operations/tasks/gen/complete");
     expect(init.method).toBe("PATCH");
     expect(JSON.parse(String(init.body))).toEqual({ outcome: "ran" });
-    await waitFor(() => expect(rpc).toHaveBeenCalledWith("home_on_tap", { p_facility_id: FACILITY }));
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("refuses Did not run without a note, then records the note", async () => {
@@ -163,6 +158,7 @@ describe("FacilityOperatorHomePageClient", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith("home_claim_task", { p_instance_id: "gen", p_claim: true }));
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
   });
 
   it("renders the weekend empty state with no queue rows", () => {

@@ -61,6 +61,7 @@ async function CommandCenterData() {
       const initial = await loadHome(supabase, { facilityId, organizationId: auth.ctx.organizationId });
       return (
         <FacilityOperatorHomePageClient
+          key={facilityId}
           initial={initial}
           initialFacilityId={facilityId}
           currentUserId={auth.ctx.userId}

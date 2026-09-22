@@ -1,13 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Activity, ChevronDown } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
-import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { loadHome, type HomeInitialData } from "@/lib/home/load-home";
-import { claimHomeTask, fetchHomeOnTap } from "@/lib/home/on-tap";
+import type { HomeInitialData } from "@/lib/home/load-home";
+import { claimHomeTask } from "@/lib/home/claim";
 import {
   buildFyiRows,
   coOperatorLine,
@@ -21,7 +21,6 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-import { FacilityRoundingCard } from "./FacilityRoundingCard";
 import { GlanceStrip } from "./GlanceStrip";
 import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
 import { ClearedRow, OnTapRow } from "./OnTapRow";
@@ -37,69 +36,47 @@ export type FacilityOperatorHomePageClientProps = {
 
 const REFRESH_TICK_MS = 60_000;
 
+// The rounding card reads its seven-day figure client-side after mount; loading
+// it on demand keeps the compliance model out of the route's first load.
+const FacilityRoundingCard = dynamic(
+  () => import("./FacilityRoundingCard").then((module) => module.FacilityRoundingCard),
+  { loading: () => <div className={cn(CARD_CLASS, "h-40 animate-pulse")} aria-hidden /> },
+);
+
 function formatTime(iso: string, timeZone: string) {
   return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone }).format(new Date(iso));
 }
 
 /**
  * Facility Operator Home (COL-593). One facility per view; the top-bar chip is
- * the switcher for people with more than one building. Every row on tap can be
- * claimed and cleared here; completions go through the operations completion
- * route so the audit row and the dual-sign rules stay exactly as they are.
+ * the switcher for people with more than one building — the shell writes the
+ * facility cookie and refreshes, and the server page re-renders this component
+ * keyed by facility. Every row on tap can be claimed and cleared here; the
+ * writes go through the claim RPC and the operations completion route, and the
+ * page then refreshes from the server so nothing is re-derived on the client.
  */
 export function FacilityOperatorHomePageClient({ initial, initialFacilityId, currentUserId, fullName }: FacilityOperatorHomePageClientProps) {
-  const { organizationId, loading: authLoading } = useHavenAuth();
-  const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
-  const [data, setData] = useState<HomeInitialData>(initial);
-  const [facilityId, setFacilityId] = useState(initialFacilityId);
+  const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
+  const data = initial;
+  const facilityId = initialFacilityId;
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [busyRow, setBusyRow] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
   const supabase = () => (supabaseRef.current ??= createClient());
+  const loading = isRefreshing;
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), REFRESH_TICK_MS);
     return () => window.clearInterval(timer);
   }, []);
 
-  const reloadFeed = useCallback(async (targetFacilityId: string) => {
-    try {
-      const feed = await fetchHomeOnTap(supabase(), targetFacilityId);
-      setData((current) => ({ ...current, feed }));
-      setError(null);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The queue could not be refreshed.");
-    }
-  }, []);
-
-  // The top-bar facility chip is the switcher: re-fetch when it changes to
-  // another building the caller can see. Null means "all"; Home stays on the
-  // building it was rendered for.
-  useEffect(() => {
-    if (authLoading || !organizationId) return;
-    if (!selectedFacilityId || selectedFacilityId === facilityId) return;
-    if (!data.facilityOptions.some((option) => option.id === selectedFacilityId)) return;
-    let cancelled = false;
-    setLoading(true);
-    loadHome(supabase(), { facilityId: selectedFacilityId, organizationId })
-      .then((next) => {
-        if (cancelled) return;
-        setData(next);
-        setFacilityId(selectedFacilityId);
-        setError(null);
-      })
-      .catch((cause: unknown) => {
-        if (!cancelled) setError(cause instanceof Error ? cause.message : "Home could not load this building.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, organizationId, selectedFacilityId, facilityId, data.facilityOptions]);
+  const refresh = useCallback(() => {
+    startRefresh(() => {
+      router.refresh();
+    });
+  }, [router]);
 
   const fyi = useMemo(() => (data.snapshot ? buildFyiRows(data.snapshot.workflowQueues) : []), [data.snapshot]);
   const ranked = useMemo(() => rankOnTap({ feed: data.feed, fyi, now, currentUserId }), [data.feed, fyi, now, currentUserId]);
@@ -117,13 +94,14 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
     setBusyRow(instanceId);
     try {
       await claimHomeTask(supabase(), instanceId, claim);
-      await reloadFeed(facilityId);
+      setError(null);
+      refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The claim could not be saved.");
     } finally {
       setBusyRow(null);
     }
-  }, [facilityId, reloadFeed]);
+  }, [refresh]);
 
   const onClear = useCallback(async (instanceId: string, action: HomeRowAction, note: string) => {
     setBusyRow(instanceId);
@@ -140,13 +118,14 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
         const payload = (await response.json().catch(() => ({}))) as { error?: string };
         throw new Error(payload.error ?? "The row could not be cleared. Refresh and retry.");
       }
-      await reloadFeed(facilityId);
+      setError(null);
+      refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The row could not be cleared.");
     } finally {
       setBusyRow(null);
     }
-  }, [facilityId, reloadFeed]);
+  }, [refresh]);
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-6 sm:px-6 lg:px-8" data-testid="facility-operator-home">
