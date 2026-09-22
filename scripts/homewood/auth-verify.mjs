@@ -49,15 +49,25 @@ import { createClient } from "@supabase/supabase-js";
 const ROOT = process.cwd();
 const REPORT_PATH = path.join(ROOT, "docs", "homewood", "AUTH_VERIFICATION.md");
 
+/**
+ * COL-615 (2026-09-22): nurse and caregiver are folded into med_tech, dietary and
+ * dietary_aide into cook. The account map secrets are keyed by the role each CI
+ * account was created for; a legacy key now expects the role its account holds.
+ */
+const RETIRED_ROLE_KEYS = { nurse: "med_tech", caregiver: "med_tech", dietary: "cook", dietary_aide: "cook" };
+
+export function expectedRoleForKey(key) {
+  return RETIRED_ROLE_KEYS[key] ?? key;
+}
+
 const ROLE_LANDING_ROUTES = {
   owner: "/admin/command",
   org_admin: "/admin/command",
   facility_admin: "/admin/command",
-  nurse: "/admin/command",
-  caregiver: "/caregiver",
   family: "/family",
   med_tech: "/med-tech",
-  dietary: "/dietary",
+  cook: "/dietary",
+  marketing: "/admin/referrals",
   maintenance_role: "/admin",
   housekeeper: "/caregiver",
   broker: "/admin",
@@ -148,7 +158,7 @@ async function main() {
       signedIn: false,
       roleMatch: false,
       actualRole: null,
-      landingRoute: ROLE_LANDING_ROUTES[account.role] ?? null,
+      landingRoute: ROLE_LANDING_ROUTES[expectedRoleForKey(account.role)] ?? null,
       routeStatus: null,
       reason: null,
     };
@@ -166,10 +176,10 @@ async function main() {
     }
     result.signedIn = true;
     result.actualRole = signIn.user?.app_metadata?.app_role ?? "(none)";
-    result.roleMatch = result.actualRole === account.role;
+    result.roleMatch = result.actualRole === expectedRoleForKey(account.role);
 
     if (!result.roleMatch) {
-      result.reason = `role mismatch (expected '${account.role}', got '${result.actualRole}')`;
+      result.reason = `role mismatch (expected '${expectedRoleForKey(account.role)}', got '${result.actualRole}')`;
       results.push(result);
       console.error(`  FAIL ${account.role.padEnd(16)} ${account.email}: ${result.reason}`);
       await client.auth.signOut().catch(() => {});
