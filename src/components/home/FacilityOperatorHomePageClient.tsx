@@ -30,8 +30,6 @@ import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
 import { ClearedRow, OnTapRow } from "./OnTapRow";
 import { PresenceTiles } from "./PresenceTiles";
 import { QuickActions } from "./QuickActions";
-import { PastDueStrip } from "./PastDueStrip";
-import { RecordPaymentDialog } from "./RecordPaymentDialog";
 
 export type FacilityOperatorHomePageClientProps = {
   initial: HomeInitialData;
@@ -47,6 +45,16 @@ const REFRESH_TICK_MS = 60_000;
 const FacilityRoundingCard = dynamic(
   () => import("./FacilityRoundingCard").then((module) => module.FacilityRoundingCard),
   { loading: () => <div className={cn(CARD_CLASS, "h-40 animate-pulse")} aria-hidden /> },
+);
+
+// Payment dialog and past-due strip ship dark and only mount when released; keep
+// them out of the /admin first-load so the 450 kB gzip hard cap stays intact.
+const PastDueStrip = dynamic(
+  () => import("./PastDueStrip").then((module) => module.PastDueStrip),
+);
+const RecordPaymentDialog = dynamic(
+  () => import("./RecordPaymentDialog").then((module) => module.RecordPaymentDialog),
+  { ssr: false },
 );
 
 function formatTime(iso: string, timeZone: string) {

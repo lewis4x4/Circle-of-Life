@@ -1,10 +1,9 @@
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import AdminRouteLoading from "@/components/layout/admin-route-loading";
-import { AdminDashboardPageClient } from "@/components/admin/AdminDashboardPageClient";
-import { FacilityOperatorHomePageClient } from "@/components/home/FacilityOperatorHomePageClient";
 import { isFacilityOperatorRole } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { getServerAuthContext } from "@/lib/auth/server-context";
@@ -19,6 +18,20 @@ import {
 import { loadHome } from "@/lib/home/load-home";
 import { resolveOperatorHomeFacility } from "@/lib/home/resolve-facility";
 import { createClient } from "@/lib/supabase/server";
+
+const AdminDashboardPageClient = dynamic(
+  () =>
+    import("@/components/admin/AdminDashboardPageClient").then(
+      (module) => module.AdminDashboardPageClient,
+    ),
+);
+
+const FacilityOperatorHomePageClient = dynamic(
+  () =>
+    import("@/components/home/FacilityOperatorHomePageClient").then(
+      (module) => module.FacilityOperatorHomePageClient,
+    ),
+);
 
 export default function AdminDashboardPage() {
   return (
