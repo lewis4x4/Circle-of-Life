@@ -1,5 +1,5 @@
 -- Shared insurance guard functions required by the InsureFlow synthetic receiver
--- (446_insureflow_synthetic_receiver.sql).
+-- (448_insureflow_synthetic_receiver.sql).
 --
 -- These three functions were authored in 336_insurance_verified_workspace.sql on
 -- branch codex/haven-insureflow-receiver. That branch also carried an insurance

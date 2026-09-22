@@ -82,13 +82,13 @@ The same three-file focused Vitest command listed above was rerun against this r
 
 ## Rebase note — 2026-09-21 (COL-514)
 
-The review above was conducted on 2026-09-09 against `codex/haven-insureflow-receiver`, which was never merged. Bringing it onto `main` required renumbering the migration: `338_insureflow_synthetic_receiver.sql` collided with `338_stand_up_field_state.sql`, already on main, and main had reached 444. The file is now `446_insureflow_synthetic_receiver.sql`.
+The review above was conducted on 2026-09-09 against `codex/haven-insureflow-receiver`, which was never merged. Bringing it onto `main` required renumbering the migration: `338_insureflow_synthetic_receiver.sql` collided with `338_stand_up_field_state.sql`, already on main, and main had reached 444. The file is now `448_insureflow_synthetic_receiver.sql`.
 
 **The rename did not change a byte.** Both hashes recorded above were re-verified on 2026-09-21 and still hold:
 
 | File | Recorded SHA-256 | Re-verified |
 | --- | --- | --- |
-| `supabase/migrations/446_insureflow_synthetic_receiver.sql` (was `338_…`) | `fcb20df440de9286232c1e62f9282cea3e41554662714cd618703bbbba72a5df` | matches |
+| `supabase/migrations/448_insureflow_synthetic_receiver.sql` (was `338_…`) | `fcb20df440de9286232c1e62f9282cea3e41554662714cd618703bbbba72a5df` | matches |
 | `src/lib/insurance/insureflow/receiver.ts` (follow-up hash) | `526176e8c6dc0ff91363729de578acdab4d78dc5cc358406d0668483123519fd` | matches |
 
 Only the receiver slice was carried across. The branch also contained an insurance workspace, servicing, document-intake and extraction build — migrations 336 and 337, plus a refactor of the `(admin)/insurance` pages into a component layer — which is **not** in this change. That refactor was written against a version of those pages predating main's React Query migration, its organisation-gap card and COL-465's HUD 232 triage, so taking it would have reverted work already shipped. Migration 445 depends only on `public.organizations`, `public.entities`, `auth.users` and the `haven` schema, all of which are on main, so the receiver stands alone without 336 or 337.
