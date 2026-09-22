@@ -4,6 +4,7 @@ import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/
 import { EMPTY_PRESENCE_CENSUS, fetchPresenceCensus, type PresenceCensus } from "@/lib/executive/presence-census";
 import { fetchHomeCensus, type HomeCensusOnTap } from "@/lib/home/census";
 import { fetchHomeOnTap, type HomeOnTapPayload } from "@/lib/home/on-tap";
+import { fetchNotesOnTap, type HomeNoteOnTap } from "@/lib/home/notes";
 import { fetchHomePastDue, type HomePastDue } from "@/lib/home/past-due";
 import { fetchLiveBoardEscalations, fetchLiveBoardTasks } from "@/lib/rounding/live-board-fetch";
 import { deriveLiveBoardCounts } from "@/lib/rounding/live-board-state";
@@ -39,6 +40,8 @@ export type HomeInitialData = {
    * balance reaches the page before then; null when unreleased or unavailable.
    */
   pastDue: HomePastDue | null;
+  /** Note tasks on tap for the caller (COL-595); read only when quick_note is released. */
+  notesOnTap: HomeNoteOnTap[];
 };
 
 const EMPTY_ROUNDING: HomeRoundingSummary = { available: false, missedToday: 0, openEscalations: 0, lastEntryAt: null, lastEntryBy: null };
@@ -132,9 +135,14 @@ export async function loadHome(
     loadReleasedModules(supabase, args.facilityId),
   ]);
   const released = releasedModules.status === "fulfilled" ? releasedModules.value : [];
-  const pastDue = released.includes("past_due")
-    ? await fetchHomePastDue(supabase as unknown as SupabaseClient, args.facilityId).catch(() => null)
-    : null;
+  const [pastDue, notesOnTap] = await Promise.all([
+    released.includes("past_due")
+      ? fetchHomePastDue(supabase as unknown as SupabaseClient, args.facilityId).catch(() => null)
+      : Promise.resolve(null),
+    released.includes("quick_note")
+      ? fetchNotesOnTap(supabase as unknown as SupabaseClient, args.facilityId).catch(() => [] as HomeNoteOnTap[])
+      : Promise.resolve([] as HomeNoteOnTap[]),
+  ]);
   return {
     feed,
     snapshot: snapshot.status === "fulfilled" ? snapshot.value : null,
@@ -146,5 +154,6 @@ export async function loadHome(
     census: census.status === "fulfilled" ? census.value : null,
     releasedModules: released,
     pastDue,
+    notesOnTap,
   };
 }

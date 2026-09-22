@@ -1,6 +1,7 @@
 import type { AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
 import type { HomeCensusOnTap } from "@/lib/home/census";
 import type { HomeOnTapPayload, HomeOnTapRow } from "@/lib/home/on-tap";
+import type { HomeNoteOnTap } from "@/lib/home/notes";
 import type { HomePastDue } from "@/lib/home/past-due";
 
 /**
@@ -390,6 +391,37 @@ export function buildRentRows(pastDue: HomePastDue | null): HomeRowView[] {
   }];
 }
 
+/**
+ * Notes that became tasks (COL-595) join On tap in the assigned bucket on their
+ * follow-up date. The row opens the note's thread on the Notes panel.
+ */
+export function buildNoteRows(notes: HomeNoteOnTap[], currentUserId: string | null): HomeRowView[] {
+  return notes.map((note) => {
+    const who = note.assignee.kind === "queue" ? "Facility queue"
+      : note.assignee.kind === "vendor" ? `Vendor: ${note.assignee.displayName ?? "vendor"}`
+      : note.assignee.userId === currentUserId ? "Yours" : `${note.assignee.displayName ?? "A colleague"}`;
+    const tags: HomeRowView["tags"] = [{ label: "Note", tone: "assigned" }];
+    if (note.overdue) tags.push({ label: "Overdue", tone: "overdue" });
+    return {
+      id: `note:${note.noteId}`,
+      bucket: "assigned" as const,
+      rank: BUCKET_RANK.assigned,
+      title: note.body.length > 120 ? `${note.body.slice(0, 117)}…` : note.body,
+      meta: [who, ...(note.followUpDate ? [`Follow up ${note.followUpDate}`] : [])],
+      tags,
+      dueAt: null,
+      dueLabel: null,
+      owner: null,
+      actions: [{ key: "open" as const, label: "Open note", tone: "default" as const, href: `#note-${note.noteId}` }],
+      href: `#note-${note.noteId}`,
+      instanceId: null,
+      clearTarget: null,
+      catalogKey: null,
+      assignedShiftDate: note.followUpDate ?? null,
+    };
+  });
+}
+
 export type RankedOnTap = {
   rows: HomeRowView[];
   later: HomeRowView[];
@@ -412,12 +444,15 @@ export function rankOnTap(args: {
   rent?: HomeRowView[];
   /** Residents past due, for the glance strip. */
   rentResidents?: number;
+  /** Note tasks from buildNoteRows, present only when quick_note is released. */
+  notes?: HomeRowView[];
 }): RankedOnTap {
   const cap = args.cap ?? HOME_VISIBLE_ROW_CAP;
   const ctx = { now: args.now, timeZone: args.feed.timezone, localDate: args.feed.localDate, currentUserId: args.currentUserId };
   const candidates: HomeRowView[] = [
     ...args.feed.rows.map((row) => toRowView(row, ctx)),
     ...(args.rent ?? []),
+    ...(args.notes ?? []),
     ...args.fyi.map(toFyiRowView),
   ];
   const censusRow = toCensusRowView(args.census, { executiveName: args.feed.escalatesTo?.displayName ?? null });
@@ -438,7 +473,7 @@ export function rankOnTap(args: {
     counts: {
       regulatory: args.feed.counts.regulatory,
       rent: args.rentResidents ?? 0,
-      assigned: args.feed.counts.assigned + (censusRow ? 1 : 0),
+      assigned: args.feed.counts.assigned + (censusRow ? 1 : 0) + (args.notes?.length ?? 0),
       fyi: args.fyi.length,
       clearedToday: args.feed.counts.clearedToday + (censusClearedRow(args.census) ? 1 : 0),
       later: later.length,
