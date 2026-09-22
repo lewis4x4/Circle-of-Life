@@ -81,6 +81,15 @@ describe("benefits API authority and evidence", () => {
     expect((await finalizeBenefitsDocument(request({ expected_revision: 2, request_id: requestId }), caseId, documentId)).status).toBe(409);
     expect(mocks.attest).not.toHaveBeenCalled();
   });
+  it("reports a permanent byte mismatch from the database as a conflict, not a retry", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: target, error: null }).mockResolvedValueOnce({ data: target, error: null }).mockResolvedValueOnce({ data: null, error: { code: "55000" } });
+    expect((await finalizeBenefitsDocument(request({ expected_revision: 2, request_id: requestId }), caseId, documentId)).status).toBe(409);
+  });
+  it("does not attest a reserved document another user prepared", async () => {
+    mocks.rpc.mockResolvedValue({ data: { ...target, document: { ...doc, status: "reserved", created_by: residentId } }, error: null });
+    expect((await finalizeBenefitsDocument(request({ expected_revision: 2, request_id: requestId }), caseId, documentId)).status).toBe(404);
+    expect(mocks.attest).not.toHaveBeenCalled();
+  });
   it("refuses stale downloaded bytes when the current object ETag differs", async () => {
     mocks.rpc.mockResolvedValue({ data: { ...target, object: { ...target.object, etag: "f".repeat(32) } }, error: null });
     expect((await finalizeBenefitsDocument(request({ expected_revision: 2, request_id: requestId }), caseId, documentId)).status).toBe(409);

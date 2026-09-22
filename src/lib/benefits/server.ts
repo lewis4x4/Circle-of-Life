@@ -45,7 +45,7 @@ export function benefitsFailure(status = 503, message = "Benefits information co
 }
 function rpcFailure(error: { code?: string }) {
   if (error.code === "42501" || error.code === "P0002") return benefitsFailure(404, "Benefits case or access is unavailable.");
-  if (["23505", "P0409", "P0001", "23514"].includes(error.code ?? "")) return benefitsFailure(409, "This action conflicts with the current case or its evidence. Refresh and review the requirements.");
+  if (["23505", "P0409", "P0001", "23514", "55000"].includes(error.code ?? "")) return benefitsFailure(409, "This action conflicts with the current case or its evidence. Refresh and review the requirements.");
   if (["22023", "22P02", "22007", "22008"].includes(error.code ?? "")) return benefitsFailure(400, "Some benefits fields are invalid.");
   return benefitsFailure();
 }
@@ -210,6 +210,7 @@ export async function finalizeBenefitsDocument(request: Request, caseId: string,
   const body = finalizeBodySchema.safeParse(await readBody(request)); if (!body.success) return benefitsFailure(400, "Invalid upload confirmation.");
   const verified = await downloadChecked(auth.actor, caseId, documentId, false); if ("response" in verified) return verified.response;
   const object = verified.target.object!;
+  if (verified.target.document.created_by !== auth.actor.id) return benefitsFailure(404, "Benefits case or access is unavailable.");
   if (verified.target.document.status === "reserved") {
     const attested = await verified.actor.admin.rpc("benefits_document_attest" as never, { p_document_id: documentId, p_sha256: verified.target.document.sha256, p_size_bytes: verified.bytes.length, p_mime_type: verified.target.document.mime_type, p_object_id: object.id, p_object_version: object.version, p_etag: object.etag } as never);
     if (attested.error) return rpcFailure(attested.error);
