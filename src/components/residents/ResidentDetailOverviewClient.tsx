@@ -54,14 +54,29 @@ import { diagnosisDisplayTitle } from "@/lib/residents/clinical-text-format";
 import { acuityDisplay } from "@/lib/residents/resident-acuity-display";
 import {
   ACTIVITY_FEED_FILTER_LABELS,
+  ACTIVITY_FEED_PERIOD_OPTIONS,
+  ACTIVITY_FEED_WINDOW_DAYS,
   activityFeedEmptyCopy,
   activityFeedFilteredEmptyCopy,
+  activityFeedPeriodLabel,
+  activityFeedTruncatedCopy,
   activityFeedWindow,
+  isActivityFeedPeriod,
   isWithinActivityWindow,
   resolveActivityFeedState,
   type ActivityFeedFilter,
   type ActivityFeedKind,
+  type ActivityFeedPeriodDays,
 } from "@/lib/residents/resident-activity-feed";
+import { presenceHistoryLines, presenceSinceSummary } from "@/lib/residents/resident-presence-history";
+import {
+  form1823TaskItems,
+  incidentFollowupTaskItems,
+  sortTaskItems,
+  type TaskItem,
+} from "@/lib/residents/resident-task-clocks";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import { useResidentBenefitsTasks } from "@/components/residents/useResidentBenefitsTasks";
 import { recordedDiagnoses } from "@/lib/residents/resident-diagnosis-display";
 import {
   RESPONSIBLE_PARTY_CONTACT_ID,
@@ -135,15 +150,18 @@ function AcuityChip({ acuityLevel }: { acuityLevel: string | null }) {
   );
 }
 
-type TaskTone = "danger" | "warning" | "muted";
-
-type TaskItem = { id: string; title: string; tone: TaskTone; sub: string; href: string };
-
-/** Recorded due dates only — no placeholder tasks the record does not carry. */
+/**
+ * Recorded due dates only — no placeholder tasks the record does not carry.
+ * COL-599 widened this from two clocks (care-plan review, assessments) to the
+ * Form 1823 and open incident follow-ups the loader reads; benefits cases come
+ * from the benefits API and are passed in as `extra`.
+ */
 export function buildTaskItems(
-  detail: Pick<ResidentOverviewDetail, "carePlanAnnualDeltaDays" | "carePlanVersion" | "assessmentsUpcomingJson">,
+  detail: Pick<ResidentOverviewDetail, "carePlanAnnualDeltaDays" | "carePlanVersion" | "assessmentsUpcomingJson"> &
+    Partial<Pick<ResidentOverviewDetail, "form1823" | "openIncidentFollowups">>,
   hrefs: Pick<ResidentDetailHrefConfig, "carePlanHref" | "assessmentsHref">,
   now: Date = new Date(),
+  extra: TaskItem[] = [],
 ): TaskItem[] {
   const items: TaskItem[] = [];
   const cpDelta = detail.carePlanAnnualDeltaDays;
@@ -171,7 +189,7 @@ export function buildTaskItems(
     if (!dueIso) return;
     const due = new Date(`${dueIso}T12:00:00`);
     const diff = Math.round((due.getTime() - now.getTime()) / 86400000);
-    let tone: TaskTone = "muted";
+    let tone: TaskItem["tone"] = "muted";
     let sub = `Due ${isoDayLabel(dueIso) ?? dueIso}`;
     if (diff < 0) {
       tone = "danger";
@@ -189,9 +207,11 @@ export function buildTaskItems(
     });
   });
 
-  const order = { danger: 0, warning: 1, muted: 2 };
-  items.sort((a, b) => order[a.tone] - order[b.tone]);
-  return items;
+  items.push(...form1823TaskItems(detail.form1823, todayFacilityDateIso(now), hrefs.carePlanHref));
+  items.push(...incidentFollowupTaskItems(detail.openIncidentFollowups ?? [], now));
+  items.push(...extra);
+
+  return sortTaskItems(items);
 }
 
 type CompletenessItem = { id: string; label: string; href: string };
@@ -308,11 +328,26 @@ export function ResidentDetailOverviewClient({
   const [contactModal, setContactModal] = useState<ResidentContactRowView | null>(null);
   const [dobVisible, setDobVisible] = useState(false);
   const [activityFilter, setActivityFilter] = useState<ActivityFeedFilter>("all");
+  // COL-599: the period is the operator's choice, and the loader reads the same
+  // span — widening it re-reads the record rather than relabelling old rows.
+  const [activityDays, setActivityDays] = useState<ActivityFeedPeriodDays>(
+    initialDetail?.activityDays ?? ACTIVITY_FEED_WINDOW_DAYS,
+  );
+  const [activityReloading, setActivityReloading] = useState(false);
+  const [showAllTasks, setShowAllTasks] = useState(false);
+  const benefitsTasks = useResidentBenefitsTasks(residentId);
 
   const hrefs = useMemo(() => residentHrefSet(residentId, workspace), [residentId, workspace]);
 
-  const load = useCallback(async (options?: { silent?: boolean }) => {
-    if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
+  // Read by `load` without making the period a dependency: a change of period
+  // is an explicit reload (below), not a reason to re-run the page's mount load.
+  const activityDaysRef = useRef(activityDays);
+  useEffect(() => {
+    activityDaysRef.current = activityDays;
+  }, [activityDays]);
+
+  const load = useCallback(async (options?: { silent?: boolean; activityDays?: ActivityFeedPeriodDays }) => {
+    if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId && options?.activityDays == null) {
       skipNextLoadRef.current = false;
       return;
     }
@@ -335,7 +370,9 @@ export function ResidentDetailOverviewClient({
     }
 
     try {
-      const row = await loadResidentOverviewDetail(residentId, selectedFacilityId);
+      const row = await loadResidentOverviewDetail(residentId, selectedFacilityId, undefined, {
+        activityDays: options?.activityDays ?? activityDaysRef.current,
+      });
       if (!row) {
         setNotFound(true);
       } else {
@@ -357,6 +394,18 @@ export function ResidentDetailOverviewClient({
   const onAfterLog = useCallback(() => {
     void load({ silent: true });
   }, [load]);
+
+  const onActivityPeriodChange = useCallback(
+    (value: string) => {
+      const days = Number(value);
+      if (!isActivityFeedPeriod(days)) return;
+      setActivityDays(days);
+      activityDaysRef.current = days;
+      setActivityReloading(true);
+      void load({ silent: true, activityDays: days }).finally(() => setActivityReloading(false));
+    },
+    [load],
+  );
 
   // The Monitoring Order band reads its own row, so entering an order has to
   // tell it to look again; reloading the overview alone would leave the band
@@ -409,7 +458,12 @@ export function ResidentDetailOverviewClient({
     );
   }
 
-  const feedWindow = activityFeedWindow();
+  // The rows on screen were read for `detail.activityDays`; label that span, not
+  // the one just picked while its reload is in flight.
+  const feedWindow = activityFeedWindow(new Date(), detail.activityDays);
+  const feedTruncatedCopy = activityFeedTruncatedCopy(detail.activityTruncatedKinds);
+  const presenceSince = presenceSinceSummary(detail.presenceHistory, detail.rawStatus);
+  const presenceLines = presenceHistoryLines(detail.presenceHistory);
   const allFeedItems = buildFeedItems(detail);
   const inWindowItems = allFeedItems.filter((item) => isWithinActivityWindow(item.atIso, feedWindow));
   const visibleItems =
@@ -449,7 +503,7 @@ export function ResidentDetailOverviewClient({
     detail.carePlanAnnualDeltaDays != null ? classifyAnnualReview(detail.carePlanAnnualDeltaDays) : null;
 
   const profileEditHref = `/admin/v2/residents/${residentId}`;
-  const taskItems = buildTaskItems(detail, hrefs);
+  const taskItems = buildTaskItems(detail, hrefs, new Date(), benefitsTasks);
   const recordGaps = buildRecordGaps(
     detail,
     { profileHref: profileEditHref, carePlanHref: hrefs.carePlanHref, assessmentsHref: hrefs.assessmentsHref },
@@ -530,6 +584,9 @@ export function ResidentDetailOverviewClient({
                 unfinished; the care-summary strip below still states the gap
                 and links to the assessments that would close it. */}
             {acuity.tone === "gap" ? null : <AcuityChip acuityLevel={detail.acuityLevel} />}
+            {/* COL-599: since when, and who recorded it — after the chips, so the
+                presence and acuity pills stay side by side. */}
+            {isPresenceStatus(detail.rawStatus) ? <PresenceSinceNote summary={presenceSince} /> : null}
           </>
         }
         subtitleTrailing={
@@ -712,6 +769,29 @@ export function ResidentDetailOverviewClient({
           <p className="mt-3 text-[11px] text-muted-foreground">{diagnosesReviewed ?? "Last update not recorded"}</p>
         </Disclosure>
 
+        <Disclosure title="Presence history">
+          {presenceLines.length === 0 ? (
+            <p className="text-[13px] text-muted-foreground">
+              No presence changes recorded for this resident. When presence is changed from the header, the change,
+              its time and who made it are recorded here.
+            </p>
+          ) : (
+            <ol className="space-y-2" aria-label="Presence history, newest first">
+              {presenceLines.map((line) => (
+                <li key={line.id} className="text-[13px]">
+                  <span className="font-medium text-foreground">{line.statusLabel}</span>
+                  {line.current ? <span className="text-muted-foreground"> (current)</span> : null}
+                  <span className="block text-[11px] tabular-nums text-muted-foreground">{line.spanLabel}</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    {line.recordedByLabel}
+                    {line.reason ? ` · ${line.reason}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Disclosure>
+
         <Disclosure title="Allergies, orders and coverage">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <DirectiveRow
@@ -744,9 +824,28 @@ export function ResidentDetailOverviewClient({
         <div className="flex min-w-0 flex-col gap-4 lg:col-span-8" id="activity-timeline">
           <RecordDetailSection
             title="Recent activity"
-            description={`Last 30 days · ${feedWindow.label}`}
+            description={`${activityFeedPeriodLabel(detail.activityDays)} · ${feedWindow.label}`}
             action={
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <label htmlFor="resident-activity-period" className="text-[12px] text-muted-foreground">
+                  Period
+                </label>
+                <Select value={String(activityDays)} onValueChange={onActivityPeriodChange}>
+                  <SelectTrigger
+                    id="resident-activity-period"
+                    aria-busy={activityReloading}
+                    className="h-8 w-[140px] rounded-md border border-input bg-card px-3 text-[12px] shadow-none"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACTIVITY_FEED_PERIOD_OPTIONS.map((days) => (
+                      <SelectItem key={days} value={String(days)} className="text-[12px]">
+                        {activityFeedPeriodLabel(days)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <label htmlFor="resident-activity-filter" className="text-[12px] text-muted-foreground">
                   Show
                 </label>
@@ -799,6 +898,14 @@ export function ResidentDetailOverviewClient({
                 {visibleItems.map((item, idx) => renderFeedItem(item, idx))}
               </div>
             )}
+            {feedTruncatedCopy ? (
+              <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground" role="note">
+                {feedTruncatedCopy}{" "}
+                <Link prefetch={false} href={hrefs.timelineHref} className="font-medium text-foreground underline-offset-4 hover:underline">
+                  Open timeline
+                </Link>
+              </p>
+            ) : null}
           </RecordDetailSection>
         </div>
 
@@ -806,11 +913,12 @@ export function ResidentDetailOverviewClient({
           <RecordDetailSection title="Tasks and due dates">
             {taskItems.length === 0 ? (
               <p className="text-[12px] leading-relaxed text-muted-foreground">
-                No due dates recorded. Care plan reviews and assessment due dates appear here once recorded.
+                No due dates recorded. Care plan reviews, assessment due dates, the Form 1823, incident follow-ups and
+                benefits renewals appear here once recorded.
               </p>
             ) : (
               <ul className="space-y-2 text-[12px]">
-                {taskItems.slice(0, 6).map((task) => (
+                {(showAllTasks ? taskItems : taskItems.slice(0, 6)).map((task) => (
                   <li key={task.id} className="flex gap-2">
                     <span
                       aria-hidden
@@ -833,10 +941,19 @@ export function ResidentDetailOverviewClient({
                 ))}
               </ul>
             )}
+            {/* The list now spans several clocks, so "view all" can no longer mean
+                "open assessments" — it expands the list in place. */}
             {taskItems.length > 6 ? (
-              <Link prefetch={false} href={hrefs.assessmentsHref} className="mt-3 inline-block text-[12px] font-medium underline-offset-4 hover:underline">
-                View all ({taskItems.length})
-              </Link>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-expanded={showAllTasks}
+                className="mt-2 h-8 px-2 text-[12px]"
+                onClick={() => setShowAllTasks((v) => !v)}
+              >
+                {showAllTasks ? "Show fewer" : `Show all (${taskItems.length})`}
+              </Button>
             ) : null}
           </RecordDetailSection>
 
@@ -936,6 +1053,11 @@ export function ResidentDetailOverviewClient({
       />
     </div>
   );
+}
+
+function PresenceSinceNote({ summary }: { summary: ReturnType<typeof presenceSinceSummary> }) {
+  const parts = [summary.sinceLabel, summary.awayDayLabel, summary.recordedByLabel].filter(Boolean);
+  return <span className="text-[12px] leading-snug text-muted-foreground">{parts.join(" · ")}</span>;
 }
 
 function DobReveal({ dobLabel, visible, onToggle }: { dobLabel: string; visible: boolean; onToggle: () => void }) {
