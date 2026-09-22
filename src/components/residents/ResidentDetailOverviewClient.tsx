@@ -63,6 +63,10 @@ import {
   type ActivityFeedKind,
 } from "@/lib/residents/resident-activity-feed";
 import { recordedDiagnoses } from "@/lib/residents/resident-diagnosis-display";
+import {
+  RESPONSIBLE_PARTY_CONTACT_ID,
+  RESPONSIBLE_PARTY_CONTACT_NOTE,
+} from "@/lib/residents/resident-responsible-party";
 import { RESIDENT_NO_UNIT_COPY as NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
@@ -422,11 +426,21 @@ export function ResidentDetailOverviewClient({
     formatResidentOverviewGenderLabel(detail.gender),
     `Room ${detail.roomLabel}`,
     detail.unitName || NO_UNIT_COPY,
+    // COL-599: the global scope may say "All facilities", and this is the tab
+    // every link to a resident lands on. The shell that carries the other tabs
+    // has always named the building; the overview did not, so the one page an
+    // operator opens first could not answer which house this person is in.
+    detail.facilityName || "Facility not recorded",
     `Admitted ${detail.admissionLabel}`,
   ].join(" · ");
 
   const contactPrimaryCandidates = [...detail.contacts].filter((c) => c.isEmergencyContact).sort((a, b) => a.sortOrder - b.sortOrder);
   const primaryContactRow = contactPrimaryCandidates[0] ?? null;
+  // COL-599: the loader's contact ladder falls back to the responsible party the
+  // record holds in its own columns. Say so on the card — it is not a care
+  // contact anyone has maintained, and it should be promoted to one.
+  const primaryContactNote =
+    primaryContactRow?.id === RESPONSIBLE_PARTY_CONTACT_ID ? RESPONSIBLE_PARTY_CONTACT_NOTE : null;
   const secondaryContactRow = contactPrimaryCandidates[1] ?? null;
   const poaRows = [...detail.contacts].filter((c) => c.isHealthcareProxy || c.isPowerOfAttorney);
   const poaPreferred = [...poaRows].sort((a, b) => a.sortOrder - b.sortOrder)[0] ?? null;
@@ -830,6 +844,7 @@ export function ResidentDetailOverviewClient({
             <ContactBlock
               tier="Primary contact"
               row={primaryContactRow}
+              note={primaryContactNote}
               onOpen={() => primaryContactRow && setContactModal(primaryContactRow)}
               emptyHref={profileEditHref}
               emptyCopy="+ Add primary contact"
@@ -1001,8 +1016,10 @@ function ContactBlock(props: {
   onOpen: () => void;
   emptyHref?: string;
   emptyCopy?: string;
+  /** Where this row came from, when it is not a maintained care contact. */
+  note?: string | null;
 }) {
-  const { tier, row, onOpen, emptyHref, emptyCopy } = props;
+  const { tier, row, onOpen, emptyHref, emptyCopy, note } = props;
   return (
     <div className="mb-3 border-b border-border pb-3">
       <p className="mb-1 text-[11px] font-semibold text-muted-foreground">{tier}</p>
@@ -1023,6 +1040,9 @@ function ContactBlock(props: {
       ) : (
         <p className="text-[13px] text-muted-foreground">Not on file</p>
       )}
+      {row && note ? (
+        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{note}</p>
+      ) : null}
     </div>
   );
 }
