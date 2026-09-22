@@ -25,7 +25,7 @@ import { NextRequest } from "next/server";
 let query: Record<string, ReturnType<typeof vi.fn>>;
 const restricted = {
   sync_status: "synchronized", job_id: "job-1", target_user_id: "target", organization_id: "org",
-  app_role: "caregiver", auth_claim_version: 7, is_active: false,
+  app_role: "housekeeper", auth_claim_version: 7, is_active: false,
   deleted_at: "2026-09-07T00:00:00.000Z", should_ban: true,
 };
 
@@ -34,7 +34,7 @@ beforeEach(() => {
   query = {};
   for (const name of ["select", "eq", "is", "update"]) query[name] = vi.fn(() => query);
   query.maybeSingle = vi.fn().mockResolvedValue({
-    data: { id: "target", organization_id: "org", app_role: "caregiver", is_active: true,
+    data: { id: "target", organization_id: "org", app_role: "housekeeper", is_active: true,
       email: "old@example.test", auth_claim_version: 6 },
   });
   query.single = vi.fn().mockResolvedValue({ data: {}, error: null });
@@ -50,7 +50,7 @@ beforeEach(() => {
 it("reports pending restriction synchronization without rolling back database authority", async () => {
   mocks.restrict.mockResolvedValue({ ...restricted, sync_status: "retry_required" });
   const response = await PATCH(
-    new NextRequest("http://localhost", { method: "PATCH", body: JSON.stringify({ app_role: "dietary_aide" }) }),
+    new NextRequest("http://localhost", { method: "PATCH", body: JSON.stringify({ app_role: "broker" }) }),
     { params: Promise.resolve({ id: "target" }) },
   );
   expect(response.status).toBe(202);
@@ -90,21 +90,21 @@ it("does not report a pending promotion as applied", async () => {
 
 it("repairs current role through the durable lifecycle command", async () => {
   const response = await PATCH(
-    new NextRequest("http://localhost", { method: "PATCH", body: JSON.stringify({ app_role: "caregiver" }) }),
+    new NextRequest("http://localhost", { method: "PATCH", body: JSON.stringify({ app_role: "housekeeper" }) }),
     { params: Promise.resolve({ id: "target" }) },
   );
   expect(response.status).toBe(200);
-  expect(mocks.restrict).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ operation: "demote", desiredRole: "caregiver" }));
+  expect(mocks.restrict).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ operation: "demote", desiredRole: "housekeeper" }));
 });
 
 it("passes request replay identity to a same-tier restriction", async () => {
   const response = await PATCH(
     new NextRequest("http://localhost", { method: "PATCH", headers: { "Idempotency-Key": "same-tier-command" },
-      body: JSON.stringify({ app_role: "dietary_aide" }) }),
+      body: JSON.stringify({ app_role: "broker" }) }),
     { params: Promise.resolve({ id: "target" }) },
   );
   expect(response.status).toBe(200);
   expect(mocks.restrict).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-    operation: "demote", desiredRole: "dietary_aide", requestKey: "same-tier-command",
+    operation: "demote", desiredRole: "broker", requestKey: "same-tier-command",
   }));
 });

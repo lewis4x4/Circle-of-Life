@@ -14,7 +14,7 @@ const TRUSTED_TRAY_ERRORS = new Set([
 
 const schema = z.object({ ticketId: z.uuid(), residentId: z.uuid(), foodLevel: z.number().int().min(0).max(7), liquidLevel: z.number().int().min(0).max(4), allergensConfirmed: z.literal(true) }).strict();
 export async function POST(request: Request) {
-  const auth = await requireAdminApiActor({ allowedRoles: ["dietary", "cook", "dietary_aide", "manager", "owner", "org_admin", "facility_admin"] });
+  const auth = await requireAdminApiActor({ allowedRoles: ["cook", "manager", "owner", "org_admin", "facility_admin"] });
   if ("response" in auth) return auth.response;
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Complete all tray checks." }, { status: 400 });

@@ -130,18 +130,8 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
       carePlans: true, assessments: true, familyMessages: true,
     },
   },
-  dietary: {
-    route: "/dietary",
-    shell: "dietary",
-    roleLabel: "Dietary",
-    primaryTaskLanes: ["dietary"],
-    firstScreenPriority: ["diet_orders", "clinical_review", "service_readiness"],
-    suppressedSections: ["enterprise_rollup", "incident_backlog", "family_billing"],
-    mobileTabletExpectation: "desktop-first",
-    visibleGroups: [],
-    sections: {},
-  },
-  // Cook = dietary for access and routing (owner ruling 2026-09-22).
+  // Owner ruling 2026-09-22: Lead Cook / Dietary and Dietary Aide are retired and
+  // folded into Cook (migration 462). Cook's home is the dietary app.
   cook: {
     route: "/dietary",
     shell: "dietary",
@@ -151,6 +141,22 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     suppressedSections: ["enterprise_rollup", "incident_backlog", "family_billing"],
     mobileTabletExpectation: "desktop-first",
     visibleGroups: [],
+    sections: {},
+  },
+  // Owner ruling 2026-09-22 ("need to add Marketing"): pipeline, referrals and reputation
+  // only. Admin-eligible, but the admin shell sends marketing anywhere else back here
+  // (isMarketingAllowedAdminPath). Reputation has no nav item for any role; it is reached
+  // from its own URL.
+  marketing: {
+    route: "/admin/referrals",
+    shell: "admin",
+    roleLabel: "Marketing",
+    primaryTaskLanes: ["referrals", "pipeline", "reputation"],
+    firstScreenPriority: ["referrals", "pipeline", "reputation"],
+    suppressedSections: ["clinical_follow_through", "resident_records", "finance", "staffing", "settings"],
+    mobileTabletExpectation: "desktop-first",
+    visibleGroups: ["Pipeline"],
+    visibleItemKeys: ["referrals"],
     sections: {},
   },
   maintenance_role: {
@@ -174,17 +180,6 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     primaryTaskLanes: ["room_assignments", "priority_cleans", "shift_summary"],
     firstScreenPriority: ["room_assignments", "priority_cleans", "completion", "shift_summary"],
     suppressedSections: ["med_pass", "incident_backlog", "finance", "rounds"],
-    mobileTabletExpectation: "phone-and-tablet",
-    visibleGroups: [],
-    sections: {},
-  },
-  caregiver: {
-    route: "/caregiver",
-    shell: "caregiver",
-    roleLabel: "Caregiver",
-    primaryTaskLanes: ["shift_brief", "due_now_tasks", "rounds", "incident_reporting", "prn_followup"],
-    firstScreenPriority: ["due_now", "overdue", "resident_assignments", "urgent_alerts", "documentation_follow_through"],
-    suppressedSections: ["admin_backlog_density", "enterprise_rollup", "finance"],
     mobileTabletExpectation: "phone-and-tablet",
     visibleGroups: [],
     sections: {},
@@ -223,8 +218,9 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     firstScreenPriority: ["medications_due_now", "resident_context", "controlled_substance_follow_through", "exceptions", "handoff"],
     suppressedSections: ["adl_documentation_breadth", "enterprise_rollup", "family_billing"],
     mobileTabletExpectation: "phone-and-tablet",
-    // Owner ruling 2026-09-22: the legacy nurse role is folded into med_tech, so a
-    // med-tech's admin-shell nav is the one nurse had (the home stays /med-tech).
+    // Owner rulings 2026-09-22: the legacy nurse and caregiver roles are folded into
+    // med_tech, so a med-tech's admin-shell nav is the one nurse had and they also use
+    // the caregiver floor app (/caregiver). The home stays /med-tech.
     visibleGroups: ["Command", "Clinical Ops", "Quality & Risk"],
     visibleItemKeys: ["residents", "med-tech", "medication-errors", "incidents-new", "incidents"],
     sections: {

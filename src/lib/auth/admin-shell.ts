@@ -1,6 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, isFacilityOperatorRole, isOrgAdminAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
+import {
+  getAppRoleFromClaims,
+  isAdminEligibleAppRole,
+  isDietaryRole,
+  isFacilityOperatorRole,
+  isMarketingAllowedAdminPath,
+  isMarketingRole,
+  isOrgAdminAppRole,
+  type AuthClaimUser,
+} from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -60,7 +69,7 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
   }
 
   const role = getAppRoleFromClaims(user);
-  if (role === "caregiver" || role === "housekeeper") {
+  if (role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (isDietaryRole(role) && nextUrl.pathname === "/admin/dietary-dashboard") {
@@ -78,6 +87,10 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
 
   const roleHome = getDashboardRouteForRole(role);
   if (nextUrl.pathname === "/admin" && roleHome !== "/admin") {
+    return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
+  }
+  // Marketing: referrals, pipeline and reputation only (owner ruling 2026-09-22).
+  if (isMarketingRole(role) && !isMarketingAllowedAdminPath(nextUrl.pathname)) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
 

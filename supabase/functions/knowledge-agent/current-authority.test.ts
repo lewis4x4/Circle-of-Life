@@ -18,10 +18,11 @@ Deno.test("referral pipeline roles match the database capability map", () => {
     "admin_assistant",
     "coordinator",
     "med_tech",
+    "marketing",
   ]) {
     assertEquals(canReadReferralPipeline(role), true, role);
   }
-  for (const role of ["caregiver", "dietary", "housekeeper", "maintenance_role", "family", "broker"]) {
+  for (const role of ["cook", "caregiver", "dietary", "housekeeper", "maintenance_role", "family", "broker"]) {
     assertEquals(canReadReferralPipeline(role), false, role);
   }
 });
@@ -37,7 +38,7 @@ Deno.test("wrong-role referral route returns no service-role rows", async () => 
         },
       },
       workspaceId: "00000000-0000-0000-0000-000000000101",
-      userRole: "caregiver",
+      userRole: "housekeeper",
       userId: "00000000-0000-0000-0000-000000000201",
       userEmail: null,
       accessibleFacilityIds: ["00000000-0000-0000-0000-000000000301"],

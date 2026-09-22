@@ -28,16 +28,13 @@ beforeEach(() => {
   mocks.revalidateActor.mockImplementation(async (actor) => ({ actor }));
 });
 const sign = () => POST(new Request("http://local/verify", { method: "POST", body: JSON.stringify({ countId: "count", facilityId: "facility", email: "witness@example.test", password: "temporary-test-input" }) }));
-it.each(["med_tech", "caregiver"])("allows %s to originate a count with an authorized med-tech witness", async (role) => {
-  outgoingRole = role; const response = await sign(); expect(response.status).toBe(200); expect(mocks.rpc).toHaveBeenCalledTimes(1);
+it("allows a med_tech (which absorbed the retired caregiver role) to originate a count with a med-tech witness", async () => {
+  outgoingRole = "med_tech"; const response = await sign(); expect(response.status).toBe(200); expect(mocks.rpc).toHaveBeenCalledTimes(1);
 });
-it("preserves caregiver witness eligibility", async () => {
-  witnessRole = "caregiver"; expect((await sign()).status).toBe(200);
-});
-it.each(["nurse", "owner", "manager", "family"])("does not authorize %s as the incoming witness", async (role) => {
+it.each(["nurse", "caregiver", "owner", "manager", "family"])("does not authorize %s as the incoming witness", async (role) => {
   witnessRole = role; expect((await sign()).status).toBe(403); expect(mocks.rpc).not.toHaveBeenCalled();
 });
-it.each(["nurse", "owner", "manager", "family"])("does not let %s perform the outgoing count", async (role) => {
+it.each(["nurse", "caregiver", "owner", "manager", "family"])("does not let %s perform the outgoing count", async (role) => {
   outgoingRole = role; expect((await sign()).status).toBe(403); expect(mocks.verify).not.toHaveBeenCalled();
 });
 it.each(["another organization", "another facility"])("does not verify a witness for a count in %s", async () => {

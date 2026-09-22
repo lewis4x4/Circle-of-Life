@@ -89,14 +89,14 @@ INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  UNION ALL SELECT admin_a,admin_a||'@svc.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site A admin"}'::jsonb FROM cf
  UNION ALL SELECT admin_b,admin_b||'@svc.invalid',jsonb_build_object('organization_id',org,'app_role','facility_admin'),'{"full_name":"Site B admin"}'::jsonb FROM cf
  UNION ALL SELECT maint,maint||'@svc.invalid',jsonb_build_object('organization_id',org,'app_role','maintenance_role'),'{"full_name":"Maintenance"}'::jsonb FROM cf
- UNION ALL SELECT cook,cook||'@svc.invalid',jsonb_build_object('organization_id',org,'app_role','dietary'),'{"full_name":"Dietary"}'::jsonb FROM cf
+ UNION ALL SELECT cook,cook||'@svc.invalid',jsonb_build_object('organization_id',org,'app_role','cook'),'{"full_name":"Dietary"}'::jsonb FROM cf
  UNION ALL SELECT aide,aide||'@svc.invalid',jsonb_build_object('organization_id',org,'app_role','housekeeper'),'{"full_name":"Aide"}'::jsonb FROM cf;
 INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active)
  SELECT owner_actor,owner_actor||'@svc.invalid','Corporate','owner'::public.app_role,org,true FROM cf
  UNION ALL SELECT admin_a,admin_a||'@svc.invalid','Site A admin','facility_admin'::public.app_role,org,true FROM cf
  UNION ALL SELECT admin_b,admin_b||'@svc.invalid','Site B admin','facility_admin'::public.app_role,org,true FROM cf
  UNION ALL SELECT maint,maint||'@svc.invalid','Maintenance','maintenance_role'::public.app_role,org,true FROM cf
- UNION ALL SELECT cook,cook||'@svc.invalid','Dietary','dietary'::public.app_role,org,true FROM cf
+ UNION ALL SELECT cook,cook||'@svc.invalid','Dietary','cook'::public.app_role,org,true FROM cf
  UNION ALL SELECT aide,aide||'@svc.invalid','Aide','housekeeper'::public.app_role,org,true FROM cf
  ON CONFLICT(id) DO UPDATE SET app_role=excluded.app_role,organization_id=excluded.organization_id,is_active=true;
 INSERT INTO auth.sessions(id,user_id) SELECT owner_session,owner_actor FROM cf UNION ALL SELECT admin_a_session,admin_a FROM cf UNION ALL SELECT admin_b_session,admin_b FROM cf
@@ -126,7 +126,7 @@ CREATE FUNCTION pg_temp.c_login(p_kind text) RETURNS void LANGUAGE plpgsql AS $$
  ELSIF p_kind='admin_a' THEN u:=f.admin_a; sess:=f.admin_a_session; r:='facility_admin';
  ELSIF p_kind='admin_b' THEN u:=f.admin_b; sess:=f.admin_b_session; r:='facility_admin';
  ELSIF p_kind='maint' THEN u:=f.maint; sess:=f.maint_session; r:='maintenance_role';
- ELSIF p_kind='cook' THEN u:=f.cook; sess:=f.cook_session; r:='dietary';
+ ELSIF p_kind='cook' THEN u:=f.cook; sess:=f.cook_session; r:='cook';
  ELSE u:=f.aide; sess:=f.aide_session; r:='housekeeper'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',sess,'iat',extract(epoch FROM clock_timestamp())::bigint,
   'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=u),'role','authenticated','app_role',r,'organization_id',f.org)::text,true);
@@ -178,9 +178,9 @@ INSERT INTO cf_results SELECT 'v_'||x.label,public.save_operation_requirement_dr
   ('fire_safety',cf.act_fire_safety,'Record fire safety inspection','["maintenance_role","facility_admin"]'::jsonb,'{}'::jsonb),
   ('fire',cf.act_fire,'Record fire inspection','["maintenance_role","facility_admin"]'::jsonb,'{}'::jsonb),
   ('sprk',cf.act_sprk,'Record sprinkler inspection','["maintenance_role","facility_admin"]'::jsonb,'{}'::jsonb),
-  ('food',cf.act_food,'Check emergency food supply','["dietary","maintenance_role","facility_admin"]'::jsonb,jsonb_build_object('required_inputs',jsonb_build_array(jsonb_build_object('key','cases_counted','label','Cases counted','type','number','required',false,'min',0,'max',1000)))),
-  ('meal',cf.act_meal,'Record meal substitution','["dietary","facility_admin"]'::jsonb,'{}'::jsonb),
-  ('menu',cf.act_menu,'Record dietitian menu approval','["dietary","facility_admin"]'::jsonb,'{}'::jsonb)) x(label,act,title,roles,extra);
+  ('food',cf.act_food,'Check emergency food supply','["cook","maintenance_role","facility_admin"]'::jsonb,jsonb_build_object('required_inputs',jsonb_build_array(jsonb_build_object('key','cases_counted','label','Cases counted','type','number','required',false,'min',0,'max',1000)))),
+  ('meal',cf.act_meal,'Record meal substitution','["cook","facility_admin"]'::jsonb,'{}'::jsonb),
+  ('menu',cf.act_menu,'Record dietitian menu approval','["cook","facility_admin"]'::jsonb,'{}'::jsonb)) x(label,act,title,roles,extra);
 INSERT INTO cf_ids SELECT label,(result->>'id')::uuid FROM cf_results WHERE label LIKE 'v\_%';
 INSERT INTO cf_results SELECT 'pub_'||label,public.publish_operation_requirement_review(id,(SELECT since FROM cf)) FROM cf_ids WHERE label LIKE 'v\_%';
 SELECT pg_temp.c_assert((SELECT count(*)=12 FROM cf_results WHERE label LIKE 'pub\_v%' AND result->>'status'='published'),'central versions not published');

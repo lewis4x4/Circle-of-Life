@@ -22,8 +22,8 @@ it("lets the actual med-tech pass owner request a med-tech witness", async () =>
   const response = await witness(); expect(response.status).toBe(200); expect(await response.json()).toEqual({ ok: true, witnessSignatureId: "signature" });
   expect(mocks.rpc).toHaveBeenCalledWith("record_verified_med_pass_witness", { p_pass_id: "pass", p_actor_id: "actor", p_witness_id: "witness" });
 });
-it("retains caregiver witness eligibility", async () => {
-  originRole = "caregiver"; witnessRole = "caregiver"; expect((await witness()).status).toBe(200);
+it("does not let a retired caregiver role originate a witnessed pass (folded into med_tech)", async () => {
+  originRole = "caregiver"; expect((await witness()).status).toBe(403);
 });
 it("does not treat a legacy nurse identity as an eligible incoming witness", async () => {
   witnessRole = "nurse"; expect((await witness()).status).toBe(409);

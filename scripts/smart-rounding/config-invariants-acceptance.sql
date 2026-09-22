@@ -206,7 +206,7 @@ BEGIN
   INSERT INTO public.user_profiles (id, organization_id, email, full_name, app_role, is_active, phone)
     VALUES (v_admin_user, v_org, 'synthetic-cfg-org-admin@haven.test', 'Synthetic Organization Administrator', 'org_admin', TRUE, '+15550000101'),
     (v_fac_admin_user, v_org, 'synthetic-cfg-fac-admin@haven.test', 'Synthetic Facility Administrator', 'facility_admin', TRUE, '+15550000102'),
-    (v_aide_user, v_org, 'synthetic-cfg-aide@haven.test', 'Synthetic Resident Aide', 'caregiver', TRUE, '+15550000103');
+    (v_aide_user, v_org, 'synthetic-cfg-aide@haven.test', 'Synthetic Resident Aide', 'med_tech', TRUE, '+15550000103');
 
   INSERT INTO public.user_facility_access (user_id, facility_id, organization_id, is_primary)
   SELECT

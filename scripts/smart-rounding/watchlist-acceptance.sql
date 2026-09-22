@@ -131,7 +131,7 @@ BEGIN
 
   INSERT INTO public.user_profiles (id, organization_id, email, full_name, app_role, is_active)
     VALUES (v_reviewer, v_org, 'synthetic-watchlist-reviewer@haven.test', 'Synthetic Watchlist Reviewer', 'facility_admin', TRUE),
-    (v_reporter, v_org, 'synthetic-watchlist-reporter@haven.test', 'Synthetic Watchlist Reporter', 'nurse', TRUE);
+    (v_reporter, v_org, 'synthetic-watchlist-reporter@haven.test', 'Synthetic Watchlist Reporter', 'med_tech', TRUE);
 
   INSERT INTO public.user_facility_access (user_id, facility_id, organization_id, is_primary)
     VALUES (v_reviewer, v_facility, v_org, TRUE),

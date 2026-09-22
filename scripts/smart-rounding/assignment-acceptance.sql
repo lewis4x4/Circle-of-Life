@@ -624,7 +624,7 @@ BEGIN
   INSERT INTO auth.sessions (id, user_id)
     VALUES (v_session, v_user);
   INSERT INTO public.user_profiles (id, organization_id, email, full_name, app_role, is_active)
-    VALUES (v_user, v_org, 'synthetic-roster-caregiver@haven.test', 'Synthetic Roster Caregiver', 'caregiver', TRUE);
+    VALUES (v_user, v_org, 'synthetic-roster-caregiver@haven.test', 'Synthetic Roster Caregiver', 'med_tech', TRUE);
   INSERT INTO public.user_facility_access (user_id, facility_id, organization_id, is_primary)
     VALUES (v_user, v_roster, v_org, TRUE);
   UPDATE
@@ -646,7 +646,7 @@ BEGIN
   INSERT INTO public.observation_vocab(organization_id,facility_id,field_name,value_code,display_label,display_order,active)
     VALUES(v_org,v_roster,'mood_state','calm','Calm',1,true);
 
-  v_result := public.complete_rounding_task_review (v_worked.task_id, v_user, 'caregiver', v_session, (
+  v_result := public.complete_rounding_task_review (v_worked.task_id, v_user, 'med_tech', v_session, (
       SELECT
         auth_claim_version
       FROM public.user_profiles

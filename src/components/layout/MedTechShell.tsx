@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isMarketingRole, isMedTechRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 
@@ -28,6 +28,7 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [isMedTech, setIsMedTech] = useState(false);
 
   // Force dark theme
 
@@ -48,14 +49,15 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     // Med-tech staff use this surface day-to-day. Admins/owners also need
     // visibility here for support and oversight, so they're allowed through
     // rather than bounced back to their own dashboard.
-    if (isMedTechRole(role) || isAdminEligibleAppRole(role)) {
+    if (isMedTechRole(role) || (isAdminEligibleAppRole(role) && !isMarketingRole(role))) {
+      setIsMedTech(isMedTechRole(role));
       setAuthorized(true);
       setChecking(false);
       return;
     }
 
     // Other roles get redirected to their proper shell.
-    if (role === "caregiver" || role === "housekeeper") {
+    if (role === "housekeeper" || isMarketingRole(role)) {
       router.replace(getDashboardRouteForRole(role));
     } else if (role === "family") {
       router.replace("/family");
@@ -100,6 +102,10 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     <div className="dark">
       <div className="min-h-screen bg-background font-sans text-foreground antialiased">
         <div className="fixed right-4 top-4 z-50">
+          {/* Med-techs also use the caregiver floor app (owner ruling 2026-09-22). */}
+          {isMedTech ? (
+            <Link href="/caregiver" className="mr-3 text-sm underline">Floor app</Link>
+          ) : null}
           <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
               <Link href="/med-tech/acknowledgments" className="mr-3 rounded border border-border bg-background px-3 py-2 text-sm">Required reading</Link>
           <PilotFeedbackLauncher shellKind="med-tech" compact />

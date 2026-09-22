@@ -87,8 +87,6 @@ export default function EditPolicyPage() {
           "org_admin",
           "facility_admin",
           "med_tech",
-          "caregiver",
-          "dietary",
           "cook",
           "maintenance_role",
         ]);

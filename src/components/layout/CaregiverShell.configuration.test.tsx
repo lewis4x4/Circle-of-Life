@@ -1,8 +1,8 @@
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ shifts: vi.fn(), ready: false, lastError: null as string | null }));
+const mocks = vi.hoisted(() => ({ shifts: vi.fn(), ready: false, lastError: null as string | null, role: "med_tech" }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/caregiver/rounds", useRouter: () => ({ replace: vi.fn() }) }));
-vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: "caregiver", loading: false, organizationId: "org", user: { id: "user", app_metadata: { app_role: "caregiver" } } }) }));
+vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: mocks.role, loading: false, organizationId: "org", user: { id: "user", app_metadata: { app_role: mocks.role } } }) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 vi.mock("@/lib/caregiver/facility-context", () => ({ loadCaregiverFacilityContextForUser: async () => ({ ok: true, ctx: { facilityId: "facility", facilityName: "Synthetic facility", timeZone: "America/New_York" } }) }));
 vi.mock("@/lib/rounding/live-board-fetch", () => ({ fetchLiveBoardShifts: mocks.shifts }));
@@ -12,7 +12,7 @@ vi.mock("@/components/rounding/RoundingOutbox", () => ({ RoundingOutbox: () => n
 vi.mock("@/components/feedback/PilotFeedbackLauncher", () => ({ PilotFeedbackLauncher: () => null }));
 import { CaregiverShell } from "./CaregiverShell";
 beforeEach(() => {
-  mocks.ready = false; mocks.lastError = null;
+  mocks.ready = false; mocks.lastError = null; mocks.role = "med_tech";
   mocks.shifts.mockResolvedValue([
     { shift_key: "early", label: "Early crew", starts_at_local: "04:30", ends_at_local: "16:30" },
     { shift_key: "late", label: "Late crew", starts_at_local: "16:30", ends_at_local: "04:30" },
@@ -49,4 +49,13 @@ it("does not claim Synced after a failed Outbox snapshot", async () => {
  expect(screen.getByText("Sync unavailable")).toBeTruthy();
  expect(screen.queryByText("Synced")).toBeNull();
  await screen.findByRole("heading", { level: 1 });
+});
+
+it("gives a med-tech a link back to the Med-Tech app, and a housekeeper none", async () => {
+  await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
+  expect(screen.getByRole("link", { name: "Med-Tech app" })).toHaveAttribute("href", "/med-tech");
+  cleanup();
+  mocks.role = "housekeeper";
+  await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
+  expect(screen.queryByRole("link", { name: "Med-Tech app" })).toBeNull();
 });

@@ -16,7 +16,7 @@ let root: Root | undefined;
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
-  mocks.auth.signInWithPassword.mockResolvedValue({ data: { user: { app_metadata: { app_role: "caregiver" } } }, error: null });
+  mocks.auth.signInWithPassword.mockResolvedValue({ data: { user: { app_metadata: { app_role: "med_tech" } } }, error: null });
   mocks.auth.resetPasswordForEmail.mockResolvedValue({});
   container = document.createElement("div");
   document.body.appendChild(container);
@@ -60,7 +60,7 @@ describe("login credential safety before hydration", () => {
     fireEvent.change(password, { target: { value: "SyntheticTestOnly123!" } });
     expect(fireEvent.submit(container.querySelector("form")!)).toBe(false);
     await waitFor(() => expect(mocks.auth.signInWithPassword).toHaveBeenCalledWith({ email: "synthetic@example.test", password: "SyntheticTestOnly123!" }));
-    await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith("/caregiver"));
+    await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith("/med-tech"));
   });
   it("preserves the hydrated password-reset flow without submitting credentials", async () => {
     prerender(); await hydrate();

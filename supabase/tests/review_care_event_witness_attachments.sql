@@ -38,17 +38,17 @@ INSERT INTO public.facilities(id,entity_id,organization_id,name,address_line_1,c
 
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
   SELECT admin_u, admin_u||'@review.invalid', jsonb_build_object('organization_id',org,'app_role','facility_admin'), '{"full_name":"Probe Administrator"}'::jsonb FROM wf
-  UNION ALL SELECT cg_a,   cg_a||'@review.invalid',   jsonb_build_object('organization_id',org,'app_role','caregiver'), '{"full_name":"Probe Caregiver A"}'::jsonb FROM wf
-  UNION ALL SELECT cg_b,   cg_b||'@review.invalid',   jsonb_build_object('organization_id',org,'app_role','caregiver'), '{"full_name":"Probe Caregiver B"}'::jsonb FROM wf
-  UNION ALL SELECT cg_c,   cg_c||'@review.invalid',   jsonb_build_object('organization_id',org,'app_role','caregiver'), '{"full_name":"Probe Caregiver C"}'::jsonb FROM wf
-  UNION ALL SELECT cg_far, cg_far||'@review.invalid', jsonb_build_object('organization_id',org,'app_role','caregiver'), '{"full_name":"Probe Caregiver Far"}'::jsonb FROM wf;
+  UNION ALL SELECT cg_a,   cg_a||'@review.invalid',   jsonb_build_object('organization_id',org,'app_role','med_tech'), '{"full_name":"Probe Caregiver A"}'::jsonb FROM wf
+  UNION ALL SELECT cg_b,   cg_b||'@review.invalid',   jsonb_build_object('organization_id',org,'app_role','med_tech'), '{"full_name":"Probe Caregiver B"}'::jsonb FROM wf
+  UNION ALL SELECT cg_c,   cg_c||'@review.invalid',   jsonb_build_object('organization_id',org,'app_role','med_tech'), '{"full_name":"Probe Caregiver C"}'::jsonb FROM wf
+  UNION ALL SELECT cg_far, cg_far||'@review.invalid', jsonb_build_object('organization_id',org,'app_role','med_tech'), '{"full_name":"Probe Caregiver Far"}'::jsonb FROM wf;
 
 INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active)
   SELECT admin_u, admin_u||'@review.invalid','Probe Administrator','facility_admin'::public.app_role,org,true FROM wf
-  UNION ALL SELECT cg_a,   cg_a||'@review.invalid',  'Probe Caregiver A','caregiver'::public.app_role,org,true FROM wf
-  UNION ALL SELECT cg_b,   cg_b||'@review.invalid',  'Probe Caregiver B','caregiver'::public.app_role,org,true FROM wf
-  UNION ALL SELECT cg_c,   cg_c||'@review.invalid',  'Probe Caregiver C','caregiver'::public.app_role,org,true FROM wf
-  UNION ALL SELECT cg_far, cg_far||'@review.invalid','Probe Caregiver Far','caregiver'::public.app_role,org,true FROM wf;
+  UNION ALL SELECT cg_a,   cg_a||'@review.invalid',  'Probe Caregiver A','med_tech'::public.app_role,org,true FROM wf
+  UNION ALL SELECT cg_b,   cg_b||'@review.invalid',  'Probe Caregiver B','med_tech'::public.app_role,org,true FROM wf
+  UNION ALL SELECT cg_c,   cg_c||'@review.invalid',  'Probe Caregiver C','med_tech'::public.app_role,org,true FROM wf
+  UNION ALL SELECT cg_far, cg_far||'@review.invalid','Probe Caregiver Far','med_tech'::public.app_role,org,true FROM wf;
 
 INSERT INTO auth.sessions(id,user_id)
   SELECT admin_s, admin_u FROM wf UNION ALL SELECT cg_a_s, cg_a FROM wf
@@ -215,15 +215,19 @@ DO $$ DECLARE v_task uuid; BEGIN
     'given by the person it was assigned to');
 END $$;
 
--- The RLS policy must refuse the direct UPDATE too, not only the function.
+-- 2026-09-22: caregivers are med-techs now (migration 462), and med_tech holds what the
+-- nurse held — including the follow-up supervision RLS gives it. So B's direct UPDATE of
+-- C's follow-up is allowed through RLS; the witness function above still refuses it.
+-- The row is put back so the rest of this probe sees C's task open.
 DO $$ DECLARE v_task uuid; v_rows integer; BEGIN
   SELECT f.id INTO v_task FROM public.incident_followups f
   WHERE f.task_type='witness_statement' AND f.assigned_to = (SELECT cg_c FROM wf) AND f.deleted_at IS NULL LIMIT 1;
   UPDATE public.incident_followups SET completed_at = now() WHERE id = v_task;
   GET DIAGNOSTICS v_rows = ROW_COUNT;
-  IF v_rows <> 0 THEN
-    RAISE EXCEPTION 'Caregiver B updated caregiver C''s follow-up through RLS';
+  IF v_rows <> 1 THEN
+    RAISE EXCEPTION 'Med-tech lost the follow-up supervision nurse held';
   END IF;
+  UPDATE public.incident_followups SET completed_at = NULL WHERE id = v_task;
 END $$;
 RESET ROLE;
 
@@ -498,12 +502,10 @@ SET LOCAL ROLE authenticated;
 SELECT pg_temp.actor(cg_a, cg_a_s) FROM wf;
 DO $$ DECLARE v_event uuid; BEGIN
   SELECT (r->>'care_event_id')::uuid INTO v_event FROM w_l2;
-  PERFORM pg_temp.must_fail(
-    format('SELECT public.care_event_print_record(%L, %L, NULL, NULL, NULL)', 'physician_sheet', v_event),
-    'print: forbidden');
-  PERFORM pg_temp.must_fail(
-    format('SELECT public.care_event_print_record(%L, NULL, %L, NULL, NULL)', 'incident_reports_log', (SELECT facility FROM wf)),
-    'print: forbidden');
+  -- 2026-09-22: this staff member is a med-tech now (caregiver folded into med_tech),
+  -- and med_tech holds the nurse's print authority for the physician sheet and log.
+  PERFORM public.care_event_print_record('physician_sheet', v_event, NULL, NULL, NULL);
+  PERFORM public.care_event_print_record('incident_reports_log', NULL, (SELECT facility FROM wf), NULL, NULL);
 END $$;
 RESET ROLE;
 
@@ -526,7 +528,8 @@ RESET ROLE;
 
 DO $$ DECLARE v_n integer; v_bad integer; BEGIN
   SELECT count(*) INTO v_n FROM public.audit_log WHERE table_name = 'care_event_print';
-  IF v_n <> 3 THEN RAISE EXCEPTION 'Expected three print rows, found %', v_n; END IF;
+  -- Three admin prints plus the two the med-tech may now make (see step 14).
+  IF v_n <> 5 THEN RAISE EXCEPTION 'Expected five print rows, found %', v_n; END IF;
 
   -- No name of any kind reaches the payload: not the resident, not the staff.
   SELECT count(*) INTO v_bad FROM public.audit_log a

@@ -19,8 +19,8 @@ type Body = {
   facilityId?: string;
 };
 
-const ALLOWED_ROLES = new Set(["med_tech", "caregiver"]);
-const OUTGOING_ROLES = ["caregiver", "med_tech"] as const;
+const ALLOWED_ROLES = new Set(["med_tech"]);
+const OUTGOING_ROLES = ["med_tech"] as const;
 const FAILURE_LIMIT = {
   maxFailures: 5,
   windowMs: 10 * 60 * 1000,

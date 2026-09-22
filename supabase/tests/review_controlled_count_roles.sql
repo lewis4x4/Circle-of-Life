@@ -1,5 +1,6 @@
 -- 2026-09-22 (Brian): nurse is not used; med-tech takes nurse's place (migration 462).
--- The second licensed signer that used to be a nurse is now a second med-tech. What
+-- The second licensed signer that used to be a nurse, and the caregiver witness, are now
+-- other med-techs (caregiver is folded into med_tech too). What
 -- still holds: two different people, both clinical staff with facility access, and a
 -- manager/owner/family can neither originate nor witness a count.
 BEGIN;
@@ -14,8 +15,8 @@ DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM count_role_fixture) THEN RAISE EXCEPTION
 INSERT INTO public.resident_medications(id,resident_id,facility_id,organization_id,medication_name,route,frequency,start_date,order_date,status,controlled_schedule)
  SELECT f.med,m.resident_id,f.facility,f.org,'Role test controlled medication',m.route,m.frequency,current_date,current_date,'active','ii' FROM count_role_fixture f JOIN public.resident_medications m ON m.id=f.source_med;
 CREATE TEMP TABLE count_test_actors AS SELECT gen_random_uuid() id,gen_random_uuid() session_id,NULL::integer claim_version,label,
-  CASE label WHEN 'med_tech_2' THEN 'med_tech' ELSE label END role
-  FROM unnest(ARRAY['med_tech','med_tech_2','caregiver','owner','manager','family']) label;
+  CASE WHEN label LIKE 'med_tech%' THEN 'med_tech' ELSE label END role
+  FROM unnest(ARRAY['med_tech','med_tech_2','med_tech_3','owner','manager','family']) label;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) SELECT a.id,a.id||'@count-review.invalid',jsonb_build_object('organization_id',f.org,'app_role',a.role),jsonb_build_object('full_name','Count role test') FROM count_test_actors a CROSS JOIN count_role_fixture f;
 INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active) SELECT a.id,f.org,a.id||'@count-review.invalid','Count role test',a.role::public.app_role,true FROM count_test_actors a CROSS JOIN count_role_fixture f
  ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
@@ -32,7 +33,7 @@ DO $$ DECLARE a record; f record; BEGIN
     'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',a.claim_version,
     'role','authenticated','app_role',a.role,'organization_id',f.org,
     'app_metadata',jsonb_build_object('app_role',a.role,'organization_id',f.org))::text,true);
-  IF a.role IN('med_tech','caregiver') THEN
+  IF a.role='med_tech' THEN
    INSERT INTO public.controlled_substance_counts(resident_medication_id,facility_id,organization_id,count_date,shift,expected_count,actual_count,outgoing_staff_id)
     VALUES(f.med,f.facility,f.org,current_date,'day',2,2,a.id);
    IF NOT EXISTS(SELECT 1 FROM public.controlled_substance_counts WHERE outgoing_staff_id=a.id) THEN RAISE EXCEPTION 'Permitted actor cannot recover pending count'; END IF;
@@ -50,7 +51,7 @@ DO $$ DECLARE f record; tech uuid; tech2 uuid; caregiver uuid; manager uuid; own
  SELECT * INTO f FROM count_role_fixture;
  SELECT id INTO tech FROM count_test_actors WHERE label='med_tech';
  SELECT id INTO tech2 FROM count_test_actors WHERE label='med_tech_2';
- SELECT id INTO caregiver FROM count_test_actors WHERE label='caregiver';
+ SELECT id INTO caregiver FROM count_test_actors WHERE label='med_tech_3';
  SELECT id INTO manager FROM count_test_actors WHERE label='manager';
  SELECT id INTO owner_id FROM count_test_actors WHERE label='owner';
  SELECT id INTO count_id FROM public.controlled_substance_counts WHERE outgoing_staff_id=tech2;

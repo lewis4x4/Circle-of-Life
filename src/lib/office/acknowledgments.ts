@@ -39,16 +39,22 @@ export const ACK_ROLES: { id: string; label: string }[] = [
   { id: "admin_assistant", label: "Admin assistant" },
   { id: "coordinator", label: "Coordinator" },
   { id: "med_tech", label: "Med tech" },
-  { id: "caregiver", label: "Caregiver" },
   { id: "cook", label: "Cook" },
-  { id: "dietary", label: "Dietary" },
-  { id: "dietary_aide", label: "Dietary aide" },
   { id: "maintenance_role", label: "Maintenance" },
   { id: "housekeeper", label: "Housekeeper" },
+  { id: "marketing", label: "Marketing" },
 ];
 
+/** Retired roles (2026-09-22, migration 462) — labels for requirement rows written before the fold. */
+const LEGACY_ACK_ROLE_LABELS: Record<string, string> = {
+  nurse: "Nurse (retired)",
+  caregiver: "Caregiver (retired)",
+  dietary: "Dietary (retired)",
+  dietary_aide: "Dietary aide (retired)",
+};
+
 export function roleLabel(id: string): string {
-  return ACK_ROLES.find((r) => r.id === id)?.label ?? id.replace(/_/g, " ");
+  return ACK_ROLES.find((r) => r.id === id)?.label ?? LEGACY_ACK_ROLE_LABELS[id] ?? id.replace(/_/g, " ");
 }
 
 /** Outstanding = active staff whose role is required and who have not signed. */

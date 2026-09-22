@@ -12,7 +12,7 @@ const bodySchema = z.object({ email: z.string().email(), password: z.string().mi
 const limits = { maxFailures: 5, windowMs: 10 * 60 * 1000 };
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAdminApiActor({ allowedRoles: ["caregiver", "med_tech"] });
+  const auth = await requireAdminApiActor({ allowedRoles: ["med_tech"] });
   if ("response" in auth) return auth.response;
   const { actor } = auth;
   const { id } = await params;

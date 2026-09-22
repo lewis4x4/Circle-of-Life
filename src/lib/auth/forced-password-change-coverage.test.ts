@@ -26,7 +26,7 @@ const readSource = (relativePath: string) => readFileSync(path.join(repoRoot, re
 function pendingUser(pending: boolean) {
   return {
     app_metadata: {
-      app_role: "caregiver",
+      app_role: "med_tech",
       organization_id: "org-1",
       auth_claim_version: 9,
       must_change_password: pending,
@@ -139,7 +139,7 @@ describe("proxy redirects a pending user from every shell", () => {
   });
 
   it("outranks the shell's own role routing", async () => {
-    // A caregiver hitting /admin would normally be redirected to /caregiver. The
+    // A med-tech hitting /admin would normally be redirected to /med-tech. The
     // password change comes first, so they cannot be routed into a shell instead.
     const response = await proxy(new NextRequest("http://localhost/admin"));
     expect(response.headers.get("location")).toBe("http://localhost/change-password");
@@ -157,7 +157,7 @@ describe("proxy redirects a pending user from every shell", () => {
   it("treats a missing claim as no pending change", async () => {
     state.updateSession.mockResolvedValue({
       response: NextResponse.next(),
-      user: { app_metadata: { app_role: "caregiver", organization_id: "org-1" } },
+      user: { app_metadata: { app_role: "med_tech", organization_id: "org-1" } },
     });
     const response = await proxy(new NextRequest("http://localhost/caregiver"));
     expect(response.status).not.toBe(307);

@@ -25,7 +25,7 @@ export function familyShellAccessRedirect(request: NextRequest, user: AuthClaimU
   if (role === "family") {
     return null;
   }
-  if (role === "caregiver" || role === "housekeeper") {
+  if (role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (isAdminEligibleAppRole(role)) {

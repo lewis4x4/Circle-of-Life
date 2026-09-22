@@ -287,18 +287,18 @@ describe("mine narrowing", () => {
   });
 
   it("keeps rows naming the actor's role, unassigned rows and rows whose rules could not be read", () => {
-    const kept = narrowToMine([item("mine", ["med_tech"]), item("theirs", ["dietary"]), item("unassigned", []), item("unknown", null)], "med_tech");
+    const kept = narrowToMine([item("mine", ["med_tech"]), item("theirs", ["cook"]), item("unassigned", []), item("unknown", null)], "med_tech");
     expect(kept.map((entry) => entry.occurrence.id)).toEqual(["mine", "unassigned", "unknown"]);
   });
 
   it("keeps unassigned legacy tasks and the actor's own", () => {
     const task = (id: string, assigned_to: string | null, assigned_role: string | null) => ({ id, assigned_to, assigned_role }) as Parameters<typeof narrowLegacyToMine>[0][number];
-    const kept = narrowLegacyToMine([task("own", "actor", null), task("other-person", "someone", null), task("own-role", null, "med_tech"), task("other-role", null, "dietary"), task("unassigned", null, null)], { id: "actor", appRole: "med_tech" });
+    const kept = narrowLegacyToMine([task("own", "actor", null), task("other-person", "someone", null), task("own-role", null, "med_tech"), task("other-role", null, "cook"), task("unassigned", null, null)], { id: "actor", appRole: "med_tech" });
     expect(kept.map((entry) => entry.id)).toEqual(["own", "own-role", "unassigned"]);
   });
 
   it("never narrows unless asked", async () => {
-    const client = fakeClient({ managed: [occurrence({ id: uuid(1) })], versions: [{ ...version, allowed_recorder_roles: ["dietary"] }], facility_rules: [facilityRule] });
+    const client = fakeClient({ managed: [occurrence({ id: uuid(1) })], versions: [{ ...version, allowed_recorder_roles: ["cook"] }], facility_rules: [facilityRule] });
     expect(todayGroups(await compose(client)).due_today).toHaveLength(1);
     expect(todayGroups(await compose(client, { mine: true })).due_today).toHaveLength(0);
   });

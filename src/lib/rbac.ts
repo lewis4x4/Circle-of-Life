@@ -15,16 +15,19 @@ export const ROLE_HIERARCHY: Record<string, number> = {
   coordinator: 60,
   admin_assistant: 50,
   med_tech: 50,
-  // Legacy: nurse is not assignable (owner ruling 2026-09-22); tier kept to mirror haven.role_tier().
-  nurse: 50,
-  dietary: 40,
+  marketing: 50,
   cook: 40,
   maintenance_role: 40,
   broker: 30,
   housekeeper: 30,
+  family: 10,
+  // Retired (owner rulings 2026-09-22, migration 462): nobody holds these; tiers kept to
+  // mirror haven.role_tier() so an old value still sorts. nurse + caregiver -> med_tech,
+  // dietary + dietary_aide -> cook.
+  nurse: 50,
+  dietary: 40,
   caregiver: 20,
   dietary_aide: 20,
-  family: 10,
 };
 
 // ── Ordered role list ─────────────────────────────────────────────
@@ -37,12 +40,10 @@ export const ALL_APP_ROLES = [
   "admin_assistant",
   "coordinator",
   "med_tech",
-  "caregiver",
   "cook",
-  "dietary",
-  "dietary_aide",
   "housekeeper",
   "maintenance_role",
+  "marketing",
   "family",
   "broker",
 ] as const;
@@ -50,8 +51,10 @@ export const ALL_APP_ROLES = [
 export type AppRole = (typeof ALL_APP_ROLES)[number];
 
 // ── Admin-shell eligible roles ────────────────────────────────────
-// All roles that may access the admin shell. Excludes caregiver, family, housekeeper.
-// The legacy nurse role is not listed: migration 462 folded it into med_tech.
+// All roles that may access the admin shell. Excludes family, housekeeper.
+// Retired roles are not listed: migration 462 folded nurse/caregiver into med_tech and
+// dietary/dietary_aide into cook. Marketing is admin-eligible but its admin nav is limited
+// to referrals / pipeline / reputation (see dashboard-routing.ts).
 
 export const ADMIN_ELIGIBLE_ROLES = new Set<string>([
   "owner",
@@ -61,9 +64,9 @@ export const ADMIN_ELIGIBLE_ROLES = new Set<string>([
   "admin_assistant",
   "coordinator",
   "med_tech",
-  "dietary",
   "cook",
   "maintenance_role",
+  "marketing",
   "broker",
 ]);
 
@@ -109,6 +112,10 @@ export function isAtLeast(role: string, minTier: number): boolean {
 
 // ── Static permission map (mirrors role_permissions seed) ─────────
 // Format: feature → role → permission level
+// med_tech holds the widest level any of nurse / caregiver / med_tech held, and cook the
+// widest of dietary / dietary_aide (migration 462 folded role_permissions the same way).
+// marketing has no entry: none of these features cover referrals / pipeline / reputation,
+// which are gated per route.
 
 type PermissionLevel = "view" | "edit" | "delete" | "admin";
 
@@ -121,8 +128,6 @@ const FEATURE_PERMISSIONS: Record<string, Record<string, PermissionLevel>> = {
     admin_assistant: "view",
     coordinator: "view",
     med_tech: "view",
-    caregiver: "view",
-    dietary: "view",
     cook: "view",
     housekeeper: "view",
     maintenance_role: "view",
@@ -135,9 +140,7 @@ const FEATURE_PERMISSIONS: Record<string, Record<string, PermissionLevel>> = {
     facility_admin: "edit",
     manager: "view",
     med_tech: "view",
-    dietary: "view",
     cook: "view",
-    caregiver: "view",
     housekeeper: "view",
     admin_assistant: "view",
     coordinator: "view",
@@ -152,8 +155,6 @@ const FEATURE_PERMISSIONS: Record<string, Record<string, PermissionLevel>> = {
     manager: "edit",
     coordinator: "edit",
     med_tech: "edit",
-    caregiver: "view",
-    dietary: "view",
     cook: "view",
     housekeeper: "view",
     admin_assistant: "view",
@@ -169,8 +170,6 @@ const FEATURE_PERMISSIONS: Record<string, Record<string, PermissionLevel>> = {
     admin_assistant: "view",
     coordinator: "view",
     med_tech: "view",
-    caregiver: "view",
-    dietary: "view",
     cook: "view",
     housekeeper: "view",
     maintenance_role: "view",
@@ -185,10 +184,8 @@ const FEATURE_PERMISSIONS: Record<string, Record<string, PermissionLevel>> = {
     coordinator: "view",
     med_tech: "view",
     admin_assistant: "view",
-    dietary: "view",
     cook: "view",
     housekeeper: "view",
-    caregiver: "view",
     maintenance_role: "view",
     family: "view",
     broker: "admin",
@@ -200,8 +197,6 @@ const FEATURE_PERMISSIONS: Record<string, Record<string, PermissionLevel>> = {
     manager: "edit",
     coordinator: "view",
     med_tech: "edit",
-    caregiver: "view",
-    dietary: "view",
     cook: "view",
     housekeeper: "view",
     admin_assistant: "view",
@@ -216,8 +211,6 @@ const FEATURE_PERMISSIONS: Record<string, Record<string, PermissionLevel>> = {
     manager: "view",
     coordinator: "edit",
     med_tech: "view",
-    caregiver: "view",
-    dietary: "view",
     cook: "view",
     housekeeper: "view",
     admin_assistant: "view",
@@ -261,17 +254,18 @@ export const ROLE_LABELS: Record<string, string> = {
   manager: "Manager",
   admin_assistant: "Admin Assistant",
   coordinator: "Service Coordinator",
-  // Legacy display only — nurse is no longer assignable (folded into med_tech, migration 462).
-  nurse: "Medication Manager",
   med_tech: "Med-Tech",
-  caregiver: "Caregiver / Resident Aide",
   cook: "Cook",
-  dietary: "Lead Cook / Dietary",
-  dietary_aide: "Dietary Aide",
   housekeeper: "Housekeeper",
   maintenance_role: "Maintenance",
+  marketing: "Marketing",
   family: "Family Member",
   broker: "Broker",
+  // Legacy display only (history rows) — retired 2026-09-22, migration 462.
+  nurse: "Medication Manager",
+  caregiver: "Caregiver / Resident Aide",
+  dietary: "Lead Cook / Dietary",
+  dietary_aide: "Dietary Aide",
 };
 
 export const ROLE_DESCRIPTIONS: Record<string, string> = {
@@ -281,12 +275,13 @@ export const ROLE_DESCRIPTIONS: Record<string, string> = {
   manager: "Operational focus — staffing, scheduling, census, incidents (no financials)",
   admin_assistant: "Front desk operations — phones, visitors, docs, basic scheduling",
   coordinator: "Care coordination — care plans, assessments, family communication",
+  med_tech: "Medication technician and floor care — Med-Tech cockpit, eMAR, med passes, controlled substances, plus the caregiver floor app (tasks, ADLs, rounding)",
+  cook: "Cook — meal planning and preparation, diet orders, HACCP, tray and service tracking",
+  marketing: "Marketing — referrals, pipeline and reputation only",
   nurse: "Legacy role — folded into Med-Tech",
-  med_tech: "Medication technician — Med-Tech cockpit, eMAR, med passes, controlled substances, med error review",
-  caregiver: "Direct care worker — ADLs, daily assistance, rounding",
-  cook: "Cook — meal preparation, diet orders, HACCP, service tracking",
-  dietary: "Kitchen lead — meal planning, dietary restrictions, HACCP, service tracking",
-  dietary_aide: "Kitchen support — tray delivery, dietary assistance",
+  caregiver: "Legacy role — folded into Med-Tech",
+  dietary: "Legacy role — folded into Cook",
+  dietary_aide: "Legacy role — folded into Cook",
   housekeeper: "Room cleaning, laundry coordination, supply tracking",
   maintenance_role: "Facility maintenance and repair",
   family: "Family portal — view resident updates and communicate with staff",

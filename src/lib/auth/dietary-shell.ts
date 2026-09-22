@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, type AuthClaimUser } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, isMarketingRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 export function isDietaryShellPath(pathname: string): boolean {
@@ -21,10 +21,13 @@ export function dietaryShellAccessRedirect(
   }
 
   const role = getAppRoleFromClaims(user);
-  if (isDietaryRole(role) || isAdminEligibleAppRole(role)) {
+  if (isDietaryRole(role) || (isAdminEligibleAppRole(role) && !isMarketingRole(role))) {
     return null;
   }
-  if (role === "caregiver" || role === "housekeeper") {
+  if (isMarketingRole(role)) {
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
+  }
+  if (role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (role === "family") {

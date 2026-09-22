@@ -21,7 +21,6 @@ export const REQUIREMENT_VIEW_ROLES = [
   "admin_assistant",
   "coordinator",
   "med_tech",
-  "dietary",
   "cook",
   "maintenance_role",
   "housekeeper",

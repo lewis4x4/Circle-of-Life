@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   const actorResult = await requireCurrentApiActor({
-    allowedRoles: ["owner", "org_admin", "facility_admin", "med_tech", "caregiver"],
+    allowedRoles: ["owner", "org_admin", "facility_admin", "med_tech"],
     scope: "infection-control.evaluate-vitals",
   });
   if ("response" in actorResult) return actorResult.response;
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   }
 
   const currentResult = await revalidateCurrentApiActor(actor, {
-    allowedRoles: ["owner", "org_admin", "facility_admin", "med_tech", "caregiver"],
+    allowedRoles: ["owner", "org_admin", "facility_admin", "med_tech"],
     scope: "infection-control.evaluate-vitals.revalidate",
   });
   if ("response" in currentResult) return currentResult.response;

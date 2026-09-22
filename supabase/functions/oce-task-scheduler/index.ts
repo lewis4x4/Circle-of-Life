@@ -67,6 +67,7 @@ type AppRole =
   | "dietary_aide"
   | "housekeeper"
   | "maintenance_role"
+  | "marketing"
   | "family"
   | "broker";
 
@@ -176,9 +177,9 @@ const assigneeCrosswalk: Record<string, AppRole[]> = {
   facility_administrator: ["facility_admin", "manager"],
   don: ["med_tech", "manager", "facility_admin"],
   lpn_supervisor: ["med_tech", "manager", "facility_admin"],
-  medication_aide: ["med_tech", "caregiver"],
-  cna: ["caregiver", "med_tech"],
-  dietary_manager: ["dietary", "cook", "dietary_aide", "manager"],
+  medication_aide: ["med_tech"],
+  cna: ["med_tech"],
+  dietary_manager: ["cook", "manager"],
   activities_director: ["coordinator", "manager"],
   maintenance: ["maintenance_role", "manager"],
   housekeeping: ["housekeeper", "maintenance_role"],

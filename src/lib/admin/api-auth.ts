@@ -22,12 +22,22 @@ type RequireAdminApiActorResult =
 
 const ORG_WIDE_ROLES = new Set<AppRole>(["owner", "org_admin"]);
 
+/**
+ * Default for routes that name no roles: every admin-shell role except marketing.
+ * Marketing opens the admin shell for referrals / pipeline / reputation only (owner
+ * ruling 2026-09-22), and these routes read with the service role, so an unnamed
+ * route must not admit it.
+ */
+export const DEFAULT_ADMIN_API_ROLES = Array.from(ADMIN_ELIGIBLE_ROLES).filter(
+  (role) => role !== "marketing",
+) as AppRole[];
+
 export async function requireAdminApiActor(options?: {
   allowedRoles?: readonly AppRole[];
 }): Promise<RequireAdminApiActorResult> {
   const allowedRoles = options?.allowedRoles
     ? options.allowedRoles
-    : (Array.from(ADMIN_ELIGIBLE_ROLES) as AppRole[]);
+    : DEFAULT_ADMIN_API_ROLES;
   const result = await requireCurrentApiActor({
     allowedRoles,
     scope: "admin.api-auth",

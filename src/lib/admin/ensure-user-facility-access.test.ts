@@ -233,7 +233,7 @@ describe("createUserSchema facility uniqueness", () => {
   const base = {
     email: "new@example.test",
     full_name: "New User",
-    app_role: "caregiver" as const,
+    app_role: "housekeeper" as const,
     send_invite: true,
   };
   const facilityA = "20000000-0000-4000-8000-000000000002";

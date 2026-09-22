@@ -31,7 +31,7 @@ export function medTechShellAccessRedirect(
   if (isMedTechRole(role)) {
     return null;
   }
-  if (role === "caregiver" || role === "housekeeper") {
+  if (role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (role === "family") {

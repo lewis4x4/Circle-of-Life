@@ -131,22 +131,25 @@ SELECT pg_temp.bm_denied('SELECT change_resident_bed(deleted_resident,(SELECT id
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''other_fac'') WHERE id=(SELECT inactive FROM bm)','unavailable in this facility');
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''foreign_org'') WHERE id=(SELECT inactive FROM bm)','unavailable in this facility');
 
--- Caregivers retain unrelated clinical edits but cannot claim or move beds.
+-- 2026-09-22: caregiver is retired and folded into med_tech (migration 462). A
+-- leftover caregiver token changes nothing on a resident, clinical or bed.
 SELECT pg_temp.bm_login('caregiver');
 UPDATE residents SET diet_order='Synthetic unrelated update' WHERE id=(SELECT resident FROM bm);
-SELECT pg_temp.bm_assert((SELECT diet_order='Synthetic unrelated update' FROM residents WHERE id=(SELECT resident FROM bm)),'unrelated caregiver edit failed');
-SELECT pg_temp.bm_denied('SELECT change_resident_bed(resident,(SELECT id FROM bm_beds WHERE label=''empty''),(SELECT id FROM bm_beds WHERE label=''target'')) FROM bm','authority required');
-SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''empty'') WHERE id=(SELECT resident FROM bm)','authority required');
-SELECT pg_temp.bm_denied('UPDATE residents SET status=''active'' WHERE id=(SELECT inactive FROM bm)','authority required');
-SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=NULL WHERE id=(SELECT resident FROM bm)','authority required');
+UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label='empty') WHERE id=(SELECT resident FROM bm);
+RESET ROLE;
+SELECT pg_temp.bm_assert((SELECT diet_order IS DISTINCT FROM 'Synthetic unrelated update' AND bed_id=(SELECT id FROM bm_beds WHERE label='target')
+  FROM residents WHERE id=(SELECT resident FROM bm)),'retired caregiver role changed a resident');
+SET LOCAL ROLE authenticated;
+-- The official discharge/death action releases occupancy as a lifecycle transition.
+SELECT pg_temp.bm_login('med_tech');
 -- The existing official discharge/death action is independently authorized by
 -- resident RLS. Releasing occupancy with that lifecycle transition is not a
 -- bed move, while clearing a still-active resident above remains prohibited.
 SAVEPOINT caregiver_discharge;
 UPDATE residents SET status='discharged',bed_id=NULL WHERE id=(SELECT resident FROM bm);
 SELECT pg_temp.bm_assert((SELECT status='discharged' AND bed_id IS NULL
-  AND updated_by=(SELECT id FROM bm_actors WHERE role='caregiver')
-  FROM residents WHERE id=(SELECT resident FROM bm)),'caregiver discharge lost existing behavior');
+  AND updated_by=(SELECT id FROM bm_actors WHERE role='med_tech')
+  FROM residents WHERE id=(SELECT resident FROM bm)),'discharge lost existing behavior');
 RESET ROLE;
 SELECT pg_temp.bm_assert((SELECT status='available' AND current_resident_id IS NULL
   FROM beds WHERE id=(SELECT id FROM bm_beds WHERE label='target')),'caregiver discharge did not release occupancy');
@@ -154,15 +157,17 @@ ROLLBACK TO SAVEPOINT caregiver_discharge;
 SAVEPOINT caregiver_death;
 UPDATE residents SET status='deceased',bed_id=NULL WHERE id=(SELECT resident FROM bm);
 SELECT pg_temp.bm_assert((SELECT status='deceased' AND bed_id IS NULL
-  AND updated_by=(SELECT id FROM bm_actors WHERE role='caregiver')
-  FROM residents WHERE id=(SELECT resident FROM bm)),'caregiver death record lost existing behavior');
+  AND updated_by=(SELECT id FROM bm_actors WHERE role='med_tech')
+  FROM residents WHERE id=(SELECT resident FROM bm)),'death record lost existing behavior');
 RESET ROLE;
 SELECT pg_temp.bm_assert((SELECT status='available' AND current_resident_id IS NULL
   FROM beds WHERE id=(SELECT id FROM bm_beds WHERE label='target')),'caregiver death record did not release occupancy');
 ROLLBACK TO SAVEPOINT caregiver_death;
 RESET ROLE;
 -- Elevated transport with end-user claims still goes through the same guard,
--- including rows hidden by normal SELECT RLS (deleted residents).
+-- including rows hidden by normal SELECT RLS (deleted residents). The claims are a
+-- retired caregiver's (folded into med_tech, 2026-09-22), which hold no bed authority.
+SELECT pg_temp.bm_login('caregiver');
 SELECT pg_temp.bm_denied('UPDATE residents SET deleted_at=NULL WHERE id=(SELECT deleted_resident FROM bm)','authority required');
 SELECT set_config('request.jwt.claims','{}',true);
 UPDATE residents SET bed_id=NULL WHERE id=(SELECT unassigned FROM bm);
