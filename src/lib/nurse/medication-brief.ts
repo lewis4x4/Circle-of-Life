@@ -9,11 +9,12 @@ import { NURSE_WATCHLIST_NO_ROOM_COPY } from "@/lib/nurse/medication-brief-displ
 import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
+/** Counts are `null` when the query failed — never render a failed read as 0. */
 export type NurseMedicationBrief = {
-  activeMedications: number;
-  emarCompliancePct: number;
-  medErrors7d: number;
-  controlledDiscrepancies: number;
+  activeMedications: number | null;
+  emarCompliancePct: number | null;
+  medErrors7d: number | null;
+  controlledDiscrepancies: number | null;
   missedDosesToday: number | null;
   prnGiven24h: number | null;
   residentAssurance: {
@@ -30,7 +31,13 @@ export type NurseMedicationBrief = {
   }>;
 };
 
-type CountResponse = { count: number | null };
+type CountResponse = { count: number | null; error?: unknown };
+
+function countOrNull(res: unknown): number | null {
+  const { count, error } = res as CountResponse;
+  if (error || count === null || count === undefined) return null;
+  return count;
+}
 type ScopedQuery<T> = { eq(column: string, value: string): T };
 
 export async function fetchNurseMedicationBrief(
@@ -70,7 +77,8 @@ export async function fetchNurseMedicationBrief(
       .eq("category", "medication_error")
       .is("deleted_at", null),
     f(supabase.from("controlled_substance_counts" as never).select("id", { count: "exact", head: true }))
-      .eq("has_discrepancy", true)
+      .neq("discrepancy", 0)
+      .not("discrepancy_resolved", "is", true)
       .is("deleted_at", null),
     f(supabase.from("emar_records" as never).select("id", { count: "exact", head: true }))
       .gte("scheduled_time", todayStart)
@@ -83,14 +91,21 @@ export async function fetchNurseMedicationBrief(
     fetchResidentAssuranceCommandBrief(facilityId),
   ]);
 
-  const activeMedications = (activeMedsRes as CountResponse).count ?? 0;
-  const emarTotal = (emarTodayRes as CountResponse).count ?? 0;
-  const emarGiven = (emarGivenRes as CountResponse).count ?? 0;
-  const emarCompliancePct = emarTotal > 0 ? Math.round((emarGiven / emarTotal) * 100) : 100;
-  const medErrors7d = (medErrorsRes as CountResponse).count ?? 0;
-  const controlledDiscrepancies = (controlledRes as CountResponse).count ?? 0;
-  const missedDosesToday = (missedRes as CountResponse).count;
-  const prnGiven24h = (prnRes as CountResponse).count;
+  const activeMedications = countOrNull(activeMedsRes);
+  const emarTotal = countOrNull(emarTodayRes);
+  const emarGiven = countOrNull(emarGivenRes);
+  const emarCompliancePct =
+    emarTotal === null || emarGiven === null
+      ? null
+      : emarTotal > 0
+        ? Math.round((emarGiven / emarTotal) * 100)
+        : 100;
+  const medErrors7d = countOrNull(medErrorsRes);
+  // Open discrepancy = discrepancy <> 0 and not resolved (NULL counts as open,
+  // matching /admin/medications/controlled).
+  const controlledDiscrepancies = countOrNull(controlledRes);
+  const missedDosesToday = countOrNull(missedRes);
+  const prnGiven24h = countOrNull(prnRes);
 
   return {
     activeMedications,

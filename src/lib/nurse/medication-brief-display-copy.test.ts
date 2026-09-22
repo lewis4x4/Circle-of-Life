@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  describeControlledCounts,
+  describeEmarCompliance,
+  describeMedErrors7d,
   formatDoseAlertCount,
   formatNurseWatchlistRoomLabel,
   NURSE_WATCHLIST_NO_ROOM_COPY,
@@ -34,5 +37,30 @@ describe("formatNurseWatchlistRoomLabel", () => {
 
   it("shows Room prefix for posted rooms", () => {
     expect(formatNurseWatchlistRoomLabel("204A")).toBe("Room 204A");
+  });
+});
+
+describe("describeControlledCounts", () => {
+  it("never renders a failed read as an all-clear", () => {
+    const card = describeControlledCounts(null);
+    expect(card.value).toBe("Unavailable");
+    expect(card.value).not.toBe(0);
+    expect(card.subLabel).toMatch(/unavailable/i);
+    expect(card.subLabel).not.toBe("All verified");
+    expect(card.urgency).toBe("critical");
+  });
+
+  it("keeps a real zero as all verified and flags open discrepancies", () => {
+    expect(describeControlledCounts(0)).toEqual({ value: 0, urgency: "normal", subLabel: "All verified" });
+    expect(describeControlledCounts(3)).toEqual({ value: 3, urgency: "critical", subLabel: "Discrepancies found" });
+  });
+});
+
+describe("describeMedErrors7d / describeEmarCompliance", () => {
+  it("show unavailable instead of 0 / 100% on a failed read", () => {
+    expect(describeMedErrors7d(null).value).toBe("Unavailable");
+    expect(describeMedErrors7d(null).subLabel).not.toBe("None reported");
+    expect(describeEmarCompliance(null).value).toBe("Unavailable");
+    expect(describeEmarCompliance(100).value).toBe("100%");
   });
 });

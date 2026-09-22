@@ -24,3 +24,52 @@ export function formatNurseWatchlistRoomLabel(room: string): string {
   }
   return `Room ${room}`;
 }
+
+export const NURSE_COUNT_UNAVAILABLE_COPY = "Unavailable";
+
+export type NurseStatCardCopy = {
+  value: number | string;
+  urgency: "critical" | "normal";
+  subLabel: string;
+};
+
+/**
+ * Stat card copy for a brief count. `null` means the read failed: show
+ * "Unavailable" (warning-level) rather than a 0 that reads as an all-clear.
+ */
+export function describeBriefCount(
+  value: number | null,
+  copy: { positive: string; zero: string; unavailable: string },
+): NurseStatCardCopy {
+  if (value === null) {
+    return { value: NURSE_COUNT_UNAVAILABLE_COPY, urgency: "critical", subLabel: copy.unavailable };
+  }
+  return value > 0
+    ? { value, urgency: "critical", subLabel: copy.positive }
+    : { value, urgency: "normal", subLabel: copy.zero };
+}
+
+export function describeControlledCounts(value: number | null): NurseStatCardCopy {
+  return describeBriefCount(value, {
+    positive: "Discrepancies found",
+    zero: "All verified",
+    unavailable: "Controlled counts unavailable — check the count log",
+  });
+}
+
+export function describeMedErrors7d(value: number | null): NurseStatCardCopy {
+  return describeBriefCount(value, {
+    positive: "Requires review",
+    zero: "None reported",
+    unavailable: "Med errors unavailable",
+  });
+}
+
+export function describeEmarCompliance(pct: number | null): NurseStatCardCopy {
+  if (pct === null) {
+    return { value: NURSE_COUNT_UNAVAILABLE_COPY, urgency: "critical", subLabel: "eMAR compliance unavailable" };
+  }
+  return pct < 95
+    ? { value: `${pct}%`, urgency: "critical", subLabel: "Below 95% threshold" }
+    : { value: `${pct}%`, urgency: "normal", subLabel: "On target" };
+}
