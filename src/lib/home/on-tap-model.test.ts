@@ -8,6 +8,7 @@ import {
   censusClearedRow,
   censusCountsMeta,
   buildNoteRows,
+  buildUncoveredShiftRows,
   buildRentRows,
   coOperatorLine,
   dueBeforeYouLeaveCount,
@@ -257,6 +258,25 @@ describe("buildNoteRows (COL-595)", () => {
       ["assigned", 3, "Vendor: Probe Plumbing", "#note-b"],
     ]);
     expect(rows[0].tags.map((t) => t.label)).toEqual(["Note", "Overdue"]);
+  });
+});
+
+describe("buildUncoveredShiftRows (COL-596)", () => {
+  it("lists only uncovered shifts, ranked with regulatory, with a Cover action", () => {
+    const rows = buildUncoveredShiftRows({
+      localDate: "2026-09-22",
+      shifts: [
+        { assignmentId: "a", staffId: "s1", staffName: "Probe, Ann", shiftType: "day", status: "called_out", uncovered: true },
+        { assignmentId: "b", staffId: "s2", staffName: "Probe, Ben", shiftType: "night", status: "no_show", uncovered: true },
+        { assignmentId: "c", staffId: "s3", staffName: "Probe, Cy", shiftType: "day", status: "assigned", uncovered: false },
+      ],
+      staff: [],
+    });
+    expect(rows.map((r) => [r.rank, r.title, r.actions[0].targetId])).toEqual([
+      [1, "Uncovered day shift — Probe, Ann called out", "a"],
+      [1, "Uncovered night shift — Probe, Ben did not show", "b"],
+    ]);
+    expect(buildUncoveredShiftRows(null)).toEqual([]);
   });
 });
 

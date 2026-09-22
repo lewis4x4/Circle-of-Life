@@ -17,6 +17,8 @@ export type OnTapRowProps = {
   onClaim: (instanceId: string, claim: boolean) => void;
   /** Called with the row's clear target: a task instance id, or `census:<month>`. */
   onClear: (clearTarget: string, action: HomeRowAction, note: string) => void;
+  /** Uncovered-shift rows (COL-596) open the cover screen. */
+  onCover?: (assignmentId: string) => void;
 };
 
 /**
@@ -24,7 +26,7 @@ export type OnTapRowProps = {
  * always on the row (COL-593 rule 5); a negative outcome asks for its note in
  * place rather than in a dialog, so a phone can finish it in three taps.
  */
-export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear }: OnTapRowProps) {
+export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear, onCover }: OnTapRowProps) {
   const [noteFor, setNoteFor] = useState<HomeRowAction | null>(null);
   const [note, setNote] = useState("");
   const noteId = useId();
@@ -122,6 +124,10 @@ export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear 
               className={cn(action.tone === "danger" && "border-destructive/40 text-destructive hover:bg-destructive/10")}
               disabled={busy || noteFor !== null}
               onClick={() => {
+                if (action.key === "cover") {
+                  if (action.targetId) onCover?.(action.targetId);
+                  return;
+                }
                 if (!row.clearTarget) return;
                 if (action.requiresNote) {
                   setNoteFor(action);
