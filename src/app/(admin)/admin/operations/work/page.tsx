@@ -73,6 +73,8 @@ function PersonWorkspace({
         ? "history"
         : "today";
   const mine = params.get("mine") === "1";
+  // COL-604: a link that names one task (Home's rows) opens it in place.
+  const instance = params.get("instance");
   const cursor = view === "history" ? params.get("cursor") : null;
   const draftScope = `${facilityId}:${view}:${mine}:${cursor ?? ""}`;
   const [renderedDraftScope, setRenderedDraftScope] = useState(draftScope);
@@ -205,6 +207,7 @@ function PersonWorkspace({
         drafts={drafts}
         draftsUnavailable={draftLoading || Boolean(draftError)}
         onNext={(next) => navigate({ cursor: next })}
+        instance={instance}
       />
     </div>
   );
@@ -221,6 +224,7 @@ function WorkspaceData({
   drafts,
   draftsUnavailable,
   onNext,
+  instance,
 }: {
   facilityId: string;
   actorId: string;
@@ -232,6 +236,7 @@ function WorkspaceData({
   drafts: DraftSummary[];
   draftsUnavailable: boolean;
   onNext: (cursor: string | null) => void;
+  instance: string | null;
 }) {
   const [reply, setReply] = useState<WorkspaceReply | null>(null);
   const [error, setError] = useState("");
@@ -333,6 +338,13 @@ function WorkspaceData({
                 {mine ? " · Mine filter applied to this page" : ""}
               </p>
             ) : null}
+            {instance &&
+            !groups.some((group) => group.rows.some((item) => item.occurrence.id === instance)) &&
+            !("legacy" in reply.groups && reply.groups.legacy.some((task) => task.id === instance)) ? (
+              <p role="status">
+                The linked task is not in this view. It may already be finished, or scheduled for another day.
+              </p>
+            ) : null}
             {groups.map((group) => (
               <Panel key={group.title} title={group.title}>
                 {group.rows.length === 0 ? (
@@ -350,6 +362,7 @@ function WorkspaceData({
                         timezone={timezone}
                         view={view}
                         pendingDrafts={drafts}
+                        targeted={item.occurrence.id === instance}
                       />
                     ))}
                   </ul>
@@ -369,6 +382,7 @@ function WorkspaceData({
                         key={task.id}
                         task={task}
                         actorName={actorName ?? actorId}
+                        targeted={task.id === instance}
                       />
                     ))}
                   </ul>

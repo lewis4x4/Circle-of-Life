@@ -53,6 +53,8 @@ export type WorkRowProps = {
   view: "today" | "upcoming" | "history";
   pendingDrafts: DraftSummary[];
   recordingUnavailable?: boolean;
+  /** Named by the page's `instance` link (COL-604): scrolled to, opened and focused. */
+  targeted?: boolean;
 };
 
 export function WorkRow({
@@ -64,6 +66,7 @@ export function WorkRow({
   view,
   pendingDrafts,
   recordingUnavailable = false,
+  targeted = false,
 }: WorkRowProps) {
   const [item, setItem] = useState(initial);
   const [expanded, setExpanded] = useState(false);
@@ -89,6 +92,7 @@ export function WorkRow({
   const [sourceLocked, setSourceLocked] = useState(false);
   const active = useRef(true);
   const primary = useRef<HTMLButtonElement>(null);
+  const rowRef = useRef<HTMLLIElement>(null);
   const issueIds = useRef(new Set<string>());
   const pending = usePendingSave({ actorId, listPending: noDraftListing });
   useEffect(() => {
@@ -466,9 +470,25 @@ export function WorkRow({
     view !== "upcoming";
   const disabled =
     recordingUnavailable || busy || unresolved || ownDrafts.length > 0;
+  // COL-604: open the linked task once — the recording form when it has inputs
+  // or evidence, otherwise its history — then bring it into view and focus it.
+  // A one-tap "Complete" is never pressed for the operator.
+  const openedFromLink = useRef(false);
+  useEffect(() => {
+    if (!targeted || openedFromLink.current) return;
+    openedFromLink.current = true;
+    if (canRecord && (hasInputs || hasEvidence)) startMode("record");
+    else if (!canRecord) setHistory(true);
+    rowRef.current?.scrollIntoView?.({ block: "center" });
+    focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once for the linked row
+  }, [targeted]);
   return (
     <li
-      className="space-y-3 rounded-md border border-border bg-card p-4"
+      ref={rowRef}
+      id={`task-${item.occurrence.id}`}
+      aria-current={targeted ? "true" : undefined}
+      className={`space-y-3 rounded-md border bg-card p-4 ${targeted ? "border-primary ring-2 ring-primary/40" : "border-border"}`}
       aria-label={item.occurrence.activity_name}
     >
       <div>

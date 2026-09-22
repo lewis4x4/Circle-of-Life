@@ -37,7 +37,15 @@ export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear 
         {position}
       </span>
       <div className="min-w-0">
-        <p className="text-[13px] font-medium leading-snug text-foreground">{row.title}</p>
+        <p className="text-[13px] font-medium leading-snug text-foreground">
+          {row.instanceId && row.href ? (
+            <Link href={row.href} className="underline-offset-4 hover:underline focus-visible:underline" aria-label={`${row.title}: open this task in Operations`}>
+              {row.title}
+            </Link>
+          ) : (
+            row.title
+          )}
+        </p>
         <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
           {row.tags.map((tag) => (
             <span key={tag.label} className={cn("inline-flex h-[18px] items-center rounded border px-1.5 text-[10px] font-semibold uppercase tracking-wide", TAG_CLASS[tag.tone])}>
