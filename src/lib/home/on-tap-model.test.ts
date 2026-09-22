@@ -15,6 +15,7 @@ import {
   greetingLine,
   rankOnTap,
   scheduleMeta,
+  taskHref,
   titleFor,
   toCensusRowView,
 } from "./on-tap-model";
@@ -241,5 +242,15 @@ describe("buildRentRows (COL-594)", () => {
     expect(buildRentRows(null)).toEqual([]);
     expect(buildRentRows({ configured: false, residents: [] })).toEqual([]);
     expect(buildRentRows({ configured: true, residents: [] })).toEqual([]);
+  });
+});
+
+describe("taskHref (COL-604)", () => {
+  it("points an operations row at its single task", () => {
+    expect(taskHref("/admin/operations/work?facility_id=f-1", "i-1")).toBe("/admin/operations/work?facility_id=f-1&instance=i-1");
+  });
+  it("leaves rows without a task, or outside operations, alone", () => {
+    expect(taskHref("/admin/operations/work?facility_id=f-1", null)).toBe("/admin/operations/work?facility_id=f-1");
+    expect(taskHref("/admin/referrals", "i-1")).toBe("/admin/referrals");
   });
 });

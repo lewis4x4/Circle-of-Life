@@ -157,6 +157,12 @@ export function actionsFor(row: Pick<HomeOnTapRow, "catalogKey" | "requiresDualS
   return [{ key: "done", label: row.requiresDualSign ? "Sign" : "Done", tone: "primary" }];
 }
 
+/** A Home row that names one task opens that task on the work page, not the facility list (COL-604). */
+export function taskHref(href: string, instanceId: string | null): string {
+  if (!instanceId || !href.startsWith("/admin/operations/work")) return href;
+  return `${href}${href.includes("?") ? "&" : "?"}instance=${encodeURIComponent(instanceId)}`;
+}
+
 export function toRowView(row: HomeOnTapRow, args: { now: Date; timeZone: string; localDate: string; currentUserId: string | null }): HomeRowView {
   const tags: HomeRowView["tags"] = [{ label: row.bucket === "regulatory" ? "Regulatory" : "Assigned", tone: row.bucket }];
   const overdue = Boolean(row.overdue) || row.assignedShiftDate < args.localDate;
@@ -176,7 +182,7 @@ export function toRowView(row: HomeOnTapRow, args: { now: Date; timeZone: string
     dueLabel: dueLabelFor(row, args),
     owner: row.owner,
     actions: actionsFor(row),
-    href: row.href,
+    href: taskHref(row.href, row.instanceId),
     instanceId: row.instanceId,
     clearTarget: row.instanceId,
     catalogKey: row.catalogKey ?? null,
