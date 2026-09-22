@@ -7,6 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormLabel } from "@/components/ui/form-label";
 import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   BENEFITS_PROGRAMS,
@@ -58,7 +59,9 @@ export function caseFlags(item: BenefitsCase, today: string, warningDays: number
   const renewal = daysUntil(item.renewal_date, today);
   if (item.status !== "closed" && renewal !== null && warningDays !== null && renewal <= warningDays) flags.push({ key: "renewal", label: renewal < 0 ? `Renewal date passed ${-renewal} day${renewal === -1 ? "" : "s"} ago` : `Renewal due in ${renewal} day${renewal === 1 ? "" : "s"}`, tone: renewal < 0 ? "urgent" : "warn" });
   if (item.needs_rebind) flags.push({ key: "moved", label: `Resident moved to ${item.resident_facility_name || "another facility"}`, tone: "warn" });
-  if (item.resident_status && !["active", "hospital_hold", "loa"].includes(item.resident_status)) flags.push({ key: "resident", label: `Resident ${item.resident_status.replace(/_/g, " ")}`, tone: "info" });
+  if (item.resident_status && ["discharged", "deceased"].includes(item.resident_status)) flags.push({ key: "resident", label: `Resident ${item.resident_status}`, tone: "info" });
+  else if (item.resident_status && ["inquiry", "pending_admission"].includes(item.resident_status)) flags.push({ key: "prospect", label: "Not yet admitted", tone: "info" });
+  if (item.assigned_to && item.assignee_active === false && item.status !== "closed") flags.push({ key: "assignee", label: "Assignee no longer has benefits access", tone: "warn" });
   return flags;
 }
 const toneClass = { urgent: "border-destructive text-destructive", warn: "border-foreground/40 text-foreground", info: "text-muted-foreground" } as const;
@@ -74,6 +77,7 @@ export function BenefitsQueue({
     (state) => state.selectedFacilityId,
   );
   const [status, setStatus] = useState("");
+  const [mine, setMine] = useState(false);
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState<BenefitsOptions | null>(null);
   const [result, setResult] = useState<BenefitsCaseList | null>(null);
@@ -81,6 +85,7 @@ export function BenefitsQueue({
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [rules, setRules] = useState<BenefitsRulesList | null>(null);
+  const [actorId, setActorId] = useState<string | null>(null);
   const [starting, setStarting] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
   const today = todayFacilityDateIso();
@@ -96,6 +101,7 @@ export function BenefitsQueue({
       if (selectedFacilityId) query.set("facility_id", selectedFacilityId);
       if (residentId) query.set("resident_id", residentId);
       if (status) query.set("status", status);
+      if (mine && actorId) query.set("assigned_to", actorId);
       if (before) query.set("before", before);
       try {
         const data = await benefitsFetch<BenefitsCaseList>(
@@ -116,7 +122,7 @@ export function BenefitsQueue({
         if (current === sequence.current) setLoading(false);
       }
     },
-    [residentId, selectedFacilityId, status],
+    [residentId, selectedFacilityId, status, mine, actorId],
   );
   useEffect(() => {
     void load();
@@ -176,6 +182,7 @@ export function BenefitsQueue({
           if (live) {
             setOptions(data);
             setOptionsError(null);
+            if (data?.actor_id) setActorId(data.actor_id);
           }
         })
         .catch((caught) => {
@@ -237,6 +244,17 @@ export function BenefitsQueue({
               ))}
             </select>
           </div>
+          {actorId && (
+            <label className="inline-flex min-h-11 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={mine}
+                onChange={(event) => setMine(event.target.checked)}
+              />
+              Assigned to me
+            </label>
+          )}
           <Button
             className="min-h-11"
             variant="outline"
@@ -291,17 +309,17 @@ export function BenefitsQueue({
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {item.assignee_name || "Unassigned"} · Due{" "}
-                    {item.due_date || "not set"}
+                    {item.due_date ? dateLabel(item.due_date) : "not set"}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Badge variant="outline">
+                  <StatusPill tone={item.status === "open" ? "warning" : item.status === "waiting" ? "info" : "muted"}>
                     {
                       statusChoices.find(
                         (choice) => choice.value === item.status,
                       )?.label
                     }
-                  </Badge>
+                  </StatusPill>
                   {caseFlags(item, today, warningDays).map((flag) => (
                     <Badge
                       key={flag.key}
@@ -372,7 +390,10 @@ export function BenefitsQueue({
           </ul>
         </Panel>
       )}
-      <section className="space-y-4" aria-label="Start a benefits case">
+      <Panel
+        title="Start a benefits case"
+        description="Use the existing resident record. An active case for the same program is kept together through move-in and ongoing residency."
+      >
         <div className="max-w-md space-y-2">
           <FormLabel htmlFor="resident-search">Find resident by name</FormLabel>
           <Input
@@ -389,9 +410,9 @@ export function BenefitsQueue({
         )}
         {options && (
           <ActionForm
+            bare
             key={`${selectedFacilityId ?? "all"}:${residentId}`}
-            title="Start a benefits case"
-            description="Use the existing resident record. An active case for the same program is kept together through move-in and ongoing residency."
+            title="Choose the resident and program"
             submitLabel="Open benefits case"
             fields={[
               {
@@ -441,7 +462,7 @@ export function BenefitsQueue({
             }}
           />
         )}
-      </section>
+      </Panel>
     </div>
   );
 }

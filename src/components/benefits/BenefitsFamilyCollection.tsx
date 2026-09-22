@@ -15,7 +15,7 @@ function RequestedUpload({ item, reload }: { item: FamilyBenefitsRequest; reload
   const send = async () => {
     if (!file || busy) return; setBusy(true); setError(null);
     try {
-      if (file.size > BENEFITS_MAX_FILE_BYTES || !["application/pdf", "image/png", "image/jpeg"].includes(file.type)) throw new Error("Choose a PDF, PNG or JPEG up to 15 MiB.");
+      if (file.size > BENEFITS_MAX_FILE_BYTES || !["application/pdf", "image/png", "image/jpeg"].includes(file.type)) throw new Error("Choose a PDF, PNG or JPEG up to 15 MB.");
       if (!attempt.current || attempt.current.file !== file) attempt.current = { file, requestId: crypto.randomUUID(), finalizeId: crypto.randomUUID(), revision: item.revision };
       const current = attempt.current;
       if (!current.reservation) {
@@ -48,7 +48,7 @@ function RequestedUpload({ item, reload }: { item: FamilyBenefitsRequest; reload
     {item.upload?.status === "received" ? <p role="status">Received: {item.upload.filename}. Staff will review the document.</p> : <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); void send(); }}>
       {item.requires_signature && <p className="text-sm text-muted-foreground">Upload the actual completed and signed document requested by staff. Uploading does not verify the signature or establish eligibility.</p>}
       {item.upload?.status === "pending" && <p className="text-sm text-muted-foreground">An upload is pending. Select the same original file, {item.upload.filename}, to resume. Contact staff if you need to replace it.</p>}
-      <p className="text-sm">Requested document (PDF, PNG or JPEG, up to 15 MiB)</p>
+      <p className="text-sm">Requested document (PDF, PNG or JPEG, up to 15 MB)</p>
       <FileInput browseLabel={`Choose file for ${item.title}`} value={file ? [file] : []} accept="application/pdf,image/png,image/jpeg" disabled={busy} onChange={(files) => setFile(files[0] || null)} />
       <Button type="submit" disabled={busy || !file} className="min-h-11">{busy ? "Verifying upload…" : "Upload document"}</Button>
     </form>}

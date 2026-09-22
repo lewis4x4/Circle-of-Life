@@ -4,7 +4,7 @@ import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 export const BENEFITS_PROGRAMS = ["smmc_ltc", "oss", "other"] as const;
 export const BENEFITS_STATUSES = ["open", "waiting", "closed"] as const;
 export const BENEFITS_STAGES = ["screening", "referral", "assessment", "application", "funding", "renewal"] as const;
-export const REQUIREMENT_STATUSES = ["missing", "requested", "received", "accepted", "rejected", "not_applicable"] as const;
+export const REQUIREMENT_STATUSES = ["missing", "requested", "received", "accepted", "rejected", "not_applicable", "expired"] as const;
 export const BENEFITS_AGENCIES = ["elder_options", "cares", "dcf", "plan", "other"] as const;
 export const BENEFITS_EVENT_TYPES = ["screening", "waitlist", "assessment", "application", "eligibility", "enrollment", "authorization", "correspondence", "denial", "appeal", "renewal", "notice_review", "note"] as const;
 export const BENEFITS_BUCKET = "benefits-documents";
@@ -39,6 +39,7 @@ export const benefitsRequirementSchema = z.object({
   assigned_to: uuid.nullable().optional(), due_date: date.nullable().optional(), notes: text.nullable().optional(),
   document_id: uuid.nullable().optional(), review_reason: text.nullable().optional(),
   signature_status: z.enum(["not_required", "pending", "verified"]).default("not_required"),
+  signed_on: date.nullable().optional(),
 }).strict();
 export const benefitsEventSchema = z.object({
   agency: z.enum(BENEFITS_AGENCIES), event_type: z.enum(BENEFITS_EVENT_TYPES), outcome: z.string().trim().min(1).max(200),
@@ -59,6 +60,7 @@ export const benefitsCommandSchema = z.discriminatedUnion("action", [
   z.object({ ...commandBase, action: z.literal("record_event"), payload: benefitsEventSchema }).strict(),
   z.object({ ...commandBase, action: z.literal("record_submission"), payload: benefitsSubmissionSchema }).strict(),
   z.object({ ...commandBase, action: z.literal("record_receipt"), payload: benefitsReceiptSchema }).strict(),
+  z.object({ ...commandBase, action: z.literal("void_document"), payload: z.object({ document_id: uuid, reason: z.string().trim().min(1).max(2000) }).strict() }).strict(),
 ]);
 export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days"] as const;
 export type BenefitsRuleKey = typeof BENEFITS_RULE_KEYS[number];
@@ -84,9 +86,9 @@ export type BenefitsFunding = z.infer<typeof benefitsFundingSchema>;
 export type BenefitsProgram = typeof BENEFITS_PROGRAMS[number];
 export type BenefitsStatus = typeof BENEFITS_STATUSES[number];
 export interface BenefitsPermissions { can_write: boolean; can_review: boolean; can_manage_access: boolean }
-export interface BenefitsCase { id: string; organization_id: string; facility_id: string; resident_id: string; admission_case_id: string | null; program: BenefitsProgram; status: BenefitsStatus; revision: number; next_action: string | null; assigned_to: string | null; due_date: string | null; closure_reason: string | null; screening: BenefitsScreening; funding: BenefitsFunding; created_at: string; updated_at: string; created_by: string; resident_name: string; facility_name: string; assignee_name: string | null; resident_status?: string | null; resident_facility_id?: string | null; resident_facility_name?: string | null; needs_rebind?: boolean; renewal_date?: string | null }
-export interface BenefitsRequirement extends z.infer<typeof benefitsRequirementSchema> { id: string; case_id: string; reviewed_by: string | null; reviewed_at: string | null; updated_at: string }
-export interface BenefitsDocument { id: string; case_id: string; filename: string; mime_type: string; size_bytes: number; sha256: string; storage_path: string; status: "reserved" | "ready"; document_type: string; template_version: string | null; created_at: string; created_by: string }
+export interface BenefitsCase { id: string; organization_id: string; facility_id: string; resident_id: string; admission_case_id: string | null; program: BenefitsProgram; status: BenefitsStatus; revision: number; next_action: string | null; assigned_to: string | null; due_date: string | null; closure_reason: string | null; screening: BenefitsScreening; funding: BenefitsFunding; created_at: string; updated_at: string; created_by: string; resident_name: string; facility_name: string; assignee_name: string | null; resident_status?: string | null; resident_facility_id?: string | null; resident_facility_name?: string | null; needs_rebind?: boolean; renewal_date?: string | null; assignee_active?: boolean | null }
+export interface BenefitsRequirement extends z.infer<typeof benefitsRequirementSchema> { id: string; case_id: string; reviewed_by: string | null; reviewed_at: string | null; updated_at: string; assignee_name?: string | null }
+export interface BenefitsDocument { id: string; case_id: string; filename: string; mime_type: string; size_bytes: number; sha256: string; storage_path: string; status: "reserved" | "ready"; document_type: string; template_version: string | null; created_at: string; created_by: string; voided_at?: string | null; voided_by?: string | null; void_reason?: string | null }
 export interface BenefitsEvent extends z.infer<typeof benefitsEventSchema> { id: string; case_id: string; created_at: string; created_by: string }
 export interface BenefitsSubmission extends z.infer<typeof benefitsSubmissionSchema> { id: string; case_id: string; manifest: Array<{ id: string; sha256: string; filename: string }>; created_at: string; created_by: string }
 export interface BenefitsReceipt extends z.infer<typeof benefitsReceiptSchema> { id: string; case_id: string; created_at: string; created_by: string }
@@ -94,5 +96,5 @@ export interface BenefitsAudit { id: string; case_id: string; action: string; pa
 export interface BenefitsDetail { case: BenefitsCase; permissions: BenefitsPermissions; requirements: BenefitsRequirement[]; documents: BenefitsDocument[]; events: BenefitsEvent[]; submissions: BenefitsSubmission[]; receipts: BenefitsReceipt[]; history: BenefitsAudit[]; history_has_more: boolean }
 export interface BenefitsCaseList { cases: BenefitsCase[]; next_cursor: string | null }
 export interface UncasedMedicaidResident { id: string; name: string; facility_id: string; payer_type: string; suggested_program: BenefitsProgram; medicaid_authorization_end: string | null }
-export interface BenefitsOptions { facilities: Array<{id: string; name: string}>; residents: Array<{id: string; name: string; facility_id: string}>; assignees: Array<{id: string; name: string; facility_id: string}>; can_manage_access: boolean; uncased_medicaid_residents?: UncasedMedicaidResident[] }
+export interface BenefitsOptions { facilities: Array<{id: string; name: string}>; residents: Array<{id: string; name: string; facility_id: string}>; assignees: Array<{id: string; name: string; facility_id: string}>; can_manage_access: boolean; uncased_medicaid_residents?: UncasedMedicaidResident[]; actor_id?: string }
 export interface BenefitsAccessGrant { id: string; facility_id: string; user_id: string; can_write: boolean; can_review: boolean; expires_at: string; revoked_at: string | null; reason: string; granted_by: string; updated_at: string; user_name: string; facility_name: string }

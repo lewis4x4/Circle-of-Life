@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/ui/status-pill";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
@@ -20,6 +20,7 @@ import {
 import {
   ActionForm,
   benefitsFetch,
+  BenefitsRequestError,
   dateLabel,
   ErrorNotice,
   label,
@@ -58,6 +59,10 @@ export function screeningStandardFromRules(
     source: typeof value.source === "string" ? value.source : undefined,
     effective_from: entry?.current?.effective_from ?? null,
   };
+}
+
+export function statusTone(status: string): "warning" | "info" | "muted" {
+  return status === "open" ? "warning" : status === "waiting" ? "info" : "muted";
 }
 
 type Command = (
@@ -176,6 +181,10 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
         }),
       });
       await refresh();
+    } catch (caught) {
+      // A conflict means the case moved under us: reload it so the next save carries the current revision.
+      if (caught instanceof BenefitsRequestError && caught.status === 409) await refresh();
+      throw caught;
     } finally {
       busyRef.current = false;
       setMutating(false);
@@ -217,7 +226,7 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
         ]
       : []);
   const docs = detail.documents
-    .filter((document) => document.status === "ready")
+    .filter((document) => document.status === "ready" && !document.voided_at)
     .map((document) => ({ value: document.id, label: document.filename }));
   const screeningReview = benefitsScreeningReview(
     item.program,
@@ -226,7 +235,7 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
     standard,
   );
   const residentAway =
-    item.resident_status && !["active", "hospital_hold", "loa"].includes(item.resident_status)
+    item.resident_status && ["discharged", "deceased"].includes(item.resident_status)
       ? item.resident_status
       : null;
   const sectionTabs = [
@@ -256,12 +265,12 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
                 ?.label
             }
           </p>
-          <Badge variant="outline" className="mt-3">
+          <StatusPill tone={statusTone(item.status)} className="mt-3">
             {
               statusChoices.find((choice) => choice.value === item.status)
                 ?.label
             }
-          </Badge>
+          </StatusPill>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -307,6 +316,7 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
             facilities moves it with the resident.
           </p>
           <ActionForm
+            bare
             title="Move the case with the resident"
             submitLabel="Rebind case to the resident’s facility"
             disabled={mutating || !permissions.can_review}
@@ -342,6 +352,7 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
             confirm coverage.
           </p>
           <ActionForm
+            bare
             title="Reopen case"
             submitLabel="Reopen for staff action"
             disabled={mutating || !permissions.can_write}
@@ -374,8 +385,8 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
         </p>
       </div>
       <Tabs defaultValue="Overview">
-        <div className="overflow-x-auto pb-2">
-          <TabsList className="min-h-11">
+        <div className="pb-2">
+          <TabsList className="h-auto min-h-11 flex-wrap justify-start">
             {sectionTabs.map((name) => (
               <TabsTrigger
                 key={name}
@@ -532,27 +543,35 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
               )
             }
           />
-          <ActionForm
-            title="Close case"
-            description="Close only when case work has ended. Funding remains supported by its own recorded evidence."
-            disabled={disabled}
-            submitLabel="Close case and retain history"
-            fields={[
-              {
-                name: "closure_reason",
-                label: "Closure reason",
-                type: "textarea",
-                required: true,
-              },
-            ]}
-            onSubmit={(payload, requestId) =>
-              command(
-                "update_case",
-                { ...payload, status: "closed" },
-                requestId,
-              )
-            }
-          />
+          <details className="rounded-[var(--radius)] border border-border p-4">
+            <summary className="min-h-11 cursor-pointer text-sm font-medium">
+              Close this case
+            </summary>
+            <div className="pt-4">
+              <ActionForm
+                bare
+                title="Close case"
+                description="Close only when case work has ended. History and evidence are retained; reopening does not renew or confirm coverage."
+                disabled={disabled}
+                submitLabel="Close case and retain history"
+                fields={[
+                  {
+                    name: "closure_reason",
+                    label: "Closure reason",
+                    type: "textarea",
+                    required: true,
+                  },
+                ]}
+                onSubmit={(payload, requestId) =>
+                  command(
+                    "update_case",
+                    { ...payload, status: "closed" },
+                    requestId,
+                  )
+                }
+              />
+            </div>
+          </details>
           <Panel title="Recorded activity">
             <ul className="divide-y divide-border">
               {detail.history.map((entry) => (
@@ -579,6 +598,8 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
             detail={detail}
             refresh={refresh}
             disabled={disabled}
+            canReview={permissions.can_review && item.status !== "closed"}
+            command={command}
           />
           <BenefitsCollectionRequests detail={detail} onChanged={refresh} />
           <RequirementForm
@@ -597,10 +618,13 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
                 {requirement.title} · {label(requirement.status)}
                 <span className="block text-sm font-normal text-muted-foreground">
                   {label(requirement.stage)} ·{" "}
-                  {assignees.find(
-                    (person) => person.value === requirement.assigned_to,
-                  )?.label || "Unassigned"}{" "}
-                  · Due {requirement.due_date || "not set"}
+                  {requirement.assignee_name ||
+                    assignees.find(
+                      (person) => person.value === requirement.assigned_to,
+                    )?.label ||
+                    "Unassigned"}{" "}
+                  · Due {requirement.due_date ? dateLabel(requirement.due_date) : "not set"}
+                  {requirement.signed_on && ` · Signed ${dateLabel(requirement.signed_on)}`}
                 </span>
               </summary>
               <div className="pt-4">
@@ -842,7 +866,7 @@ function RequirementForm({
         REQUIREMENT_STATUSES.filter(
           (status) =>
             canReview ||
-            !["accepted", "rejected", "not_applicable"].includes(status),
+            !["accepted", "rejected", "not_applicable", "expired"].includes(status),
         ),
       ),
       value: requirement?.status ?? "missing",
@@ -886,9 +910,19 @@ function RequirementForm({
           : []),
       ],
     },
+    ...(canReview
+      ? [
+          {
+            name: "signed_on",
+            label: "Date actually signed (required when verified)",
+            type: "date" as const,
+            value: requirement?.signed_on,
+          },
+        ]
+      : []),
     {
       name: "review_reason",
-      label: "Review reason or not-applicable explanation",
+      label: "Review reason, expiry or not-applicable explanation",
       type: "textarea",
       value: requirement?.review_reason,
     },

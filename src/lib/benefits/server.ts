@@ -28,6 +28,7 @@ export const benefitsDocumentRowSchema = z.object({
   size_bytes: z.number().int().positive().max(BENEFITS_MAX_FILE_BYTES), sha256: z.string().regex(/^[a-f0-9]{64}$/),
   storage_path: z.string().min(1), status: z.enum(["reserved", "ready"]), document_type: z.string(),
   template_version: z.string().nullable(), created_at: z.string(), created_by: uuid,
+  voided_at: z.string().nullable().optional(), voided_by: uuid.nullable().optional(), void_reason: z.string().nullable().optional(),
 }).passthrough();
 const rowStamp = { id: uuid, case_id: uuid, created_at: z.string(), created_by: uuid };
 const detailSchema = z.object({
@@ -94,7 +95,7 @@ export async function loadBenefitsDetail(actor: CurrentApiActor, id: string): Pr
 export async function listBenefitsCases(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
   const query = Object.fromEntries(new URL(request.url).searchParams);
-  const filters = z.object({ facility_id: uuid.optional(), resident_id: uuid.optional(), status: z.enum(BENEFITS_STATUSES).optional(), before: z.string().max(200).optional(), limit: z.coerce.number().int().min(1).max(100).default(50) }).strict().safeParse(query);
+  const filters = z.object({ facility_id: uuid.optional(), resident_id: uuid.optional(), status: z.enum(BENEFITS_STATUSES).optional(), assigned_to: uuid.optional(), before: z.string().max(200).optional(), limit: z.coerce.number().int().min(1).max(100).default(50) }).strict().safeParse(query);
   if (!filters.success) return benefitsFailure(400, "Invalid case filters.");
   const result = await rpc(auth.actor, "benefits_case_list", { p_filters: filters.data });
   if (result.error) return rpcFailure(result.error);
@@ -133,7 +134,7 @@ export async function getBenefitsOptions(request: Request) {
   if (result.error) return rpcFailure(result.error);
   const named = z.object({ id: uuid, name: z.string() });
   const parsed = z.object({ facilities: z.array(named), residents: z.array(named.extend({ facility_id: uuid })), assignees: z.array(named.extend({ facility_id: uuid })), can_manage_access: z.boolean(),
-    uncased_medicaid_residents: z.array(named.extend({ facility_id: uuid, payer_type: z.string(), suggested_program: z.enum(BENEFITS_PROGRAMS), medicaid_authorization_end: z.string().nullable() })).default([]) }).safeParse(result.data);
+    uncased_medicaid_residents: z.array(named.extend({ facility_id: uuid, payer_type: z.string(), suggested_program: z.enum(BENEFITS_PROGRAMS), medicaid_authorization_end: z.string().nullable() })).default([]), actor_id: uuid.optional() }).safeParse(result.data);
   return parsed.success ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
 }
 const ruleRowSchema = z.object({ id: uuid, organization_id: uuid, rule_key: z.enum(BENEFITS_RULE_KEYS), value: z.unknown(), effective_from: z.string(), reason: z.string(), created_by: uuid.nullable(), created_at: z.string() });
@@ -182,7 +183,7 @@ export async function setBenefitsAccess(request: Request) {
 export const prepareBenefitsDocumentSchema = z.object({
   filename: z.string().trim().min(1).max(255), mime_type: z.enum(BENEFITS_MIME_TYPES), size_bytes: z.number().int().positive().max(BENEFITS_MAX_FILE_BYTES),
   sha256: z.string().regex(/^[a-f0-9]{64}$/), document_type: z.string().trim().min(1).max(100), template_version: z.string().max(200).nullable().optional(),
-  expected_revision: z.number().int().positive(), request_id: uuid,
+  expected_revision: z.number().int().positive(), request_id: uuid, resume_document_id: uuid.optional(),
 }).strict();
 const finalizeBodySchema = z.object({ expected_revision: z.number().int().positive(), request_id: uuid }).strict();
 const storageObjectSchema = z.object({ id: uuid, version: z.string(), etag: z.string(), size_bytes: z.number(), mime_type: z.string() });
@@ -198,10 +199,20 @@ export async function prepareBenefitsDocument(request: Request, caseId: string) 
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
   const parsed = prepareBenefitsDocumentSchema.safeParse(await readBody(request));
   if (!uuid.safeParse(caseId).success || !parsed.success) return benefitsFailure(400, "Choose a PDF, JPEG or PNG within the upload size limit.");
-  const { request_id, expected_revision, ...payload } = parsed.data;
-  const result = await rpc(auth.actor, "benefits_case_command", { p_case_id: caseId, p_action: "prepare_document", p_payload: payload, p_expected_revision: expected_revision, p_request_id: request_id });
-  if (result.error) return rpcFailure(result.error);
-  const reply = commandReply.safeParse(result.data); if (!reply.success || !reply.data.document || reply.data.case_id !== caseId) return benefitsFailure();
+  const { request_id, expected_revision, resume_document_id, ...payload } = parsed.data;
+  let reply: ReturnType<typeof commandReply.safeParse>;
+  if (resume_document_id) {
+    // A reservation that lost its browser state: the same original file continues the same document, nothing new is reserved.
+    const resumed = await documentTarget(auth.actor, caseId, resume_document_id); if ("response" in resumed) return resumed.response;
+    const doc = resumed.target.document;
+    if (doc.sha256 !== payload.sha256 || doc.size_bytes !== payload.size_bytes || doc.mime_type !== payload.mime_type || doc.created_by !== auth.actor.id || doc.voided_at) return benefitsFailure(409, "Resume with the same original file you reserved, or upload it as a new document.");
+    reply = commandReply.safeParse({ case_id: caseId, revision: expected_revision, document: doc });
+  } else {
+    const result = await rpc(auth.actor, "benefits_case_command", { p_case_id: caseId, p_action: "prepare_document", p_payload: payload, p_expected_revision: expected_revision, p_request_id: request_id });
+    if (result.error) return rpcFailure(result.error);
+    reply = commandReply.safeParse(result.data);
+  }
+  if (!reply.success || !reply.data.document || reply.data.case_id !== caseId) return benefitsFailure();
   const current = await revalidateBenefitsActor(auth.actor); if ("response" in current) return current.response;
   const fresh = await documentTarget(current.actor, caseId, reply.data.document.id); if ("response" in fresh) return fresh.response;
   if (fresh.target.document.status === "ready") return NextResponse.json({ ...reply.data, document: fresh.target.document, upload: null }, { headers: noStore });
@@ -214,6 +225,7 @@ async function downloadChecked(actor: CurrentApiActor, caseId: string, documentI
   if (!uuid.safeParse(caseId).success || !uuid.safeParse(documentId).success) return { response: benefitsFailure(400, "Invalid document.") };
   let current = await revalidateBenefitsActor(actor); if ("response" in current) return current;
   const before = await documentTarget(current.actor, caseId, documentId); if ("response" in before) return before;
+  if (before.target.document.voided_at) return { response: benefitsFailure(404, "Benefits case or access is unavailable.") };
   if (!before.target.object || (requireReady && before.target.document.status !== "ready")) return { response: benefitsFailure(409, "Document upload is not complete.") };
   const downloaded = await current.actor.admin.storage.from(BENEFITS_BUCKET).download(before.target.document.storage_path);
   if (downloaded.error || !downloaded.data) return { response: benefitsFailure(503, "Document bytes are unavailable. Retry without replacing the document.") };

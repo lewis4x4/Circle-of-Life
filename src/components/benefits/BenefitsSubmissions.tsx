@@ -258,6 +258,7 @@ export function BenefitsSubmissions({
                   Record agency receipt
                 </summary>
                 <ActionForm
+                  bare
                   title="Agency receipt"
                   disabled={disabled}
                   submitLabel="Record receipt"

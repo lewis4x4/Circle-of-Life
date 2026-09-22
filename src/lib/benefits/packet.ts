@@ -21,7 +21,7 @@ export function selectPacketDocuments(detail: BenefitsDetail, documentIds: strin
     const document = detail.documents.find((item) => item.id === id && item.case_id === detail.case.id);
     const reviews = detail.requirements.filter((item) => item.case_id === detail.case.id && item.document_id === id);
     const accepted = reviews.some((review) => review.status === "accepted" && review.reviewed_by && review.reviewed_at && review.signature_status !== "pending");
-    if (!document || document.status !== "ready" || !accepted || reviews.some((review) => review.status === "rejected" || review.signature_status === "pending")) {
+    if (!document || document.status !== "ready" || document.voided_at || !accepted || reviews.some((review) => review.status === "rejected" || review.signature_status === "pending")) {
       throw new BenefitsPacketError("Every selected document must belong to this case and have an accepted review with signatures resolved.");
     }
     return document;

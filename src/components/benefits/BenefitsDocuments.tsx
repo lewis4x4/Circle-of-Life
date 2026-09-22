@@ -27,11 +27,23 @@ export function BenefitsDocuments({
   detail,
   refresh,
   disabled,
+  canReview = false,
+  command,
 }: {
   detail: BenefitsDetail;
   refresh: () => Promise<void>;
   disabled: boolean;
+  canReview?: boolean;
+  command?: (
+    action: "void_document",
+    payload: Record<string, unknown>,
+    requestId: string,
+  ) => Promise<void>;
 }) {
+  const [resumeTarget, setResumeTarget] = useState<BenefitsDocument | null>(null);
+  const [voidReason, setVoidReason] = useState<Record<string, string>>({});
+  const [voiding, setVoiding] = useState<string | null>(null);
+  const [voidError, setVoidError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState("");
@@ -47,6 +59,7 @@ export function BenefitsDocuments({
     uploaded?: boolean;
     documentType: string;
     version: string;
+    resumeDocumentId?: string;
   } | null>(null);
   const base = `/api/admin/benefits/cases/${detail.case.id}/documents`;
   return (
@@ -77,8 +90,9 @@ export function BenefitsDocuments({
                 file,
                 requestId: crypto.randomUUID(),
                 finalizeId: crypto.randomUUID(),
-                documentType,
-                version,
+                documentType: resumeTarget ? resumeTarget.document_type : documentType,
+                version: resumeTarget ? (resumeTarget.template_version ?? "") : version,
+                resumeDocumentId: resumeTarget?.id,
               };
             const attempt = upload.current;
             if (!attempt.reservation) {
@@ -100,6 +114,9 @@ export function BenefitsDocuments({
                     template_version: attempt.version || null,
                     expected_revision: detail.case.revision,
                     request_id: attempt.requestId,
+                    ...(attempt.resumeDocumentId
+                      ? { resume_document_id: attempt.resumeDocumentId }
+                      : {}),
                   }),
                 },
               );
@@ -161,6 +178,7 @@ export function BenefitsDocuments({
               );
             upload.current = null;
             setFile(null);
+            setResumeTarget(null);
             if (fileInput.current) fileInput.current.value = "";
             setSuccess(true);
             await refresh();
@@ -273,19 +291,92 @@ export function BenefitsDocuments({
               {document.template_version || "Version not recorded"} · Uploaded{" "}
               {dateLabel(document.created_at)}
             </p>
-            {document.status === "ready" ? (
-              <a
-                className="inline-flex min-h-11 items-center text-sm underline"
-                href={`${base}/${document.id}`}
-                download
-              >
-                Download {document.filename}
-              </a>
-            ) : (
+            {document.voided_at ? (
               <p className="text-sm">
-                Upload reserved; verification pending. Retry the original upload
-                to complete it.
+                Voided {dateLabel(document.voided_at)}: {document.void_reason}. The
+                bytes remain as a record of what was uploaded but no longer count
+                as evidence.
               </p>
+            ) : document.status === "ready" ? (
+              <>
+                <a
+                  className="inline-flex min-h-11 items-center text-sm underline"
+                  href={`${base}/${document.id}`}
+                  download
+                >
+                  Download {document.filename}
+                </a>
+                {canReview && command && (
+                  <details className="mt-1">
+                    <summary className="min-h-11 cursor-pointer text-sm underline">
+                      Void this document
+                    </summary>
+                    <div className="space-y-2 pt-2">
+                      <FormLabel htmlFor={`void-${document.id}`} required>
+                        Reason (for example, uploaded to the wrong resident)
+                      </FormLabel>
+                      <Input
+                        id={`void-${document.id}`}
+                        className="min-h-11"
+                        value={voidReason[document.id] ?? ""}
+                        onChange={(event) =>
+                          setVoidReason((prior) => ({ ...prior, [document.id]: event.target.value }))
+                        }
+                      />
+                      <ErrorNotice error={voiding === document.id ? voidError : null} />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11"
+                        disabled={disabled || voiding !== null || !(voidReason[document.id] ?? "").trim()}
+                        onClick={async () => {
+                          setVoiding(document.id);
+                          setVoidError(null);
+                          try {
+                            await command(
+                              "void_document",
+                              { document_id: document.id, reason: (voidReason[document.id] ?? "").trim() },
+                              crypto.randomUUID(),
+                            );
+                          } catch (caught) {
+                            setVoidError(caught instanceof Error ? caught.message : "Unable to void the document.");
+                          } finally {
+                            setVoiding(null);
+                          }
+                        }}
+                      >
+                        {voiding === document.id ? "Voiding…" : "Void and detach from every requirement"}
+                      </Button>
+                    </div>
+                  </details>
+                )}
+              </>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm">
+                  Upload reserved; the file never finished verifying.
+                  {resumeTarget?.id === document.id
+                    ? " Select the same original file above and submit to finish it."
+                    : ""}
+                </p>
+                {resumeTarget?.id !== document.id && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-11"
+                    disabled={disabled || busy}
+                    onClick={() => {
+                      setResumeTarget(document);
+                      upload.current = null;
+                      setFile(null);
+                      if (fileInput.current) fileInput.current.value = "";
+                      fileInput.current?.focus();
+                    }}
+                  >
+                    Finish this upload with the original file
+                  </Button>
+                )}
+              </div>
             )}
           </li>
         ))}
