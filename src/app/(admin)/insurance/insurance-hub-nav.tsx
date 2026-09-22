@@ -15,6 +15,7 @@ const LINKS = [
   { href: "/admin/insurance/claims", label: "Claims" },
   { href: "/admin/insurance/loss-runs", label: "Loss runs" },
   { href: "/admin/insurance/coi", label: "Certificates (COI)" },
+  { href: "/admin/insurance/agency-summaries", label: "Agency summaries" },
   { href: "/admin/insurance/workers-comp", label: "Workers’ comp" },
 ] as const;
 
