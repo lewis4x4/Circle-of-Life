@@ -107,8 +107,10 @@ CREATE TEMP TABLE ew_plan AS SELECT
 GRANT SELECT ON ew_plan TO authenticated;
 SELECT pg_temp.ew_actor(true);
 SET LOCAL ROLE authenticated;
+-- COL-553: an open-period census on a facility that may hold residents carries a reason in case it differs from the roster.
 INSERT INTO ew_results SELECT 'open_save',public.stand_up_command('save',jsonb_build_object(
- 'facility_id',p.facility,'week_start',p.open_week,'expected_version',0,'request_id',gen_random_uuid(),'status','draft','values',p.census_only)) FROM ew_plan p;
+ 'facility_id',p.facility,'week_start',p.open_week,'expected_version',0,'request_id',gen_random_uuid(),'status','draft','values',p.census_only,
+ 'roster',jsonb_build_object('current_total_census',jsonb_build_object('override_reason','other')))) FROM ew_plan p;
 DO $$ DECLARE r jsonb; BEGIN
  SELECT value INTO r FROM ew_results WHERE name='open_save';
  IF r->>'week_start' IS DISTINCT FROM (SELECT open_week::text FROM ew_plan) OR (r->>'version')::int<>1 THEN RAISE EXCEPTION 'Open week save did not record a first revision: %',r; END IF;

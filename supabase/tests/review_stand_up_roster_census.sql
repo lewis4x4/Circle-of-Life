@@ -122,11 +122,14 @@ DO $$ DECLARE r jsonb; BEGIN
  SELECT value INTO r FROM rc_results WHERE name='reason_dropped';
  IF r->'roster_confirmations'->'current_total_census'->>'source'<>'roster_confirmed' OR r->'roster_confirmations'->'current_total_census'->'override_reason'<>'null'::jsonb THEN RAISE EXCEPTION 'Server must own the source: %',r; END IF;
 END $$;
--- A blank figure confirms nothing, and a save without the roster key records nothing.
+-- A blank figure confirms nothing. COL-553: a save without the roster key is compared all the same;
+-- a differing figure is refused and a matching one records roster_confirmed.
 INSERT INTO rc_results SELECT 'blank',public.stand_up_command('save',value||jsonb_build_object('request_id',gen_random_uuid(),'expected_version',3,'values',pg_temp.rc_values(NULL,NULL))) FROM rc_results WHERE name='confirm_payload';
-INSERT INTO rc_results SELECT 'no_roster_key',public.stand_up_command('save',(value-'roster')||jsonb_build_object('request_id',gen_random_uuid(),'expected_version',4,'values',pg_temp.rc_values(7,1))) FROM rc_results WHERE name='confirm_payload';
+SELECT pg_temp.rc_fail(format('SELECT public.stand_up_command(''save'',%L::jsonb)',(value-'roster')||jsonb_build_object('request_id',gen_random_uuid(),'expected_version',4,'values',pg_temp.rc_values(7,1))),'differs from the Haven roster') FROM rc_results WHERE name='confirm_payload';
+INSERT INTO rc_results SELECT 'no_roster_key',public.stand_up_command('save',(value-'roster')||jsonb_build_object('request_id',gen_random_uuid(),'expected_version',4,'values',pg_temp.rc_values(5,1))) FROM rc_results WHERE name='confirm_payload';
 DO $$ BEGIN
- IF (SELECT value->'roster_confirmations' FROM rc_results WHERE name='blank')<>'{}'::jsonb OR (SELECT value->'roster_confirmations' FROM rc_results WHERE name='no_roster_key')<>'{}'::jsonb THEN RAISE EXCEPTION 'Blank or legacy saves must record no confirmation'; END IF;
+ IF (SELECT value->'roster_confirmations' FROM rc_results WHERE name='blank')<>'{}'::jsonb THEN RAISE EXCEPTION 'Blank saves must record no confirmation'; END IF;
+ IF (SELECT value->'roster_confirmations'->'current_total_census'->>'source' FROM rc_results WHERE name='no_roster_key')<>'roster_confirmed' THEN RAISE EXCEPTION 'A save without the roster key must still be compared'; END IF;
 END $$;
 -- A facility with no roster in Haven records entered_no_roster with no suggestion.
 INSERT INTO rc_results SELECT 'no_roster',public.stand_up_command('save',jsonb_build_object('facility_id',fac_empty,'week_start',week,'expected_version',0,'request_id',gen_random_uuid(),'status','draft',
@@ -142,7 +145,8 @@ SELECT pg_temp.rc_fail(format('SELECT public.stand_up_command(''save'',%L::jsonb
 INSERT INTO rc_results VALUES('workspace',public.stand_up_command('workspace','{}'));
 DO $$ DECLARE r jsonb; BEGIN
  SELECT value INTO r FROM jsonb_array_elements((SELECT value->'reports' FROM rc_results WHERE name='workspace')) WHERE value->>'facility_id'=(SELECT fac_roster::text FROM rc_fixture);
- IF r->'roster_confirmations'<>'{}'::jsonb OR r->>'version'<>'5' THEN RAISE EXCEPTION 'Workspace must show the latest revision confirmation: %',r; END IF;
+ -- COL-553: revision 5 was saved without a roster key and is now compared all the same.
+ IF r->'roster_confirmations'->'current_total_census'->>'source'<>'roster_confirmed' OR r->>'version'<>'5' THEN RAISE EXCEPTION 'Workspace must show the latest revision confirmation: %',r; END IF;
  SELECT value INTO r FROM jsonb_array_elements((SELECT value->'reports' FROM rc_results WHERE name='workspace')) WHERE value->>'facility_id'=(SELECT fac_empty::text FROM rc_fixture);
  IF r->'roster_confirmations'->'current_total_census'->>'source'<>'entered_no_roster' THEN RAISE EXCEPTION 'Workspace lost the recorded confirmation: %',r; END IF;
 END $$;
