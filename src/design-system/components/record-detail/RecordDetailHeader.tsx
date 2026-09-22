@@ -42,6 +42,14 @@ export interface RecordDetailHeaderProps {
    */
   statusChips?: ReactNode;
   /**
+   * Optional quiet control rendered at the end of the subtitle line.
+   * For a reveal toggle or a single inline link that belongs to the identity
+   * line rather than the action group — keeping it out of `statusChips` is what
+   * stops the chip row turning into a second toolbar.
+   * Only rendered when `subtitle` is supplied.
+   */
+  subtitleTrailing?: ReactNode;
+  /**
    * Optional primary action group, right-aligned on desktop.
    * e.g. Edit, Save, Print buttons.
    */
@@ -70,6 +78,7 @@ export interface RecordDetailHeaderProps {
 export function RecordDetailHeader({
   title,
   subtitle,
+  subtitleTrailing,
   statusChips,
   actions,
   backLink,
@@ -107,8 +116,14 @@ export function RecordDetailHeader({
             )}
           </div>
           {subtitle && (
-            <p className="text-sm tabular-nums text-muted-foreground">
-              {subtitle}
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm tabular-nums text-muted-foreground">
+              <span>{subtitle}</span>
+              {subtitleTrailing && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  {subtitleTrailing}
+                </>
+              )}
             </p>
           )}
         </div>

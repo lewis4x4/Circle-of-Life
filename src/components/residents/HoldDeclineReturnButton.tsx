@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
 import type { ResidencyStatus } from "@/lib/residents/presence";
 
@@ -16,10 +17,15 @@ export function HoldDeclineReturnButton({
   residentId,
   status,
   onDone,
+  asMenuItem = false,
 }: {
   residentId: string;
   status: ResidencyStatus;
   onDone?: () => void;
+  /** Render as a dropdown item instead of a standalone button. Safe inside menu
+   *  content because this action has no dialog of its own — it saves and
+   *  toasts. */
+  asMenuItem?: boolean;
 }) {
   const [saving, setSaving] = useState(false);
   if (status !== "hospital" && status !== "loa") return null;
@@ -51,6 +57,17 @@ export function HoldDeclineReturnButton({
     } finally {
       setSaving(false);
     }
+  }
+
+  if (asMenuItem) {
+    return (
+      <>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={saving} onClick={() => void markDecline()}>
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Will not return — release hold"}
+        </DropdownMenuItem>
+      </>
+    );
   }
 
   return (

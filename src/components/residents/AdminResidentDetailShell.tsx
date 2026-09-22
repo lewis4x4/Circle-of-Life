@@ -4,8 +4,6 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSelectedLayoutSegment } from "next/navigation";
-import { Brain, FileText, Stethoscope } from "lucide-react";
-
 import {
   BehaviorLogModal,
   ConditionLogModal,
@@ -16,7 +14,11 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { ResidentDetailTabStrip } from "@/components/residents/ResidentDetailTabStrip";
-import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  RESIDENT_HEADER_ACTION_CLASS,
+  ResidentDocumentationActions,
+} from "@/components/residents/ResidentHeaderActions";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
@@ -171,6 +173,7 @@ export function AdminResidentDetailShell({
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-4 pt-2">
       <RecordDetailHeader
+        className="mb-0"
         title={detail.fullName}
         subtitle={subtitle}
         backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
@@ -181,9 +184,8 @@ export function AdminResidentDetailShell({
             ) : (
               <StatusPill tone={presenceTone(detail.status)}>{presenceLabel(detail.status)}</StatusPill>
             )}
-            {acuity.tone === "gap" ? (
-              <span className="text-[13px] text-muted-foreground">{acuity.label}</span>
-            ) : (
+            {/* Only when acuity is actually posted — see the overview header. */}
+            {acuity.tone === "gap" ? null : (
               <StatusPill tone={acuity.tone} className="normal-case tracking-tight">
                 {acuity.label}
               </StatusPill>
@@ -191,42 +193,26 @@ export function AdminResidentDetailShell({
           </>
         }
         actions={
-          <div className="flex shrink-0 flex-col items-end gap-2 md:flex-row md:items-start">
-            <div className="grid w-[calc(100vw-2rem)] grid-cols-3 items-center gap-2 md:flex md:w-auto md:flex-row md:flex-wrap">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setBehaviorModalOpen(true)}
-                className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
-              >
-                <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setConditionModalOpen(true)}
-                className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
-              >
-                <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setGeneralNoteModalOpen(true)}
-                className="h-auto min-h-[44px] min-w-0 px-2 py-2 text-[12px] font-medium sm:px-4 sm:text-[13px] md:h-10 md:min-h-0 md:py-0"
-              >
-                <FileText className="mr-1.5 size-4" aria-hidden /> General note
-              </Button>
-            </div>
+          // The same three buttons at the same size as the overview header, so
+          // the header does not resize as the operator moves between tabs.
+          <div className="grid w-[calc(100vw-2rem)] grid-cols-2 items-center gap-2 md:flex md:w-auto md:flex-row md:flex-wrap">
+            <ResidentDocumentationActions
+              onLogBehavior={() => setBehaviorModalOpen(true)}
+              onLogCondition={() => setConditionModalOpen(true)}
+              onGeneralNote={() => setGeneralNoteModalOpen(true)}
+            />
+            <Link
+              href={`/admin/benefits?resident_id=${encodeURIComponent(residentId)}`}
+              className={cn(buttonVariants({ variant: "outline" }), RESIDENT_HEADER_ACTION_CLASS)}
+            >
+              Benefits cases
+            </Link>
           </div>
         }
       />
 
       <div className="w-full shrink-0">
         <ResidentDetailTabStrip hrefs={hrefs} active={activeTab} />
-        <div className="mt-2">
-          <Link href={`/admin/benefits?resident_id=${encodeURIComponent(residentId)}`} className={buttonVariants({ variant: "outline", size: "sm", className: "min-h-11" })}>Medicaid &amp; Benefits cases</Link>
-        </div>
       </div>
 
       <div className="min-w-0">{children}</div>
