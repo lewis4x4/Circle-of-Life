@@ -4,6 +4,7 @@ import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/
 import { EMPTY_PRESENCE_CENSUS, fetchPresenceCensus, type PresenceCensus } from "@/lib/executive/presence-census";
 import { fetchHomeCensus, type HomeCensusOnTap } from "@/lib/home/census";
 import { fetchHomeOnTap, type HomeOnTapPayload } from "@/lib/home/on-tap";
+import { fetchHomePastDue, type HomePastDue } from "@/lib/home/past-due";
 import { fetchLiveBoardEscalations, fetchLiveBoardTasks } from "@/lib/rounding/live-board-fetch";
 import { deriveLiveBoardCounts } from "@/lib/rounding/live-board-state";
 import { liveBoardStatusCopy } from "@/lib/rounding/live-board-display-copy";
@@ -33,6 +34,11 @@ export type HomeInitialData = {
   census: HomeCensusOnTap | null;
   /** Home modules switched on for this facility (COL-594); empty when the read fails, so nothing unreleased appears. */
   releasedModules: string[];
+  /**
+   * Past-due rent, read only when past_due is released for the facility so no
+   * balance reaches the page before then; null when unreleased or unavailable.
+   */
+  pastDue: HomePastDue | null;
 };
 
 const EMPTY_ROUNDING: HomeRoundingSummary = { available: false, missedToday: 0, openEscalations: 0, lastEntryAt: null, lastEntryBy: null };
@@ -125,6 +131,10 @@ export async function loadHome(
     fetchHomeCensus(supabase, args.facilityId, args.now),
     loadReleasedModules(supabase, args.facilityId),
   ]);
+  const released = releasedModules.status === "fulfilled" ? releasedModules.value : [];
+  const pastDue = released.includes("past_due")
+    ? await fetchHomePastDue(supabase as unknown as SupabaseClient, args.facilityId).catch(() => null)
+    : null;
   return {
     feed,
     snapshot: snapshot.status === "fulfilled" ? snapshot.value : null,
@@ -134,6 +144,7 @@ export async function loadHome(
     rounding: rounding.status === "fulfilled" ? rounding.value : EMPTY_ROUNDING,
     facilityOptions: facilityOptions.status === "fulfilled" ? facilityOptions.value : [],
     census: census.status === "fulfilled" ? census.value : null,
-    releasedModules: releasedModules.status === "fulfilled" ? releasedModules.value : [],
+    releasedModules: released,
+    pastDue,
   };
 }

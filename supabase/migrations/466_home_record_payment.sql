@@ -17,6 +17,9 @@
 --     idempotency, invoice settlement, and the 458 bridge that posts the
 --     resident ledger entry for an activated entity). No second write path.
 --   * payment_evidence + the private payment-evidence bucket.
+--   * home_rent_settings (facility due day + grace, effective-dated, nothing
+--     seeded), residents.rent_due_day, and home_past_due -- the read behind the
+--     past-due strip and the On-tap rent row. Released separately as past_due.
 --
 -- Known limit, stated rather than hidden: payment_allocations allows one
 -- allocation per payment (PK payment_id), so a payment larger than the oldest
@@ -304,6 +307,121 @@ REVOKE ALL ON FUNCTION public.home_record_payment(uuid, uuid, date, integer, tex
 GRANT EXECUTE ON FUNCTION public.home_record_payment(uuid, uuid, date, integer, text, text, text, text, text, text) TO authenticated;
 COMMENT ON FUNCTION public.home_record_payment(uuid, uuid, date, integer, text, text, text, text, text, text) IS
   'COL-37 ruling: definer required — payments and payment_evidence have no browser write path (340 guard, append-only evidence); the function checks facility access and the per-facility release switch, verifies the uploaded photo object, picks the oldest open invoice, and writes through haven.record_finance_payment, which re-asserts current finance authority (owner/org_admin/facility_admin), keeps the receipt and idempotency, and triggers the 458 ledger bridge (COL-594).';
+
+-- ---------------------------------------------------------------------------
+-- 4. Past-due rent (Home W2 strip and On-tap rent row)
+-- ---------------------------------------------------------------------------
+-- The due day and the grace period are configuration, never code: a facility
+-- default that is effective-dated, and an optional per-resident due day (the
+-- 5th for most, ~18th for some per DEC-2026-09-22-03). Nothing is seeded; a
+-- facility with no settings reads as "not configured", not as "nobody owes".
+CREATE TABLE IF NOT EXISTS public.home_rent_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES public.organizations(id),
+  facility_id uuid NOT NULL REFERENCES public.facilities(id),
+  default_due_day smallint NOT NULL CHECK (default_due_day BETWEEN 1 AND 28),
+  grace_days smallint NOT NULL CHECK (grace_days BETWEEN 0 AND 60),
+  effective_from date NOT NULL,
+  reason text NOT NULL CHECK (btrim(reason) <> ''),
+  set_by uuid NOT NULL REFERENCES auth.users(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (facility_id, effective_from)
+);
+COMMENT ON TABLE public.home_rent_settings IS
+  'COL-594: when rent is due and how long before it is past due on Home, per facility, effective-dated. The latest row with effective_from <= the facility''s local date applies. Append-only history.';
+ALTER TABLE public.home_rent_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Facility members see rent settings" ON public.home_rent_settings;
+CREATE POLICY "Facility members see rent settings" ON public.home_rent_settings
+  FOR SELECT TO authenticated USING (
+    organization_id = haven.organization_id() AND facility_id IN (SELECT haven.accessible_facility_ids())
+  );
+REVOKE ALL ON public.home_rent_settings FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.home_rent_settings TO authenticated;
+DROP TRIGGER IF EXISTS home_rent_settings_audit_trigger ON public.home_rent_settings;
+CREATE TRIGGER home_rent_settings_audit_trigger AFTER INSERT OR UPDATE OR DELETE ON public.home_rent_settings
+  FOR EACH ROW EXECUTE FUNCTION public.haven_capture_audit_log();
+
+ALTER TABLE public.residents
+  ADD COLUMN IF NOT EXISTS rent_due_day smallint CHECK (rent_due_day IS NULL OR rent_due_day BETWEEN 1 AND 28);
+COMMENT ON COLUMN public.residents.rent_due_day IS
+  'COL-594: day of the month this resident''s rent is due, when it differs from the facility default in home_rent_settings. NULL = facility default.';
+
+CREATE OR REPLACE FUNCTION public.home_set_rent_settings(
+  p_facility_id uuid, p_default_due_day integer, p_grace_days integer, p_effective_from date, p_reason text
+) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+DECLARE a record; v_org uuid; v_row public.home_rent_settings;
+BEGIN
+  SELECT * INTO a FROM haven.current_authorized_actor();
+  IF a.actor_user_id IS NULL OR a.actor_role_text NOT IN ('owner', 'org_admin') THEN
+    RAISE EXCEPTION 'Only an owner or org admin sets rent terms' USING ERRCODE = '42501';
+  END IF;
+  SELECT organization_id INTO v_org FROM public.facilities
+   WHERE id = p_facility_id AND deleted_at IS NULL AND organization_id = a.actor_organization_id;
+  IF v_org IS NULL OR p_facility_id NOT IN (SELECT haven.accessible_facility_ids()) THEN
+    RAISE EXCEPTION 'Facility unavailable' USING ERRCODE = '42501';
+  END IF;
+  IF nullif(btrim(coalesce(p_reason, '')), '') IS NULL OR p_effective_from IS NULL THEN
+    RAISE EXCEPTION 'An effective date and the decision behind it are required' USING ERRCODE = '22023';
+  END IF;
+  INSERT INTO public.home_rent_settings (organization_id, facility_id, default_due_day, grace_days, effective_from, reason, set_by)
+  VALUES (v_org, p_facility_id, p_default_due_day, p_grace_days, p_effective_from, btrim(p_reason), a.actor_user_id)
+  RETURNING * INTO v_row;
+  RETURN to_jsonb(v_row);
+END $$;
+REVOKE ALL ON FUNCTION public.home_set_rent_settings(uuid, integer, integer, date, text) FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.home_set_rent_settings(uuid, integer, integer, date, text) TO authenticated;
+COMMENT ON FUNCTION public.home_set_rent_settings(uuid, integer, integer, date, text) IS
+  'COL-37 ruling: definer required — home_rent_settings has no browser write grant so every rent-term change is attributable and reasoned; the function asserts a current owner/org_admin actor with access to the facility and appends one effective-dated row (COL-594).';
+
+-- Who is past due today. SECURITY INVOKER: invoices and residents RLS decide
+-- what the caller sees; a caller without billing access sees nobody.
+CREATE OR REPLACE FUNCTION public.home_past_due(p_facility_id uuid, p_as_of timestamptz DEFAULT now())
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path = '' AS $$
+  WITH f AS (
+    SELECT fa.id, (p_as_of AT TIME ZONE COALESCE(fa.timezone, 'America/New_York'))::date AS local_date
+    FROM public.facilities fa WHERE fa.id = p_facility_id AND fa.deleted_at IS NULL
+  ), cfg AS (
+    SELECT s.default_due_day, s.grace_days, s.effective_from
+    FROM public.home_rent_settings s JOIN f ON s.facility_id = f.id
+    WHERE s.effective_from <= f.local_date
+    ORDER BY s.effective_from DESC LIMIT 1
+  ), open_invoices AS (
+    SELECT i.resident_id, i.balance_due,
+           make_date(extract(year FROM i.period_start)::int, extract(month FROM i.period_start)::int,
+                     COALESCE(r.rent_due_day, cfg.default_due_day)::int) AS due_on
+    FROM public.invoices i
+    JOIN public.residents r ON r.id = i.resident_id AND r.deleted_at IS NULL
+    CROSS JOIN cfg
+    WHERE i.facility_id = p_facility_id AND i.deleted_at IS NULL
+      AND i.status IN ('sent', 'partial', 'overdue') AND i.balance_due > 0
+  ), late AS (
+    SELECT o.resident_id, min(o.due_on) AS oldest_due, sum(o.balance_due)::bigint AS open_cents
+    FROM open_invoices o CROSS JOIN cfg CROSS JOIN f
+    WHERE o.due_on + cfg.grace_days < f.local_date
+    GROUP BY o.resident_id
+  )
+  SELECT CASE WHEN NOT EXISTS (SELECT 1 FROM cfg) THEN
+      jsonb_build_object('configured', false, 'localDate', (SELECT local_date FROM f), 'residents', '[]'::jsonb)
+    ELSE jsonb_build_object(
+      'configured', true,
+      'localDate', (SELECT local_date FROM f),
+      'graceDays', (SELECT grace_days FROM cfg),
+      'defaultDueDay', (SELECT default_due_day FROM cfg),
+      'residents', COALESCE((
+        SELECT jsonb_agg(jsonb_build_object(
+                 'residentId', l.resident_id,
+                 'name', r.last_name || ', ' || COALESCE(nullif(r.preferred_name, ''), r.first_name),
+                 'oldestDueDate', l.oldest_due,
+                 'daysPastDue', (SELECT local_date FROM f) - l.oldest_due,
+                 'openCents', l.open_cents)
+               ORDER BY l.oldest_due, r.last_name)
+        FROM late l JOIN public.residents r ON r.id = l.resident_id), '[]'::jsonb))
+  END
+$$;
+REVOKE ALL ON FUNCTION public.home_past_due(uuid, timestamptz) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.home_past_due(uuid, timestamptz) TO authenticated;
+COMMENT ON FUNCTION public.home_past_due(uuid, timestamptz) IS
+  'COL-594: residents whose oldest open invoice is past its due day (resident rent_due_day, else the facility default) plus the facility grace days, oldest first, at the facility''s local date. Not configured when the facility has no home_rent_settings in effect. INVOKER: billing RLS scopes it.';
 
 COMMIT;
 

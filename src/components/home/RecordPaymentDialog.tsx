@@ -25,6 +25,8 @@ export type RecordPaymentDialogProps = {
   /** The facility's local date; a payment defaults to today there, not in UTC. */
   localDate: string;
   onRecorded?: () => void;
+  /** Opened from a past-due name: that resident is already chosen. */
+  initialResidentId?: string | null;
   /** Injected in tests. */
   loadResidents?: (facilityId: string) => Promise<ResidentOption[]>;
   record?: typeof recordPaymentOnHome;
@@ -53,11 +55,11 @@ async function defaultLoadResidents(facilityId: string): Promise<ResidentOption[
  * A/R for a full month); the server says when the amount is not the full open
  * balance, and only then is a reason asked for.
  */
-export function RecordPaymentDialog({ open, onOpenChange, facilityId, localDate, onRecorded, loadResidents = defaultLoadResidents, record = recordPaymentOnHome }: RecordPaymentDialogProps) {
+export function RecordPaymentDialog({ open, onOpenChange, facilityId, localDate, onRecorded, initialResidentId = null, loadResidents = defaultLoadResidents, record = recordPaymentOnHome }: RecordPaymentDialogProps) {
   const ids = useId();
   const [residents, setResidents] = useState<ResidentOption[] | null>(null);
   const [residentsError, setResidentsError] = useState(false);
-  const [residentId, setResidentId] = useState("");
+  const [residentId, setResidentId] = useState(initialResidentId ?? "");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("check");
   const [reference, setReference] = useState("");
@@ -85,7 +87,7 @@ export function RecordPaymentDialog({ open, onOpenChange, facilityId, localDate,
 
   function reset() {
     paymentId.current = crypto.randomUUID();
-    setResidentId(""); setAmount(""); setMethod("check"); setReference(""); setPayerName("");
+    setResidentId(initialResidentId ?? ""); setAmount(""); setMethod("check"); setReference(""); setPayerName("");
     setPaymentDate(localDate); setPhoto(null); setReasonAsked(null); setReason(""); setError(null); setDone(null);
   }
 

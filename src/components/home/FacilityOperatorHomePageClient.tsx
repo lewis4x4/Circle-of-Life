@@ -13,6 +13,7 @@ import {
   buildFyiRows,
   CENSUS_CLEAR_PREFIX,
   censusClearedRow,
+  buildRentRows,
   coOperatorLine,
   dueBeforeYouLeaveCount,
   escalationFooter,
@@ -29,6 +30,7 @@ import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
 import { ClearedRow, OnTapRow } from "./OnTapRow";
 import { PresenceTiles } from "./PresenceTiles";
 import { QuickActions } from "./QuickActions";
+import { PastDueStrip } from "./PastDueStrip";
 import { RecordPaymentDialog } from "./RecordPaymentDialog";
 
 export type FacilityOperatorHomePageClientProps = {
@@ -67,6 +69,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   const [error, setError] = useState<string | null>(null);
   const [busyRow, setBusyRow] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentResident, setPaymentResident] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
   const supabase = () => (supabaseRef.current ??= createClient());
@@ -84,9 +87,12 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   }, [router]);
 
   const fyi = useMemo(() => (data.snapshot ? buildFyiRows(data.snapshot.workflowQueues) : []), [data.snapshot]);
+  const pastDueLive = data.releasedModules.includes("past_due");
+  const paymentLive = data.releasedModules.includes("record_payment");
+  const rent = useMemo(() => (pastDueLive ? buildRentRows(data.pastDue) : []), [pastDueLive, data.pastDue]);
   const ranked = useMemo(
-    () => rankOnTap({ feed: data.feed, fyi, now, currentUserId, census: data.census }),
-    [data.feed, fyi, now, currentUserId, data.census],
+    () => rankOnTap({ feed: data.feed, fyi, now, currentUserId, census: data.census, rent, rentResidents: pastDueLive ? (data.pastDue?.residents.length ?? 0) : 0 }),
+    [data.feed, fyi, now, currentUserId, data.census, rent, pastDueLive, data.pastDue],
   );
   const censusCleared = censusClearedRow(data.census);
   const dueCount = dueBeforeYouLeaveCount(ranked);
@@ -178,16 +184,31 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
         ) : null}
       </header>
 
-      <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => { if (key === "record_payment") setPaymentOpen(true); }} />
-      {data.releasedModules.includes("record_payment") ? (
-        <RecordPaymentDialog open={paymentOpen} onOpenChange={setPaymentOpen} facilityId={facilityId} localDate={feed.localDate} onRecorded={refresh} />
+      <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => { if (key === "record_payment") { setPaymentResident(null); setPaymentOpen(true); } }} />
+      {paymentLive ? (
+        <RecordPaymentDialog
+          key={paymentResident ?? "any"}
+          open={paymentOpen}
+          onOpenChange={setPaymentOpen}
+          facilityId={facilityId}
+          localDate={feed.localDate}
+          initialResidentId={paymentResident}
+          onRecorded={refresh}
+        />
       ) : null}
 
       <GlanceStrip
         counts={ranked.counts}
-        rentLive={false}
+        rentLive={pastDueLive}
         rightNote={`Due before you leave · uncleared goes to ${executiveFirst ?? "the Facility Executive"} at ${endOfDay}`}
       />
+
+      {pastDueLive ? (
+        <PastDueStrip
+          pastDue={data.pastDue}
+          onRecordPayment={paymentLive ? (residentId) => { setPaymentResident(residentId); setPaymentOpen(true); } : undefined}
+        />
+      ) : null}
 
       {error ? (
         <p role="alert" className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm text-destructive">

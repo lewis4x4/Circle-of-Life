@@ -64,6 +64,7 @@ function initial(overrides: Partial<HomeInitialData> = {}): HomeInitialData {
     facilityOptions: [{ id: FACILITY, name: "Sample Lodge" }],
     census: null,
     releasedModules: [],
+    pastDue: null,
     ...overrides,
   };
 }
@@ -180,6 +181,48 @@ describe("FacilityOperatorHomePageClient", () => {
     expect(screen.getByRole("button", { name: /Quick note/ })).toBeDisabled();
     fireEvent.click(live);
     expect(screen.getByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
+  });
+
+  it("shows past-due rent only once released: count and total first, names after a tap, and a prefilled Record payment (COL-594)", () => {
+    const pastDue = {
+      configured: true, localDate: "2026-09-22", graceDays: 5, defaultDueDay: 5,
+      residents: [
+        { residentId: "r-late", name: "Probe, Ada", oldestDueDate: "2026-08-05", daysPastDue: 48, openCents: 300000 },
+        { residentId: "r-18", name: "Probe, Bea", oldestDueDate: "2026-09-18", daysPastDue: 4, openCents: 120000 },
+      ],
+    };
+    const { unmount } = render(
+      <FacilityOperatorHomePageClient initial={initial({ pastDue })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    expect(screen.queryByTestId("past-due-strip")).toBeNull();
+    expect(screen.getByTestId("glance-rent")).toHaveTextContent("Week 2");
+    unmount();
+
+    render(
+      <FacilityOperatorHomePageClient initial={initial({ pastDue, releasedModules: ["past_due", "record_payment"] })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    const strip = screen.getByTestId("past-due-strip");
+    expect(strip).toHaveTextContent("2 residents · $4,200.00 open");
+    expect(within(strip).queryByText(/Probe, Ada/)).toBeNull();
+    expect(screen.getByTestId("glance-rent")).toHaveTextContent("2");
+    expect(screen.getByText("2 residents past due on rent")).toBeInTheDocument();
+    fireEvent.click(within(strip).getByRole("button", { name: "Show names" }));
+    expect(within(strip).getByText(/Probe, Ada/)).toBeInTheDocument();
+    fireEvent.click(within(strip).getAllByRole("button", { name: "Record payment" })[0]);
+    expect(screen.getByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
+  });
+
+  it("says rent terms are not set rather than showing nobody past due (COL-594)", () => {
+    render(
+      <FacilityOperatorHomePageClient
+        initial={initial({ pastDue: { configured: false, localDate: "2026-09-22", residents: [] }, releasedModules: ["past_due"] })}
+        initialFacilityId={FACILITY}
+        currentUserId="me"
+        fullName={null}
+      />,
+    );
+    expect(screen.getByTestId("past-due-unconfigured")).toHaveTextContent("not set for this building");
+    expect(screen.queryByText(/past due on rent/)).toBeNull();
   });
 
   it("renders the weekend empty state with no queue rows", () => {

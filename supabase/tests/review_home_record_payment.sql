@@ -66,6 +66,9 @@ CREATE FUNCTION pg_temp.hp_fail(sql text, expected text) RETURNS void LANGUAGE p
   BEGIN EXECUTE sql; EXCEPTION WHEN OTHERS THEN IF position(expected IN SQLERRM) > 0 THEN RETURN; END IF; RAISE; END;
   RAISE EXCEPTION 'COL-594 expected failure: %', expected;
 END $$;
+-- Hosted Supabase grants request roles SELECT on public tables by default; the
+-- local replay does not. RLS, not the grant, is what this probe tests.
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
 CREATE TEMP TABLE hp_out(name text PRIMARY KEY, value jsonb);
 GRANT ALL ON hp_out TO authenticated;
 GRANT SELECT ON hp TO authenticated;
@@ -172,5 +175,53 @@ DO $$ BEGIN
     RAISE EXCEPTION 'COL-594: switching off lost the release history';
   END IF;
 END $$;
+
+-- 9. Past due: not configured is said, not read as "nobody owes".
+CREATE TEMP TABLE hp2 AS SELECT gen_random_uuid() late_resident, gen_random_uuid() late_invoice,
+  gen_random_uuid() day18_resident, gen_random_uuid() day18_invoice;
+GRANT SELECT ON hp2 TO authenticated;
+INSERT INTO public.residents(id,facility_id,organization_id,first_name,last_name,date_of_birth,gender,status,admission_date,rent_due_day)
+  SELECT late_resident, facility, org, 'Late', 'Probe', date '1941-04-04', 'male'::public.gender, 'active'::public.resident_status, current_date - 300, NULL FROM hp, hp2
+  UNION ALL SELECT day18_resident, facility, org, 'Eighteen', 'Probe', date '1942-05-05', 'female'::public.gender, 'active'::public.resident_status, current_date - 300, 18 FROM hp, hp2;
+-- Both invoices cover the month two months back; both are long past any due day.
+INSERT INTO public.invoices(id,resident_id,facility_id,organization_id,entity_id,invoice_number,invoice_date,due_date,period_start,period_end,status,subtotal,adjustments,tax,total,amount_paid,balance_due)
+  SELECT late_invoice, late_resident, facility, org, entity, 'PROBE-594-LATE', (date_trunc('month', current_date) - interval '2 month')::date, (date_trunc('month', current_date) - interval '2 month')::date + 4,
+         (date_trunc('month', current_date) - interval '2 month')::date, (date_trunc('month', current_date) - interval '1 month - 0 day')::date - 1,
+         'sent'::public.invoice_status, 300000, 0, 0, 300000, 0, 300000 FROM hp, hp2
+  UNION ALL
+  SELECT day18_invoice, day18_resident, facility, org, entity, 'PROBE-594-D18', (date_trunc('month', current_date) - interval '2 month')::date, (date_trunc('month', current_date) - interval '2 month')::date + 4,
+         (date_trunc('month', current_date) - interval '2 month')::date, (date_trunc('month', current_date) - interval '1 month')::date - 1,
+         'sent'::public.invoice_status, 200000, 0, 0, 200000, 0, 200000 FROM hp, hp2;
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.hp_actor('fa');
+DO $$ DECLARE v jsonb; BEGIN
+  v := public.home_past_due((SELECT facility FROM hp));
+  IF v->>'configured' <> 'false' OR jsonb_array_length(v->'residents') <> 0 THEN
+    RAISE EXCEPTION 'COL-594: an unconfigured facility must say so, got %', v;
+  END IF;
+END $$;
+SELECT pg_temp.hp_fail(format('SELECT public.home_set_rent_settings(%L,5,5,current_date - 400,''x'')', facility), 'Only an owner or org admin') FROM hp;
+SELECT pg_temp.hp_actor('owner');
+SELECT public.home_set_rent_settings(facility, 5, 5, current_date - 400, 'DEC-2026-09-22-03: due the 5th, past due after 5 days') FROM hp;
+SELECT pg_temp.hp_actor('fa');
+DO $$ DECLARE v jsonb; r jsonb; f hp2; BEGIN
+  SELECT * INTO f FROM hp2;
+  v := public.home_past_due((SELECT facility FROM hp));
+  IF v->>'configured' <> 'true' OR (v->>'graceDays')::int <> 5 THEN RAISE EXCEPTION 'COL-594: settings not applied: %', v; END IF;
+  IF jsonb_array_length(v->'residents') <> 2 THEN RAISE EXCEPTION 'COL-594: expected the two late residents, got %', v->'residents'; END IF;
+  -- Oldest due first: the 5th resident before the 18th resident.
+  IF (v->'residents'->0->>'residentId')::uuid <> f.late_resident OR (v->'residents'->1->>'residentId')::uuid <> f.day18_resident THEN
+    RAISE EXCEPTION 'COL-594: past due not ordered oldest first: %', v->'residents';
+  END IF;
+  IF extract(day FROM (v->'residents'->1->>'oldestDueDate')::date) <> 18 THEN
+    RAISE EXCEPTION 'COL-594: a per-resident due day was ignored: %', v->'residents'->1;
+  END IF;
+  IF (v->'residents'->0->>'openCents')::bigint <> 300000 THEN RAISE EXCEPTION 'COL-594: open cents wrong: %', v->'residents'->0; END IF;
+  -- The two residents paid in full above are not past due.
+  IF EXISTS (SELECT 1 FROM jsonb_array_elements(v->'residents') e WHERE (e->>'residentId')::uuid = (SELECT resident FROM hp)) THEN
+    RAISE EXCEPTION 'COL-594: a paid-up resident reads as past due';
+  END IF;
+END $$;
+RESET ROLE;
 
 ROLLBACK;

@@ -7,6 +7,7 @@ import {
   buildFyiRows,
   censusClearedRow,
   censusCountsMeta,
+  buildRentRows,
   coOperatorLine,
   dueBeforeYouLeaveCount,
   dueLabelFor,
@@ -222,5 +223,23 @@ describe("monthly census on tap (COL-569)", () => {
     expect(parsed).toMatchObject({ due: true, status: "open", canRecord: true, confirmed: null, lastFlag: null });
     expect(parsed?.snapshot?.rosterCensus).toBe(12);
     expect(parseHomeCensusOnTap({ nope: true })).toBeNull();
+  });
+});
+
+describe("buildRentRows (COL-594)", () => {
+  it("is one count-only row, ranked right after regulatory", () => {
+    const rows = buildRentRows({ configured: true, residents: [
+      { residentId: "a", name: "Probe, Ada", oldestDueDate: "2026-08-05", daysPastDue: 48, openCents: 1 },
+      { residentId: "b", name: "Probe, Bea", oldestDueDate: "2026-09-18", daysPastDue: 4, openCents: 1 },
+    ] });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ bucket: "rent", rank: 2, title: "2 residents past due on rent" });
+    expect(JSON.stringify(rows[0])).not.toContain("Probe");
+    expect(rows[0].meta[0]).toBe("Oldest 48 days past due");
+  });
+  it("adds nothing when unconfigured, empty or unavailable", () => {
+    expect(buildRentRows(null)).toEqual([]);
+    expect(buildRentRows({ configured: false, residents: [] })).toEqual([]);
+    expect(buildRentRows({ configured: true, residents: [] })).toEqual([]);
   });
 });
