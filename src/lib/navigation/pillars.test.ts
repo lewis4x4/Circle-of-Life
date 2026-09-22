@@ -46,7 +46,8 @@ describe("pillars navigation", () => {
 });
 
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
-import { pillarsForRole } from "./pillars";
+import { applyFacilityOperatorNav, pillarsForRole } from "./pillars";
+import { applyExecutiveCommandNavToItems } from "@/lib/auth/executive-nav-access";
 
 describe("role navigation", () => {
   it("keeps broker navigation in insurance instead of falling back to all tools", () => {
@@ -59,5 +60,51 @@ describe("role navigation", () => {
     const items = pillarsForRole(getRoleDashboardConfig("nurse")).flatMap((p) => p.items);
     expect(items.map((i) => i.key)).toContain("residents");
     expect(items.map((i) => i.key)).not.toContain("transportation");
+  });
+
+  it("gives Administrator, Assistant Administrator and Manager the identical Command rail (COL-571)", () => {
+    const facilities = [{ id: "00000000-0000-0000-0002-000000000003", name: "One building" }];
+    const railFor = (role: string) =>
+      applyFacilityOperatorNav(pillarsForRole(getRoleDashboardConfig(role)), role, facilities).map((pillar) => ({
+        ...pillar,
+        items: applyExecutiveCommandNavToItems(pillar.items, role, false),
+      }));
+    const admin = railFor("facility_admin");
+    const manager = railFor("manager");
+    expect(manager).toEqual(admin);
+
+    const command = admin.find((pillar) => pillar.id === "command");
+    expect(command?.items.map((item) => item.label)).toEqual([
+      "Home",
+      "Weekly Stand Up",
+      "Reports hub",
+      "My facility",
+      "Billing & AR",
+    ]);
+    const myFacility = command?.items.find((item) => item.key === "facilities");
+    expect(myFacility?.href).toBe("/admin/facilities/00000000-0000-0000-0002-000000000003");
+
+    const keys = admin.flatMap((pillar) => pillar.items.map((item) => item.key));
+    expect(keys).not.toContain("executive");
+    expect(keys).not.toContain("med-tech");
+  });
+
+  it("keeps the facility list for operators who cover more than one building", () => {
+    const pillars = applyFacilityOperatorNav(
+      pillarsForRole(getRoleDashboardConfig("facility_admin")),
+      "facility_admin",
+      [
+        { id: "a", name: "Building A" },
+        { id: "b", name: "Building B" },
+      ],
+    );
+    const facilities = pillars.find((p) => p.id === "command")?.items.find((i) => i.key === "facilities");
+    expect(facilities?.label).toBe("Facilities");
+    expect(facilities?.href).toBe("/admin/facilities");
+  });
+
+  it("leaves owner navigation untouched", () => {
+    const pillars = pillarsForRole(getRoleDashboardConfig("owner"));
+    expect(applyFacilityOperatorNav(pillars, "owner", [{ id: "a", name: "Building A" }])).toEqual(pillars);
   });
 });

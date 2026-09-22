@@ -1,4 +1,4 @@
-import { isOrgAdminAppRole } from "@/lib/auth/app-role";
+import { isFacilityOperatorRole, isOrgAdminAppRole } from "@/lib/auth/app-role";
 
 export type ExecutiveCommandNav = {
   href: "/admin/executive" | "/admin/executive/standup";
@@ -9,20 +9,22 @@ export function canOpenExecutiveOverview(role: string): boolean {
   return isOrgAdminAppRole(role);
 }
 
+/** Weekly Stand Up: owners, org admins, and every facility operator title (COL-571). */
 export function canOpenExecutiveStandup(role: string): boolean {
-  return role === "facility_admin" || isOrgAdminAppRole(role);
+  return isFacilityOperatorRole(role) || isOrgAdminAppRole(role);
 }
 
 /**
  * Sidebar Command item for Executive. Returns null when the role cannot open
  * any executive surface (redirect would look like a broken link).
+ *
+ * Facility operators (Administrator / Assistant Administrator / Manager) get no
+ * Executive item at all: their Home is facility-scoped and Weekly Stand Up has
+ * its own rail entry (COL-593). The standup hub stays reachable by URL.
  */
 export function resolveExecutiveCommandNav(role: string): ExecutiveCommandNav | null {
   if (canOpenExecutiveOverview(role)) {
     return { href: "/admin/executive", label: "Executive summary" };
-  }
-  if (canOpenExecutiveStandup(role)) {
-    return { href: "/admin/executive/standup", label: "Standup" };
   }
   return null;
 }

@@ -29,6 +29,7 @@ import {
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
 import { AdminLiveDataFallbackNotice } from "@/components/common/AdminLiveDataFallbackNotice";
+import { EscalatedFromFacilitiesPanel } from "@/components/executive/EscalatedFromFacilitiesPanel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -1696,6 +1697,10 @@ function ExecutiveDashboardBody({
       {/* Coverage first and compact, then the work, then the comparison an
           owner opens this page for — the explanations sit behind them. */}
       <CoverageStrip rows={coverage} />
+
+      {/* COL-593 §5.4: what a building did not clear by the end of its operator
+          day lands with its Facility Executive here. Renders nothing otherwise. */}
+      <EscalatedFromFacilitiesPanel />
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 lg:col-span-7">

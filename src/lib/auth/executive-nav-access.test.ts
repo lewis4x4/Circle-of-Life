@@ -9,9 +9,9 @@ import {
 } from "./executive-nav-access";
 
 describe("executive nav access", () => {
-  it("exposes weekly entry only to its authorized reporting roles", () => {
+  it("exposes weekly entry to owners, org admins, and every facility operator title", () => {
     const items = [{ key: "stand-up", href: "/admin/stand-up", label: "Weekly Stand Up" }];
-    for (const role of ["owner", "org_admin", "facility_admin"]) {
+    for (const role of ["owner", "org_admin", "facility_admin", "manager"]) {
       expect(applyExecutiveCommandNavToItems(items, role, false)).toEqual(items);
       expect(canOpenExecutiveHubHref(role, "/admin/stand-up")).toBe(true);
     }
@@ -28,25 +28,32 @@ describe("executive nav access", () => {
     expect(canOpenExecutiveHubHref("org_admin", "/admin/executive/reports")).toBe(true);
   });
 
-  it("points facility admin at standup and not the overview bounce", () => {
-    expect(canOpenExecutiveOverview("facility_admin")).toBe(false);
-    expect(canOpenExecutiveStandup("facility_admin")).toBe(true);
-    expect(resolveExecutiveCommandNav("facility_admin")).toEqual({
-      href: "/admin/executive/standup",
-      label: "Standup",
-    });
-    expect(canOpenExecutiveHubHref("facility_admin", "/admin/executive")).toBe(false);
-    expect(canOpenExecutiveHubHref("facility_admin", "/admin/executive/standup")).toBe(true);
-    expect(canOpenExecutiveHubHref("facility_admin", "/admin/executive/standup/history")).toBe(
-      true,
+  it("gives facility operators no Executive rail item while the standup hub stays reachable", () => {
+    for (const role of ["facility_admin", "manager"]) {
+      expect(canOpenExecutiveOverview(role)).toBe(false);
+      expect(canOpenExecutiveStandup(role)).toBe(true);
+      expect(resolveExecutiveCommandNav(role)).toBeNull();
+      expect(canOpenExecutiveHubHref(role, "/admin/executive")).toBe(false);
+      expect(canOpenExecutiveHubHref(role, "/admin/executive/standup")).toBe(true);
+      expect(canOpenExecutiveHubHref(role, "/admin/executive/standup/history")).toBe(true);
+      expect(canOpenExecutiveHubHref(role, "/admin/executive/reports")).toBe(false);
+    }
+  });
+
+  it("treats Administrator, Assistant Administrator and Manager identically (COL-571)", () => {
+    const items = [
+      { key: "owner-home", href: "/admin", label: "Home" },
+      { key: "executive", href: "/admin/executive", label: "Executive" },
+      { key: "stand-up", href: "/admin/stand-up", label: "Weekly Stand Up" },
+    ];
+    expect(applyExecutiveCommandNavToItems(items, "manager", false)).toEqual(
+      applyExecutiveCommandNavToItems(items, "facility_admin", false),
     );
-    expect(canOpenExecutiveHubHref("facility_admin", "/admin/executive/reports")).toBe(false);
   });
 
   it("hides executive command nav for roles that cannot open standup or overview", () => {
-    expect(resolveExecutiveCommandNav("manager")).toBeNull();
     expect(resolveExecutiveCommandNav("nurse")).toBeNull();
-    expect(canOpenExecutiveStandup("manager")).toBe(false);
+    expect(canOpenExecutiveStandup("nurse")).toBe(false);
     expect(canOpenExecutiveHubHref("nurse", "/admin/executive/standup")).toBe(false);
   });
 
@@ -61,7 +68,6 @@ describe("executive nav access", () => {
     ]);
     expect(applyExecutiveCommandNavToItems(items, "facility_admin", false)).toEqual([
       { key: "owner-home", href: "/admin", label: "Owner home" },
-      { key: "executive", href: "/admin/executive/standup", label: "Standup" },
     ]);
     expect(applyExecutiveCommandNavToItems(items, "nurse", false)).toEqual([
       { key: "owner-home", href: "/admin", label: "Owner home" },

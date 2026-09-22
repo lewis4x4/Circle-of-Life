@@ -40,6 +40,26 @@ export interface DashboardConfig {
   };
 }
 
+/**
+ * One permission set for the three facility operator titles (Administrator,
+ * Assistant Administrator, Manager). DEC-2026-09-22-02 / COL-571.
+ */
+const FACILITY_OPERATOR_CONFIG: DashboardConfig = {
+  route: "/admin",
+  shell: "admin",
+  roleLabel: "Facility Admin",
+  primaryTaskLanes: ["staffing_gaps", "incident_followups", "admissions", "discharge", "family_workflow"],
+  firstScreenPriority: ["urgent_now", "blocked_workflows", "resident_watchlist", "critical_activity", "operational_follow_through"],
+  suppressedSections: ["enterprise_rollup", "portfolio_comparison", "owner_financial_narrative"],
+  mobileTabletExpectation: "desktop-first",
+  visibleGroups: ["Command", "Pipeline", "Clinical Ops", "Quality & Risk", "Knowledge", "Workforce", "Finance"],
+  sections: {
+    heroStats: true, quickActions: true, criticalUpdates: true,
+    compliance: true, financials: true, watchlist: true,
+    staffing: true, incidents: true,
+  },
+};
+
 const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
   owner: {
     route: "/admin/executive",
@@ -69,35 +89,14 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
       compliance: true, financials: true, watchlist: true,
     },
   },
-  facility_admin: {
-    route: "/admin",
-    shell: "admin",
-    roleLabel: "Facility Admin",
-    primaryTaskLanes: ["staffing_gaps", "incident_followups", "admissions", "discharge", "family_workflow"],
-    firstScreenPriority: ["urgent_now", "blocked_workflows", "resident_watchlist", "critical_activity", "operational_follow_through"],
-    suppressedSections: ["enterprise_rollup", "portfolio_comparison", "owner_financial_narrative"],
-    mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Command", "Pipeline", "Clinical Ops", "Quality & Risk", "Knowledge", "Workforce", "Finance"],
-    sections: {
-      heroStats: true, quickActions: true, criticalUpdates: true,
-      compliance: true, financials: true, watchlist: true,
-      staffing: true, incidents: true,
-    },
-  },
+  facility_admin: FACILITY_OPERATOR_CONFIG,
+  // DEC-2026-09-22-02 / COL-571: Administrator, Assistant Administrator and
+  // Manager are three titles on one permission set. `manager` stays a distinct
+  // app_role value until it is retired, but it resolves to the same home,
+  // groups, and sections as `facility_admin`; the title comes from staff_role.
   manager: {
-    route: "/admin",
-    shell: "admin",
+    ...FACILITY_OPERATOR_CONFIG,
     roleLabel: "Manager",
-    primaryTaskLanes: ["staffing_gaps", "incident_followups", "resident_watchlist"],
-    firstScreenPriority: ["urgent_now", "watchlist", "operational_follow_through"],
-    suppressedSections: ["enterprise_rollup", "owner_financial_narrative"],
-    mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Command", "Pipeline", "Clinical Ops", "Quality & Risk", "Workforce"],
-    sections: {
-      heroStats: true, quickActions: true, criticalUpdates: true,
-      compliance: true, financials: false, watchlist: true,
-      staffing: true, incidents: true,
-    },
   },
   admin_assistant: {
     route: "/admin/assistant-dashboard",

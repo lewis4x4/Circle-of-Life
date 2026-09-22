@@ -21673,6 +21673,18 @@ export type Database = {
         Args: { p_facility_id?: string | null }
         Returns: Json
       }
+      home_on_tap: {
+        Args: { p_facility_id: string; p_as_of?: string }
+        Returns: Json
+      }
+      home_claim_task: {
+        Args: { p_instance_id: string; p_claim?: boolean }
+        Returns: Json
+      }
+      home_escalations_for_executive: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       allocate_incident_number: {
         Args: { p_facility_id: string }
         Returns: string

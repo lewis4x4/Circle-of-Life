@@ -270,6 +270,28 @@ describe("legacy template translation", () => {
     expect(dates(listOccurrenceDates(yearly.rule, "2026-01-01", "2026-12-31"))).toEqual(["2026-07-01"]);
   });
 
+  it("lets the asset self-test schedule override the weekday and the shift-derived deadline (COL-568)", () => {
+    const generator = { cadence_type: "weekly", day_of_week: 5, day_of_month: null, month_of_year: null, estimated_minutes: 10, escalation_ladder: ladder };
+    // Asset says Tuesday 10:00 local: the template's Friday and the 07:00 + SLA arithmetic are both replaced.
+    const scheduled = legacyTemplateRule(generator, "day", NY, { run_check_weekday: 2, run_check_local_time: "10:00:00" });
+    if (scheduled.kind !== "rule") throw new Error(scheduled.reason);
+    expect(scheduled.rule.recurrence).toEqual({ kind: "weekly", weekday: "tuesday" });
+    expect(scheduled.rule.deadline).toEqual({ time: "10:00", offset_minutes: 0 });
+    expect(dates(listOccurrenceDates(scheduled.rule, "2026-09-21", "2026-09-27"))).toEqual(["2026-09-22"]);
+    expect(resolved(resolveOccurrence(scheduled.rule, "2026-09-22")).due_at).toBe("2026-09-22T14:00:00.000Z");
+    // A vendor visit that resets the clock changes the row with no template edit.
+    const reset = legacyTemplateRule(generator, "day", NY, { run_check_weekday: 4, run_check_local_time: "14:30" });
+    if (reset.kind !== "rule") throw new Error(reset.reason);
+    expect(resolved(resolveOccurrence(reset.rule, "2026-09-24")).due_at).toBe("2026-09-24T18:30:00.000Z");
+    // No asset schedule, or half of one, leaves the template's own timing in force.
+    for (const partial of [null, undefined, { run_check_weekday: 2, run_check_local_time: null }, { run_check_weekday: null, run_check_local_time: "10:00" }, { run_check_weekday: 9, run_check_local_time: "10:00" }, { run_check_weekday: 2, run_check_local_time: "ten" }]) {
+      const unchanged = legacyTemplateRule(generator, "day", NY, partial);
+      if (unchanged.kind !== "rule") throw new Error(unchanged.reason);
+      expect(unchanged.rule.recurrence).toEqual({ kind: "weekly", weekday: "friday" });
+      expect(unchanged.rule.deadline).toEqual({ time: "07:00", offset_minutes: 15 });
+    }
+  });
+
   it("leaves on-demand, event-driven and incomplete templates unresolved", () => {
     expect(legacyTemplateRule({ cadence_type: "on_demand", day_of_week: null, day_of_month: null, month_of_year: null, estimated_minutes: null, escalation_ladder: null }, null, NY)).toEqual({ kind: "unresolved", reason: "on_demand templates have no recurrence" });
     expect(legacyTemplateRule({ cadence_type: "event_driven", day_of_week: null, day_of_month: null, month_of_year: null, estimated_minutes: null, escalation_ladder: null }, null, NY)).toEqual({ kind: "unresolved", reason: "event_driven templates have no recurrence" });

@@ -60,3 +60,12 @@ export function isMedTechRole(role: string): boolean {
 export function isDietaryRole(role: string): boolean {
   return role === "dietary" || role === "dietary_aide";
 }
+
+/**
+ * Facility operator titles — Administrator, Assistant Administrator, Manager —
+ * share one permission set and one Home (DEC-2026-09-22-02 / COL-571). The
+ * `manager` app_role value is kept only until it is retired.
+ */
+export function isFacilityOperatorRole(role: string): boolean {
+  return role === "facility_admin" || role === "manager";
+}

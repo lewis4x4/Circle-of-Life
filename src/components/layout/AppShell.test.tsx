@@ -286,21 +286,26 @@ describe("AppShell all-sections jump list", () => {
     expect(pushMock).toHaveBeenCalledWith("/admin/assessments/overdue");
   });
 
-  it("points facility admin at standup instead of the executive overview bounce", async () => {
+  it("gives a facility administrator the operator rail: no Executive item, Weekly Stand Up, My facility", async () => {
     authMock.appRole = "facility_admin";
     const user = userEvent.setup();
     renderAppShell();
 
     expect(screen.queryByRole("link", { name: "Executive" })).not.toBeInTheDocument();
-    const standupLinks = screen.getAllByRole("link", { name: "Standup" });
-    expect(standupLinks.some((link) => link.getAttribute("href") === "/admin/executive/standup")).toBe(
-      true,
-    );
+    expect(screen.queryByRole("link", { name: "Standup" })).not.toBeInTheDocument();
+    const standUpLinks = screen.getAllByRole("link", { name: "Weekly Stand Up" });
+    expect(standUpLinks.some((link) => link.getAttribute("href") === "/admin/stand-up")).toBe(true);
+    const myFacility = screen.getAllByRole("link", { name: "My facility" });
+    expect(myFacility.some((link) => link.getAttribute("href") === "/admin/facilities/fac-1")).toBe(true);
+    // One building: the chip is static and reads the building, not a switcher.
+    expect(screen.queryByTestId("admin-facility-filter-trigger")).not.toBeInTheDocument();
+    expect(screen.getByTestId("admin-facility-static-chip")).toHaveTextContent("Oakridge ALF");
 
     await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
     const jumpList = await screen.findByTestId("all-sections-jump-list");
-    expect(within(jumpList).getByText("Standup")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Weekly Stand Up")).toBeInTheDocument();
     expect(within(jumpList).queryByText("Executive")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Med-Tech cockpit")).not.toBeInTheDocument();
   });
 
   it("hides executive command nav for roles that cannot open standup or overview", async () => {

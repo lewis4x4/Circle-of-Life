@@ -752,18 +752,49 @@ export function legacyShiftBaseTime(shift: LegacyShift) {
   return "09:00";
 }
 
-export function legacyTemplateRule(template: LegacyTemplateTiming, shift: LegacyShift, timeZone: string): { kind: "rule"; rule: ScheduleRule } | ScheduleUnresolved {
+/**
+ * COL-568 / DEC-2026-09-22-04: an asset that self-tests on a clock (the
+ * generator) carries its own weekday and local time on `facility_assets`. When
+ * both are set they override the template's weekday and the shift-derived
+ * deadline, so a vendor visit that resets the clock changes the row without a
+ * template edit. Partial schedules (one column) change nothing.
+ */
+export type LegacyAssetSchedule = {
+  run_check_weekday: number | null;
+  run_check_local_time: string | null;
+};
+
+const LOCAL_TIME_RE = /^(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/;
+
+export function assetScheduleOverride(schedule: LegacyAssetSchedule | null | undefined): { weekday: Weekday; time: string } | null {
+  if (!schedule || !isInt(schedule.run_check_weekday, 1, 7) || typeof schedule.run_check_local_time !== "string") return null;
+  const match = LOCAL_TIME_RE.exec(schedule.run_check_local_time.trim());
+  if (!match) return null;
+  const hh = Number(match[1]);
+  const mi = Number(match[2]);
+  if (hh > 23 || mi > 59) return null;
+  return { weekday: WEEKDAYS[schedule.run_check_weekday - 1], time: `${match[1]}:${match[2]}` };
+}
+
+export function legacyTemplateRule(template: LegacyTemplateTiming, shift: LegacyShift, timeZone: string, assetSchedule?: LegacyAssetSchedule | null): { kind: "rule"; rule: ScheduleRule } | ScheduleUnresolved {
   if (!isValidTimeZone(timeZone)) return { kind: "unresolved", reason: "facility timezone is not an IANA zone name" };
   const ladder = Array.isArray(template.escalation_ladder) ? template.escalation_ladder : [];
   const firstStep = ladder.find((step) => step && step.enabled !== false && typeof step.sla_minutes === "number");
   const offsetMinutes = firstStep?.sla_minutes ?? Math.max(template.estimated_minutes ?? 0, 60);
-  const deadline: ScheduleDeadline = { time: legacyShiftBaseTime(shift), offset_minutes: Math.max(0, Math.min(10080, Math.round(offsetMinutes))) };
+  const override = assetScheduleOverride(assetSchedule);
+  const deadline: ScheduleDeadline = override
+    ? { time: override.time, offset_minutes: 0 }
+    : { time: legacyShiftBaseTime(shift), offset_minutes: Math.max(0, Math.min(10080, Math.round(offsetMinutes))) };
   let recurrence: ScheduleRecurrence;
   switch (template.cadence_type) {
     case "daily":
       recurrence = { kind: "weekday_set", weekdays: [...WEEKDAYS] };
       break;
     case "weekly": {
+      if (override) {
+        recurrence = { kind: "weekly", weekday: override.weekday };
+        break;
+      }
       const weekday = template.day_of_week;
       if (!isInt(weekday, 1, 7)) return { kind: "unresolved", reason: "weekly template has no weekday" };
       recurrence = { kind: "weekly", weekday: WEEKDAYS[weekday - 1] };

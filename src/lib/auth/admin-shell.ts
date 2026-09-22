@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, isOrgAdminAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, isFacilityOperatorRole, isOrgAdminAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -91,7 +91,7 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
   if (isExecutiveShellPath && !isExecutiveStandupPath && !isOrgAdminAppRole(role)) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
-  if (isExecutiveStandupPath && !(role === "facility_admin" || isOrgAdminAppRole(role))) {
+  if (isExecutiveStandupPath && !(isFacilityOperatorRole(role) || isOrgAdminAppRole(role))) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
 
