@@ -15,7 +15,11 @@ test.describe("Homewood — Caregiver shift + ADL entry", () => {
   test("caregiver completes one ADL entry on shift", async ({ page }) => {
     const residents = await requireHomewoodResidents(1);
 
+    // COL-615: the caregiver CI account is a med-tech now; med-techs land on
+    // /med-tech and open the floor app from there.
     await signIn(page, "caregiver");
+    await expect(page).toHaveURL(/\/med-tech/);
+    await page.goto("/caregiver");
     await expect(page).toHaveURL(/\/caregiver/);
 
     // Resident assignments visible on the caregiver hub

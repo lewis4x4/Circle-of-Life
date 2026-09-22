@@ -20,6 +20,8 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
  * account skip with a clear message when it is absent rather than signing in as
  * somebody unexpected.
  */
+// Account-map keys, not app roles: since COL-615 (2026-09-22) the "caregiver" and
+// "nurse" accounts hold med_tech and "dietary" holds cook (see auth-verify.mjs).
 export type Role = "owner" | "facility_admin" | "caregiver" | "med_tech" | "family" | "nurse" | "dietary";
 
 function readHomewoodAccounts(): Partial<Record<Role, string>> {

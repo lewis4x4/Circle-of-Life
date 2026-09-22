@@ -23,6 +23,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * acceptance 19 allows a literal, and this project does not need the allowance.
  */
 
+// Account-map keys, not app roles: since COL-615 (2026-09-22) the accounts behind
+// "nurse" and "caregiver" hold med_tech, which has the floor and supervisor rights both had.
 export type SmartRoundingRole = "owner" | "facility_admin" | "manager" | "nurse" | "caregiver";
 
 const ROLE_KEYS: SmartRoundingRole[] = ["owner", "facility_admin", "manager", "nurse", "caregiver"];

@@ -16,6 +16,8 @@ test.describe("Homewood — Caregiver reports an incident", () => {
     await requireHomewoodResidents(1);
 
     await signIn(page, "caregiver");
+    // COL-615: the caregiver CI account is a med-tech now and lands on /med-tech.
+    await page.goto("/caregiver");
 
     // Navigate to incident report
     const incidentLink = page.getByRole("link", { name: /report incident|new incident|incident report/i }).first();
