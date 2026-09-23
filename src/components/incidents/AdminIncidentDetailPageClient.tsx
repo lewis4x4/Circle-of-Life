@@ -36,7 +36,6 @@ import {
   type IncidentDetailView,
   type IncidentSeverityUi,
   type IncidentStatusUi,
-  type RcaInvestigationUi,
   type SupabaseIncidentDetail,
 } from "@/lib/incidents/load-incident-detail";
 import {
@@ -50,6 +49,10 @@ import {
 } from "@/lib/incidents/incident-detail-display-copy";
 import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import { buildIncidentAcknowledgmentLine, buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
+import {
+  INCIDENT_OPERATIONALLY_CLEAR_COPY,
+  buildIncidentWorkflowSummary,
+} from "@/lib/incidents/incident-workflow-summary";
 import { formatCorrectiveActionNotes } from "@/lib/care-events/admin-copy";
 import { toObligationDelivery } from "@/lib/care-events/admin-data";
 import { IncidentCareEventNotifications } from "@/components/incidents/IncidentCareEventNotifications";
@@ -451,11 +454,9 @@ export function AdminIncidentDetailPageClient({
                   ))}
                 </ul>
               </div>
-            ) : (
-              <p className="text-sm text-success">
-                This incident is operationally clear. Follow-ups, reporting, RCA, and care-plan expectations are in a good state.
-              </p>
-            )}
+            ) : workflowSummary.operationallyClear ? (
+              <p className="text-sm text-success">{INCIDENT_OPERATIONALLY_CLEAR_COPY}</p>
+            ) : null}
           </div>
         </RecordDetailSection>
 
@@ -1083,76 +1084,6 @@ function formatCategoryRaw(value: string): string {
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
-}
-
-function buildIncidentWorkflowSummary(
-  incident: SupabaseIncidentDetail,
-  rcaInvestigation: RcaInvestigationUi,
-  followups: IncidentDetailView["followups"],
-  openObligations: string[],
-) {
-  const openFollowups = followups.filter((item) => !item.isCompleted);
-  const overdueFollowups = openFollowups.filter((item) => item.isOverdue).length;
-  const unassignedFollowups = openFollowups.filter((item) => !item.assignedToId).length;
-  const escalatedFollowups = openFollowups.filter((item) => isFollowupEscalated(item.escalationLevel)).length;
-  const rootCauseExpected =
-    incident.severity === "level_3" ||
-    incident.severity === "level_4" ||
-    followups.some((item) => item.taskType === "root_cause_analysis");
-  const carePlanPending =
-    Boolean(incident.resolved_at) &&
-    !incident.care_plan_updated &&
-    (incident.severity === "level_3" || incident.severity === "level_4" || openFollowups.length > 0);
-
-  const nextActions: string[] = [];
-  if (openObligations.length > 0) {
-    nextActions.push(...openObligations);
-  }
-  if (escalatedFollowups > 0) {
-    nextActions.push("Work the escalated follow-ups before closure or sign-off.");
-  } else if (overdueFollowups > 0) {
-    nextActions.push("Clear overdue follow-ups before the incident can move cleanly toward closure.");
-  }
-  if (unassignedFollowups > 0) {
-    nextActions.push("Assign the remaining unassigned follow-up work.");
-  }
-  if (rootCauseExpected && rcaInvestigation !== "complete") {
-    nextActions.push("Complete the root cause investigation for this incident.");
-  }
-  if (carePlanPending) {
-    nextActions.push("Document the care-plan update before closing the incident loop.");
-  }
-
-  let summary = "No outstanding workflow pressure.";
-  let tone: "clear" | "warning" = "clear";
-  if (openObligations.length > 0) {
-    summary = "Notifications or regulatory reporting are still incomplete.";
-    tone = "warning";
-  } else if (escalatedFollowups > 0) {
-    summary = "Chronically overdue follow-up work is driving the current incident risk.";
-    tone = "warning";
-  } else if (overdueFollowups > 0 || unassignedFollowups > 0) {
-    summary = "Follow-up execution still needs operator attention.";
-    tone = "warning";
-  } else if (rootCauseExpected && rcaInvestigation !== "complete") {
-    summary = "Root cause analysis is the main remaining incident workflow step.";
-    tone = "warning";
-  } else if (carePlanPending) {
-    summary = "Care-plan closure is the last operational step still pending.";
-    tone = "warning";
-  }
-
-  return {
-    summary,
-    tone,
-    openFollowups: openFollowups.length,
-    overdueFollowups,
-    unassignedFollowups,
-    escalatedFollowups,
-    openObligations: openObligations.length,
-    rcaLabel: rcaInvestigation === "complete" ? "complete" : rcaInvestigation === "draft" ? "draft" : "not started",
-    nextActions,
-  };
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
