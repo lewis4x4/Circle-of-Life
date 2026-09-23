@@ -11,6 +11,7 @@ import {
   type RiskBanner,
 } from "@/lib/caregiver/resident-profile";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { checkCaregiverResidentScope } from "@/lib/caregiver/resident-scope";
 import { appendShiftNote } from "@/lib/caregiver/clinical-writes";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -26,6 +27,7 @@ export default function CaregiverResidentQuickProfilePage() {
   const [profile, setProfile] = useState<CaregiverResidentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [outOfScope, setOutOfScope] = useState(false);
 
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
@@ -39,6 +41,13 @@ export default function CaregiverResidentQuickProfilePage() {
     setLoading(true);
     setError(null);
     try {
+      const scope = await checkCaregiverResidentScope(supabase, residentId);
+      if (!scope.ok) {
+        setOutOfScope(scope.outOfScope);
+        setError(scope.error);
+        return;
+      }
+      setOutOfScope(false);
       const result = await fetchCaregiverResidentProfile(supabase, residentId);
       if (!result.ok) {
         setError(result.error);
@@ -58,7 +67,8 @@ export default function CaregiverResidentQuickProfilePage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load resident profile");
+      console.error("[caregiver resident] profile load failed", err);
+      setError("This resident's profile could not be loaded right now. Try again.");
     } finally {
       setLoading(false);
     }
@@ -77,8 +87,12 @@ export default function CaregiverResidentQuickProfilePage() {
   if (error || !profile) {
     return (
       <div className="space-y-3 py-12 text-center">
-        <p className="text-sm text-red-400">{error ?? "Resident not found"}</p>
-        <Button variant="outline" size="sm" onClick={() => { void load(); }}>Retry</Button>
+        <p className={outOfScope ? "text-sm text-muted-foreground" : "text-sm text-red-400"}>{error ?? "Resident not found"}</p>
+        {outOfScope ? (
+          <Link href="/caregiver" className="text-sm underline">Back to shift home</Link>
+        ) : (
+          <Button variant="outline" size="sm" onClick={() => { void load(); }}>Retry</Button>
+        )}
       </div>
     );
   }
