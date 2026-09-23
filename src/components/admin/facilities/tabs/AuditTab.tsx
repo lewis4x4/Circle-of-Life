@@ -31,6 +31,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 const LS_VIEWS = "haven:facility-audit-log:saved-view";
 const PER_PAGE = 50;
 
@@ -603,88 +604,90 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
           <div className="border-t border-border" />
         </>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-border">
-          <table className="w-full caption-bottom text-[13px]">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-muted-foreground">
-                <th className="px-3 py-2 text-left font-medium">Timestamp</th>
-                <th className="px-3 py-2 text-left font-medium">User</th>
-                <th className="px-3 py-2 text-left font-medium">Action</th>
-                <th className="px-3 py-2 text-left font-medium">Entity</th>
-                <th className="px-3 py-2 text-left font-medium">Summary</th>
-                <th className="px-3 py-2 text-left font-medium">Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => {
-                const expandedRow = expanded === entry.id;
-                const link = buildFacilityAuditEntityHref(facilityId, entry.table_name);
-                return (
-                  <React.Fragment key={entry.id}>
-                    <tr
-                      className="h-10 cursor-pointer border-t border-border/80 hover:bg-muted/30"
-                      onClick={() => setExpanded(expandedRow ? null : entry.id)}
-                    >
-                      <td className="px-3 py-1.5 align-middle tabular-nums">
-                        {new Date(entry.timestamp).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                        })}
-                      </td>
-                      <td className="max-w-[10rem] truncate px-3 py-1.5 align-middle text-foreground" title={entry.changed_by_display}>
-                        {entry.changed_by_display}
-                      </td>
-                      <td className="px-3 py-1.5 align-middle">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-normal",
-                            actionChipCls(entry.action),
-                          )}
-                        >
-                          {entry.action === "INSERT" ? "Created" : entry.action === "DELETE" ? "Deleted" : "Updated"}
-                        </span>
-                      </td>
-                      <td className="max-w-[12rem] px-3 py-1.5 align-middle">
-                        {link ? (
-                          <Link href={link.href} className="truncate text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                            {link.label}
-                          </Link>
-                        ) : (
-                          <span className="truncate text-muted-foreground">{enumLabel(entry.table_name)}</span>
-                        )}
-                      </td>
-                      <td className="min-w-[12rem] px-3 py-1.5 align-middle">{entry.summary}</td>
-                      <td className="px-3 py-1.5 align-middle text-muted-foreground">{sourceHint(entry)}</td>
-                    </tr>
-                    {expandedRow ? (
-                      <tr className="bg-muted/20">
-                        <td colSpan={6} className="px-4 pb-4 pt-2 text-[12px] leading-relaxed text-foreground">
-                          <p className="font-semibold tracking-normal text-foreground">Diff preview</p>
-                          <p className="mt-2 text-muted-foreground">
-                            record id <span className="tabular-nums text-foreground">{entry.record_id}</span>
-                          </p>
-                          {entry.field_name ? (
-                            <p className="mt-3 text-muted-foreground">
-                              <span className="mr-2 font-medium text-foreground">{entry.field_name}:</span>
-                              <span className="text-destructive line-through">{formatAuditTabOldValue(entry.old_value_text)}</span> →{" "}
-                              <strong className="font-semibold text-foreground">{formatAuditTabNewValue(entry.new_value_text)}</strong>
-                            </p>
+        <div className="rounded-md border border-border">
+          <HorizontalScroll label="Facility audit log">
+            <table className="w-full caption-bottom text-[13px]">
+              <thead>
+                <tr className="border-b border-border bg-muted/40 text-muted-foreground">
+                  <th className="px-3 py-2 text-left font-medium">Timestamp</th>
+                  <th className="px-3 py-2 text-left font-medium">User</th>
+                  <th className="px-3 py-2 text-left font-medium">Action</th>
+                  <th className="px-3 py-2 text-left font-medium">Entity</th>
+                  <th className="px-3 py-2 text-left font-medium">Summary</th>
+                  <th className="px-3 py-2 text-left font-medium">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((entry) => {
+                  const expandedRow = expanded === entry.id;
+                  const link = buildFacilityAuditEntityHref(facilityId, entry.table_name);
+                  return (
+                    <React.Fragment key={entry.id}>
+                      <tr
+                        className="h-10 cursor-pointer border-t border-border/80 hover:bg-muted/30"
+                        onClick={() => setExpanded(expandedRow ? null : entry.id)}
+                      >
+                        <td className="px-3 py-1.5 align-middle tabular-nums">
+                          {new Date(entry.timestamp).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </td>
+                        <td className="max-w-[10rem] truncate px-3 py-1.5 align-middle text-foreground" title={entry.changed_by_display}>
+                          {entry.changed_by_display}
+                        </td>
+                        <td className="px-3 py-1.5 align-middle">
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-normal",
+                              actionChipCls(entry.action),
+                            )}
+                          >
+                            {entry.action === "INSERT" ? "Created" : entry.action === "DELETE" ? "Deleted" : "Updated"}
+                          </span>
+                        </td>
+                        <td className="max-w-[12rem] px-3 py-1.5 align-middle">
+                          {link ? (
+                            <Link href={link.href} className="truncate text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                              {link.label}
+                            </Link>
                           ) : (
-                            <pre className="mt-3 max-h-48 overflow-auto rounded-md border border-border bg-background p-2 text-[11px] leading-relaxed">
-                              {prettyPayload(entry)}
-                            </pre>
+                            <span className="truncate text-muted-foreground">{enumLabel(entry.table_name)}</span>
                           )}
                         </td>
+                        <td className="min-w-[12rem] px-3 py-1.5 align-middle">{entry.summary}</td>
+                        <td className="px-3 py-1.5 align-middle text-muted-foreground">{sourceHint(entry)}</td>
                       </tr>
-                    ) : null}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                      {expandedRow ? (
+                        <tr className="bg-muted/20">
+                          <td colSpan={6} className="px-4 pb-4 pt-2 text-[12px] leading-relaxed text-foreground">
+                            <p className="font-semibold tracking-normal text-foreground">Diff preview</p>
+                            <p className="mt-2 text-muted-foreground">
+                              record id <span className="tabular-nums text-foreground">{entry.record_id}</span>
+                            </p>
+                            {entry.field_name ? (
+                              <p className="mt-3 text-muted-foreground">
+                                <span className="mr-2 font-medium text-foreground">{entry.field_name}:</span>
+                                <span className="text-destructive line-through">{formatAuditTabOldValue(entry.old_value_text)}</span> →{" "}
+                                <strong className="font-semibold text-foreground">{formatAuditTabNewValue(entry.new_value_text)}</strong>
+                              </p>
+                            ) : (
+                              <pre className="mt-3 max-h-48 overflow-auto rounded-md border border-border bg-background p-2 text-[11px] leading-relaxed">
+                                {prettyPayload(entry)}
+                              </pre>
+                            )}
+                          </td>
+                        </tr>
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </div>
       )}
 

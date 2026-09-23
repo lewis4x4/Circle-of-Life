@@ -20,6 +20,7 @@ import {
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Row = Database["public"]["Tables"]["workers_comp_claims"]["Row"];
 
@@ -92,29 +93,31 @@ export default function InsuranceWorkersCompPage() {
           <CardTitle className="text-base">Claims</CardTitle>
           <CardDescription>{loading ? "Loading…" : `${rows.length} row(s)`}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="py-2 pr-4 font-medium">Injury date</th>
-                <th className="py-2 pr-4 font-medium">Status</th>
-                <th className="py-2 pr-4 font-medium">Reserve</th>
-                <th className="py-2 pr-4 font-medium">Paid</th>
-                <th className="py-2 font-medium">Return to work</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-2 pr-4">{r.injury_date}</td>
-                  <td className="py-2 pr-4">{enumLabel(r.status)}</td>
-                  <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.reserve_cents)}</td>
-                  <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.paid_cents)}</td>
-                  <td className="py-2">{workersCompReturnToWorkDateCopy(r.return_to_work_date)}</td>
+        <CardContent>
+          <HorizontalScroll label="Workers' comp claims">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="py-2 pr-4 font-medium">Injury date</th>
+                  <th className="py-2 pr-4 font-medium">Status</th>
+                  <th className="py-2 pr-4 font-medium">Reserve</th>
+                  <th className="py-2 pr-4 font-medium">Paid</th>
+                  <th className="py-2 font-medium">Return to work</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
+                    <td className="py-2 pr-4">{r.injury_date}</td>
+                    <td className="py-2 pr-4">{enumLabel(r.status)}</td>
+                    <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.reserve_cents)}</td>
+                    <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.paid_cents)}</td>
+                    <td className="py-2">{workersCompReturnToWorkDateCopy(r.return_to_work_date)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </HorizontalScroll>
           {!loading && rows.length === 0 && organizationId ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">No workers’ comp claims yet.</p>
           ) : null}

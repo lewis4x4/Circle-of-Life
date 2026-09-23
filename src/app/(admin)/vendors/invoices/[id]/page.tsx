@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canFinalizeVendorInvoice } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type InvRow = Database["public"]["Tables"]["vendor_invoices"]["Row"];
 type LineRow = Database["public"]["Tables"]["vendor_invoice_lines"]["Row"];
@@ -164,25 +165,27 @@ export default function VendorInvoiceDetailPage() {
           </RecordDetailSection>
 
           <RecordDetailSection title="Lines">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="pb-2 pr-4 font-medium">#</th>
-                    <th className="pb-2 pr-4 font-medium">Description</th>
-                    <th className="pb-2 font-medium">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lines.map((l) => (
-                    <tr key={l.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4 tabular-nums">{l.line_number}</td>
-                      <td className="py-2 pr-4">{l.description}</td>
-                      <td className="py-2 tabular-nums">{formatUsdFromCents(l.line_total_cents)}</td>
+            <div>
+              <HorizontalScroll label="Invoice lines">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="pb-2 pr-4 font-medium">#</th>
+                      <th className="pb-2 pr-4 font-medium">Description</th>
+                      <th className="pb-2 font-medium">Amount</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {lines.map((l) => (
+                      <tr key={l.id} className="border-b border-border/50">
+                        <td className="py-2 pr-4 tabular-nums">{l.line_number}</td>
+                        <td className="py-2 pr-4">{l.description}</td>
+                        <td className="py-2 tabular-nums">{formatUsdFromCents(l.line_total_cents)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </HorizontalScroll>
             </div>
           </RecordDetailSection>
         </>

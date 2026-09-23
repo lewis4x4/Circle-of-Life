@@ -45,6 +45,7 @@ import {
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 function editable(metric: StandupMetricRow, snapshot: StandupSnapshotDetail["snapshot"]): boolean {
   return snapshot.status === "draft" && metric.sourceMode !== "auto";
@@ -561,103 +562,105 @@ export default function ExecutiveStandupWeekDetailPage() {
             if (metricKeys.length === 0) return null;
             return (
               <RecordDetailSection key={sectionKey} title={sectionLabel}>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Metric</th>
-                        {facilities.map((facility) => (
-                          <th key={facility.facilityId} className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                            {facility.facilityName}
-                          </th>
-                        ))}
-                        {totals ? <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Totals</th> : null}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {metricKeys.map((metricKey) => {
-                        const sampleMetric = facilities.find((facility) => facility.metrics[metricKey])?.metrics[metricKey] ?? totals?.metrics[metricKey];
-                        if (!sampleMetric) return null;
-                        return (
-                          <tr key={metricKey} className="border-b border-border/50">
-                            <td className="px-3 py-3 align-top">
-                              <div className="font-medium text-foreground">{sampleMetric.label}</div>
-                              <div className="mt-1 text-xs text-muted-foreground">{sampleMetric.description}</div>
-                            </td>
-                            {facilities.map((facility) => {
-                              const metric = facility.metrics[metricKey];
-                              const editKey = `${facility.facilityId}:${metricKey}`;
-                              const editableMetric = editable(metric, detail.snapshot);
-                              const displayValue =
-                                editKey in edits
-                                  ? edits[editKey]
-                                  : metric.valueType === "currency"
-                                    ? metric.valueNumeric == null
-                                      ? ""
-                                      : (metric.valueNumeric / 100).toString()
-                                    : metric.valueNumeric == null
-                                      ? metric.valueText ?? ""
-                                      : metric.valueNumeric.toString();
-
-                              return (
-                                <td key={editKey} className="px-3 py-3 align-top">
-                                  {editableMetric ? (
-                                    <div className="space-y-2">
-                                      <Input
-                                        value={displayValue}
-                                        onChange={(event) =>
-                                          setEdits((current) => ({ ...current, [editKey]: event.target.value }))
-                                        }
-                                        placeholder={metric.sourceMode === "forecast" ? "Enter forecast" : "Enter value"}
-                                      />
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline">{metric.sourceMode}</Badge>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant="outline"
-                                          disabled={savingKey === editKey}
-                                          onClick={() => void onSaveMetric(facility.facilityId!, metricKey, metric)}
-                                        >
-                                          {savingKey === editKey ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-2 h-3.5 w-3.5" />}
-                                          Save
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-2">
-                                      <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(metric)}</div>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        <Badge variant="outline">{metric.sourceMode}</Badge>
-                                        <Badge variant="outline">{metric.confidenceBand}</Badge>
-                                      </div>
-                                      {standupMetricNote(metric) ? (
-                                        <div className="text-xs text-muted-foreground">{standupMetricNote(metric)}</div>
-                                      ) : null}
-                                    </div>
-                                  )}
-                                </td>
-                              );
-                            })}
-                            {totals ? (
+                <div>
+                  <HorizontalScroll label="Stand Up section">
+                    <table className="min-w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Metric</th>
+                          {facilities.map((facility) => (
+                            <th key={facility.facilityId} className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                              {facility.facilityName}
+                            </th>
+                          ))}
+                          {totals ? <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Totals</th> : null}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metricKeys.map((metricKey) => {
+                          const sampleMetric = facilities.find((facility) => facility.metrics[metricKey])?.metrics[metricKey] ?? totals?.metrics[metricKey];
+                          if (!sampleMetric) return null;
+                          return (
+                            <tr key={metricKey} className="border-b border-border/50">
                               <td className="px-3 py-3 align-top">
-                                <div className="space-y-2">
-                                  <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(totals.metrics[metricKey])}</div>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    <Badge variant="outline">{totals.metrics[metricKey].sourceMode}</Badge>
-                                    <Badge variant="outline">{totals.metrics[metricKey].confidenceBand}</Badge>
-                                  </div>
-                                  {standupMetricNote(totals.metrics[metricKey]) ? (
-                                    <div className="text-xs text-muted-foreground">{standupMetricNote(totals.metrics[metricKey])}</div>
-                                  ) : null}
-                                </div>
+                                <div className="font-medium text-foreground">{sampleMetric.label}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{sampleMetric.description}</div>
                               </td>
-                            ) : null}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                              {facilities.map((facility) => {
+                                const metric = facility.metrics[metricKey];
+                                const editKey = `${facility.facilityId}:${metricKey}`;
+                                const editableMetric = editable(metric, detail.snapshot);
+                                const displayValue =
+                                  editKey in edits
+                                    ? edits[editKey]
+                                    : metric.valueType === "currency"
+                                      ? metric.valueNumeric == null
+                                        ? ""
+                                        : (metric.valueNumeric / 100).toString()
+                                      : metric.valueNumeric == null
+                                        ? metric.valueText ?? ""
+                                        : metric.valueNumeric.toString();
+
+                                return (
+                                  <td key={editKey} className="px-3 py-3 align-top">
+                                    {editableMetric ? (
+                                      <div className="space-y-2">
+                                        <Input
+                                          value={displayValue}
+                                          onChange={(event) =>
+                                            setEdits((current) => ({ ...current, [editKey]: event.target.value }))
+                                          }
+                                          placeholder={metric.sourceMode === "forecast" ? "Enter forecast" : "Enter value"}
+                                        />
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline">{metric.sourceMode}</Badge>
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            disabled={savingKey === editKey}
+                                            onClick={() => void onSaveMetric(facility.facilityId!, metricKey, metric)}
+                                          >
+                                            {savingKey === editKey ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-2 h-3.5 w-3.5" />}
+                                            Save
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(metric)}</div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          <Badge variant="outline">{metric.sourceMode}</Badge>
+                                          <Badge variant="outline">{metric.confidenceBand}</Badge>
+                                        </div>
+                                        {standupMetricNote(metric) ? (
+                                          <div className="text-xs text-muted-foreground">{standupMetricNote(metric)}</div>
+                                        ) : null}
+                                      </div>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                              {totals ? (
+                                <td className="px-3 py-3 align-top">
+                                  <div className="space-y-2">
+                                    <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(totals.metrics[metricKey])}</div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      <Badge variant="outline">{totals.metrics[metricKey].sourceMode}</Badge>
+                                      <Badge variant="outline">{totals.metrics[metricKey].confidenceBand}</Badge>
+                                    </div>
+                                    {standupMetricNote(totals.metrics[metricKey]) ? (
+                                      <div className="text-xs text-muted-foreground">{standupMetricNote(totals.metrics[metricKey])}</div>
+                                    ) : null}
+                                  </div>
+                                </td>
+                              ) : null}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </HorizontalScroll>
                 </div>
               </RecordDetailSection>
             );

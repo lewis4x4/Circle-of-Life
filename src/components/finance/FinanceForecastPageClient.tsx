@@ -28,6 +28,7 @@ import {
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { ForecastSnapshot } from "@/lib/finance/load-forecast-data";
 import { forecastResidentCountLabel } from "@/lib/billing/money-page-counts";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type FinanceForecastPageClientProps = {
   initialData: ForecastSnapshot | null;
@@ -176,49 +177,51 @@ export default function FinanceForecastPageClient({
                   description="Billing and payment records are required before DSO forecasting can render."
                 />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-800">
-                        <th className="pb-2 pr-4 font-medium">Facility</th>
-                        <th className="pb-2 pr-4 font-medium">Open AR</th>
-                        <th className="pb-2 pr-4 font-medium">Resident funds</th>
-                        <th className="pb-2 pr-4 font-medium">Current DSO</th>
-                        <th className="pb-2 pr-4 font-medium">Projected 30d</th>
-                        <th className="pb-2 pr-4 font-medium">Collections / 90d</th>
-                        <th className="pb-2 font-medium">Efficiency</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {snapshot.dso.rows.map((row) => (
-                        <tr key={row.facilityId} className="border-b border-slate-100 dark:border-slate-900">
-                          <td className="py-3 pr-4">{row.facilityName}</td>
-                          <td className="py-3 pr-4">{formatCents(row.openArCents)}</td>
-                          <td className="py-3 pr-4">{snapshot.residentMoneyReviewFacilityIds.includes(row.facilityId) ? "Not established / review required" : formatCents(row.trustCoverageCents)}</td>
-                          <td className="py-3 pr-4">{forecastDaysCell(row.currentDsoDays)}</td>
-                          <td className="py-3 pr-4">
-                            <span
-                              className={
-                                forecastDsoAccent(row.currentDsoDays, row.projected30DayDsoDays) === "amber"
-                                  ? "text-amber-600 dark:text-amber-400"
-                                  : forecastDsoAccent(row.currentDsoDays, row.projected30DayDsoDays) === "emerald"
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : "text-muted-foreground"
-                              }
-                            >
-                              {forecastDaysCell(row.projected30DayDsoDays)}
-                            </span>
-                          </td>
-                          <td className="py-3 pr-4">
-                            {snapshot.dso.summary.trailing90PaymentCount === 0
-                              ? "No payments recorded"
-                              : formatCents(row.trailing90CollectedCents)}
-                          </td>
-                          <td className="py-3">{forecastPctCell(row.collectionEfficiencyPct)}</td>
+                <div>
+                  <HorizontalScroll label="Forecast">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800">
+                          <th className="pb-2 pr-4 font-medium">Facility</th>
+                          <th className="pb-2 pr-4 font-medium">Open AR</th>
+                          <th className="pb-2 pr-4 font-medium">Resident funds</th>
+                          <th className="pb-2 pr-4 font-medium">Current DSO</th>
+                          <th className="pb-2 pr-4 font-medium">Projected 30d</th>
+                          <th className="pb-2 pr-4 font-medium">Collections / 90d</th>
+                          <th className="pb-2 font-medium">Efficiency</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {snapshot.dso.rows.map((row) => (
+                          <tr key={row.facilityId} className="border-b border-slate-100 dark:border-slate-900">
+                            <td className="py-3 pr-4">{row.facilityName}</td>
+                            <td className="py-3 pr-4">{formatCents(row.openArCents)}</td>
+                            <td className="py-3 pr-4">{snapshot.residentMoneyReviewFacilityIds.includes(row.facilityId) ? "Not established / review required" : formatCents(row.trustCoverageCents)}</td>
+                            <td className="py-3 pr-4">{forecastDaysCell(row.currentDsoDays)}</td>
+                            <td className="py-3 pr-4">
+                              <span
+                                className={
+                                  forecastDsoAccent(row.currentDsoDays, row.projected30DayDsoDays) === "amber"
+                                    ? "text-amber-600 dark:text-amber-400"
+                                    : forecastDsoAccent(row.currentDsoDays, row.projected30DayDsoDays) === "emerald"
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : "text-muted-foreground"
+                                }
+                              >
+                                {forecastDaysCell(row.projected30DayDsoDays)}
+                              </span>
+                            </td>
+                            <td className="py-3 pr-4">
+                              {snapshot.dso.summary.trailing90PaymentCount === 0
+                                ? "No payments recorded"
+                                : formatCents(row.trailing90CollectedCents)}
+                            </td>
+                            <td className="py-3">{forecastPctCell(row.collectionEfficiencyPct)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </HorizontalScroll>
                 </div>
               )}
             </CardContent>
@@ -260,33 +263,35 @@ export default function FinanceForecastPageClient({
                     description="Approved payroll records or vendor invoices are required before cost-to-serve can render."
                   />
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 dark:border-slate-800">
-                          <th className="pb-2 pr-4 font-medium">Facility</th>
-                          <th className="pb-2 pr-4 font-medium">Active residents today</th>
-                          <th className="pb-2 pr-4 font-medium">Labor</th>
-                          <th className="pb-2 pr-4 font-medium">Vendor</th>
-                          <th className="pb-2 pr-4 font-medium">Total</th>
-                          <th className="pb-2 font-medium">Cost / resident</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {snapshot.cost.rows.map((row) => (
-                          <tr key={row.facilityId} className="border-b border-slate-100 dark:border-slate-900">
-                            <td className="py-3 pr-4">{row.facilityName}</td>
-                            <td className="py-3 pr-4">{row.activeResidents}</td>
-                            <td className="py-3 pr-4">{formatCents(row.laborCostCents)}</td>
-                            <td className="py-3 pr-4">{formatCents(row.vendorCostCents)}</td>
-                            <td className="py-3 pr-4">{formatCents(row.totalCostCents)}</td>
-                            <td className="py-3">
-                              {row.totalCostCents === 0 ? "No cost posted" : formatUsdFromCents(row.costPerResidentCents)}
-                            </td>
+                  <div>
+                    <HorizontalScroll label="Forecast detail">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-slate-800">
+                            <th className="pb-2 pr-4 font-medium">Facility</th>
+                            <th className="pb-2 pr-4 font-medium">Active residents today</th>
+                            <th className="pb-2 pr-4 font-medium">Labor</th>
+                            <th className="pb-2 pr-4 font-medium">Vendor</th>
+                            <th className="pb-2 pr-4 font-medium">Total</th>
+                            <th className="pb-2 font-medium">Cost / resident</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {snapshot.cost.rows.map((row) => (
+                            <tr key={row.facilityId} className="border-b border-slate-100 dark:border-slate-900">
+                              <td className="py-3 pr-4">{row.facilityName}</td>
+                              <td className="py-3 pr-4">{row.activeResidents}</td>
+                              <td className="py-3 pr-4">{formatCents(row.laborCostCents)}</td>
+                              <td className="py-3 pr-4">{formatCents(row.vendorCostCents)}</td>
+                              <td className="py-3 pr-4">{formatCents(row.totalCostCents)}</td>
+                              <td className="py-3">
+                                {row.totalCostCents === 0 ? "No cost posted" : formatUsdFromCents(row.costPerResidentCents)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </HorizontalScroll>
                   </div>
                 )}
               </CardContent>
@@ -355,45 +360,47 @@ export default function FinanceForecastPageClient({
                   description="Add asset replacement dates and estimates to begin building the three-year capital plan."
                 />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-800">
-                        <th className="pb-2 pr-4 font-medium">Facility</th>
-                        <th className="pb-2 pr-4 font-medium">Overdue</th>
-                        <th className="pb-2 pr-4 font-medium">Next 12m</th>
-                        <th className="pb-2 pr-4 font-medium">13-36m</th>
-                        <th className="pb-2 pr-4 font-medium">Due asset count</th>
-                        <th className="pb-2 font-medium">Pressure lane</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {snapshot.capex.rows.map((row) => {
-                        const dueAssets = row.overdueCount + row.due12MonthsCount + row.due36MonthsCount;
-                        const isHot = row.overdueCount > 0 || row.due12MonthsCostCents > 2500000;
-                        return (
-                          <tr key={row.facilityId} className="border-b border-slate-100 dark:border-slate-900">
-                            <td className="py-3 pr-4">{row.facilityName}</td>
-                            <td className="py-3 pr-4">{formatCents(row.overdueCostCents)}</td>
-                            <td className="py-3 pr-4">{formatCents(row.due12MonthsCostCents)}</td>
-                            <td className="py-3 pr-4">{formatCents(row.due36MonthsCostCents)}</td>
-                            <td className="py-3 pr-4">{dueAssets}</td>
-                            <td className="py-3">
-                              <span
-                                className={
-                                  isHot
-                                    ? "text-amber-600 dark:text-amber-400"
-                                    : "text-emerald-600 dark:text-emerald-400"
-                                }
-                              >
-                                {isHot ? "Escalate" : "Monitor"}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div>
+                  <HorizontalScroll label="Forecast assumptions">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800">
+                          <th className="pb-2 pr-4 font-medium">Facility</th>
+                          <th className="pb-2 pr-4 font-medium">Overdue</th>
+                          <th className="pb-2 pr-4 font-medium">Next 12m</th>
+                          <th className="pb-2 pr-4 font-medium">13-36m</th>
+                          <th className="pb-2 pr-4 font-medium">Due asset count</th>
+                          <th className="pb-2 font-medium">Pressure lane</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {snapshot.capex.rows.map((row) => {
+                          const dueAssets = row.overdueCount + row.due12MonthsCount + row.due36MonthsCount;
+                          const isHot = row.overdueCount > 0 || row.due12MonthsCostCents > 2500000;
+                          return (
+                            <tr key={row.facilityId} className="border-b border-slate-100 dark:border-slate-900">
+                              <td className="py-3 pr-4">{row.facilityName}</td>
+                              <td className="py-3 pr-4">{formatCents(row.overdueCostCents)}</td>
+                              <td className="py-3 pr-4">{formatCents(row.due12MonthsCostCents)}</td>
+                              <td className="py-3 pr-4">{formatCents(row.due36MonthsCostCents)}</td>
+                              <td className="py-3 pr-4">{dueAssets}</td>
+                              <td className="py-3">
+                                <span
+                                  className={
+                                    isHot
+                                      ? "text-amber-600 dark:text-amber-400"
+                                      : "text-emerald-600 dark:text-emerald-400"
+                                  }
+                                >
+                                  {isHot ? "Escalate" : "Monitor"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </HorizontalScroll>
                 </div>
               )}
             </CardContent>

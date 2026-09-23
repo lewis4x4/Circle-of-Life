@@ -39,6 +39,7 @@ import {
   formatRegisterEventTime,
   isCompleteDateInput,
 } from "@/lib/registers/register-display-copy";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export type VisitableResident = { id: string; firstName: string; lastName: string };
 
@@ -386,90 +387,92 @@ export function VisitorLogClient({
         {rows.filter((row) => !row.voidedAt).length === 0 ? (
           <p className="text-sm text-muted-foreground">{VISITOR_LOG_RANGE_EMPTY_COPY}</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <caption className="sr-only">Visitors signed in for the chosen range</caption>
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                  <th scope="col" className="py-2 pr-3 font-medium">Visitor</th>
-                  <th scope="col" className="py-2 pr-3 font-medium">Type</th>
-                  <th scope="col" className="py-2 pr-3 font-medium">Visiting</th>
-                  <th scope="col" className="py-2 pr-3 font-medium">In</th>
-                  <th scope="col" className="py-2 pr-3 font-medium">Out</th>
-                  <th scope="col" className="py-2 pr-3 font-medium">By</th>
-                  <th scope="col" className="py-2 pr-3 font-medium">
-                    <span className="sr-only">Correction</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows
-                  .filter((row) => !row.voidedAt)
-                  .map((row) => (
-                    <tr key={row.id} className="border-b border-border align-top">
-                      <td className="py-2 pr-3 text-foreground">{row.visitorName}</td>
-                      <td className="py-2 pr-3 text-muted-foreground">{visitorTypeLabel(row.visitorType)}</td>
-                      <td className="py-2 pr-3 text-muted-foreground">
-                        {row.visitingResidentName ?? row.visitingType ?? ""}
-                      </td>
-                      <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
-                        {formatRegisterEventTime(row.signedInAt)}
-                      </td>
-                      <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
-                        {row.signedOutAt ? formatRegisterEventTime(row.signedOutAt) : ""}
-                        {row.signOutMethod === "bulk_end_of_day" ? " (end of day)" : ""}
-                      </td>
-                      <td className="py-2 pr-3 text-muted-foreground">{row.signedInByName ?? ""}</td>
-                      <td className="py-2 pr-3">
-                        {voidingId === row.id ? (
-                          <div className="flex flex-wrap items-center gap-2">
-                            <label htmlFor={`void-${row.id}`} className="sr-only">
-                              Why is this entry wrong
-                            </label>
-                            <select
-                              id={`void-${row.id}`}
-                              defaultValue=""
-                              onChange={(event) => {
-                                const reason = event.target.value;
-                                if (!reason) return;
-                                setVoidingId(null);
-                                void act(
-                                  row.id,
-                                  () => voidVisitorEntry(createClient(), row.id, reason),
-                                  "The entry could not be voided.",
-                                );
-                              }}
-                              className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
-                            >
-                              <option value="">Why is it wrong…</option>
-                              {VOID_REASONS.map((reason) => (
-                                <option key={reason.id} value={reason.id}>
-                                  {reason.label}
-                                </option>
-                              ))}
-                            </select>
+          <div>
+            <HorizontalScroll label="Visitor log">
+              <table className="w-full border-collapse text-sm">
+                <caption className="sr-only">Visitors signed in for the chosen range</caption>
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                    <th scope="col" className="py-2 pr-3 font-medium">Visitor</th>
+                    <th scope="col" className="py-2 pr-3 font-medium">Type</th>
+                    <th scope="col" className="py-2 pr-3 font-medium">Visiting</th>
+                    <th scope="col" className="py-2 pr-3 font-medium">In</th>
+                    <th scope="col" className="py-2 pr-3 font-medium">Out</th>
+                    <th scope="col" className="py-2 pr-3 font-medium">By</th>
+                    <th scope="col" className="py-2 pr-3 font-medium">
+                      <span className="sr-only">Correction</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows
+                    .filter((row) => !row.voidedAt)
+                    .map((row) => (
+                      <tr key={row.id} className="border-b border-border align-top">
+                        <td className="py-2 pr-3 text-foreground">{row.visitorName}</td>
+                        <td className="py-2 pr-3 text-muted-foreground">{visitorTypeLabel(row.visitorType)}</td>
+                        <td className="py-2 pr-3 text-muted-foreground">
+                          {row.visitingResidentName ?? row.visitingType ?? ""}
+                        </td>
+                        <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
+                          {formatRegisterEventTime(row.signedInAt)}
+                        </td>
+                        <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
+                          {row.signedOutAt ? formatRegisterEventTime(row.signedOutAt) : ""}
+                          {row.signOutMethod === "bulk_end_of_day" ? " (end of day)" : ""}
+                        </td>
+                        <td className="py-2 pr-3 text-muted-foreground">{row.signedInByName ?? ""}</td>
+                        <td className="py-2 pr-3">
+                          {voidingId === row.id ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <label htmlFor={`void-${row.id}`} className="sr-only">
+                                Why is this entry wrong
+                              </label>
+                              <select
+                                id={`void-${row.id}`}
+                                defaultValue=""
+                                onChange={(event) => {
+                                  const reason = event.target.value;
+                                  if (!reason) return;
+                                  setVoidingId(null);
+                                  void act(
+                                    row.id,
+                                    () => voidVisitorEntry(createClient(), row.id, reason),
+                                    "The entry could not be voided.",
+                                  );
+                                }}
+                                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
+                              >
+                                <option value="">Why is it wrong…</option>
+                                {VOID_REASONS.map((reason) => (
+                                  <option key={reason.id} value={reason.id}>
+                                    {reason.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => setVoidingId(null)}
+                                className="text-xs text-muted-foreground underline"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
                             <button
                               type="button"
-                              onClick={() => setVoidingId(null)}
+                              onClick={() => setVoidingId(row.id)}
                               className="text-xs text-muted-foreground underline"
                             >
-                              Cancel
+                              Void
                             </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setVoidingId(row.id)}
-                            className="text-xs text-muted-foreground underline"
-                          >
-                            Void
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           </div>
         )}
       </section>
