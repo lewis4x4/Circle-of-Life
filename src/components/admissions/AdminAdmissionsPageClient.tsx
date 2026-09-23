@@ -574,7 +574,7 @@ export function AdminAdmissionsPageClient({
                   <Link href="/admin/admissions/new" className={workflowQuietLinkClass}>
                     Start admission
                   </Link>
-                  <Link href="/pipeline/discharge-management/new-reconciliation" className={workflowQuietLinkClass}>
+                  <Link href="/admin/discharge/new" className={workflowQuietLinkClass}>
                     Process discharge
                   </Link>
                 </>
@@ -840,14 +840,14 @@ export function AdminAdmissionsPageClient({
         )}
       </HubSection>
 
-      <HubSection title="Discharges" viewAllHref="/pipeline/discharge-management" metrics={<InlineMetricsRow parts={[{ label: "In review", value: hubMetric(dischargeMetrics.inReview, metricCtx) }]} />}>
+      <HubSection title="Discharges" viewAllHref="/admin/discharge" metrics={<InlineMetricsRow parts={[{ label: "In review", value: hubMetric(dischargeMetrics.inReview, metricCtx) }]} />}>
         {noFacility ? (
           <p className="text-sm text-muted-foreground">Select a facility to preview discharge work.</p>
         ) : loading ? (
           <p className="text-sm text-muted-foreground">Loading discharges…</p>
         ) : discharges.length === 0 ? (
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            No active reconciliations. <QuietInlineArrowLink href="/pipeline/discharge-management/new-reconciliation">Start a discharge →</QuietInlineArrowLink>
+            No active reconciliations. <QuietInlineArrowLink href="/admin/discharge/new">Start a discharge →</QuietInlineArrowLink>
           </p>
         ) : (
           <div className="space-y-3">

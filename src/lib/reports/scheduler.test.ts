@@ -6,14 +6,15 @@ vi.mock("@/lib/admin/api-auth",()=>({actorCanAccessFacility:mocks.facility}));
 vi.mock("./run-persistence",()=>({runTemplateAndPersist:mocks.run,failReportRun:mocks.fail,finishReportRun:vi.fn()}));
 import {POST} from "@/app/api/reports/scheduler/route";
 let updates:Record<string,unknown>[];
+let runUpdates:{value:Record<string,unknown>;filters:unknown[][]}[];
 let failAdvance=false;
 beforeEach(()=>{
- vi.clearAllMocks();vi.stubEnv("REPORT_SCHEDULER_SECRET","local-secret");updates=[];failAdvance=false;
+ vi.clearAllMocks();vi.stubEnv("REPORT_SCHEDULER_SECRET","local-secret");updates=[];runUpdates=[];failAdvance=false;
  mocks.facility.mockResolvedValue(true);
  mocks.client.mockReturnValue({from:(table:string)=>{
-   const q:Record<string,ReturnType<typeof vi.fn>>={};let writing=false;let advancing=false;
-   for(const method of ["select","eq","is","lte","order","limit","or"])q[method]=vi.fn(()=>q);
-   q.update=vi.fn((value)=>{writing=true;advancing="next_run_at" in value;updates.push(value);return q;});
+   const q:Record<string,ReturnType<typeof vi.fn>>={};let writing=false;let advancing=false;const filters:unknown[][]=[];
+   for(const method of ["select","eq","is","lte","lt","order","limit","or"])q[method]=vi.fn((...args:unknown[])=>{filters.push([method,...args]);return q;});
+   q.update=vi.fn((value)=>{writing=true;advancing="next_run_at" in value;if(table==="report_runs")runUpdates.push({value,filters});else updates.push(value);return q;});
    q.maybeSingle=vi.fn().mockResolvedValue({data:table==="user_profiles"?{id:"owner",organization_id:"org",app_role:"owner"}:null,error:null});
    q.single=vi.fn().mockResolvedValue({data:{slug:"census",name:"Census"},error:null});
    q.then=vi.fn((resolve)=>resolve({data:writing?null:[{id:"schedule",source_type:"template",source_id:"template",organization_id:"org",created_by:"owner",facility_id:null,output_format:"csv",timezone:"America/New_York",next_run_at:"2026-01-01T13:00:00Z",recurrence_rule:'{"frequency":"daily","weekday":1,"monthDay":1,"timeLocal":"08:00"}'}],error:failAdvance && advancing ? {message:"calendar write failed"}:null}));
@@ -44,4 +45,17 @@ it("preserves completed output when advancing the schedule fails",async()=>{
  expect(result.status).toBe(500);
  expect(mocks.fail).not.toHaveBeenCalled();
  expect(updates).toContainEqual(expect.objectContaining({status:"failed",last_error:"Output saved; could not advance schedule"}));
+});
+
+it("closes manual runs left running past the interrupt timeout, and only those (COL-643)",async()=>{
+ mocks.run.mockResolvedValue({runId:"run"});
+ const before=Date.now();
+ await POST(new NextRequest("http://local/api/reports/scheduler",{method:"POST",headers:{"x-cron-secret":"local-secret"}}));
+ expect(runUpdates).toHaveLength(1);
+ const [{value,filters}]=runUpdates;
+ expect(value).toMatchObject({status:"failed",error_json:{message:"Interrupted before it finished. Run it again."}});
+ expect(filters).toContainEqual(["eq","status","running"]);
+ expect(filters).toContainEqual(["is","schedule_id",null]);
+ const cutoff=filters.find(f=>f[0]==="lt" && f[1]==="started_at")?.[2] as string;
+ expect(before-new Date(cutoff).getTime()).toBeGreaterThanOrEqual(30*60*1000-50);
 });
