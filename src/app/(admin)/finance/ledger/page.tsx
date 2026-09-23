@@ -21,7 +21,7 @@ import {
   resolveLedgerOrganizationGapMessage,
 } from "@/lib/finance/ledger-page-state";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
 
 type JournalRow = Database["public"]["Tables"]["journal_entries"]["Row"];
@@ -124,6 +124,7 @@ export default function LedgerPage() {
 
         {!organizationGapMessage && !authLoading ? (
           <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+            <TableRowList label="Journal entries">
             <TableRowHeader>
               <span className="flex-1 min-w-0">Memo</span>
               <span className="w-[140px] shrink-0">Entry date</span>
@@ -168,6 +169,7 @@ export default function LedgerPage() {
                 ))}
               </MotionList>
             )}
+            </TableRowList>
           </div>
         ) : null}
       </div>

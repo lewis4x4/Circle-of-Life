@@ -198,7 +198,7 @@ function buildWorkflowInbox(input: {
   if (input.doctrineBlockedReview > 0) {
     items.push({
       id: "doctrine-blocked",
-      label: "Doctrine Review",
+      label: "Document review",
       message: `${input.doctrineBlockedReview} document${input.doctrineBlockedReview === 1 ? "" : "s"} are blocked in review out of ${input.doctrinePendingReview} pending.`,
       tone: "warning",
       href: "/admin/knowledge/admin#doctrine-blocked-review",
@@ -209,7 +209,7 @@ function buildWorkflowInbox(input: {
   if (input.doctrineReadyToPublish > 0) {
     items.push({
       id: "doctrine-ready",
-      label: "Doctrine Review",
+      label: "Document review",
       message: `${input.doctrineReadyToPublish} document${input.doctrineReadyToPublish === 1 ? "" : "s"} cleared review prerequisites and are ready for publication.`,
       tone: "normal",
       href: "/admin/knowledge/admin#doctrine-ready-to-publish",
@@ -223,8 +223,8 @@ function buildWorkflowInbox(input: {
     if (input.doctrineDueSoon > 0) parts.push(`${input.doctrineDueSoon} due soon`);
     items.push({
       id: "doctrine-sla",
-      label: "Doctrine SLA",
-      message: `${parts.join(" · ")} review${input.doctrineOverdue + input.doctrineDueSoon === 1 ? "" : "s"} need attention in the doctrine lane.`,
+      label: "Document review due",
+      message: `${parts.join(" · ")} review${input.doctrineOverdue + input.doctrineDueSoon === 1 ? "" : "s"} need attention in document review.`,
       tone: input.doctrineOverdue > 0 ? "warning" : "normal",
       href: "/admin/knowledge/admin#doctrine-review-sla",
       ctaLabel: "Open SLA queue",

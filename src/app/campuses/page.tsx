@@ -35,7 +35,7 @@ export default function CampusesPage() {
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-300/30">
-              <Compass className="w-3.5 h-3.5 text-[#C85A32]" />
+              <Compass className="w-3.5 h-3.5 text-[#B04F2C]" />
               <span>5 Campuses • 258 Licensed Beds • 3 Counties</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">

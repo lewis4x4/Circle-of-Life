@@ -227,7 +227,7 @@ const ANTICIPATED_PAYER_OPTIONS: { value: AnticipatedPayerDb; label: string }[] 
 type ReferralSourceOpt = { id: string; name: string };
 
 function roomTypeShortLabel(rt: string | null): string {
-  if (rt === "semi_private") return "Semi-private";
+  if (rt === "semi_private") return "Companion";
   if (rt === "shared") return "Shared";
   return "Private";
 }
