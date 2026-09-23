@@ -34,7 +34,7 @@ import {
   type StandupSectionKey,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
-import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
+import { formatStandupMetricValue, standupMetricNote } from "@/lib/executive/executive-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
   EXECUTIVE_STANDUP_WEEK_LOADING_MESSAGE,
@@ -630,6 +630,9 @@ export default function ExecutiveStandupWeekDetailPage() {
                                         <Badge variant="outline">{metric.sourceMode}</Badge>
                                         <Badge variant="outline">{metric.confidenceBand}</Badge>
                                       </div>
+                                      {standupMetricNote(metric) ? (
+                                        <div className="text-xs text-muted-foreground">{standupMetricNote(metric)}</div>
+                                      ) : null}
                                     </div>
                                   )}
                                 </td>
@@ -643,6 +646,9 @@ export default function ExecutiveStandupWeekDetailPage() {
                                     <Badge variant="outline">{totals.metrics[metricKey].sourceMode}</Badge>
                                     <Badge variant="outline">{totals.metrics[metricKey].confidenceBand}</Badge>
                                   </div>
+                                  {standupMetricNote(totals.metrics[metricKey]) ? (
+                                    <div className="text-xs text-muted-foreground">{standupMetricNote(totals.metrics[metricKey])}</div>
+                                  ) : null}
                                 </div>
                               </td>
                             ) : null}

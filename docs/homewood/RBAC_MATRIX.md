@@ -2,46 +2,41 @@
 
 Documents which app routes each `app_role` is expected to be able to load, and a script (`npm run homewood:verify-rbac`) that signs in as each role and asserts reality matches this table.
 
-- ✓ — role is allowed to load the route (2xx response)
-- ✗ — role is blocked (4xx, or redirect to `/login` / `/unauthorized`)
-- △ — allowed with restrictions (footnoted)
-
 ## Route matrix
 
-> **Roles updated 2026-09-22 (COL-615).** `nurse` and `caregiver` are retired login roles folded into `med_tech`, and `dietary` / `dietary_aide` are folded into `cook` (migration 468; see the Roles section in `AGENTS.md`). The `med_tech` column below is the union of what the old `nurse`, `caregiver` and `med_tech` columns allowed, and `cook` is the old `dietary` column. Not yet re-verified: `scripts/homewood/rbac-verify.mjs` still carries the pre-2026-09-22 columns (`nurse`, `caregiver`, `dietary`) and the `/admin/command` row, which no longer exists as a route. Both need regenerating against the live app before this matrix is treated as verified. `housekeeper` (floor app housekeeper paths only) and `recruiter` (`/admin/referrals`, pipeline and reputation only) are not in the verifier yet.
+> **Regenerated 2026-09-23 (COL-627)** for the COL-615 role model. This is the proxy (shell) layer: what happens when a signed-in role asks for a route. A page can still refuse a role it lets through, and what each role can *read* is enforced by RLS (e.g. housekeepers see resident name, room and logs only — migration 473). The cells come from `scripts/homewood/rbac-matrix.json`, which is generated from `src/lib/auth/rbac-matrix.ts`; `rbac-matrix.test.ts` fails if it drifts from the code, and `npm run homewood:verify-rbac` checks the deployed app against it.
 
-| Route | owner | facility_admin | med_tech | family | cook |
-|---|:-:|:-:|:-:|:-:|:-:|
-| `/admin/command` | ✓ | ✓ | ✓ | ✗ | ✗ |
-| `/admin/residents` | ✓ | ✓ | ✓ | ✗ | ✗ |
-| `/admin/incidents` | ✓ | ✓ | ✓ | ✗ | ✗ |
-| `/admin/staff` | ✓ | ✓ | ✗ | ✗ | ✗ |
-| `/admin/finance` | ✓ | ✓ | ✗ | ✗ | ✗ |
-| `/admin/payroll` | ✓ | ✓ | ✗ | ✗ | ✗ |
-| `/admin/training` | ✓ | ✓ | ✓ | ✗ | ✗ |
-| `/admin/dietary` | ✓ | ✓ | ✗ | ✗ | △ ¹ |
-| `/admin/transportation` | ✓ | ✓ | ✗ | ✗ | ✗ |
-| `/admin/reputation` | ✓ | ✓ | ✗ | ✗ | ✗ |
-| `/caregiver` | ✗ ² | ✗ ² | ✓ | ✗ | ✗ |
-| `/caregiver/tasks` | ✗ ² | ✗ ² | ✓ | ✗ | ✗ |
-| `/caregiver/meds` | ✗ ² | ✗ ² | ✓ | ✗ | ✗ |
-| `/med-tech` | ✗ ² | ✗ ² | ✓ | ✗ | ✗ |
-| `/family` | ✗ | ✗ | ✗ | ✓ | ✗ |
-| `/dietary` | ✗ ² | ✗ ² | ✗ | ✗ | ✓ |
-| `/login` | ✓ | ✓ | ✓ | ✓ | ✓ |
+- ✓ — served
+- → `route` — sent to that role's own home
+- ✗ login — sent to the login screen (no current role should ever get this)
 
-**Footnotes:**
-
-¹ Cooks can edit their own dietary hub but cannot edit clinical care plans referenced from it.
-² Admin-tier roles (owner, facility_admin) are routed to their admin home on sign-in. They have the rights to view shell-specific routes (`/caregiver`, `/med-tech`, `/dietary`), but the app's landing-redirect logic sends them to admin instead. The verifier reports those as "allowed with redirect" — not a failure. Med-Techs land on `/med-tech` and also use the floor app at `/caregiver`.
+| Route | `owner` | `facility_admin` | `med_tech` | `cook` | `housekeeper` | `recruiter` | `family` |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `/admin` | → `/admin/executive` | ✓ | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/residents` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/incidents` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/staff` | ✓ | ✓ | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/finance` | ✓ | ✓ | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/payroll` | ✓ | ✓ | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/training` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/transportation` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/reputation` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | ✓ | → `/family` |
+| `/admin/referrals` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | ✓ | → `/family` |
+| `/admin/executive` | ✓ | → `/admin` | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/caregiver` | → `/admin/executive` | → `/admin` | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/caregiver/tasks` | → `/admin/executive` | → `/admin` | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/caregiver/housekeeper` | → `/admin/executive` | → `/admin` | ✓ | → `/dietary` | ✓ | → `/admin/referrals` | → `/family` |
+| `/med-tech` | → `/admin/executive` | → `/admin` | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/dietary` | ✓ | ✓ | ✓ | ✓ | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/family` | → `/admin/executive` | → `/admin` | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | ✓ |
 
 ## How the verifier works
 
 `scripts/homewood/rbac-verify.mjs`:
 
-1. Reads this matrix from a structured constant inside the script (kept in sync with this doc).
+1. Reads the matrix from `scripts/homewood/rbac-matrix.json` (generated from `src/lib/auth/rbac-matrix.ts`; `rbac-matrix.test.ts` keeps it equal to the shell-access code).
 2. For each role, signs in via the canonical Homewood account.
-3. For each (role, route) cell, fetches the route with the authenticated cookie/header.
+3. For each (role, route) cell, fetches the route with that session's Supabase SSR cookie and expects the cell's outcome: served, sent to the named route, or sent to login.
 4. Compares the observed response against the expected cell value:
    - ✓ expected, observed 2xx → PASS
    - ✗ expected, observed 4xx or redirect to `/login`/`/unauthorized` → PASS

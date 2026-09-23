@@ -27,7 +27,7 @@ import {
   type StandupMetricRow,
   type StandupSectionKey,
 } from "@/lib/executive/standup";
-import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
+import { formatStandupMetricValue, standupMetricNote } from "@/lib/executive/executive-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
   hasExecutiveStandupOrgScopedPackData,
@@ -273,6 +273,9 @@ export default function ExecutiveStandupPage() {
                         <Badge variant="outline" className={confidenceBadgeClass(metric)}>{metric.confidenceBand} confidence</Badge>
                       </div>
                     ) : null}
+                    {standupMetricNote(metric) ? (
+                      <p className="mt-2 text-xs text-slate-500 dark:text-zinc-400">{standupMetricNote(metric)}</p>
+                    ) : null}
                   </CardContent>
                 </Card>
               );
@@ -416,6 +419,9 @@ export default function ExecutiveStandupPage() {
                                     <Badge variant="outline" className={sourceBadgeClass(metric)}>{metric.sourceMode}</Badge>
                                     <Badge variant="outline" className={confidenceBadgeClass(metric)}>{metric.confidenceBand}</Badge>
                                   </div>
+                                  {standupMetricNote(metric) ? (
+                                    <div className="text-xs text-slate-500 dark:text-zinc-400">{standupMetricNote(metric)}</div>
+                                  ) : null}
                                 </div>
                               ) : (
                                 <span className="text-slate-400">{formatStandupMetricValue(undefined, definition.label)}</span>

@@ -12,6 +12,8 @@ function hasProp(node, propName) {
 }
 
 function valueLooksComputed(node) {
+  // A MetricState is always read-backed (COL-649).
+  if (hasProp(node, "state")) return true;
   const valueProp = node.attributes.find(
     (attribute) => attribute.type === "JSXAttribute" && attribute.name?.name === "value",
   );

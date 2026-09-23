@@ -2,14 +2,16 @@
 /**
  * Homewood Lodge ALF — RBAC matrix verifier (Sprint 4 of Homewood Go-Live).
  *
- * Signs in as one canonical account per role and fetches each route in the
- * matrix below. Compares the observed status against the documented cell:
- *   ✓ → expect 2xx
- *   ✗ → expect 4xx OR redirect to /login or /unauthorized
+ * Signs in as one canonical account per role (COL-615 model) and fetches each
+ * route in scripts/homewood/rbac-matrix.json with that session's cookie. Each cell
+ * expects one outcome from the proxy's shell layer:
+ *   allow    → 2xx
+ *   redirect → 3xx to the named in-app route (the role's own home)
+ *   deny     → login / 401 / 403
  *
- * Source-of-truth for the cells: docs/homewood/RBAC_MATRIX.md. Keep this
- * constant and the markdown in sync — the verifier fails if reality doesn't
- * match either.
+ * The JSON is generated from src/lib/auth/rbac-matrix.ts and a unit test keeps it
+ * equal to the shell-access functions, so a mismatch here means the deployed app
+ * differs from the code. docs/homewood/RBAC_MATRIX.md is the readable copy.
  *
  * Required env:
  *   NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)
@@ -51,15 +53,21 @@ function requireEnv(...names) {
 }
 
 // Retired 2026-09-16: the hardcoded @circleoflifealf.com personas that used to sit here were fictitious accounts and no longer exist. Supply real accounts via the env var below.
-// HOMEWOOD_RBAC_ACCOUNTS is JSON: {"owner":"...","facility_admin":"...",...}
-const RBAC_ROLES = ["owner", "facility_admin", "nurse", "caregiver", "med_tech", "family", "dietary"];
+// HOMEWOOD_RBAC_ACCOUNTS is JSON keyed by the COL-615 roles:
+// {"owner":"...","facility_admin":"...","med_tech":"...","cook":"...","housekeeper":"...","recruiter":"...","family":"..."}
+//
+// The matrix is scripts/homewood/rbac-matrix.json (COL-627). It is generated from the
+// app's own shell-access functions and src/lib/auth/rbac-matrix.test.ts fails if it
+// drifts from them, so this script checks the DEPLOYED app against the code.
+const MATRIX_FILE = JSON.parse(readFileSync(path.join(ROOT, "scripts", "homewood", "rbac-matrix.json"), "utf8"));
+const RBAC_ROLES = MATRIX_FILE.roles;
+const MATRIX = Object.entries(MATRIX_FILE.matrix).map(([route, cells]) => ({ route, expectations: cells }));
 
 function readCanonicalAccounts() {
   const raw = process.env.HOMEWOOD_RBAC_ACCOUNTS;
   if (!raw) {
     console.error("[rbac] HOMEWOOD_RBAC_ACCOUNTS is required.");
     console.error(`[rbac] Provide JSON mapping each of ${RBAC_ROLES.join(", ")} to a real account email.`);
-    console.error("[rbac] The former hardcoded @circleoflifealf.com defaults were fictitious personas retired 2026-09-16.");
     process.exit(2);
   }
   let parsed;
@@ -74,48 +82,44 @@ function readCanonicalAccounts() {
     console.error(`[rbac] HOMEWOOD_RBAC_ACCOUNTS is missing: ${missing.join(", ")}`);
     process.exit(2);
   }
-  return parsed;
+  return Object.fromEntries(RBAC_ROLES.map((role) => [role, parsed[role]]));
 }
 
 const CANONICAL_ACCOUNTS = readCanonicalAccounts();
 
-// Cells: ✓ allowed, ✗ blocked, △ allowed-with-restriction (treated as ✓ for status).
-const MATRIX = [
-  { route: "/admin/command", expectations: { owner: "✓", facility_admin: "✓", nurse: "✓", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/admin/residents", expectations: { owner: "✓", facility_admin: "✓", nurse: "✓", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/admin/incidents", expectations: { owner: "✓", facility_admin: "✓", nurse: "✓", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/admin/staff", expectations: { owner: "✓", facility_admin: "✓", nurse: "✗", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/admin/finance", expectations: { owner: "✓", facility_admin: "✓", nurse: "✗", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/admin/payroll", expectations: { owner: "✓", facility_admin: "✓", nurse: "✗", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/admin/training", expectations: { owner: "✓", facility_admin: "✓", nurse: "✓", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/admin/transportation", expectations: { owner: "✓", facility_admin: "✓", nurse: "✗", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/admin/reputation", expectations: { owner: "✓", facility_admin: "✓", nurse: "✗", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/caregiver", expectations: { owner: "—", facility_admin: "—", nurse: "✓", caregiver: "✓", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/caregiver/tasks", expectations: { owner: "—", facility_admin: "—", nurse: "✓", caregiver: "✓", med_tech: "✗", family: "✗", dietary: "✗" } },
-  { route: "/med-tech", expectations: { owner: "—", facility_admin: "—", nurse: "✓", caregiver: "✗", med_tech: "✓", family: "✗", dietary: "✗" } },
-  { route: "/family", expectations: { owner: "✗", facility_admin: "✗", nurse: "✗", caregiver: "✗", med_tech: "✗", family: "✓", dietary: "✗" } },
-  { route: "/dietary", expectations: { owner: "—", facility_admin: "—", nurse: "✗", caregiver: "✗", med_tech: "✗", family: "✗", dietary: "✓" } },
-  { route: "/login", expectations: { owner: "✓", facility_admin: "✓", nurse: "✓", caregiver: "✓", med_tech: "✓", family: "✓", dietary: "✓" } },
-];
-
-function classify(statusCode, locationHeader) {
-  if (statusCode >= 200 && statusCode < 300) return "allowed";
-  if (statusCode === 401 || statusCode === 403) return "blocked";
-  if (statusCode >= 300 && statusCode < 400) {
-    const loc = (locationHeader ?? "").toLowerCase();
-    if (loc.includes("/login") || loc.includes("/unauthorized")) return "blocked";
-    return "redirected"; // could be admin-shell landing redirect — see footnote
-  }
-  if (statusCode >= 400) return "blocked";
-  return "unknown";
+/** allow (2xx), redirect (3xx to an in-app route, with its path) or deny (login / 401 / 403). */
+function describe(cell) {
+  return cell.outcome + (cell.location ? ` ${cell.location}` : "");
 }
 
-async function fetchWithToken(baseUrl, route, accessToken) {
-  const res = await fetch(`${baseUrl}${route}`, {
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    redirect: "manual",
-  });
+function classify(statusCode, locationHeader, baseUrl) {
+  if (statusCode >= 200 && statusCode < 300) return { outcome: "allow" };
+  if (statusCode === 401 || statusCode === 403) return { outcome: "deny" };
+  if (statusCode >= 300 && statusCode < 400) {
+    const pathname = locationHeader ? new URL(locationHeader, baseUrl).pathname : "";
+    if (pathname === "/login" || pathname === "/unauthorized") return { outcome: "deny", location: pathname };
+    return { outcome: "redirect", location: pathname };
+  }
+  return { outcome: statusCode >= 400 ? "deny" : "unknown" };
+}
+
+// The app reads the Supabase SSR session cookie, not an Authorization header.
+async function fetchWithSession(baseUrl, route, cookie) {
+  const res = await fetch(`${baseUrl}${route}`, { headers: cookie ? { cookie } : {}, redirect: "manual" });
   return { status: res.status, location: res.headers.get("location") };
+}
+
+function sessionCookie(supabaseUrl, session) {
+  const ref = new URL(supabaseUrl).hostname.split(".")[0];
+  const payload = {
+    access_token: session.access_token,
+    token_type: session.token_type,
+    expires_in: session.expires_in,
+    expires_at: session.expires_at,
+    refresh_token: session.refresh_token,
+    user: session.user,
+  };
+  return `sb-${ref}-auth-token=base64-${Buffer.from(JSON.stringify(payload)).toString("base64")}`;
 }
 
 async function main() {
@@ -145,35 +149,33 @@ async function main() {
       console.error(`  ! sign-in failed: ${sErr.message}`);
       for (const row of MATRIX) {
         const expected = row.expectations[role];
-        if (expected === "—") continue;
-        failures.push({ role, route: row.route, expected, observed: `sign-in failed: ${sErr.message}` });
+        failures.push({ role, route: row.route, expected: describe(expected), observed: `sign-in failed: ${sErr.message}` });
         totalCells += 1;
       }
       continue;
     }
-    const access = signIn.session?.access_token ?? null;
+    const cookie = signIn.session ? sessionCookie(url, signIn.session) : null;
 
     for (const row of MATRIX) {
       const expected = row.expectations[role];
-      if (expected === "—") continue;
       totalCells += 1;
       try {
-        const { status, location } = await fetchWithToken(baseUrl, row.route, access);
-        const observed = classify(status, location);
+        const { status, location } = await fetchWithSession(baseUrl, row.route, cookie);
+        const cell = classify(status, location, baseUrl);
+        const observed = cell.outcome + (cell.location ? ` ${cell.location}` : "");
         const isPass =
-          (expected === "✓" || expected === "△") && (observed === "allowed" || observed === "redirected") ||
-          expected === "✗" && observed === "blocked";
+          cell.outcome === expected.outcome && (expected.outcome !== "redirect" || cell.location === expected.location);
         if (isPass) {
-          passes.push({ role, route: row.route, expected, status, observed });
-          process.stdout.write(`  OK   ${expected.padEnd(2)} ${row.route.padEnd(30)} → ${status}${location ? ` → ${location}` : ""}\n`);
+          passes.push({ role, route: row.route, expected: describe(expected), status, observed });
+          process.stdout.write(`  OK   ${describe(expected).padEnd(28)} ${row.route.padEnd(24)} → ${status}\n`);
         } else {
-          failures.push({ role, route: row.route, expected, observed: `${status}${location ? ` → ${location}` : ""} (${observed})` });
-          process.stdout.write(`  FAIL ${expected.padEnd(2)} ${row.route.padEnd(30)} → ${status}${location ? ` → ${location}` : ""} (${observed})\n`);
+          failures.push({ role, route: row.route, expected: describe(expected), observed: `${status} (${observed})` });
+          process.stdout.write(`  FAIL ${describe(expected).padEnd(28)} ${row.route.padEnd(24)} → ${status} (${observed})\n`);
         }
       } catch (err) {
         const msg = err.message || String(err);
-        failures.push({ role, route: row.route, expected, observed: `fetch failed: ${msg}` });
-        process.stdout.write(`  FAIL ${expected.padEnd(2)} ${row.route.padEnd(30)} → ${msg}\n`);
+        failures.push({ role, route: row.route, expected: describe(expected), observed: `fetch failed: ${msg}` });
+        process.stdout.write(`  FAIL ${describe(expected).padEnd(28)} ${row.route.padEnd(24)} → ${msg}\n`);
       }
     }
     await client.auth.signOut().catch(() => {});
