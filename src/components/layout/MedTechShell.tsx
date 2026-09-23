@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import React, { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { getAppRoleFromClaims, isAdminEligibleAppRole, isMarketingRole, isMedTechRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
+import { AccountNotLinkedNotice } from "@/components/auth/AccountNotLinkedNotice";
+import { hasLinkedStaffRecord, loadAccountLinkContact, type AccountLinkContact } from "@/lib/auth/account-link";
+import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 
 /**
  * MedTechShell — dedicated full-bleed shell for the Med-Tech Shift Cockpit.
@@ -74,6 +77,36 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [checkAccess]);
 
+  // A med-tech login with no staff record cannot have a shift, so the cockpit
+  // would wait forever; show the shared "not set up yet" state (COL-661).
+  // Admins visiting for oversight have no staff record by design and skip this.
+  const pathname = usePathname();
+  const [staffLinked, setStaffLinked] = useState<boolean | null>(null);
+  const [linkContact, setLinkContact] = useState<AccountLinkContact | null>(null);
+  useEffect(() => {
+    if (!isMedTech) return;
+    let active = true;
+    void (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const linked = await hasLinkedStaffRecord(supabase, user.id);
+      if (!active) return;
+      setStaffLinked(linked);
+      if (linked === false) {
+        const facility = await loadCaregiverFacilityContext(supabase);
+        const contact = await loadAccountLinkContact(supabase, facility.ok ? facility.ctx.facilityId : null);
+        if (active) setLinkContact(contact);
+      }
+    })().catch((error) => console.error("[MedTechShell] staff link check failed", error));
+    return () => {
+      active = false;
+    };
+  }, [isMedTech]);
+  const showNotLinked = staffLinked === false && !pathname?.startsWith("/med-tech/acknowledgments");
+
   if (checking || !authorized) {
     return (
       // `dark` class on the outer wrapper forces the dark-variant tokens
@@ -113,7 +146,15 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
           <Link href="/med-tech/acknowledgments" className="rounded border border-border bg-background px-3 py-2 text-sm">Required reading</Link>
           <PilotFeedbackLauncher shellKind="med-tech" compact />
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          {showNotLinked ? (
+            <div className="p-4 md:p-8">
+              <AccountNotLinkedNotice kind="staff" contact={linkContact} />
+            </div>
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );

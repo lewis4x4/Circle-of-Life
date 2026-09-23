@@ -5,14 +5,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AlertTriangle, ClipboardList, Clock3, Home, Pill, User } from "lucide-react";
 
+import { AccountNotLinkedNotice } from "@/components/auth/AccountNotLinkedNotice";
 import { WorkingFacilitySelector } from "@/components/caregiver/WorkingFacilitySelector";
 import { RoundingOutbox } from "@/components/rounding/RoundingOutbox";
 import { BottomNav, BottomNavItem } from "@/components/ui/bottom-nav";
 import { StatusPill } from "@/components/ui/status-pill";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { hasLinkedStaffRecord, loadAccountLinkContact, type AccountLinkContact } from "@/lib/auth/account-link";
 import { getAppRoleFromClaims, isMedTechRole } from "@/lib/auth/app-role";
-import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
+import { isHousekeeperAllowedPath, isStaffLinkOptionalPath } from "@/lib/auth/caregiver-route-access";
 import { loadCaregiverFacilityContextForUser } from "@/lib/caregiver/facility-context";
 import { fetchLiveBoardShifts } from "@/lib/rounding/live-board-fetch";
 import { shiftSpanAt } from "@/lib/rounding/observation-cadence";
@@ -62,6 +64,9 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const [workingFacilityId, setWorkingFacilityId] = useState("");
   const [facilityName, setFacilityName] = useState("Facility");
   const [shiftLabel, setShiftLabel] = useState<string | null>(null);
+  // null until checked (or when the check failed): pages render as before.
+  const [staffLinked, setStaffLinked] = useState<boolean | null>(null);
+  const [linkContact, setLinkContact] = useState<AccountLinkContact | null>(null);
   const effectiveRole = getAppRoleFromClaims(user) || appRole;
   const isHousekeeper = effectiveRole === "housekeeper";
   // Med-techs hold both apps (owner ruling 2026-09-22): the cockpit is their home.
@@ -98,6 +103,20 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         });
         if (!resolved.ok || cancelled) return;
         setFacilityName(resolved.ctx.facilityName ?? "Facility");
+        // Floor logins with no staff record hit 403s and zeros on every page;
+        // show one "not set up yet" state instead (COL-661).
+        if (isMedTech || isHousekeeper) {
+          void Promise.all([
+            hasLinkedStaffRecord(supabase, user.id),
+            loadAccountLinkContact(supabase, resolved.ctx.facilityId),
+          ]).then(([linked, contact]) => {
+            if (cancelled) return;
+            setStaffLinked(linked);
+            setLinkContact(contact);
+          }).catch((error) => {
+            console.error("[CaregiverShell] staff link check failed", error);
+          });
+        }
         refreshShift = () => {
           const attempt = ++shiftRequest;
           if (shiftTimer) clearTimeout(shiftTimer);
@@ -125,7 +144,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
       if (shiftTimer) clearTimeout(shiftTimer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [effectiveRole, loading, organizationId, user?.id, workingFacilityId]);
+  }, [effectiveRole, isHousekeeper, isMedTech, loading, organizationId, user?.id, workingFacilityId]);
 
   const isDeeperWorkflowPage = useMemo(
     () =>
@@ -221,7 +240,13 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
 
           <main className="flex-1 p-4 md:p-8">
             <RoundingOutbox />
-            {workingFacilityId ? <div key={workingFacilityId} className={isDeeperWorkflowPage ? "space-y-4" : undefined}>{children}</div> : <p role="status">Choose your working facility in the header to begin this shift.</p>}
+            {!workingFacilityId ? (
+              <p role="status">Choose your working facility in the header to begin this shift.</p>
+            ) : staffLinked === false && !isStaffLinkOptionalPath(pathname) ? (
+              <AccountNotLinkedNotice kind="staff" contact={linkContact} />
+            ) : (
+              <div key={workingFacilityId} className={isDeeperWorkflowPage ? "space-y-4" : undefined}>{children}</div>
+            )}
           </main>
         </div>
 
