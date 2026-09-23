@@ -212,7 +212,7 @@ export default function AdminWorkspacePageDetail() {
 
   const submitBreakGlass = useCallback(async () => {
     if (breakGlassReason.trim().length < 5) {
-      setNotice("Enter a reason (at least 5 characters) for break-glass access.");
+      setNotice("Enter a reason (at least 5 characters) for opening this private page.");
       return;
     }
     setBreakGlassBusy(true);
@@ -265,7 +265,7 @@ export default function AdminWorkspacePageDetail() {
           <section className="rounded-[var(--radius)] border border-warning/40 bg-warning/10 p-6 space-y-3">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-warning" aria-hidden />
-              Private page — break-glass access
+              Private page — emergency access
             </h2>
             <p className="text-sm text-muted-foreground">
               This page belongs to another employee. As an owner/administrator you may access it
@@ -306,7 +306,7 @@ export default function AdminWorkspacePageDetail() {
                 </StatusPill>
                 <StatusPill tone="muted">{templateLabel(page.template_kind)}</StatusPill>
                 <span className="text-xs text-muted-foreground tabular-nums">v{page.version}</span>
-                {!isOwner ? <StatusPill tone="warning">break-glass view</StatusPill> : null}
+                {!isOwner ? <StatusPill tone="warning">emergency access</StatusPill> : null}
               </div>
               <Button
                 type="button"

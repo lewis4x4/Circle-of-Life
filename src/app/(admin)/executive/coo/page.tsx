@@ -20,7 +20,9 @@ import {
   OfficerLiveViewsNotice,
   officerAlarmTone,
   officerCountLabel,
+  officerAlertsEmptyDescription,
   officerKpiValue,
+  officerRegisterKpi,
   useFacilityNameMap,
   type OfficerLane,
 } from "@/components/executive/officer-dashboard";
@@ -62,10 +64,19 @@ export default function CooDashboardPage() {
   const overdue = kpis?.residentAssurance.overdueTasksCount;
   const certsExpiring = kpis?.workforce.certificationsExpiring30d;
   const deficiencies = kpis?.compliance.openSurveyDeficiencies;
+  const registers = kpis?.registers;
+  const openEscalations = registers?.openRoundingEscalations ?? null;
+  const medErrorsTile = officerRegisterKpi(medErrors, registers?.medicationErrorsRecorded, loading, "Med errors (MTD)", "warning");
+  const outbreaksTile = officerRegisterKpi(outbreaks, registers?.outbreaksRecorded, loading, "Active outbreaks", "danger");
+  const deficienciesLane =
+    registers?.surveyDeficienciesRecorded === false ? "No deficiencies recorded yet" : officerCountLabel(deficiencies, "deficiencies");
 
   const lanes: OfficerLane[] = [
     {
-      stat: officerCountLabel(overdue, "overdue"),
+      stat:
+        openEscalations != null && openEscalations > 0
+          ? `${officerCountLabel(overdue, "overdue")} · ${openEscalations} open escalations`
+          : officerCountLabel(overdue, "overdue"),
       title: "Operations queue",
       description: "Recurring tasks, escalations, and missed checks.",
       href: "/admin/operations",
@@ -77,7 +88,7 @@ export default function CooDashboardPage() {
       href: "/admin/staffing",
     },
     {
-      stat: officerCountLabel(deficiencies, "deficiencies"),
+      stat: deficienciesLane,
       title: "Compliance & readiness",
       description: "Survey readiness and emergency preparedness.",
       href: "/admin/compliance/emergency-preparedness",
@@ -119,8 +130,8 @@ export default function CooDashboardPage() {
 
         <OfficerKpiStrip>
           <OfficerKpiTile label="Open incidents" value={officerKpiValue(openIncidents, loading, "Open incidents")} tone={officerAlarmTone(openIncidents, "danger")} />
-          <OfficerKpiTile label="Med errors (MTD)" value={officerKpiValue(medErrors, loading, "Med errors (MTD)")} tone={officerAlarmTone(medErrors, "warning")} />
-          <OfficerKpiTile label="Active outbreaks" value={officerKpiValue(outbreaks, loading, "Active outbreaks")} tone={officerAlarmTone(outbreaks, "danger")} />
+          <OfficerKpiTile label="Med errors (MTD)" value={medErrorsTile.value} tone={medErrorsTile.tone} />
+          <OfficerKpiTile label="Active outbreaks" value={outbreaksTile.value} tone={outbreaksTile.tone} />
           <OfficerKpiTile label="Overdue tasks" value={officerKpiValue(overdue, loading, "Overdue tasks")} tone={officerAlarmTone(overdue, "warning")} />
         </OfficerKpiStrip>
 
@@ -130,6 +141,7 @@ export default function CooDashboardPage() {
             <OfficerAlertsPanel
               heading="Operational alerts"
               emptyTitle="No open operational alerts"
+              emptyDescription={officerAlertsEmptyDescription(openEscalations)}
               alerts={alerts}
               facilityNameById={facilityNameById}
               loading={loading}

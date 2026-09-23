@@ -1,3 +1,5 @@
+import { emptyRosterCopy } from "@/lib/residents/empty-roster-copy";
+
 /**
  * Quiet Operator copy for caregiver shift overview hero stats.
  * Copy reflects real shift-brief counts — never fabricates residents, alerts, meds, or notes.
@@ -42,8 +44,21 @@ export function caregiverShiftOverviewLoadErrorRetryLabel(): string {
   return "Try again";
 }
 
-/** Title + helper when the whole shift board is empty after a successful load. */
-export function caregiverShiftOverviewEmptyNotice(): CaregiverShiftOverviewEmptyNotice {
+/**
+ * Title + helper when the whole shift board is empty after a successful load.
+ * A facility with nobody on the roster says so (COL-670): asking a nurse about
+ * an assignment cannot help when the building has no residents in Haven.
+ */
+export function caregiverShiftOverviewEmptyNotice(
+  metrics?: CaregiverShiftOverviewMetrics,
+  facilityName?: string | null,
+): CaregiverShiftOverviewEmptyNotice {
+  if (metrics && metrics.census === 0) {
+    return {
+      title: emptyRosterCopy(facilityName),
+      helper: "An administrator adds residents to the roster. Until then rounds, meds and reports have no one to show.",
+    };
+  }
   return {
     title: "No assigned work on this shift yet",
     helper:
@@ -54,9 +69,10 @@ export function caregiverShiftOverviewEmptyNotice(): CaregiverShiftOverviewEmpty
 /** Summary line under the hero stat strip — empty board vs loaded real zeros. */
 export function caregiverShiftOverviewKpiStripHelperLine(
   metrics: CaregiverShiftOverviewMetrics,
+  facilityName?: string | null,
 ): string {
   if (caregiverShiftBoardIsEmpty(metrics)) {
-    return caregiverShiftOverviewEmptyNotice().helper;
+    return caregiverShiftOverviewEmptyNotice(metrics, facilityName).helper;
   }
 
   const zeroLanes = [

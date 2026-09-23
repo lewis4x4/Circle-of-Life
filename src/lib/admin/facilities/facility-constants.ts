@@ -82,7 +82,7 @@ export type RateType = (typeof RATE_TYPES)[number];
 
 export const RATE_TYPE_LABELS: Record<RateType, string> = {
   private_room: 'Private Room (Monthly)',
-  semi_private_room: 'Semi-Private Room (Monthly)',
+  semi_private_room: 'Companion Room (Monthly)',
   respite_daily: 'Respite (Daily)',
   second_occupant: 'Second Occupant (Monthly)',
   community_fee: 'Community Fee (One-Time)',

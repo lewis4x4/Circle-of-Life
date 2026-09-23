@@ -5,6 +5,7 @@ import {
   RISK_NO_TIMESTAMP_POSTED_COPY,
   formatRiskDateTime,
   formatRiskScore,
+  riskPortfolioTone,
 } from "./risk-display-copy";
 
 const EM_DASH = "—";
@@ -40,5 +41,18 @@ describe("formatRiskDateTime", () => {
     const formatted = formatRiskDateTime("2026-04-15T12:00:00.000Z");
     expect(formatted).not.toBe(RISK_NO_TIMESTAMP_POSTED_COPY);
     expect(formatted).not.toBe(EM_DASH);
+  });
+});
+
+describe("riskPortfolioTone (COL-649)", () => {
+  it("is neutral, not green, when no score was posted", () => {
+    expect(riskPortfolioTone(null)).toBe("indigo");
+    expect(riskPortfolioTone(undefined)).toBe("indigo");
+  });
+
+  it("keeps the existing bands for a real score", () => {
+    expect(riskPortfolioTone(40)).toBe("red");
+    expect(riskPortfolioTone(60)).toBe("amber");
+    expect(riskPortfolioTone(90)).toBe("emerald");
   });
 });

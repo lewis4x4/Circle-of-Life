@@ -167,7 +167,7 @@ export default function AdminNewScheduleWeekPage() {
         <CardHeader>
           <CardTitle>Week</CardTitle>
           <CardDescription>
-            Pick any date in the target week — we store the **Monday** of that week ({computedMonday ?? "…"}).
+            Pick any date in the target week — the schedule starts on the Monday of that week ({computedMonday ?? "…"}).
           </CardDescription>
         </CardHeader>
         <CardContent>

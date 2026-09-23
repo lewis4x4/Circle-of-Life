@@ -13,6 +13,10 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatStaffingConsoleExpiredCertStaffName } from "@/lib/staffing/staffing-console-display-copy";
+import {
+  fetchStaffingCoverageScope,
+  type StaffingCoverageScope,
+} from "@/lib/staffing/staffing-coverage-scope";
 import type { Database } from "@/types/database";
 
 export type SnapshotRow = {
@@ -76,6 +80,8 @@ export type StaffingConsoleData = {
   staffOptions: StaffOption[];
   requisitions: RequisitionRow[];
   attendance: AttendanceEventRow[];
+  /** What the gap and credential panels examined; null when that read failed. */
+  coverageScope: StaffingCoverageScope | null;
 };
 
 type SupabaseSnapshotRow = {
@@ -333,7 +339,7 @@ export async function loadStaffingConsole(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database>,
 ): Promise<StaffingConsoleData> {
-  const [snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance] =
+  const [snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope] =
     await Promise.all([
       fetchSnapshotsFromSupabase(selectedFacilityId, supabase),
       fetchExpiredCertificationWarnings(selectedFacilityId, supabase),
@@ -341,7 +347,21 @@ export async function loadStaffingConsole(
       fetchStaffOptions(selectedFacilityId, supabase),
       fetchStaffRequisitions(selectedFacilityId, supabase),
       fetchAttendanceEvents(selectedFacilityId, supabase),
+      fetchCoverageScopeOrNull(selectedFacilityId, supabase),
     ]);
 
-  return { snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance };
+  return { snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope };
+}
+
+/** A failed scope read must not blank the console; the panels say "could not be checked" instead. */
+export async function fetchCoverageScopeOrNull(
+  selectedFacilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
+): Promise<StaffingCoverageScope | null> {
+  try {
+    return await fetchStaffingCoverageScope(selectedFacilityId, supabase);
+  } catch (error) {
+    console.error("[staffing] coverage scope read failed:", error);
+    return null;
+  }
 }

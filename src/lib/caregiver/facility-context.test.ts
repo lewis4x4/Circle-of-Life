@@ -31,7 +31,13 @@ it("reports no preference when neither header has a selection", () => {
 });
 
 function profileClient(result: { data: unknown; error: unknown }) {
-  const query = { select: () => query, eq: () => query, maybeSingle: async () => result };
+  const grants = { data: [], error: null };
+  const query = {
+    select: () => query,
+    eq: () => query,
+    maybeSingle: async () => result,
+    is: async () => grants,
+  };
   return { from: () => query } as unknown as Parameters<typeof loadCaregiverFacilityContextForUser>[0];
 }
 
@@ -44,4 +50,31 @@ it("never hands a database error to staff as the working-facility message", asyn
 it("keeps the staff-facing message for an account with no profile", async () => {
   const result = await loadCaregiverFacilityContextForUser(profileClient({ data: null, error: null }), { userId: "user-1" });
   expect(result).toEqual({ ok: false, error: "Your staff profile is unavailable." });
+});
+
+it("reads the profile and the facility grants at the same time", async () => {
+  const started: string[] = [];
+  let releaseProfile!: () => void;
+  const profileGate = new Promise<void>((resolve) => { releaseProfile = resolve; });
+  const client = {
+    from: (table: string) => {
+      started.push(table);
+      const query = {
+        select: () => query,
+        eq: () => query,
+        in: () => query,
+        order: () => query,
+        then: (resolve: (value: unknown) => void) => resolve({ data: [{ id: "a", name: "A", organization_id: "org", timezone: null }], error: null }),
+        maybeSingle: async () => { await profileGate; return { data: { organization_id: "org", app_role: "med_tech" }, error: null }; },
+        is: (column: string) => (column === "revoked_at" ? Promise.resolve({ data: [{ facility_id: "a" }], error: null }) : query),
+      };
+      return query;
+    },
+  } as unknown as Parameters<typeof loadCaregiverFacilityContextForUser>[0];
+  const pending = loadCaregiverFacilityContextForUser(client, { userId: "user-1" });
+  await Promise.resolve();
+  expect(started).toEqual(["user_profiles", "user_facility_access"]);
+  releaseProfile();
+  const result = await pending;
+  expect(result).toEqual({ ok: true, ctx: { facilityId: "a", organizationId: "org", facilityName: "A", timeZone: "America/New_York" } });
 });

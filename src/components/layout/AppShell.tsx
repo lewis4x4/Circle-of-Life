@@ -48,6 +48,7 @@ import { useSurveyVisitSession } from "@/hooks/useSurveyVisitSession";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { createClient } from "@/lib/supabase/client";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
+import { singleFacilityDefault } from "@/lib/facilities/single-facility-default";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,7 +75,6 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
-import { isFacilityOperatorRole } from "@/lib/auth/app-role";
 import { applyExecutiveCommandNavToItems } from "@/lib/auth/executive-nav-access";
 import { getRoleDashboardConfig, getResolvedRoleLabel } from "@/lib/auth/dashboard-routing";
 import {
@@ -394,6 +394,22 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     safeSelectedFacilityId,
   ]);
 
+  useEffect(() => {
+    if (authLoading || currentUserId == null || facilitiesLoading || facilitiesLoadFailed) return;
+    // COL-651: one accessible building is the scope. The cookie effect above
+    // then moves the server's scope and refreshes.
+    const onlyFacilityId = singleFacilityDefault(visibleFacilities, safeSelectedFacilityId);
+    if (onlyFacilityId) setSelectedFacility(onlyFacilityId);
+  }, [
+    authLoading,
+    currentUserId,
+    facilitiesLoadFailed,
+    facilitiesLoading,
+    safeSelectedFacilityId,
+    setSelectedFacility,
+    visibleFacilities,
+  ]);
+
   const handleFacilityScopeChange = useCallback(
     (facilityId: string | null) => {
       if (setSelectedFacility(facilityId) === false) return;
@@ -476,13 +492,12 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     />
   );
 
-  // COL-593: a facility operator with exactly one building gets a static chip
+  // COL-593 / COL-651: anyone with exactly one building gets a static chip
   // that reads the building's name — there is nothing to switch to, and
-  // "All facilities" is not a scope Home can render for.
+  // "All facilities" would only dead-end their facility-gated pages. The
+  // effect above defaults the scope to that building.
   const singleOperatorFacility =
-    !facilityControlLoading && isFacilityOperatorRole(appRole) && visibleFacilities.length === 1
-      ? visibleFacilities[0]
-      : null;
+    !facilityControlLoading && visibleFacilities.length === 1 ? visibleFacilities[0] : null;
 
   const renderFacilityScope = () => singleOperatorFacility ? (
     <span
@@ -843,7 +858,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
               <PopoverTitle className="px-2 pb-2">More actions</PopoverTitle>
               <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); window.dispatchEvent(new CustomEvent("grace:open")); }}><MessageSquare className="size-4" aria-hidden />Ask Grace</button>
               <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); window.dispatchEvent(new CustomEvent("haven-insight:open")); }}><LineChart className="size-4" aria-hidden />Haven Insight</button>
-              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); setMobileFeedbackOpen(true); }}><MessageSquareWarning className="size-4" aria-hidden />Pilot feedback</button>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); setMobileFeedbackOpen(true); }}><MessageSquareWarning className="size-4" aria-hidden />Send feedback</button>
               <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setMobileMoreOpen(false); navigate("/admin/settings/notifications"); }}><Bell className="size-4" aria-hidden />Notification settings</button>
               <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setMobileMoreOpen(false); setTheme(theme === "dark" ? "light" : "dark"); }}>{theme === "dark" ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}Switch to {theme === "dark" ? "light" : "dark"} theme</button>
               {!suppressSurveyVisitChrome && <div className="mt-2 space-y-2 border-t border-border px-2 pt-3"><p className="text-xs font-medium">Survey visit tools</p>{safeSelectedFacilityId ? <SurveyVisitShellToggle survey={surveyVisit} /> : <p className="text-xs text-muted-foreground">Select a facility to use survey visit tools.</p>}</div>}

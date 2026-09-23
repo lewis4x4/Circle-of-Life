@@ -181,7 +181,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
         </main>
 
         {residentLinked === false ? null : (
-          <BottomNav aria-label="Family navigation">
+          <BottomNav aria-label="Family navigation" className="md:mx-auto md:max-w-md md:rounded-t-2xl md:border-x">
             {navItems.map((item) => (
               <BottomNavItem
                 key={item.href}

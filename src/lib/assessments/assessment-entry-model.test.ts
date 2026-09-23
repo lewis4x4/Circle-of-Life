@@ -87,7 +87,7 @@ describe("seeded instrument definitions (provenance)", () => {
     expect(seeded.morse_fall.default_frequency_days).toBe(90);
     expect(seeded.braden.default_frequency_days).toBe(90);
     expect(seeded.phq9.default_frequency_days).toBe(180);
-    expect(ASSESSMENT_SCHEDULE_BASIS_COPY).toBe("Haven default interval");
+    expect(ASSESSMENT_SCHEDULE_BASIS_COPY).toBe("standard schedule");
   });
 
   it("seeds labels only — no option definitions or item instructions yet", () => {
