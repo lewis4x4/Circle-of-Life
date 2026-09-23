@@ -137,6 +137,8 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
 };
 
 export const NOT_A_GATE: Record<string, string> = {
+  "src/app/(admin)/admin/compliance/page.tsx":
+    "Code comment (COL-649) explaining why the server no longer shows org-wide counts under a gate banner.",
   "src/app/(admin)/admin/operations/templates/page.tsx":
     "Validation for a template's own facility field: org-wide templates need none, facility-scoped ones pick one in the form.",
   "src/app/(admin)/admin/rounding/reports/page.tsx":
