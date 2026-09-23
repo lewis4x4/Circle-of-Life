@@ -1,5 +1,7 @@
 # Phase 1 Acceptance Report — Haven ALF
 
+> **Role note (2026-09-22, COL-615):** this is a historical record. The `nurse`, `caregiver`, `dietary` and `dietary_aide` login roles it names were retired by migration 468 (nurse and caregiver folded into `med_tech`, dietary and dietary_aide into `cook`). For the current role model see the Roles section in `AGENTS.md`.
+
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-04-04 |

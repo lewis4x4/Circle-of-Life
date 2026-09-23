@@ -251,7 +251,7 @@ CREATE INDEX idx_staffing_noncompliant ON staffing_ratio_snapshots(facility_id) 
 ```sql
 ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins see staff in accessible facilities" ON staff FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Staff see own record" ON staff FOR SELECT
   USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND user_id = auth.uid());
 CREATE POLICY "Admin can manage staff" ON staff FOR ALL
@@ -259,17 +259,17 @@ CREATE POLICY "Admin can manage staff" ON staff FOR ALL
 
 ALTER TABLE staff_certifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins see certs" ON staff_certifications FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Staff see own certs" ON staff_certifications FOR SELECT
   USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND (SELECT user_id FROM staff WHERE id = staff_id) = auth.uid());
 
 ALTER TABLE schedules ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see published schedules" ON schedules FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND (status = 'published' OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND (status = 'published' OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')));
 
 ALTER TABLE shift_assignments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see own assignments" ON shift_assignments FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND (staff_id IN (SELECT id FROM staff WHERE user_id = auth.uid()) OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND (staff_id IN (SELECT id FROM staff WHERE user_id = auth.uid()) OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')));
 
 ALTER TABLE time_records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see own time" ON time_records FOR SELECT
@@ -279,7 +279,7 @@ CREATE POLICY "Staff clock in/out" ON time_records FOR INSERT
 
 ALTER TABLE staffing_ratio_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins see ratios" ON staffing_ratio_snapshots FOR SELECT
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 -- Audit + updated_at triggers
 CREATE TRIGGER audit_staff AFTER INSERT OR UPDATE OR DELETE ON staff FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
@@ -304,7 +304,7 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON time_records FOR EACH ROW EXECUTE
 | Evening | 1 staff : 10 residents | 3:00 PM – 11:00 PM |
 | Night | 1 staff : 20 residents | 11:00 PM – 7:00 AM |
 
-**Rule:** Staffing ratio snapshot is calculated every 30 minutes. If `ratio > required_ratio`, generate immediate alert to facility_admin and on-shift nurse. Alert includes: current count, required count, shortfall, and suggested actions (call in PRN staff, contact float pool at sister facility, contact agency).
+**Rule:** Staffing ratio snapshot is calculated every 30 minutes. If `ratio > required_ratio`, generate immediate alert to facility_admin and the on-shift Med-Tech. Alert includes: current count, required count, shortfall, and suggested actions (call in PRN staff, contact float pool at sister facility, contact agency).
 
 ### Certification Expiration Alerts
 | Days Until Expiration | Action |
@@ -368,13 +368,13 @@ Validation failures block publishing and display specific violations.
 | PUT | `/staff-certifications/:id` | Required | facility_admin+ | Update certification |
 | GET | `/certifications/expiring` | Required | facility_admin+ | List certs expiring within N days. Param: `days` (default 90) |
 | GET | `/schedules` | Required | Staff | List schedules. Params: `facility_id`, `week_start` |
-| POST | `/schedules` | Required | facility_admin, nurse | Create schedule draft |
-| PUT | `/schedules/:id` | Required | facility_admin, nurse | Update schedule |
+| POST | `/schedules` | Required | facility_admin, med_tech | Create schedule draft |
+| PUT | `/schedules/:id` | Required | facility_admin, med_tech | Update schedule |
 | POST | `/schedules/:id/publish` | Required | facility_admin | Publish schedule (runs validation) |
 | GET | `/schedules/:id/assignments` | Required | Staff | List shift assignments for a schedule |
-| POST | `/schedules/:id/assignments` | Required | facility_admin, nurse | Add shift assignment |
-| PUT | `/shift-assignments/:id` | Required | facility_admin, nurse | Update assignment |
-| DELETE | `/shift-assignments/:id` | Required | facility_admin, nurse | Remove assignment |
+| POST | `/schedules/:id/assignments` | Required | facility_admin, med_tech | Add shift assignment |
+| PUT | `/shift-assignments/:id` | Required | facility_admin, med_tech | Update assignment |
+| DELETE | `/shift-assignments/:id` | Required | facility_admin, med_tech | Remove assignment |
 | POST | `/time-records/clock-in` | Required | Staff (self) | Clock in with GPS |
 | POST | `/time-records/clock-out` | Required | Staff (self) | Clock out |
 | GET | `/time-records` | Required | Admin+ or self | List time records. Params: `staff_id`, `date_from`, `date_to` |
@@ -382,7 +382,7 @@ Validation failures block publishing and display specific violations.
 | POST | `/shift-swap-requests` | Required | Staff (self) | Create swap request |
 | GET | `/shift-swap-requests/open` | Required | Staff | List open swap requests at facility |
 | PUT | `/shift-swap-requests/:id/claim` | Required | Staff | Claim an open swap |
-| PUT | `/shift-swap-requests/:id/approve` | Required | facility_admin, nurse | Approve swap |
+| PUT | `/shift-swap-requests/:id/approve` | Required | facility_admin, med_tech | Approve swap |
 | GET | `/facilities/:id/staffing-ratio` | Required | Admin+ | Current staffing ratio |
 | GET | `/facilities/:id/staffing-ratio/history` | Required | Admin+ | Staffing ratio history |
 
@@ -468,7 +468,7 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 
 ### Track D — shift swap approve / deny (shipped)
 
-**D37:** **`/admin/shift-swaps`** — **Pending** requests: **Approve** (`approved_at`, `approved_by`, `status=approved`) or **Deny** (required **`denied_reason`**, `status=denied`). **No** new DDL (RLS **`staff_update_shift_swap_requests`** already allows `facility_admin` / `nurse`).
+**D37:** **`/admin/shift-swaps`** — **Pending** requests: **Approve** (`approved_at`, `approved_by`, `status=approved`) or **Deny** (required **`denied_reason`**, `status=denied`). **No** new DDL (RLS **`staff_update_shift_swap_requests`** already allows `facility_admin` / `nurse`; since migration 468 that grant is `med_tech`).
 
 ---
 

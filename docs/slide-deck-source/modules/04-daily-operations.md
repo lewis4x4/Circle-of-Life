@@ -1,7 +1,7 @@
 # 04 Daily Operations And Logging
 
 - Spec maturity: `FULL + COL notes`
-- Repo posture: core caregiver-facing workflows are shipped
+- Repo posture: core floor-app workflows are shipped
 
 ## What It Covers
 
@@ -9,9 +9,9 @@ The frontline execution layer for shift documentation, ADLs, behavior tracking, 
 
 ## Primary Users
 
-- Caregivers
+- Med-Techs on the floor app
 - Med-tech users
-- Nurses reviewing shift activity
+- Med-Techs and administrators reviewing shift activity
 - Facility operators watching documentation completeness
 
 ## Key Workflows

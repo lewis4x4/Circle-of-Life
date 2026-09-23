@@ -11,7 +11,7 @@ The structured move-in workflow that takes a person from pending admission throu
 
 - Admissions staff
 - Facility admins
-- Coordinators and nurses involved in readiness checks
+- Coordinators and Med-Techs involved in readiness checks
 
 ## Key Workflows
 
