@@ -387,7 +387,7 @@ export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS, auxiliary: 
 
 export const PILLAR_ITEM_CAP = 9;
 
-export function pillarsForRole(config: DashboardConfig): Pillar[] {
+export function pillarsForRole(config: DashboardConfig, role?: string | null): Pillar[] {
   const groups = new Set(config.visibleGroups.map((group) =>
     group === "Clinical Ops" ? "clinical" : group === "Quality & Risk" ? "quality" : group.toLowerCase()));
   const keys = config.visibleItemKeys ? new Set(config.visibleItemKeys) : null;
@@ -399,6 +399,7 @@ export function pillarsForRole(config: DashboardConfig): Pillar[] {
           (item) => !keys || keys.has(item.key) || (item.key === "clinical-desk" && keys.has("assessments")),
         ),
         config.visibleItemKeys,
+        role,
       ),
     }))
     .filter((pillar) => pillar.items.length > 0);
