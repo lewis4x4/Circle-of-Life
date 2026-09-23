@@ -5,6 +5,7 @@ import {
   admissionsHubCalendarUpperBoundUtc,
   type AdmissionsHubScope,
 } from "@/lib/admin/admissions/hub-scope";
+import { requireHeadCount } from "@/lib/metrics/require-head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -323,17 +324,17 @@ export async function loadAdmissionsHubBootstrap(
     triage: (triList.data ?? []) as AdmissionsHubTriageRow[],
     conferences: (confList.data ?? []) as AdmissionsHubConferenceRow[],
     onboardingState,
-    referralMetrics: { activePipeline: pipeCt.count ?? 0 },
+    referralMetrics: { activePipeline: requireHeadCount(pipeCt, "Active pipeline") },
     admissionMetrics: {
-      pending: admPendCt.count ?? 0,
-      reserved: admResCt.count ?? 0,
-      moveIn: admMoveCt.count ?? 0,
+      pending: requireHeadCount(admPendCt, "Pending admissions"),
+      reserved: requireHeadCount(admResCt, "Reserved admissions"),
+      moveIn: requireHeadCount(admMoveCt, "Move-ins"),
     },
-    dischargeMetrics: { inReview: disRevCt.count ?? 0 },
+    dischargeMetrics: { inReview: requireHeadCount(disRevCt, "Discharges in review") },
     familyMetrics: {
-      triage: famTriageCt.count ?? 0,
-      conferences: famConfCt.count ?? 0,
-      consentsPending: famConsentCt.count ?? 0,
+      triage: requireHeadCount(famTriageCt, "Family triage"),
+      conferences: requireHeadCount(famConfCt, "Care conferences"),
+      consentsPending: requireHeadCount(famConsentCt, "Family consents"),
     },
   };
 }

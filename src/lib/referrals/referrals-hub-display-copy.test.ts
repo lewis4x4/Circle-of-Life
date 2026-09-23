@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatReferralsHubHl7Summary,
   formatReferralsHubOutreachWeek,
   formatReferralsHubReferralSource,
   formatReferralsHubTourScheduledFor,
@@ -136,5 +137,17 @@ describe("formatReferralsHubTourScheduledFor", () => {
     expect(formatted).toBeTruthy();
     expect(formatted).not.toBe(REFERRALS_HUB_NO_TOUR_TIME_COPY);
     expect(formatted).not.toBe(EM_DASH);
+  });
+});
+
+describe("formatReferralsHubHl7Summary (COL-649)", () => {
+  it("does not print Pending 0, failed 0 when the counts were not read", () => {
+    const copy = formatReferralsHubHl7Summary({ loading: false, pending: null, failed: null });
+    expect(copy).not.toMatch(/Pending 0/);
+    expect(copy).toMatch(/could not be read/);
+  });
+
+  it("prints real counts", () => {
+    expect(formatReferralsHubHl7Summary({ loading: false, pending: 0, failed: 2 })).toMatch(/^Pending 0, failed 2\./);
   });
 });

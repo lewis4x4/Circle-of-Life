@@ -89,7 +89,10 @@ import {
   RESPONSIBLE_PARTY_CONTACT_NOTE,
 } from "@/lib/residents/resident-responsible-party";
 import { RESIDENT_NO_UNIT_COPY as NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
-import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
+import {
+  formatResidentOverviewGenderLabel,
+  formatResidentOverviewSpecialistCount,
+} from "@/lib/residents/resident-overview-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -1051,7 +1054,7 @@ export function ResidentDetailOverviewClient({
                 <QuietButton onClick={() => openEditor("primary_physician")} label="+ Add primary care physician" />
               )}
               <p className="mt-2 text-[11px] text-muted-foreground">
-                Specialist consults on file: <span className="font-semibold text-foreground">{detail.specialistConsultActiveCount}</span>
+                Specialist consults on file: <span className="font-semibold text-foreground">{formatResidentOverviewSpecialistCount(detail.specialistConsultActiveCount)}</span>
               </p>
             </div>
           </RecordDetailSection>
