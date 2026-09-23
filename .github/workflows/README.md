@@ -6,6 +6,7 @@
 | `main-ci-failure-alert.yml` | Preserves established main-CI incident routing; an independent observer-health job performs five-minute catch-up, audits old reruns, and retains unfinished runs. |
 | `netlify-production-failure-alert.yml` | Observes the exact Haven production site every five minutes and on main pushes; maintains one assigned production incident with distinct-deploy escalation and publication-backed recovery. Finite dispatch supports isolated synthetic replay. |
 | `ci-nightly.yml` | Runs nightly extended CI (full gate suite + server route probe). |
+| `perf-route-budget.yml` | Nightly and on dispatch: loads the COL-660 slow routes one at a time against a local `next start` signed in as the CI screenshot account and fails when a route exceeds its budget in `perf-route-budget.json`. |
 | `ci-ui-gates.yml` | Runs UI-specific quality gates (bundle budget, a11y, visual regression and related checks). |
 | `homewood-launch-tests.yml` | Runs Homewood launch workflow Playwright tests (gated by UI-gates repo variable). |
 | `style-regression.yml` | Blocks known style anti-pattern regressions in `src/` on PRs. |
