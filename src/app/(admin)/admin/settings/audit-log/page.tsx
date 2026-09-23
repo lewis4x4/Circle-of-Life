@@ -1,5 +1,3 @@
-import { notFound } from "next/navigation";
-
 import { SettingsShell } from "@/components/v2/settings/SettingsShell";
 import {
   auditLogActorIdIsPosted,
@@ -8,13 +6,11 @@ import {
   formatAuditLogFacilityIdDisplay,
   formatAuditLogNoteDisplay,
 } from "@/lib/admin/settings/audit-log-display-copy";
-import { uiV2 } from "@/lib/flags";
 import { loadV2AuditLog } from "@/lib/v2-audit-log";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsAuditLogPage() {
-  if (!uiV2()) notFound();
   const load = await loadV2AuditLog(100);
 
   return (

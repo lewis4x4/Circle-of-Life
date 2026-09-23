@@ -32,7 +32,7 @@ const NOT_YET_CONVERTED = new Set<string>([
   "src/app/(admin)/admin/knowledge/coverage/page.tsx",
   "src/app/(admin)/admin/residents/[id]/assessments/new/page.tsx",
   "src/app/(admin)/admin/rounding/watchlist/[residentId]/page.tsx",
-  "src/app/(admin)/admin/v2/settings/audit-log/page.tsx",
+  "src/app/(admin)/admin/settings/audit-log/page.tsx",
   "src/app/(admin)/executive/reports/page.tsx",
   "src/app/(admin)/executive/scenarios/page.tsx",
   "src/app/(admin)/executive/standup/[week]/board/page.tsx",
