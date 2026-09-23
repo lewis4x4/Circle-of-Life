@@ -277,7 +277,7 @@ export default function CaregiverResidentConditionChangePage() {
                 use your facility escalation protocol and nurse chain.
               </>
             ) : (
-              "Structured report saved to the clinical record (RLS-scoped)."
+              "Saved to the resident's clinical record."
             )}
           </CardDescription>
         </CardHeader>

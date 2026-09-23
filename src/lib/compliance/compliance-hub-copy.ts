@@ -3,6 +3,15 @@
  * Copy reflects real data gaps — never fabricates survey scores, due dates, or deficiencies.
  */
 
+import {
+  canClaimAllClear,
+  metricLoading,
+  metricNeedsFacility,
+  metricUnavailable,
+  metricValue,
+  type MetricState,
+} from "@/lib/metrics/metric-state";
+
 /** Label for a POC submission due date — never a silent dash. */
 export function compliancePocDueDateLabel(dueDate: string | null): string {
   if (dueDate) return dueDate;
@@ -65,4 +74,49 @@ export function complianceSurveyVisitStatusCopy(surveyVisitActive: boolean | nul
 export function complianceSnapshotTileDisplay(value: number | null): string | number {
   if (value === null) return complianceSnapshotTileLoadingCopy();
   return value;
+}
+
+/**
+ * State for one hub KPI tile. A failed snapshot is "Unavailable", never 0
+ * (COL-649). The hub passes `facilityReady: true` for its tiles because the
+ * snapshot rolls up across facilities under All facilities (COL-651).
+ */
+export function complianceTileState(input: {
+  facilityReady: boolean;
+  loading: boolean;
+  error: string | null;
+  value: number | null | undefined;
+}): MetricState<number> {
+  if (!input.facilityReady) return metricNeedsFacility();
+  if (input.loading) return metricLoading();
+  if (input.error || typeof input.value !== "number") return metricUnavailable();
+  return metricValue(input.value);
+}
+
+/** Heading shown only when `complianceDeficienciesAllClear` is true. */
+export const COMPLIANCE_DEFICIENCIES_ALL_CLEAR_TITLE = "All Clear";
+
+/** "All Clear" on open deficiencies only after a successful read for a chosen facility. */
+export function complianceDeficienciesAllClear(input: {
+  facilityReady: boolean;
+  loading: boolean;
+  error: string | null;
+  openCount: number;
+}): boolean {
+  return canClaimAllClear({
+    loading: input.loading,
+    error: input.error,
+    scopeReady: input.facilityReady,
+    scopeSize: input.facilityReady ? 1 : 0,
+    issueCount: input.openCount,
+  });
+}
+
+/** Header alert for overdue emergency drills and checks; null when none are overdue. */
+export function complianceOverdueEmergencyAlert(items: ReadonlyArray<{ overdue: boolean }>): string | null {
+  const overdue = items.filter((i) => i.overdue).length;
+  if (overdue === 0) return null;
+  return overdue === 1
+    ? "1 emergency drill or check is overdue."
+    : `${overdue} emergency drills or checks are overdue.`;
 }

@@ -26,6 +26,7 @@ import {
 import { formatInsuranceClaimNumber } from "@/lib/insurance/claims-display-copy";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Claim = Database["public"]["Tables"]["insurance_claims"]["Row"];
 type Activity = Database["public"]["Tables"]["claim_activities"]["Row"];
@@ -161,7 +162,7 @@ export default function InsuranceClaimDetailPage() {
       <InsuranceHubNav />
       <RecordDetailHeader
         title="Claim"
-        subtitle={`${formatInsuranceClaimNumber(claim.claim_number)} · ${claim.status.replace(/_/g, " ")}`}
+        subtitle={`${formatInsuranceClaimNumber(claim.claim_number)} · ${enumLabel(claim.status)}`}
         backLink={{ label: "Back to claims", href: "/admin/insurance/claims" }}
       />
 

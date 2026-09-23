@@ -28,9 +28,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { metricLoading, metricUnavailable, metricValue } from "@/lib/metrics/metric-state";
+import { summarizeRosterCerts } from "@/lib/staff/roster-cert-summary";
 
 const DEFAULT_FILTERS = {
   search: "",
@@ -270,7 +272,9 @@ export function AdminStaffPageClient({
   );
 
   const activeCount = rows.filter((row) => row.status === "active").length;
-  const certRiskCount = rows.filter((row) => row.certifications !== "current").length;
+  const certSummary = summarizeRosterCerts(rows);
+  // While loading or after a failed read the tiles say so instead of counting an empty list.
+  const rosterRead = isLoading ? metricLoading() : error ? metricUnavailable() : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -278,7 +282,7 @@ export function AdminStaffPageClient({
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
-            Staffing roster
+            Staff roster
           </h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
             Roster from staff, certifications, and upcoming shift assignments.
@@ -313,12 +317,13 @@ export function AdminStaffPageClient({
       <div className="grid max-w-2xl grid-cols-2 gap-3">
         <StatCard
           label="Active roster"
-          value={activeCount}
+          state={rosterRead ?? metricValue(activeCount)}
           icon={<UserRoundCheck aria-hidden />}
         />
         <StatCard
           label="Cert attention"
-          value={certRiskCount}
+          state={rosterRead ?? certSummary.attention}
+          description={rosterRead ? undefined : certSummary.description}
           icon={<ShieldAlert aria-hidden />}
           attentionTone="warning"
         />
@@ -400,7 +405,8 @@ export function AdminStaffPageClient({
             </>
           }
         >
-          <TableRowHeader className="hidden lg:flex">
+          <TableRowList label="Staff roster">
+          <TableRowHeader>
             <div className="flex-[3]">Staff</div>
             <div className="flex-1">Status</div>
             <div className="flex-1">Recorded credentials</div>
@@ -459,6 +465,7 @@ export function AdminStaffPageClient({
               </MotionItem>
             ))}
           </MotionList>
+          </TableRowList>
         </AdminOperationalListPanel>
       ) : null}
     </div>

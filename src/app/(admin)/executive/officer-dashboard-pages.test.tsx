@@ -1,12 +1,11 @@
 import React from "react";
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 
-import CfoDashboardPage, { CFO_LIVE_TABS } from "./cfo/page";
-import CooDashboardPage, { COO_LIVE_TABS } from "./coo/page";
+import CfoDashboardPage from "./cfo/page";
+import CooDashboardPage from "./coo/page";
 import { EXEC_KPI_METRICS_VERSION, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 
 const repoRoot = process.cwd();
@@ -100,32 +99,16 @@ describe("officer dashboard pages — training-week click paths", () => {
     }
   });
 
-  it("CFO board exposes only live pills and never renders stub panes", async () => {
-    const user = userEvent.setup();
+  it("CFO board uses the shared executive strip instead of its own pills and never renders stub panes (COL-655)", () => {
     const { container } = render(<CfoDashboardPage />);
 
-    expect(screen.getByTestId("officer-live-views-notice")).toHaveTextContent("3 live views on this board");
-
-    for (const tab of CFO_STUB_TABS) {
+    expect(screen.getAllByRole("navigation", { name: "Executive intelligence sections" }).length).toBeGreaterThan(0);
+    for (const tab of [...CFO_STUB_TABS, "Overview", "Scenarios", "Haven Insight"]) {
       expect(screen.queryByRole("button", { name: tab })).not.toBeInTheDocument();
     }
-
-    for (const tab of CFO_LIVE_TABS) {
-      await user.click(screen.getByRole("button", { name: tab }));
-      expectNoStubCopy(container);
-    }
-
-    await user.click(screen.getByRole("button", { name: "Overview" }));
+    expectNoStubCopy(container);
     expect(screen.getByText("Jump into the live finance queues.")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Scenarios" }));
-    expect(screen.getByRole("link", { name: /Open scenario planner/i })).toHaveAttribute(
-      "href",
-      "/admin/executive/scenarios",
-    );
-
-    await user.click(screen.getByRole("button", { name: "Haven Insight" }));
-    expect(screen.getByRole("link", { name: /Open Haven Insight/i })).toHaveAttribute("href", "/admin/executive/nlq");
+    expect(screen.getByRole("link", { name: /Scenarios/ })).toHaveAttribute("href", "/admin/executive/scenarios");
   });
 
   it("CFO occupancy tile labels portfolio scope when no facility is selected", () => {
@@ -156,25 +139,14 @@ describe("officer dashboard pages — training-week click paths", () => {
     expect(screen.queryByText("Portfolio occupancy")).not.toBeInTheDocument();
   });
 
-  it("COO board exposes only live pills and never renders stub panes", async () => {
-    const user = userEvent.setup();
+  it("COO board uses the shared executive strip instead of its own pills and never renders stub panes (COL-655)", () => {
     const { container } = render(<CooDashboardPage />);
 
-    expect(screen.getByTestId("officer-live-views-notice")).toHaveTextContent("2 live views on this board");
-
-    for (const tab of COO_STUB_TABS) {
+    expect(screen.getAllByRole("navigation", { name: "Executive intelligence sections" }).length).toBeGreaterThan(0);
+    for (const tab of [...COO_STUB_TABS, "Operations Hub", "Haven Insight"]) {
       expect(screen.queryByRole("button", { name: tab })).not.toBeInTheDocument();
     }
-
-    for (const tab of COO_LIVE_TABS) {
-      await user.click(screen.getByRole("button", { name: tab }));
-      expectNoStubCopy(container);
-    }
-
-    await user.click(screen.getByRole("button", { name: "Operations Hub" }));
+    expectNoStubCopy(container);
     expect(screen.getByText("Jump into the live operating queues.")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Haven Insight" }));
-    expect(screen.getByRole("link", { name: /Open Haven Insight/i })).toHaveAttribute("href", "/admin/executive/nlq");
   });
 });

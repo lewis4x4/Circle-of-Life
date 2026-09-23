@@ -27,6 +27,7 @@ import {
   Panel,
   type Choice,
 } from "./benefits-ui";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const programChoices: Choice[] = BENEFITS_PROGRAMS.map((value) => ({
   value,
@@ -375,7 +376,7 @@ export function BenefitsQueue({
                   </Link>
                   <p className="text-sm text-muted-foreground">
                     {options.facilities.find((f) => f.id === resident.facility_id)?.name ?? "Facility"} ·{" "}
-                    {resident.payer_type.replace(/_/g, " ")}
+                    {enumLabel(resident.payer_type)}
                     {resident.medicaid_authorization_end
                       ? ` · authorization ends ${resident.medicaid_authorization_end}`
                       : " · no authorization end date on file"}

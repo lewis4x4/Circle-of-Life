@@ -28,6 +28,7 @@ import type { CarePlanPrintPacket } from "@/lib/care-plans/care-plan-print-packe
 import { formatMedicationOrdersAttachment, formatMedicationSystemOfRecord } from "@/lib/admin/facilities/medication-system-of-record";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /**
  * Survey / family printout of one care-plan version, served outside the app
@@ -149,7 +150,7 @@ export default function CarePlanPrintSheetPage() {
         <section className="mt-4 grid grid-cols-3 gap-4 border-b border-neutral-300 pb-4 text-sm">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-700">Plan</p>
-            <p className="tabular-nums">{formatCarePlanVersion(packet.plan.version)} · {packet.plan.status.replace(/_/g, " ")}</p>
+            <p className="tabular-nums">{formatCarePlanVersion(packet.plan.version)} · {enumLabel(packet.plan.status)}</p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-700">Effective</p>

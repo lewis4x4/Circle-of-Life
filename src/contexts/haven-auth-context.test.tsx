@@ -168,4 +168,60 @@ describe("HavenAuthProvider", () => {
     expect(screen.getByTestId("organization-id")).toHaveTextContent("none");
     expect(authMocks.primeClientRoleContext).not.toHaveBeenCalled();
   });
+
+  it("keeps the signed-in identity on screen through a same-user token refresh (COL-674)", async () => {
+    let onAuthStateChange: ((event: string, session: Session | null) => void) | undefined;
+    const current = sessionFor("current-user", "current-organization");
+    const actor = deferred<{ data: unknown; error: null }>();
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: { user_id: "current-user", app_role: "facility_admin", organization_id: "current-organization", is_managed: true },
+        error: null,
+      })
+      .mockImplementationOnce(() => actor.promise);
+    const supabase = {
+      auth: {
+        getSession: vi.fn().mockResolvedValue({ data: { session: current }, error: null }),
+        onAuthStateChange: vi.fn((callback: (event: string, session: Session | null) => void) => {
+          onAuthStateChange = callback;
+          return { data: { subscription: { unsubscribe: vi.fn() } } };
+        }),
+      },
+      rpc,
+    };
+    authMocks.createClient.mockReturnValue(supabase);
+
+    render(
+      <HavenAuthProvider>
+        <AuthStateProbe />
+      </HavenAuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId("user-id")).toHaveTextContent("current-user"));
+
+    await act(async () => {
+      onAuthStateChange?.("INITIAL_SESSION", current);
+      await Promise.resolve();
+    });
+    expect(rpc).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      onAuthStateChange?.("TOKEN_REFRESHED", current);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(rpc).toHaveBeenCalledTimes(2));
+    // While the background re-read is in flight, nothing flips back to loading.
+    expect(screen.getByTestId("user-id")).toHaveTextContent("current-user");
+    expect(screen.getByTestId("loading")).toHaveTextContent("false");
+    expect(authMocks.clearClientRoleContext).not.toHaveBeenCalled();
+
+    await act(async () => {
+      actor.resolve({
+        data: { user_id: "current-user", app_role: "facility_admin", organization_id: "current-organization", is_managed: true },
+        error: null,
+      });
+      await actor.promise;
+    });
+    expect(screen.getByTestId("user-id")).toHaveTextContent("current-user");
+  });
 });

@@ -19,6 +19,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type IncidentSeverity = Database["public"]["Enums"]["incident_severity"];
 type StaffRole = Database["public"]["Enums"]["staff_role"];
@@ -107,9 +108,11 @@ export default function AdminNotificationsSettingsPage() {
 
   const [routeName, setRouteName] = useState("");
   const [routeFacilityId, setRouteFacilityId] = useState("");
-  const [routeSeverity, setRouteSeverity] = useState<RouteRow["severity_min"]>("level_2");
-  const [routeChannels, setRouteChannels] = useState<string[]>(["email", "push"]);
-  const [routeRoles, setRouteRoles] = useState<StaffRole[]>(["administrator", "assistant_administrator"]);
+  // A new route starts with nothing chosen: pre-ticked channels and recipients were saved
+  // by whoever did not untick them (COL-653).
+  const [routeSeverity, setRouteSeverity] = useState<RouteRow["severity_min"] | "">("");
+  const [routeChannels, setRouteChannels] = useState<string[]>([]);
+  const [routeRoles, setRouteRoles] = useState<StaffRole[]>([]);
   const [routeActive, setRouteActive] = useState(true);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -276,8 +279,16 @@ export default function AdminNotificationsSettingsPage() {
       return;
     }
 
+    if (!routeSeverity) {
+      setErr("Choose the severity the route starts at.");
+      return;
+    }
     if (routeChannels.length === 0) {
       setErr("Choose at least one channel.");
+      return;
+    }
+    if (routeRoles.length === 0) {
+      setErr("Choose at least one role to notify.");
       return;
     }
     const channels = routeChannels;
@@ -317,9 +328,9 @@ export default function AdminNotificationsSettingsPage() {
 
       setRouteName("");
       setRouteFacilityId("");
-      setRouteSeverity("level_2");
-      setRouteChannels(["email", "push"]);
-      setRouteRoles(["administrator", "assistant_administrator"]);
+      setRouteSeverity("");
+      setRouteChannels([]);
+      setRouteRoles([]);
       setRouteActive(true);
       setEditingId(null);
       await loadRoutes();
@@ -439,6 +450,9 @@ export default function AdminNotificationsSettingsPage() {
                 disabled={busy || !canManageRoutes}
                 className="w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               >
+                <option value="" disabled>
+                  Select severity…
+                </option>
                 {SEVERITY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -504,9 +518,9 @@ export default function AdminNotificationsSettingsPage() {
                   setEditingId(null);
                   setRouteName("");
                   setRouteFacilityId("");
-                  setRouteSeverity("level_2");
-                  setRouteChannels(["email", "push"]);
-                  setRouteRoles(["administrator", "assistant_administrator"]);
+                  setRouteSeverity("");
+                  setRouteChannels([]);
+                  setRouteRoles([]);
                   setRouteActive(true);
                 }}
                 disabled={busy}
@@ -521,7 +535,7 @@ export default function AdminNotificationsSettingsPage() {
           ) : routes.length === 0 ? (
             <p className="text-sm text-slate-500">No routes found for your organization yet.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
+            <HorizontalScroll label="Notification routes" className="rounded-lg border">
               <table className="w-full min-w-[900px] text-left text-xs">
                 <thead>
                   <tr className="border-b bg-slate-50 dark:bg-slate-900/40">
@@ -554,7 +568,7 @@ export default function AdminNotificationsSettingsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </HorizontalScroll>
           )}
         </CardContent>
       </Card>

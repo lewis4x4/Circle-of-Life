@@ -169,19 +169,15 @@ type PillTone = keyof typeof PILL_TONES;
 const PILL_TONE_NAMES = Object.keys(PILL_TONES) as PillTone[];
 
 /**
- * Only `warning` is held to AA here — it is the tone COL-432 fixed. The other
- * tones are recorded so a regression is visible, and floored at the 3:1
- * non-text/large-text threshold; several of them sit between 3:1 and 4.5:1 on
- * their own tint today and deepening them is a separate, wider change.
+ * Every tone is held to AA (COL-411 / COL-658 deepened success, danger and
+ * info; COL-432 fixed warning first).
  */
-const AA_ENFORCED_TONES = new Set<PillTone>(["warning"]);
-const LARGE_TEXT_FLOOR = 3;
 
 describe("StatusPill tones on their own tinted surface", () => {
   for (const theme of THEMES) {
     for (const tone of PILL_TONE_NAMES) {
       const token = PILL_TONES[tone];
-      const threshold = AA_ENFORCED_TONES.has(tone) ? AA_NORMAL_TEXT : LARGE_TEXT_FLOOR;
+      const threshold = AA_NORMAL_TEXT;
 
       it(`${theme} tone="${tone}" clears ${threshold}:1 on bg-${token}/${STATUS_PILL_TINT_PERCENT}`, () => {
         const block = themeBlock(theme);
@@ -197,5 +193,39 @@ describe("StatusPill tones on their own tinted surface", () => {
         }
       });
     }
+  }
+});
+
+/**
+ * COL-658. The semantic text tokens are what the design system uses for
+ * help text, status labels and eyebrows (`text-muted-foreground`,
+ * `text-destructive`, `text-success`, `text-info`, `text-warning`). The audit
+ * found colour-contrast failures on 100+ pages built from them; fixing the
+ * tokens fixes every consumer. Each must clear AA on every opaque surface it
+ * is placed on in its own theme.
+ */
+const TEXT_TOKENS = ["muted-foreground", "destructive", "success", "warning", "info"] as const;
+const TEXT_SURFACES = ["background", "card", "muted"] as const;
+
+describe("semantic text tokens meet AA on every theme surface (COL-658)", () => {
+  for (const theme of THEMES) {
+    for (const token of TEXT_TOKENS) {
+      it(`${theme} --${token} clears ${AA_NORMAL_TEXT}:1 on --background, --card and --muted`, () => {
+        const block = themeBlock(theme);
+        const fg = tokenRgb(block, token);
+        for (const surface of TEXT_SURFACES) {
+          const ratio = contrastRatio(fg, tokenRgb(block, surface));
+          expect(ratio, `${theme} --${token} on --${surface} measured ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(
+            AA_NORMAL_TEXT,
+          );
+        }
+      });
+    }
+
+    it(`${theme} destructive buttons keep AA between --destructive and --destructive-foreground`, () => {
+      const block = themeBlock(theme);
+      const ratio = contrastRatio(tokenRgb(block, "destructive"), tokenRgb(block, "destructive-foreground"));
+      expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+    });
   }
 });

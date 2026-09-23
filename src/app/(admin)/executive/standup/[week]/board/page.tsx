@@ -388,9 +388,9 @@ export default function ExecutiveStandupBoardPage() {
                       </CardHeader>
                       <CardContent className="space-y-4 text-sm text-foreground">
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Why red</div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">What is flagged</div>
                           <ul className="mt-2 space-y-1">
-                            {(action.whyRed.length > 0 ? action.whyRed : ["No active red flags beyond the summary concern."]).map((item) => (
+                            {(action.whyRed.length > 0 ? action.whyRed : ["Nothing flagged."]).map((item) => (
                               <li key={item}>{item}</li>
                             ))}
                           </ul>

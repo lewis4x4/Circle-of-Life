@@ -21,7 +21,7 @@ export default async function SettingsAuditLogPage() {
     <SettingsShell
       activeId="audit-log"
       title="Audit log"
-      subtitle="Append-only record of UI-V2 alert actions. RLS-cascading; you only see entries for facilities you can read."
+      subtitle="A permanent record of alert actions. You see entries only for the facilities you have access to."
       sections={[
         {
           id: "alert-audit-log",

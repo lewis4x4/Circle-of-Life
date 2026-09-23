@@ -9,7 +9,7 @@ it("does not double-count an invoice when a new invoice shifts later pages",asyn
  const first=Array.from({length:500},(_,i)=>invoice(501-i));let reads=0;
  const client={auth:{getUser:async()=>({data:{user:{id:"family"}},error:null})},from:(table:string)=>{
   const q:Record<string,ReturnType<typeof vi.fn>>={};let cursor=false;
-  for(const method of ["select","is","order","range","limit","in"])q[method]=vi.fn(()=>q);
+  for(const method of ["select","is","order","range","limit","in","eq"])q[method]=vi.fn(()=>q);
   q.lt=vi.fn(()=>{cursor=true;return q;});
   q.then=vi.fn((resolve)=>resolve({data:table==="invoices"?(reads++===0?first:cursor?[invoice(1)]:[invoice(2),invoice(1)]):table==="residents"?[{id:"resident",first_name:"Test",last_name:"Resident"}]:[],error:null}));
   return q;

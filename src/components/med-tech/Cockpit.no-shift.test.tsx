@@ -13,3 +13,8 @@ it("points a med-tech with no open shift at the floor app's time clock, not at a
   expect(screen.getByRole("link", { name: "Medications" })).toHaveAttribute("href", "/caregiver/meds");
   expect(screen.queryByText(/scheduling system/)).toBeNull();
 });
+
+it("tells a med-tech that clocking in opens the shift, since the time clock is now the writer (COL-668)", () => {
+  render(<Cockpit />);
+  expect(screen.getByText(/Clocking in on the time clock opens your shift here/)).toBeInTheDocument();
+});

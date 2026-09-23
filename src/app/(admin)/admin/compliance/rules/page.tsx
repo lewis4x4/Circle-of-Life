@@ -130,6 +130,7 @@ export default function ComplianceRulesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
+        <h1 className="sr-only">Compliance Scoring</h1>
         <p className="text-sm text-slate-500">Loading compliance rules…</p>
       </div>
     );

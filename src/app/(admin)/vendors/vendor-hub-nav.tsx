@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { buttonVariants } from "@/components/ui/button";
+import { activeSectionTabHref } from "@/lib/navigation/section-tabs";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -19,6 +20,7 @@ const LINKS = [
 
 export function VendorHubNav() {
   const pathname = usePathname();
+  const activeHref = activeSectionTabHref(pathname, LINKS.map((item) => item.href));
 
   return (
     <nav
@@ -26,7 +28,7 @@ export function VendorHubNav() {
       aria-label="Vendor sections"
     >
       {LINKS.map((item) => {
-        const active = pathname === item.href;
+        const active = item.href === activeHref;
         return (
           <Link
             key={item.href}
@@ -35,6 +37,7 @@ export function VendorHubNav() {
               buttonVariants({ variant: active ? "default" : "outline", size: "sm" }),
               active && "pointer-events-none",
             )}
+            aria-current={active ? "page" : undefined}
           >
             {item.label}
           </Link>

@@ -38,13 +38,19 @@ import { StatuteCitation } from "@/components/ui/StatuteCitation";
 import {
   complianceFacilityGateReason,
   complianceRollupScopeCopy,
+  COMPLIANCE_DEFICIENCIES_ALL_CLEAR_TITLE,
+  complianceDeficienciesAllClear,
+  complianceOverdueEmergencyAlert,
   compliancePocDueLine,
   complianceScoreEmptyCopy,
   complianceScoreLoadingCopy,
-  complianceSnapshotTileDisplay,
+  complianceSnapshotTileLoadingCopy,
   complianceSurveyVisitLoadingCopy,
   complianceSurveyVisitStatusCopy,
+  complianceTileState,
 } from "@/lib/compliance/compliance-hub-copy";
+import { enumLabel } from "@/lib/display/enum-label";
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
 
 type DefRow = {
   id: string;
@@ -86,11 +92,13 @@ export function AdminCompliancePageClient({
   const [snapshot, setSnapshot] = useState<Awaited<ReturnType<typeof fetchComplianceDashboardSnapshot>> | null>(initialSnapshot);
   const [defRows, setDefRows] = useState<DefRow[]>([]);
   const [defLoading, setDefLoading] = useState(true);
+  const [defError, setDefError] = useState<string | null>(null);
 
   // Enhanced tier state
   const [complianceScore, setComplianceScore] = useState<{ percentage: number; passed: number; total: number } | null>(null);
   const [enhancedScoreLoading, setEnhancedScoreLoading] = useState(true);
   const [emergencyItems, setEmergencyItems] = useState<EmergencyItem[]>([]);
+  const [emergencyError, setEmergencyError] = useState(false);
   const [reminders, setReminders] = useState<ComplianceReminder[]>([]);
 
   // Skip the first client-side snapshot fetch when the server already supplied
@@ -104,6 +112,13 @@ export function AdminCompliancePageClient({
       return;
     }
     skipNextSnapshotRef.current = false;
+
+    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      setSnapshot(null);
+      setSnapError(null);
+      setSnapLoading(false);
+      return;
+    }
 
     setSnapLoading(true);
     setSnapError(null);
@@ -121,10 +136,12 @@ export function AdminCompliancePageClient({
   const loadDeficiencies = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setDefRows([]);
+      setDefError(null);
       setDefLoading(false);
       return;
     }
     setDefLoading(true);
+    setDefError(null);
     const { data, error } = await supabase
       .from("survey_deficiencies")
       .select("id, tag_number, severity, status")
@@ -136,6 +153,7 @@ export function AdminCompliancePageClient({
 
     if (error || !data) {
       setDefRows([]);
+      setDefError(error?.message ?? "Open deficiencies could not be loaded.");
       setDefLoading(false);
       return;
     }
@@ -192,20 +210,28 @@ export function AdminCompliancePageClient({
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setComplianceScore(null);
       setEmergencyItems([]);
+      setEmergencyError(false);
       setEnhancedScoreLoading(false);
       return;
     }
 
     setEnhancedScoreLoading(true);
+    setEmergencyError(false);
     try {
       // Load compliance score
       const score = await getComplianceScore(selectedFacilityId);
       setComplianceScore(score);
 
+    } catch (e) {
+      console.error("Failed to load compliance score:", e);
+      setComplianceScore(null);
+    }
+    try {
       setEmergencyItems(await getEmergencyChecklistPreview(selectedFacilityId));
     } catch (e) {
-      console.error("Failed to load enhanced data:", e);
-      setComplianceScore(null);
+      console.error("Failed to load emergency checklist:", e);
+      setEmergencyItems([]);
+      setEmergencyError(true);
     } finally {
       setEnhancedScoreLoading(false);
     }
@@ -228,6 +254,18 @@ export function AdminCompliancePageClient({
   }, [loadReminders]);
 
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  // COL-651: the snapshot is an org-wide rollup under All facilities (every
+  // count drops its facility filter), so the tiles have a real scope either
+  // way; only the per-building sections below need one facility.
+  const tileState = (value: number | undefined) =>
+    complianceTileState({ facilityReady: true, loading: snapLoading, error: snapError, value });
+  const overdueEmergencyAlert = facilityReady ? complianceOverdueEmergencyAlert(emergencyItems) : null;
+  const deficienciesAllClear = complianceDeficienciesAllClear({
+    facilityReady,
+    loading: defLoading,
+    error: defError,
+    openCount: defRows.length,
+  });
 
   const daysUntilDue = (dueDate: string) => {
     const today = new Date();
@@ -246,7 +284,7 @@ export function AdminCompliancePageClient({
           <div>
             
             <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
-              Compliance {(emergencyItems.some((e) => e.overdue) || (complianceScore?.percentage ?? 100) < 75) && <></>}
+              Compliance
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
               Incident reporting aligns with{" "}
@@ -285,6 +323,27 @@ export function AdminCompliancePageClient({
           </div>
         </div>
 
+        {overdueEmergencyAlert ? (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <Flame className="h-4 w-4 shrink-0" aria-hidden />
+              {overdueEmergencyAlert}
+            </span>
+            <Link href="/admin/compliance/emergency-preparedness" className="font-medium underline underline-offset-2">
+              Open emergency preparedness
+            </Link>
+          </div>
+        ) : null}
+
+        {facilityReady && emergencyError ? (
+          <p className="text-sm text-destructive" role="alert">
+            Emergency drills and checks could not be loaded, so overdue drills cannot be shown.
+          </p>
+        ) : null}
+
         {!facilityReady ? (
           <p className="text-sm text-muted-foreground">{complianceRollupScopeCopy()}</p>
         ) : null}
@@ -299,7 +358,7 @@ export function AdminCompliancePageClient({
           <div className="h-[140px]">
             <Tile
               title="Overdue assessments"
-              value={snapLoading ? null : snapshot?.overdueAssessments ?? 0}
+              state={tileState(snapshot?.overdueAssessments)}
               href="/admin/assessments/overdue"
               hoverColor="red"
             />
@@ -307,7 +366,7 @@ export function AdminCompliancePageClient({
           <div className="h-[140px]">
             <Tile
               title="Overdue care plan reviews"
-              value={snapLoading ? null : snapshot?.overdueCarePlanReviews ?? 0}
+              state={tileState(snapshot?.overdueCarePlanReviews)}
               href="/admin/care-plans/reviews-due"
               hoverColor="orange"
             />
@@ -315,7 +374,7 @@ export function AdminCompliancePageClient({
           <div className="h-[140px]">
             <Tile
               title="Incident follow-ups past due"
-              value={snapLoading ? null : snapshot?.openIncidentFollowupsPastDue ?? 0}
+              state={tileState(snapshot?.openIncidentFollowupsPastDue)}
               href="/admin/incidents"
               hoverColor="red"
             />
@@ -323,12 +382,14 @@ export function AdminCompliancePageClient({
           <div className="h-[140px]">
             <Tile
               title="Active infections"
-              value={snapLoading ? null : snapshot?.activeInfections ?? 0}
+              state={tileState(snapshot?.activeInfections)}
               href="/admin/infection-control"
               hoverColor="red"
               badge={
-                !snapLoading && snapshot && snapshot.activeOutbreaks > 0 ? (
-                  <></>
+                facilityReady && !snapLoading && snapshot && snapshot.activeOutbreaks > 0 ? (
+                  <Badge variant="destructive" className="text-[9px] uppercase tracking-wider">
+                    {snapshot.activeOutbreaks === 1 ? "1 outbreak" : `${snapshot.activeOutbreaks} outbreaks`}
+                  </Badge>
                 ) : null
               }
             />
@@ -336,7 +397,7 @@ export function AdminCompliancePageClient({
           <div className="h-[140px]">
             <Tile
               title="Certs expiring (30d)"
-              value={snapLoading ? null : snapshot?.expiringCertifications30d ?? 0}
+              state={tileState(snapshot?.expiringCertifications30d)}
               href="/admin/certifications"
               hoverColor="amber"
             />
@@ -344,7 +405,7 @@ export function AdminCompliancePageClient({
           <div className="h-[140px]">
             <Tile
               title="Open deficiencies"
-              value={snapLoading ? null : snapshot?.openDeficiencies ?? 0}
+              state={tileState(snapshot?.openDeficiencies)}
               href="#open-deficiencies"
               hoverColor="red"
             />
@@ -362,9 +423,13 @@ export function AdminCompliancePageClient({
             <FacilityGateNotice reason={complianceFacilityGateReason()} />
           ) : defLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : defRows.length === 0 ? (
+          ) : defError ? (
+            <p className="text-sm text-destructive" role="alert">
+              Open deficiencies could not be loaded. This is not an all-clear.
+            </p>
+          ) : deficienciesAllClear ? (
             <div className="p-8 text-center text-muted-foreground bg-card rounded-xl border border-border max-w-xl mx-auto mt-8">
-               <p className="font-medium text-foreground">All Clear</p>
+               <p className="font-medium text-foreground">{COMPLIANCE_DEFICIENCIES_ALL_CLEAR_TITLE}</p>
                <p className="text-sm opacity-80 mt-1">No open deficiencies for this facility.</p>
             </div>
           ) : (
@@ -380,7 +445,7 @@ export function AdminCompliancePageClient({
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-wider bg-card">Severity {row.severity}</Badge>
-                          <span className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{row.status.replace(/_/g, " ")}</span>
+                          <span className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{enumLabel(row.status)}</span>
                         </div>
                         <span className="text-sm text-muted-foreground font-medium">{compliancePocDueLine(row.submission_due_date)}</span>
                       </div>
@@ -654,19 +719,21 @@ export function AdminCompliancePageClient({
 
 function Tile({
   title,
-  value,
+  state,
   href,
   badge,
   hoverColor = "indigo",
 }: {
   title: string;
-  value: number | null;
+  state: MetricState<number>;
   href: string;
   badge?: ReactNode;
   hoverColor?: "indigo" | "rose" | "emerald" | "amber" | "slate" | "red" | "orange";
 }) {
-  const isDanger = (value ?? 0) > 0 && (hoverColor === "red" || hoverColor === "amber" || hoverColor === "orange");
-  const displayValue = complianceSnapshotTileDisplay(value);
+  const value = state.status === "value" ? state.value : null;
+  const isDanger = value !== null && value > 0 && (hoverColor === "red" || hoverColor === "amber" || hoverColor === "orange");
+  const displayValue =
+    state.status === "loading" ? complianceSnapshotTileLoadingCopy() : formatMetric(state);
 
   return (
     <Link href={href} className="block h-full group focus-visible:outline-none">
@@ -674,7 +741,7 @@ function Tile({
         hoverColor={hoverColor}
         className={cn("h-full flex flex-col justify-between", isDanger ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "")}
       >
-        <MonolithicWatermark value={value ?? 0} className={cn("opacity-50", isDanger ? "text-destructive/10" : "text-muted-foreground/10")} />
+        {value !== null ? <MonolithicWatermark value={value} className={cn("opacity-50", isDanger ? "text-destructive/10" : "text-muted-foreground/10")} /> : null}
         <div className="relative z-10 flex flex-col h-full justify-between">
           <div className="flex items-center justify-between">
              <h3 className={cn("text-[10px] font-mono tracking-wider uppercase", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>
@@ -684,7 +751,7 @@ function Tile({
                {badge}
              </div>
           </div>
-          <p className={cn("text-4xl font-mono tracking-tighter pb-1 transition-colors", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400", hoverColor === "indigo" && !isDanger ? "group-hover:text-primary" : "")}>
+          <p className={cn(value === null ? "text-base font-medium pb-1 text-muted-foreground" : "text-4xl font-mono tracking-tighter pb-1 transition-colors", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400", hoverColor === "indigo" && !isDanger ? "group-hover:text-primary" : "")}>
             {displayValue}
           </p>
         </div>

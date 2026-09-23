@@ -330,7 +330,7 @@ export default function CaregiverMedsPage() {
         <div>
           <h1 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">eMAR Queue</h1>
           <p className="text-zinc-400 mt-1 uppercase tracking-wider text-xs font-semibold">
-            {ctx?.facilityName ? `${ctx.facilityName} · TZ: ${ctx.timeZone.split("/").pop()}` : "Document medication passes."}
+            {ctx?.facilityName ?? "Document medication passes."}
           </p>
         </div>
         <button 

@@ -90,8 +90,7 @@ export default function AdminQualityMeasureNewPage() {
             Define measure
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Catalog entries require <strong className="font-medium">owner</strong> or <strong className="font-medium">org admin</strong>{" "}
-            (RLS).
+            Catalog entries require <strong className="font-medium">owner</strong> or <strong className="font-medium">org admin</strong>.
           </p>
         </div>
         <Link href="/admin/quality" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>

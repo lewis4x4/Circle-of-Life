@@ -533,7 +533,7 @@ export default function EditResidentTransportRequestPage() {
 
       <RecordDetailSection
         title="Schedule & assignment"
-        description="Assign vehicle/driver on site; license and wheelchair rules validated on save (spec 15)."
+        description="Assign the vehicle and driver. Saving checks the driver's license and the vehicle's wheelchair access."
       >
         <form className="space-y-4" onSubmit={(e) => void save(e)}>
           <div className="grid gap-4 sm:grid-cols-2">

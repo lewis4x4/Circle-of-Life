@@ -26,6 +26,7 @@ import {
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 
 import { BillingHubNav } from "../billing-hub-nav";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type CollectionRow = {
   id: string;
@@ -164,7 +165,7 @@ export default function AdminCollectionsPage() {
                           <div className="col-span-2">
                              <span className="md:hidden font-bold uppercase tracking-wider text-[9px] text-muted-foreground mb-1 block">Type</span>
                              <span className="inline-flex text-xs font-mono tracking-wider uppercase bg-muted text-muted-foreground px-2.5 py-1 rounded-full border border-border">
-                               {r.activity_type.replace(/_/g, " ")}
+                               {enumLabel(r.activity_type)}
                              </span>
                           </div>
 

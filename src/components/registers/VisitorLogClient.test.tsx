@@ -7,6 +7,9 @@ import { VisitorLogClient } from "./VisitorLogClient";
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), confirm: vi.fn() }));
 
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc: mocks.rpc }) }));
+vi.mock("@/components/common/FacilityGate", () => ({
+  FacilityGateNotice: ({ reason }: { reason: string }) => <div data-testid="facility-gate">{reason}</div>,
+}));
 
 function dbRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -226,6 +229,7 @@ describe("no facility", () => {
         onSignIn={vi.fn()}
       />,
     );
-    expect(screen.getByText("Choose a facility to open its visitor log.")).toBeTruthy();
+    // COL-651: the shared gate (inline picker), not a bare sentence.
+    expect(screen.getByTestId("facility-gate").textContent).toBe("The visitor log is kept per building.");
   });
 });

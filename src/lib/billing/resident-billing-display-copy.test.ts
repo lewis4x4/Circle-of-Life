@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   RESIDENT_BILLING_NO_PROVIDER_POSTED_COPY,
   RESIDENT_BILLING_NO_RATE_UNIT_POSTED_COPY,
+  formatResidentBillingMedicaidProviderCurrent,
   formatResidentBillingMedicaidProviderFromCatalog,
   formatResidentBillingMedicaidProviderName,
   formatResidentBillingMedicaidRateUnitLabel,
+  residentBillingMedicaidSplitLine,
 } from "./resident-billing-display-copy";
 
 const CATALOG = [
@@ -57,5 +59,24 @@ describe("formatResidentBillingMedicaidRateUnitLabel", () => {
     expect(formatResidentBillingMedicaidRateUnitLabel("")).toBe(RESIDENT_BILLING_NO_RATE_UNIT_POSTED_COPY);
     expect(formatResidentBillingMedicaidRateUnitLabel("   ")).toBe(RESIDENT_BILLING_NO_RATE_UNIT_POSTED_COPY);
     expect(formatResidentBillingMedicaidRateUnitLabel("—")).toBe(RESIDENT_BILLING_NO_RATE_UNIT_POSTED_COPY);
+  });
+});
+
+describe("Medicaid payer card lines (COL-667)", () => {
+  it("names an unlinked insurer instead of saying no provider under its name", () => {
+    expect(formatResidentBillingMedicaidProviderCurrent(null, [...CATALOG], "UnitedHealthcare")).toBe(
+      "UnitedHealthcare is on the payer record but not linked to a facility Medicaid provider",
+    );
+    expect(formatResidentBillingMedicaidProviderCurrent("prov-2", [...CATALOG], "UnitedHealthcare")).toBe("Humana");
+    expect(formatResidentBillingMedicaidProviderCurrent(null, [...CATALOG], "  ")).toBe(RESIDENT_BILLING_NO_PROVIDER_POSTED_COPY);
+  });
+
+  it("explains why a Homewood Medicaid draft is less than the resident's terms", () => {
+    // Terms $2,437.00 = Medicaid $1,600.00 + resident share $837.00; the draft is $1,600.00 (COL-678).
+    expect(residentBillingMedicaidSplitLine(160_000, 83_700)).toBe(
+      "Medicaid pays $1,600.00 · resident share $837.00 a month. Monthly invoices bill the Medicaid portion only; the resident share is not on any Haven invoice yet.",
+    );
+    expect(residentBillingMedicaidSplitLine(160_000, 0)).toBe("Medicaid pays $1,600.00 · resident share $0.00 a month.");
+    expect(residentBillingMedicaidSplitLine(null, null)).toBeNull();
   });
 });

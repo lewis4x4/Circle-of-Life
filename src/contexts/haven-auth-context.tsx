@@ -50,11 +50,15 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const loadingRef = useRef(false);
   const loadGenerationRef = useRef(0);
+  // The user the provider last resolved. A reload for the same user (token
+  // refresh, tab refocus) keeps showing that identity until the new answer
+  // arrives instead of blanking the shell and every page back to loading (COL-674).
+  const resolvedUserIdRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     startupMark("auth-start");
     const generation = loadGenerationRef.current;
-    setLoading(true);
+    if (resolvedUserIdRef.current === null) setLoading(true);
     try {
       // Derive identity from the locally cached session instead of paying a
       // network round-trip to the auth server (getUser). The auth-lock retry
@@ -66,9 +70,13 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
 
       if (generation !== loadGenerationRef.current) return;
 
-      setUser(null);
-      setSession(null);
-      setAppRole("");
+      if (user?.id !== resolvedUserIdRef.current) {
+        resolvedUserIdRef.current = null;
+        setLoading(true);
+        setUser(null);
+        setSession(null);
+        setAppRole("");
+      }
 
       if (!user) {
         clearClientRoleContext(supabase);
@@ -113,6 +121,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         typeof actor.organization_id !== "string" ||
         typeof actor.app_role !== "string"
       ) {
+        resolvedUserIdRef.current = null;
         clearClientRoleContext(supabase);
         setSession(null);
         setUser(null);
@@ -125,6 +134,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      resolvedUserIdRef.current = user.id;
       setUser(user);
       setSession(session ?? null);
       const organizationIdFromProfile = actor.organization_id;
@@ -145,6 +155,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       if (generation !== loadGenerationRef.current) return;
       console.error("[HavenAuth] Failed to resolve browser session", error);
+      resolvedUserIdRef.current = null;
       clearClientRoleContext(supabase);
       setSession(null);
       setUser(null);
@@ -178,10 +189,17 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
     });
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       startupMark("auth-event");
+      // The mount load above already reads this session; reloading for it
+      // cancelled that load and paid the actor RPC twice on every page load.
+      if (event === "INITIAL_SESSION") return;
       loadGenerationRef.current += 1;
-      clearClientRoleContext(supabase);
+      // A refresh for the user already shown keeps the role context primed;
+      // load() re-reads the actor in the background and replaces it.
+      if (!nextSession?.user || nextSession.user.id !== resolvedUserIdRef.current) {
+        clearClientRoleContext(supabase);
+      }
       queueMicrotask(() => {
         void load();
       });

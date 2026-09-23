@@ -16,6 +16,7 @@ import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { dollarsToCents } from "@/lib/money/dollars-to-cents";
 import { Constants } from "@/types/database";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type PolicyInsert = Database["public"]["Tables"]["insurance_policies"]["Insert"];
 type EntityMini = { id: string; name: string };
@@ -163,7 +164,7 @@ export default function NewInsurancePolicyPage() {
               >
                 {Constants.public.Enums.insurance_policy_type.map((t) => (
                   <option key={t} value={t}>
-                    {t.replace(/_/g, " ")}
+                    {enumLabel(t)}
                   </option>
                 ))}
               </select>
@@ -178,7 +179,7 @@ export default function NewInsurancePolicyPage() {
               >
                 {Constants.public.Enums.insurance_policy_status.map((t) => (
                   <option key={t} value={t}>
-                    {t.replace(/_/g, " ")}
+                    {enumLabel(t)}
                   </option>
                 ))}
               </select>

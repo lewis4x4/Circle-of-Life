@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, type AuthClaimUser, isDietaryRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /** Family portal lives under `src/app/(family)/family/`. */
@@ -29,6 +29,11 @@ export function familyShellAccessRedirect(request: NextRequest, user: AuthClaimU
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (isAdminEligibleAppRole(role)) {
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
+  }
+
+  // A signed-in cook goes to its own app, not to login (COL-627 matrix).
+  if (isDietaryRole(role)) {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
 

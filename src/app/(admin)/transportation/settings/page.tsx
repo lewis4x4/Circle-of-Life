@@ -204,8 +204,8 @@ export default function TransportationOrgSettingsPage() {
             Mileage reimbursement rate
           </h1>
           <p className="max-w-2xl text-base font-medium leading-relaxed text-slate-600 dark:text-zinc-400">
-            Set how staff are reimbursed per mile when using a <strong className="text-slate-800 dark:text-zinc-200">personal vehicle</strong> for approved resident transport. This rate is stored on each new{" "}
-            <span className="font-mono text-sm">mileage_logs</span> row at the time it is created — changing it does not rewrite history.
+            Set how staff are reimbursed per mile when using a <strong className="text-slate-800 dark:text-zinc-200">personal vehicle</strong> for approved resident transport. This rate is saved on each new
+            mileage log when it is created — changing it does not change past logs.
           </p>
           <p className="max-w-2xl text-sm text-muted-foreground">{TRANSPORT_SETTINGS_ORG_WIDE_SCOPE_CUE}</p>
         </div>
@@ -334,8 +334,8 @@ export default function TransportationOrgSettingsPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200/60 bg-slate-50/50 p-5 text-xs leading-relaxed text-slate-600 dark:border-white/10 dark:text-zinc-500">
-            <strong className="font-semibold text-slate-800 dark:text-zinc-300">Effective scope:</strong> applies when completing a transport request with a linked mileage log for{" "}
-            <span className="font-mono">staff_personal_vehicle</span>. Existing mileage rows keep their original rate.
+            <strong className="font-semibold text-slate-800 dark:text-zinc-300">Effective scope:</strong> applies when completing a transport request with a linked mileage log for a staff member&apos;s
+            personal vehicle. Existing mileage logs keep their original rate.
           </div>
         </div>
       </div>
