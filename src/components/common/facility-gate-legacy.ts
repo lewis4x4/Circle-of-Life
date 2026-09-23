@@ -59,30 +59,7 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
     "src/lib/rounding/rounding-scope-copy.ts",
   ],
 
-  "b5-compliance": [
-    "src/app/(admin)/admin/compliance/audit-export/page.tsx",
-    "src/app/(admin)/admin/compliance/deficiencies/analysis/page.tsx",
-    "src/app/(admin)/admin/compliance/deficiencies/new/page.tsx",
-    "src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx",
-    "src/app/(admin)/admin/compliance/policies/new/page.tsx",
-    "src/app/(admin)/admin/compliance/policies/page.tsx",
-    "src/app/(admin)/admin/compliance/rules/new/page.tsx",
-    "src/app/(admin)/admin/compliance/rules/page.tsx",
-    "src/app/(admin)/admin/compliance/scan/page.tsx",
-    "src/app/(admin)/admin/quality/measures/new/page.tsx",
-    "src/app/(admin)/admin/quality/page.tsx",
-    "src/app/(admin)/admin/survey-binder/page.tsx",
-    "src/app/(admin)/reports/run/[sourceType]/[id]/page.tsx",
-    "src/app/(admin)/reputation/accounts/new/page.tsx",
-    "src/app/(admin)/reputation/page.tsx",
-    "src/app/(admin)/reputation/replies/new/page.tsx",
-    "src/components/compliance/AdminCompliancePageClient.tsx",
-    "src/components/risk/RiskSurveyBundlePageClient.tsx",
-    "src/lib/compliance/compliance-hub-copy.ts",
-    "src/lib/quality/quality-hub-display-copy.ts",
-    "src/lib/reputation/reputation-account-new-display-copy.ts",
-    "src/lib/reputation/reputation-reply-new-display-copy.ts",
-  ],
+  "b5-compliance": [],
 
   "b6-office": [],
 
@@ -91,6 +68,8 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
 };
 
 export const NOT_A_GATE: Record<string, string> = {
+  "src/app/(admin)/reports/run/[sourceType]/[id]/page.tsx":
+    "The run form's own facility-scope field (a report may run for one building or, for owners, all of them); it follows the header and no longer defaults to the first facility.",
   "src/app/(admin)/admin/operations/templates/page.tsx":
     "Validation for a template's own facility field: org-wide templates need none, facility-scoped ones pick one in the form.",
   "src/app/(admin)/admin/rounding/reports/page.tsx":

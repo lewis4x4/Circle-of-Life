@@ -38,9 +38,14 @@ export function complianceSurveyVisitInactiveCopy(): string {
   return "No active session.";
 }
 
-/** One-line gap when no facility is selected in the header scope. */
-export function complianceFacilityNotSelectedCopy(): string {
-  return "Select a facility to load compliance data.";
+/** Under All facilities the tiles are an org-wide rollup; say so instead of gating them. */
+export function complianceRollupScopeCopy(): string {
+  return "Tile totals cover all your facilities. Findings, the compliance score and preparedness below are kept per building.";
+}
+
+/** Why the per-building sections of the hub need one facility (COL-651 gate reason). */
+export function complianceFacilityGateReason(): string {
+  return "Survey deficiencies, the compliance score, emergency preparedness and reminders belong to one building.";
 }
 
 /** One-line gap when rule-based compliance score is absent for the facility. */
@@ -55,7 +60,7 @@ export function complianceScoreLoadingCopy(): string {
 
 /** Survey visit status when no facility is scoped in the header selector. */
 export function complianceSurveyVisitNotScopedCopy(): string {
-  return "Select a facility to check survey visit status.";
+  return "Survey visit sessions run per building; choose one to see its status.";
 }
 
 /** Survey visit status line from snapshot — never fabricates inactive when unscoped. */
@@ -72,9 +77,9 @@ export function complianceSnapshotTileDisplay(value: number | null): string | nu
 }
 
 /**
- * State for one hub KPI tile. The hub is per-facility (its own banner says
- * "Select a facility"), so with no facility the tile names that instead of a
- * 0; a failed snapshot is "Unavailable", never 0 (COL-649).
+ * State for one hub KPI tile. A failed snapshot is "Unavailable", never 0
+ * (COL-649). The hub passes `facilityReady: true` for its tiles because the
+ * snapshot rolls up across facilities under All facilities (COL-651).
  */
 export function complianceTileState(input: {
   facilityReady: boolean;

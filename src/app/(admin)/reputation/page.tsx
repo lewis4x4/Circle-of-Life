@@ -9,6 +9,7 @@ import { Star } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { formatMetric } from "@/lib/metrics/metric-state";
@@ -408,6 +409,9 @@ export default function AdminReputationHubPage() {
             </div>
         </header>
 
+        {!facilityReady ? (
+          <FacilityGateNotice reason="Review listings, drafts and posted replies are connected per building." />
+        ) : (
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="indigo" className="border-primary/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
@@ -493,12 +497,7 @@ export default function AdminReputationHubPage() {
             </V2Card>
           </div>
         </KineticGrid>
-
-      {!facilityReady && (
-        <p className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
-          Select a facility to load reputation accounts and replies.
-        </p>
-      )}
+        )}
 
       {error && (
         <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">

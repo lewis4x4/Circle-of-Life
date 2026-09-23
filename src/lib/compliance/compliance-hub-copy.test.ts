@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  complianceFacilityNotSelectedCopy,
+  complianceRollupScopeCopy,
   compliancePocDueDateLabel,
   compliancePocDueLine,
   complianceScoreEmptyCopy,
@@ -60,7 +60,7 @@ describe("complianceSurveyVisitInactiveCopy", () => {
 describe("complianceSurveyVisitNotScopedCopy", () => {
   it("names the gap when survey visit status is not facility-scoped", () => {
     expect(complianceSurveyVisitNotScopedCopy()).toBe(
-      "Select a facility to check survey visit status.",
+      "Survey visit sessions run per building; choose one to see its status.",
     );
   });
 });
@@ -76,9 +76,10 @@ describe("complianceSurveyVisitStatusCopy", () => {
   });
 });
 
-describe("complianceFacilityNotSelectedCopy", () => {
-  it("names the facility selection gap", () => {
-    expect(complianceFacilityNotSelectedCopy()).toBe("Select a facility to load compliance data.");
+describe("complianceRollupScopeCopy", () => {
+  it("labels All-facilities tiles as a rollup rather than a dead end (COL-651)", () => {
+    expect(complianceRollupScopeCopy()).toMatch(/all your facilities/);
+    expect(complianceRollupScopeCopy()).not.toMatch(/select a facility/i);
   });
 });
 

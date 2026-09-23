@@ -17,7 +17,7 @@ import {
  * which is what a walk in survey usually asks for; nothing else is chosen on
  * the administrator's behalf.
  */
-export function SurveyPackChooser() {
+export function SurveyPackChooser({ facilityName }: { facilityName: string }) {
   const router = useRouter();
   const [request, setRequest] = useState(() => defaultSurveyPackRequest());
   const [problems, setProblems] = useState<string[]>([]);
@@ -41,6 +41,9 @@ export function SurveyPackChooser() {
 
   return (
     <div className="space-y-5">
+      <p className="text-sm text-foreground">
+        Building: <span className="font-medium">{facilityName}</span>
+      </p>
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1">
           <label htmlFor="pack-from" className="text-xs text-muted-foreground">
@@ -107,7 +110,7 @@ export function SurveyPackChooser() {
       ) : null}
 
       <Button type="button" onClick={print}>
-        Print
+        Print for {facilityName}
       </Button>
     </div>
   );
