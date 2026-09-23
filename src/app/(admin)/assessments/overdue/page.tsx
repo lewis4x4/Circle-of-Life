@@ -6,7 +6,6 @@ import {
   fetchClinicalDeskScope,
   fetchOverdueAssessmentsFromSupabase,
   type ClinicalDeskScope,
-  NO_FACILITY_SOURCE_NOTICE,
   type CarePlanReviewDueRow,
   type OverdueAssessmentRow,
 } from "@/lib/assessments/load-overdue-assessments";
@@ -27,12 +26,10 @@ export default async function OverdueAssessmentsPage() {
   let initialAssessments: OverdueAssessmentRow[] = [];
   let initialCarePlans: CarePlanReviewDueRow[] = [];
   let initialError: string | null = null;
-  let initialSourceNotice: string | null = null;
   let initialScope: ClinicalDeskScope | null = null;
 
-  if (!isValidFacilityIdForQuery(initialFacilityId)) {
-    initialSourceNotice = NO_FACILITY_SOURCE_NOTICE;
-  } else {
+  // Under All facilities the client renders the facility gate; there is no cross-facility queue.
+  if (isValidFacilityIdForQuery(initialFacilityId)) {
     try {
       [initialAssessments, initialCarePlans, initialScope] = await Promise.all([
         fetchOverdueAssessmentsFromSupabase(initialFacilityId, supabase),
@@ -52,7 +49,6 @@ export default async function OverdueAssessmentsPage() {
       initialError={initialError}
       initialFacilityId={initialFacilityId}
       initialScope={initialScope}
-      initialSourceNotice={initialSourceNotice}
     />
   );
 }

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateInput } from "@/components/ui/date-input";
@@ -103,10 +104,8 @@ export default function NewStaffIllnessPage() {
 
   const submit = useCallback(async () => {
     setError(null);
-    if (!facilityReady || !selectedFacilityId) {
-      setError("Select a facility in the header.");
-      return;
-    }
+    // The form only renders inside a facility scope (COL-651).
+    if (!facilityReady || !selectedFacilityId) return;
     if (!user?.id || !organizationId) {
       setError("Could not resolve your profile. Sign in again.");
       return;
@@ -144,12 +143,10 @@ export default function NewStaffIllnessPage() {
         >
           ← Staff illness
         </Link>
-        <Card>
-          <CardHeader>
-            <CardTitle>Select a facility</CardTitle>
-            <CardDescription>Use the facility selector in the header to log a staff illness.</CardDescription>
-          </CardHeader>
-        </Card>
+        <FacilityGateNotice
+          title="Log staff illness"
+          reason="Staff illness is logged against one building's staff and outbreak watch."
+        />
       </div>
     );
   }

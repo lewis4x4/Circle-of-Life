@@ -6,6 +6,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ type Row = {
 export default function AdminVerbalOrdersPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -41,7 +43,6 @@ export default function AdminVerbalOrdersPage() {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
       setLoading(false);
-      setError("Select a facility to view verbal orders.");
       return;
     }
     try {
@@ -110,6 +111,10 @@ export default function AdminVerbalOrdersPage() {
         </div>
       </div>
 
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Verbal orders and their co-signatures are tracked per building." />
+      ) : (
+      <>
       {error ? (
         <p className="text-sm text-warning">{error}</p>
       ) : null}
@@ -217,6 +222,8 @@ export default function AdminVerbalOrdersPage() {
             </MotionList>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );
