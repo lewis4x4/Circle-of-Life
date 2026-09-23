@@ -5,11 +5,11 @@
 
 ## What It Covers
 
-The offline and sync contract for high-reliability frontline workflows such as eMAR and caregiver documentation.
+The offline and sync contract for high-reliability frontline workflows such as eMAR and floor-app documentation.
 
 ## Primary Users
 
-- Caregivers
+- Med-Techs on the floor app
 - Med-tech users
 - Operators who need continuity during poor connectivity
 
@@ -21,7 +21,7 @@ The offline and sync contract for high-reliability frontline workflows such as e
 
 ## Primary Surfaces
 
-- No standalone UX chapter yet; this is a platform behavior layer attached to caregiver and medication workflows.
+- No standalone UX chapter yet; this is a platform behavior layer attached to floor-app and medication workflows.
 
 ## Data, Controls, And Automation
 

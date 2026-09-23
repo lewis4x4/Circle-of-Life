@@ -83,6 +83,15 @@ import {
   type InvoiceHubKpiContext,
 } from "@/lib/billing/invoice-hub-kpi-copy";
 import {
+  RECEIVABLE_DEFINITION_COPY,
+  isOpenReceivable,
+  isPastDueReceivable,
+  isUnsettledStatus,
+  notYetSentCaption,
+  summarizeReceivables,
+} from "@/lib/billing/receivables";
+import { billingNyTodayIso } from "@/lib/billing/ar-aging-as-of";
+import {
   fetchInvoicesFromSupabase,
   fetchActiveResidentCountForBillingScope,
   type BillingRow,
@@ -120,6 +129,9 @@ const DEFAULT_FILTERS = {
 
 const DEFAULT_HUB_LEDGER_PAGE_SIZE = 50;
 
+/** Balance slice on top of the status filter: every row, open receivables only, or past-due receivables only. */
+type BalanceFilter = "any" | "receivable" | "past_due";
+
 type PeriodPreset =
   | "this_month"
   | "last_month"
@@ -127,9 +139,10 @@ type PeriodPreset =
   | "last_quarter"
   | "ytd"
   | "rolling_12"
+  | "all"
   | "custom";
 
-function periodBounds(preset: Exclude<PeriodPreset, "custom">, now = new Date()): { start: string; end: string } {
+function periodBounds(preset: Exclude<PeriodPreset, "custom" | "all">, now = new Date()): { start: string; end: string } {
   switch (preset) {
     case "last_month": {
       const ref = subMonths(now, 1);
@@ -165,6 +178,7 @@ const OVERVIEW_PERIOD_FILTER_OPTIONS = [
   { value: "last_quarter", label: "Last quarter" },
   { value: "ytd", label: "Year to date" },
   { value: "rolling_12", label: "Last 12 months" },
+  { value: "all", label: "All invoice dates" },
 ];
 
 const INVOICES_HUB_PERIOD_FILTER_OPTIONS = [
@@ -298,6 +312,8 @@ type MetricLinkProps = {
   valuePresentation?: "metric" | "message";
   /** Optional clarification next to title (Quiet Operator KPIs). */
   labelTooltip?: string;
+  /** What the figure counts, shown under the label. */
+  caption?: string | null;
 };
 
 function MetricLinkTile({
@@ -307,6 +323,7 @@ function MetricLinkTile({
   valueClassName,
   valuePresentation = "metric",
   labelTooltip,
+  caption,
 }: MetricLinkProps) {
   return (
     <div
@@ -329,6 +346,9 @@ function MetricLinkTile({
           {value}
         </span>
         <span className="mt-2 max-w-[10rem] px-5 text-[13px] leading-snug text-muted-foreground">{label}</span>
+        {caption ? (
+          <span className="mt-1 max-w-[14rem] px-3 text-[11px] leading-snug text-muted-foreground">{caption}</span>
+        ) : null}
       </Link>
       {labelTooltip ? (
         <div className="absolute right-1 top-1">
@@ -412,14 +432,21 @@ function BillingInvoiceLedgerInner({
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [status, setStatus] = useState(() => {
     const st = searchParams.get("status");
-    return st === "overdue" ? "overdue" : DEFAULT_FILTERS.status;
+    return st != null && (HUB_LEDGER_STATUS_CHIPS as readonly string[]).includes(st) ? st : DEFAULT_FILTERS.status;
   });
   const [payerType, setPayerType] = useState(DEFAULT_FILTERS.payerType);
-  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>("this_month");
+  // A drill-down from an all-dates figure (Overview tiles, action queue) must land on the same invoices,
+  // so a `status` or `balance` link opens across all invoice dates instead of this month only.
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>(() =>
+    searchParams.get("status") != null || searchParams.get("balance") != null ? "all" : "this_month",
+  );
   const [ledgerFacilityIds, setLedgerFacilityIds] = useState<string[] | null>(null);
   const [customPeriodFrom, setCustomPeriodFrom] = useState("");
   const [customPeriodTo, setCustomPeriodTo] = useState("");
-  const [balanceDueOnly, setBalanceDueOnly] = useState(false);
+  const [balanceFilter, setBalanceFilter] = useState<BalanceFilter>(() => {
+    const b = searchParams.get("balance");
+    return b === "receivable" || b === "past_due" ? b : "any";
+  });
   const [savedLedgerViewKey, setSavedLedgerViewKey] = useState("custom");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [invoiceHubPage, setInvoiceHubPage] = useState(1);
@@ -456,8 +483,15 @@ function BillingInvoiceLedgerInner({
       }
       return periodBounds("this_month");
     }
+    if (periodPreset === "all") {
+      const dates = rows.map((row) => row.invoiceDateIso).filter(Boolean).sort();
+      if (dates.length === 0) return periodBounds("this_month");
+      return { start: dates[0]!, end: dates[dates.length - 1]! };
+    }
     return periodBounds(periodPreset);
-  }, [periodPreset, customPeriodFrom, customPeriodTo]);
+  }, [periodPreset, customPeriodFrom, customPeriodTo, rows]);
+
+  const todayIso = billingNyTodayIso();
 
   const rowsMatchingPeriodAndFacilities = useMemo(() => {
     if (residentIdFilter) return rows;
@@ -478,10 +512,14 @@ function BillingInvoiceLedgerInner({
         row.invoiceNumber.toLowerCase().includes(loweredSearch) ||
         row.residentName.toLowerCase().includes(loweredSearch);
       const matchesPayerType = payerType === "all" || row.payerType === payerType;
-      const balanceOk = !balanceDueOnly || row.amountDueCents > 0;
+      const receivable = { status: row.status, balanceDueCents: row.amountDueCents, dueDateIso: row.dueDateIso };
+      const balanceOk =
+        balanceFilter === "any" ||
+        (balanceFilter === "receivable" && isOpenReceivable(receivable)) ||
+        (balanceFilter === "past_due" && isPastDueReceivable(receivable, todayIso));
       return matchesSearch && matchesPayerType && balanceOk;
     });
-  }, [balanceDueOnly, payerType, rowsMatchingPeriodAndFacilities, search]);
+  }, [balanceFilter, payerType, rowsMatchingPeriodAndFacilities, search, todayIso]);
 
   const displayRows = useMemo(() => {
     if (status === "all") return pipelineRows;
@@ -492,10 +530,9 @@ function BillingInvoiceLedgerInner({
     if (isInvoicesHub) {
       return [...displayRows].sort((a, b) => -1 * a.invoiceDateIso.localeCompare(b.invoiceDateIso));
     }
-    const openFirst = new Set<InvoiceStatusUi>(["draft", "sent", "partial", "overdue"]);
     return [...displayRows].sort((a, b) => {
-      const aOpen = openFirst.has(a.status);
-      const bOpen = openFirst.has(b.status);
+      const aOpen = isUnsettledStatus(a.status);
+      const bOpen = isUnsettledStatus(b.status);
       if (aOpen !== bOpen) return aOpen ? -1 : 1;
       if (aOpen) return a.dueDateIso.localeCompare(b.dueDateIso);
       return b.invoiceDateIso.localeCompare(a.invoiceDateIso);
@@ -517,7 +554,7 @@ function BillingInvoiceLedgerInner({
     () =>
       [
         hubPageSize,
-        balanceDueOnly,
+        balanceFilter,
         customPeriodFrom,
         customPeriodTo,
         ledgerFacilityIds?.join(",") ?? "",
@@ -530,7 +567,7 @@ function BillingInvoiceLedgerInner({
       ].join("|"),
     [
       hubPageSize,
-      balanceDueOnly,
+      balanceFilter,
       customPeriodFrom,
       customPeriodTo,
       ledgerFacilityIds,
@@ -603,7 +640,7 @@ function BillingInvoiceLedgerInner({
     periodPreset !== "this_month" ||
     (ledgerFacilityIds != null && ledgerFacilityIds.length > 0);
 
-  const invoicesHubFiltersDirty = overviewFiltersDirty || balanceDueOnly;
+  const invoicesHubFiltersDirty = overviewFiltersDirty || balanceFilter !== "any";
 
   const hubStatusCounts = useMemo(() => {
     const tally: Record<InvoiceStatusUi, number> = {
@@ -622,15 +659,24 @@ function BillingInvoiceLedgerInner({
   const invoiceHubKpis = useMemo(() => {
     const inScope = pipelineRows.length;
     const totalBilledCents = pipelineRows
-      .filter((r) => r.status !== "void")
+      .filter((r) => r.status !== "void" && r.status !== "draft")
       .reduce((s, r) => s + r.totalCents, 0);
-    const outstandingCents = pipelineRows
-      .filter((r) => ["draft", "sent", "partial", "overdue"].includes(r.status))
-      .reduce((s, r) => s + r.amountDueCents, 0);
-    const overdueN = hubStatusCounts.overdue;
-    const overduePct = inScope === 0 ? 0 : overdueN / inScope;
-    return { inScope, totalBilledCents, outstandingCents, overdueN, overduePct };
-  }, [hubStatusCounts, pipelineRows]);
+    const receivables = summarizeReceivables(
+      pipelineRows.map((r) => ({ status: r.status, balanceDueCents: r.amountDueCents, dueDateIso: r.dueDateIso })),
+      todayIso,
+    );
+    const overdueN = receivables.pastDueCount;
+    const overduePct = receivables.receivableCount === 0 ? 0 : overdueN / receivables.receivableCount;
+    return {
+      inScope,
+      totalBilledCents,
+      outstandingCents: receivables.receivableCents,
+      overdueN,
+      overduePct,
+      notYetSentCount: receivables.notYetSentCount,
+      notYetSentCents: receivables.notYetSentCents,
+    };
+  }, [pipelineRows, todayIso]);
 
   const hubCsvFilename = useMemo(
     () =>
@@ -728,12 +774,12 @@ function BillingInvoiceLedgerInner({
     return {
       title: "No invoices match this status slice",
       description:
-        balanceDueOnly && status === "all"
+        balanceFilter !== "any" && status === "all"
           ? "Clear the Outstanding balance shortcut or widen other filters."
           : "Pick another chip or set status to All to see invoices in scope.",
     };
   }, [
-    balanceDueOnly,
+    balanceFilter,
     pipelineRows.length,
     residentIdFilter,
     rowsMatchingPeriodAndFacilities.length,
@@ -742,16 +788,29 @@ function BillingInvoiceLedgerInner({
 
   const openArTotalCents = useMemo(() => totalOpenArCents(rows), [rows]);
   const aging = useMemo(() => summarizeOpenArBucketTotals(rows), [rows]);
-  const overdueCount = rows.filter((row) => row.status === "overdue").length;
-
-  const draftInvoiceCount = useMemo(() => rows.filter((row) => row.status === "draft").length, [rows]);
+  const scopeReceivables = useMemo(
+    () =>
+      summarizeReceivables(
+        rows.map((row) => ({ status: row.status, balanceDueCents: row.amountDueCents, dueDateIso: row.dueDateIso })),
+        todayIso,
+      ),
+    [rows, todayIso],
+  );
+  const overdueCount = scopeReceivables.pastDueCount;
+  const draftInvoiceCount = scopeReceivables.notYetSentCount;
+  const draftsNotIncludedCaption = notYetSentCaption(
+    scopeReceivables.notYetSentCount,
+    billingCurrency.format(scopeReceivables.notYetSentCents / 100),
+  );
 
   const periodInvoiceSnapshot = useMemo(() => {
-    const scope = rowsMatchingPeriodAndFacilities.filter((row) => row.status !== "void");
+    // Only sent invoices were billed; a draft in the period is not a missed collection.
+    const scope = rowsMatchingPeriodAndFacilities.filter((row) => row.status !== "void" && row.status !== "draft");
     const billedCents = scope.reduce((s, row) => s + row.totalCents, 0);
     const appliedCents = scope.reduce((s, row) => s + Math.max(0, row.totalCents - row.amountDueCents), 0);
     const ratePct = billedCents > 0 ? (appliedCents / billedCents) * 100 : null;
-    return { billedCents, appliedCents, ratePct };
+    const draftCount = rowsMatchingPeriodAndFacilities.filter((row) => row.status === "draft").length;
+    return { billedCents, appliedCents, ratePct, draftCount };
   }, [rowsMatchingPeriodAndFacilities]);
 
   const ninetyPlusSharePct = openArTotalCents > 0 ? (aging.d91Plus / openArTotalCents) * 100 : null;
@@ -759,6 +818,9 @@ function BillingInvoiceLedgerInner({
   const billingAnomalyMessage = useMemo(() => {
     if (!isOverviewChrome) return null;
     if (cohortCount > 0 && openArTotalCents === 0) {
+      if (draftInvoiceCount > 0) {
+        return `Nothing is billed yet in this scope: ${draftInvoiceCount} draft invoice${draftInvoiceCount === 1 ? " has" : "s have"} not been sent.`;
+      }
       return "Outstanding balance reads $0 while this scope still has active resident census.";
     }
     if (openArTotalCents > 0 && aging.d91Plus / openArTotalCents > 0.1) {
@@ -775,6 +837,7 @@ function BillingInvoiceLedgerInner({
   }, [
     aging.d91Plus,
     cohortCount,
+    draftInvoiceCount,
     isOverviewChrome,
     openArTotalCents,
     period.start,
@@ -793,7 +856,9 @@ function BillingInvoiceLedgerInner({
       openArTotalCents,
       cohortResidentCount: cohortCount,
       periodBilledCents: periodInvoiceSnapshot.billedCents,
+      periodAppliedCents: periodInvoiceSnapshot.appliedCents,
       periodAppliedRatePct: periodInvoiceSnapshot.ratePct,
+      periodDraftCount: periodInvoiceSnapshot.draftCount,
       ninetyPlusSharePct,
       overdueCount,
     };
@@ -806,7 +871,9 @@ function BillingInvoiceLedgerInner({
     ninetyPlusSharePct,
     openArTotalCents,
     overdueCount,
+    periodInvoiceSnapshot.appliedCents,
     periodInvoiceSnapshot.billedCents,
+    periodInvoiceSnapshot.draftCount,
     periodInvoiceSnapshot.ratePct,
     rows.length,
   ]);
@@ -905,7 +972,7 @@ function BillingInvoiceLedgerInner({
     if (key === "custom") return;
     setCustomPeriodFrom("");
     setCustomPeriodTo("");
-    setBalanceDueOnly(false);
+    setBalanceFilter("any");
     setSearch(DEFAULT_FILTERS.search);
     setPayerType(DEFAULT_FILTERS.payerType);
     setLedgerFacilityIds(null);
@@ -1022,7 +1089,7 @@ function BillingInvoiceLedgerInner({
           <h2 className="text-[14px] font-semibold text-foreground">Action queue</h2>
           <ul className="mt-3 list-none space-y-2 text-[13px] leading-snug">
             <li className={overdueCount > 0 ? "" : "text-muted-foreground"}>
-              <Link href="/admin/billing/invoices?status=overdue" className="text-primary underline-offset-4 hover:underline">
+              <Link href="/admin/billing/invoices?balance=past_due" className="text-primary underline-offset-4 hover:underline">
                 {billingActionQueueOverdueCopy(billingOverviewKpiContext)}
               </Link>
             </li>
@@ -1056,6 +1123,8 @@ function BillingInvoiceLedgerInner({
             <MetricLinkTile
               href="/admin/billing/ar-aging"
               label="Outstanding AR"
+              caption={draftsNotIncludedCaption ?? "Sent invoices, all invoice dates"}
+              labelTooltip={RECEIVABLE_DEFINITION_COPY}
               value={
                 outstandingArEmptyCopy ?? billingCurrency.format(openArTotalCents / 100)
               }
@@ -1072,7 +1141,7 @@ function BillingInvoiceLedgerInner({
             />
             <MetricLinkTile
               href="/admin/billing/ar-aging?bucket=91-plus"
-              label="90+ share of open AR"
+              label="90+ days past due share"
               value={
                 ninetyPlusEmptyCopy ?? `${Math.round(ninetyPlusSharePct ?? 0)}%`
               }
@@ -1082,11 +1151,11 @@ function BillingInvoiceLedgerInner({
                   ? "text-muted-foreground"
                   : ninetyPlusRiskShareClass(openArTotalCents, aging.d91Plus)
               }
-              labelTooltip="Percentage of outstanding balance that sits in ninety-plus aging. Details on the Aging tab."
+              labelTooltip="Share of the outstanding AR balance more than ninety days past its due date. Drafts are never aged. Details on the Aging tab."
             />
             <MetricLinkTile
               href="/admin/billing/invoices"
-              label="Applied (invoice period)"
+              label="Applied (sent this period)"
               value={
                 appliedPeriodEmptyCopy ?? `${Math.round(periodInvoiceSnapshot.ratePct ?? 0)}%`
               }
@@ -1096,11 +1165,12 @@ function BillingInvoiceLedgerInner({
                   ? "text-muted-foreground"
                   : collectionRateSemanticClass(periodInvoiceSnapshot.ratePct)
               }
-              labelTooltip={`Share of non-void invoiced totals dated ${period.start}–${period.end} that already have payments or adjustments applied (ledger snapshot).`}
+              labelTooltip={`Share of sent invoice totals dated ${period.start}–${period.end} that already have payments or adjustments applied. Drafts are not billed and are left out.`}
             />
             <MetricLinkTile
-              href="/admin/billing/invoices?status=overdue"
-              label="Overdue invoices"
+              href="/admin/billing/invoices?balance=past_due"
+              label="Past-due invoices"
+              caption="Sent, balance open, due date passed"
               value={overdueCountEmptyCopy ?? String(overdueCount)}
               valuePresentation={overdueCountEmptyCopy != null ? "message" : "metric"}
               valueClassName={
@@ -1120,7 +1190,7 @@ function BillingInvoiceLedgerInner({
               "rounded-xl border border-border bg-card px-4 py-3 text-left shadow-[var(--shadow-card)] ring-1 ring-border/60 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
             onClick={() => {
-              setBalanceDueOnly(false);
+              setBalanceFilter("any");
               setStatus("all");
             }}
           >
@@ -1145,11 +1215,11 @@ function BillingInvoiceLedgerInner({
               "rounded-xl border border-border bg-card px-4 py-3 text-left shadow-[var(--shadow-card)] ring-1 ring-border/60 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
             onClick={() => {
-              setBalanceDueOnly(false);
+              setBalanceFilter("any");
               setStatus("all");
             }}
           >
-            <p className="text-[12px] font-medium text-muted-foreground">Total billed</p>
+            <p className="text-[12px] font-medium text-muted-foreground">Total billed (sent)</p>
             <p
               className={cn(
                 "mt-2 font-semibold tabular-nums",
@@ -1167,11 +1237,11 @@ function BillingInvoiceLedgerInner({
               "rounded-xl border border-border bg-card px-4 py-3 text-left shadow-[var(--shadow-card)] ring-1 ring-border/60 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
             onClick={() => {
-              setBalanceDueOnly(true);
+              setBalanceFilter("receivable");
               setStatus("all");
             }}
           >
-            <p className="text-[12px] font-medium text-muted-foreground">Outstanding</p>
+            <p className="text-[12px] font-medium text-muted-foreground">Outstanding (sent)</p>
             <p
               className={cn(
                 "mt-2 font-semibold tabular-nums",
@@ -1182,6 +1252,14 @@ function BillingInvoiceLedgerInner({
             >
               {outstandingDisplay}
             </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {invoiceHubKpisReady
+                ? notYetSentCaption(
+                    invoiceHubKpis.notYetSentCount,
+                    billingCurrency.format(invoiceHubKpis.notYetSentCents / 100),
+                  ) ?? "Sent invoices dated in range"
+                : null}
+            </p>
           </button>
           <button
             type="button"
@@ -1189,11 +1267,11 @@ function BillingInvoiceLedgerInner({
               "rounded-xl border border-border bg-card px-4 py-3 text-left shadow-[var(--shadow-card)] ring-1 ring-border/60 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
             onClick={() => {
-              setBalanceDueOnly(false);
-              setStatus("overdue");
+              setBalanceFilter("past_due");
+              setStatus("all");
             }}
           >
-            <p className="text-[12px] font-medium text-muted-foreground">Overdue</p>
+            <p className="text-[12px] font-medium text-muted-foreground">Past due</p>
             <p
               className={cn(
                 "mt-2 font-semibold tabular-nums",
@@ -1204,8 +1282,26 @@ function BillingInvoiceLedgerInner({
             >
               {overdueDisplay}
             </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Sent, dated in range, due date passed</p>
           </button>
         </section>
+      ) : null}
+
+      {isInvoicesHub && balanceFilter !== "any" ? (
+        <p className="flex flex-wrap items-center gap-2 text-[12px] text-muted-foreground" role="status">
+          <span>
+            {balanceFilter === "past_due"
+              ? "Showing sent invoices with a balance past their due date."
+              : "Showing sent invoices with a balance. Drafts are not billed yet."}
+          </span>
+          <button
+            type="button"
+            className="text-primary underline-offset-4 hover:underline"
+            onClick={() => setBalanceFilter("any")}
+          >
+            Show all invoices
+          </button>
+        </p>
       ) : null}
 
       <AdminFilterBar
@@ -1381,7 +1477,7 @@ function BillingInvoiceLedgerInner({
           setLedgerFacilityIds(null);
           setCustomPeriodFrom("");
           setCustomPeriodTo("");
-          setBalanceDueOnly(false);
+          setBalanceFilter("any");
           setSavedLedgerViewKey("custom");
           setInvoiceHubPage(1);
         }}
@@ -1476,7 +1572,7 @@ function BillingInvoiceLedgerInner({
           {HUB_LEDGER_STATUS_CHIPS.map((key) => {
             const count = key === "all" ? pipelineRows.length : hubStatusCounts[key];
             const active =
-              !balanceDueOnly &&
+              balanceFilter === "any" &&
               ((key === "all" && status === "all") || (key !== "all" && status === key));
             return (
               <button
@@ -1491,7 +1587,7 @@ function BillingInvoiceLedgerInner({
                     : "border-border bg-card text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground",
                 )}
                 onClick={() => {
-                  setBalanceDueOnly(false);
+                  setBalanceFilter("any");
                   setStatus(key === "all" ? "all" : key);
                 }}
               >

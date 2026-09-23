@@ -128,7 +128,7 @@ CREATE TABLE diet_orders (
   organization_id               uuid NOT NULL REFERENCES organizations(id),
   facility_id                   uuid NOT NULL REFERENCES facilities(id),
   resident_id                   uuid NOT NULL REFERENCES residents(id),
-  ordered_by_user_id            uuid REFERENCES user_profiles(user_id),   -- nurse who transcribed order
+  ordered_by_user_id            uuid REFERENCES user_profiles(user_id),   -- med_tech (or admin) who transcribed order
   physician_name                text,
   order_date                    date NOT NULL,
   effective_date                date NOT NULL,
@@ -273,7 +273,7 @@ CREATE POLICY "Nurses and dietary staff manage diet orders"
   ON diet_orders FOR ALL
   USING (organization_id = haven.organization_id()
     AND facility_id = ANY(haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner','org_admin','facility_admin','nurse','dietary'));
+    AND haven.app_role() IN ('owner','org_admin','facility_admin','med_tech','cook'));
 
 -- kitchen_temp_logs
 CREATE POLICY "Facility dietary/admin staff see temp logs"
@@ -285,7 +285,7 @@ CREATE POLICY "Dietary and admin manage temp logs"
   ON kitchen_temp_logs FOR ALL
   USING (organization_id = haven.organization_id()
     AND facility_id = ANY(haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner','org_admin','facility_admin','nurse','dietary'));
+    AND haven.app_role() IN ('owner','org_admin','facility_admin','med_tech','cook'));
 
 -- meal_service_logs (same pattern)
 CREATE POLICY "Facility staff see meal logs"
@@ -297,7 +297,7 @@ CREATE POLICY "Dietary staff manage meal logs"
   ON meal_service_logs FOR ALL
   USING (organization_id = haven.organization_id()
     AND facility_id = ANY(haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner','org_admin','facility_admin','nurse','dietary'));
+    AND haven.app_role() IN ('owner','org_admin','facility_admin','med_tech','cook'));
 ```
 
 ---
@@ -339,7 +339,7 @@ The following temperature thresholds are seeded into the application constants (
 - **Diet order detail:** Full order with history (superseded orders visible). Edit / discontinue flows.
 - **HACCP Logs tab:** Date-range picker + facility filter. Table of readings with pass/fail color coding. "Add Reading" form: equipment picker (seeded list per facility), temp entry, result, corrective action if failed.
 - **Meal Logs tab:** Calendar or list view. "Log Today's Meal" form: select meal type, enter menu, resident count, any notes.
-- **Dietary Staff tab:** Staff with `dietary` role showing food handler cert status (expired = red).
+- **Dietary Staff tab:** Staff with the `cook` login role (formerly `dietary` / `dietary_aide`, folded by migration 468) showing food handler cert status (expired = red).
 
 ### Resident profile integration
 - `/residents/:id` clinical tab must surface active diet order summary and link to full order.

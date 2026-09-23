@@ -10,7 +10,7 @@ The expanded medication layer: eMAR operations, medication errors, PRN reassessm
 ## Primary Users
 
 - Med-tech users
-- Nurses
+- Med-Techs
 - Facility operators managing med compliance
 
 ## Key Workflows

@@ -35,7 +35,7 @@ Every screen in the app uses one of exactly three layout shells. No exceptions.
 
 ### Shell A: Admin Dashboard (Web)
 
-**Users:** owner, org_admin, facility_admin, nurse
+**Users:** owner, org_admin, facility_admin, manager, admin_assistant, coordinator, med_tech (also uses Shell B), maintenance_role, recruiter (referrals / pipeline / reputation only), broker
 **Viewport:** Desktop-first (1280px+), responsive down to 1024px. Below 1024px, sidebar collapses to icon-only.
 
 ```
@@ -75,7 +75,7 @@ Every screen in the app uses one of exactly three layout shells. No exceptions.
 
 ### Shell B: Caregiver Mobile (PWA)
 
-**Users:** caregiver (CNA, LPN on the floor)
+**Users:** med_tech (floor staff; lands on `/med-tech` and uses this floor app at `/caregiver`), housekeeper (housekeeper paths only, never clinical)
 **Viewport:** Mobile-first (375px). Must work on: iPhone SE (375px), standard phones (390-430px), small tablets (768px). Nothing larger — caregivers don't use desktops.
 
 ```
@@ -400,7 +400,7 @@ interface OfflineQueueItem {
 - When connectivity resumes, queue processes in FIFO order (oldest first).
 - Each item retries up to 3 times with exponential backoff.
 - Failed items after 3 retries → status 'failed' → surface to user as "X items could not be saved — tap to review."
-- Timestamp conflicts: if two offline devices documented the same eMAR record, the server rejects the duplicate and alerts the nurse for resolution.
+- Timestamp conflicts: if two offline devices documented the same eMAR record, the server rejects the duplicate and alerts the Med-Tech for resolution.
 
 ### Sync Indicator Component
 
@@ -448,10 +448,13 @@ App loads
   → If session exists → Fetch user_profile (app_role, organization_id)
     → Fetch user_facility_access (available facilities)
     → Route to appropriate shell:
-        - app_role IN (owner, org_admin, facility_admin, nurse) → Shell A
-        - app_role = caregiver → Shell B
+        - app_role IN (owner, org_admin, facility_admin, manager, admin_assistant, coordinator) → Shell A
+        - app_role = med_tech → /med-tech (and Shell B, the floor app at /caregiver)
+        - app_role = housekeeper → Shell B (/caregiver/housekeeper paths only)
+        - app_role = recruiter → Shell A (referrals, pipeline, reputation only)
         - app_role = family → Shell C
-        - app_role IN (dietary, maintenance_role) → Shell A (limited sidebar items)
+        - app_role = cook → /dietary; app_role = maintenance_role → Shell A (limited sidebar items)
+        (nurse, caregiver, dietary, dietary_aide are retired — migration 468, COL-615)
         - app_role = broker → Shell A (limited to insurance module — Phase 4)
 ```
 
