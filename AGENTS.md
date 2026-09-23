@@ -259,7 +259,7 @@ Owner rulings by Brian, 2026-09-22. This is the login-role model (`app_role`). S
 | `cook` | Cook | `/dietary` | Holds everything the retired `dietary` and `dietary_aide` roles held. |
 | `housekeeper` | Housekeeper | `/caregiver/housekeeper` | Floor app housekeeper paths only (plus clock, schedules, me, policies, acknowledgments, shift swaps). Never clinical. Unlicensed staff who are not Med-Techs are Housekeeping. |
 | `maintenance_role` | Maintenance | `/admin/facilities` | |
-| `recruiter` | Recruiter | `/admin/referrals` | Finds residents to place. Referrals, pipeline and reputation only; the admin shell refuses it everywhere else. Briefly named `marketing` in PR #671; a follow-up migration renames the enum value. Say "Recruiter", never "marketing". |
+| `recruiter` | Recruiter | `/admin/referrals` | Finds residents to place. Referrals, pipeline and reputation only; the admin shell refuses it everywhere else. Briefly named `marketing` in PR #671; migration 469 renamed the enum value. Say "Recruiter", never "marketing". |
 | `family` | Family Member | `/family` | |
 | `broker` | Broker | `/admin/insurance` | |
 
