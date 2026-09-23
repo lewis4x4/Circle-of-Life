@@ -20,3 +20,9 @@ export function requiredPositiveCents(raw: string): number | null {
   if (c === null || c < 1) return null;
   return c;
 }
+
+/** Integer cents from the database as the dollars text an input shows ("4440.00"). */
+export function centsToDollarsInput(cents: number | null | undefined): string {
+  if (cents === null || cents === undefined || !Number.isFinite(cents)) return "";
+  return (cents / 100).toFixed(2);
+}

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { formatCompliancePolicyPublishedDate } from "@/lib/compliance/policies-display-copy";
@@ -97,7 +97,7 @@ export default function PoliciesListPage() {
                <p className="text-[12px] opacity-80 mt-1">Upload and version your operational policies.</p>
              </div>
            ) : (
-             <>
+             <TableRowList label="Policies">
                <TableRowHeader>
                  <span className="w-[112px] shrink-0">Status</span>
                  <span className="flex-[2] min-w-0">Title</span>
@@ -145,7 +145,7 @@ export default function PoliciesListPage() {
                    );
                  })}
                </MotionList>
-             </>
+             </TableRowList>
            )}
         </div>
       </div>

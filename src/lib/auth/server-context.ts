@@ -37,13 +37,16 @@ type ProfileWithOrganization = {
  */
 export const getServerAuthContext = cache(async (): Promise<ServerAuthContextResult> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  // getClaims verifies the JWT signature locally (asymmetric keys, cached JWKS),
+  // where getUser was a round trip to Supabase Auth on every page render (COL-674).
+  // Revocation is still enforced: PostgREST runs haven_assert_authorized_request
+  // before the profile read below, so a revoked or stale session fails there.
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
 
-  if (userError) return { ok: false, error: userError.message };
-  if (!user) return { ok: false, error: "Sign in required." };
+  if (claimsError) return { ok: false, error: claimsError.message };
+  const claims = claimsData?.claims;
+  if (typeof claims?.sub !== "string") return { ok: false, error: "Sign in required." };
+  const user = { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null };
 
   const { data, error: profileError } = await supabase
     .from("user_profiles")

@@ -54,7 +54,7 @@ export default function SeedTargetsRoute() {
   // New-target form state
   const [newTopic, setNewTopic] = useState("");
   const [newLabel, setNewLabel] = useState("");
-  const [newPriority, setNewPriority] = useState(50);
+  const [newPriority, setNewPriority] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -126,7 +126,7 @@ export default function SeedTargetsRoute() {
               .replace(/^_+|_+$/g, ""),
             topic_label: newLabel.trim(),
             sample_questions: [],
-            priority: newPriority,
+            priority: Number(newPriority),
           } as never,
         );
         if (iErr) {
@@ -135,7 +135,7 @@ export default function SeedTargetsRoute() {
         }
         setNewTopic("");
         setNewLabel("");
-        setNewPriority(50);
+        setNewPriority("");
         await load();
       } finally {
         setSaving(false);
@@ -209,13 +209,16 @@ export default function SeedTargetsRoute() {
             min={0}
             max={100}
             value={newPriority}
-            onChange={(e) => setNewPriority(Number(e.target.value))}
+            onChange={(e) => setNewPriority(e.target.value)}
+            aria-label="Priority, 0 to 100"
+            placeholder="Priority (0–100, higher first)"
+            required
             className="rounded border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
           />
         </div>
         <button
           type="submit"
-          disabled={saving || !newTopic.trim() || !newLabel.trim()}
+          disabled={saving || !newTopic.trim() || !newLabel.trim() || newPriority.trim() === ""}
           className="mt-3 rounded bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-1.5 text-sm font-medium disabled:opacity-40"
         >
           {saving ? "Adding…" : "Add target"}
