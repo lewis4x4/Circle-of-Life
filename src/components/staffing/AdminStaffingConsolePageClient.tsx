@@ -51,8 +51,10 @@ import { ADMIN_STAFFING_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-ro
 import { AdminEmptyState, AdminErrorState } from "@/components/common/admin-list-patterns";
 import { enumLabel } from "@/lib/display/enum-label";
 
-type ComplianceFilter = "all" | "non_compliant" | "compliant";
 type WindowFilter = "all" | "24h";
+
+/** Brian, 2026-09-23 (COL-675). */
+export const STAFFING_RATIO_CHECK_OFF_COPY = "Staffing ratio check is off. Ratios are recorded for reference, never scored.";
 
 type StaffingSnapshotCsvRow = Database["public"]["Tables"]["staffing_ratio_snapshots"]["Row"];
 type QueryError = { message: string };
@@ -156,7 +158,6 @@ export function AdminStaffingConsolePageClient({
     () => Object.fromEntries(initialRequisitions.map((row) => [row.id, row.status])),
   );
   const [requisitionUpdatingId, setRequisitionUpdatingId] = useState<string | null>(null);
-  const [complianceFilter, setComplianceFilter] = useState<ComplianceFilter>("all");
   const [windowFilter, setWindowFilter] = useState<WindowFilter>("all");
 
   // Skip the first client-side load when the server already supplied data for
@@ -218,13 +219,7 @@ export function AdminStaffingConsolePageClient({
   }, [load]);
 
   useEffect(() => {
-    const requestedFilter = searchParams.get("compliance");
     const requestedWindow = searchParams.get("window");
-    if (requestedFilter === "non_compliant" || requestedFilter === "compliant") {
-      setComplianceFilter(requestedFilter);
-    } else {
-      setComplianceFilter("all");
-    }
     if (requestedWindow === "24h") {
       setWindowFilter("24h");
       return;
@@ -241,14 +236,10 @@ export function AdminStaffingConsolePageClient({
     });
   }, [snapshots, windowFilter]);
 
-  const visibleSnapshots = useMemo(() => {
-    return windowScopedSnapshots.filter((snapshot) => {
-      return (
-        complianceFilter === "all" ||
-        (complianceFilter === "non_compliant" ? !snapshot.isCompliant : snapshot.isCompliant)
-      );
-    });
-  }, [complianceFilter, windowScopedSnapshots]);
+  // Brian, 2026-09-23 (COL-675): the staffing ratio check is off — salaried staff do not
+  // clock in and Med-Techs carry the floor. Snapshots are shown for reference; nothing on
+  // this page says pass, fail, compliant or non-compliant.
+  const visibleSnapshots = windowScopedSnapshots;
 
   const exportStaffingSnapshotsCsv = useCallback(async () => {
     setExportingCsv(true);
@@ -297,25 +288,7 @@ export function AdminStaffingConsolePageClient({
   const currentRatio = latestVisibleSnapshot?.ratio ?? null;
   const currentRatioMainValue = formatStaffingConsoleCurrentRatioMainValue(currentRatio);
   const currentRatioMainIsNumeric = staffingConsoleCurrentRatioMainIsNumeric(currentRatioMainValue);
-  const requiredRatio = latestVisibleSnapshot?.requiredRatio ?? null;
-  const ratioDelta =
-    currentRatio != null && requiredRatio != null
-      ? currentRatio - requiredRatio
-      : null;
-  const ratioCardTone =
-    latestVisibleSnapshot == null
-      ? "text-slate-500"
-      : latestVisibleSnapshot.isCompliant
-        ? "text-emerald-500"
-        : "text-amber-500";
-  const ratioStatusCopy =
-    latestVisibleSnapshot == null
-      ? "No staffing snapshot has been recorded for this view."
-      : ratioDelta != null && ratioDelta > 0
-        ? `${ratioDelta.toFixed(1)} above the required ratio on the latest ${latestVisibleSnapshot.shift} snapshot.`
-        : ratioDelta != null
-          ? `${Math.abs(ratioDelta).toFixed(1)} below the required ratio on the latest ${latestVisibleSnapshot.shift} snapshot.`
-          : "Latest staffing snapshot loaded for this slice.";
+  const ratioStatusCopy = STAFFING_RATIO_CHECK_OFF_COPY;
   const openShiftShortage = shiftGaps.reduce((sum, gap) => sum + gap.shortage, 0);
   const shiftPanel = describeShiftGapPanel({
     scope: coverageScope,
@@ -329,12 +302,6 @@ export function AdminStaffingConsolePageClient({
         : null;
   // Single pass over the snapshots (this runs after an early return, so it
   // can't be a hook); derive both counts from one filter instead of two.
-  const compliantCount = windowScopedSnapshots.filter((s) => s.isCompliant).length;
-  const complianceOptions: Array<{ value: ComplianceFilter; label: string }> = [
-    { value: "all", label: `All (${windowScopedSnapshots.length})` },
-    { value: "non_compliant", label: `Non-compliant (${windowScopedSnapshots.length - compliantCount})` },
-    { value: "compliant", label: `Compliant (${compliantCount})` },
-  ];
 
   const attendanceLocked = adpStaffBlocker != null;
   const attendanceEmptyTitle = attendanceLocked ? "Attendance logging blocked" : "No attendance events yet";
@@ -394,15 +361,10 @@ export function AdminStaffingConsolePageClient({
         </div>
       </header>
 
-      {complianceFilter !== "all" || windowFilter !== "all" ? (
+      {windowFilter !== "all" ? (
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">{visibleSnapshots.length} visible snapshots</Badge>
-          {complianceFilter !== "all" ? (
-            <Badge variant="outline">
-              {complianceFilter === "non_compliant" ? "Non-compliant only" : "Compliant only"}
-            </Badge>
-          ) : null}
-          {windowFilter !== "all" ? <Badge variant="outline">Last 24 hours</Badge> : null}
+          <Badge variant="outline">Last 24 hours</Badge>
           <Link href="/admin/staffing" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2")}>
             Clear filters
           </Link>
@@ -422,7 +384,7 @@ export function AdminStaffingConsolePageClient({
                 currentRatioMainIsNumeric
                   ? "text-3xl font-semibold tabular-nums"
                   : "text-lg font-semibold leading-snug",
-                ratioCardTone,
+                "text-foreground",
               )}
             >
               {currentRatioMainIsNumeric
@@ -430,7 +392,7 @@ export function AdminStaffingConsolePageClient({
                 : currentRatioMainValue}
             </span>
             <span className="pb-1 text-sm text-muted-foreground">
-              {requiredRatio != null ? `required ${requiredRatio.toFixed(1)}` : "no live snapshot"}
+              {latestVisibleSnapshot != null ? "residents per staff" : "no live snapshot"}
             </span>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">{ratioStatusCopy}</p>
@@ -886,46 +848,23 @@ export function AdminStaffingConsolePageClient({
             <h3 className="text-base font-semibold text-foreground">
               {windowFilter === "24h" ? "Recent ratio snapshots (24h)" : "Recent ratio snapshots"}
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Toggle between compliant and non-compliant snapshots without leaving the console.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {complianceOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setComplianceFilter(option.value)}
-                aria-pressed={complianceFilter === option.value}
-                className={cn(
-                  "h-8 rounded-md border px-3 text-xs font-medium transition-colors",
-                  complianceFilter === option.value
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
+            <p className="mt-1 text-sm text-muted-foreground">{STAFFING_RATIO_CHECK_OFF_COPY}</p>
           </div>
         </div>
         <div className={cn(listShellClass, "mt-4 divide-y divide-border")}>
           {visibleSnapshots.slice(0, 5).map((snap) => (
-            <div key={snap.id} className={cn(listRowClass, "grid gap-2 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center")}>
+            <div key={snap.id} className={cn(listRowClass, "grid gap-2 text-sm sm:grid-cols-[1fr_auto] sm:items-center")}>
               <div className="font-medium text-foreground">
                 {new Date(snap.snapshotAt).toLocaleDateString()} / {snap.shift}
               </div>
               <div className="text-muted-foreground">Ratio {snap.ratio.toFixed(1)}</div>
-              <Badge variant={snap.isCompliant ? "secondary" : "destructive"}>
-                {snap.isCompliant ? "Compliant" : "Non-compliant"}
-              </Badge>
             </div>
           ))}
           {visibleSnapshots.length === 0 ? (
             <div className="p-4">
               <AdminEmptyState
                 title="No staffing snapshots match this filter"
-                description="Broaden the compliance filter or clear the 24 hour window to see additional snapshots."
+                description="Clear the 24 hour window to see earlier snapshots."
               />
             </div>
           ) : null}
