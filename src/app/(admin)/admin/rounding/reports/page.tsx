@@ -207,18 +207,22 @@ function ScopedAdminRoundingReportsPage() {
             onBuild={() => void load()}
           />
 
-          {!totals ? (
+          {loadState === "error" ? null : !totals ? (
             <RoundingEmptyNotice
               label="No report built"
               copy={
                 loadState === "loading"
                   ? { why: "Building the report.", guidance: "The window projection is on its way." }
-                  : {
-                      why: "No expected windows in this range.",
-                      guidance:
-                        "A report appears once the building had residents in occupancy over the dates selected.",
-                    }
+                  : { why: "No report built yet.", guidance: "Choose a building and dates, then build the report." }
               }
+            />
+          ) : totals.expected === 0 && totals.unconfigured === 0 ? (
+            <RoundingEmptyNotice
+              label="No report built"
+              copy={{
+                why: "No expected windows in this range.",
+                guidance: "A report appears once the building had residents in occupancy over the dates selected.",
+              }}
             />
           ) : (
             <>

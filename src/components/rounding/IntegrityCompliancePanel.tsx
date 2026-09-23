@@ -144,20 +144,21 @@ function ScopedIntegrityCompliancePanel({ facilityId }: { facilityId: string | n
         </div>
       </div>
 
-      {error ? <RoundingErrorNotice message={error} onRetry={() => void load()} /> : null}
-
-      {!totals ? (
+      {error ? (
+        // A failed read is only ever a failed read — never the "no residents" explanation.
+        <RoundingErrorNotice message={error} onRetry={() => void load()} />
+      ) : !totals ? (
         <RoundingEmptyNotice
           label="Observation compliance"
-          copy={
-            loading
-              ? { why: "Loading compliance.", guidance: "The window projection is on its way." }
-              : {
-                  why: "No compliance figures for this range.",
-                  guidance:
-                    "Figures appear once the building has residents in occupancy over the dates selected.",
-                }
-          }
+          copy={{ why: "Loading compliance.", guidance: "The window projection is on its way." }}
+        />
+      ) : totals.expected === 0 && totals.unconfigured === 0 ? (
+        <RoundingEmptyNotice
+          label="Observation compliance"
+          copy={{
+            why: "No compliance figures for this range.",
+            guidance: "Figures appear once the building has residents in occupancy over the dates selected.",
+          }}
         />
       ) : (
         <>
