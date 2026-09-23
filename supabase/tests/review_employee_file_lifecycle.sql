@@ -48,18 +48,20 @@ BEGIN
  RAISE EXCEPTION 'Expected rejection: %',p_message;
 END $$;
 SET LOCAL ROLE authenticated;
--- Minimal staff identity RPC supports a manager without granting the staff PII table.
+-- COL-571 (Brian, 2026-09-22): managers share administrator staff scope.
+-- The employee-file identity RPC must still preserve its minimal projection.
 SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.manager,'session_id',f.manager_session,'role','authenticated','auth_claim_version',p.auth_claim_version,'app_role','manager','organization_id',f.org)::text,true)
  FROM employee_fixture f JOIN public.user_profiles p ON p.id=f.manager;
 DO $$ DECLARE projected jsonb; BEGIN
- IF EXISTS(SELECT 1 FROM public.staff WHERE id=(SELECT employee FROM employee_fixture)) THEN RAISE EXCEPTION 'Fixture manager unexpectedly has full staff-row access'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.staff WHERE id=(SELECT employee FROM employee_fixture)) THEN RAISE EXCEPTION 'Scoped manager cannot read the approved facility staff scope'; END IF;
+ IF EXISTS(SELECT 1 FROM public.staff WHERE organization_id<>(SELECT org FROM employee_fixture)) THEN RAISE EXCEPTION 'Manager staff read escaped organization scope'; END IF;
  SELECT to_jsonb(x) INTO projected FROM public.haven_employee_file_staff((SELECT employee FROM employee_fixture)) x;
  IF projected IS NULL OR projected->>'first_name'<>'File' THEN RAISE EXCEPTION 'Scoped manager cannot resolve minimal employee identity'; END IF;
  IF (SELECT count(*) FROM jsonb_object_keys(projected))<>9 OR projected ? 'hourly_rate' OR projected ? 'date_of_birth' OR projected ? 'ssn_last_four' THEN RAISE EXCEPTION 'Staff projection contains private columns'; END IF;
  IF EXISTS(SELECT 1 FROM public.haven_employee_file_staff(NULL)) THEN RAISE EXCEPTION 'Null staff lookup exposed manager roster'; END IF;
  IF EXISTS(SELECT 1 FROM public.haven_employee_file_staff(gen_random_uuid())) THEN RAISE EXCEPTION 'Unknown staff identity exposed'; END IF;
 END $$;
--- Exact old staffing-console payload remains valid even without private staff SELECT.
+-- Exact old staffing-console payload remains valid with the approved scoped staff read.
 INSERT INTO public.staff_attendance_events(staff_id,facility_id,organization_id,event_type,occurred_at,reason,created_by,updated_by)
  SELECT employee,facility,org,'callout',now()-interval '1 hour','Legacy compatibility probe',manager,manager FROM employee_fixture;
 DO $$ DECLARE baseline jsonb; malicious jsonb; BEGIN

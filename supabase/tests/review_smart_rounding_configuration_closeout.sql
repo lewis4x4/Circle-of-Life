@@ -135,13 +135,20 @@ BEGIN
  RAISE NOTICE 'PASS: explicit idempotent rescue, legacy chip bypass refusal, immutable completion replay';
 END $$;
 
+-- Isolate this rollback-only roster fixture from the published demo week.
+-- Only fixture retirement bypasses the publication guard; every tested write below uses it.
+ALTER TABLE public.schedules DISABLE TRIGGER workforce_guard_schedule_row;
+UPDATE public.schedules SET deleted_at=now(),status='archived'
+ WHERE facility_id=(SELECT fac FROM closeout_fixture) AND deleted_at IS NULL
+ AND week_start_date BETWEEN date_trunc('week',now())::date-7 AND date_trunc('week',now())::date;
+ALTER TABLE public.schedules ENABLE TRIGGER workforce_guard_schedule_row;
 DO $$ DECLARE f record; sw record; sw_next record; sch uuid; ord uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); n integer; first_count integer; interval_minutes integer;
 BEGIN
  SELECT * INTO f FROM closeout_fixture;
  SELECT * INTO sw FROM public.facility_shift_window_at(f.fac,now());
  INSERT INTO public.schedules(organization_id,facility_id,week_start_date)
- VALUES(f.org,f.fac,date_trunc('week',now())::date) ON CONFLICT DO NOTHING;
- SELECT id INTO sch FROM public.schedules WHERE facility_id=f.fac AND week_start_date=date_trunc('week',now())::date AND deleted_at IS NULL;
+ VALUES(f.org,f.fac,date_trunc('week',sw.shift_service_date)::date) ON CONFLICT DO NOTHING;
+ SELECT id INTO sch FROM public.schedules WHERE facility_id=f.fac AND week_start_date=date_trunc('week',sw.shift_service_date)::date AND deleted_at IS NULL;
  INSERT INTO public.shift_assignments(id,schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids)
  VALUES(assignment,sch,f.aide_staff,f.fac,f.org,sw.shift_service_date,sw.roster_shift_type,ARRAY[f.resident]);
  -- The generation horizon below is an hour wide, so for the hour before every
@@ -150,6 +157,8 @@ BEGIN
  -- shift the horizon actually reaches as well.
  SELECT * INTO sw_next FROM public.facility_shift_window_at(f.fac,now()+interval '1 hour');
  IF (sw_next.shift_service_date,sw_next.roster_shift_type) IS DISTINCT FROM (sw.shift_service_date,sw.roster_shift_type) THEN
+  INSERT INTO public.schedules(organization_id,facility_id,week_start_date) VALUES(f.org,f.fac,date_trunc('week',sw_next.shift_service_date)::date) ON CONFLICT DO NOTHING;
+  SELECT id INTO sch FROM public.schedules WHERE facility_id=f.fac AND week_start_date=date_trunc('week',sw_next.shift_service_date)::date AND deleted_at IS NULL;
   INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids)
   VALUES(sch,f.aide_staff,f.fac,f.org,sw_next.shift_service_date,sw_next.roster_shift_type,ARRAY[f.resident]);
  END IF;

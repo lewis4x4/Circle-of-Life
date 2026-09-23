@@ -8,7 +8,7 @@
  * time. Nothing here edits a punch; every change is an appended row.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { fromZonedTime } from "date-fns-tz";
@@ -92,6 +92,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const correctionTimeRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -151,9 +152,13 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
     (target: string): string | null => {
       const punch = punches.find((p) => p.id === target);
       if (punch?.facility_id) return punch.facility_id;
+      const correction = corrections.find((c) => c.id === target);
+      if (correction?.facility_id) return correction.facility_id;
+      const rejection = rejections.find((r) => r.id === target);
+      if (rejection?.facility_id) return rejection.facility_id;
       return staff?.facilityId ?? null;
     },
-    [punches, staff],
+    [punches, corrections, rejections, staff],
   );
 
   const insertCorrection = useCallback(
@@ -167,7 +172,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
   );
 
   const acknowledge = async (exception: TimesheetException) => {
-    if (!user || !organizationId || !staff) return;
+    if (!user || !organizationId || !staff || exception.type === "missing_out") return;
     setFormError(null);
     try {
       await insertCorrection({
@@ -182,6 +187,12 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Could not acknowledge");
     }
+  };
+
+  const addMissingClockOut = (exception: TimesheetException) => {
+    setFormError(null);
+    setDraft({ ...EMPTY_DRAFT, target: exception.anchorId, punchType: "out", reason: "missed_punch" });
+    correctionTimeRef.current?.focus();
   };
 
   const submitCorrection = async (event: React.FormEvent) => {
@@ -206,6 +217,11 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
       const when = utcFromEasternLocal(draft.when);
       if (!when) {
         setFormError("Enter the punch time.");
+        return;
+      }
+      const missingClockIn = sheet?.effective.find((punch) => punch.id === draft.target);
+      if (missingClockIn && draft.punchType === "out" && new Date(when) <= missingClockIn.at) {
+        setFormError("Clock out must be after the clock in.");
         return;
       }
       row.punch_type = draft.punchType;
@@ -332,7 +348,11 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
                             {EXCEPTION_LABELS[exception.type]} · {formatKioskTime(exception.at)}
                             {exception.acknowledged ? <span className="ml-2 text-xs text-muted-foreground">Acknowledged</span> : null}
                           </span>
-                          {canReview && !exception.acknowledged ? (
+                          {canReview && !exception.acknowledged && exception.type === "missing_out" ? (
+                            <Button type="button" size="sm" variant="outline" onClick={() => addMissingClockOut(exception)}>
+                              Add clock out
+                            </Button>
+                          ) : canReview && !exception.acknowledged ? (
                             <Button type="button" size="sm" variant="outline" onClick={() => void acknowledge(exception)}>
                               Acknowledge
                             </Button>
@@ -352,6 +372,9 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
                 Add a correction
               </h2>
               <p className="text-xs text-muted-foreground">Punches are never edited. A correction is a new row with a reason on record.</p>
+              {draft.kind === "add_punch" && draft.target ? (
+                <p role="status" className="text-sm text-warning">Enter the verified clock-out time. Missing hours remain unresolved until the punch is corrected.</p>
+              ) : null}
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
                   <label htmlFor="correction-kind" className={LABEL}>
@@ -399,7 +422,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
                     <label htmlFor="correction-when" className={LABEL}>
                       {draft.kind === "add_punch" ? "Punch time (Eastern)" : "Corrected time (Eastern)"}
                     </label>
-                    <input id="correction-when" type="datetime-local" className={FIELD} value={draft.when} onChange={(e) => setDraft((d) => ({ ...d, when: e.target.value }))} required />
+                    <input ref={correctionTimeRef} id="correction-when" type="datetime-local" className={FIELD} value={draft.when} onChange={(e) => setDraft((d) => ({ ...d, when: e.target.value }))} required />
                   </div>
                 ) : null}
                 <div>

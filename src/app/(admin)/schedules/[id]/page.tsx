@@ -1,405 +1,210 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { format } from "date-fns";
-import { Download } from "lucide-react";
-
-import {
-  AdminEmptyState,
-  AdminLiveDataFallbackNotice,
-  AdminTableLoadingState,
-} from "@/components/common/admin-list-patterns";
+import { Copy, Download, Save, Send } from "lucide-react";
+import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
-import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
-import {
-  formatScheduleAssignmentStaffDisplayName,
-  formatScheduleAssignmentStaffLabel,
-} from "@/lib/schedules/schedule-assignment-display-copy";
-import { formatSchedulePublishedSubtitle } from "@/lib/schedules/schedules-display-copy";
-import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { Input } from "@/components/ui/input";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { enumLabel } from "@/lib/display/enum-label";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { formatScheduleAssignmentStaffLabel } from "@/lib/schedules/schedule-assignment-display-copy";
+import { formatSchedulePublishedSubtitle } from "@/lib/schedules/schedules-display-copy";
+import { assignmentDefinitionId, formatScheduleTimes, nextScheduleCellValue, scheduleCellKey, scheduledHours, scheduleWeekDates, type ScheduleAssignment, type ScheduleCellChange, type ScheduleShiftDefinition } from "@/lib/schedules/week-grid";
 import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { cn } from "@/lib/utils";
-import {
-  RecordDetailHeader,
-  RecordDetailSection,
-} from "@/design-system/components/record-detail";
-import { enumLabel } from "@/lib/display/enum-label";
-type ShiftAssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
+
 type ScheduleRow = Database["public"]["Tables"]["schedules"]["Row"];
-
-type AssignmentUi = {
-  id: string;
-  shiftDate: string;
-  shiftType: string;
-  shiftClassification: string;
-  status: string;
-  staffName: string;
-  notes: string | null;
-};
-
-type SupabaseStaffMini = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  deleted_at: string | null;
-};
-
-type QueryError = { message: string };
-type QueryResult<T> = { data: T[] | null; error: QueryError | null };
-
-type ShiftExportRow = ShiftAssignmentRow & { staff_display_name: string };
-
-function buildShiftAssignmentsCsv(rows: ShiftExportRow[]): string {
-  const header = [
-    "id",
-    "organization_id",
-    "facility_id",
-    "schedule_id",
-    "staff_id",
-    "staff_display_name",
-    "shift_date",
-    "shift_type",
-    "shift_classification",
-    "custom_start_time",
-    "custom_end_time",
-    "status",
-    "unit_id",
-    "notes",
-    "assigned_resident_ids",
-    "created_at",
-    "updated_at",
-    "created_by",
-    "updated_by",
-    "deleted_at",
-  ].join(",");
-  const body = rows.map((row) =>
-    [
-      csvEscapeCell(row.id),
-      csvEscapeCell(row.organization_id),
-      csvEscapeCell(row.facility_id),
-      csvEscapeCell(row.schedule_id),
-      csvEscapeCell(row.staff_id),
-      csvEscapeCell(row.staff_display_name),
-      csvEscapeCell(row.shift_date),
-      csvEscapeCell(row.shift_type),
-      csvEscapeCell(row.shift_classification),
-      csvEscapeCell(row.custom_start_time ?? ""),
-      csvEscapeCell(row.custom_end_time ?? ""),
-      csvEscapeCell(row.status),
-      csvEscapeCell(row.unit_id ?? ""),
-      csvEscapeCell(row.notes ?? ""),
-      csvEscapeCell(row.assigned_resident_ids != null ? JSON.stringify(row.assigned_resident_ids) : ""),
-      csvEscapeCell(row.created_at),
-      csvEscapeCell(row.updated_at),
-      csvEscapeCell(row.created_by ?? ""),
-      csvEscapeCell(row.updated_by ?? ""),
-      csvEscapeCell(row.deleted_at ?? ""),
-    ].join(","),
-  );
-  return [header, ...body].join("\r\n");
-}
+type StaffRow = { id: string; first_name: string; last_name: string; staff_role: string; employment_status: string };
 
 export default function AdminScheduleWeekDetailPage() {
   const params = useParams();
   const scheduleId = typeof params?.id === "string" ? params.id : "";
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
-
   const { appRole } = useHavenAuth();
-  const canEdit = ["owner", "org_admin", "facility_admin", "med_tech"].includes(appRole ?? "");
-  const [staffOptions, setStaffOptions] = useState<SupabaseStaffMini[]>([]);
-  const [shiftStaff, setShiftStaff] = useState("");
-  const [shiftDate, setShiftDate] = useState("");
-  const [shiftStart, setShiftStart] = useState("");
-  const [shiftEnd, setShiftEnd] = useState("");
-  const [savingShift, setSavingShift] = useState(false);
-  const [shiftId, setShiftId] = useState(() => crypto.randomUUID());
+  const canEdit = ["owner", "org_admin", "facility_admin", "manager"].includes(appRole ?? "");
   const [schedule, setSchedule] = useState<ScheduleRow | null>(null);
-  const [rows, setRows] = useState<AssignmentUi[]>([]);
-  const [rawAssignments, setRawAssignments] = useState<ShiftAssignmentRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [people, setPeople] = useState<StaffRow[]>([]);
+  const [assignments, setAssignments] = useState<ScheduleAssignment[]>([]);
+  const [definitions, setDefinitions] = useState<ScheduleShiftDefinition[]>([]);
+  const [changes, setChanges] = useState<Record<string, ScheduleCellChange>>({});
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [exportingCsv, setExportingCsv] = useState(false);
-
-  const facilityScopeOk = useMemo(() => {
-    if (!schedule) return true;
-    if (!isValidFacilityIdForQuery(selectedFacilityId)) return true;
-    return schedule.facility_id === selectedFacilityId;
-  }, [schedule, selectedFacilityId]);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [timeZone, setTimeZone] = useState("America/New_York");
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
-    if (!scheduleId) {
-      setError("Missing schedule id.");
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
+    const isCurrent = beginLoad();
+    setLoading(true);
     setError(null);
     try {
-      const schedRes = (await supabase
-        .from("schedules" as never)
-        .select("*")
-        .eq("id", scheduleId)
-        .is("deleted_at", null)
-        .maybeSingle()) as unknown as { data: ScheduleRow | null; error: QueryError | null };
-      if (schedRes.error) throw schedRes.error;
-      if (!schedRes.data) {
-        setSchedule(null);
-        setRows([]);
-        setRawAssignments([]);
-        setError(null);
-        setIsLoading(false);
-        return;
-      }
-      setSchedule(schedRes.data);
-      const staffResult = await readAllPages((from, to) => supabase.from("staff").select("id, first_name, last_name, deleted_at", { count: "exact" }).eq("facility_id", schedRes.data!.facility_id).eq("employment_status", "active").is("deleted_at", null).order("id").range(from, to));
-      setStaffOptions(staffResult.data as SupabaseStaffMini[]);
-
-      const assignRes = (await readAllPages((from, to) => supabase
-        .from("shift_assignments" as never)
-        .select("*", { count: "exact" })
-        .eq("schedule_id", scheduleId)
-        .is("deleted_at", null)
-        .order("shift_date", { ascending: true })
-        .order("shift_type", { ascending: true })
-        .order("id").range(from, to))) as unknown as QueryResult<ShiftAssignmentRow>;
-      if (assignRes.error) throw assignRes.error;
-      const list = assignRes.data ?? [];
-      setRawAssignments(list);
-
-      if (list.length === 0) {
-        setRows([]);
-        return;
-      }
-
-      const staffIds = [...new Set(list.map((a) => a.staff_id))];
-      const staffRes = (await supabase
-        .from("staff" as never)
-        .select("id, first_name, last_name, deleted_at")
-        .in("id", staffIds)
-        .is("deleted_at", null)) as unknown as QueryResult<SupabaseStaffMini>;
-      if (staffRes.error) throw staffRes.error;
-
-      const nameById = new Map<string, string>();
-      for (const s of staffRes.data ?? []) {
-        nameById.set(s.id, formatScheduleAssignmentStaffLabel(s));
-      }
-
-      setRows(
-        list.map((a) => ({
-          id: a.id,
-          shiftDate: a.shift_date,
-          shiftType: a.shift_type,
-          shiftClassification: a.shift_classification,
-          status: a.status,
-          staffName: formatScheduleAssignmentStaffDisplayName(nameById.get(a.staff_id)),
-          notes: a.notes,
-        })),
-      );
-    } catch (err) {
-      setError(formatLiveDataLoadError(err, "Failed to load schedule."));
+      const result = await supabase.from("schedules").select("*").eq("id", scheduleId).is("deleted_at", null).maybeSingle();
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error("Schedule unavailable. It may have been removed or you may not have access.");
+      const week = result.data;
+      const [staffResult, assignmentResult, definitionResult, facilityResult] = await Promise.all([
+        readAllPages((from, to) => supabase.from("staff").select("id, first_name, last_name, staff_role, employment_status", { count: "exact" }).eq("facility_id", week.facility_id).is("deleted_at", null).order("last_name").order("id").range(from, to)),
+        readAllPages((from, to) => supabase.from("shift_assignments").select("*", { count: "exact" }).eq("schedule_id", week.id).is("deleted_at", null).order("shift_date").order("id").range(from, to)),
+        readAllPages((from, to) => supabase.from("facility_shift_definitions").select("id, label, roster_shift_type, starts_at_local, ends_at_local", { count: "exact" }).eq("facility_id", week.facility_id).eq("active", true).is("deleted_at", null).order("sort_order").order("id").range(from, to)),
+        supabase.from("facilities").select("timezone").eq("id", week.facility_id).single(),
+      ]);
+      if (facilityResult.error) throw facilityResult.error;
+      if (!isCurrent()) return;
+      setSchedule(week);
+      setPeople(staffResult.data);
+      setAssignments(assignmentResult.data);
+      setDefinitions(definitionResult.data);
+      setTimeZone(facilityResult.data.timezone || "America/New_York");
+      setChanges({});
+    } catch (cause) {
+      if (!isCurrent()) return;
+      setError(formatLiveDataLoadError(cause, "Could not load the schedule."));
       setSchedule(null);
-      setRows([]);
-      setRawAssignments([]);
+      setPeople([]);
+      setAssignments([]);
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [scheduleId, supabase]);
+  }, [beginLoad, scheduleId, supabase]);
 
+  useEffect(() => { void load(); }, [load]);
+  const pendingCount = Object.keys(changes).length;
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!pendingCount) return;
+    const prevent = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    window.addEventListener("beforeunload", prevent);
+    return () => window.removeEventListener("beforeunload", prevent);
+  }, [pendingCount]);
 
-  const exportAssignmentsCsv = useCallback(() => {
-    if (!schedule) return;
-    setExportingCsv(true);
-    setError(null);
-    try {
-      const nameById = new Map<string, string>();
-      for (const a of rawAssignments) {
-        const ui = rows.find((r) => r.id === a.id);
-        nameById.set(a.staff_id, formatScheduleAssignmentStaffDisplayName(ui?.staffName));
-      }
+  const scopeMatches = !schedule || !isValidFacilityIdForQuery(selectedFacilityId) || schedule.facility_id === selectedFacilityId;
+  const editable = canEdit && scopeMatches && schedule?.status === "draft";
+  const days = schedule ? scheduleWeekDates(schedule.week_start_date) : [];
+  const byCell = new Map<string, ScheduleAssignment[]>();
+  for (const assignment of assignments) {
+    const key = scheduleCellKey(assignment.staff_id, assignment.shift_date);
+    byCell.set(key, [...(byCell.get(key) ?? []), assignment]);
+  }
+  const assignedIds = new Set(assignments.map((assignment) => assignment.staff_id));
+  const gridPeople = people.filter((person) => person.employment_status === "active" || assignedIds.has(person.id));
+  // Keep assignments visible even if their historical staff record is unavailable.
+  for (const id of assignedIds) if (!gridPeople.some((person) => person.id === id)) gridPeople.push({ id, first_name: "Staff record", last_name: "unavailable", staff_role: "", employment_status: "inactive" });
+  const visiblePeople = gridPeople.filter((person) => `${person.first_name} ${person.last_name} ${person.staff_role}`.toLowerCase().includes(search.toLowerCase().trim()));
 
-      const exportRows: ShiftExportRow[] = rawAssignments.map((row) => ({
-        ...row,
-        staff_display_name: formatScheduleAssignmentStaffDisplayName(nameById.get(row.staff_id)),
-      }));
-
-      const csv = buildShiftAssignmentsCsv(exportRows);
-      const week = schedule.week_start_date.replace(/[^0-9-]/g, "") || "week";
-      triggerCsvDownload(`shift-assignments-${week}-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Export failed.");
-    } finally {
-      setExportingCsv(false);
-    }
-  }, [schedule, rawAssignments, rows]);
-
-  async function editAssignment(action: "add" | "remove", assignmentId = shiftId) {
-    if (!schedule || !canEdit || !facilityScopeOk || savingShift) return;
-    setSavingShift(true); setError(null);
-    try {
-      const { error: editError } = await supabase.rpc("edit_draft_schedule" as never, {
-        p_schedule_id: schedule.id, p_action: action, p_shift_id: assignmentId,
-        p_staff_id: action === "add" ? shiftStaff : null, p_date: action === "add" ? shiftDate : null,
-        p_start: action === "add" ? shiftStart : null, p_end: action === "add" ? shiftEnd : null,
-      } as never);
-      if (editError) throw new Error(editError.message);
-      setShiftId(crypto.randomUUID());
-      await load();
-    } catch (error) { setError(error instanceof Error ? error.message : "Assignment was not saved."); }
-    finally { setSavingShift(false); }
+  function cycleCell(person: StaffRow, date: string) {
+    const key = scheduleCellKey(person.id, date);
+    const existing = byCell.get(key) ?? [];
+    if (!editable || busy || definitions.length === 0 || existing.length > 1 || person.employment_status !== "active") return;
+    const original = existing[0] ? assignmentDefinitionId(existing[0], definitions) : null;
+    const current = changes[key] ? changes[key].shift_definition_id : original;
+    const next = nextScheduleCellValue(current, definitions);
+    setChanges((previous) => {
+      const updated = { ...previous };
+      // An unrecognized legacy shift must remain an explicit change if cycled to Off.
+      if (next === original && (!existing.length || original !== null)) delete updated[key];
+      else updated[key] = { staff_id: person.id, shift_date: date, shift_definition_id: next };
+      return updated;
+    });
+    setNotice(null);
   }
 
-  const weekLabel = schedule ? formatWeekLabel(schedule.week_start_date) : "";
+  async function mutate(action: "save" | "copy" | "publish" | "remove", assignmentId?: string) {
+    if (!schedule || !editable || busy) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const rpc = action === "save" ? "schedule_bulk_upsert" : action === "copy" ? "schedule_copy_week" : action === "publish" ? "schedule_publish" : "edit_draft_schedule";
+      const args = action === "remove"
+        ? { p_schedule_id: schedule.id, p_action: "remove", p_shift_id: assignmentId }
+        : { p_schedule_id: schedule.id, p_expected_updated_at: schedule.updated_at, ...(action === "save" ? { p_cells: Object.values(changes) } : {}) };
+      const result = await supabase.rpc(rpc as never, args as never);
+      if (result.error) throw new Error(result.error.message);
+      await load();
+      setNotice(action === "publish" ? "Published. Assigned staff can now see this week in My schedule." : action === "copy" ? "Last week's assignments copied into this draft. Review the grid before publishing." : "Draft saved.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The schedule was not changed. Try again.");
+    } finally { setBusy(false); }
+  }
 
-  return (
-    <div className="space-y-6">
-      <RecordDetailHeader
-        title={schedule ? weekLabel : "Schedule week"}
-        subtitle={
-          schedule ? formatSchedulePublishedSubtitle(schedule.published_at, schedule.notes) : undefined
-        }
-        statusChips={schedule ? <ScheduleStatusBadge status={schedule.status} /> : undefined}
-        backLink={{ label: "Schedule weeks", href: "/admin/schedules" }}
-        actions={
-          rawAssignments.length > 0 ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={exportingCsv}
-              aria-busy={exportingCsv}
-              onClick={() => exportAssignmentsCsv()}
-            >
-              <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
-              {exportingCsv ? "Exporting…" : "Download assignments CSV"}
-            </Button>
-          ) : undefined
-        }
-      />
+  function effectiveCell(personId: string, date: string) {
+    const key = scheduleCellKey(personId, date);
+    const existing = byCell.get(key) ?? [];
+    const change = changes[key];
+    if (!change) return existing.map((assignment) => ({ label: definitions.find((definition) => definition.id === assignmentDefinitionId(assignment, definitions))?.label ?? enumLabel(assignment.shift_type), start: assignment.custom_start_time, end: assignment.custom_end_time }));
+    const definition = definitions.find((item) => item.id === change.shift_definition_id);
+    return definition ? [{ label: definition.label, start: definition.starts_at_local, end: definition.ends_at_local }] : [];
+  }
 
-      {!facilityScopeOk ? (
-        <div
-          className="rounded-[8px] border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning"
-          role="status"
-        >
-          This schedule belongs to another facility. Choose the matching facility in the header to align with
-          operations context (your access may still limit what you see).
-        </div>
-      ) : null}
+  function personHours(personId: string): string {
+    const hours = days.flatMap((date) => effectiveCell(personId, date).map((shift) => scheduledHours(date, shift.start, shift.end, timeZone)));
+    if (hours.some((value) => value === null)) return "Unknown";
+    return `${hours.reduce<number>((sum, value) => sum + (value ?? 0), 0).toFixed(1)} h`;
+  }
 
-      <div className="flex items-center gap-4 px-1 tabular-nums">
-        <div className="flex flex-col gap-0.5">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Shift assignments
-          </p>
-          <p className="text-2xl font-semibold text-foreground">{rows.length}</p>
-          <p className="text-xs text-muted-foreground">All assignments reconciled against the schedule row count.</p>
-        </div>
+  function exportAssignments() {
+    if (!schedule) return;
+    const fields = ["Employee", "Date", "Shift", "Start", "End", "Status", "Notes"];
+    const rows = assignments.map((assignment) => [formatScheduleAssignmentStaffLabel(people.find((person) => person.id === assignment.staff_id)), assignment.shift_date, enumLabel(assignment.shift_type), assignment.custom_start_time ?? "", assignment.custom_end_time ?? "", assignment.status, assignment.notes ?? ""]);
+    triggerCsvDownload(`schedule-${schedule.week_start_date}.csv`, [fields, ...rows].map((row) => row.map(csvEscapeCell).join(",")).join("\r\n"));
+  }
+
+  return <div className="space-y-5">
+    <Link href="/admin/schedules" className="text-sm text-muted-foreground underline">All schedule weeks</Link>
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div className="space-y-1">
+        <div className="flex items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">Schedule</h1>{schedule && <Badge variant={schedule.status === "published" ? "default" : "secondary"}>{enumLabel(schedule.status)}</Badge>}</div>
+        <p className="text-sm text-muted-foreground">{schedule ? `${formatDate(schedule.week_start_date)} – ${formatDate(days[6])} · ${timeZone}` : "Weekly shifts"}</p>
+        {schedule?.published_at && <p className="text-xs text-muted-foreground">{formatSchedulePublishedSubtitle(schedule.published_at, schedule.notes)}</p>}
       </div>
-
-      {isLoading ? <AdminTableLoadingState /> : null}
-      {!isLoading && error ? (
-        <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
-      ) : null}
-      {!isLoading && !schedule && !error ? (
-        <AdminEmptyState
-          title="Schedule not found"
-          description="This week may have been removed or you may not have access."
-        />
-      ) : null}
-
-      {!isLoading && schedule ? (
-          <RecordDetailSection
-            title="Assignments"
-            description="Draft assignments can be planned and exported. Publishing requires approved facility staffing and credential rules; a draft is not the working schedule."
-          >
-            {schedule.status === "draft" && canEdit && facilityScopeOk && <form className="grid gap-3 rounded-lg border border-border p-4 mb-4" onSubmit={(event) => { event.preventDefault(); void editAssignment("add"); }}>
-              <label>Employee<select aria-label="Employee" required value={shiftStaff} onChange={(event) => setShiftStaff(event.target.value)} className="block border rounded p-2 w-full"><option value="">Choose employee</option>{staffOptions.map((staff) => <option key={staff.id} value={staff.id}>{staff.first_name} {staff.last_name}</option>)}</select></label>
-              <label>Shift date<Input type="date" required value={shiftDate} onChange={(event) => setShiftDate(event.target.value)} /></label>
-              <label>Start time (Eastern)<Input type="time" required value={shiftStart} onChange={(event) => setShiftStart(event.target.value)} /></label>
-              <label>End time (Eastern; next day if earlier)<Input type="time" required value={shiftEnd} onChange={(event) => setShiftEnd(event.target.value)} /></label>
-              <Button type="submit" disabled={savingShift}>Add draft shift</Button>
-            </form>}
-            {rows.length === 0 ? (
-              <AdminEmptyState
-                title="No shift assignments yet"
-                description="Add draft shifts using the form above, then export the plan for staffing review."
-              />
-            ) : (
-              <MotionList className="space-y-3">
-                {rows.map((row) => (
-                  <MotionItem key={row.id}>
-                    <div className="flex w-full flex-col gap-3 rounded-[8px] border border-border bg-card p-4 transition-[transform,box-shadow] duration-[var(--motion-duration)] hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-semibold text-foreground">{row.staffName}</span>
-                        <span className="text-xs text-muted-foreground">{formatIsoDate(row.shiftDate)}</span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="font-mono text-[9px] uppercase tracking-wider">{row.shiftType}</Badge>
-                        <Badge variant="outline" className="font-mono text-[9px]">
-                          {row.shiftClassification}
-                        </Badge>
-                        <AssignmentStatusBadge status={row.status} />
-                        {schedule.status === "draft" && canEdit && facilityScopeOk && <Button type="button" variant="outline" size="sm" disabled={savingShift} onClick={() => void editAssignment("remove", row.id)}>Remove draft shift</Button>}
-                        {row.notes ? (
-                          <span className="max-w-md truncate text-xs text-muted-foreground" title={row.notes}>
-                            {row.notes}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </MotionItem>
-                ))}
-              </MotionList>
-            )}
-          </RecordDetailSection>
-        ) : null}
-    </div>
-  );
+      {editable && <div className="flex flex-wrap gap-2">
+        <Button variant="outline" disabled={busy || pendingCount > 0 || assignments.length > 0} title={assignments.length ? "Copy last week is available for an empty draft." : undefined} onClick={() => void mutate("copy")}><Copy className="mr-2 h-4 w-4" />Copy last week</Button>
+        <Button variant="outline" disabled={busy || pendingCount === 0} onClick={() => void mutate("save")}><Save className="mr-2 h-4 w-4" />{busy ? "Saving…" : `Save${pendingCount ? ` ${pendingCount} changes` : " draft"}`}</Button>
+        <Button disabled={busy || pendingCount > 0 || assignments.length === 0} onClick={() => void mutate("publish")}><Send className="mr-2 h-4 w-4" />Publish week</Button>
+      </div>}
+    </header>
+    {!scopeMatches && <p role="status" className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">This schedule belongs to another facility. Select its facility to edit it.</p>}
+    {loading && <AdminTableLoadingState />}
+    {error && <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />}
+    {notice && <p role="status" className="rounded-lg border border-border bg-muted/40 p-3 text-sm">{notice}</p>}
+    {!loading && schedule && <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{editable ? `Click a cell to cycle: Off${definitions.length ? ` → ${definitions.map((definition) => definition.label).join(" → ")}` : ""}. Save changes before publishing.` : schedule.status === "published" ? "Published shifts are visible to assigned staff." : "Review the schedule below."}</p>
+        <Input aria-label="Find a person on the schedule" placeholder="Find a person…" value={search} onChange={(event) => setSearch(event.target.value)} className="w-full sm:w-56" />
+      </div>
+      {definitions.length === 0 && <p className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">No active shift definitions are configured for this facility. Configure shift times in facility settings before adding shifts.</p>}
+      {pendingCount > 0 && <div className="flex items-center gap-3 text-sm" role="status"><span>{pendingCount} unsaved cell {pendingCount === 1 ? "change" : "changes"}.</span><Button size="sm" variant="ghost" disabled={busy} onClick={() => setChanges({})}>Discard changes</Button></div>}
+      {visiblePeople.length === 0 ? <AdminEmptyState title={search ? "No matching people" : "No active staff in this facility"} description={search ? "Try another name or clear the search." : "Add staff to People before planning their shifts."} /> : <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <table className="w-full min-w-[1040px] border-collapse text-sm"><caption className="sr-only">Seven-day employee schedule. Hours use the facility time zone and do not deduct unrecorded meals.</caption>
+          <thead><tr className="border-b border-border text-left"><th scope="col" className="sticky left-0 z-10 min-w-48 bg-card p-4 font-medium">Person</th>{days.map((date) => <th scope="col" key={date} className="min-w-28 p-3 text-center font-medium">{formatDate(date)}</th>)}<th scope="col" className="p-4 text-right font-medium">Hours</th></tr></thead>
+          <tbody>{visiblePeople.map((person) => <tr key={person.id} className="border-b border-border/60 last:border-b-0">
+            <th scope="row" className="sticky left-0 z-10 bg-card p-4 text-left font-medium"><Link href={`/admin/staff/${person.id}`} className="hover:underline">{formatScheduleAssignmentStaffLabel(person)}</Link><span className="mt-1 block text-xs font-normal text-muted-foreground">{enumLabel(person.staff_role)}{person.employment_status !== "active" ? " · Inactive" : ""}</span></th>
+            {days.map((date) => { const key = scheduleCellKey(person.id, date); const shifts = effectiveCell(person.id, date); const multiple = (byCell.get(key)?.length ?? 0) > 1; return <td key={date} className="p-1.5"><button type="button" onClick={() => cycleCell(person, date)} disabled={!editable || busy || !definitions.length || multiple || person.employment_status !== "active"} aria-label={`${formatScheduleAssignmentStaffLabel(person)}, ${formatDate(date)}: ${shifts.map((shift) => `${shift.label} ${formatScheduleTimes(shift.start, shift.end)}`).join(", ") || "Off"}. ${multiple ? "Review multiple assignments below." : "Cycle shift."}`} className={`min-h-16 w-full rounded-lg border px-2 py-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default ${changes[key] ? "border-primary bg-primary/10" : shifts.length ? "border-border bg-muted/50" : "border-transparent text-muted-foreground hover:border-border"}`}>
+              {shifts.length ? shifts.map((shift, index) => <span key={index} className="block"><span className="font-semibold">{shift.label}</span><span className="mt-1 block text-[11px] text-muted-foreground">{formatScheduleTimes(shift.start, shift.end)}</span></span>) : <span>Off</span>}
+            </button></td>; })}
+            <td className="p-4 text-right font-medium tabular-nums">{personHours(person.id)}</td>
+          </tr>)}</tbody>
+          <tfoot><tr className="border-t border-border"><th scope="row" className="sticky left-0 bg-card p-4 text-left font-medium">Assigned shifts</th>{days.map((date) => <td key={date} className="p-3 text-center tabular-nums">{gridPeople.reduce((sum, person) => sum + effectiveCell(person.id, date).length, 0)}</td>)}<td /></tr></tfoot>
+        </table>
+      </div>}
+      <p className="text-xs text-muted-foreground">Hours are scheduled elapsed time, before meal deductions. Assignment counts are not a staffing minimum or credential check. {schedule.status === "draft" ? "This draft is hidden from staff until you publish it." : "Published assignments are available in My schedule."}</p>
+      <div className="flex flex-wrap items-center gap-4 text-sm"><Link href="/admin/shift-swaps" className="underline">Review shift swap requests</Link><Button variant="ghost" size="sm" disabled={!assignments.length || pendingCount > 0} onClick={exportAssignments}><Download className="mr-2 h-4 w-4" />Download assignments</Button></div>
+      {assignments.length > 0 && <details className="rounded-lg border border-border p-4"><summary className="cursor-pointer text-sm font-medium">Assignment details ({assignments.length})</summary><div className="mt-3 space-y-2">{assignments.map((assignment) => <div key={assignment.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 text-sm"><div><span className="font-medium">{formatScheduleAssignmentStaffLabel(people.find((person) => person.id === assignment.staff_id))}</span> · {formatDate(assignment.shift_date)} · {formatScheduleTimes(assignment.custom_start_time, assignment.custom_end_time)}<span className="ml-2 text-xs text-muted-foreground">{enumLabel(assignment.status)}</span></div>{editable && <Button size="sm" variant="outline" disabled={busy || pendingCount > 0} onClick={() => void mutate("remove", assignment.id)}>Remove shift</Button>}</div>)}</div></details>}
+    </>}
+  </div>;
 }
 
-function formatWeekLabel(isoDate: string): string {
-  const parsed = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return `Week of ${new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(parsed)}`;
-}
-
-function formatIsoDate(isoDate: string): string {
-  const parsed = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
-}
-
-function ScheduleStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; className: string }> = {
-    draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
-    published: {
-      label: "Published",
-      className: "bg-success/10 text-success",
-    },
-    archived: { label: "Archived", className: "bg-muted text-muted-foreground" },
-  };
-  const m = map[status] ?? { label: status, className: "bg-slate-100 text-slate-600" };
-  return <Badge className={cn("uppercase tracking-wider text-[9px] font-bold border-0", m.className)}>{m.label}</Badge>;
-}
-
-function AssignmentStatusBadge({ status }: { status: string }) {
-  const label = enumLabel(status);
-  return (
-    <Badge variant="secondary" className="font-mono text-[9px] uppercase tracking-wider">
-      {label}
-    </Badge>
-  );
+function formatDate(date: string): string {
+  return new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" }).format(new Date(`${date}T12:00:00`));
 }
