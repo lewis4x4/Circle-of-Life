@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -84,9 +85,11 @@ export default function PoliciesListPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/admin/compliance/policies/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-4 text-[10px] font-semibold bg-primary hover:bg-primary/90 text-primary-foreground")} >
-               + New Policy
-            </Link>
+            {ready ? (
+              <Link href="/admin/compliance/policies/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-4 text-[10px] font-semibold bg-primary hover:bg-primary/90 text-primary-foreground")} >
+                 + New Policy
+              </Link>
+            ) : null}
           </div>
         </header>
 
@@ -99,10 +102,7 @@ export default function PoliciesListPage() {
            </div>
 
            {!ready ? (
-             <div className="p-12 text-center text-warning bg-warning/10 rounded-lg border border-warning/20">
-               <p className="font-semibold text-[13px]">Select a facility</p>
-               <p className="text-[12px] opacity-80 mt-1">Policies are managed per facility.</p>
-             </div>
+             <FacilityGateNotice reason="Policies are versioned and acknowledged per building." />
            ) : loading ? (
              <p className="text-[13px] text-muted-foreground pl-2">Loading policies…</p>
            ) : loadError ? (

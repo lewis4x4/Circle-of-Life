@@ -18,7 +18,7 @@ vi.mock("@/lib/auth/account-link", () => ({
   hasLinkedStaffRecord: async () => mocks.linked,
   loadAccountLinkContact: async () => ({ facilityName: "Oakridge ALF", administratorName: "Dana Admin", phone: "386-555-0100" }),
 }));
-vi.mock("@/lib/rounding/live-board-fetch", () => ({ fetchLiveBoardShifts: async () => [] }));
+vi.mock("@/lib/caregiver/shift", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/caregiver/shift")>()), fetchFacilityShiftDefinitions: async () => new Map() }));
 vi.mock("@/hooks/useRoundingOfflineSync", () => ({
   useRoundingOfflineSync: () => ({ ready: true, lastError: null, online: true, pendingCount: 0, isSyncing: false, flush: vi.fn() }),
 }));

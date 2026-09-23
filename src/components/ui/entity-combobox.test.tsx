@@ -62,3 +62,16 @@ describe("EntityCombobox dismissal", () => {
     await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
   });
 });
+
+describe("EntityCombobox accessibility (COL-658)", () => {
+  it("names the required trigger by its label without disallowed ARIA", async () => {
+    const { axeViolations } = await import("@/test-utils/axe");
+    const { container } = render(
+      <EntityCombobox id="resident" label="Resident" placeholder="Select resident" required
+        searchPlaceholder="Search residents" value="" onChange={() => {}}
+        options={[{ id: "one", label: "Resident One", keywords: "Resident One" }]} />,
+    );
+    expect(screen.getByRole("button", { name: /Resident/ })).not.toHaveAttribute("aria-required");
+    expect(await axeViolations(container)).toEqual([]);
+  });
+});

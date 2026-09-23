@@ -33,11 +33,13 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { StatuteCitation } from "@/components/ui/StatuteCitation";
 import {
+  complianceFacilityGateReason,
+  complianceRollupScopeCopy,
   COMPLIANCE_DEFICIENCIES_ALL_CLEAR_TITLE,
   complianceDeficienciesAllClear,
-  complianceFacilityNotSelectedCopy,
   complianceOverdueEmergencyAlert,
   compliancePocDueLine,
   complianceScoreEmptyCopy,
@@ -252,8 +254,11 @@ export function AdminCompliancePageClient({
   }, [loadReminders]);
 
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  // COL-651: the snapshot is an org-wide rollup under All facilities (every
+  // count drops its facility filter), so the tiles have a real scope either
+  // way; only the per-building sections below need one facility.
   const tileState = (value: number | undefined) =>
-    complianceTileState({ facilityReady, loading: snapLoading, error: snapError, value });
+    complianceTileState({ facilityReady: true, loading: snapLoading, error: snapError, value });
   const overdueEmergencyAlert = facilityReady ? complianceOverdueEmergencyAlert(emergencyItems) : null;
   const deficienciesAllClear = complianceDeficienciesAllClear({
     facilityReady,
@@ -340,12 +345,7 @@ export function AdminCompliancePageClient({
         ) : null}
 
         {!facilityReady ? (
-          <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50">
-            <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
-            <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
-              {complianceFacilityNotSelectedCopy()}
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">{complianceRollupScopeCopy()}</p>
         ) : null}
 
         {snapError ? (
@@ -420,7 +420,7 @@ export function AdminCompliancePageClient({
           <p className="text-sm text-muted-foreground mb-6">Survey citations that still need correction or verification.</p>
 
           {!facilityReady ? (
-            <p className="text-sm text-muted-foreground">{complianceFacilityNotSelectedCopy()}</p>
+            <FacilityGateNotice reason={complianceFacilityGateReason()} />
           ) : defLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : defError ? (

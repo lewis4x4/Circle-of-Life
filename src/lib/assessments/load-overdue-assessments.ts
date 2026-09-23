@@ -58,9 +58,6 @@ type SupabaseResidentMini = {
 type QueryError = { message: string };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
 
-export const NO_FACILITY_SOURCE_NOTICE =
-  "Select a facility to see its assessments and care plans that are due.";
-
 function easternDateString(d = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",

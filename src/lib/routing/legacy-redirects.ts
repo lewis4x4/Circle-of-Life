@@ -35,6 +35,22 @@ export const ADMIN_ALIAS_SEGMENTS = [
   "vendors",
 ] as const;
 
+/**
+ * `/admin/v2/<segment>` pages were one-line re-exports of `/admin/<segment>` (COL-654);
+ * the tree is retired and each URL 308s to its `/admin` equivalent. Only the flag-gated
+ * design-system preview (`/admin/v2/design-preview`) still renders under `/admin/v2`.
+ */
+export const RETIRED_V2_SEGMENTS = [
+  "admissions",
+  "executive",
+  "finance",
+  "incidents",
+  "quality",
+  "residents",
+  "rounding",
+  "settings",
+] as const;
+
 export type LegacyRedirect = {
   source: string;
   destination: string;
@@ -45,6 +61,17 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
   ...ADMIN_ALIAS_SEGMENTS.flatMap((seg) => [
     { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
     { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
+  ]),
+  { source: "/admin/v2", destination: "/admin", permanent: true },
+  // The v2 alert detail only ever redirected to the alert's anchor on the list.
+  {
+    source: "/admin/v2/executive/alerts/:id",
+    destination: "/admin/executive/alerts",
+    permanent: true,
+  },
+  ...RETIRED_V2_SEGMENTS.flatMap((seg) => [
+    { source: `/admin/v2/${seg}`, destination: `/admin/${seg}`, permanent: true },
+    { source: `/admin/v2/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
   ]),
   // The medication reconciliation hub lives at /admin/discharge; the pipeline URL
   // rendered the same hub outside the admin shell (COL-644).

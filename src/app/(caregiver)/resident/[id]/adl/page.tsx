@@ -9,7 +9,7 @@ import { ADL_OPTIONS, ASSIST_OPTIONS, adlTypeLabel, assistanceLabel } from "@/li
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -39,6 +39,7 @@ export default function CaregiverResidentAdlPage() {
     organizationId: string;
     facilityName: string | null;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
   const [residentLabel, setResidentLabel] = useState<string | null>(null);
@@ -152,7 +153,7 @@ export default function CaregiverResidentAdlPage() {
     setLoadError(null);
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const dailyLogId = await fetchShiftDailyLogId(supabase, {
         residentId,
         facilityId: ctx.facilityId,
@@ -261,7 +262,7 @@ export default function CaregiverResidentAdlPage() {
                   <>
                     {" "}
                     · today ({zonedYmd(new Date(), ctx.timeZone)}) · shift{" "}
-                    <span className="text-zinc-200">{currentShiftForTimezone(ctx.timeZone)}</span>
+                    <span className="text-zinc-200">{currentShiftFor(ctx).label.toLowerCase()}</span>
                   </>
                 ) : null}
               </>
@@ -275,8 +276,8 @@ export default function CaregiverResidentAdlPage() {
             <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">ADL</Label>
-                  <select
+                  <Label htmlFor="adl-adl" className="text-xs text-zinc-400">ADL</Label>
+                  <select id="adl-adl"
                     className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                     value={adlType}
                     onChange={(e) => setAdlType(e.target.value)}
@@ -289,8 +290,8 @@ export default function CaregiverResidentAdlPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Assistance</Label>
-                  <select
+                  <Label htmlFor="adl-assistance" className="text-xs text-zinc-400">Assistance</Label>
+                  <select id="adl-assistance"
                     className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                     value={assistance}
                     onChange={(e) => setAssistance(e.target.value as Database["public"]["Enums"]["assistance_level"])}

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   REPUTATION_ACCOUNT_NEW_LOADING_PROFILE_COPY,
@@ -128,7 +129,7 @@ export default function AdminReputationAccountNewPage() {
       ) : null}
 
       {!facilityReady && !authLoading ? (
-        <p className="text-sm text-warning">Select a facility first.</p>
+        <FacilityGateNotice reason="A review listing is connected to one building's Google or Yelp profile." />
       ) : null}
 
       {fetchErrorBannerMessage ? (
@@ -137,6 +138,7 @@ export default function AdminReputationAccountNewPage() {
         </p>
       ) : null}
 
+      {facilityReady ? (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Review surface</CardTitle>
@@ -210,6 +212,7 @@ export default function AdminReputationAccountNewPage() {
           </form>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }

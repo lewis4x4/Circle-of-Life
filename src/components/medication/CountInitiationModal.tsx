@@ -335,9 +335,9 @@ export function CountInitiationModal({
 
                 {/* Shift Selection */}
                 <div className="space-y-2 mb-4">
-                  <Label className="text-xs text-emerald-200/80">Shift ending</Label>
+                  <Label htmlFor="count-init-shift-ending" className="text-xs text-emerald-200/80">Shift ending</Label>
                   <div className="relative">
-                    <select
+                    <select id="count-init-shift-ending"
                       value={shift}
                       onChange={(e) => setShift(e.target.value as Shift)}
                       className="w-full h-12 appearance-none rounded-lg border border-emerald-900/50 bg-zinc-950 px-4 text-sm text-zinc-100 focus:ring-2 focus:ring-emerald-500/50"
@@ -384,12 +384,12 @@ export function CountInitiationModal({
                         </CardHeader>
                         <CardContent className="flex items-center gap-4">
                           <div className="flex-1">
-                            <Label className="text-[10px] text-zinc-400">Expected</Label>
-                            <Input aria-label="Expected quantity from inventory ledger" inputMode="numeric" value={line.expected} onChange={(e) => setLines((prev) => prev.map((x) => x.med.id === line.med.id ? { ...x, expected: e.target.value } : x))} />
+                            <Label htmlFor="count-init-expected" className="text-[10px] text-zinc-400">Expected</Label>
+                            <Input id="count-init-expected" aria-label="Expected quantity from inventory ledger" inputMode="numeric" value={line.expected} onChange={(e) => setLines((prev) => prev.map((x) => x.med.id === line.med.id ? { ...x, expected: e.target.value } : x))} />
                           </div>
                           <div className="flex-1">
-                            <Label className="text-[10px] text-zinc-400">Actual</Label>
-                            <Input
+                            <Label htmlFor="count-init-actual" className="text-[10px] text-zinc-400">Actual</Label>
+                            <Input id="count-init-actual"
                               aria-label="Actual count on hand"
                               type="number"
                               inputMode="numeric"
@@ -480,8 +480,8 @@ export function CountInitiationModal({
               )}
 
               <div className="space-y-2">
-                <Label className="text-xs text-emerald-200/80">Incoming staff email</Label>
-                <Input
+                <Label htmlFor="count-init-incoming-staff-email" className="text-xs text-emerald-200/80">Incoming staff email</Label>
+                <Input id="count-init-incoming-staff-email"
                   type="email"
                   autoComplete="off"
                   value={coEmail}
@@ -491,8 +491,8 @@ export function CountInitiationModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs text-emerald-200/80">Password</Label>
-                <Input
+                <Label htmlFor="count-init-password" className="text-xs text-emerald-200/80">Password</Label>
+                <Input id="count-init-password"
                   type="password"
                   autoComplete="off"
                   value={coPassword}

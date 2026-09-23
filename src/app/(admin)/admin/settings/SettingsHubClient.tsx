@@ -84,7 +84,7 @@ const SETTINGS_CARDS: SettingsCard[] = [
     title: "Audit log",
     description:
       "Review who did what across Haven — clinical, financial, and admin actions.",
-    href: "/admin/v2/settings/audit-log",
+    href: "/admin/settings/audit-log",
     icon: ScrollText,
     roles: ["owner", "org_admin", "facility_admin"],
   },

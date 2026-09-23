@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EntityCombobox, type EntityComboboxOption } from "@/components/ui/entity-combobox";
@@ -98,10 +99,8 @@ export default function NewMedicationErrorPage() {
 
   const submit = useCallback(async () => {
     setFormError(null);
-    if (!facilityReady || !selectedFacilityId) {
-      setFormError("Select a facility in the header.");
-      return;
-    }
+    // The form only renders inside a facility scope (COL-651).
+    if (!facilityReady || !selectedFacilityId) return;
     if (!user?.id || !organizationId) {
       setFormError("Could not resolve profile.");
       return;
@@ -139,6 +138,12 @@ export default function NewMedicationErrorPage() {
         Medication errors
       </Link>
 
+      {!facilityReady ? (
+        <FacilityGateNotice
+          title="Report medication error"
+          reason="A medication error is filed against a resident in one building."
+        />
+      ) : (
       <Card>
         <CardHeader>
           <CardTitle className="">Report medication error</CardTitle>
@@ -149,9 +154,6 @@ export default function NewMedicationErrorPage() {
             <p role="alert" className="text-sm text-destructive">
               {formError}
             </p>
-          ) : null}
-          {!facilityReady ? (
-            <p className="text-sm text-muted-foreground">Select a facility in the header to report an error.</p>
           ) : null}
 
           <div>
@@ -263,6 +265,7 @@ export default function NewMedicationErrorPage() {
           ) : null}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

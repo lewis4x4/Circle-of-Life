@@ -679,15 +679,13 @@ export default function AdminReferralsHl7InboundPage() {
                           onChange={() => toggleHeaderSelect()}
                         />
                       </TableHead>
-                      <TableHead>
+                      {/* aria-sort belongs on the column header, not the sort button (COL-658). */}
+                      <TableHead aria-sort={receivedDir === "desc" ? "descending" : "ascending"}>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           className="-ml-2 h-auto gap-1 px-2 py-0 text-[12px] font-semibold text-muted-foreground hover:text-foreground"
-                          aria-sort={
-                            receivedDir === "desc" ? "descending" : "ascending"
-                          }
                           onClick={toggleReceivedSort}
                         >
                           Received

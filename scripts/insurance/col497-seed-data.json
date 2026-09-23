@@ -42,7 +42,7 @@
       "deductible_cents": 2500000,
       "premium_cents": null,
       "premium_period": "annual",
-      "notes": "DATES AS PRINTED, NOT AS ASSUMED. The Plantation ACORD 25 issued 2026-04-15 prints CGL 04/06/2026-04/06/2027, while its own Professional Liability line and all four sibling facility certificates print 04/08/2026-04/08/2027 for the same policy number NSC101045. Two days is most likely a typographical error on a lender-facing certificate, but it has not been confirmed with the carrier. Do not silently normalise to 04/08 — resolve with Lewis & Lewis and reissue. Tracked as a COL-497 finding."
+      "notes": "DATES AS PRINTED, NOT AS ASSUMED. The Plantation ACORD 25 issued 2026-04-15 prints CGL 04/06/2026-04/06/2027, while its own Professional Liability line and all four sibling facility certificates print 04/08/2026-04/08/2027 for the same policy number NSC101045. Two days is most likely a typographical error on a lender-facing certificate, but it has not been confirmed with the carrier. Do not silently normalise to 04/08 — resolve with Lewis & Lewis and reissue."
     },
     {
       "program": "professional-nsc101045",
@@ -76,7 +76,7 @@
       "deductible_cents": null,
       "premium_cents": null,
       "premium_period": "annual",
-      "notes": "EXPIRED 2026-07-19 and no successor term is recorded anywhere Haven or InsureFlow can see. Employers liability $1,000,000 each accident / $1,000,000 disease each employee / $1,000,000 disease policy limit. This is the most recent workers compensation term evidenced by the ACORD 25 certificates issued 2026-04-15 to Berkadia Commercial Mortgage and HUD. Either the renewal exists and was never captured, or four facilities are carrying an uncovered statutory exposure. Resolve before relying on this record. Tracked as a COL-497 finding."
+      "notes": "EXPIRED 2026-07-19 and no successor term is recorded anywhere Haven or InsureFlow can see. Employers liability $1,000,000 each accident / $1,000,000 disease each employee / $1,000,000 disease policy limit. This is the most recent workers compensation term evidenced by the ACORD 25 certificates issued 2026-04-15 to Berkadia Commercial Mortgage and HUD. Either the renewal exists and was never captured, or four facilities are carrying an uncovered statutory exposure. Resolve before relying on this record."
     },
     {
       "program": "wc-normandy",
@@ -93,7 +93,7 @@
       "deductible_cents": null,
       "premium_cents": null,
       "premium_period": "annual",
-      "notes": "EXPIRED 2026-07-19 and no successor term is recorded. Grande Cypress sits on a separate workers compensation carrier from the other four facilities — Normandy Insurance Company, not Technology Insurance Company. Employers liability $1,000,000 / $1,000,000 / $1,000,000. Source: Grande Cypress ACORD 25 issued 2026-04-15. Same open question as the Technology Insurance term. Tracked as a COL-497 finding."
+      "notes": "EXPIRED 2026-07-19 and no successor term is recorded. Grande Cypress sits on a separate workers compensation carrier from the other four facilities — Normandy Insurance Company, not Technology Insurance Company. Employers liability $1,000,000 / $1,000,000 / $1,000,000. Source: Grande Cypress ACORD 25 issued 2026-04-15. Same open question as the Technology Insurance term."
     },
     {
       "program": "property-homewood-icat",
@@ -110,7 +110,7 @@
       "deductible_cents": null,
       "premium_cents": 2402452,
       "premium_period": "annual",
-      "notes": "Source: InsureFlow policies row on account Homewood Property Company LLC (45892ec6-70ff-4e82-9a8f-abbdb6f578bd), premium $24,024.52. NOTE: the InsureFlow account is the property-owning company, while the Haven entity Sorensen, Smith & Bay LLC is the operator of Homewood Lodge ALF. The owner-to-operator mapping is an assumption made for this seed and needs confirmation before the InsureFlow feed relies on it. Tracked as a COL-497 finding."
+      "notes": "Source: InsureFlow policies row on account Homewood Property Company LLC (45892ec6-70ff-4e82-9a8f-abbdb6f578bd), premium $24,024.52. NOTE: the InsureFlow account is the property-owning company, while the Haven entity Sorensen, Smith & Bay LLC is the operator of Homewood Lodge ALF. The owner-to-operator mapping is an assumption made for this seed and needs confirmation before the InsureFlow feed relies on it."
     },
     {
       "program": "auto-plantation",
@@ -136,7 +136,7 @@
     { "entity": "rising_oaks",    "additional_insured": true,  "waiver_of_subrogation": true,  "effective_date": "2026-04-08", "expiration_date": "2027-04-08", "described_location": "201 NW Ranchera Street, Live Oak, FL 32064 (52 bed facility)", "source_file": "RISING OAKS GL CERT.pdf" },
     { "entity": "oakridge",       "additional_insured": true,  "waiver_of_subrogation": true,  "effective_date": "2026-04-08", "expiration_date": "2027-04-08", "described_location": "297 SW County Rd 300, Mayo, FL 32066 (52 beds)", "source_file": "OAKRIDGE GL CERT.pdf" },
     { "entity": "grande_cypress", "additional_insured": false, "waiver_of_subrogation": false, "effective_date": "2026-04-08", "expiration_date": "2027-04-08", "described_location": "970 SW Pinemount Road, Lake City, FL 32024", "source_file": "GRANDE CYPRESS GL CERT.pdf", "extra_note": "Named insured on this certificate is Grande Cypress Property Company LLC, not Grande Cypress ALF LLC. The ADDITIONAL INSURED and SUBROGATION WAIVED columns are blank on this certificate while all four siblings print Y/Y — recorded as false because that is what the document states, not because it was confirmed." },
-    { "entity": "plantation",     "additional_insured": true,  "waiver_of_subrogation": true,  "effective_date": "2026-04-06", "expiration_date": "2027-04-06", "described_location": "430 SE Mill St, Mayo, FL 32066", "source_file": "PLANTATION ALF GL CERT.pdf", "extra_note": "DEFECT: this certificate's Description of Operations names Homewood Lodge Assisted Living Facility at 430 SE Mill St Mayo FL 32066 — the wrong facility. The Plantation's own site is not stated anywhere on its certificate. This document went to Berkadia Commercial Mortgage and HUD in that condition. Recorded as printed. Tracked as a COL-497 finding." }
+    { "entity": "plantation",     "additional_insured": true,  "waiver_of_subrogation": true,  "effective_date": "2026-04-06", "expiration_date": "2027-04-06", "described_location": "430 SE Mill St, Mayo, FL 32066", "source_file": "PLANTATION ALF GL CERT.pdf", "extra_note": "DEFECT: this certificate's Description of Operations names Homewood Lodge Assisted Living Facility at 430 SE Mill St Mayo FL 32066 — the wrong facility. The Plantation's own site is not stated anywhere on its certificate. This document went to Berkadia Commercial Mortgage and HUD in that condition. Recorded as printed." }
   ],
 
   "coi_common": {

@@ -9,7 +9,7 @@ import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options"
 import { formatCaregiverResidentLogGeneralNotes } from "@/lib/caregiver/resident-log-display-copy";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { appendShiftNote as persistShiftNote, parseVitalMeasurements, recordVitals } from "@/lib/caregiver/clinical-writes";
 import { requestEvaluateVitals } from "@/lib/infection-control/request-evaluate-vitals";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
@@ -45,6 +45,7 @@ export default function CaregiverResidentLogPage() {
     organizationId: string;
     facilityName: string | null;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
   const [residentLabel, setResidentLabel] = useState<string | null>(null);
@@ -295,7 +296,7 @@ export default function CaregiverResidentLogPage() {
                   <>
                     {" "}
                     · today ({zonedYmd(new Date(), ctx.timeZone)}) · shift{" "}
-                    <span className="text-zinc-200">{currentShiftForTimezone(ctx.timeZone)}</span>
+                    <span className="text-zinc-200">{currentShiftFor(ctx).label.toLowerCase()}</span>
                   </>
                 ) : null}
               </>
@@ -307,8 +308,8 @@ export default function CaregiverResidentLogPage() {
         <CardContent className="space-y-4 text-sm text-zinc-300">
           {ctx && residentLabel ? (
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Add shift note</Label>
-              <textarea
+              <Label htmlFor="log-add-shift-note" className="text-xs text-zinc-400">Add shift note</Label>
+              <textarea id="log-add-shift-note"
                 rows={3}
                 placeholder="Objective, brief narrative for this pass…"
                 className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
@@ -332,8 +333,8 @@ export default function CaregiverResidentLogPage() {
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Vitals (shift row)</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div>
-                  <Label className="text-[10px] text-zinc-500">Temp °F</Label>
-                  <input
+                  <Label htmlFor="log-temp-f" className="text-[10px] text-zinc-500">Temp °F</Label>
+                  <input id="log-temp-f"
                     className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
                     inputMode="decimal"
                     value={temp}
@@ -342,8 +343,8 @@ export default function CaregiverResidentLogPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-[10px] text-zinc-500">BP sys</Label>
-                  <input
+                  <Label htmlFor="log-bp-sys" className="text-[10px] text-zinc-500">BP sys</Label>
+                  <input id="log-bp-sys"
                     className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
                     inputMode="numeric"
                     value={bpSys}
@@ -352,8 +353,8 @@ export default function CaregiverResidentLogPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-[10px] text-zinc-500">BP dia</Label>
-                  <input
+                  <Label htmlFor="log-bp-dia" className="text-[10px] text-zinc-500">BP dia</Label>
+                  <input id="log-bp-dia"
                     className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
                     inputMode="numeric"
                     value={bpDia}
@@ -362,8 +363,8 @@ export default function CaregiverResidentLogPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-[10px] text-zinc-500">Pulse</Label>
-                  <input
+                  <Label htmlFor="log-pulse" className="text-[10px] text-zinc-500">Pulse</Label>
+                  <input id="log-pulse"
                     className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
                     inputMode="numeric"
                     value={pulse}

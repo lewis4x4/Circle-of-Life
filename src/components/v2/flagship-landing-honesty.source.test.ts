@@ -3,8 +3,6 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { resolveUiV2AdminRewritePath, uiV2 } from "@/lib/flags";
-
 const read = (relativePath: string) =>
   readFileSync(path.join(process.cwd(), relativePath), "utf8");
 
@@ -14,22 +12,6 @@ const w2Source = read("src/components/v2/W2ListClient.tsx");
 const w3Source = read("src/components/v2/W3AnalyticsClient.tsx");
 
 describe("flagship V2 landing honesty", () => {
-  it("keeps V2 as the default landing and does not kill-switch the rewrite", () => {
-    expect(uiV2({})).toBe(true);
-    expect(resolveUiV2AdminRewritePath("/admin/executive", { enabled: true })).toBe(
-      "/admin/v2/executive",
-    );
-    expect(resolveUiV2AdminRewritePath("/admin/executive/standup", { enabled: true })).toBe(
-      "/admin/v2/executive/standup",
-    );
-    expect(resolveUiV2AdminRewritePath("/admin/rounding", { enabled: true })).toBe(
-      "/admin/v2/rounding",
-    );
-    expect(resolveUiV2AdminRewritePath("/admin/residents", { enabled: true })).toBe(
-      "/admin/v2/residents",
-    );
-  });
-
   it("mounts rounding and executive hub nav on rewritten V2 dashboards", () => {
     expect(w1Source).toContain("FlagshipDashboardHeaderNav");
     expect(w1Source).toContain("FlagshipDashboardBoardNav");

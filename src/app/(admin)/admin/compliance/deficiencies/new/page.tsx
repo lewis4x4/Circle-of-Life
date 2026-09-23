@@ -6,6 +6,7 @@ import { useState } from "react";
 import { addDays, format } from "date-fns";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -36,7 +37,7 @@ export default function NewDeficiencyPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header.");
+      setError("No facility is in scope.");
       return;
     }
     if (!tagNumber.trim() || !tagDescription.trim() || !description.trim()) {
@@ -114,11 +115,11 @@ export default function NewDeficiencyPage() {
 
   if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
     return (
-      <div className="mx-auto max-w-lg space-y-4">
-        <p className="text-sm text-slate-600 dark:text-slate-400">Select a facility to record deficiencies.</p>
-        <Link href="/admin/compliance" className={cn(buttonVariants({ variant: "outline" }))}>
-          Back to compliance
-        </Link>
+      <div className="mx-auto max-w-2xl">
+        <FacilityGateNotice
+          title="New deficiency"
+          reason="A survey deficiency and its Plan of Correction belong to the building that was surveyed."
+        />
       </div>
     );
   }

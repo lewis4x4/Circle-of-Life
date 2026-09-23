@@ -217,7 +217,7 @@ export function StaffFamilyBulletinSection({
             )}
             {!residentsLoading && residents.length === 0 && !residentsError ? (
               <p className="text-xs text-muted-foreground">
-                No active residents in the selected facility scope.
+                No active residents at this facility.
               </p>
             ) : null}
           </div>

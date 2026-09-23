@@ -52,6 +52,10 @@ export function AdminIncidentsPageClient({
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility. Any later facility scope change falls through.
   const skipNextLoadRef = useRef(initialError == null);
+  // Only the load for the current facility scope may write rows. Without this,
+  // an "All facilities" request that resolves after a later single-facility
+  // request paints other buildings' incidents under the selected one (COL-662).
+  const requestSequence = useRef(0);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
@@ -59,6 +63,7 @@ export function AdminIncidentsPageClient({
   }, []);
 
   const loadIncidents = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
       skipNextLoadRef.current = false;
       return;
@@ -69,17 +74,20 @@ export function AdminIncidentsPageClient({
     setError(null);
     try {
       const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
+      if (sequence !== requestSequence.current) return;
       setRows(liveRows);
     } catch (err) {
+      if (sequence !== requestSequence.current) return;
       setRows([]);
       setError(err instanceof Error ? err.message : "Failed to load incidents");
     } finally {
-      setIsLoading(false);
+      if (sequence === requestSequence.current) setIsLoading(false);
     }
   }, [selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void loadIncidents();
+    return () => { requestSequence.current += 1; };
   }, [loadIncidents]);
 
   if (isLoading) {
