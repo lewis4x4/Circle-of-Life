@@ -371,7 +371,7 @@ export default function OperationsTodayPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-muted/30 rounded-lg border">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <select
+        <select aria-label="Shift"
           value={selectedShift}
           onChange={(e) => setSelectedShift(e.target.value as typeof selectedShift)}
           className="bg-background border rounded-md px-3 py-2 text-sm"
@@ -381,7 +381,7 @@ export default function OperationsTodayPage() {
           <option value="evening">Evening Shift</option>
           <option value="night">Night Shift</option>
         </select>
-        <select
+        <select aria-label="Status"
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value as typeof selectedStatus)}
           className="bg-background border rounded-md px-3 py-2 text-sm"

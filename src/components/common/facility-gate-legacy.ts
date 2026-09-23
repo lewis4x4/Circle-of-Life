@@ -97,20 +97,7 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
     "src/lib/reputation/reputation-reply-new-display-copy.ts",
   ],
 
-  "b6-office": [
-    "src/app/(admin)/admin/acknowledgments/my/page.tsx",
-    "src/app/(admin)/admin/acknowledgments/page.tsx",
-    "src/app/(admin)/admin/contacts/page.tsx",
-    "src/app/(admin)/admin/drive-cutover/page.tsx",
-    "src/app/(admin)/admin/drive-import/page.tsx",
-    "src/app/(admin)/admin/forms/page.tsx",
-    "src/app/(admin)/admin/forms/submit/page.tsx",
-    "src/app/(admin)/admin/front-desk/page.tsx",
-    "src/app/(admin)/admin/handoff/page.tsx",
-    "src/app/(admin)/admin/meetings/new/page.tsx",
-    "src/app/(admin)/admin/meetings/page.tsx",
-    "src/components/care-events/print/TaxonomyPacketPageClient.tsx",
-  ],
+  "b6-office": [],
 
   "b7-workforce": [
     "src/app/(admin)/certifications/new/page.tsx",

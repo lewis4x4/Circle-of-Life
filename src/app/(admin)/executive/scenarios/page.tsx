@@ -7,7 +7,7 @@
  * and see projected KPIs update in real-time with charts.
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useId, useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Calculator, Sliders, RefreshCw } from "lucide-react";
 import {
@@ -122,15 +122,17 @@ function AssumptionSlider({ label, value, onChange, min, max, step, unit, descri
   label: string; value: number; onChange: (v: number) => void;
   min: number; max: number; step: number; unit: string; description?: string;
 }) {
+  const id = useId();
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</label>
+        <label htmlFor={id} className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</label>
         <span className={cn("text-sm font-semibold tabular-nums", value > 0 ? "text-success" : value < 0 ? "text-destructive" : "text-foreground")}>
           {value > 0 ? "+" : ""}{value}{unit}
         </span>
       </div>
       <input
+        id={id}
         type="range"
         min={min}
         max={max}

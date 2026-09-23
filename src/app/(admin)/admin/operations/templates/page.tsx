@@ -846,12 +846,14 @@ function SummaryCard({
   );
 }
 
+// A wrapping <label> names the control it holds (COL-658); a sibling <Label>
+// with no htmlFor left every select in the template form unnamed.
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
+    <label className="block space-y-1.5">
+      <span className="block text-sm leading-none font-medium">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 

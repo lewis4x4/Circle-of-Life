@@ -179,7 +179,7 @@ export default function OverdueTasksPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-lg border">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <select
+        <select aria-label="Category"
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
           className="bg-background border rounded-md px-3 py-2 text-sm"
@@ -189,7 +189,7 @@ export default function OverdueTasksPage() {
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
-        <select
+        <select aria-label="Priority"
           value={selectedPriority}
           onChange={(e) => setSelectedPriority(e.target.value)}
           className="bg-background border rounded-md px-3 py-2 text-sm"

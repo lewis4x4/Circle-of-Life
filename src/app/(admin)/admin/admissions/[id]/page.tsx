@@ -956,8 +956,8 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Rate schedule</label>
-                      <select
+                      <label htmlFor="admission-rate-schedule" className="text-xs uppercase tracking-wider text-muted-foreground">Rate schedule</label>
+                      <select id="admission-rate-schedule"
                         value={rateScheduleDraft}
                         onChange={(event) => setRateScheduleDraft(event.target.value)}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -971,8 +971,8 @@ export default function AdminAdmissionCaseDetailPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Accommodation</label>
-                      <select
+                      <label htmlFor="admission-accommodation" className="text-xs uppercase tracking-wider text-muted-foreground">Accommodation</label>
+                      <select id="admission-accommodation"
                         value={rateAccommodationDraft}
                         onChange={(event) => setRateAccommodationDraft(event.target.value as Database["public"]["Enums"]["admission_accommodation_quote"])}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -982,8 +982,8 @@ export default function AdminAdmissionCaseDetailPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Care level helper</label>
-                      <select
+                      <label htmlFor="admission-care-level-helper" className="text-xs uppercase tracking-wider text-muted-foreground">Care level helper</label>
+                      <select id="admission-care-level-helper"
                         value={rateCareLevelDraft}
                         onChange={(event) => setRateCareLevelDraft(event.target.value as "1" | "2" | "3")}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1004,8 +1004,8 @@ export default function AdminAdmissionCaseDetailPage() {
                       </Button>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Quoted base rate ($)</label>
-                      <input
+                      <label htmlFor="admission-quoted-base-rate" className="text-xs uppercase tracking-wider text-muted-foreground">Quoted base rate ($)</label>
+                      <input id="admission-quoted-base-rate"
                         inputMode="decimal"
                         placeholder="Monthly amount in dollars"
                         value={quotedBaseDraft}
@@ -1014,8 +1014,8 @@ export default function AdminAdmissionCaseDetailPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Quoted care surcharge ($)</label>
-                      <input
+                      <label htmlFor="admission-quoted-care-surcharge" className="text-xs uppercase tracking-wider text-muted-foreground">Quoted care surcharge ($)</label>
+                      <input id="admission-quoted-care-surcharge"
                         inputMode="decimal"
                         placeholder="Monthly amount in dollars, if any"
                         value={quotedCareDraft}
@@ -1024,8 +1024,8 @@ export default function AdminAdmissionCaseDetailPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Effective date</label>
-                      <input
+                      <label htmlFor="admission-effective-date" className="text-xs uppercase tracking-wider text-muted-foreground">Effective date</label>
+                      <input id="admission-effective-date"
                         type="date"
                         value={effectiveDateDraft}
                         onChange={(event) => setEffectiveDateDraft(event.target.value)}
@@ -1044,8 +1044,8 @@ export default function AdminAdmissionCaseDetailPage() {
                     </div>
                   ) : null}
                   <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</label>
-                    <textarea
+                    <label htmlFor="admission-notes" className="text-xs uppercase tracking-wider text-muted-foreground">Notes</label>
+                    <textarea id="admission-notes"
                       value={rateNotesDraft}
                       onChange={(event) => setRateNotesDraft(event.target.value)}
                       rows={3}
