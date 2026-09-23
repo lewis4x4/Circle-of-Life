@@ -48,20 +48,28 @@ export type DsoFacilityRow = {
   netExposureCents: number;
   trailing90BilledCents: number;
   trailing90CollectedCents: number;
-  currentDsoDays: number;
-  projected30DayDsoDays: number;
-  collectionEfficiencyPct: number;
+  /** Null when nothing was sent in the window — DSO has no billing to divide by. */
+  currentDsoDays: number | null;
+  projected30DayDsoDays: number | null;
+  /** Null when nothing was sent in the window. */
+  collectionEfficiencyPct: number | null;
 };
 
 export type DsoSummary = {
   openArCents: number;
+  /** Sent invoices dated inside the trailing window (any amount). */
+  trailing90BilledCount: number;
+  /** Payment rows dated inside the trailing window. */
+  trailing90PaymentCount: number;
   trustCoverageCents: number;
   netExposureCents: number;
   trailing90BilledCents: number;
   trailing90CollectedCents: number;
-  currentDsoDays: number;
-  projected30DayDsoDays: number;
-  collectionEfficiencyPct: number;
+  /** Null when nothing was sent in the window — DSO has no billing to divide by. */
+  currentDsoDays: number | null;
+  projected30DayDsoDays: number | null;
+  /** Null when nothing was sent in the window. */
+  collectionEfficiencyPct: number | null;
 };
 
 export type CostToServeFacilityRow = {
@@ -78,6 +86,10 @@ export type CostToServeFacilityRow = {
 
 export type CostToServeSummary = {
   activeResidents: number;
+  /** Approved time records in the window — zero means labor cost is unknown, not $0. */
+  laborRecordCount: number;
+  /** Vendor invoices in the window — zero means vendor cost is unknown, not $0. */
+  vendorInvoiceCount: number;
   laborCostCents: number;
   vendorCostCents: number;
   totalCostCents: number;
@@ -110,6 +122,8 @@ export type CapexDueAssetRow = {
 };
 
 export type CapexSummary = {
+  /** Assets with a replacement date and estimate — zero means no capital plan exists yet. */
+  scheduledAssetCount: number;
   overdueCount: number;
   overdueCostCents: number;
   due12MonthsCount: number;
@@ -145,15 +159,15 @@ function roundMoney(value: number): number {
   return Number.isFinite(value) ? Math.round(value) : 0;
 }
 
-function safePercent(numerator: number, denominator: number): number {
-  if (denominator <= 0) return 0;
+function safePercent(numerator: number, denominator: number): number | null {
+  if (denominator <= 0) return null;
   return (numerator / denominator) * 100;
 }
 
-function safeDays(openBalanceCents: number, billedCents: number, billedWindowDays: number): number {
-  if (billedCents <= 0 || billedWindowDays <= 0) return 0;
-  const averageDailyBilling = billedCents / billedWindowDays;
-  return averageDailyBilling > 0 ? openBalanceCents / averageDailyBilling : 0;
+/** Days of billing the open balance represents; null (not 0) when there was no billing to measure. */
+function safeDays(openBalanceCents: number, billedCents: number, billedWindowDays: number): number | null {
+  if (billedCents <= 0 || billedWindowDays <= 0) return null;
+  return openBalanceCents / (billedCents / billedWindowDays);
 }
 
 function monthsFromNow(dateString: string, today: Date): number {
@@ -260,6 +274,8 @@ export function buildDsoForecast(input: {
 
   const summary = {
     openArCents: sumNumbers(rows.map((row) => row.openArCents)),
+    trailing90BilledCount: input.billedInvoices90d.filter((invoice) => isBilledStatus(invoice.status)).length,
+    trailing90PaymentCount: input.payments90d.length,
     trustCoverageCents: sumNumbers(rows.map((row) => row.trustCoverageCents)),
     netExposureCents: sumNumbers(rows.map((row) => row.netExposureCents)),
     trailing90BilledCents: sumNumbers(rows.map((row) => row.trailing90BilledCents)),
@@ -368,6 +384,8 @@ export function buildCostToServeForecast(input: {
   return {
     summary: {
       activeResidents: totalResidents,
+      laborRecordCount: input.timeRecords30d.length,
+      vendorInvoiceCount: input.vendorInvoices30d.filter((invoice) => INCLUDED_VENDOR_STATUSES.has(invoice.status)).length,
       laborCostCents: totalLaborCostCents,
       vendorCostCents: totalVendorCostCents,
       totalCostCents,
@@ -454,6 +472,12 @@ export function buildCapexForecast(input: {
 
   return {
     summary: {
+      scheduledAssetCount: input.assets.filter(
+        (asset) =>
+          asset.status !== "retired" &&
+          Boolean(asset.lifecycle_replace_by) &&
+          (asset.replacement_cost_estimate_cents ?? 0) > 0,
+      ).length,
       overdueCount: sumNumbers(rows.map((row) => row.overdueCount)),
       overdueCostCents: sumNumbers(rows.map((row) => row.overdueCostCents)),
       due12MonthsCount: sumNumbers(rows.map((row) => row.due12MonthsCount)),
