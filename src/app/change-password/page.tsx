@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -28,6 +29,15 @@ export default function ChangePasswordPage() {
           </p>
         </header>
         {!loading && <ChangePasswordForm forced={mustChangePassword} onSuccess={handleSuccess} />}
+        {/* A forced change has no way out until it is done; a voluntary one does (COL-654). */}
+        {!loading && !mustChangePassword ? (
+          <Link
+            href={getDashboardRouteForRole(appRole) || "/admin"}
+            className="inline-block text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            Cancel
+          </Link>
+        ) : null}
       </div>
     </div>
   );
