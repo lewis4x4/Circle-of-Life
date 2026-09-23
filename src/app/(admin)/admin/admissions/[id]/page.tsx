@@ -202,11 +202,11 @@ export default function AdminAdmissionCaseDetailPage() {
   const [bedDraft, setBedDraft] = useState("");
   const [physicianOrdersSummaryDraft, setPhysicianOrdersSummaryDraft] = useState("");
   const [caseNotesDraft, setCaseNotesDraft] = useState("");
-  const [medicaidPipelineStageDraft, setMedicaidPipelineStageDraft] = useState<MedicaidPipelineStage>("prospect");
+  // Drafts start unchosen; a quoted care level, room or 1823 status is picked, never assumed (COL-676).
+  const [medicaidPipelineStageDraft, setMedicaidPipelineStageDraft] = useState<MedicaidPipelineStage | "">("");
   const [rateScheduleDraft, setRateScheduleDraft] = useState("");
-  const [rateAccommodationDraft, setRateAccommodationDraft] =
-    useState<Database["public"]["Enums"]["admission_accommodation_quote"]>("private");
-  const [rateCareLevelDraft, setRateCareLevelDraft] = useState<"1" | "2" | "3">("2");
+  const [rateAccommodationDraft, setRateAccommodationDraft] = useState<Database["public"]["Enums"]["admission_accommodation_quote"] | "">("");
+  const [rateCareLevelDraft, setRateCareLevelDraft] = useState<"1" | "2" | "3" | "">("");
   const [quotedBaseDraft, setQuotedBaseDraft] = useState("");
   const [quotedCareDraft, setQuotedCareDraft] = useState("");
   const [effectiveDateDraft, setEffectiveDateDraft] = useState("");
@@ -214,7 +214,7 @@ export default function AdminAdmissionCaseDetailPage() {
   const [editingRateTermId, setEditingRateTermId] = useState<string | null>(null);
   const [arrivalDate, setArrivalDate] = useState("");
   const [arrivalMessage, setArrivalMessage] = useState<string | null>(null);
-  const [form1823StatusDraft, setForm1823StatusDraft] = useState<Form1823Record["status"]>("pending");
+  const [form1823StatusDraft, setForm1823StatusDraft] = useState<Form1823Record["status"] | "">("");
   const [form1823PhysicianDraft, setForm1823PhysicianDraft] = useState("");
   const [form1823ExamDateDraft, setForm1823ExamDateDraft] = useState("");
   const [form1823ExpirationDraft, setForm1823ExpirationDraft] = useState("");
@@ -252,7 +252,7 @@ export default function AdminAdmissionCaseDetailPage() {
       setBedDraft(caseRow?.bed_id ?? "");
       setPhysicianOrdersSummaryDraft(caseRow?.physician_orders_summary ?? "");
       setCaseNotesDraft(caseRow?.notes ?? "");
-      setMedicaidPipelineStageDraft((caseRow?.medicaid_pipeline_stage as MedicaidPipelineStage | null) ?? "prospect");
+      setMedicaidPipelineStageDraft((caseRow?.medicaid_pipeline_stage as MedicaidPipelineStage | null) ?? "");
       setEffectiveDateDraft(caseRow?.target_move_in_date ?? "");
       if (caseRow?.facility_id) {
         const [{ data: schedules, error: schedulesError }, { data: bedRows, error: bedsError }] = await Promise.all([
@@ -318,7 +318,7 @@ export default function AdminAdmissionCaseDetailPage() {
         const resolvedChecklist = (form1823ChecklistRes.data ?? null) as AdmissionChecklistItem | null;
         setForm1823Record(resolvedForm1823Record);
         setForm1823ChecklistItem(resolvedChecklist);
-        setForm1823StatusDraft(resolvedForm1823Record?.status ?? "pending");
+        setForm1823StatusDraft(resolvedForm1823Record?.status ?? "");
         setForm1823PhysicianDraft(resolvedForm1823Record?.physician_name ?? "");
         setForm1823ExamDateDraft(resolvedForm1823Record?.exam_date ?? "");
         setForm1823ExpirationDraft(resolvedForm1823Record?.expiration_date ?? "");
@@ -327,7 +327,7 @@ export default function AdminAdmissionCaseDetailPage() {
         setOnboardingCounts({ carePlans: 0, medications: 0, payers: 0, familyConsents: 0 });
         setForm1823Record(null);
         setForm1823ChecklistItem(null);
-        setForm1823StatusDraft("pending");
+        setForm1823StatusDraft("");
         setForm1823PhysicianDraft("");
         setForm1823ExamDateDraft("");
         setForm1823ExpirationDraft("");
@@ -371,6 +371,11 @@ export default function AdminAdmissionCaseDetailPage() {
 
   async function saveForm1823() {
     if (!row) return;
+    if (!form1823StatusDraft) {
+      setActionError("Choose the Form 1823 status.");
+      setActionMessage(null);
+      return;
+    }
     setActionLoading("form-1823");
     setActionError(null);
     setActionMessage(null);
@@ -414,7 +419,7 @@ export default function AdminAdmissionCaseDetailPage() {
   const selectedRateSchedule = rateSchedules.find((schedule) => schedule.id === rateScheduleDraft) ?? null;
 
   function prefillQuotedTermsFromSchedule() {
-    if (!selectedRateSchedule) return;
+    if (!selectedRateSchedule || !rateAccommodationDraft || !rateCareLevelDraft) return;
     const base =
       rateAccommodationDraft === "private"
         ? selectedRateSchedule.base_rate_private
@@ -432,6 +437,11 @@ export default function AdminAdmissionCaseDetailPage() {
 
   async function addRateTerm() {
     if (!row) return;
+    if (!rateAccommodationDraft) {
+      setActionError("Choose the accommodation.");
+      setActionMessage(null);
+      return;
+    }
     // Staff type dollars and the column holds cents; cents inputs invited 100x errors (COL-653).
     const base = dollarsToCents(quotedBaseDraft);
     const care = quotedCareDraft.trim() ? dollarsToCents(quotedCareDraft) : 0;
@@ -481,8 +491,8 @@ export default function AdminAdmissionCaseDetailPage() {
       }
       setEditingRateTermId(null);
       setRateScheduleDraft("");
-      setRateAccommodationDraft("private");
-      setRateCareLevelDraft("2");
+      setRateAccommodationDraft("");
+      setRateCareLevelDraft("");
       setQuotedBaseDraft("");
       setQuotedCareDraft("");
       setRateNotesDraft("");
@@ -508,8 +518,8 @@ export default function AdminAdmissionCaseDetailPage() {
   function clearRateTermForm() {
     setEditingRateTermId(null);
     setRateScheduleDraft("");
-    setRateAccommodationDraft("private");
-    setRateCareLevelDraft("2");
+    setRateAccommodationDraft("");
+    setRateCareLevelDraft("");
     setQuotedBaseDraft("");
     setQuotedCareDraft("");
     setEffectiveDateDraft(row?.target_move_in_date ?? "");
@@ -589,7 +599,7 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Medicaid Stage</dt>
-                    <dd className="text-base font-semibold text-foreground capitalize">{formatStatus(row.medicaid_pipeline_stage ?? "prospect")}</dd>
+                    <dd className="text-base font-semibold text-foreground capitalize">{row.medicaid_pipeline_stage ? formatStatus(row.medicaid_pipeline_stage) : "Not set"}</dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Target Move-In</dt>
@@ -622,6 +632,9 @@ export default function AdminAdmissionCaseDetailPage() {
                           onChange={(event) => setMedicaidPipelineStageDraft(event.target.value as MedicaidPipelineStage)}
                           className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
+                          <option value="" disabled>
+                            Select stage…
+                          </option>
                           {MEDICAID_PIPELINE_STAGE_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
                               {option.label}
@@ -631,8 +644,8 @@ export default function AdminAdmissionCaseDetailPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          disabled={actionLoading === "Medicaid stage saved." || medicaidPipelineStageDraft === (row.medicaid_pipeline_stage ?? "prospect")}
-                          onClick={() => void updateCase({ medicaid_pipeline_stage: medicaidPipelineStageDraft }, "Medicaid stage saved.")}
+                          disabled={actionLoading === "Medicaid stage saved." || !medicaidPipelineStageDraft || medicaidPipelineStageDraft === (row.medicaid_pipeline_stage ?? "")}
+                          onClick={() => { if (medicaidPipelineStageDraft) void updateCase({ medicaid_pipeline_stage: medicaidPipelineStageDraft }, "Medicaid stage saved."); }}
                         >
                           {actionLoading === "Medicaid stage saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save stage"}
                         </Button>
@@ -775,6 +788,9 @@ export default function AdminAdmissionCaseDetailPage() {
                         onChange={(event) => setForm1823StatusDraft(event.target.value as Form1823Record["status"])}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
+                        <option value="" disabled>
+                          Select status…
+                        </option>
                         <option value="pending">Pending</option>
                         <option value="received">Received</option>
                         <option value="expired">Expired</option>
@@ -977,6 +993,9 @@ export default function AdminAdmissionCaseDetailPage() {
                         onChange={(event) => setRateAccommodationDraft(event.target.value as Database["public"]["Enums"]["admission_accommodation_quote"])}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
+                        <option value="" disabled>
+                          Select accommodation…
+                        </option>
                         <option value="private">{formatColLabel("private")}</option>
                         <option value="semi_private">{formatColLabel("semi_private")}</option>
                       </select>
@@ -988,6 +1007,9 @@ export default function AdminAdmissionCaseDetailPage() {
                         onChange={(event) => setRateCareLevelDraft(event.target.value as "1" | "2" | "3")}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
+                        <option value="" disabled>
+                          Select care level…
+                        </option>
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
@@ -997,7 +1019,7 @@ export default function AdminAdmissionCaseDetailPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={!selectedRateSchedule}
+                        disabled={!selectedRateSchedule || !rateAccommodationDraft || !rateCareLevelDraft}
                         onClick={() => prefillQuotedTermsFromSchedule()}
                       >
                         Prefill from schedule
