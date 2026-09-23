@@ -707,6 +707,8 @@ export default function AssessmentEntryPage() {
               name="assessmentDate"
               render={({ field }) => (
                 <FormItem>
+                  {/* Bound to the control by FormItem context (ui/form). */}
+                  {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                   <FormLabel>Assessment date (ET)</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} className="max-w-xs" />
@@ -841,6 +843,8 @@ export default function AssessmentEntryPage() {
               name="notes"
               render={({ field }) => (
                 <FormItem className="max-w-3xl">
+                  {/* Bound to the control by FormItem context (ui/form). */}
+                  {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                   <FormLabel>Notes (optional)</FormLabel>
                   <FormControl>
                     <Textarea

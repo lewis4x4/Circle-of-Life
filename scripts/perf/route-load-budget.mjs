@@ -153,8 +153,14 @@ async function main() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const email = process.env.SCREENSHOT_USER_EMAIL;
   const password = process.env.PHASE1_DEMO_PASSWORD;
-  if (!supabaseUrl || !supabaseAnonKey || !email || !password) {
-    console.error("[perf:routes] NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SCREENSHOT_USER_EMAIL and PHASE1_DEMO_PASSWORD are required.");
+  const missing = Object.entries({
+    NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey,
+    SCREENSHOT_USER_EMAIL: email,
+    PHASE1_DEMO_PASSWORD: password,
+  }).filter(([, value]) => !value).map(([name]) => name);
+  if (missing.length > 0) {
+    console.error(`[perf:routes] missing or empty: ${missing.join(", ")}`);
     process.exit(2);
   }
   const budgetFile = path.resolve(process.env.PERF_ROUTE_BUDGET_FILE ?? "perf-route-budget.json");
