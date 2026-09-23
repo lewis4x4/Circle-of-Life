@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -144,6 +144,9 @@ async function openHub() {
   expect(await screen.findByRole("heading", { name: /family portal notes/i })).toBeInTheDocument();
   return screen.findByLabelText("Resident");
 }
+
+// Loaded CI runners can exceed Testing Library's 1 s default (COL-672).
+const CI_WAIT = { timeout: 5000 };
 
 describe("staff family bulletin drafts", () => {
   beforeEach(() => {
@@ -362,28 +365,32 @@ describe("staff family bulletin drafts", () => {
     const user = userEvent.setup();
     mocks.delayRoster = true;
     const { rerender } = render(<StaffFamilyMessagesPage />);
-    expect(await screen.findByRole("heading", { name: /family portal notes/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /family portal notes/i }, CI_WAIT)).toBeInTheDocument();
     expect(mocks.rosterRequests.map((request) => request.facilityId)).toContain(FACILITY_A);
 
     mocks.facilityId = FACILITY_B;
     rerender(<StaffFamilyMessagesPage />);
     await waitFor(() =>
       expect(mocks.rosterRequests.some((request) => request.facilityId === FACILITY_B)).toBe(true),
-    );
+    CI_WAIT);
 
     const stale = mocks.rosterRequests.find((request) => request.facilityId === FACILITY_A);
-    stale?.resolve({
-      data: [resident(RESIDENT_A, "Ada", "Alpha")],
-      error: null,
+    await act(async () => {
+      stale?.resolve({
+        data: [resident(RESIDENT_A, "Ada", "Alpha")],
+        error: null,
+      });
     });
     expect(screen.queryByRole("option", { name: "Ada Alpha" })).not.toBeInTheDocument();
 
     const current = [...mocks.rosterRequests].reverse().find((request) => request.facilityId === FACILITY_B);
-    current?.resolve({
-      data: [resident(RESIDENT_C, "Cy", "Gamma")],
-      error: null,
+    await act(async () => {
+      current?.resolve({
+        data: [resident(RESIDENT_C, "Cy", "Gamma")],
+        error: null,
+      });
     });
-    expect(await screen.findByRole("option", { name: "Cy Gamma" })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Cy Gamma" }, CI_WAIT)).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Ada Alpha" })).not.toBeInTheDocument();
 
     const residentSelect = screen.getByLabelText("Resident");
@@ -394,7 +401,7 @@ describe("staff family bulletin drafts", () => {
     mocks.delayRoster = false;
     mocks.facilityId = FACILITY_A;
     rerender(<StaffFamilyMessagesPage />);
-    expect(await screen.findByRole("option", { name: "Ada Alpha" })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Ada Alpha" }, CI_WAIT)).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Cy Gamma" })).not.toBeInTheDocument();
     expect(screen.getByText("Recipient: none selected")).toBeInTheDocument();
 
@@ -402,7 +409,7 @@ describe("staff family bulletin drafts", () => {
     await user.type(screen.getByPlaceholderText(/write an update/i), "Ada ate lunch.");
     mocks.facilityId = FACILITY_B;
     rerender(<StaffFamilyMessagesPage />);
-    expect(await screen.findByRole("option", { name: "Cy Gamma" })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Cy Gamma" }, CI_WAIT)).toBeInTheDocument();
     expect(screen.getByText("Recipient: none selected")).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/write an update/i)).toHaveValue("");
     await user.selectOptions(screen.getByLabelText("Resident"), RESIDENT_C);
