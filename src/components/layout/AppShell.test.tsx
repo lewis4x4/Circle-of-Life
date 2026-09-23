@@ -186,8 +186,9 @@ describe("AppShell all-sections jump list", () => {
     expect(within(jumpList).queryByText("Medications")).not.toBeInTheDocument();
     expect(within(jumpList).queryByText("Medication errors")).not.toBeInTheDocument();
     expect(within(jumpList).queryByText("Dietary & Nutrition")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Finance")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Insurance")).not.toBeInTheDocument();
+    // Hold lifted for owners and admins (Brian, 2026-09-23).
+    expect(within(jumpList).getByText("Finance")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Insurance")).toBeInTheDocument();
     expect(within(jumpList).getByText("Vendors & AP")).toBeInTheDocument();
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
@@ -282,8 +283,7 @@ describe("AppShell all-sections jump list", () => {
 
     await user.clear(search);
     await user.type(search, "finance");
-    expect(within(jumpList).queryByText("Finance")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Insurance")).not.toBeInTheDocument();
+    expect(within(jumpList).getByText("Finance")).toBeInTheDocument();
 
     await user.clear(search);
     await user.type(search, "vendor");
@@ -397,12 +397,20 @@ describe("AppShell nav anchoring (COL-655)", () => {
     expect(meetings.rail).toEqual(["Meetings"]);
   });
 
-  it("shows a staff-launch-held Finance item in the rail while the operator is inside Finance", () => {
+  it("shows Finance and Insurance in the Business rail for owners and admins (hold lifted 2026-09-23)", () => {
     const ledger = litLinks("/admin/finance/ledger", "facility_admin");
-    expect(ledger.pillars).toEqual(["Business"]);
+    expect(ledger.pillars).toContain("Business");
+    expect(ledger.pillars).not.toContain("Command");
     expect(ledger.rail).toEqual(["Finance"]);
-    // Off Finance pages the hold still keeps it off the rail.
-    expect(litLinks("/admin/vendors", "facility_admin").railItems).not.toContain("Finance");
+    const vendors = litLinks("/admin/vendors", "owner");
+    expect(vendors.railItems).toEqual(expect.arrayContaining(["Finance", "Insurance", "Vendors & AP"]));
+  });
+
+  it("shows a still-held item in the rail only while the operator is on it", () => {
+    const medRec = litLinks("/admin/discharge", "owner");
+    expect(medRec.pillars).toEqual(["Pipeline"]);
+    expect(medRec.rail).toEqual(["Medication reconciliation"]);
+    expect(litLinks("/admin/referrals", "owner").railItems).not.toContain("Medication reconciliation");
   });
 
   it("gives account routes no pillar and no rail", () => {
