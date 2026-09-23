@@ -15,9 +15,9 @@ Documents which app routes each `app_role` is expected to be able to load, and a
 | `/admin` | → `/admin/executive` | ✓ | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
 | `/admin/residents` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
 | `/admin/incidents` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
-| `/admin/staff` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
-| `/admin/finance` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
-| `/admin/payroll` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/staff` | ✓ | ✓ | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/finance` | ✓ | ✓ | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
+| `/admin/payroll` | ✓ | ✓ | → `/med-tech` | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
 | `/admin/training` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
 | `/admin/transportation` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | → `/admin/referrals` | → `/family` |
 | `/admin/reputation` | ✓ | ✓ | ✓ | → `/dietary` | → `/caregiver/housekeeper` | ✓ | → `/family` |

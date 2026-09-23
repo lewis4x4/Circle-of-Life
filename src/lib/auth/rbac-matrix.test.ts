@@ -31,3 +31,14 @@ describe("route role matrix", () => {
     expect(denied).toEqual([]);
   });
 });
+
+describe("Med-Tech has no finance, payroll or staff pages (Brian, 2026-09-23)", () => {
+  it("sends a med-tech home from each of them and their short aliases", async () => {
+    const { shellOutcome } = await import("@/lib/auth/rbac-matrix");
+    for (const route of ["/admin/finance", "/finance", "/admin/payroll", "/payroll/runs", "/admin/staff", "/staff/abc"]) {
+      expect(shellOutcome("med_tech", route)).toEqual({ outcome: "redirect", location: "/med-tech" });
+    }
+    expect(shellOutcome("med_tech", "/admin/residents")).toEqual({ outcome: "allow" });
+    expect(shellOutcome("facility_admin", "/admin/payroll")).toEqual({ outcome: "allow" });
+  });
+});

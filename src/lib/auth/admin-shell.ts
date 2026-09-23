@@ -5,6 +5,8 @@ import {
   isAdminEligibleAppRole,
   isDietaryRole,
   isFacilityOperatorRole,
+  isMedTechBlockedAdminPath,
+  isMedTechRole,
   isRecruiterAllowedAdminPath,
   isRecruiterRole,
   isOrgAdminAppRole,
@@ -93,6 +95,10 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
   }
   // Recruiter: referrals, pipeline and reputation only (owner ruling 2026-09-22).
   if (isRecruiterRole(role) && !isRecruiterAllowedAdminPath(nextUrl.pathname)) {
+    return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
+  }
+  // Med-Tech: no finance, payroll or staff areas (owner ruling 2026-09-23).
+  if (isMedTechRole(role) && isMedTechBlockedAdminPath(nextUrl.pathname)) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
 

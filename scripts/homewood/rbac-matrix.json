@@ -100,7 +100,8 @@
         "outcome": "allow"
       },
       "med_tech": {
-        "outcome": "allow"
+        "outcome": "redirect",
+        "location": "/med-tech"
       },
       "cook": {
         "outcome": "redirect",
@@ -127,7 +128,8 @@
         "outcome": "allow"
       },
       "med_tech": {
-        "outcome": "allow"
+        "outcome": "redirect",
+        "location": "/med-tech"
       },
       "cook": {
         "outcome": "redirect",
@@ -154,7 +156,8 @@
         "outcome": "allow"
       },
       "med_tech": {
-        "outcome": "allow"
+        "outcome": "redirect",
+        "location": "/med-tech"
       },
       "cook": {
         "outcome": "redirect",
