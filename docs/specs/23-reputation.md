@@ -82,8 +82,8 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 ## RLS (normative)
 
-- **SELECT:** `organization_id = haven.organization_id()`, `deleted_at IS NULL`, `facility_id` in **`haven.accessible_facility_ids()`**; roles `owner`, `org_admin`, `facility_admin`, `nurse`.
-- **INSERT / UPDATE:** Same facility guard; same roles (operational marketing/comms aligned with referral intake).
+- **SELECT:** `organization_id = haven.organization_id()`, `deleted_at IS NULL`, `facility_id` in **`haven.accessible_facility_ids()`**; roles `owner`, `org_admin`, `facility_admin`, `med_tech`, `recruiter` (migration 468 folded `nurse` into `med_tech` and granted the Recruiter role wherever a reputation surface grants the facility administrator).
+- **INSERT / UPDATE:** Same facility guard; same roles (operational outreach/comms aligned with referral intake).
 
 ---
 

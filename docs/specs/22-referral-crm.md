@@ -58,7 +58,7 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 Aligned with **`referral_leads`** (`076_referral_inquiry_rls_audit.sql`):
 
 - **SELECT:** `organization_id = haven.organization_id()`, `deleted_at IS NULL`, `facility_id` in **`haven.accessible_facility_ids()`**.
-- **INSERT / UPDATE:** Same facility guard; roles `owner`, `org_admin`, `facility_admin`, `nurse`.
+- **INSERT / UPDATE:** Same facility guard; roles `owner`, `org_admin`, `facility_admin`, `med_tech` (the `nurse` grant folded into `med_tech`, migration 468). `recruiter` is not granted on the HL7 inbound queue; it works the referral pipeline under `/admin/referrals`.
 
 ---
 
