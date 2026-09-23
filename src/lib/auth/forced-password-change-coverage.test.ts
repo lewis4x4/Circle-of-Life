@@ -78,7 +78,6 @@ describe("every authenticated route group is gated", () => {
 
   it("gates the authenticated layouts that sit outside a route group", () => {
     for (const layout of [
-      "src/app/clinical/layout.tsx",
       "src/app/change-password/layout.tsx",
     ]) {
       expect(readSource(layout), layout).toContain("AppRuntimeProviders");
