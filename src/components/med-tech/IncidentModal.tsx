@@ -320,7 +320,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
                 else if (step === 1 && canProceed2) void submitIncident();
               }}
               disabled={step === 0 ? !canProceed1 : !canProceed2 || submitting}
-              className="flex-1 py-2.5 rounded-xl hover: hover: disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition"
+              className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-[var(--accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold transition"
             >
               {step === 0 ? "Continue →" : submitting ? "Saving…" : "Submit Incident"}
             </button>

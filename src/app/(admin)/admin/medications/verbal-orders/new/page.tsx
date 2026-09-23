@@ -412,7 +412,7 @@ export default function NewVerbalOrderPage() {
             type="button"
             disabled={saving || !readBack || !residentId || !orderText || !prescriberName}
             onClick={() => void submit()}
-            className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-lg text-white hover: hover: disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed text-lg"
+            className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-lg bg-primary text-primary-foreground hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed text-lg"
           >
             {saving ? (
               <>

@@ -33,7 +33,7 @@ export function HACCPStrip({
         </div>
         <button
           onClick={onVoice}
-          className="rounded-xl hover: hover: text-white py-3 font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30 transition"
+          className="rounded-xl bg-primary text-primary-foreground hover:bg-[var(--accent-hover)] py-3 font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30 transition"
         >
           <Mic className="w-4 h-4" /> Record temperature
         </button>

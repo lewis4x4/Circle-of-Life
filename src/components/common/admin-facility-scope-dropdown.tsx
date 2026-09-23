@@ -88,7 +88,7 @@ export function AdminFacilityScopeDropdown({
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align={align}
-          className="w-[min(100vw-2rem,260px)] rounded-[1.2rem] p-2 dark:border-white/10 dark:bg-zinc-950/95 dark:"
+          className="w-[min(100vw-2rem,260px)] rounded-[1.2rem] p-2 dark:border-white/10 dark:bg-zinc-950/95"
         >
           <DropdownMenuItem
             onClick={() => onChange(null)}

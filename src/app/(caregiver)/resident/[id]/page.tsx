@@ -237,7 +237,7 @@ export default function CaregiverResidentQuickProfilePage() {
          {!noteOpen ? (
            <Button
              type="button"
-             className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-[0_4px_30px_rgba(16,185,129,0.15)] text-black hover: hover: tap-responsive text-sm font-mono border-0"
+             className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-[0_4px_30px_rgba(16,185,129,0.15)] bg-primary text-primary-foreground hover:bg-[var(--accent-hover)] tap-responsive text-sm font-mono border-0"
              onClick={() => { setNoteOpen(true); setNoteSaved(false); }}
            >
              <Plus className="mr-3 h-5 w-5" />

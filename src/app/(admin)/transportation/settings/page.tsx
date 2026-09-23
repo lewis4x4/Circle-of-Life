@@ -184,7 +184,7 @@ export default function TransportationOrgSettingsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-10 pb-16 w-full px-4 sm:px-6">
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between dark: dark: dark: p-8 md:p-10 rounded-lg border border-slate-200/60 dark:border-white/10 shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between p-8 md:p-10 rounded-lg border border-slate-200/60 dark:border-white/10 shadow-sm mt-4">
         <div className="space-y-3">
           <Link
             href="/admin/transportation"
@@ -308,7 +308,7 @@ export default function TransportationOrgSettingsPage() {
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-lg border border-primary/10 p-6 shadow-inner dark: dark: dark:shadow-none">
+          <div className="rounded-lg border border-primary/10 p-6 shadow-inner dark:shadow-none">
             <h2 className="text-[11px] font-bold text-primary">Live preview</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
               Estimated reimbursement at <span className="font-semibold text-slate-900 dark:text-white">{formatCentsPerMileUsd(previewCents)}</span> / mi
