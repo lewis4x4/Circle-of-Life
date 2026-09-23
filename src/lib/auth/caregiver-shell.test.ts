@@ -40,8 +40,8 @@ describe("isStaffRoleAllowedOnReportPath", () => {
     }
   });
 
-  it("keeps family, onboarding, housekeeper, broker, cook, marketing, maintenance, retired, and unknown roles out", () => {
-    for (const role of ["family", "onboarding", "housekeeper", "broker", "cook", "marketing", "dietary", "dietary_aide", "maintenance_role", "nurse", "caregiver", ""]) {
+  it("keeps family, onboarding, housekeeper, broker, cook, recruiter, maintenance, retired, and unknown roles out", () => {
+    for (const role of ["family", "onboarding", "housekeeper", "broker", "cook", "recruiter", "dietary", "dietary_aide", "maintenance_role", "nurse", "caregiver", ""]) {
       expect(isStaffRoleAllowedOnReportPath(role)).toBe(false);
     }
   });

@@ -525,8 +525,8 @@ const REFERRAL_READ_ROLES = new Set<string>([
   "admin_assistant",
   "coordinator",
   "med_tech",
-  // Owner ruling 2026-09-22: marketing reads referrals (migration 468 lead_read).
-  "marketing",
+  // Owner ruling 2026-09-22: recruiter reads referrals (migration 468 lead_read).
+  "recruiter",
 ]);
 
 export function canReadReferralPipeline(userRole: string): boolean {

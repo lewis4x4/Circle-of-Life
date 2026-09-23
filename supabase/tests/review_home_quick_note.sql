@@ -77,8 +77,11 @@ SELECT pg_temp.qn_as(fa_actor, fa_session) FROM qn;
 SELECT pg_temp.qn_fail(format('SELECT public.home_note_create(%L,%L,''maintenance'',''Leak'',NULL,NULL,%L)', note_1, facility, other_vendor), 'not linked to this facility') FROM qn;
 
 -- 3. Notes: dated for the manager tomorrow; vendor task today; plain note.
-SELECT public.home_note_create(note_1, facility, 'staffing', 'Call Mo about the weekend schedule', NULL, mgr_actor, NULL, current_date + 1) FROM qn;
-SELECT public.home_note_create(note_2, facility, 'maintenance', 'Leak under sink in 12', resident, NULL, vendor, current_date) FROM qn;
+-- "Today" is the facility's day (home_notes_on_tap reads it in the facility time zone,
+-- America/New_York by default), not the session's current_date: CI runs in UTC, and
+-- between 00:00 and 04:00 UTC the two are different days.
+SELECT public.home_note_create(note_1, facility, 'staffing', 'Call Mo about the weekend schedule', NULL, mgr_actor, NULL, (now() AT TIME ZONE 'America/New_York')::date + 1) FROM qn;
+SELECT public.home_note_create(note_2, facility, 'maintenance', 'Leak under sink in 12', resident, NULL, vendor, (now() AT TIME ZONE 'America/New_York')::date) FROM qn;
 SELECT public.home_note_create(note_3, facility, 'other', 'Fire marshal said the new signs look good') FROM qn;
 -- replay
 SELECT public.home_note_create(note_3, facility, 'other', 'Fire marshal said the new signs look good') FROM qn;

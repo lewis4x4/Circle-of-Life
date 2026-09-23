@@ -21816,7 +21816,7 @@ export type Database = {
         | "family"
         | "broker"
         | "cook"
-        | "marketing"
+        | "recruiter"
       assistance_level:
         | "independent"
         | "supervision"
@@ -22457,7 +22457,7 @@ export const Constants = {
         "family",
         "broker",
         "cook",
-        "marketing",
+        "recruiter",
       ],
       assistance_level: [
         "independent",

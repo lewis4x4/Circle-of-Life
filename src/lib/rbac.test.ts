@@ -28,30 +28,30 @@ describe("app-role pickers (owner rulings 2026-09-22)", () => {
         "cook",
         "housekeeper",
         "maintenance_role",
-        "marketing",
+        "recruiter",
         "family",
         "broker",
       ].sort(),
     );
   });
 
-  it("never offers a retired role and always offers cook, housekeeper, marketing and med_tech", () => {
+  it("never offers a retired role and always offers cook, housekeeper, recruiter and med_tech", () => {
     const assignable = getAssignableRoles("owner");
     for (const retired of RETIRED_ROLES) {
       expect(ALL_APP_ROLES).not.toContain(retired);
       expect(assignable).not.toContain(retired);
     }
-    expect(assignable).toEqual(expect.arrayContaining(["cook", "housekeeper", "marketing", "med_tech"]));
+    expect(assignable).toEqual(expect.arrayContaining(["cook", "housekeeper", "recruiter", "med_tech"]));
     expect(ROLE_LABELS.cook).toBe("Cook");
     expect(ROLE_LABELS.housekeeper).toBe("Housekeeper");
-    expect(ROLE_LABELS.marketing).toBe("Marketing");
+    expect(ROLE_LABELS.recruiter).toBe("Recruiter");
     expect(ROLE_LABELS.med_tech).toBe("Med-Tech");
   });
 
   it("offers the current roles but no retired role in the acknowledgement role picker", () => {
     const ids = ACK_ROLES.map((role) => role.id);
     for (const retired of RETIRED_ROLES) expect(ids).not.toContain(retired);
-    expect(ids).toEqual(expect.arrayContaining(["cook", "housekeeper", "marketing", "med_tech"]));
+    expect(ids).toEqual(expect.arrayContaining(["cook", "housekeeper", "recruiter", "med_tech"]));
   });
 
   it("rejects retired roles and accepts the current ones at the user-management API", () => {
@@ -59,7 +59,7 @@ describe("app-role pickers (owner rulings 2026-09-22)", () => {
       expect(createUserSchema.safeParse(validCreate(retired)).success).toBe(false);
       expect(updateUserSchema.safeParse({ app_role: retired }).success).toBe(false);
     }
-    for (const role of ["cook", "housekeeper", "marketing", "med_tech"]) {
+    for (const role of ["cook", "housekeeper", "recruiter", "med_tech"]) {
       expect(createUserSchema.safeParse(validCreate(role)).success).toBe(true);
       expect(updateUserSchema.safeParse({ app_role: role }).success).toBe(true);
     }
@@ -87,9 +87,9 @@ describe("med_tech holds nurse + caregiver; cook holds dietary + dietary_aide", 
     }
   });
 
-  it("gives marketing tier 50, admin-shell eligibility and none of the feature permissions", () => {
-    expect(getRoleTier("marketing")).toBe(50);
-    expect(ADMIN_ELIGIBLE_ROLES.has("marketing")).toBe(true);
-    for (const feature of FEATURES) expect(hasPermission("marketing", feature, "view")).toBe(false);
+  it("gives recruiter tier 50, admin-shell eligibility and none of the feature permissions", () => {
+    expect(getRoleTier("recruiter")).toBe(50);
+    expect(ADMIN_ELIGIBLE_ROLES.has("recruiter")).toBe(true);
+    for (const feature of FEATURES) expect(hasPermission("recruiter", feature, "view")).toBe(false);
   });
 });

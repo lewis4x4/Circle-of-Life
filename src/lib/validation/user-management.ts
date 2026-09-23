@@ -12,7 +12,7 @@ const uuidStringSchema = z.string().refine((value) => UUID_STRING_RE.test(value)
 });
 
 // Owner rulings 2026-09-22 (migration 468): nurse and caregiver are retired and folded
-// into med_tech; dietary and dietary_aide into cook; marketing is new. Retired values are
+// into med_tech; dietary and dietary_aide into cook; recruiter is new. Retired values are
 // not assignable.
 const appRoleEnum = z.enum([
   "owner",
@@ -25,7 +25,7 @@ const appRoleEnum = z.enum([
   "cook",
   "housekeeper",
   "maintenance_role",
-  "marketing",
+  "recruiter",
   "family",
   "broker",
 ]);
