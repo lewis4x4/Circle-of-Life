@@ -205,7 +205,11 @@ export function OverviewTab({
             <div className="flex justify-between text-sm">
               <span className="text-[13px] text-muted-foreground">Occupancy</span>
               <span className="font-medium tabular-nums text-foreground">
-                <span className={cn(portfolioOccupancyKpiTextClass(occupancyPctValue ?? 0))}>
+                <span
+                  className={cn(
+                    occupancyPctValue === null ? "text-muted-foreground" : portfolioOccupancyKpiTextClass(occupancyPctValue),
+                  )}
+                >
                   {occupancyDisplay}
                 </span>
                 <span className="text-muted-foreground"> · </span>
