@@ -277,8 +277,6 @@ export default function AdminStaffDetailPage() {
         Employee file & onboarding
       </Link>
 
-      <StaffOffboardCard staff={staff} canEdit={canEditProfile} onStaffUpdated={setStaff} />
-
         <div className="grid gap-6 lg:grid-cols-2">
           <StaffProfileSections
             key={`${staff.id}-${staff.updated_at ?? ""}`}
@@ -343,6 +341,14 @@ export default function AdminStaffDetailPage() {
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{staff.notes}</p>
             </RecordDetailSection>
           ) : null}
+
+          {/* Destructive action last, after who the person is (COL-662). */}
+          <StaffOffboardCard
+            staff={staff}
+            canEdit={canEditProfile}
+            onStaffUpdated={setStaff}
+            className="lg:col-span-2"
+          />
         </div>
     </div>
   );
