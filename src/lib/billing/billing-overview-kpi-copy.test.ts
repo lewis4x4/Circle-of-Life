@@ -22,7 +22,9 @@ function ctx(partial: Partial<BillingOverviewKpiContext> = {}): BillingOverviewK
     openArTotalCents: 0,
     cohortResidentCount: 0,
     periodBilledCents: 0,
+    periodAppliedCents: 0,
     periodAppliedRatePct: null,
+    periodDraftCount: 0,
     ninetyPlusSharePct: null,
     overdueCount: 0,
     ...partial,
@@ -64,7 +66,7 @@ describe("billingOverviewOutstandingArEmptyCopy", () => {
 describe("billingOverviewNinetyPlusShareEmptyCopy", () => {
   it("names the gap when there is no open AR to age", () => {
     expect(billingOverviewNinetyPlusShareEmptyCopy(ctx({ openArTotalCents: 0 }))).toBe(
-      "No open AR to age",
+      "No sent invoices with a balance",
     );
   });
 
@@ -80,16 +82,30 @@ describe("billingOverviewNinetyPlusShareEmptyCopy", () => {
 describe("billingOverviewAppliedPeriodEmptyCopy", () => {
   it("names the gap when no invoices fall in the period", () => {
     expect(billingOverviewAppliedPeriodEmptyCopy(ctx({ periodBilledCents: 0 }))).toBe(
-      "No invoices this period",
+      "No invoices sent this period",
     );
   });
 
   it("returns null when collection rate is loaded", () => {
     expect(
       billingOverviewAppliedPeriodEmptyCopy(
-        ctx({ periodBilledCents: 100_000, periodAppliedRatePct: 92 }),
+        ctx({ periodBilledCents: 100_000, periodAppliedCents: 92_000, periodAppliedRatePct: 92 }),
       ),
     ).toBeNull();
+  });
+
+  it("says drafts are not sent instead of reporting a zero rate on them (COL-650)", () => {
+    expect(billingOverviewAppliedPeriodEmptyCopy(ctx({ periodBilledCents: 0, periodDraftCount: 29 }))).toBe(
+      "No invoices sent this period — 29 drafts not yet sent",
+    );
+  });
+
+  it("says no payments are recorded instead of showing Applied 0% (COL-650)", () => {
+    expect(
+      billingOverviewAppliedPeriodEmptyCopy(
+        ctx({ periodBilledCents: 100_000, periodAppliedCents: 0, periodAppliedRatePct: 0 }),
+      ),
+    ).toBe("No payments recorded");
   });
 });
 
@@ -106,7 +122,7 @@ describe("billingOverviewOverdueCountEmptyCopy", () => {
 describe("billingOverviewKpiEmptyCopy", () => {
   it("routes metric keys to the right helper", () => {
     expect(billingOverviewKpiEmptyCopy("applied_period", ctx({ periodBilledCents: 0 }))).toBe(
-      "No invoices this period",
+      "No invoices sent this period",
     );
   });
 });
@@ -131,7 +147,7 @@ describe("billingActionQueueOverdueCopy", () => {
 
   it("names a loaded zero-overdue state", () => {
     expect(billingActionQueueOverdueCopy(ctx({ totalInvoiceRows: 5, overdueCount: 0 }))).toBe(
-      "No overdue invoices in scope",
+      "No sent invoices past their due date",
     );
   });
 });
@@ -139,7 +155,7 @@ describe("billingActionQueueOverdueCopy", () => {
 describe("billingActionQueueDraftCopy", () => {
   it("names draft work when rows exist", () => {
     expect(billingActionQueueDraftCopy(2, ctx({ totalInvoiceRows: 5 }))).toBe(
-      "2 draft invoices to finalize",
+      "2 draft invoices not yet sent — review and send",
     );
   });
 });
@@ -152,6 +168,7 @@ describe("billingOverviewKpiStripHelperLine", () => {
           totalInvoiceRows: 3,
           openArTotalCents: 25_000,
           periodBilledCents: 100_000,
+          periodAppliedCents: 88_000,
           periodAppliedRatePct: 88,
           ninetyPlusSharePct: 4,
           overdueCount: 1,
