@@ -38,11 +38,14 @@ import {
 } from "@/lib/billing/invoices-display-copy";
 import { ninetyPlusRiskShareClass } from "@/lib/billing/billing-ar-semantics";
 import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
+import {
+  NOT_YET_SENT_INVOICE_STATUSES,
+  RECEIVABLE_DEFINITION_COPY,
+  RECEIVABLE_INVOICE_STATUSES,
+} from "@/lib/billing/receivables";
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
-
-const OPEN = ["draft", "sent", "partial", "overdue"] as const;
 
 export type ArBucketUrlKey = "current" | "31-60" | "61-90" | "91-plus";
 
@@ -174,6 +177,8 @@ function AdminArAgingPageContent() {
   const [rawInvoices, setRawInvoices] = useState<RawInv[]>([]);
   const [residentCount, setResidentCount] = useState<number | null>(null);
   const [anyInvoiceCount, setAnyInvoiceCount] = useState<number | null>(null);
+  /** Drafts are not billed, so they are never aged — counted here so the page says what it leaves out. */
+  const [notYetSent, setNotYetSent] = useState<{ count: number; cents: number }>({ count: 0, cents: 0 });
   const [facilityNames, setFacilityNames] = useState<Record<string, string>>({});
   const [residentNames, setResidentNames] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -219,16 +224,29 @@ function AdminArAgingPageContent() {
         )
         .is("deleted_at", null)
         .gt("balance_due", 0)
-        .in("status", [...OPEN])
+        .in("status", [...RECEIVABLE_INVOICE_STATUSES])
+        .limit(800);
+
+      let draftQ = supabase
+        .from("invoices" as never)
+        .select("balance_due, payer_type")
+        .is("deleted_at", null)
+        .in("status", [...NOT_YET_SENT_INVOICE_STATUSES])
         .limit(800);
 
       if (facilityIds != null && facilityIds.length > 0) {
         invQ = invQ.in("facility_id", facilityIds);
+        draftQ = draftQ.in("facility_id", facilityIds);
       }
 
-      const invRes = (await invQ) as unknown as QueryListResult<RawInv>;
+      const [invRes, draftRes] = (await Promise.all([invQ, draftQ])) as unknown as [
+        QueryListResult<RawInv>,
+        QueryListResult<{ balance_due: number; payer_type: string | null }>,
+      ];
       if (invRes.error) throw invRes.error;
+      if (draftRes.error) throw draftRes.error;
       let invs = invRes.data ?? [];
+      let drafts = draftRes.data ?? [];
 
       let rq = supabase
         .from("residents" as never)
@@ -259,7 +277,12 @@ function AdminArAgingPageContent() {
           const pt = (i.payer_type ?? "other") as PayerDb;
           return allow.has(pt);
         });
+        drafts = drafts.filter((d) => allow.has((d.payer_type ?? "other") as PayerDb));
       }
+      setNotYetSent({
+        count: drafts.length,
+        cents: drafts.reduce((sum, d) => sum + Math.max(0, d.balance_due), 0),
+      });
 
       const uniqFids = [...new Set(invs.map((i) => i.facility_id))];
       const facMap: Record<string, string> = {};
@@ -300,6 +323,7 @@ function AdminArAgingPageContent() {
       setRawInvoices([]);
       setResidentCount(null);
       setAnyInvoiceCount(null);
+      setNotYetSent({ count: 0, cents: 0 });
       setFacilityNames({});
       setResidentNames({});
       setError("Could not load AR aging.");
@@ -541,8 +565,17 @@ function AdminArAgingPageContent() {
           <div className="max-w-3xl space-y-2">
             <h2 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">AR aging</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Outstanding balances grouped by days past due date. Paid, void, and zero-balance invoices are excluded.
+              Outstanding balances grouped by days past due date. {RECEIVABLE_DEFINITION_COPY}
             </p>
+            {notYetSent.count > 0 ? (
+              <p className="text-[13px] text-muted-foreground" role="status">
+                {notYetSent.count} draft invoice{notYetSent.count === 1 ? "" : "s"} (
+                {billingCurrency.format(notYetSent.cents / 100)}) not yet sent — not aged and not in collections.{" "}
+                <Link href="/admin/billing/invoices?status=draft" className="text-primary underline">
+                  Review drafts
+                </Link>
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">
             <button
@@ -833,7 +866,9 @@ function AdminArAgingPageContent() {
           <div className="rounded-lg border border-border bg-card px-5 py-8">
             <p className="text-[15px] font-semibold text-foreground">No open AR</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              🎉 No open AR. All invoices in scope are paid, void, or zero-balance.
+              {notYetSent.count > 0
+                ? "No sent invoice in scope carries a balance. The drafts above are not billed until they are sent."
+                : "All invoices in scope are paid, void, or zero-balance."}
             </p>
           </div>
         ) : null}
