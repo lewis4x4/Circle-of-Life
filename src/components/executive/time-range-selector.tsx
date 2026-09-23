@@ -164,10 +164,10 @@ export function TimeRangeSelector({
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
+                  <label htmlFor="time-range-start-date" className="text-xs text-muted-foreground mb-1 block">
                     Start Date
                   </label>
-                  <input
+                  <input id="time-range-start-date"
                     type="date"
                     value={startDate ? startDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => setStartDate(new Date(e.target.value))}
@@ -176,10 +176,10 @@ export function TimeRangeSelector({
                 </div>
 
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
+                  <label htmlFor="time-range-end-date" className="text-xs text-muted-foreground mb-1 block">
                     End Date
                   </label>
-                  <input
+                  <input id="time-range-end-date"
                     type="date"
                     value={endDate ? endDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => setEndDate(new Date(e.target.value))}

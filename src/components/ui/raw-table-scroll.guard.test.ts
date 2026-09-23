@@ -34,7 +34,6 @@ const NOT_YET_CONVERTED = new Set<string>([
   "src/app/(admin)/admin/rounding/watchlist/[residentId]/page.tsx",
   "src/app/(admin)/admin/settings/audit-log/page.tsx",
   "src/app/(admin)/executive/reports/page.tsx",
-  "src/app/(admin)/executive/scenarios/page.tsx",
   "src/app/(admin)/executive/standup/[week]/board/page.tsx",
   "src/app/(admin)/executive/standup/[week]/page.tsx",
   "src/app/(admin)/executive/standup/compare/page.tsx",

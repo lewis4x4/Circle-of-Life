@@ -199,8 +199,8 @@ export function StaffProfileSections({
           <div className="space-y-4 max-w-xl">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className={FIELD_LABEL}>First name</label>
-                <Input
+                <label htmlFor="staff-profile-first-name" className={FIELD_LABEL}>First name</label>
+                <Input id="staff-profile-first-name"
                   value={draft.first_name}
                   onChange={(e) => setDraft((d) => ({ ...d, first_name: e.target.value }))}
                   required
@@ -208,8 +208,8 @@ export function StaffProfileSections({
                 />
               </div>
               <div className="space-y-1.5">
-                <label className={FIELD_LABEL}>Last name</label>
-                <Input
+                <label htmlFor="staff-profile-last-name" className={FIELD_LABEL}>Last name</label>
+                <Input id="staff-profile-last-name"
                   value={draft.last_name}
                   onChange={(e) => setDraft((d) => ({ ...d, last_name: e.target.value }))}
                   required
@@ -218,8 +218,8 @@ export function StaffProfileSections({
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Preferred name (optional)</label>
-              <Input
+              <label htmlFor="staff-profile-preferred-name-optional" className={FIELD_LABEL}>Preferred name (optional)</label>
+              <Input id="staff-profile-preferred-name-optional"
                 value={draft.preferred_name}
                 onChange={(e) => setDraft((d) => ({ ...d, preferred_name: e.target.value }))}
               />
@@ -258,8 +258,8 @@ export function StaffProfileSections({
           <div className="space-y-4 max-w-xl">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className={FIELD_LABEL}>Phone</label>
-                <Input
+                <label htmlFor="staff-profile-phone" className={FIELD_LABEL}>Phone</label>
+                <Input id="staff-profile-phone"
                   type="tel"
                   value={draft.phone}
                   onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))}
@@ -267,8 +267,8 @@ export function StaffProfileSections({
                 />
               </div>
               <div className="space-y-1.5">
-                <label className={FIELD_LABEL}>Alt phone</label>
-                <Input
+                <label htmlFor="staff-profile-alt-phone" className={FIELD_LABEL}>Alt phone</label>
+                <Input id="staff-profile-alt-phone"
                   type="tel"
                   value={draft.phone_alt}
                   onChange={(e) => setDraft((d) => ({ ...d, phone_alt: e.target.value }))}
@@ -276,8 +276,8 @@ export function StaffProfileSections({
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Email</label>
-              <Input
+              <label htmlFor="staff-profile-email" className={FIELD_LABEL}>Email</label>
+              <Input id="staff-profile-email"
                 type="email"
                 value={draft.email}
                 onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
@@ -305,15 +305,15 @@ export function StaffProfileSections({
         edit={
           <div className="space-y-4 max-w-xl">
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Name</label>
-              <Input
+              <label htmlFor="staff-profile-name" className={FIELD_LABEL}>Name</label>
+              <Input id="staff-profile-name"
                 value={draft.emergency_contact_name}
                 onChange={(e) => setDraft((d) => ({ ...d, emergency_contact_name: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Relationship</label>
-              <Input
+              <label htmlFor="staff-profile-relationship" className={FIELD_LABEL}>Relationship</label>
+              <Input id="staff-profile-relationship"
                 value={draft.emergency_contact_relationship}
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, emergency_contact_relationship: e.target.value }))
@@ -321,8 +321,8 @@ export function StaffProfileSections({
               />
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Phone</label>
-              <Input
+              <label htmlFor="staff-profile-phone-2" className={FIELD_LABEL}>Phone</label>
+              <Input id="staff-profile-phone-2"
                 type="tel"
                 value={draft.emergency_contact_phone}
                 onChange={(e) => setDraft((d) => ({ ...d, emergency_contact_phone: e.target.value }))}
@@ -351,30 +351,30 @@ export function StaffProfileSections({
         edit={
           <div className="grid gap-4 max-w-xl sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <label className={FIELD_LABEL}>Address line 1</label>
-              <Input
+              <label htmlFor="staff-profile-address-line-1" className={FIELD_LABEL}>Address line 1</label>
+              <Input id="staff-profile-address-line-1"
                 value={draft.address_line_1}
                 onChange={(e) => setDraft((d) => ({ ...d, address_line_1: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className={FIELD_LABEL}>Address line 2</label>
-              <Input
+              <label htmlFor="staff-profile-address-line-2" className={FIELD_LABEL}>Address line 2</label>
+              <Input id="staff-profile-address-line-2"
                 value={draft.address_line_2}
                 onChange={(e) => setDraft((d) => ({ ...d, address_line_2: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>City</label>
-              <Input value={draft.city} onChange={(e) => setDraft((d) => ({ ...d, city: e.target.value }))} />
+              <label htmlFor="staff-profile-city" className={FIELD_LABEL}>City</label>
+              <Input id="staff-profile-city" value={draft.city} onChange={(e) => setDraft((d) => ({ ...d, city: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>State</label>
-              <Input value={draft.state} onChange={(e) => setDraft((d) => ({ ...d, state: e.target.value }))} />
+              <label htmlFor="staff-profile-state" className={FIELD_LABEL}>State</label>
+              <Input id="staff-profile-state" value={draft.state} onChange={(e) => setDraft((d) => ({ ...d, state: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>ZIP</label>
-              <Input value={draft.zip} onChange={(e) => setDraft((d) => ({ ...d, zip: e.target.value }))} />
+              <label htmlFor="staff-profile-zip" className={FIELD_LABEL}>ZIP</label>
+              <Input id="staff-profile-zip" value={draft.zip} onChange={(e) => setDraft((d) => ({ ...d, zip: e.target.value }))} />
             </div>
           </div>
         }
@@ -418,8 +418,8 @@ export function StaffProfileSections({
               />
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Employment status</label>
-              <select
+              <label htmlFor="staff-profile-employment-status" className={FIELD_LABEL}>Employment status</label>
+              <select id="staff-profile-employment-status"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={draft.employment_status}
                 onChange={(e) => setDraft((d) => ({ ...d, employment_status: e.target.value }))}
@@ -433,16 +433,16 @@ export function StaffProfileSections({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className={FIELD_LABEL}>Termination date</label>
-                <Input
+                <label htmlFor="staff-profile-termination-date" className={FIELD_LABEL}>Termination date</label>
+                <Input id="staff-profile-termination-date"
                   type="date"
                   value={draft.termination_date}
                   onChange={(e) => setDraft((d) => ({ ...d, termination_date: e.target.value }))}
                 />
               </div>
               <div className="space-y-1.5">
-                <label className={FIELD_LABEL}>Max hrs / week</label>
-                <Input
+                <label htmlFor="staff-profile-max-hrs-week" className={FIELD_LABEL}>Max hrs / week</label>
+                <Input id="staff-profile-max-hrs-week"
                   inputMode="decimal"
                   value={draft.max_hours_per_week}
                   onChange={(e) => setDraft((d) => ({ ...d, max_hours_per_week: e.target.value }))}
@@ -450,8 +450,8 @@ export function StaffProfileSections({
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Termination reason</label>
-              <Input
+              <label htmlFor="staff-profile-termination-reason" className={FIELD_LABEL}>Termination reason</label>
+              <Input id="staff-profile-termination-reason"
                 value={draft.termination_reason}
                 onChange={(e) => setDraft((d) => ({ ...d, termination_reason: e.target.value }))}
               />
@@ -505,8 +505,8 @@ export function StaffProfileSections({
         edit={
           <div className="grid gap-4 max-w-xl sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Base hourly ($)</label>
-              <Input
+              <label htmlFor="staff-profile-base-hourly" className={FIELD_LABEL}>Base hourly ($)</label>
+              <Input id="staff-profile-base-hourly"
                 inputMode="decimal"
                 value={draft.hourly_rate_dollars}
                 onChange={(e) => setDraft((d) => ({ ...d, hourly_rate_dollars: e.target.value }))}
@@ -514,8 +514,8 @@ export function StaffProfileSections({
               />
             </div>
             <div className="space-y-1.5">
-              <label className={FIELD_LABEL}>Overtime ($)</label>
-              <Input
+              <label htmlFor="staff-profile-overtime" className={FIELD_LABEL}>Overtime ($)</label>
+              <Input id="staff-profile-overtime"
                 inputMode="decimal"
                 value={draft.overtime_rate_dollars}
                 onChange={(e) => setDraft((d) => ({ ...d, overtime_rate_dollars: e.target.value }))}
