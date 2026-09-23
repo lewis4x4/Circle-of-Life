@@ -8,9 +8,6 @@
   "src/app/(admin)/admin/meetings/page.tsx": {
     "count-or-zero": 1
   },
-  "src/app/(admin)/admin/rounding/reports/page.tsx": {
-    "silent-zero": 2
-  },
   "src/app/(admin)/billing/ar-aging/page.tsx": {
     "count-or-zero": 2,
     "silent-zero": 2
@@ -84,9 +81,6 @@
   "src/components/rounding/CadencePreviewPanel.tsx": {
     "silent-zero": 3
   },
-  "src/components/rounding/IntegrityCompliancePanel.tsx": {
-    "silent-zero": 2
-  },
   "src/components/stand-up/editor.tsx": {
     "silent-zero": 1
   },
@@ -122,9 +116,6 @@
   },
   "src/lib/insurance/assemble-renewal-package-payload.ts": {
     "count-or-zero": 3
-  },
-  "src/lib/nurse/medication-brief-display-copy.ts": {
-    "all-clear-copy": 1
   },
   "src/lib/office/morning-huddle.ts": {
     "count-or-zero": 2
