@@ -37,10 +37,6 @@ vi.mock("@/hooks/useFacilityStore", () => ({
   useFacilityStore: () => ({ selectedFacilityId: facilityStoreMock.selectedFacilityId }),
 }));
 
-vi.mock("@/components/executive/executive-nav-v2", () => ({
-  ExecutiveNavV2: () => <div data-testid="executive-nav-v2" />,
-}));
-
 describe("CfoDashboardPage auth hydration", () => {
   beforeEach(() => {
     execRoleKpisMock.error = null;

@@ -33,6 +33,6 @@ describe("Executive page mobile Sections integration", () => {
     const drawer = within(await screen.findByRole("dialog", { name: "Executive intelligence" }));
     expect(drawer.getAllByRole("link", { current: "page" })).toHaveLength(1);
     expect(drawer.getByRole("link", { current: "page" })).toHaveAccessibleName(label);
-    expect(drawer.getByRole("link", { name: "Standup history" })).toHaveAttribute("href", "/admin/executive/standup/history");
+    expect(drawer.getByRole("link", { name: "Stand Up history" })).toHaveAttribute("href", "/admin/executive/standup/history");
   });
 });

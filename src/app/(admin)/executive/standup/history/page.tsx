@@ -164,7 +164,7 @@ export default function ExecutiveStandupHistoryPage() {
                 <History className="h-3.5 w-3.5" />
                 Standup archive
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Executive Standup History</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Stand Up history</h1>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
                 Weekly standup packs remain immutable after publication so the owner can compare weeks without spreadsheet drift.
               </p>

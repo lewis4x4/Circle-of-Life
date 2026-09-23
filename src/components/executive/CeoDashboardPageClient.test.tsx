@@ -16,10 +16,6 @@ vi.mock("@/contexts/haven-auth-context", () => ({
   }),
 }));
 
-vi.mock("@/components/executive/executive-nav-v2", () => ({
-  ExecutiveNavV2: () => <div data-testid="executive-nav-v2" />,
-}));
-
 describe("CeoDashboardPageClient organization gap handling", () => {
   it("suppresses the legacy org crash string while auth hydrates", () => {
     authMock.loading = true;
