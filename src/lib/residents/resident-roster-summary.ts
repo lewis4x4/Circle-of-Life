@@ -156,6 +156,6 @@ export function effectiveRosterGroupBy(
   if (anyUnit || rows.length === 0) return { groupBy: requested, notice: null };
   return {
     groupBy: "none",
-    notice: "No unit assignments on file for this facility — showing the room-sorted list.",
+    notice: "No unit assignments on file for these residents — showing the room-sorted list.",
   };
 }
