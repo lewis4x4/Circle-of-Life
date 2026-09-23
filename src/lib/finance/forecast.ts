@@ -1,3 +1,4 @@
+import { isBilledStatus, isReceivableStatus } from "@/lib/billing/receivables";
 import type { Enums, Tables } from "@/types/database";
 
 export type ForecastFacility = Pick<Tables<"facilities">, "id" | "name" | "entity_id">;
@@ -131,8 +132,6 @@ type MutableCapexFacilityRow = {
   due36MonthsCostCents: number;
 };
 
-const OPEN_AR_STATUSES = new Set<Enums<"invoice_status">>(["sent", "partial", "overdue"]);
-const BILLED_STATUSES = new Set<Enums<"invoice_status">>(["sent", "paid", "partial", "overdue"]);
 const ACTIVE_RESIDENT_STATUSES = new Set<Enums<"resident_status">>(["active", "hospital_hold", "loa"]);
 const INCLUDED_VENDOR_STATUSES = new Set<Enums<"vendor_invoice_status">>(["submitted", "approved", "matched", "paid"]);
 
@@ -192,12 +191,12 @@ export function buildDsoForecast(input: {
   const latestTrustByResident = new Map<string, { facilityId: string; entryDate: string; balanceAfterCents: number }>();
 
   for (const invoice of input.openInvoices) {
-    if (!OPEN_AR_STATUSES.has(invoice.status)) continue;
+    if (!isReceivableStatus(invoice.status)) continue;
     openArByFacility.set(invoice.facility_id, (openArByFacility.get(invoice.facility_id) ?? 0) + Math.max(invoice.balance_due, 0));
   }
 
   for (const invoice of input.billedInvoices90d) {
-    if (!BILLED_STATUSES.has(invoice.status)) continue;
+    if (!isBilledStatus(invoice.status)) continue;
     billedByFacility.set(invoice.facility_id, (billedByFacility.get(invoice.facility_id) ?? 0) + Math.max(invoice.total, 0));
   }
 
