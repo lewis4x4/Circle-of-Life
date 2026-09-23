@@ -83,8 +83,8 @@ export function isMarketingRole(role: string): boolean {
  */
 const MARKETING_ADMIN_PATH_PREFIXES = [
   "/admin/referrals",
-  // Pipeline aliases for the referral CRM. /pipeline/recent-admissions and
-  // /pipeline/discharge-management lead into resident records and stay closed.
+  // Pipeline aliases for the referral CRM. /pipeline/recent-admissions leads into
+  // resident records and stays closed, as does /admin/discharge.
   "/pipeline/referrals",
   "/pipeline/referrals-crm",
   "/reputation",
