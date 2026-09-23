@@ -9,6 +9,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -176,6 +177,12 @@ export default function AdminAdmissionsOnboardingPage() {
   }, [rows]);
 
   const visibleRows = rows.filter((row) => missingFilter === "all" || row.missingItems.includes(missingFilter));
+
+  // COL-651: these cases live per building; under All facilities the
+  // queue used to report "0 … in this scope" instead of asking for one.
+  if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+    return <FacilityGateNotice title="Downstream onboarding queue" reason="Move-in onboarding items are kept per building." />;
+  }
 
   return (
     <div className="space-y-6">
