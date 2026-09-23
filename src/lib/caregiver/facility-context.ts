@@ -47,7 +47,12 @@ export async function loadCaregiverFacilityContextForUser(supabase: SupabaseClie
     const ctx = selectWorkingFacility(options, preferredFacilityId(userId, selectedFacilityId));
     if (!ctx) return { ok: false, error: options.length ? "Choose your working facility in the header before continuing." : "No active facility access is assigned to your account." };
     return { ok: true, ctx };
-  } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Working facility is unavailable." }; }
+  } catch (error) {
+    // Messages thrown above are written for staff; database errors (they carry a code) are not.
+    if (error instanceof Error && !("code" in error)) return { ok: false, error: error.message };
+    console.error("[facility-context] working facility lookup failed", error);
+    return { ok: false, error: "Your working facility could not be loaded right now. Try again." };
+  }
 }
 
 export async function loadCaregiverFacilityContext(supabase: SupabaseClient<Database>): Promise<{ ok: true; ctx: CaregiverFacilityContext } | { ok: false; error: string }> {
