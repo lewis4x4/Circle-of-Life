@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  financeLedgerQueueState,
   financeOverviewKpiEmptyCopy,
   financeOverviewKpiTileValue,
   type FinanceOverviewKpiContext,
@@ -57,5 +58,28 @@ describe("financeOverviewKpiTileValue", () => {
     );
     expect(financeOverviewKpiTileValue("posted_count", null, ctx())).not.toBe(EM_DASH);
     expect(financeOverviewKpiTileValue("unposted_invoices", null, ctx())).not.toBe(EM_DASH);
+  });
+});
+
+describe("financeLedgerQueueState (COL-649)", () => {
+  it("does not claim 'Ledger Reconciled' when nothing was sent", () => {
+    expect(financeLedgerQueueState({ unpostedInvoices: 0, sentInvoices: 0, loadFailed: false })).toEqual({
+      kind: "no_sent_invoices",
+    });
+  });
+
+  it("does not claim it when the counts did not load", () => {
+    expect(financeLedgerQueueState({ unpostedInvoices: null, sentInvoices: null, loadFailed: false }).kind).toBe(
+      "unavailable",
+    );
+    expect(financeLedgerQueueState({ unpostedInvoices: 0, sentInvoices: 12, loadFailed: true }).kind).toBe("unavailable");
+  });
+
+  it("reconciles only when sent invoices exist and none is unposted", () => {
+    expect(financeLedgerQueueState({ unpostedInvoices: 0, sentInvoices: 12, loadFailed: false }).kind).toBe("reconciled");
+    expect(financeLedgerQueueState({ unpostedInvoices: 3, sentInvoices: 12, loadFailed: false })).toEqual({
+      kind: "unposted",
+      count: 3,
+    });
   });
 });

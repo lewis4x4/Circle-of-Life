@@ -28,6 +28,8 @@ async function FinanceOverviewData() {
         postedCount={null}
         postedLookbackStart={null}
         unpostedInvoices={null}
+        sentInvoices={null}
+        countsLoaded={false}
         initialError={roleContext.error}
       />
     );
@@ -36,6 +38,8 @@ async function FinanceOverviewData() {
   const supabase = await createClient();
   let postedCount: number | null = null;
   let unpostedInvoices: number | null = null;
+  let sentInvoices: number | null = null;
+  let countsLoaded = false;
   let postedLookbackStart: string | null = null;
   let initialError: string | null = null;
 
@@ -44,6 +48,8 @@ async function FinanceOverviewData() {
     postedCount = snapshot.postedCount;
     postedLookbackStart = snapshot.postedLookbackStart;
     unpostedInvoices = snapshot.unpostedInvoices;
+    sentInvoices = snapshot.sentInvoices;
+    countsLoaded = true;
   } catch (error) {
     initialError = error instanceof Error ? error.message : "Failed to load finance overview.";
   }
@@ -54,6 +60,8 @@ async function FinanceOverviewData() {
       postedCount={postedCount}
       postedLookbackStart={postedLookbackStart}
       unpostedInvoices={unpostedInvoices}
+      sentInvoices={sentInvoices}
+      countsLoaded={countsLoaded}
       initialError={initialError}
     />
   );
