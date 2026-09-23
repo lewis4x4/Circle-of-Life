@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Users } from "lucide-react";
 
 import type { PresenceCensus } from "@/lib/executive/presence-census";
+import { presenceSubtitle, presenceTileState } from "@/lib/home/presence-tiles-state";
+import { formatMetric } from "@/lib/metrics/metric-state";
 import { cn } from "@/lib/utils";
 
 import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
@@ -21,9 +23,7 @@ export type PresenceTilesProps = {
 export function PresenceTiles({ presence, available, licensedBeds, standUpCensus }: PresenceTilesProps) {
   const openBeds = licensedBeds == null ? null : Math.max(0, licensedBeds - presence.total);
   const disagreement = standUpCensus && available && standUpCensus.value !== presence.total ? standUpCensus : null;
-  const subtitle = !available
-    ? "Roster counts unavailable right now."
-    : `${presence.total} on census${licensedBeds != null ? ` · ${licensedBeds} licensed beds · ${openBeds} open` : ""}. Every held bed counts.`;
+  const subtitle = presenceSubtitle({ available, rosterTotal: presence.total, licensedBeds, openBeds });
   const tiles = [
     { key: "active", value: presence.inHouse, label: "In house", sub: "Roster · in the building", tone: "" },
     { key: "hospital", value: presence.hospital, label: "Hospital", sub: "Bed held", tone: "text-warning" },
@@ -41,20 +41,32 @@ export function PresenceTiles({ presence, available, licensedBeds, standUpCensus
         <Link href="/admin/residents" className={LINK_BUTTON_CLASS}>Roster →</Link>
       </div>
       <div className="grid grid-cols-3 gap-px bg-border/60">
-        {tiles.map((tile) => (
+        {tiles.map((tile) => {
+          const state = presenceTileState({ available, rosterTotal: presence.total, value: tile.value });
+          const shown = formatMetric(state);
+          return (
           <Link
             key={tile.key}
             href={`/admin/residents?status=${tile.key}`}
             className="flex flex-col gap-0.5 bg-card px-4 py-3.5 text-left hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-            aria-label={`${tile.label}: ${available ? tile.value : "unavailable"}. Open the roster filtered to ${tile.label.toLowerCase()}.`}
+            aria-label={`${tile.label}: ${shown}. Open the roster filtered to ${tile.label.toLowerCase()}.`}
           >
-            <span className={cn("text-[26px] font-semibold leading-none tracking-tight tabular-nums", tile.tone)} data-testid={`presence-${tile.key}`}>
-              {available ? tile.value : "—"}
+            <span
+              className={cn(
+                state.status === "value"
+                  ? cn("text-[26px] font-semibold leading-none tracking-tight tabular-nums", tile.tone)
+                  : "text-sm font-medium leading-[26px] text-muted-foreground",
+              )}
+              data-testid={`presence-${tile.key}`}
+              data-metric-state={state.status}
+            >
+              {shown}
             </span>
             <span className="text-xs text-muted-foreground">{tile.label}</span>
             <span className="text-[11px] text-muted-foreground">{tile.sub}</span>
           </Link>
-        ))}
+          );
+        })}
       </div>
       {disagreement ? (
         <p className="border-t border-dashed border-border bg-background/40 px-4 py-2.5 text-xs text-warning" role="note">

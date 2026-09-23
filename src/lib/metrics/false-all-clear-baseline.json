@@ -30,9 +30,6 @@
   "src/app/(admin)/billing/payments/new/page.tsx": {
     "silent-zero": 2
   },
-  "src/app/(admin)/executive/alerts/page.tsx": {
-    "all-clear-copy": 1
-  },
   "src/app/(admin)/insurance/page.tsx": {
     "silent-zero": 3
   },
@@ -71,9 +68,6 @@
   },
   "src/components/admin-assistant/AssistantDashboardPageClient.tsx": {
     "silent-zero": 3
-  },
-  "src/components/admin/AdminDashboardPageClient.tsx": {
-    "all-clear-copy": 1
   },
   "src/components/admin/facilities/FacilityAuditMetricsStrip.tsx": {
     "silent-zero": 1

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Clock, MapPin, CheckCircle2 } from "lucide-react";
+import { Clock, MapPin, Inbox } from "lucide-react";
 
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,13 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
+import {
+  ALERT_QUEUE_EMPTY_COPY,
+  ALERT_QUEUE_UNAVAILABLE_COPY,
+  alertSeverityTileState,
+  resolveAlertQueueStatus,
+} from "@/lib/executive/alert-queue-state";
+import { formatMetric } from "@/lib/metrics/metric-state";
 import { cn } from "@/lib/utils";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -99,6 +106,12 @@ export default function ExecutiveAlertsPage() {
   const criticals = rows.filter(r => r.severity === 'critical');
   const warnings = rows.filter(r => r.severity === 'warning');
   const infos = rows.filter(r => r.severity === 'info');
+  const queueStatus = resolveAlertQueueStatus({
+    loading,
+    error: fetchError,
+    organizationId,
+    rowCount: rows.length,
+  });
   const decisionLinks = [
     {
       title: "Finance review",
@@ -172,7 +185,7 @@ export default function ExecutiveAlertsPage() {
                <h3 className="text-[10px] font-medium tracking-wider uppercase text-destructive mb-2">
                  Critical Thresholds
                </h3>
-               <p className="text-2xl font-semibold tabular-nums text-destructive">{criticals.length}</p>
+               <p className="text-2xl font-semibold tabular-nums text-destructive">{formatMetric(alertSeverityTileState(queueStatus, criticals.length))}</p>
              </V2Card>
           </div>
           <div className="h-[140px]">
@@ -180,7 +193,7 @@ export default function ExecutiveAlertsPage() {
                <h3 className="text-[10px] font-medium tracking-wider uppercase text-warning mb-2">
                  Active Warnings
                </h3>
-               <p className="text-2xl font-semibold tabular-nums text-warning">{warnings.length}</p>
+               <p className="text-2xl font-semibold tabular-nums text-warning">{formatMetric(alertSeverityTileState(queueStatus, warnings.length))}</p>
              </V2Card>
           </div>
           <div className="h-[140px]">
@@ -188,7 +201,7 @@ export default function ExecutiveAlertsPage() {
                <h3 className="text-[10px] font-medium tracking-wider uppercase text-info mb-2">
                  Routing Actions
                </h3>
-               <p className="text-2xl font-semibold tabular-nums text-info">{infos.length}</p>
+               <p className="text-2xl font-semibold tabular-nums text-info">{formatMetric(alertSeverityTileState(queueStatus, infos.length))}</p>
              </V2Card>
           </div>
         </KineticGrid>
@@ -206,12 +219,19 @@ export default function ExecutiveAlertsPage() {
            <div className="flex items-center justify-center py-20 text-muted-foreground text-sm uppercase tracking-wider animate-pulse">
              Syncing Exception Engine...
            </div>
+        ) : queueStatus === "unavailable" ? (
+           <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent className="flex flex-col items-center justify-center p-10 text-center">
+              <p className="text-lg font-semibold text-foreground">{ALERT_QUEUE_UNAVAILABLE_COPY.headline}</p>
+              <p className="text-sm mt-2 max-w-xl text-muted-foreground">{ALERT_QUEUE_UNAVAILABLE_COPY.body}</p>
+            </CardContent>
+          </Card>
         ) : rows.length === 0 ? (
-           <Card className="border-success/20 bg-success/10">
-            <CardContent className="flex flex-col items-center justify-center p-16 text-center text-success">
-              <CheckCircle2 className="h-12 w-12 mb-4 opacity-50" />
-              <p className="text-lg font-semibold">Triage Queue Clear</p>
-              <p className="text-sm mt-2 opacity-80">All interventions routed and resolved.</p>
+           <Card className="border-border bg-card">
+            <CardContent className="flex flex-col items-center justify-center p-10 text-center">
+              <Inbox className="h-10 w-10 mb-4 text-muted-foreground" aria-hidden />
+              <p className="text-lg font-semibold text-foreground">{ALERT_QUEUE_EMPTY_COPY.headline}</p>
+              <p className="text-sm mt-2 max-w-xl text-muted-foreground">{ALERT_QUEUE_EMPTY_COPY.body}</p>
             </CardContent>
           </Card>
         ) : (
