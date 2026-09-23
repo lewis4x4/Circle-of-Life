@@ -1,0 +1,63 @@
+name: Route load budget
+
+# COL-660. Loads the slow routes from the 2026-09-22 UI audit one at a time
+# against a local `next start` (never the production web host) backed by the
+# CI project, signed in as the CI screenshot account, and fails when any route
+# takes longer than its budget in perf-route-budget.json to become usable.
+
+on:
+  schedule:
+    - cron: '30 6 * * *' # 06:30 UTC daily, after the nightly suite
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  route-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build
+        run: npx next build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+      - name: Start server
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven.log 2>&1 &
+          for i in {1..60}; do
+            if curl -sSf -o /dev/null http://127.0.0.1:4310/login; then break; fi
+            sleep 1
+          done
+          curl -sSf http://127.0.0.1:4310/login >/dev/null
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+      - name: Route load budget
+        run: npm run perf:routes
+        env:
+          BASE_URL: "http://127.0.0.1:4310"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          SCREENSHOT_USER_EMAIL: ${{ secrets.AUTH_SCREENSHOT_USER_EMAIL }}
+          PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
+          PERF_REPORT_FILE: route-load-budget.json
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: route-load-budget
+          path: |
+            route-load-budget.json
+            /tmp/haven.log
+          retention-days: 30
