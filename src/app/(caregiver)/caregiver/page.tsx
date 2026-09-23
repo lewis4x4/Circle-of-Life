@@ -28,8 +28,8 @@ import {
   caregiverShiftOverviewLoadingCopy,
 } from "@/lib/caregiver/shift-overview-kpi-copy";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
-import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
+import { formatDisplayDate } from "@/lib/format/datetime";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,7 @@ export default function CaregiverHomePage() {
   const [loading, setLoading] = useState(true);
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [timeZone, setTimeZone] = useState("America/New_York");
+  const [shifts, setShifts] = useState<FacilityShiftDefinition[]>([]);
   const [brief, setBrief] = useState<CaregiverShiftBrief | null>(null);
   const [activeOutbreak, setActiveOutbreak] = useState<{ id: string; infection_type: string } | null>(null);
   const [myOutbreakActions, setMyOutbreakActions] = useState(0);
@@ -67,6 +68,7 @@ export default function CaregiverHomePage() {
       const { ctx } = resolved;
       setFacilityName(ctx.facilityName);
       setTimeZone(ctx.timeZone);
+      setShifts(ctx.shifts ?? []);
       // The brief, the outbreak read and the caller's id are independent (COL-674).
       const [b, ob, claims] = await Promise.all([
         fetchCaregiverShiftBrief(supabase, ctx),
@@ -109,10 +111,10 @@ export default function CaregiverHomePage() {
   }, [load]);
 
   const shiftLine = useMemo(() => {
-    const shift = currentShiftForTimezone(timeZone);
-    const ymd = zonedYmd(new Date(), timeZone);
-    return `${ymd} · ${shift} shift`;
-  }, [timeZone]);
+    // Same model as the header (COL-659); the date is the shift's own service date.
+    const shift = currentShiftFor({ timeZone, shifts });
+    return `${formatDisplayDate(shift.serviceDate)} · ${shift.label} shift`;
+  }, [timeZone, shifts]);
 
   if (configError) {
     return (

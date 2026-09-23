@@ -8,7 +8,7 @@ import { ArrowLeft, Loader2, PlusCircle } from "lucide-react";
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -48,6 +48,7 @@ export default function CaregiverResidentBehaviorPage() {
     facilityId: string;
     organizationId: string;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [residentLabel, setResidentLabel] = useState<string | null>(null);
   const [rows, setRows] = useState<BehaviorRow[]>([]);
@@ -105,6 +106,7 @@ export default function CaregiverResidentBehaviorPage() {
         facilityId: c.facilityId,
         organizationId: c.organizationId,
         timeZone: c.timeZone,
+        shifts: c.shifts,
       });
 
       const resQ = await supabase
@@ -172,7 +174,7 @@ export default function CaregiverResidentBehaviorPage() {
     setLoadError(null);
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const dailyLogId = await fetchShiftDailyLogId(supabase, {
         residentId,
         facilityId: ctx.facilityId,
@@ -297,7 +299,7 @@ export default function CaregiverResidentBehaviorPage() {
                 {ctx ? (
                   <>
                     {" "}
-                    · shift <span className="text-zinc-200">{currentShiftForTimezone(ctx.timeZone)}</span>
+                    · shift <span className="text-zinc-200">{currentShiftFor(ctx).label.toLowerCase()}</span>
                   </>
                 ) : null}
               </>
