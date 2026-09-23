@@ -205,7 +205,7 @@ export function PilotFeedbackLauncher({
               />
             </label>
 
-            <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] px-4 py-3 text-xs text-slate-500 dark:text-zinc-400">
+            <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] px-4 py-3 text-xs text-muted-foreground">
               <div>Route: <span className="font-mono">{pathname}</span></div>
               <div>Shell: <span className="font-mono">{shellKind}</span></div>
               <div>Facility: <span className="font-mono">{facilityId ?? "none selected"}</span></div>

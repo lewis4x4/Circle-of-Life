@@ -142,14 +142,14 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
           <div className="flex items-center justify-center gap-2">
             <span className="text-sm text-slate-700 dark:text-zinc-300">{file.name}</span>
             <button type="button" aria-label="Remove selected file" onClick={() => setFile(null)} className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-zinc-700">
-              <X className="w-4 h-4 text-slate-400" />
+              <X className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
         ) : (
           <label className="cursor-pointer">
-            <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-            <p className="text-sm text-slate-500 dark:text-zinc-400">Drop a file here or click to browse</p>
-            <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">PDF, Word, Excel, Markdown, Text</p>
+            <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Drop a file here or click to browse</p>
+            <p className="text-xs text-muted-foreground mt-1">PDF, Word, Excel, Markdown, Text</p>
             <input type="file" className="hidden" onChange={handleFileChange} accept=".pdf,.docx,.xlsx,.xls,.csv,.md,.txt" />
           </label>
         )}

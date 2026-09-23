@@ -154,7 +154,7 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-500" aria-hidden />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
       </div>
     );
   }

@@ -147,7 +147,7 @@ export default function AdminNewScheduleWeekPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <CalendarPlus className="h-6 w-6 text-slate-500" />
+        <CalendarPlus className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New schedule week</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">

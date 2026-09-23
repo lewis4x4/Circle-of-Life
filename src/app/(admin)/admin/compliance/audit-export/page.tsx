@@ -319,11 +319,11 @@ export default function AuditLogExportPage() {
         </CardHeader>
         <CardContent>
           {authLoading ? null : jobsLoading ? (
-            <p className="text-sm text-slate-500" role="status">
+            <p className="text-sm text-muted-foreground" role="status">
               {AUDIT_EXPORT_LOADING_JOBS_COPY}
             </p>
           ) : jobs.length === 0 ? (
-            <p className="text-sm text-slate-500">{AUDIT_EXPORT_NO_JOBS_COPY}</p>
+            <p className="text-sm text-muted-foreground">{AUDIT_EXPORT_NO_JOBS_COPY}</p>
           ) : (
             <Table>
               <TableHeader>

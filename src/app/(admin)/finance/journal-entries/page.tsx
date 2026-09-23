@@ -131,7 +131,7 @@ export default function JournalEntriesListPage() {
           <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Recent Entries</h3>
-              <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
+              <p className="text-[10px] font-mono tracking-wider text-muted-foreground mt-1 uppercase">
                 {showLoadingEntries ? JOURNAL_ENTRIES_LOADING_COPY : `${rows.length} rows`}
               </p>
             </div>
@@ -158,7 +158,7 @@ export default function JournalEntriesListPage() {
                       >
                         <div className="min-w-0 flex items-start gap-4">
                           <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-primary/5 group-hover:border-primary/20 transition-colors mt-0.5">
-                            <BookOpenText className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
+                            <BookOpenText className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-3">
@@ -172,7 +172,7 @@ export default function JournalEntriesListPage() {
                               >
                                 {r.status}
                               </Badge>
-                              <span className="text-xs font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+                              <span className="text-xs font-mono tracking-wider text-muted-foreground uppercase">
                                 Entry: {r.entry_date}
                               </span>
                             </div>
@@ -180,7 +180,7 @@ export default function JournalEntriesListPage() {
                               {r.memo ? (
                                 <span className="line-clamp-2 leading-snug">{r.memo}</span>
                               ) : (
-                                <span className="italic text-slate-400">No memo provided</span>
+                                <span className="italic text-muted-foreground">No memo provided</span>
                               )}
                             </p>
                           </div>
@@ -188,7 +188,7 @@ export default function JournalEntriesListPage() {
 
                         <div className="flex shrink-0 items-center justify-end">
                           <div className="h-8 w-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center group-hover:border-primary/20 group-hover:bg-primary/5 transition-colors shrink-0">
-                            <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-primary transition-colors" />
+                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                         </div>
                       </Link>

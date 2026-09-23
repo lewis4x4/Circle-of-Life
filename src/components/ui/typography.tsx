@@ -26,7 +26,7 @@ export function SysLabel({
   return (
     <span
       className={cn(
-        "text-[10px] font-mono uppercase tracking-[0.15em] text-slate-400",
+        "text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground",
         color && "text-current",
         className
       )}
@@ -68,7 +68,7 @@ export function Subtitle({
   className?: string;
 }) {
   return (
-    <p className={cn("text-sm text-slate-400 mt-1", className)}>{children}</p>
+    <p className={cn("text-sm text-muted-foreground mt-1", className)}>{children}</p>
   );
 }
 
@@ -90,7 +90,7 @@ export function MonoLabel({
   return (
     <span
       className={cn(
-        "text-[11px] font-mono uppercase tracking-wider text-slate-400",
+        "text-[11px] font-mono uppercase tracking-wider text-muted-foreground",
         color && "text-current",
         className
       )}

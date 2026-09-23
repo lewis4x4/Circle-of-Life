@@ -145,7 +145,7 @@ export default function CaregiverMePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading…
       </div>
@@ -169,14 +169,14 @@ export default function CaregiverMePage() {
             </div>
             <div>
                <h3 className="text-3xl font-semibold tracking-wide text-white mb-1">{displayName}</h3>
-               <p className="text-sm font-mono text-zinc-400 uppercase tracking-wider font-bold">{roleLabel}</p>
+               <p className="text-sm font-mono text-muted-foreground uppercase tracking-wider font-bold">{roleLabel}</p>
                
                <div className="flex flex-wrap gap-2 mt-4">
                   <Badge className="border-emerald-500/40 bg-emerald-500/10 text-emerald-300 uppercase tracking-wider font-mono text-[9px] font-bold rounded-full px-3 py-1 shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]">
                   Floor profile
                   </Badge>
                   {email ? (
-                     <Badge className="border-white/10 bg-black/40 text-zinc-300 tracking-wider font-mono text-[10px] font-bold rounded-full px-3 py-1">
+                     <Badge className="border-white/10 bg-black/40 text-muted-foreground tracking-wider font-mono text-[10px] font-bold rounded-full px-3 py-1">
                         {email}
                      </Badge>
                   ) : null}
@@ -207,7 +207,7 @@ export default function CaregiverMePage() {
         <div className="p-8 rounded-lg border border-white/5 bg-white/[0.02] relative overflow-visible z-10 w-full transition-all text-zinc-100">
            <div className="mb-6">
              <h4 className="text-xl font-semibold text-white tracking-wide">Report illness</h4>
-             <p className="text-sm font-mono text-zinc-400 mt-1.5 leading-relaxed pr-4">
+             <p className="text-sm font-mono text-muted-foreground mt-1.5 leading-relaxed pr-4">
                Self-report an absence. Your facility team will see this on the staff illness list.
              </p>
            </div>
@@ -231,7 +231,7 @@ export default function CaregiverMePage() {
                      </option>
                    ))}
                  </select>
-                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-500">
+                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-muted-foreground">
                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                    </svg>
@@ -253,21 +253,21 @@ export default function CaregiverMePage() {
       <div className="p-8 rounded-lg border border-white/5 bg-white/[0.02] relative overflow-visible z-10 w-full transition-all text-zinc-100">
          <div className="mb-6">
             <h4 className="text-xl font-semibold text-white tracking-wide">Account</h4>
-            <p className="text-sm font-mono text-zinc-400 mt-1.5 leading-relaxed pr-4">
+            <p className="text-sm font-mono text-muted-foreground mt-1.5 leading-relaxed pr-4">
               End your session on this device.
             </p>
          </div>
 
          <Link
            href={homeHref}
-           className="mb-4 inline-flex h-12 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-wider font-mono font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner"
+           className="mb-4 inline-flex h-12 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-wider font-mono font-bold text-muted-foreground hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner"
          >
            Back to shift home
          </Link>
          
          <Button
             type="button"
-            className="w-full h-14 rounded-full border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white disabled:opacity-50 transition-all font-mono uppercase tracking-wider text-[11px] font-bold tap-responsive shadow-inner"
+            className="w-full h-14 rounded-full border border-white/10 bg-black/40 text-muted-foreground hover:bg-white/10 hover:text-white disabled:opacity-50 transition-all font-mono uppercase tracking-wider text-[11px] font-bold tap-responsive shadow-inner"
             disabled={signingOut || !isBrowserSupabaseConfigured()}
             onClick={() => void signOut()}
          >

@@ -30,7 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
   published: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   draft: "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400",
   pending_review: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  archived: "bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-500",
+  archived: "bg-slate-100 text-muted-foreground dark:bg-zinc-800",
   ingest_failed: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
@@ -323,11 +323,11 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                 <tr key={doc.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                      <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                       <div>
                         <div className="font-medium text-slate-800 dark:text-zinc-200">{doc.title}</div>
                         {doc.summary && (
-                          <div className="text-xs text-slate-500 dark:text-zinc-400 line-clamp-1 mt-0.5">{doc.summary}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{doc.summary}</div>
                         )}
                       </div>
                     </div>
@@ -350,7 +350,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                         <option value="archived">Archived</option>
                         <option value="ingest_failed">Ingest Failed</option>
                       </select>
-                      <div className="text-[11px] text-slate-500 dark:text-zinc-400 max-w-[220px]">
+                      <div className="text-[11px] text-muted-foreground max-w-[220px]">
                         {STATUS_HELP[doc.status as DocumentStatus] ?? STATUS_HELP.draft}
                       </div>
                     </div>
@@ -359,7 +359,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                     <div className="space-y-1 text-xs text-slate-600 dark:text-zinc-300">
                       <div className="font-medium">{reviewOwnerLabel(doc)}</div>
                       {knowledgeReviewDueLabel(doc) ? (
-                        <div className="text-slate-500 dark:text-zinc-400">{knowledgeReviewDueLabel(doc)}</div>
+                        <div className="text-muted-foreground">{knowledgeReviewDueLabel(doc)}</div>
                       ) : null}
                     </div>
                   </td>
@@ -381,12 +381,12 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                       ))}
                     </select>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 dark:text-zinc-400">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {formatDocumentWordCount(doc.word_count)}
                   </td>
                   <td className="px-4 py-3">
                     {actionLoading === doc.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                     ) : (
                       <div className="flex gap-1">
                         <button
@@ -395,7 +395,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                           title="Re-index document"
                           className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                         >
-                          <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                          <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
                         <button
                           type="button"
@@ -426,7 +426,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400 dark:text-zinc-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     No documents found
                   </td>
                 </tr>

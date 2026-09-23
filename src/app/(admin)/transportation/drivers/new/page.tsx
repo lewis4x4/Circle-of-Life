@@ -201,7 +201,7 @@ export default function AdminTransportationDriverNewPage() {
             <div className="space-y-2">
               <Label htmlFor="stf">Staff</Label>
               {loadingStaff || authLoading ? (
-                <p className="text-sm text-slate-500">{DRIVER_NEW_LOADING_STAFF_COPY}</p>
+                <p className="text-sm text-muted-foreground">{DRIVER_NEW_LOADING_STAFF_COPY}</p>
               ) : showEmptyStaffGap ? (
                 <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   {DRIVER_NEW_NO_STAFF_AT_FACILITY_COPY}
