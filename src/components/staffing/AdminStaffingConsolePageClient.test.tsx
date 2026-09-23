@@ -32,6 +32,10 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: mocks.createClientMock,
 }));
 
+vi.mock("@/components/common/FacilityGate", () => ({
+  FacilityGateNotice: ({ reason }: { reason: string }) => <div data-testid="facility-gate">{reason}</div>,
+}));
+
 const baseFacilityId = "11111111-1111-1111-1111-111111111111";
 
 const loadedProps = {
@@ -147,6 +151,28 @@ describe("<AdminStaffingConsolePageClient />", () => {
 
     expect(screen.getByRole("button", { name: /save attendance event/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: /create open position/i })).toBeEnabled();
+  });
+
+  it("under All facilities keeps the cross-facility figures and gates only the per-building actions (COL-651)", () => {
+    mocks.useFacilityStoreMock.mockReturnValue({ selectedFacilityId: null });
+
+    render(
+      <AdminStaffingConsolePageClient
+        {...loadedProps}
+        initialFacilityId={null}
+        initialStaffOptions={[]}
+        initialRequisitions={[]}
+        initialAttendance={[]}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: /recent ratio snapshots/i })).toBeInTheDocument();
+    expect(screen.getByText("All facilities")).toBeInTheDocument();
+    expect(screen.queryByText("No facility selected")).not.toBeInTheDocument();
+    expect(screen.queryByText(/select a facility to load staffing metrics/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("facility-gate")).toHaveTextContent(/attendance events and open positions/i);
+    expect(screen.queryByRole("button", { name: /save attendance event/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /create open position/i })).not.toBeInTheDocument();
   });
 
   it("shows a blocked staffing-directory state when no active ADP-linked staff are available", () => {

@@ -8,6 +8,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { AdminEmptyState, AdminErrorState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -33,7 +34,6 @@ import {
   TIMECLOCK_PAGE_TITLE,
   TIMECLOCK_PAY_PERIOD_UNSET,
   TIMECLOCK_PERIOD_UNSET_WEEK_NOTE,
-  TIMECLOCK_PICK_FACILITY,
   formatMinutesCompact,
   formatPeriodLabel,
   formatStatusNow,
@@ -263,7 +263,7 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
       {error ? <AdminErrorState message={error} onRetry={() => void load()} /> : null}
 
       {!facilityId ? (
-        <AdminEmptyState title={TIMECLOCK_PICK_FACILITY} description="Use the facility selector in the top bar." />
+        <FacilityGateNotice reason="Punches, worked minutes and exceptions are kept per building, so the timeclock opens for one facility at a time." />
       ) : loading || !period ? (
         <AdminTableLoadingState />
       ) : rows.length === 0 ? (
