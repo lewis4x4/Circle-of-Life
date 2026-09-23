@@ -119,6 +119,13 @@ export default function RiskCommandPageClient({
 
       {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => router.refresh()} /> : null}
 
+      {snapshot && snapshot.latestRows.length === 0 ? (
+        <p role="status" className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+          <span className="font-medium">Risk scoring has not run for this scope.</span> The nightly risk scorer has not
+          produced a score yet, so the counts below are empty, not zero.
+        </p>
+      ) : null}
+
       {snapshot ? (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -132,7 +139,7 @@ export default function RiskCommandPageClient({
             <MetricCard
               icon={Siren}
               label="Critical facilities"
-              value={String(summary.criticalFacilities)}
+              value={snapshot.latestRows.length === 0 ? "Not scored" : String(summary.criticalFacilities)}
               detail="Latest nightly snapshot in critical range"
               tone={summary.criticalFacilities > 0 ? "red" : "indigo"}
             />
@@ -164,7 +171,7 @@ export default function RiskCommandPageClient({
                 {snapshot.latestRows.length === 0 ? (
                   <AdminEmptyState
                     title="No nightly risk scores yet"
-                    description="Run the nightly scorer once to populate risk snapshots and owner alert history."
+                    description="No risk score has been computed for this scope. Scores appear the morning after the nightly risk scorer runs."
                   />
                 ) : (
                   <div className="overflow-x-auto">
