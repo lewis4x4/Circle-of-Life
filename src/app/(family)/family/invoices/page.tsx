@@ -19,6 +19,7 @@ import {
   FAMILY_INVOICES_RETRY,
 } from "@/lib/family/family-portal-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { describeFamilyBillingSummary } from "@/lib/family/family-billing-status";
 import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
 import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 
@@ -144,7 +145,7 @@ export default function FamilyInvoicesPage() {
             <h2 className="text-2xl font-serif text-foreground">Invoices</h2>
             <p className="text-sm text-muted-foreground">
               Open balance across visible invoices:{" "}
-              <span className="font-semibold text-foreground">{formatUsd(data.totalBalanceDue)}</span>
+              <span className="font-semibold text-foreground">{describeFamilyBillingSummary(data).openBalance}</span>
             </p>
           </div>
         </div>

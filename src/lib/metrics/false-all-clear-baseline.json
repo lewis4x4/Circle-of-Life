@@ -42,9 +42,6 @@
   "src/app/(caregiver)/caregiver/page.tsx": {
     "count-or-zero": 1
   },
-  "src/app/(family)/family/billing/page.tsx": {
-    "all-clear-copy": 1
-  },
   "src/app/api/admin/facilities/[facilityId]/audit-log/route.ts": {
     "count-or-zero": 3
   },
