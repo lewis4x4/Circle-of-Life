@@ -1,75 +1,104 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { EntityCombobox, type EntityComboboxOption } from "@/components/ui/entity-combobox";
+import { FacilityFormSelect } from "@/components/ui/facility-form-select";
+import { FormLabel } from "@/components/ui/form-label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import {
+  fetchActiveResidentsWithRooms,
+  type ResidentWithRoom,
+} from "@/lib/caregiver/facility-residents";
+import {
+  EMPTY_MEDICATION_ERROR_FORM,
+  MEDICATION_ERROR_FACTOR_OPTIONS,
+  MEDICATION_ERROR_SEVERITY_OPTIONS,
+  MEDICATION_ERROR_SHIFT_OPTIONS,
+  MEDICATION_ERROR_TYPE_OPTIONS,
+  buildMedicationErrorInsert,
+  missingMedicationErrorFields,
+  type MedicationErrorFormState,
+} from "@/lib/medications/medication-error-form";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
-const ERROR_TYPES = [
-  "wrong_medication",
-  "wrong_dose",
-  "wrong_time",
-  "wrong_resident",
-  "wrong_route",
-  "omission",
-  "unauthorized_medication",
-  "documentation_error",
-  "other",
-] as const;
-
-const SEVERITY = [
-  "near_miss",
-  "no_harm",
-  "minor_harm",
-  "moderate_harm",
-  "severe_harm",
-] as const;
-
-const SHIFTS = ["day", "evening", "night", "custom"] as const;
-
-const FACTORS = [
-  "transcription",
-  "communication",
-  "distraction",
-  "staffing",
-  "similar_packaging",
-  "similar_names",
-  "workflow_interruption",
-] as const;
+/** Upper bound on the picker census; one building is far below it. */
+const RESIDENT_PICKER_LIMIT = 500;
 
 export default function NewMedicationErrorPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const { user, organizationId } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
-  const [residentId, setResidentId] = useState("");
-  const [errorType, setErrorType] = useState<string>("wrong_medication");
-  const [severity, setSeverity] = useState<string>("near_miss");
-  const [shift, setShift] = useState<string>("day");
-  const [description, setDescription] = useState("");
-  const [immediate, setImmediate] = useState("");
-  const [factors, setFactors] = useState<string[]>([]);
-  const [physicianNotified, setPhysicianNotified] = useState(false);
+  const [form, setForm] = useState<MedicationErrorFormState>(EMPTY_MEDICATION_ERROR_FORM);
+  const [residents, setResidents] = useState<ResidentWithRoom[]>([]);
+  const [residentsLoading, setResidentsLoading] = useState(false);
+  const [residentsError, setResidentsError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const toggleFactor = (f: string) => {
-    setFactors((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
-  };
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
+
+  const update = <K extends keyof MedicationErrorFormState>(key: K, value: MedicationErrorFormState[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  useEffect(() => {
+    // A resident picked at another facility must never be filed here.
+    setForm((prev) => ({ ...prev, residentId: "" }));
+    setResidents([]);
+    setResidentsError(null);
+    if (!facilityReady || !selectedFacilityId) return;
+    let cancelled = false;
+    setResidentsLoading(true);
+    fetchActiveResidentsWithRooms(supabase, selectedFacilityId, RESIDENT_PICKER_LIMIT)
+      .then((rows) => {
+        if (!cancelled) setResidents(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setResidentsError("Could not load residents for this facility. Reload to try again.");
+      })
+      .finally(() => {
+        if (!cancelled) setResidentsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, selectedFacilityId, facilityReady]);
+
+  const residentOptions: EntityComboboxOption[] = useMemo(
+    () =>
+      residents.map((r) => ({
+        id: r.id,
+        label: r.displayName,
+        meta: `Room ${r.roomLabel}`,
+        keywords: `${r.displayName} ${r.roomLabel}`,
+      })),
+    [residents],
+  );
+
+  const missing = missingMedicationErrorFields(form);
+
+  const toggleFactor = (f: string) =>
+    update(
+      "contributingFactors",
+      form.contributingFactors.includes(f)
+        ? form.contributingFactors.filter((x) => x !== f)
+        : [...form.contributingFactors, f],
+    );
 
   const submit = useCallback(async () => {
     setFormError(null);
-    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+    if (!facilityReady || !selectedFacilityId) {
       setFormError("Select a facility in the header.");
       return;
     }
@@ -77,48 +106,28 @@ export default function NewMedicationErrorPage() {
       setFormError("Could not resolve profile.");
       return;
     }
-    if (!residentId.trim() || !description.trim() || !immediate.trim()) {
-      setFormError("Resident, description, and immediate actions are required.");
+    const stillMissing = missingMedicationErrorFields(form);
+    if (stillMissing.length > 0) {
+      setFormError(`Complete the required fields: ${stillMissing.join(", ")}.`);
       return;
     }
     setSaving(true);
     try {
-      const { error: insErr } = await supabase.from("medication_errors").insert({
-        resident_id: residentId.trim(),
-        facility_id: selectedFacilityId,
-        organization_id: organizationId,
-        error_type: errorType,
-        severity,
-        shift: shift as "day" | "evening" | "night" | "custom",
-        discovered_by: user.id,
-        description: description.trim(),
-        immediate_actions: immediate.trim(),
-        contributing_factors: factors.length ? factors : null,
-        physician_notified: physicianNotified,
-        physician_notified_at: physicianNotified ? new Date().toISOString() : null,
-      });
+      const { error: insErr } = await supabase.from("medication_errors").insert(
+        buildMedicationErrorInsert(form, {
+          facilityId: selectedFacilityId,
+          organizationId,
+          userId: user.id,
+        }),
+      );
       if (insErr) throw insErr;
       router.push("/admin/medications/errors");
     } catch (e: unknown) {
-      setFormError(e instanceof Error ? e.message : "Save failed");
+      setFormError(formatLiveDataLoadError(e, "Could not save the report. Nothing was filed — try again."));
     } finally {
       setSaving(false);
     }
-  }, [
-    supabase,
-    selectedFacilityId,
-    user,
-    organizationId,
-    residentId,
-    errorType,
-    severity,
-    shift,
-    description,
-    immediate,
-    factors,
-    physicianNotified,
-    router,
-  ]);
+  }, [supabase, facilityReady, selectedFacilityId, user, organizationId, form, router]);
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -136,119 +145,122 @@ export default function NewMedicationErrorPage() {
           <CardDescription>Structured capture for quality improvement.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {formError ? <p className="text-sm text-red-600 dark:text-red-400">{formError}</p> : null}
+          {formError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {formError}
+            </p>
+          ) : null}
+          {!facilityReady ? (
+            <p className="text-sm text-muted-foreground">Select a facility in the header to report an error.</p>
+          ) : null}
 
-          <div className="space-y-2">
-            <Label htmlFor="resident_id">Resident ID (UUID)</Label>
-            <Input
-              id="resident_id"
-              value={residentId}
-              onChange={(e) => setResidentId(e.target.value)}
-              className="font-mono text-sm"
+          <div>
+            <EntityCombobox
+              id="med-error-resident"
+              label="Resident"
+              required
+              placeholder={residents.length === 0 && !residentsLoading ? "No residents to choose" : "Select…"}
+              searchPlaceholder="Search by name or room…"
+              options={residentOptions}
+              value={form.residentId}
+              onChange={(id) => update("residentId", id)}
+              loading={residentsLoading}
+              disabled={!facilityReady || residents.length === 0}
+              data-testid="med-error-resident"
             />
+            {residentsError ? <p className="mt-2 text-sm text-destructive">{residentsError}</p> : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <select
-                value={errorType}
-                onChange={(e) => setErrorType(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950"
-              >
-                {ERROR_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>Severity</Label>
-              <select
-                value={severity}
-                onChange={(e) => setSeverity(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950"
-              >
-                {SEVERITY.map((t) => (
-                  <option key={t} value={t}>
-                    {t.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <FacilityFormSelect
+              id="med-error-type"
+              label="Error type *"
+              placeholder="Select…"
+              value={form.errorType}
+              options={MEDICATION_ERROR_TYPE_OPTIONS}
+              onValueChange={(v) => update("errorType", v)}
+            />
+            <FacilityFormSelect
+              id="med-error-severity"
+              label="Outcome *"
+              placeholder="Select…"
+              value={form.severity}
+              options={MEDICATION_ERROR_SEVERITY_OPTIONS}
+              onValueChange={(v) => update("severity", v)}
+            />
           </div>
 
-          <div className="space-y-2">
-            <Label>Shift</Label>
-            <select
-              value={shift}
-              onChange={(e) => setShift(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950"
-            >
-              {SHIFTS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FacilityFormSelect
+            id="med-error-shift"
+            label="Shift *"
+            placeholder="Select…"
+            value={form.shift}
+            options={MEDICATION_ERROR_SHIFT_OPTIONS}
+            onValueChange={(v) => update("shift", v)}
+          />
 
           <div className="space-y-2">
-            <Label htmlFor="desc">What happened</Label>
-            <textarea
-              id="desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <FormLabel htmlFor="med-error-description" required>
+              What happened
+            </FormLabel>
+            <Textarea
+              id="med-error-description"
+              required
+              value={form.description}
+              onChange={(e) => update("description", e.target.value)}
               rows={4}
-              className="flex min-h-[96px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="imm">Immediate actions</Label>
-            <textarea
-              id="imm"
-              value={immediate}
-              onChange={(e) => setImmediate(e.target.value)}
+            <FormLabel htmlFor="med-error-immediate" required>
+              Immediate actions
+            </FormLabel>
+            <Textarea
+              id="med-error-immediate"
+              required
+              value={form.immediateActions}
+              onChange={(e) => update("immediateActions", e.target.value)}
               rows={3}
-              className="flex min-h-[72px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Contributing factors</Label>
+          <fieldset className="space-y-2">
+            <legend className="text-[13px] font-semibold text-muted-foreground">Contributing factors</legend>
             <div className="flex flex-wrap gap-2">
-              {FACTORS.map((f) => (
-                <label key={f} className="flex items-center gap-1 text-xs">
+              {MEDICATION_ERROR_FACTOR_OPTIONS.map((f) => (
+                <label key={f.value} className="flex items-center gap-1 text-xs">
                   <input
                     type="checkbox"
-                    checked={factors.includes(f)}
-                    onChange={() => toggleFactor(f)}
+                    checked={form.contributingFactors.includes(f.value)}
+                    onChange={() => toggleFactor(f.value)}
                   />
-                  {f.replace(/_/g, " ")}
+                  {f.label}
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={physicianNotified}
-              onChange={(e) => setPhysicianNotified(e.target.checked)}
+              checked={form.physicianNotified}
+              onChange={(e) => update("physicianNotified", e.target.checked)}
             />
             Physician notified (if harm)
           </label>
 
           <button
             type="button"
-            disabled={saving}
+            disabled={saving || !facilityReady || missing.length > 0}
             onClick={() => void submit()}
             className={cn(buttonVariants(), "w-full")}
           >
             {saving ? "Saving…" : "Submit report"}
           </button>
+          {missing.length > 0 ? (
+            <p className="text-xs text-muted-foreground">Still needed: {missing.join(", ")}.</p>
+          ) : null}
         </CardContent>
       </Card>
     </div>
