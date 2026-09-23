@@ -16,9 +16,11 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  478: "held for open PR #788 (policy_self_comparison_tautologies), already applied to production; remove once #788 merges.",
-  479: "held for open PR #789 (remove_dev_notes_and_acceptance_test_rows), already applied to production; remove once #789 merges.",
-  480: "held for med_tech_shift_follows_punch_corrections (COL-668 follow-up), applied to production and staging from a branch not yet pushed; remove once its file merges.",
+  478: "held for PR #788 (policy_self_comparison_tautologies), already applied to production; its file is on main, remove this entry after rebasing onto it.",
+  479: "held for PR #789 (remove_dev_notes_and_acceptance_test_rows), already applied to production; its file is on main, remove this entry after rebasing onto it.",
+  480: "held for med_tech_shift_follows_punch_corrections (COL-668 follow-up), applied to production; its file is on main, remove this entry after rebasing onto it.",
+  481: "held for open PR #808 (medicaid_resident_share_invoice, COL-678), applied to Haven HFO Staging; remove once #808 merges.",
+  482: "held for open PR #811 (rls_helper_initplans_everywhere, COL-696); remove once #811 merges.",
 };
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;

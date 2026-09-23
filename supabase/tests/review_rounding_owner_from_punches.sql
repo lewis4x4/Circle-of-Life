@@ -1,4 +1,4 @@
--- COL-677 / COL-693: Smart Rounding checks owned by on-clock staff (migration 482).
+-- COL-677 / COL-693: Smart Rounding checks owned by on-clock staff (migration 484).
 -- Spec 40 section 8 and section 10 item 6.
 --
 -- With no shift_assignments at all, the timeclock is the staffing record:

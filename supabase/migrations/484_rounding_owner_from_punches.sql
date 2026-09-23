@@ -26,7 +26,7 @@
 --
 -- Decisions:
 --   * On the clock means haven.timeclock_state IN ('in', 'meal'). A person on a
---     meal break is still on shift; the floor tablet roster (migration 481)
+--     meal break is still on shift; the floor tablet roster (migration 483)
 --     uses the same definition, so the roster and the owner cannot disagree.
 --   * The opening 'in' punch must be at this facility, so somebody whose home
 --     is here but who punched in at another building owns nothing here.

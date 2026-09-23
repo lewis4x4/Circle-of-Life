@@ -1,6 +1,6 @@
 /**
  * Floor tablet settings for the facility Timeclock tab (COL-690, spec 40 §1, §3).
- * Client-safe. The database is the authority: migration 481's
+ * Client-safe. The database is the authority: migration 483's
  * `haven.floor_roster_roles_valid` refuses any role outside current staff login
  * roles, and these lists only keep the form from offering one it would refuse.
  */
@@ -33,7 +33,7 @@ const ROSTER_ROLE_VALUES: ReadonlySet<string> = new Set(FLOOR_ROSTER_ROLE_OPTION
 export const FLOOR_IDLE_LOCK_MIN = 1;
 export const FLOOR_IDLE_LOCK_MAX = 30;
 
-/** Column defaults in migration 481, shown before a facility has a settings row. */
+/** Column defaults in migration 483, shown before a facility has a settings row. */
 export const FLOOR_SETTINGS_DEFAULTS = { idle_lock_minutes: 3, roster_roles: ["med_tech", "facility_admin"] } as const;
 
 export type FloorSettings = { idle_lock_minutes: number; roster_roles: string[] };
