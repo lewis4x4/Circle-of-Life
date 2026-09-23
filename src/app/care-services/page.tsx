@@ -34,7 +34,7 @@ export default function CareServicesPage() {
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-300/30">
-              <Heart className="w-3.5 h-3.5 text-[#C85A32] fill-[#C85A32]" />
+              <Heart className="w-3.5 h-3.5 text-[#B04F2C] fill-[#C85A32]" />
               <span>Dignity-Centered Care Services</span>
             </div>
 
@@ -92,7 +92,7 @@ export default function CareServicesPage() {
                     className="w-full h-full object-cover" unoptimized loading="eager" fill sizes="100vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
-                  <div className="absolute top-4 left-4 px-3.5 py-1 rounded-full bg-[#C85A32] text-white text-xs font-bold shadow-sm">
+                  <div className="absolute top-4 left-4 px-3.5 py-1 rounded-full bg-[#B04F2C] text-white text-xs font-bold shadow-sm">
                     Long-Term Sanctuary
                   </div>
                   <div className="absolute bottom-4 left-4 right-4 text-white">
@@ -130,11 +130,11 @@ export default function CareServicesPage() {
                       <span className="text-[11px] text-stone-400 block uppercase tracking-wider font-semibold">
                         All-Inclusive Rates From
                       </span>
-                      <span className="text-2xl font-bold text-[#C85A32] font-serif">$4,000 / mo</span>
+                      <span className="text-2xl font-bold text-[#B04F2C] font-serif">$4,000 / mo</span>
                     </div>
                     <button
                       onClick={() => setTourModalOpen(true)}
-                      className="px-6 py-3 rounded-xl bg-[#C85A32] hover:bg-[#B34E28] text-white font-bold text-xs shadow-md transition-colors"
+                      className="px-6 py-3 rounded-xl bg-[#B04F2C] hover:bg-[#B34E28] text-white font-bold text-xs shadow-md transition-colors"
                     >
                       Book a Private Tour
                     </button>
@@ -231,7 +231,7 @@ export default function CareServicesPage() {
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-stone-100 text-stone-700">
                         {level.tier}
                       </span>
-                      <span className="font-bold text-sm text-[#C85A32]">
+                      <span className="font-bold text-sm text-[#B04F2C]">
                         {level.monthlyFee === 0 ? "Included ($0)" : `+$${level.monthlyFee}/mo`}
                       </span>
                     </div>
@@ -242,7 +242,7 @@ export default function CareServicesPage() {
                   <div className="pt-3 border-t border-stone-100 space-y-1.5 text-[11px] text-[#3D5A4C] font-medium">
                     {level.includedServices.map((srv, idx) => (
                       <div key={idx} className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#C85A32] shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#B04F2C] shrink-0" />
                         <span>{srv}</span>
                       </div>
                     ))}

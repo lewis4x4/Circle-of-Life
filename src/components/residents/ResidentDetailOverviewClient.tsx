@@ -10,6 +10,7 @@ import { BehaviorLogModal, ConditionLogModal, GeneralNoteModal } from "@/compone
 import {
   ResidentCodeStatusValue,
   ResidentFallRiskPresentation,
+  hasFallRiskAssessment,
   hospiceElectionPhrase,
   polstMolstFriendly,
   resolveCodeStatusPresentation,
@@ -705,7 +706,7 @@ export function ResidentDetailOverviewClient({
           </SummaryCell>
 
           <SummaryCell label="Fall risk">
-            <ResidentFallRiskPresentation raw={detail.fallRiskRaw} />
+            <ResidentFallRiskPresentation raw={detail.fallRiskRaw} assessed={hasFallRiskAssessment(detail.assessmentsUpcomingJson)} />
           </SummaryCell>
 
           <SummaryCell label="Diet order">
@@ -862,7 +863,7 @@ export function ResidentDetailOverviewClient({
               value={diagnosisDisplayTitle(detail.dietOrder ?? "") || "Not recorded"}
               muted={!detail.dietOrder}
             />
-            <DirectiveRow label="Fall risk" value={<ResidentFallRiskPresentation raw={detail.fallRiskRaw} />} />
+            <DirectiveRow label="Fall risk" value={<ResidentFallRiskPresentation raw={detail.fallRiskRaw} assessed={hasFallRiskAssessment(detail.assessmentsUpcomingJson)} />} />
             <DirectiveRow label="Primary payer" value={detail.primaryPayer ?? "Not recorded"} muted={!detail.primaryPayer} />
           </div>
         </Disclosure>

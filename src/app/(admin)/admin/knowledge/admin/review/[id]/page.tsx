@@ -290,8 +290,8 @@ export default function KnowledgeDocumentReviewPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <RecordDetailHeader
-        title="Doctrine Review"
-        subtitle="Review a KB upload, create or revisit its Obsidian draft, and move it through the doctrine workflow."
+        title="Document review"
+        subtitle="Review an uploaded document, draft or revise its knowledge-base page, and move it toward publishing."
         backLink={{ label: "Knowledge Base Admin", href: "/admin/knowledge/admin" }}
       />
 

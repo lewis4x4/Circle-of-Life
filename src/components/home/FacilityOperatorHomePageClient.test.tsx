@@ -172,14 +172,14 @@ describe("FacilityOperatorHomePageClient", () => {
       <FacilityOperatorHomePageClient initial={initial()} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
     );
     expect(screen.getByRole("button", { name: /Record payment/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /Record payment/ })).toHaveTextContent("Week 2");
+    expect(screen.getByRole("button", { name: /Record payment/ })).toHaveTextContent("Coming soon");
     unmount();
     render(
       <FacilityOperatorHomePageClient initial={initial({ releasedModules: ["record_payment"] })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
     );
     const live = screen.getByTestId("quick-action-record_payment");
     expect(live).toBeEnabled();
-    expect(live).not.toHaveTextContent("Week 2");
+    expect(live).not.toHaveTextContent("Coming soon");
     expect(screen.getByRole("button", { name: /Quick note/ })).toBeDisabled();
     fireEvent.click(live);
     expect(await screen.findByRole("dialog", { name: "Record payment" })).toBeInTheDocument();
@@ -197,7 +197,7 @@ describe("FacilityOperatorHomePageClient", () => {
       <FacilityOperatorHomePageClient initial={initial({ pastDue })} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
     );
     expect(screen.queryByTestId("past-due-strip")).toBeNull();
-    expect(screen.getByTestId("glance-rent")).toHaveTextContent("Week 2");
+    expect(screen.getByTestId("glance-rent")).toHaveTextContent("Coming soon");
     unmount();
 
     render(
@@ -296,7 +296,7 @@ describe("FacilityOperatorHomePageClient", () => {
       <FacilityOperatorHomePageClient initial={initial()} initialFacilityId={FACILITY} currentUserId="me" fullName="Charlene Example" />,
     );
     const strip = screen.getByLabelText("Quick actions");
-    const labels = Array.from(strip.querySelectorAll("a, button")).map((node) => node.textContent?.replace(/Week \d/, "").trim());
+    const labels = Array.from(strip.querySelectorAll("a, button")).map((node) => node.textContent?.replace(/Coming soon/, "").trim());
     expect(labels).toEqual(["Open Stand Up", "Referrals", "My facility", "EMP", "Report incident", "Record payment", "Call-out", "Quick note"]);
     expect(within(strip).getByRole("link", { name: /My facility/ })).toHaveAttribute("href", `/admin/facilities/${FACILITY}`);
     expect(within(strip).getByRole("button", { name: /Record payment/ })).toBeDisabled();

@@ -30,7 +30,7 @@ import {
   resolveQualityHubOrganizationGapMessage,
   resolveQualityHubQueryErrorMessage,
 } from "@/lib/quality/quality-hub-page-state";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -212,6 +212,7 @@ export default function AdminQualityHubPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <TableRowList label="Quality measures" minWidthClassName="min-w-[28rem]">
             <TableRowHeader>
               <span className="flex-[2] min-w-0">Measure</span>
               <span className="flex-1 min-w-0">Key / Domain</span>
@@ -231,6 +232,7 @@ export default function AdminQualityHubPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         )}
       </div>
@@ -248,6 +250,7 @@ export default function AdminQualityHubPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <TableRowList label="Latest facility results" minWidthClassName="min-w-[28rem]">
             <TableRowHeader>
               <span className="flex-[2] min-w-0">Measure</span>
               <span className="flex-1 min-w-0">Period</span>
@@ -268,6 +271,7 @@ export default function AdminQualityHubPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         )}
       </div>

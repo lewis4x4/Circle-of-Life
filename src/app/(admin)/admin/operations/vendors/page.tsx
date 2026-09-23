@@ -133,7 +133,7 @@ export default function OperationsVendorBookingsPage() {
   return (
     <div className="space-y-6 p-6">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations Cadence Engine</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations</p>
         <h1 className="text-3xl font-semibold tracking-tight">Vendor Bookings</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Configure which facility vendors are booking-capable and turn them into recurring vendor-management tasks.

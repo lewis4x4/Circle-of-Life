@@ -22,7 +22,7 @@
 import { computeTotalScore, lookupRiskLevel } from "./scoring";
 import type { AssessmentScores, AssessmentTemplate, AssessmentTemplateItem } from "./types";
 
-export const ASSESSMENT_SCHEDULE_BASIS_COPY = "Haven default interval";
+export const ASSESSMENT_SCHEDULE_BASIS_COPY = "standard schedule";
 export const ASSESSMENT_PROVISIONAL_LABEL = "Provisional result";
 export const ASSESSMENT_NOT_RECORDED_COPY = "Not yet recorded";
 export const ASSESSMENT_RECORDED_LABEL = "Recorded";

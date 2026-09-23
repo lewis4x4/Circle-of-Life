@@ -8,12 +8,19 @@ import { Star } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { formatMetric } from "@/lib/metrics/metric-state";
 import {
+  REPUTATION_DRAFT_QUEUE_CLEAR_BODY,
+  REPUTATION_DRAFT_QUEUE_CLEAR_TITLE,
+  REPUTATION_NO_LISTINGS_BODY,
+  REPUTATION_NO_LISTINGS_TITLE,
   formatReputationHubCardSubtitle,
   formatReputationListingLabel,
+  reputationDraftQueueEmptyKind,
+  reputationHubCountState,
 } from "@/lib/reputation/reputation-display-copy";
 import { GOOGLE_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/google-business-reviews";
 import { YELP_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/yelp-fusion";
@@ -184,6 +191,19 @@ export default function AdminReputationHubPage() {
 
   const draftReplies = useMemo(() => replies.filter((r) => r.status === "draft"), [replies]);
   const postedReplies = useMemo(() => replies.filter((r) => r.status === "posted"), [replies]);
+  const countState = (count: number) =>
+    reputationHubCountState({ facilityReady, loading, error: queryError, count: data ? count : null });
+  const trackedState = countState(accounts.length);
+  const draftState = countState(draftReplies.length);
+  const postedState = countState(postedReplies.length);
+  const hasDrafts = draftState.status === "value" && draftState.value > 0;
+  const draftQueueEmpty = reputationDraftQueueEmptyKind({
+    facilityReady,
+    loading,
+    error: queryError,
+    accountCount: accounts.length,
+    draftCount: draftReplies.length,
+  });
 
   async function exportRepliesCsv() {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
@@ -391,28 +411,34 @@ export default function AdminReputationHubPage() {
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="indigo" className="border-primary/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
-              <MonolithicWatermark value={accounts.length} className="text-info/10 opacity-50" />
+              {trackedState.status === "value" ? (
+                <MonolithicWatermark value={trackedState.value} className="text-info/10 opacity-50" />
+              ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary flex items-center gap-2">
                   <Star className="h-3.5 w-3.5" /> Tracked Listings
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-primary pb-1">{accounts.length}</p>
+                <p className={trackedState.status === "value" ? "text-4xl font-mono tracking-tighter text-primary pb-1" : "text-base font-medium text-muted-foreground pb-1"}>
+                  {formatMetric(trackedState)}
+                </p>
               </div>
             </V2Card>
           </div>
           <div className="h-[160px]">
             <V2Card
               hoverColor="red"
-              className={draftReplies.length > 0 ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "border-border"}
+              className={hasDrafts ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "border-border"}
             >
-              <MonolithicWatermark
-                value={draftReplies.length}
-                className={draftReplies.length > 0 ? "text-destructive/10 opacity-50" : "text-muted-foreground/10 opacity-50"}
-              />
+              {draftState.status === "value" ? (
+                <MonolithicWatermark
+                  value={draftState.value}
+                  className={hasDrafts ? "text-destructive/10 opacity-50" : "text-muted-foreground/10 opacity-50"}
+                />
+              ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3
                   className={
-                    draftReplies.length > 0
+                    hasDrafts
                       ? "text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2"
                       : "text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2"
                   }
@@ -421,24 +447,36 @@ export default function AdminReputationHubPage() {
                 </h3>
                 <p
                   className={
-                    draftReplies.length > 0
-                      ? "text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1"
-                      : "text-4xl font-mono tracking-tighter text-foreground pb-1"
+                    draftState.status !== "value"
+                      ? "text-base font-medium text-muted-foreground pb-1"
+                      : hasDrafts
+                        ? "text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1"
+                        : "text-4xl font-mono tracking-tighter text-foreground pb-1"
                   }
                 >
-                  {draftReplies.length}
+                  {formatMetric(draftState)}
                 </p>
               </div>
             </V2Card>
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
-              <MonolithicWatermark value={postedReplies.length} className="text-success/10 opacity-50" />
+              {postedState.status === "value" ? (
+                <MonolithicWatermark value={postedState.value} className="text-success/10 opacity-50" />
+              ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
                   Posted Replies
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{postedReplies.length}</p>
+                <p
+                  className={
+                    postedState.status === "value"
+                      ? "text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1"
+                      : "text-base font-medium text-muted-foreground pb-1"
+                  }
+                >
+                  {formatMetric(postedState)}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -482,12 +520,16 @@ export default function AdminReputationHubPage() {
             <MotionList className="space-y-3">
               {loading ? (
                 <p className="text-sm font-mono text-muted-foreground">Loading replies…</p>
-              ) : draftReplies.length === 0 ? (
+              ) : draftQueueEmpty ? (
                 <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border">
-                   <p className="font-medium text-foreground">Inbox Zero</p>
-                   <p className="text-sm opacity-80">All reputation exceptions resolved.</p>
+                   <p className="font-medium text-foreground">
+                     {draftQueueEmpty === "clear" ? REPUTATION_DRAFT_QUEUE_CLEAR_TITLE : REPUTATION_NO_LISTINGS_TITLE}
+                   </p>
+                   <p className="text-sm opacity-80">
+                     {draftQueueEmpty === "clear" ? REPUTATION_DRAFT_QUEUE_CLEAR_BODY : REPUTATION_NO_LISTINGS_BODY}
+                   </p>
                 </div>
-              ) : (
+              ) : draftReplies.length === 0 ? null : (
                 draftReplies.map((row) => (
                   <MotionItem key={row.id} className="rounded-lg p-6 border border-border bg-card relative overflow-hidden group transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40 hover:-translate-y-0.5">
                     <div className="absolute top-0 left-0 w-1 h-full bg-destructive" />
@@ -586,6 +628,7 @@ export default function AdminReputationHubPage() {
             {postedReplies.length > 0 && (
               <div className="mt-8 space-y-2 opacity-60 hover:opacity-100 transition-opacity">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recently Posted</h4>
+                <TableRowList label="Recently posted replies" minWidthClassName="min-w-[28rem]">
                 <TableRowHeader>
                   <span className="flex-1 min-w-0">Listing</span>
                   <span className="flex-[2] min-w-0">Reply</span>
@@ -608,6 +651,7 @@ export default function AdminReputationHubPage() {
                     </MotionItem>
                   ))}
                 </MotionList>
+                </TableRowList>
               </div>
             )}
             
@@ -627,6 +671,7 @@ export default function AdminReputationHubPage() {
                <p className="text-sm text-muted-foreground">No connected accounts.</p>
             ) : (
               <div className="rounded-lg border border-border bg-card overflow-hidden">
+                <TableRowList label="Connected listings" minWidthClassName="min-w-[24rem]">
                 <TableRowHeader>
                   <span className="flex-1 min-w-0">Listing</span>
                   <span className="w-[110px] shrink-0">Platform</span>
@@ -651,6 +696,7 @@ export default function AdminReputationHubPage() {
                     </TableRow>
                   ))}
                 </div>
+                </TableRowList>
               </div>
             )}
           </div>

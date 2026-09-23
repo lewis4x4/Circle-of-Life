@@ -131,8 +131,8 @@ export function PilotFeedbackLauncher({
         size={compact ? "icon-sm" : "sm"}
         className={compact ? "" : "rounded-xl"}
         onClick={() => setOpen(true)}
-        aria-label={compact ? "Pilot feedback" : undefined}
-        title={compact ? "Pilot feedback" : undefined}
+        aria-label={compact ? "Send feedback" : undefined}
+        title={compact ? "Send feedback" : undefined}
       >
         {compact ? <Flag className="h-4 w-4" aria-hidden /> : <><MessageSquareWarning className="mr-2 h-4 w-4" aria-hidden />Feedback</>}
       </Button>}
@@ -146,7 +146,7 @@ export function PilotFeedbackLauncher({
       }}>
         <DialogContent onCloseAutoFocus={returnFocusRef ? event => { event.preventDefault(); returnFocusRef.current?.focus(); } : undefined} className="max-w-xl rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-zinc-950/95 ">
           <DialogHeader>
-            <DialogTitle>Pilot Feedback</DialogTitle>
+            <DialogTitle>Send feedback</DialogTitle>
             <DialogDescription>
               Capture what is confusing, broken, missing, or working well on this exact screen.
             </DialogDescription>

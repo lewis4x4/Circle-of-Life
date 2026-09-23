@@ -27,14 +27,8 @@
   "src/app/(admin)/executive/alerts/page.tsx": {
     "all-clear-copy": 1
   },
-  "src/app/(admin)/insurance/page.tsx": {
-    "silent-zero": 3
-  },
   "src/app/(admin)/reports/page.tsx": {
     "count-or-zero": 4
-  },
-  "src/app/(admin)/reputation/page.tsx": {
-    "all-clear-copy": 1
   },
   "src/app/(admin)/transportation/page.tsx": {
     "all-clear-copy": 1
@@ -47,9 +41,6 @@
   },
   "src/app/(caregiver)/caregiver/page.tsx": {
     "count-or-zero": 1
-  },
-  "src/app/(family)/family/billing/page.tsx": {
-    "all-clear-copy": 1
   },
   "src/app/api/admin/facilities/[facilityId]/audit-log/route.ts": {
     "count-or-zero": 3
@@ -84,21 +75,11 @@
   "src/components/benefits/BenefitsQueue.tsx": {
     "silent-zero": 1
   },
-  "src/components/compliance/AdminCompliancePageClient.tsx": {
-    "all-clear-copy": 1,
-    "silent-zero": 8
-  },
   "src/components/coordinator/CoordinatorDashboardPageClient.tsx": {
     "silent-zero": 5
   },
-  "src/components/dietary/AdminDietaryPageClient.tsx": {
-    "all-clear-copy": 1
-  },
   "src/components/home/PastDueStrip.tsx": {
     "silent-zero": 1
-  },
-  "src/components/incidents/AdminIncidentDetailPageClient.tsx": {
-    "all-clear-copy": 1
   },
   "src/components/resident-intake/types.ts": {
     "count-or-zero": 1
@@ -111,9 +92,6 @@
   },
   "src/components/rounding/IntegrityCompliancePanel.tsx": {
     "silent-zero": 2
-  },
-  "src/components/staffing/AdminStaffingConsolePageClient.tsx": {
-    "all-clear-copy": 2
   },
   "src/components/stand-up/editor.tsx": {
     "silent-zero": 1
@@ -138,9 +116,6 @@
   },
   "src/lib/caregiver/shift-brief.ts": {
     "count-or-zero": 4
-  },
-  "src/lib/compliance-dashboard-snapshot.ts": {
-    "count-or-zero": 6
   },
   "src/lib/coordinator/dashboard-brief.ts": {
     "count-or-zero": 6

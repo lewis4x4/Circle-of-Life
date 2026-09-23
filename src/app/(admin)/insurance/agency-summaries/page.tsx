@@ -16,6 +16,7 @@ import {
   type AgencySummaryConnection,
   type AgencySummaryView,
 } from "@/lib/insurance/agency-summaries-page-state";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 /**
  * Agency summaries — what Circle of Life's insurance agency says it holds.
@@ -36,8 +37,8 @@ export { AGENCY_SUMMARIES_LOADING_COPY };
 function SummaryTable({ connection }: { connection: AgencySummaryConnection }) {
   if (connection.summaries.length === 0) return null;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
+    <HorizontalScroll label="Agency summaries">
+      <table className="w-full min-w-[40rem] text-left text-sm">
         <thead>
           <tr className="border-b border-border">
             <th className="py-2 pr-4 font-medium">Covers</th>
@@ -72,7 +73,7 @@ function SummaryTable({ connection }: { connection: AgencySummaryConnection }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </HorizontalScroll>
   );
 }
 

@@ -41,7 +41,7 @@ export default function CaregiverHomePage() {
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [, setFacilityName] = useState<string | null>(null);
+  const [facilityName, setFacilityName] = useState<string | null>(null);
   const [timeZone, setTimeZone] = useState("America/New_York");
   const [brief, setBrief] = useState<CaregiverShiftBrief | null>(null);
   const [activeOutbreak, setActiveOutbreak] = useState<{ id: string; infection_type: string } | null>(null);
@@ -68,21 +68,24 @@ export default function CaregiverHomePage() {
       const { ctx } = resolved;
       setFacilityName(ctx.facilityName);
       setTimeZone(ctx.timeZone);
-      const b = await fetchCaregiverShiftBrief(supabase, ctx);
+      // The brief, the outbreak read and the caller's id are independent (COL-674).
+      const [b, ob, claims] = await Promise.all([
+        fetchCaregiverShiftBrief(supabase, ctx),
+        supabase
+          .from("infection_outbreaks")
+          .select("id, infection_type")
+          .eq("facility_id", ctx.facilityId)
+          .eq("status", "active")
+          .is("deleted_at", null)
+          .limit(1)
+          .maybeSingle(),
+        supabase.auth.getClaims(),
+      ]);
       setBrief(b);
-      const ob = await supabase
-        .from("infection_outbreaks")
-        .select("id, infection_type")
-        .eq("facility_id", ctx.facilityId)
-        .eq("status", "active")
-        .is("deleted_at", null)
-        .limit(1)
-        .maybeSingle();
       const first = ob.data as { id: string; infection_type: string } | null;
       setActiveOutbreak(first);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const sub = claims.data?.claims?.sub;
+      const user = typeof sub === "string" ? { id: sub } : null;
       if (user && first) {
         const cnt = await supabase
           .from("outbreak_actions")
@@ -155,8 +158,8 @@ export default function CaregiverHomePage() {
     notesToFinish: docPending,
   };
   const boardIsEmpty = caregiverShiftBoardIsEmpty(overviewMetrics);
-  const emptyNotice = caregiverShiftOverviewEmptyNotice();
-  const kpiStripHelperLine = caregiverShiftOverviewKpiStripHelperLine(overviewMetrics);
+  const emptyNotice = caregiverShiftOverviewEmptyNotice(overviewMetrics, facilityName);
+  const kpiStripHelperLine = caregiverShiftOverviewKpiStripHelperLine(overviewMetrics, facilityName);
 
   return (
     <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-4 pb-6 md:grid-cols-4 md:gap-6">

@@ -8,10 +8,15 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/ui/stat-card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchActorContext } from "@/lib/office/meetings";
-import { formatBinderLastSurveyLine } from "@/lib/office/survey-binder-display-copy";
+import {
+  binderChecklistSummary,
+  binderEvidenceTiles,
+  formatBinderLastSurveyLine,
+} from "@/lib/office/survey-binder-display-copy";
 import {
   BINDER_CATEGORIES,
   binderCategoryLabel,
@@ -145,19 +150,16 @@ export default function AdminSurveyBinderPage() {
     return map;
   }, [items]);
 
-  const readyCount = useMemo(() => items.filter((i) => i.status === "ready").length, [items]);
-  const missingCount = useMemo(() => items.filter((i) => i.status === "missing").length, [items]);
+  const checklistSummary = binderChecklistSummary({
+    facilityReady,
+    loading: isLoading,
+    loadError,
+    statuses: items.map((i) => i.status),
+  });
 
   const inputCls = "rounded-[9px] border border-border bg-background px-3 py-2 text-sm text-foreground";
 
-  const kpis = evidence
-    ? [
-        { label: "Facility documents", value: evidence.documentCount },
-        { label: "Expiring ≤60d", value: evidence.expiringSoonCount, warn: (evidence.expiringSoonCount ?? 0) > 0 },
-        { label: "In-services YTD", value: evidence.inservicesThisYear },
-        { label: "Drills due ≤60d", value: evidence.drillsDueSoon, warn: (evidence.drillsDueSoon ?? 0) > 0 },
-      ]
-    : [];
+  const kpis = evidence ? binderEvidenceTiles(evidence) : [];
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -168,8 +170,8 @@ export default function AdminSurveyBinderPage() {
             Survey-readiness binder
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Manual binder checklist status; live evidence availability is shown below. {readyCount} ready · {missingCount} missing across{" "}
-            {items.length} tracked item{items.length === 1 ? "" : "s"}.
+            Manual binder checklist status; live evidence availability is shown below.
+            {checklistSummary ? ` ${checklistSummary}` : null}
           </p>
         </header>
 
@@ -186,14 +188,11 @@ export default function AdminSurveyBinderPage() {
         ) : null}
 
         {facilityReady && evidence ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {kpis.map((k) => (
-              <div key={k.label} className="rounded-[var(--radius)] border border-border bg-card px-4 py-3">
-                <p className="text-xs text-muted-foreground">{k.label}</p>
-                <p className={`text-2xl font-semibold ${k.warn ? "text-warning" : "text-foreground"}`}>{k.value ?? "Unavailable"}</p>
-              </div>
+              <StatCard key={k.label} label={k.label} state={k.state} attentionTone={k.attentionTone} />
             ))}
-            <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 sm:col-span-2 lg:col-span-4">
+            <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 sm:col-span-2 lg:col-span-3">
               <p className="text-xs text-muted-foreground">Last survey on record</p>
               <p
                 className={`text-sm ${evidence.lastSurvey ? "text-foreground" : "text-muted-foreground"}`}

@@ -16,8 +16,9 @@ import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 import {
-  formatResidentBillingMedicaidProviderFromCatalog,
+  formatResidentBillingMedicaidProviderCurrent,
   formatResidentBillingMedicaidRateUnitLabel,
+  residentBillingMedicaidSplitLine,
 } from "@/lib/billing/resident-billing-display-copy";
 import { BillingInvoiceLedger, PayerTypeBadge, billingCurrency, mapDbPayerTypeToUi } from "../../../billing/billing-invoice-ledger";
 import { enumLabel } from "@/lib/display/enum-label";
@@ -45,6 +46,8 @@ type SupabasePayer = {
   end_date: string | null;
   medicaid_rate_unit: string | null;
   facility_medicaid_provider_id: string | null;
+  medicaid_rate: number | null;
+  medicaid_patient_responsibility: number | null;
   deleted_at: string | null;
 };
 
@@ -218,7 +221,7 @@ export default function ResidentBillingPage() {
       const [payRes, scheduleRes, agreementRes, providerRes] = (await Promise.all([
         supabase
           .from("resident_payers" as never)
-          .select("id, payer_type, is_primary, payer_name, effective_date, end_date, medicaid_rate_unit, facility_medicaid_provider_id, deleted_at")
+          .select("id, payer_type, is_primary, payer_name, effective_date, end_date, medicaid_rate_unit, facility_medicaid_provider_id, medicaid_rate, medicaid_patient_responsibility, deleted_at")
           .eq("resident_id", residentId)
           .is("deleted_at", null)
           .order("effective_date", { ascending: false }),
@@ -608,8 +611,13 @@ export default function ResidentBillingPage() {
                             </select>
                           </label>
                           <p className="text-xs text-slate-500 sm:col-span-2">
-                            Current: {formatResidentBillingMedicaidProviderFromCatalog(p.facility_medicaid_provider_id, providers)} · {formatResidentBillingMedicaidRateUnitLabel(p.medicaid_rate_unit)}
+                            Current: {formatResidentBillingMedicaidProviderCurrent(p.facility_medicaid_provider_id, providers, p.payer_name)} · {formatResidentBillingMedicaidRateUnitLabel(p.medicaid_rate_unit)}
                           </p>
+                          {residentBillingMedicaidSplitLine(p.medicaid_rate, p.medicaid_patient_responsibility) ? (
+                            <p className="text-xs text-slate-500 sm:col-span-2">
+                              {residentBillingMedicaidSplitLine(p.medicaid_rate, p.medicaid_patient_responsibility)}
+                            </p>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>

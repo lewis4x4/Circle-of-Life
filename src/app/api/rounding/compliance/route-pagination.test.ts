@@ -29,7 +29,7 @@ it("includes unsatisfied tail windows after the hosted response cap", async () =
   expect((await response.json()).totals).toMatchObject({ expected: 1007, satisfied: 1000 });
 });
 
-it("reads the range one service date per call so no statement spans the whole range", async () => {
+it("reads the range in bounded week-long calls with no gap or overlap", async () => {
   const calls: Array<{ p_from: string; p_to: string }> = [];
   function query(all: unknown[]) {
     const builder = {
@@ -50,15 +50,17 @@ it("reads the range one service date per call so no statement spans the whole ra
       from: () => query([]),
     } },
   } });
-  const response = await GET(new Request("https://haven.test/api/rounding/compliance?facilityId=f&from=2026-09-16&to=2026-09-22"));
+  const response = await GET(new Request("https://haven.test/api/rounding/compliance?facilityId=f&from=2026-09-01&to=2026-09-16"));
   expect(response.status).toBe(200);
-  expect(calls.map((c) => [c.p_from, c.p_to])).toEqual(
-    ["16", "17", "18", "19", "20", "21", "22"].map((d) => [`2026-09-${d}`, `2026-09-${d}`]),
-  );
-  expect((await response.json()).totals).toMatchObject({ expected: 7, satisfied: 7 });
+  expect(calls.map((c) => [c.p_from, c.p_to])).toEqual([
+    ["2026-09-01", "2026-09-07"],
+    ["2026-09-08", "2026-09-14"],
+    ["2026-09-15", "2026-09-16"],
+  ]);
+  expect((await response.json()).totals).toMatchObject({ expected: 3, satisfied: 3 });
 });
 
-it("answers 500 when any one day fails, never a partial range", async () => {
+it("answers 500 when any one chunk fails, never a partial range", async () => {
   function query(result: { data: unknown[] | null; count: number | null; error: { message: string } | null }) {
     const builder = {
       select: () => builder, eq: () => builder, is: () => builder,
@@ -70,12 +72,12 @@ it("answers 500 when any one day fails, never a partial range", async () => {
   mocks.context.mockResolvedValue({ context: {
     appRole: "administrator",
     actor: { client: {
-      rpc: (_name: string, args: { p_from: string }) => args.p_from === "2026-09-18"
+      rpc: (_name: string, args: { p_from: string }) => args.p_from === "2026-09-23"
         ? query({ data: null, count: null, error: { message: "canceling statement due to statement timeout" } })
         : query({ data: [], count: 0, error: null }),
       from: () => query({ data: [], count: 0, error: null }),
     } },
   } });
-  const response = await GET(new Request("https://haven.test/api/rounding/compliance?facilityId=f&from=2026-09-16&to=2026-09-22"));
+  const response = await GET(new Request("https://haven.test/api/rounding/compliance?facilityId=f&from=2026-09-16&to=2026-09-29"));
   expect(response.status).toBe(500);
 });

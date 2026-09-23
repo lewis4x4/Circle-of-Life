@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Phone, Mail, CircleCheck } from "lucide-react";
+import { AlertTriangle, Loader2, Phone, Mail, CircleCheck } from "lucide-react";
 
 import { useFacilityBedAvailability } from "@/hooks/useFacilityBedAvailability";
 import type { FacilityDetailRow } from "@/types/facility";
@@ -22,6 +22,8 @@ import {
 import { formatStaffingTabAdministratorName } from "@/lib/facilities/staffing-tab-display-copy";
 import { FacilityDataHealthPanel } from "@/components/facility-checks/FacilityDataHealthPanel";
 import { useFacilityDataHealth } from "@/hooks/useFacilityDataHealth";
+import { useFacilityThresholds } from "@/hooks/useFacilityThresholds";
+import { facilityRecentAlertsView } from "@/lib/admin/facilities/facility-recent-alerts";
 
 interface OverviewTabProps {
   facilityId: string;
@@ -55,6 +57,14 @@ export function OverviewTab({
   const [blockedReasonDrafts, setBlockedReasonDrafts] = useState<Record<string, string>>({});
   // COL-361: live anomaly counts, read only, beside the census they explain.
   const dataHealth = useFacilityDataHealth(facilityId);
+  // COL-649: "Recent alerts" evaluates the facility's own thresholds instead of a fixed "No active alerts".
+  const alertThresholds = useFacilityThresholds(facilityId);
+  const alertsView = facilityRecentAlertsView({
+    facility,
+    thresholds: alertThresholds.thresholds,
+    loading: alertThresholds.isLoading,
+    error: alertThresholds.error,
+  });
   const [bedFilter, setBedFilter] = useState<"all" | "open" | "blocked" | "unclassified">("all");
 
   // Facility-scoped presence split (in-house vs on-hold) for the Census panel.
@@ -262,10 +272,33 @@ export function OverviewTab({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RecordDetailSection title="Recent alerts">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CircleCheck className="h-4 w-4 flex-shrink-0 text-success/80" aria-hidden />
-            <span>No active alerts</span>
-          </div>
+          {alertsView.status === "loading" ? (
+            <p className="text-sm text-muted-foreground">Checking alert thresholds…</p>
+          ) : alertsView.status === "firing" ? (
+            <ul className="space-y-2 text-sm">
+              {alertsView.lines.map((line) => (
+                <li key={line.threshold_type} className="flex items-start gap-2">
+                  <AlertTriangle
+                    className={cn(
+                      "mt-0.5 h-4 w-4 flex-shrink-0",
+                      line.severity === "red" ? "text-destructive" : "text-warning",
+                    )}
+                    aria-hidden
+                  />
+                  <span className="text-foreground">
+                    {line.label}: {line.current}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : alertsView.status === "clear" ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CircleCheck className="h-4 w-4 flex-shrink-0 text-success/80" aria-hidden />
+              <span>{alertsView.message}</span>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{alertsView.message}</p>
+          )}
         </RecordDetailSection>
 
         <RecordDetailSection title="Upcoming expirations">
