@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDateTimeWith } from "@/lib/format/datetime";
+import { formatDateTimeWith, formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, Loader2 } from "lucide-react";
@@ -124,8 +124,8 @@ export default function CaregiverSchedulesPage() {
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {facilityName
-              ? `Published shifts at ${facilityName} from ${scheduleWindow.start} through ${scheduleWindow.end} Eastern.`
-              : `Published shift assignments from ${scheduleWindow.start} through ${scheduleWindow.end} Eastern.`}
+              ? `Published shifts at ${facilityName} from ${formatDisplayDate(scheduleWindow.start)} through ${formatDisplayDate(scheduleWindow.end)}.`
+              : `Published shift assignments from ${formatDisplayDate(scheduleWindow.start)} through ${formatDisplayDate(scheduleWindow.end)}.`}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -146,7 +146,7 @@ export default function CaregiverSchedulesPage() {
       {!loading && !error && rows.length === 0 ? (
         <Card className="border-border bg-card text-card-foreground">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No shift assignments from {scheduleWindow.start} through {scheduleWindow.end} Eastern. Scheduling
+            No shift assignments from {formatDisplayDate(scheduleWindow.start)} through {formatDisplayDate(scheduleWindow.end)}. Scheduling
             publishes from the admin console.
           </CardContent>
         </Card>

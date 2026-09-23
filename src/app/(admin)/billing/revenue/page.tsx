@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDateTimeWith } from "@/lib/format/datetime";
+import { formatDateTimeWith, formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, TrendingUp } from "lucide-react";
 
@@ -138,7 +138,7 @@ export default function AdminRevenuePage() {
                      </p>
                      <p className="font-mono text-sm tracking-wider uppercase text-emerald-600/60 dark:text-emerald-400/60 mt-1">Across {byMonth.length} active months</p>
                      <p className="mt-2 text-sm text-muted-foreground">
-                       Includes payments dated on or after {lookbackStart} Eastern.
+                       Includes payments dated on or after {formatDisplayDate(lookbackStart)}.
                      </p>
                    </div>
                  </div>
