@@ -127,8 +127,8 @@ function dollarsToCents(value: string): number | null {
   return Math.round(parsed * 100);
 }
 
-function rateForRoom(schedule: RateSchedule | null, roomClass: "private" | "companion" | "other"): number {
-  if (!schedule) return 0;
+function rateForRoom(schedule: RateSchedule | null, roomClass: "private" | "companion" | "other" | ""): number {
+  if (!schedule || !roomClass) return 0;
   if (roomClass === "companion") return schedule.base_rate_semi_private ?? schedule.base_rate_private;
   return schedule.base_rate_private;
 }
@@ -165,13 +165,15 @@ export default function ResidentBillingPage() {
 
   const currentAgreement = agreements.find((agreement) => agreement.status === "active" && !agreement.end_date) ?? agreements[0] ?? null;
 
-  const [roomClass, setRoomClass] = useState<"private" | "companion" | "other">("private");
+  // Room, care mode and concession reason start unchosen when there is no agreement yet:
+  // a preselected "Legacy rate lock" recorded a concession nobody decided (COL-676).
+  const [roomClass, setRoomClass] = useState<"private" | "companion" | "other" | "">("");
   const [effectiveDate, setEffectiveDate] = useState(() => todayFacilityDateIso());
   const [negotiatedBase, setNegotiatedBase] = useState("");
-  const [careMode, setCareMode] = useState<"standard" | "flat" | "bundled" | "waived">("standard");
+  const [careMode, setCareMode] = useState<"standard" | "flat" | "bundled" | "waived" | "">("");
   const [negotiatedCare, setNegotiatedCare] = useState("");
   const [negotiatedTotal, setNegotiatedTotal] = useState("");
-  const [concessionReason, setConcessionReason] = useState("legacy_rate_lock");
+  const [concessionReason, setConcessionReason] = useState("");
   const [concessionNotes, setConcessionNotes] = useState("");
   const [expiresOn, setExpiresOn] = useState("");
   const [notes, setNotes] = useState("");
@@ -321,14 +323,14 @@ export default function ResidentBillingPage() {
       return;
     }
 
-    setRoomClass("private");
+    setRoomClass("");
     setEffectiveDate(resident.rate_effective_date ?? todayFacilityDateIso());
     setNegotiatedBase(centsToInput(resident.monthly_base_rate ?? resident.monthly_total_rate));
-    setCareMode(resident.monthly_care_surcharge && resident.monthly_care_surcharge > 0 ? "flat" : "standard");
+    setCareMode("");
     setNegotiatedCare(centsToInput(resident.monthly_care_surcharge));
     setNegotiatedTotal(centsToInput(resident.monthly_total_rate));
-    setConcessionReason(resident.monthly_total_rate ? "legacy_rate_lock" : "none");
-    setConcessionNotes(resident.monthly_total_rate ? "Imported from current Homewood A/R monthly rent." : "");
+    setConcessionReason("");
+    setConcessionNotes("");
     setExpiresOn("");
     setNotes("");
   }, [agreements, resident]);
@@ -355,6 +357,10 @@ export default function ResidentBillingPage() {
     const base = dollarsToCents(negotiatedBase);
     const care = negotiatedCare.trim() ? dollarsToCents(negotiatedCare) : null;
     const total = dollarsToCents(negotiatedTotal);
+    if (!roomClass || !careMode || !concessionReason) {
+      setError("Choose the room class, care charge mode and concession reason.");
+      return;
+    }
     if (base == null) {
       setError("Enter a valid negotiated base rent.");
       return;
@@ -477,7 +483,7 @@ export default function ResidentBillingPage() {
               <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-white/10 dark:bg-black/20">
                 <p className="text-[10px] uppercase tracking-widest text-slate-500">Posted standard</p>
                 <p className="mt-2 text-2xl font-display text-slate-900 dark:text-white">{billingCurrency.format(standardTotal / 100)}</p>
-                <p className="text-xs text-slate-500 mt-1">{roomClass === "companion" ? "Companion" : roomClass === "other" ? "Other" : "Private"} + current acuity</p>
+                <p className="text-xs text-slate-500 mt-1">{roomClass === "companion" ? "Companion" : roomClass === "other" ? "Other" : roomClass === "private" ? "Private" : "Choose a room class"} + current acuity</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-white/10 dark:bg-black/20">
                 <p className="text-[10px] uppercase tracking-widest text-slate-500">Actual monthly rent</p>
@@ -495,6 +501,7 @@ export default function ResidentBillingPage() {
               <label className="space-y-1.5 text-sm font-medium">
                 <span className="text-xs uppercase tracking-widest text-slate-500">Room class</span>
                 <select value={roomClass} onChange={(event) => setRoomClass(event.target.value as "private" | "companion" | "other")} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                  <option value="" disabled>Select room class…</option>
                   <option value="private">Private</option>
                   <option value="companion">Companion / shared</option>
                   <option value="other">Other</option>
@@ -515,6 +522,7 @@ export default function ResidentBillingPage() {
               <label className="space-y-1.5 text-sm font-medium">
                 <span className="text-xs uppercase tracking-widest text-slate-500">Care charge mode</span>
                 <select value={careMode} onChange={(event) => setCareMode(event.target.value as "standard" | "flat" | "bundled" | "waived")} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                  <option value="" disabled>Select care charge mode…</option>
                   <option value="standard">Use posted acuity surcharge</option>
                   <option value="flat">Flat negotiated care amount</option>
                   <option value="bundled">Bundled in rent</option>
@@ -528,6 +536,7 @@ export default function ResidentBillingPage() {
               <label className="space-y-1.5 text-sm font-medium">
                 <span className="text-xs uppercase tracking-widest text-slate-500">Concession reason</span>
                 <select value={concessionReason} onChange={(event) => setConcessionReason(event.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                  <option value="" disabled>Select concession reason…</option>
                   {CONCESSION_REASONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </label>
