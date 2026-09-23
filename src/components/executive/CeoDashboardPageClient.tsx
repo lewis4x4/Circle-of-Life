@@ -171,7 +171,7 @@ export default function CeoDashboardPageClient({
   ];
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full">
+    <div className="relative w-full">
       <div className="border-b border-border px-6 py-3 sm:px-12">
         <ExecutiveHubNav />
       </div>

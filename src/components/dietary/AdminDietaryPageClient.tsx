@@ -436,7 +436,7 @@ export function AdminDietaryPageClient({
   const dietOrderLoadCapNotice = dietOrdersHubLoadCapNotice(rows.length);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         {canActivateOrder && rows.some((row) => row.status === "draft") && <section className="rounded-lg border border-border p-4 space-y-3" aria-label="Diet orders awaiting clinical review">
           <h2 className="font-semibold">Draft orders awaiting clinical review</h2>
