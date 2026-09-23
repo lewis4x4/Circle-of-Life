@@ -39,7 +39,7 @@ export function FloorWorkflowStrip({
       <div className="mb-2 sm:mb-3">
         <p className="hidden text-xs font-medium text-muted-foreground sm:block">Floor workflow</p>
         <h2 className="text-base font-medium text-white sm:mt-1">{title}</h2>
-        <p className="mt-1 hidden text-xs leading-relaxed text-zinc-400 sm:block">{description}</p>
+        <p className="mt-1 hidden text-xs leading-relaxed text-muted-foreground sm:block">{description}</p>
       </div>
       <nav
         aria-label="Floor workflows"
@@ -53,7 +53,7 @@ export function FloorWorkflowStrip({
             Shift home
           </Link>
         ) : (
-          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
             Resolving home
           </span>
         )}
@@ -68,7 +68,7 @@ export function FloorWorkflowStrip({
                 "rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors",
                 isActive
                   ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-200"
-                  : "border-white/10 bg-black/30 text-zinc-400 hover:border-white/20 hover:text-zinc-200",
+                  : "border-white/10 bg-black/30 text-muted-foreground hover:border-white/20 hover:text-zinc-200",
               )}
             >
               {item.label}

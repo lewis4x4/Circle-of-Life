@@ -70,7 +70,7 @@ export default function DynamicCampusPage() {
               {facility.name}
             </h1>
 
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl leading-relaxed font-normal">
               {facility.heroDescription}
             </p>
 

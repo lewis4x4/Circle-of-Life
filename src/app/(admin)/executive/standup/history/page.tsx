@@ -256,7 +256,7 @@ export default function ExecutiveStandupHistoryPage() {
                     aria-disabled={!compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek}
                     className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-xs font-semibold uppercase tracking-wider ${
                       !compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek
-                        ? "pointer-events-none border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-zinc-500"
+                        ? "pointer-events-none border border-slate-200 bg-slate-100 text-muted-foreground dark:border-white/10 dark:bg-white/5"
                         : "border border-primary/20 bg-primary/5 text-primary transition-colors hover:bg-primary/10 dark:border-primary/30 dark:bg-primary/10 dark:hover:bg-primary/15"
                     }`}
                   >

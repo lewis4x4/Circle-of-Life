@@ -23,7 +23,7 @@ export function BuilderStory() {
             {/* Floating Badge */}
             <div className="absolute -bottom-6 -right-4 sm:bottom-6 sm:-right-6 bg-[#1C2822] text-white p-6 rounded-3xl shadow-2xl border border-stone-700 max-w-[260px]">
               <div className="text-[#E5A952] font-bold text-3xl font-serif">50+ Years</div>
-              <div className="text-xs text-stone-300 mt-1 leading-snug">
+              <div className="text-xs text-chrome-foreground-muted mt-1 leading-snug">
                 Of master builder craftsmanship and non-institutional integrity in North Florida.
               </div>
             </div>

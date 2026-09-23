@@ -28,7 +28,7 @@ export function TrayLine({
           <h2 className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
             <Activity className="w-4 h-4 text-amber-400" /> Tray Line
           </h2>
-          <p className="text-xs text-stone-500 mt-0.5">Open a ticket to verify and record a tray pass</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Open a ticket to verify and record a tray pass</p>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => window.print()} className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-medium ring-1 ring-stone-700 transition flex items-center gap-1.5">

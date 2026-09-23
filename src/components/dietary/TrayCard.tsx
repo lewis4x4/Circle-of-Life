@@ -36,7 +36,7 @@ export function TrayCard({
   onOpen: (t: TrayTicket) => void;
 }) {
   const statusClass = STATUS_BG[ticket.status] ?? STATUS_BG.queued;
-  const dietClass = DIET_COLOR[ticket.diet_label] ?? "bg-stone-700/60 text-stone-300 ring-stone-600";
+  const dietClass = DIET_COLOR[ticket.diet_label] ?? "bg-stone-700/60 text-muted-foreground ring-stone-600";
 
   return (
     <button
@@ -46,7 +46,7 @@ export function TrayCard({
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="text-[10px] font-mono text-stone-400">{ticket.room}</span>
+            <span className="text-[10px] font-mono text-muted-foreground">{ticket.room}</span>
             {ticket.fortify && <MessageSquare className="w-3 h-3 text-amber-400" />}
           </div>
           <div className="text-sm font-semibold text-white truncate">{ticket.resident_name}</div>
@@ -73,12 +73,12 @@ export function TrayCard({
         </div>
       )}
 
-      <div className="mt-2 pt-2 border-t border-stone-700/50 text-[11px] text-stone-400 leading-snug line-clamp-2">
+      <div className="mt-2 pt-2 border-t border-stone-700/50 text-[11px] text-muted-foreground leading-snug line-clamp-2">
         {ticket.menu_items.join(" · ")}
       </div>
 
       {(ticket.diet_type === "ncs" || ticket.diet_type === "renal") && (
-        <div className="mt-2 flex items-center gap-2 text-[10px] text-stone-400">
+        <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
           {ticket.diet_type === "ncs" && ticket.carb_count_g != null && (
             <span className="font-mono">{ticket.carb_count_g}g C</span>
           )}
