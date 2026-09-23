@@ -42,6 +42,8 @@ import {
 import { canChangeTimeclockSettings, canReviewTimeclock, loadOrganizationPayPeriod, loadTimeclockPeriod, type TimeclockPeriodData } from "@/lib/timeclock/load";
 import { cn } from "@/lib/utils";
 
+import { MedTechShiftRulesPanel } from "./MedTechShiftRulesPanel";
+
 const TH = "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
 const TD = "px-3 py-2 text-sm";
 
@@ -261,6 +263,8 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
       ) : null}
 
       {error ? <AdminErrorState message={error} onRetry={() => void load()} /> : null}
+
+      {facilityId && canReview ? <MedTechShiftRulesPanel facilityId={facilityId} facilityName={facilityName} now={now} /> : null}
 
       {!facilityId ? (
         <AdminEmptyState title={TIMECLOCK_PICK_FACILITY} description="Use the facility selector in the top bar." />
