@@ -49,6 +49,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { enumLabel } from "@/lib/display/enum-label";
 
 interface UserEditSheetProps {
   userId: string;
@@ -404,7 +405,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const reason = typeof json.reason === "string" ? json.reason.replace(/_/g, " ") : null;
+        const reason = typeof json.reason === "string" ? enumLabel(json.reason) : null;
         throw new Error(typeof json.error === "string" ? json.error : reason ?? "Failed to retire user");
       }
 
@@ -708,7 +709,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                     auditEntries.map((entry) => (
                       <div key={entry.id} className="space-y-1 rounded-lg border px-4 py-3 text-sm">
                         <div className="flex items-center justify-between gap-3">
-                          <span className="font-medium capitalize">{entry.action.replace(/_/g, " ")}</span>
+                          <span className="font-medium capitalize">{enumLabel(entry.action)}</span>
                           <span className="text-xs text-muted-foreground">
                             {new Date(entry.created_at).toLocaleString()}
                           </span>

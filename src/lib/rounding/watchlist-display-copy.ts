@@ -17,6 +17,7 @@
 
 import type { StatusPillTone } from "@/components/ui/status-pill";
 import { formatPersonName } from "@/lib/format/datetime";
+import { metricNoData, metricValue, type MetricState } from "@/lib/metrics/metric-state";
 
 export const SIGNAL_STATUSES = ["new", "acknowledged", "plan_in_place", "cleared"] as const;
 
@@ -369,4 +370,36 @@ export function formatSignalEvidence(
   }
 
   return lines;
+}
+
+export const WATCHLIST_NOT_EVALUATED_COPY = "Not evaluated";
+
+/**
+ * Watchlist summary totals (COL-649). Summing zero portfolio rows gives 0, so a
+ * selected building the portfolio view returned no row for would read "Open
+ * Acute signals 0". With no row in scope the totals are "Not evaluated".
+ */
+export function watchlistSummaryTotals(
+  portfolio: ReadonlyArray<{
+    facility_id: string;
+    open_acute_signal_count: number;
+    residents_on_watchlist: number;
+    data_quality_signal_count: number;
+  }>,
+  selectedFacilityId: string | null,
+): { acute: MetricState<number>; residents: MetricState<number>; documentation: MetricState<number> } {
+  const scoped = selectedFacilityId
+    ? portfolio.filter((row) => row.facility_id === selectedFacilityId)
+    : portfolio;
+  if (scoped.length === 0) {
+    const none = metricNoData<number>(WATCHLIST_NOT_EVALUATED_COPY);
+    return { acute: none, residents: none, documentation: none };
+  }
+  const sum = (pick: (row: (typeof scoped)[number]) => number) =>
+    metricValue(scoped.reduce((total, row) => total + pick(row), 0));
+  return {
+    acute: sum((row) => row.open_acute_signal_count),
+    residents: sum((row) => row.residents_on_watchlist),
+    documentation: sum((row) => row.data_quality_signal_count),
+  };
 }

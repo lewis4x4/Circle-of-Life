@@ -11,9 +11,12 @@ import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
 import {
+  CAREGIVER_ROUNDS_LOAD_FAILED_COPY,
+  caregiverRoundsCount,
   deriveCaregiverRoundsQueueState,
   describeCaregiverRoundsEmptyState,
 } from "@/lib/rounding/caregiver-rounds-copy";
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
 import { logRoundingQueryFailure } from "@/lib/rounding/rounding-query-error";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +101,7 @@ export default function CaregiverRoundsPage() {
         logRoundingQueryFailure(
           "caregiver.rounds.queue",
           error,
-          "Your queue could not be loaded. Pull to refresh, or try again in a moment.",
+          CAREGIVER_ROUNDS_LOAD_FAILED_COPY,
         ),
       );
       setTasks([]);
@@ -170,6 +173,9 @@ export default function CaregiverRoundsPage() {
       </div>
     );
   }
+
+  const countScope = { loadError, noFacility: noFacilityFromError || !hasFacility };
+  const queueUnknown = loadError != null || !hasFacility;
 
   const syncTone: "success" | "warning" | "destructive" = roundingSync.isSyncing
     ? "warning"
@@ -247,10 +253,10 @@ export default function CaregiverRoundsPage() {
 
       {/* Metrics block */}
       <div className="flex flex-wrap gap-2 rounded-lg p-4 md:grid md:grid-cols-4">
-        <MetricPill icon={<AlertTriangle className="h-3 w-3" />} label="Critical" value={String(grouped.urgent.length)} tone="danger" />
-        <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Due now" value={String(grouped.due.length)} tone="warning" />
-        <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Next up" value={String(grouped.next.length)} tone="muted" />
-        <MetricPill icon={<CheckCircle2 className="h-3 w-3" />} label="Completed" value={String(grouped.done.length)} tone="success" />
+        <MetricPill icon={<AlertTriangle className="h-3 w-3" />} label="Critical" state={caregiverRoundsCount(countScope, grouped.urgent.length)} tone="danger" />
+        <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Due now" state={caregiverRoundsCount(countScope, grouped.due.length)} tone="warning" />
+        <MetricPill icon={<Clock3 className="h-3 w-3" />} label="Next up" state={caregiverRoundsCount(countScope, grouped.next.length)} tone="muted" />
+        <MetricPill icon={<CheckCircle2 className="h-3 w-3" />} label="Completed" state={caregiverRoundsCount(countScope, grouped.done.length)} tone="success" />
       </div>
 
       {/* List sections */}
@@ -259,7 +265,7 @@ export default function CaregiverRoundsPage() {
         tone="danger"
         emptyMessage="No critical rounds right now."
         count={grouped.urgent.length}
-        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError}
+        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError || queueUnknown}
       >
         {grouped.urgent.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
@@ -271,7 +277,7 @@ export default function CaregiverRoundsPage() {
         tone="warning"
         emptyMessage="No due-now rounds."
         count={grouped.due.length}
-        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError}
+        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError || queueUnknown}
       >
         {grouped.due.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
@@ -283,7 +289,7 @@ export default function CaregiverRoundsPage() {
         tone="muted"
         emptyMessage="No upcoming rounds in window."
         count={grouped.next.length}
-        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError}
+        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError || queueUnknown}
       >
         {grouped.next.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
@@ -296,14 +302,17 @@ export default function CaregiverRoundsPage() {
 function MetricPill({
   icon,
   label,
-  value,
-  tone,
+  state,
+  tone: toneProp,
 }: {
   icon: ReactNode;
   label: string;
-  value: string;
+  state: MetricState<number>;
   tone: "muted" | "warning" | "danger" | "success";
 }) {
+  // An unknown count carries no colour: a red "Critical" pill must mean a real count.
+  const tone = state.status === "value" ? toneProp : "muted";
+  const value = formatMetric(state);
   const toneClass =
     tone === "danger"
       ? "bg-destructive/10 border-destructive/30 text-foreground"
@@ -328,7 +337,14 @@ function MetricPill({
         <span className={iconColor}>{icon}</span>
         <span>{label}</span>
       </div>
-      <div className="text-2xl font-medium tabular-nums tracking-tight">{value}</div>
+      <div
+        data-metric-state={state.status}
+        className={cn(
+          state.status === "value" ? "text-2xl font-medium tabular-nums tracking-tight" : "text-base font-medium text-muted-foreground",
+        )}
+      >
+        {value}
+      </div>
     </div>
   );
 }

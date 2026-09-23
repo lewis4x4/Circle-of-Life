@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { enumLabel } from "@/lib/display/enum-label";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -273,16 +274,9 @@ function mapDbStaffRoleToUi(role: string): StaffRole {
   return "admin";
 }
 
-/** Job-title abbreviations that read as initials, not words ("CEO", never "Ceo") (COL-659). */
-const STAFF_ROLE_ACRONYMS = new Set(["cna", "rn", "lpn", "ceo", "coo", "cfo", "cto", "cmo", "don", "hr", "it"]);
-
 export function formatStaffRoleLabel(role: string): string {
-  const normalized = role.trim().toLowerCase();
-  return normalized
-    .split("_")
-    .filter(Boolean)
-    .map((word) => (STAFF_ROLE_ACRONYMS.has(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)))
-    .join(" ");
+  // Title case with acronyms kept: "CNA", "CEO", "Medication Tech" (never "Ceo"; COL-652).
+  return enumLabel(role, { case: "title" });
 }
 
 export function mapEmploymentToUiStatus(employment: string): StaffStatus {

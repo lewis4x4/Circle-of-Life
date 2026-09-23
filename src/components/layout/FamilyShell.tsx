@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDays,
@@ -27,7 +27,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { hasLinkedResident } from "@/lib/auth/account-link";
+import { activeFamilySection, FAMILY_SECTIONS, type FamilySectionKey } from "@/lib/family/family-sections";
 import { createClient } from "@/lib/supabase/client";
+
+const FAMILY_SECTION_ICONS: Record<FamilySectionKey, React.ReactNode> = {
+  today: <CalendarHeart className="h-5 w-5" aria-hidden />,
+  calendar: <CalendarDays className="h-5 w-5" aria-hidden />,
+  care: <HeartPulse className="h-5 w-5" aria-hidden />,
+  updates: <Megaphone className="h-5 w-5" aria-hidden />,
+  documents: <FileText className="h-5 w-5" aria-hidden />,
+  billing: <CreditCard className="h-5 w-5" aria-hidden />,
+};
 
 export function FamilyShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -83,50 +93,13 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const navItems = useMemo(
-    () => [
-      {
-        href: "/family",
-        label: "Today",
-        icon: <CalendarHeart className="h-5 w-5" aria-hidden />,
-        active: pathname === "/family" || pathname === "/family/",
-      },
-      {
-        href: "/family/calendar",
-        label: "Calendar",
-        icon: <CalendarDays className="h-5 w-5" aria-hidden />,
-        active: pathname.startsWith("/family/calendar"),
-      },
-      {
-        href: "/family/care-plan",
-        label: "Care",
-        icon: <HeartPulse className="h-5 w-5" aria-hidden />,
-        active: pathname.startsWith("/family/care-plan"),
-      },
-      {
-        href: "/family/messages",
-        label: "Updates",
-        icon: <Megaphone className="h-5 w-5" aria-hidden />,
-        active: pathname.startsWith("/family/messages"),
-      },
-      {
-        href: "/family/benefits",
-        label: "Documents",
-        icon: <FileText className="h-5 w-5" aria-hidden />,
-        active: pathname.startsWith("/family/benefits"),
-      },
-      {
-        href: "/family/billing",
-        label: "Billing",
-        icon: <CreditCard className="h-5 w-5" aria-hidden />,
-        active:
-          pathname.startsWith("/family/billing") ||
-          pathname.startsWith("/family/invoices") ||
-          pathname.startsWith("/family/payments"),
-      },
-    ],
-    [pathname],
-  );
+  const activeSection = activeFamilySection(pathname);
+  const navItems = FAMILY_SECTIONS.map((section) => ({
+    href: section.href,
+    label: section.label,
+    icon: FAMILY_SECTION_ICONS[section.key],
+    active: section.key === activeSection,
+  }));
 
   return (
     <div className="family-shell relative flex min-h-screen flex-col bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom))] font-sans text-foreground antialiased">

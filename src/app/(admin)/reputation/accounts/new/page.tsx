@@ -141,7 +141,7 @@ export default function AdminReputationAccountNewPage() {
         <CardHeader>
           <CardTitle className="text-lg">Review surface</CardTitle>
           <CardDescription>
-            Store a label and optional external id for hand-off to Enhanced sync jobs.{" "}
+            Name the listing and, optionally, its ID on the review site so its reviews can be imported.{" "}
             {REPUTATION_ACCOUNT_NEW_ORGANIZATION_SCOPE_COPY}
           </CardDescription>
         </CardHeader>

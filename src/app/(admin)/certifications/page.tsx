@@ -30,6 +30,7 @@ import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
+import { enumLabel } from "@/lib/display/enum-label";
 type TimelineUi = "current" | "expiring_soon" | "expired";
 
 type CertRow = {
@@ -305,9 +306,9 @@ export default function AdminCertificationsPage() {
         <header className="mb-8">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
-              Credential Tracking {expiredCount > 0 && <></>}
-            </h2>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+              Certifications
+            </h1>
           </div>
         </header>
 
@@ -442,12 +443,12 @@ export default function AdminCertificationsPage() {
           </Badge>
           {timeline !== DEFAULT_FILTERS.timeline ? (
             <Badge variant="outline" className="border-warning/20 bg-warning/10 text-warning">
-              Timeline: {timeline.replace(/_/g, " ")}
+              Timeline: {enumLabel(timeline)}
             </Badge>
           ) : null}
           {dbStatus !== DEFAULT_FILTERS.dbStatus ? (
             <Badge variant="outline" className="border-info/20 bg-info/10 text-info">
-              Status: {dbStatus.replace(/_/g, " ")}
+              Status: {enumLabel(dbStatus)}
             </Badge>
           ) : null}
           {windowFilter !== DEFAULT_FILTERS.window ? (

@@ -120,14 +120,14 @@ describe("<AdminStaffingConsolePageClient />", () => {
     render(<AdminStaffingConsolePageClient {...loadedProps} />);
 
     expect(screen.getByText("Loading staffing…")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /workforce command/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /staffing alerts/i })).not.toBeInTheDocument();
   });
 
   it("renders the operational staffing console with flat lists and action controls", async () => {
     const user = userEvent.setup();
     render(<AdminStaffingConsolePageClient {...loadedProps} />);
 
-    expect(screen.getByRole("heading", { name: /workforce command/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /staffing alerts/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /log attendance event/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /open positions/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /shift assignment gaps/i })).toBeInTheDocument();

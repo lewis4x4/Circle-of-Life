@@ -27,6 +27,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   resolveWatchlistFacilityScope,
   watchlistPageSubtitle,
+  watchlistSummaryTotals,
 } from "@/lib/rounding/watchlist-display-copy";
 import {
   fetchFacilityWatchlist,
@@ -91,19 +92,10 @@ function ScopedWatchlistPage() {
     return () => { generation.current++; };
   }, [load]);
 
-  const totals = useMemo(() => {
-    const scoped = selectedFacilityId
-      ? portfolio.filter((row) => row.facility_id === selectedFacilityId)
-      : portfolio;
-    return scoped.reduce(
-      (acc, row) => ({
-        acute: acc.acute + row.open_acute_signal_count,
-        residents: acc.residents + row.residents_on_watchlist,
-        documentation: acc.documentation + row.data_quality_signal_count,
-      }),
-      { acute: 0, residents: 0, documentation: 0 },
-    );
-  }, [portfolio, selectedFacilityId]);
+  const totals = useMemo(
+    () => watchlistSummaryTotals(portfolio, selectedFacilityId),
+    [portfolio, selectedFacilityId],
+  );
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -145,22 +137,19 @@ function ScopedWatchlistPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <MetricCard
             label="Open Acute signals"
-            value={totals.acute}
-            numericValue={totals.acute}
+            state={totals.acute}
             thresholds={{ type: "critical-count" }}
             hint="Clinical signals on residents the band rules put in the Acute band"
           />
           <MetricCard
             label="Residents listed"
-            value={totals.residents}
-            numericValue={totals.residents}
+            state={totals.residents}
             thresholds={{ type: "informational" }}
             hint="Residents carrying at least one open signal"
           />
           <MetricCard
             label="Documentation signals"
-            value={totals.documentation}
-            numericValue={totals.documentation}
+            state={totals.documentation}
             thresholds={{ type: "informational" }}
             hint="Checks nobody wrote down. Not a report of resident decline"
           />

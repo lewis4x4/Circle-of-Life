@@ -29,6 +29,7 @@ import {
 } from "@/lib/office/survey-binder";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type QueryResult<T> = { data: T[] | null; error: { message: string } | null };
 
@@ -164,10 +165,10 @@ export default function AdminSurveyBinderPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-2">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <BookCheck className="h-8 w-8 text-info shrink-0" aria-hidden />
             Survey-readiness binder
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Manual binder checklist status; live evidence availability is shown below.
             {checklistSummary ? ` ${checklistSummary}` : null}
@@ -273,7 +274,7 @@ export default function AdminSurveyBinderPage() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <StatusPill tone={binderStatusTone(row.status)}>
-                            {row.status.replace(/_/g, " ")}
+                            {enumLabel(row.status)}
                           </StatusPill>
                           <select
                             value={row.status}

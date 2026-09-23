@@ -134,8 +134,9 @@ describe("formatExecutivePacketStatus", () => {
     expect(formatExecutivePacketStatus("")).toBe(EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY);
   });
 
-  it("returns posted status unchanged", () => {
-    expect(formatExecutivePacketStatus("published")).toBe("published");
+  it("names the posted status in words (COL-652)", () => {
+    expect(formatExecutivePacketStatus("published")).toBe("Published");
+    expect(formatExecutivePacketStatus("in_review")).toBe("In review");
   });
 });
 
@@ -145,8 +146,8 @@ describe("formatExecutiveConfidenceBand", () => {
     expect(formatExecutiveConfidenceBand("   ")).toBe(EXECUTIVE_NO_CONFIDENCE_POSTED_COPY);
   });
 
-  it("returns posted confidence unchanged", () => {
-    expect(formatExecutiveConfidenceBand("high")).toBe("high");
+  it("names the posted confidence in words (COL-652)", () => {
+    expect(formatExecutiveConfidenceBand("high")).toBe("High");
   });
 });
 

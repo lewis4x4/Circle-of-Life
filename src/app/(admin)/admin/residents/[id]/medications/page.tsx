@@ -18,6 +18,7 @@ import {
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Med = {
   id: string;
@@ -155,12 +156,12 @@ export default function AdminResidentMedicationsPage() {
 
                             <div className="flex flex-col">
                               <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Route</span>
-                              <span className="text-sm font-medium capitalize text-foreground">{m.route.replace(/_/g, " ")}</span>
+                              <span className="text-sm font-medium capitalize text-foreground">{enumLabel(m.route)}</span>
                             </div>
 
                             <div className="flex flex-col">
                               <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Frequency &amp; Schedule</span>
-                              <span className="tabular-nums text-sm text-foreground">{m.frequency.replace(/_/g, " ")}</span>
+                              <span className="tabular-nums text-sm text-foreground">{enumLabel(m.frequency)}</span>
                               {m.scheduled_times?.length ? (
                                 <div className="flex flex-wrap gap-1 mt-1.5">
                                   {m.scheduled_times.map((t) => (

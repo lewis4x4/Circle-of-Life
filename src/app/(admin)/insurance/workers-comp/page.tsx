@@ -19,6 +19,7 @@ import {
   INSURANCE_WORKERS_COMP_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = Database["public"]["Tables"]["workers_comp_claims"]["Row"];
 
@@ -66,7 +67,7 @@ export default function InsuranceWorkersCompPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Workers’ compensation</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Facility-scoped WC claim headers (OSHA 300 detail is out of Core scope).
+          Workers’ compensation claims for this facility. OSHA 300 log detail is not kept here.
         </p>
       </div>
       {authLoading ? (
@@ -106,7 +107,7 @@ export default function InsuranceWorkersCompPage() {
               {rows.map((r) => (
                 <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
                   <td className="py-2 pr-4">{r.injury_date}</td>
-                  <td className="py-2 pr-4">{r.status.replace(/_/g, " ")}</td>
+                  <td className="py-2 pr-4">{enumLabel(r.status)}</td>
                   <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.reserve_cents)}</td>
                   <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.paid_cents)}</td>
                   <td className="py-2">{workersCompReturnToWorkDateCopy(r.return_to_work_date)}</td>

@@ -78,10 +78,10 @@ export default function AdminMentionsPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 max-w-3xl">
         <header className="mb-2">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <AtSign className="h-8 w-8 text-info shrink-0" aria-hidden />
             My mentions
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Comments where a colleague tagged you.
           </p>

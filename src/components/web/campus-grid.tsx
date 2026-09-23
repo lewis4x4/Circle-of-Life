@@ -8,7 +8,7 @@ import {
   CheckCircle2,
   Compass,
 } from "lucide-react";
-import { FACILITIES } from "@/lib/data/facilities-data";
+import { FACILITIES, PUBLIC_AVAILABILITY_COPY } from "@/lib/data/facilities-data";
 import Image from "next/image";
 
 interface CampusGridProps {
@@ -93,7 +93,7 @@ export function CampusGrid({ onOpenTourModal }: CampusGridProps) {
 
                   <span className="px-3 py-1 rounded-full bg-emerald-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    {facility.availableBeds} Suites Available
+                    {PUBLIC_AVAILABILITY_COPY}
                   </span>
                 </div>
 
