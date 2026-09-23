@@ -222,7 +222,7 @@ export default function AdminDischargeDetailPage() {
       <RecordDetailHeader
         title="Medication reconciliation"
         subtitle="Operational workspace for discharge reconciliation, pharmacist attestation, and transition notes."
-        backLink={{ label: "Back to medication reconciliation queue", href: "/pipeline/discharge-management" }}
+        backLink={{ label: "Back to medication reconciliation queue", href: "/admin/discharge" }}
       />
 
       {loading ? (
