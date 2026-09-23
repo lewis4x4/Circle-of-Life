@@ -172,7 +172,7 @@ function TimelineEntry({ row, timeZone, workspace, expanded, onToggle }: Timelin
         <span className="text-sm tabular-nums text-muted-foreground">{label.timeLabel}</span>
         <span className="text-sm font-medium text-foreground">{label.title}</span>
         {label.levelWord && badge ? (
-          <Badge variant={badge.variant} tone={badge.tone} aria-label={`Level ${label.levelWord}`}>
+          <Badge variant={badge.variant} tone={badge.tone} aria-label={`Severity: ${label.levelWord}`}>
             {label.levelWord}
           </Badge>
         ) : null}

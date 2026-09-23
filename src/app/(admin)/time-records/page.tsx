@@ -262,7 +262,6 @@ export default function AdminTimeRecordsPage() {
 
   const bulkApprovePending = useCallback(async () => {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setActionError("Select a facility to approve punches.");
       return;
     }
     const pending = rows.filter((r) => !r.approved && r.clockOut);
@@ -412,22 +411,27 @@ export default function AdminTimeRecordsPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="font-medium text-[10px] border-warning/40 text-warning hover:bg-warning/10"
-                disabled={
-                  approvingBulk ||
-                  exportingCsv ||
-                  pendingApproval === 0 ||
-                  !isValidFacilityIdForQuery(selectedFacilityId)
-                }
-                aria-busy={approvingBulk}
-                onClick={() => void bulkApprovePending()}
-              >
-                {approvingBulk ? "Approving…" : `Approve all pending (${pendingApproval})`}
-              </Button>
+              {isValidFacilityIdForQuery(selectedFacilityId) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="font-medium text-[10px] border-warning/40 text-warning hover:bg-warning/10"
+                  disabled={
+                    approvingBulk ||
+                    exportingCsv ||
+                    pendingApproval === 0
+                  }
+                  aria-busy={approvingBulk}
+                  onClick={() => void bulkApprovePending()}
+                >
+                  {approvingBulk ? "Approving…" : `Approve all pending (${pendingApproval})`}
+                </Button>
+              ) : (
+                <span className="text-[10px] text-muted-foreground">
+                  Bulk approval runs one facility at a time; switch the header from All facilities to approve.
+                </span>
+              )}
               <Button
                 type="button"
                 variant="outline"

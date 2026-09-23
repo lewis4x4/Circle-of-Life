@@ -38,9 +38,15 @@ import { cn } from "@/lib/utils";
  *     <TableRow render={<a href={url} />}>...</TableRow>
  *     <TableRow render={<Link href={url} />}>...</TableRow>
  *
- *   Default tag is `<div role="row">`. When you render as an anchor /
- *   button you don't need to add `role` — the underlying tag carries the
- *   right semantics for keyboard nav.
+ *   Default tag is a plain `<div>`. These are flex rows, not an ARIA grid:
+ *   they carry no `role="row"` (COL-658). A row role needs a `table` /
+ *   `rowgroup` parent and `cell` children, which callers never render, so
+ *   axe flagged every list (aria-required-parent / -children, critical) —
+ *   and on `render={<Link />}` it overrode the link role, hiding the link
+ *   from screen readers. Rendered as an anchor / button, the underlying tag
+ *   carries the semantics. For real tabular data use `@/components/ui/table`,
+ *   or build the full grid yourself (`role="table"` → `rowgroup` → pass
+ *   `role="row"` here → `cell` children), as the resident roster does.
  *
  * Children:
  *   Pass `flex-[N]` column cells. Status chips MUST use the StatusPill
@@ -82,7 +88,6 @@ export function TableRow({
     defaultTagName: "div",
     props: mergeProps<"div">(
       {
-        role: "row",
         className: cn(TABLE_ROW_BASE, "group", className),
       },
       props,
@@ -103,7 +108,6 @@ export function TableRowHeader({
     defaultTagName: "div",
     props: mergeProps<"div">(
       {
-        role: "row",
         className: cn(TABLE_HEADER_BASE, className),
       },
       props,

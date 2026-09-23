@@ -134,6 +134,8 @@ export function ChatMessage({ id, role, content, sources, feedback, isStreaming 
             <div className="flex gap-1">
               <button
                 type="button"
+                aria-label="Helpful answer"
+                aria-pressed={currentFeedback === "positive"}
                 onClick={() => void handleFeedback("positive")}
                 className={`rounded p-1 transition-colors ${currentFeedback === "positive" ? "text-success" : "text-muted-foreground hover:text-foreground"}`}
               >
@@ -141,6 +143,8 @@ export function ChatMessage({ id, role, content, sources, feedback, isStreaming 
               </button>
               <button
                 type="button"
+                aria-label="Not helpful"
+                aria-pressed={currentFeedback === "negative"}
                 onClick={() => void handleFeedback("negative")}
                 className={`rounded p-1 transition-colors ${currentFeedback === "negative" ? "text-destructive" : "text-muted-foreground hover:text-foreground"}`}
               >

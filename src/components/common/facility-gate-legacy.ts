@@ -87,21 +87,6 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
   "b6-office": [],
 
   "b7-workforce": [
-    "src/app/(admin)/certifications/new/page.tsx",
-    "src/app/(admin)/schedules/new/page.tsx",
-    "src/app/(admin)/staff/new/page.tsx",
-    "src/app/(admin)/staffing/new/page.tsx",
-    "src/app/(admin)/time-records/new/page.tsx",
-    "src/app/(admin)/time-records/page.tsx",
-    "src/app/(admin)/training/completions/new/page.tsx",
-    "src/app/(admin)/training/inservice/new/page.tsx",
-    "src/app/(admin)/training/new/page.tsx",
-    "src/app/(admin)/training/page.tsx",
-    "src/components/schedules/AdminSchedulesPageClient.tsx",
-    "src/components/staffing/AdminStaffingConsolePageClient.tsx",
-    "src/components/timeclock/TimeclockOverview.tsx",
-    "src/components/timeclock/UpunchCompare.tsx",
-    "src/lib/timeclock/display-copy.ts",
   ],
 };
 

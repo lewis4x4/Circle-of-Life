@@ -19,65 +19,66 @@ export type StaffLaunchHiddenNavItem = {
   /** Left-rail / jump-list label */
   label: string;
   href: string;
-  note: string;
 };
 
 export const STAFF_LAUNCH_HIDDEN_NAV: readonly StaffLaunchHiddenNavItem[] = [
+  // Hold med rec until staff are ready for that workflow. Recording a discharge no longer
+  // depends on this route — that action lives on the resident record (COL-418), so hiding
+  // this does not strand a bed as occupied.
   {
     key: "discharge",
     pillar: "pipeline",
     menu: "Pipeline",
     label: "Medication reconciliation",
     href: "/admin/discharge",
-    note: "Hold med rec until staff are ready for that workflow. Recording a discharge no longer depends on this route — that action lives on the resident record (COL-418), so hiding this does not strand a bed as occupied.",
   },
+  // Hold the dedicated med-tech surface from the Clinical menu.
   {
     key: "med-tech",
     pillar: "clinical",
     menu: "Clinical",
     label: "Med-Tech cockpit",
     href: "/med-tech",
-    note: "Hold the dedicated med-tech surface from the Clinical menu.",
   },
+  // Hold medications from the Clinical menu.
   {
     key: "medications",
     pillar: "clinical",
     menu: "Clinical",
     label: "Medications",
     href: "/admin/medications",
-    note: "Hold medications from the Clinical menu.",
   },
+  // Hold medication-error review from the Clinical menu.
   {
     key: "medication-errors",
     pillar: "clinical",
     menu: "Clinical",
     label: "Medication errors",
     href: "/admin/medications/errors",
-    note: "Hold medication-error review from the Clinical menu.",
   },
+  // Hold dietary and nutrition from the Clinical menu.
   {
     key: "dietary",
     pillar: "clinical",
     menu: "Clinical",
     label: "Dietary & Nutrition",
     href: "/admin/dietary",
-    note: "Hold dietary and nutrition from the Clinical menu.",
   },
+  // Moving finance to Front desk; keep Vendors & AP on Business.
   {
     key: "finance",
     pillar: "finance",
     menu: "Business",
     label: "Finance",
     href: "/admin/finance",
-    note: "Moving finance to Front desk; keep Vendors & AP on Business.",
   },
+  // Moving insurance to Front desk; keep Vendors & AP on Business.
   {
     key: "insurance",
     pillar: "finance",
     menu: "Business",
     label: "Insurance",
     href: "/admin/insurance",
-    note: "Moving insurance to Front desk; keep Vendors & AP on Business.",
   },
 ] as const;
 
