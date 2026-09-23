@@ -30,21 +30,6 @@
   "src/app/(caregiver)/caregiver/page.tsx": {
     "count-or-zero": 1
   },
-  "src/app/api/admin/facilities/[facilityId]/audit-log/route.ts": {
-    "count-or-zero": 3
-  },
-  "src/app/api/admin/facilities/route.ts": {
-    "count-or-zero": 2
-  },
-  "src/app/api/admin/users/[id]/audit/route.ts": {
-    "count-or-zero": 1
-  },
-  "src/app/api/admin/users/route.ts": {
-    "count-or-zero": 1
-  },
-  "src/components/admin-assistant/AssistantDashboardPageClient.tsx": {
-    "silent-zero": 3
-  },
   "src/components/admin/facilities/FacilityAuditMetricsStrip.tsx": {
     "silent-zero": 1
   },
@@ -55,12 +40,6 @@
     "silent-zero": 1
   },
   "src/components/benefits/BenefitsQueue.tsx": {
-    "silent-zero": 1
-  },
-  "src/components/coordinator/CoordinatorDashboardPageClient.tsx": {
-    "silent-zero": 5
-  },
-  "src/components/home/PastDueStrip.tsx": {
     "silent-zero": 1
   },
   "src/components/resident-intake/types.ts": {
@@ -84,9 +63,6 @@
   "src/features/knowledge/hooks/useKBHealth.ts": {
     "count-or-zero": 9
   },
-  "src/lib/admin-assistant/dashboard-brief.ts": {
-    "count-or-zero": 3
-  },
   "src/lib/admissions/admissions-hub-bootstrap.ts": {
     "count-or-zero": 8
   },
@@ -96,20 +72,11 @@
   "src/lib/caregiver/shift-brief.ts": {
     "count-or-zero": 4
   },
-  "src/lib/coordinator/dashboard-brief.ts": {
-    "count-or-zero": 6
-  },
   "src/lib/dietary/dashboard-brief.ts": {
     "count-or-zero": 4
   },
-  "src/lib/exec-kpi-snapshot.ts": {
-    "count-or-zero": 8
-  },
   "src/lib/insurance/assemble-renewal-package-payload.ts": {
     "count-or-zero": 3
-  },
-  "src/lib/office/morning-huddle.ts": {
-    "count-or-zero": 2
   },
   "src/lib/referrals/referrals-hub-bootstrap.ts": {
     "count-or-zero": 2
@@ -117,13 +84,7 @@
   "src/lib/reports/executors/index.ts": {
     "count-or-zero": 2
   },
-  "src/lib/resident-assurance/command-center-brief.ts": {
-    "count-or-zero": 8
-  },
   "src/lib/residents/resident-detail-overview-load.ts": {
-    "count-or-zero": 1
-  },
-  "src/lib/workflows/workflow-events.ts": {
     "count-or-zero": 1
   }
 }
