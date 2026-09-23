@@ -38,3 +38,18 @@ export function compliancePolicyListCountLabel(input: {
   if (input.loading) return "Loading…";
   return `${input.count} shown`;
 }
+
+/**
+ * Empty Policy Library. Policies live in two places: this library holds
+ * versioned, per-building policies that staff acknowledge; the knowledge base
+ * holds uploaded manuals (e.g. the Policies & Procedures binder) for search.
+ * An empty library must not read as "this organization has no policies"
+ * (COL-710), so it names the other store and links to it.
+ */
+export const COMPLIANCE_POLICY_LIBRARY_EMPTY = {
+  title: "No policies versioned for acknowledgment at this building",
+  description:
+    "Policy manuals uploaded to the knowledge base are kept there for search and are not tracked for staff acknowledgment here. Add a policy here to version it and collect acknowledgments.",
+  knowledgeBaseHref: "/admin/knowledge/admin",
+  knowledgeBaseLabel: "Open knowledge base documents",
+} as const;
