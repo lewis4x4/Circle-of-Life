@@ -88,6 +88,101 @@ export function classifyCarePlanCoverage(
   };
 }
 
+/** The facility-level reads behind the roster metrics; independent of the roster itself. */
+export type ResidentRosterMetricInputs = {
+  licensedBeds: number | null;
+  /** Null when the care-plan read failed. */
+  plans: CarePlanCoverageRow[] | null;
+  today: string;
+  horizon: string;
+};
+
+/**
+ * Reads licensed beds and the facility's active plans in parallel. Neither
+ * depends on the roster, so callers can start this alongside the roster read
+ * and combine the two with composeResidentRosterMetrics (COL-674).
+ */
+export async function fetchResidentRosterMetricInputs(
+  selectedFacilityId: string | null,
+  supabase: SupabaseClient<Database>,
+): Promise<ResidentRosterMetricInputs | null> {
+  if (!isValidFacilityIdForQuery(selectedFacilityId)) return null;
+
+  const today = startOfTodayIsoDate();
+  const horizon = addDaysIsoDate(today, 7);
+
+  const readLicensedBeds = async (): Promise<number | null> => {
+    try {
+      const fac = await supabase
+        .from("facilities" as never)
+        .select("total_licensed_beds")
+        .eq("id", selectedFacilityId)
+        .maybeSingle();
+      if (fac.error) {
+        console.error("[Haven] licensed beds lookup failed:", queryErrorMessage(fac.error), fac.error);
+        return null;
+      }
+      const n = (fac.data as { total_licensed_beds: number | null } | null)?.total_licensed_beds;
+      return typeof n === "number" && Number.isFinite(n) ? n : null;
+    } catch (error) {
+      console.error("[Haven] licensed beds lookup failed:", queryErrorMessage(error), error);
+      return null;
+    }
+  };
+
+  const readPlans = async (): Promise<CarePlanCoverageRow[] | null> => {
+    try {
+      const plans = await supabase
+        .from("care_plans" as never)
+        .select("resident_id, review_due_date")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .in("status", ["active", "under_review"]);
+      if (plans.error) {
+        console.error("[Haven] care plan coverage failed:", queryErrorMessage(plans.error), plans.error);
+        return null;
+      }
+      return (plans.data as CarePlanCoverageRow[] | null) ?? [];
+    } catch (error) {
+      console.error("[Haven] care plan coverage failed:", queryErrorMessage(error), error);
+      return null;
+    }
+  };
+
+  const [licensedBeds, plans] = await Promise.all([readLicensedBeds(), readPlans()]);
+  return { licensedBeds, plans, today, horizon };
+}
+
+/** Combines the facility reads with the roster's resident ids. Pure. */
+export function composeResidentRosterMetrics(
+  inputs: ResidentRosterMetricInputs | null,
+  rosterResidentIds: string[],
+): ResidentRosterMetrics {
+  const occupiedResidents = rosterResidentIds.length;
+  if (!inputs) {
+    return {
+      licensedBeds: null,
+      occupiedResidents,
+      openBeds: null,
+      carePlanReviewsDueWeek: null,
+      carePlanCoverage: null,
+    };
+  }
+  const { licensedBeds } = inputs;
+  const openBeds =
+    licensedBeds != null ? Math.max(0, licensedBeds - occupiedResidents) : null;
+  const carePlanCoverage = inputs.plans
+    ? classifyCarePlanCoverage(inputs.plans, rosterResidentIds, inputs.today, inputs.horizon)
+    : null;
+  return {
+    licensedBeds,
+    occupiedResidents,
+    openBeds,
+    carePlanReviewsDueWeek: carePlanCoverage?.reviewsDueWeek ?? null,
+    carePlanCoverage,
+  };
+}
+
 /**
  * Aggregate capacity + care-plan coverage for the resident roster summary strip.
  * No schema mutations — reads `facilities` and `care_plans`; census comes from the
@@ -98,71 +193,8 @@ export async function fetchResidentRosterMetrics(
   rosterResidentIds: string[],
   supabase: SupabaseClient<Database>,
 ): Promise<ResidentRosterMetrics> {
-  const occupiedResidents = rosterResidentIds.length;
-
-  if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-    return {
-      licensedBeds: null,
-      occupiedResidents,
-      openBeds: null,
-      carePlanReviewsDueWeek: null,
-      carePlanCoverage: null,
-    };
-  }
-
-  let licensedBeds: number | null = null;
-
-  try {
-    const fac = await supabase
-      .from("facilities" as never)
-      .select("total_licensed_beds")
-      .eq("id", selectedFacilityId)
-      .maybeSingle();
-
-    const payload = fac.data as { total_licensed_beds: number | null } | null;
-    const n = payload?.total_licensed_beds;
-    licensedBeds = typeof n === "number" && Number.isFinite(n) ? n : null;
-    if (fac.error) {
-      console.error("[Haven] licensed beds lookup failed:", queryErrorMessage(fac.error), fac.error);
-      licensedBeds = null;
-    }
-  } catch (error) {
-    console.error("[Haven] licensed beds lookup failed:", queryErrorMessage(error), error);
-    licensedBeds = null;
-  }
-
-  const openBeds =
-    licensedBeds != null ? Math.max(0, licensedBeds - occupiedResidents) : null;
-
-  let carePlanCoverage: CarePlanCoverage | null = null;
-  const today = startOfTodayIsoDate();
-  const horizon = addDaysIsoDate(today, 7);
-
-  try {
-    const plans = await supabase
-      .from("care_plans" as never)
-      .select("resident_id, review_due_date")
-      .eq("facility_id", selectedFacilityId)
-      .is("deleted_at", null)
-      .in("status", ["active", "under_review"]);
-
-    if (plans.error) {
-      console.error("[Haven] care plan coverage failed:", queryErrorMessage(plans.error), plans.error);
-      carePlanCoverage = null;
-    } else {
-      const rowsPlans = (plans.data as CarePlanCoverageRow[] | null) ?? [];
-      carePlanCoverage = classifyCarePlanCoverage(rowsPlans, rosterResidentIds, today, horizon);
-    }
-  } catch (error) {
-    console.error("[Haven] care plan coverage failed:", queryErrorMessage(error), error);
-    carePlanCoverage = null;
-  }
-
-  return {
-    licensedBeds,
-    occupiedResidents,
-    openBeds,
-    carePlanReviewsDueWeek: carePlanCoverage?.reviewsDueWeek ?? null,
-    carePlanCoverage,
-  };
+  return composeResidentRosterMetrics(
+    await fetchResidentRosterMetricInputs(selectedFacilityId, supabase),
+    rosterResidentIds,
+  );
 }

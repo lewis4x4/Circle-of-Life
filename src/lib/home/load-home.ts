@@ -127,18 +127,15 @@ export async function loadHome(
   supabase: SupabaseClient<Database>,
   args: { facilityId: string; organizationId: string; now?: Date },
 ): Promise<HomeInitialData> {
-  const feed = await fetchHomeOnTap(supabase, args.facilityId, args.now);
-  const [snapshot, presence, standUp, rounding, facilityOptions, census, releasedModules] = await Promise.allSettled([
-    fetchAdminDashboardSnapshot(args.facilityId, supabase),
-    fetchPresenceCensus(supabase, args.organizationId, args.facilityId),
-    loadStandUpCensus(supabase, args.facilityId),
-    loadRounding(supabase, args.facilityId, feed.localDate),
-    loadFacilityOptions(supabase),
-    fetchHomeCensus(supabase, args.facilityId, args.now),
-    loadReleasedModules(supabase, args.facilityId),
-  ]);
-  const released = releasedModules.status === "fulfilled" ? releasedModules.value : [];
-  const [pastDue, notesOnTap, shiftsToday] = await Promise.all([
+  // Every read starts at once (COL-674). Only rounding needs the feed's local
+  // date, and only the released-module reads need the release list, so each
+  // waits on its own prerequisite instead of the whole page waiting in series.
+  const feedPromise = fetchHomeOnTap(supabase, args.facilityId, args.now);
+  const releasedPromise = loadReleasedModules(supabase, args.facilityId).then(
+    (value) => value,
+    () => [] as string[],
+  );
+  const releasedReadsPromise: Promise<[HomePastDue | null, HomeNoteOnTap[], HomeShiftsToday | null]> = releasedPromise.then((released) => Promise.all([
     released.includes("past_due")
       ? fetchHomePastDue(supabase as unknown as SupabaseClient, args.facilityId).catch(() => null)
       : Promise.resolve(null),
@@ -148,7 +145,18 @@ export async function loadHome(
     released.includes("call_out")
       ? fetchShiftsToday(supabase as unknown as SupabaseClient, args.facilityId).catch(() => null)
       : Promise.resolve(null),
+  ]));
+  const settledPromise = Promise.allSettled([
+    fetchAdminDashboardSnapshot(args.facilityId, supabase),
+    fetchPresenceCensus(supabase, args.organizationId, args.facilityId),
+    loadStandUpCensus(supabase, args.facilityId),
+    feedPromise.then((feed) => loadRounding(supabase, args.facilityId, feed.localDate)),
+    loadFacilityOptions(supabase),
+    fetchHomeCensus(supabase, args.facilityId, args.now),
   ]);
+  // The feed is required: its rejection still rejects loadHome.
+  const [feed, [snapshot, presence, standUp, rounding, facilityOptions, census], released, [pastDue, notesOnTap, shiftsToday]] =
+    await Promise.all([feedPromise, settledPromise, releasedPromise, releasedReadsPromise]);
   return {
     feed,
     snapshot: snapshot.status === "fulfilled" ? snapshot.value : null,
