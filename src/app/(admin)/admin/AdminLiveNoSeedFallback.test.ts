@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { NO_FACILITY_SOURCE_NOTICE } from "@/lib/assessments/load-overdue-assessments";
+import { clinicalDeskEmptyCopy } from "@/lib/assessments/overdue-assessments-display-copy";
 import { adminIncidentsGlobalEmptyNotice } from "@/lib/incidents/incidents-board-copy";
 
 const repoRoot = process.cwd();
@@ -65,8 +66,10 @@ describe("admin live surfaces seeded fallback removal", () => {
     expect(clinicalDeskSource).toContain("<AdminOverdueAssessmentsPageClient");
     expect(clinicalDeskSource).toContain("initialSourceNotice={initialSourceNotice}");
     const clinicalDeskClient = readSource("src/components/assessments/AdminOverdueAssessmentsPageClient.tsx");
-    expect(clinicalDeskClient).toContain("No overdue assessments.");
-    expect(clinicalDeskClient).toContain("No drafts awaiting review.");
+    // Empty-queue copy lives in the display-copy module and is gated on records existing (COL-649).
+    expect(clinicalDeskClient).toContain("clinicalDeskEmptyCopy(");
+    expect(clinicalDeskEmptyCopy("assessments", "clear").body).toBe("No overdue assessments.");
+    expect(clinicalDeskEmptyCopy("carePlans", "clear").body).toBe("No drafts awaiting review.");
     expect(NO_FACILITY_SOURCE_NOTICE).toContain("No cross-facility fallback query is run.");
   });
 });

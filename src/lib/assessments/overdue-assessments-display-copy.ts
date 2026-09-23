@@ -63,7 +63,7 @@ const CLINICAL_DESK_EMPTY: Record<"assessments" | "carePlans", Record<Exclude<Cl
       title: "No active care plans",
       body: "No resident in this facility has an active care plan, so no review can be due. Start from the Form 1823 alignment queue.",
     },
-    clear: { title: "All Clear", body: "No care plan reviews due." },
+    clear: { title: "All Clear", body: "No drafts awaiting review." },
   },
 };
 
