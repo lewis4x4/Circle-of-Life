@@ -32,13 +32,19 @@ export function FloorWorkflowStrip({
   const homeHref = effectiveRole ? getDashboardRouteForRole(effectiveRole) : null;
 
   return (
-    <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.03] px-4 py-4  shadow-inner">
-      <div className="mb-3">
-        <p className="text-xs font-medium text-muted-foreground">Floor workflow</p>
-        <h2 className="mt-1 text-base font-medium text-white">{title}</h2>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-400">{description}</p>
+    // On a phone the strip is one swipeable row under the title: the advice
+    // sentence and the wrapped pill grid pushed the first work item below the
+    // fold (COL-657). From sm up it is the full panel.
+    <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.03] px-3 py-3 shadow-inner sm:px-4 sm:py-4">
+      <div className="mb-2 sm:mb-3">
+        <p className="hidden text-xs font-medium text-muted-foreground sm:block">Floor workflow</p>
+        <h2 className="text-base font-medium text-white sm:mt-1">{title}</h2>
+        <p className="mt-1 hidden text-xs leading-relaxed text-zinc-400 sm:block">{description}</p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <nav
+        aria-label="Floor workflows"
+        className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&>*]:shrink-0 [&>*]:whitespace-nowrap"
+      >
         {homeHref ? (
           <Link
             href={homeHref}
@@ -57,6 +63,7 @@ export function FloorWorkflowStrip({
             <Link
               key={item.key}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors",
                 isActive
@@ -68,7 +75,7 @@ export function FloorWorkflowStrip({
             </Link>
           );
         })}
-      </div>
+      </nav>
     </div>
   );
 }

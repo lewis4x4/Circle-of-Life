@@ -263,7 +263,7 @@ export function BoardCheckClient({
       ) : null}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-sm">
+        <table className="w-full border-collapse text-sm sm:min-w-[640px]">
           <caption className="sr-only">
             Every bed in this facility, grouped by room, with what Haven shows and what the board shows.
           </caption>

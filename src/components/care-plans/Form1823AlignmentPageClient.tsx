@@ -179,20 +179,10 @@ function tileIsActive(tile: SummaryTile, filters: Filters): boolean {
 
 const rowActionClass = cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 gap-1 px-2.5 text-xs");
 
-/**
- * Toned pills keep their dot and tint but read in foreground ink: the
- * primitives' 10px amber/red text fails WCAG AA contrast on the tinted
- * background (axe color-contrast), and the count span's opacity-80 fails on
- * the muted pill. Same treatment the executive overview uses for band cells.
- */
+/** The StatusPill tones meet AA on their own tint (COL-411 / COL-658). */
 function Pill({ tone, children }: { tone: StatusPillTone; children: React.ReactNode }) {
-  return (
-    <StatusPill tone={tone} className={tone === "muted" ? undefined : "text-foreground"}>
-      {children}
-    </StatusPill>
-  );
+  return <StatusPill tone={tone}>{children}</StatusPill>;
 }
-const filterPillContrastClass = "[&>span]:opacity-100";
 
 /**
  * Resident-by-resident review queue: for every current resident in scope,
@@ -324,8 +314,7 @@ export function Form1823AlignmentPageClient({ initialRoster, initialError, initi
                       count={tile.count}
                       tone={tile.tone}
                       active={active}
-                      className={cn(filterPillContrastClass, (active || tile.count > 0) && "text-foreground")}
-                      aria-label={`${tile.label}: ${tile.count} ${tile.denominator}`}
+                                            aria-label={`${tile.label}: ${tile.count} ${tile.denominator}`}
                       onClick={() => toggleTile(tile)}
                     />
                     <span className="pl-1 text-[11px] text-muted-foreground">{tile.denominator}</span>

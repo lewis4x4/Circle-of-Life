@@ -207,7 +207,10 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="flex min-w-0 flex-1 flex-col md:ml-20 md:border-l md:border-border">
-          <header className="haven-chrome-topnav sticky top-0 z-40 flex flex-col items-stretch gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8 md:py-4">
+          {/* On a phone the header scrolls away with the page: the bottom tab
+              bar is the only chrome that stays, so floor work gets the screen
+              (COL-657). It pins from md up, where there is room. */}
+          <header className="haven-chrome-topnav z-40 flex flex-col items-stretch gap-1.5 border-b border-border px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3 md:sticky md:top-0 md:px-8 md:py-4">
             <div className="min-w-0 flex-1">
               {/* The facility picker sits beside the heading, not inside it (COL-658). */}
               <h1 className="break-words text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
@@ -218,11 +221,11 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
                 {shiftLabel}
               </p> : null}
             </div>
-            <div className="flex min-w-0 flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:shrink-0 sm:justify-end sm:gap-3 sm:text-sm">
               {isMedTech ? (
-                <Link href="/med-tech" className="mr-3 text-sm underline">Med-Tech app</Link>
+                <Link href="/med-tech" className="underline sm:mr-3">Med-Tech app</Link>
               ) : null}
-              <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
+              <Link href="/employee-file" className="underline sm:mr-3">My employee file</Link>
               <Link href="/caregiver/acknowledgments" className="text-xs underline">Required reading</Link>
               <PilotFeedbackLauncher shellKind="caregiver" compact />
               <button

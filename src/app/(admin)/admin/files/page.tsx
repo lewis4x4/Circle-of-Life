@@ -171,8 +171,8 @@ export default function AdminWorkspaceFilesPage() {
             My files
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Private file drive. Only you can open these; owners/administrators can break-glass with
-            a logged reason. Files transfer to your manager at offboarding — never deleted silently.
+            Private file drive. Only you can open these; owners and administrators can open them in an
+            emergency, with a recorded reason. Files transfer to your manager at offboarding — never deleted silently.
           </p>
         </header>
 

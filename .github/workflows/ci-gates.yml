@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  # GitHub merge queue: the queue tests each PR on top of the ones ahead of it.
+  merge_group:
 
 concurrency:
   group: haven-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -30,8 +32,8 @@ jobs:
         id: risk
         run: node scripts/ci/classify-changes.mjs
         env:
-          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-          CI_DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          CI_DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
           CI_DIFF_MODE: ${{ github.event_name == 'pull_request' && 'merge-base' || 'range' }}
 
   gates:
@@ -53,7 +55,7 @@ jobs:
         run: npm ci
 
       - name: Gate failure regression tests
-        run: node --test scripts/ci/classify-changes.test.mjs scripts/ci/release-tree-proof.test.mjs scripts/ci/netlify-production-failure-alert.test.mjs scripts/review-gates.test.mjs
+        run: node --test scripts/ci/classify-changes.test.mjs scripts/ci/release-tree-proof.test.mjs scripts/ci/netlify-production-failure-alert.test.mjs scripts/review-gates.test.mjs scripts/perf/route-load-budget.test.mjs
 
       - name: TypeScript and application tests
         if: needs.classify.outputs.policy_only != 'true'
@@ -132,7 +134,9 @@ jobs:
         run: npm run migrations:check:hosted
 
       - name: Migration number is not already claimed
-        if: needs.classify.outputs.policy_only != 'true'
+        # In the merge queue the PR's own claim is the one being merged; the
+        # sideways check already ran on the pull request itself.
+        if: needs.classify.outputs.policy_only != 'true' && github.event_name != 'merge_group'
         # `migrations:check` only sees one working tree, so it catches a
         # duplicate number after both branches have merged — which is how main
         # spent twenty minutes failing its own sequence check on 2026-09-16,

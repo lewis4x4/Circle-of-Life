@@ -118,11 +118,33 @@ export function polstMolstFriendly(status: string | null | undefined): string {
   }
 }
 
-export function ResidentFallRiskPresentation({ raw }: { raw: string | null }) {
+/**
+ * True when a Morse Fall assessment is on file. Morse is what writes
+ * `residents.fall_risk_level`; before migration 386 the column defaulted to
+ * `standard`, so a stored `standard` with no Morse on file is the old default,
+ * not a finding (COL-649).
+ */
+export function hasFallRiskAssessment(assessments: ReadonlyArray<{ assessmentType: string }>): boolean {
+  return assessments.some((a) => a.assessmentType.trim().toLowerCase() === "morse_fall");
+}
+
+export function ResidentFallRiskPresentation({
+  raw,
+  assessed,
+}: {
+  raw: string | null;
+  /** Whether a fall-risk assessment is on file; `false` withholds the reassuring "Standard baseline". */
+  assessed?: boolean;
+}) {
   const v = (raw ?? "").trim().toLowerCase();
   if (!v) {
     return (
       <span className="text-[13px] font-medium text-muted-foreground">Not reviewed</span>
+    );
+  }
+  if ((v === "standard" || v === "normal" || v === "low") && assessed === false) {
+    return (
+      <span className="text-[13px] font-medium text-muted-foreground">Not assessed — no Morse Fall on file</span>
     );
   }
   if (v === "standard" || v === "normal" || v === "low") {

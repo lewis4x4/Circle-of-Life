@@ -108,7 +108,7 @@ export default function AdminWorkspacePagesPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Private-by-default notes and pages. Only you can see these unless you publish them.
-            Owners/administrators can break-glass with a logged reason for compliance.
+            Owners and administrators can open them in an emergency, with a recorded reason.
           </p>
         </header>
 

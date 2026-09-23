@@ -4,6 +4,7 @@
  */
 
 import { formatColLabel } from "@/lib/col-labels";
+import { formatUsdFromCents } from "@/lib/insurance/format-money";
 
 export const RESIDENT_BILLING_NO_PROVIDER_POSTED_COPY = "No provider posted";
 export const RESIDENT_BILLING_NO_RATE_UNIT_POSTED_COPY = "No rate unit posted";
@@ -31,6 +32,44 @@ export function formatResidentBillingMedicaidProviderFromCatalog(
   if (!providerId) return RESIDENT_BILLING_NO_PROVIDER_POSTED_COPY;
   const provider = providers.find((item) => item.id === providerId);
   return formatResidentBillingMedicaidProviderName(provider?.provider_name);
+}
+
+/**
+ * The provider line on a Medicaid payer card (COL-667). A payer row can name
+ * its insurer (e.g. an MCO) without being linked to a facility Medicaid
+ * provider; saying "No provider posted" under that name read as a
+ * contradiction. Say which is true: linked, named but not linked, or neither.
+ */
+export function formatResidentBillingMedicaidProviderCurrent(
+  providerId: string | null | undefined,
+  providers: MedicaidProviderCatalogRow[],
+  payerName: string | null | undefined,
+): string {
+  const linked = formatResidentBillingMedicaidProviderFromCatalog(providerId, providers);
+  if (linked !== RESIDENT_BILLING_NO_PROVIDER_POSTED_COPY) return linked;
+  const named = payerName?.trim();
+  if (named) return `${named} is on the payer record but not linked to a facility Medicaid provider`;
+  return RESIDENT_BILLING_NO_PROVIDER_POSTED_COPY;
+}
+
+/**
+ * How a Medicaid resident's monthly terms split between Medicaid and the
+ * resident, and what the monthly invoices cover today. Monthly invoice
+ * generation bills the Medicaid portion only (COL-678), so the resident share
+ * is named as not invoiced rather than left to look like a wrong draft.
+ */
+export function residentBillingMedicaidSplitLine(
+  medicaidRateCents: number | null | undefined,
+  residentShareCents: number | null | undefined,
+): string | null {
+  if (medicaidRateCents == null && residentShareCents == null) return null;
+  const medicaid = medicaidRateCents == null ? "Medicaid rate not posted" : `Medicaid pays ${formatUsdFromCents(medicaidRateCents)}`;
+  const share = residentShareCents == null ? "no resident share posted" : `resident share ${formatUsdFromCents(residentShareCents)}`;
+  const invoiced =
+    residentShareCents != null && residentShareCents > 0
+      ? " Monthly invoices bill the Medicaid portion only; the resident share is not on any Haven invoice yet."
+      : "";
+  return `${medicaid} · ${share} a month.${invoiced}`;
 }
 
 /** Medicaid rate unit label — posted enum as human text, or explicit gap copy. */

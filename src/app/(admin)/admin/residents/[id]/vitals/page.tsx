@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  describeVitalAlertsPanel,
   formatVitalsBloodPressure,
   formatVitalsOxygenSaturation,
   formatVitalsPulse,
@@ -72,6 +73,14 @@ export default function ResidentVitalsPage() {
       void load();
     });
   }, [load]);
+
+  const alertsPanel = describeVitalAlertsPanel({
+    loading,
+    alertsError,
+    logsError,
+    alertCount: alerts.length,
+    logCount: logs.length,
+  });
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -172,7 +181,7 @@ export default function ResidentVitalsPage() {
           <div className="h-fit">
             <RecordDetailSection
               title="Vital alerts"
-              className="border-destructive/20 bg-destructive/10"
+              className={alertsPanel.tone === "alert" ? "border-destructive/20 bg-destructive/10" : undefined}
             >
               <ul className="space-y-3">
                 {alerts.map((a) => (
@@ -184,8 +193,8 @@ export default function ResidentVitalsPage() {
                     <span className="text-xs tabular-nums text-destructive/70 mt-2">{new Date(a.created_at).toLocaleString()}</span>
                   </li>
                 ))}
-                {!loading && !alertsError && alerts.length === 0 && (
-                  <li className="text-destructive/70 text-sm font-medium p-4 text-center">No alerts.</li>
+                {alertsPanel.emptyCopy && (
+                  <li className="text-muted-foreground text-sm font-medium p-4 text-center">{alertsPanel.emptyCopy}</li>
                 )}
               </ul>
             </RecordDetailSection>

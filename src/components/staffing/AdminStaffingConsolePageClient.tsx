@@ -10,6 +10,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import {
   fetchAttendanceEvents,
+  fetchCoverageScopeOrNull,
   fetchExpiredCertificationWarnings,
   fetchShiftAssignmentGaps,
   fetchSnapshotsFromSupabase,
@@ -25,6 +26,12 @@ import {
 } from "@/lib/staffing/load-staffing-console";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
+import {
+  describeCredentialPanel,
+  describeShiftGapPanel,
+  type StaffingCoverageScope,
+} from "@/lib/staffing/staffing-coverage-scope";
 import {
   facilityDatetimeLocalToUtcIso,
   formatFacilityTimestampEt,
@@ -89,9 +96,18 @@ type AdminStaffingConsolePageClientProps = {
   initialStaffOptions: StaffOption[];
   initialRequisitions: RequisitionRow[];
   initialAttendance: AttendanceEventRow[];
+  /** Omitted/null = unknown: panels say "could not be checked", never "Clear". */
+  initialCoverageScope?: StaffingCoverageScope | null;
   initialError: string | null;
   initialFacilityId: string | null;
 };
+
+/** Tile value: large number for a figure, muted phrase for any other state (COL-649). */
+function metricTileValueClass(state: MetricState<number>): string {
+  return state.status === "value"
+    ? "text-3xl font-semibold tabular-nums text-foreground"
+    : "text-lg font-semibold leading-snug text-muted-foreground";
+}
 
 const panelClass = "rounded-lg border border-border bg-card p-5 shadow-sm";
 const fieldClass =
@@ -106,6 +122,7 @@ export function AdminStaffingConsolePageClient({
   initialStaffOptions,
   initialRequisitions,
   initialAttendance,
+  initialCoverageScope = null,
   initialError,
   initialFacilityId,
 }: AdminStaffingConsolePageClientProps) {
@@ -115,6 +132,7 @@ export function AdminStaffingConsolePageClient({
   const [snapshots, setSnapshots] = useState<SnapshotRow[]>(initialSnapshots);
   const [certWarnings, setCertWarnings] = useState<CertWarning[]>(initialCertWarnings);
   const [shiftGaps, setShiftGaps] = useState<ShiftGap[]>(initialShiftGaps);
+  const [coverageScope, setCoverageScope] = useState<StaffingCoverageScope | null>(initialCoverageScope);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -153,13 +171,22 @@ export function AdminStaffingConsolePageClient({
     setIsLoading(true);
     setError(null);
     try {
-      const [liveSnapshots, liveCertWarnings, liveShiftGaps, liveStaffOptions, liveRequisitions, liveAttendance] = await Promise.all([
+      const [
+        liveSnapshots,
+        liveCertWarnings,
+        liveShiftGaps,
+        liveStaffOptions,
+        liveRequisitions,
+        liveAttendance,
+        liveCoverageScope,
+      ] = await Promise.all([
         fetchSnapshotsFromSupabase(selectedFacilityId),
         fetchExpiredCertificationWarnings(selectedFacilityId),
         fetchShiftAssignmentGaps(selectedFacilityId),
         fetchStaffOptions(selectedFacilityId),
         fetchStaffRequisitions(selectedFacilityId),
         fetchAttendanceEvents(selectedFacilityId),
+        fetchCoverageScopeOrNull(selectedFacilityId),
       ]);
       setSnapshots(liveSnapshots);
       setCertWarnings(liveCertWarnings);
@@ -167,6 +194,7 @@ export function AdminStaffingConsolePageClient({
       setStaffOptions(liveStaffOptions);
       setRequisitionRows(liveRequisitions);
       setAttendanceRows(liveAttendance);
+      setCoverageScope(liveCoverageScope);
       setRequisitionStatusDrafts(
         Object.fromEntries(liveRequisitions.map((row) => [row.id, row.status])),
       );
@@ -174,6 +202,7 @@ export function AdminStaffingConsolePageClient({
       setError(err instanceof Error ? err.message : "Failed to load staffing metrics");
       setCertWarnings([]);
       setShiftGaps([]);
+      setCoverageScope(null);
       setStaffOptions([]);
       setRequisitionRows([]);
       setAttendanceRows([]);
@@ -279,21 +308,19 @@ export function AdminStaffingConsolePageClient({
         : "text-amber-500";
   const ratioStatusCopy =
     latestVisibleSnapshot == null
-      ? "No staffing snapshot is available for the current slice."
+      ? "No staffing snapshot has been recorded for this view."
       : ratioDelta != null && ratioDelta > 0
         ? `${ratioDelta.toFixed(1)} above the required ratio on the latest ${latestVisibleSnapshot.shift} snapshot.`
         : ratioDelta != null
           ? `${Math.abs(ratioDelta).toFixed(1)} below the required ratio on the latest ${latestVisibleSnapshot.shift} snapshot.`
           : "Latest staffing snapshot loaded for this slice.";
   const openShiftShortage = shiftGaps.reduce((sum, gap) => sum + gap.shortage, 0);
-  const openShiftCopy =
-    openShiftShortage > 0
-      ? `${openShiftShortage} unfilled ${openShiftShortage === 1 ? "role" : "roles"} in the next 48 hours.`
-      : "No open shift gaps in the next 48 hours.";
-  const credentialCopy =
-    certWarnings.length > 0
-      ? `${certWarnings.length} expired ${certWarnings.length === 1 ? "credential" : "credentials"} require review.`
-      : "No expired credentials in this scope.";
+  const shiftPanel = describeShiftGapPanel({
+    scope: coverageScope,
+    openShiftShortage,
+    gapRows: shiftGaps.length,
+  });
+  const credentialPanel = describeCredentialPanel(coverageScope);
   const scopeBlockerMessage =
     selectedFacilityId == null
       ? "Select a facility to load staffing metrics and enable requisition and attendance actions."
@@ -437,15 +464,17 @@ export function AdminStaffingConsolePageClient({
           <div className="mt-4 flex items-end gap-3">
             <span
               className={cn(
-                "text-3xl font-semibold tabular-nums",
-                openShiftShortage > 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground",
+                metricTileValueClass(shiftPanel.tile),
+                openShiftShortage > 0 ? "text-rose-600 dark:text-rose-400" : "",
               )}
             >
-              {openShiftShortage}
+              {formatMetric(shiftPanel.tile)}
             </span>
-            <span className="pb-1 text-sm text-muted-foreground">roles unfilled</span>
+            {shiftPanel.tile.status === "value" ? (
+              <span className="pb-1 text-sm text-muted-foreground">roles unfilled</span>
+            ) : null}
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">{openShiftCopy}</p>
+          <p className="mt-3 text-sm text-muted-foreground">{shiftPanel.tileCopy}</p>
         </div>
 
         <Link
@@ -463,15 +492,17 @@ export function AdminStaffingConsolePageClient({
           <div className="mt-4 flex items-end gap-3">
             <span
               className={cn(
-                "text-3xl font-semibold tabular-nums",
-                certWarnings.length > 0 ? "text-amber-700 dark:text-amber-400" : "text-foreground",
+                metricTileValueClass(credentialPanel.tile),
+                certWarnings.length > 0 ? "text-amber-700 dark:text-amber-400" : "",
               )}
             >
-              {certWarnings.length}
+              {formatMetric(credentialPanel.tile)}
             </span>
-            <span className="pb-1 text-sm text-muted-foreground">blockers</span>
+            {credentialPanel.tile.status === "value" ? (
+              <span className="pb-1 text-sm text-muted-foreground">blockers</span>
+            ) : null}
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">{credentialCopy}</p>
+          <p className="mt-3 text-sm text-muted-foreground">{credentialPanel.tileCopy}</p>
         </Link>
       </section>
 
@@ -789,13 +820,13 @@ export function AdminStaffingConsolePageClient({
                 Review the next 48 hours for unfilled shift coverage.
               </p>
             </div>
-            {shiftGaps.length > 0 ? <Badge variant="destructive">Priority dispatch</Badge> : <Badge variant="outline">Clear</Badge>}
+            <Badge variant={shiftPanel.badge === "gaps" ? "destructive" : "outline"}>{shiftPanel.badgeLabel}</Badge>
           </div>
           {shiftGaps.length === 0 ? (
             <div className="mt-4">
               <AdminEmptyState
-                title="No open shift assignment gaps"
-                description="Coverage is currently sufficient for the next 48 hours in this scope."
+                title={shiftPanel.emptyTitle}
+                description={shiftPanel.emptyDescription}
               />
             </div>
           ) : (
@@ -841,8 +872,8 @@ export function AdminStaffingConsolePageClient({
           {certWarnings.length === 0 ? (
             <div className="mt-4">
               <AdminEmptyState
-                title="No credential blockers"
-                description="There are no expired credentials in the current staffing scope."
+                title={credentialPanel.emptyTitle}
+                description={credentialPanel.emptyDescription}
               />
             </div>
           ) : (
