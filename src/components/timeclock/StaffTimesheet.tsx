@@ -173,7 +173,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
   );
 
   const acknowledge = async (exception: TimesheetException) => {
-    if (!user || !organizationId || !staff || exception.type === "missing_out") return;
+    if (!user || !organizationId || !staff || (exception.type === "missing_out" || exception.type === "missing_meal_end")) return;
     setFormError(null);
     try {
       await insertCorrection({
@@ -190,9 +190,9 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
     }
   };
 
-  const addMissingClockOut = (exception: TimesheetException) => {
+  const addMissingPunch = (exception: TimesheetException) => {
     setFormError(null);
-    setDraft({ ...EMPTY_DRAFT, target: exception.anchorId, punchType: "out", reason: "missed_punch" });
+    setDraft({ ...EMPTY_DRAFT, target: exception.anchorId, punchType: exception.type === "missing_meal_end" ? "meal_end" : "out", reason: "missed_punch" });
     correctionTimeRef.current?.focus();
   };
 
@@ -220,9 +220,9 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
         setFormError("Enter the punch time.");
         return;
       }
-      const missingClockIn = sheet?.effective.find((punch) => punch.id === draft.target);
-      if (missingClockIn && draft.punchType === "out" && new Date(when) <= missingClockIn.at) {
-        setFormError("Clock out must be after the clock in.");
+      const missingStart = sheet?.effective.find((punch) => punch.id === draft.target);
+      if (missingStart && (draft.punchType === "out" || draft.punchType === "meal_end") && new Date(when) <= missingStart.at) {
+        setFormError(draft.punchType === "meal_end" ? "Meal end must be after the meal start." : "Clock out must be after the clock in.");
         return;
       }
       row.punch_type = draft.punchType;
@@ -349,9 +349,9 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
                             {EXCEPTION_LABELS[exception.type]} · {formatKioskTime(exception.at)}
                             {exception.acknowledged ? <span className="ml-2 text-xs text-muted-foreground">Acknowledged</span> : null}
                           </span>
-                          {canReview && !exception.acknowledged && exception.type === "missing_out" ? (
-                            <Button type="button" size="sm" variant="outline" onClick={() => addMissingClockOut(exception)}>
-                              Add clock out
+                          {canReview && !exception.acknowledged && (exception.type === "missing_out" || exception.type === "missing_meal_end") ? (
+                            <Button type="button" size="sm" variant="outline" onClick={() => addMissingPunch(exception)}>
+                              {exception.type === "missing_meal_end" ? "Add meal end" : "Add clock out"}
                             </Button>
                           ) : canReview && !exception.acknowledged ? (
                             <Button type="button" size="sm" variant="outline" onClick={() => void acknowledge(exception)}>
@@ -374,7 +374,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
               </h2>
               <p className="text-xs text-muted-foreground">Punches are never edited. A correction is a new row with a reason on record.</p>
               {draft.kind === "add_punch" && draft.target ? (
-                <p role="status" className="text-sm text-warning">Enter the verified clock-out time. Missing hours remain unresolved until the punch is corrected.</p>
+                <p role="status" className="text-sm text-warning">Enter the verified {draft.punchType === "meal_end" ? "meal-end" : "clock-out"} time. Missing hours remain unresolved until the punch is corrected.</p>
               ) : null}
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
