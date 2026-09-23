@@ -1,5 +1,7 @@
 # Track D — Phase 6 completion pass (execution log)
 
+> **Role note (2026-09-22, COL-615):** this is a historical record. The `nurse`, `caregiver`, `dietary` and `dietary_aide` login roles it names were retired by migration 468 (nurse and caregiver folded into `med_tech`, dietary and dietary_aide into `cook`). For the current role model see the Roles section in `AGENTS.md`.
+
 **Purpose:** Record **which Phase 6 module** is in focus for each bounded segment and what shipped. Authoritative module specs remain in `12-*` … `23-*`; [README.md](./README.md) § Track D lists example Enhanced gaps.
 
 **First target (D1):** **Module 15 — Transportation** ([15-transportation.md](./15-transportation.md)).

@@ -15,7 +15,7 @@ Migrations use **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 
 ## COL Operational Context
 
-Circle of Life operates five ALF facilities (Oakridge, Rising Oaks, Homewood Lodge, Plantation, Grande Cypress) across three Florida counties. COL uses **Baya** as an external medication management training partner — Baya conducts medication safety training, issues competency certifications, and maintains sign-off records for CNAs and caregivers who administer medications. Haven must model Baya as a named external program with certificate ingestion, not assume all training is delivered in-house.
+Circle of Life operates five ALF facilities (Oakridge, Rising Oaks, Homewood Lodge, Plantation, Grande Cypress) across three Florida counties. COL uses **Baya** as an external medication management training partner — Baya conducts medication safety training, issues competency certifications, and maintains sign-off records for CNAs and Med-Techs who administer medications. Haven must model Baya as a named external program with certificate ingestion, not assume all training is delivered in-house.
 
 Florida ALF regulations (FAC 59A-36.011 and FAC 59A-36.022) mandate specific training categories for all staff at hire and annually. These must be tracked per-staff-member with completion dates, hours, and verifying signatures. COL currently tracks this via paper sign-in sheets (`Orientation & Training Sign-In.pdf`, in-service training sign-in logs) and Baya-issued competency certificates.
 
@@ -285,7 +285,7 @@ CREATE POLICY "Admins and nurses manage completions"
   ON staff_training_completions FOR ALL
   USING (organization_id = haven.organization_id()
     AND facility_id = ANY(haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner','org_admin','facility_admin','nurse'));
+    AND haven.app_role() IN ('owner','org_admin','facility_admin','med_tech'));
 
 -- competency_demonstrations (same pattern as staff_certifications)
 CREATE POLICY "Facility-scoped roles see demos"
@@ -298,7 +298,7 @@ CREATE POLICY "Admins and nurses manage demos"
   ON competency_demonstrations FOR ALL
   USING (organization_id = haven.organization_id()
     AND facility_id = ANY(haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner','org_admin','facility_admin','nurse'));
+    AND haven.app_role() IN ('owner','org_admin','facility_admin','med_tech'));
 
 -- inservice_log_sessions
 CREATE POLICY "Facility staff see in-service sessions"

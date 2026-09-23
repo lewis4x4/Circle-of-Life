@@ -69,7 +69,7 @@ See migrations **`077`** (DDL) and **`078`** (RLS, audit, `updated_at` on `admis
 
 ## RLS (normative)
 
-- **SELECT / INSERT / UPDATE:** Same facility scope as `referral_leads` — `organization_id = haven.organization_id()`, `facility_id ∈ haven.accessible_facility_ids()`, `deleted_at IS NULL` for reads; roles **`owner`**, **`org_admin`**, **`facility_admin`**, **`nurse`** for writes unless policy tightened later.
+- **SELECT / INSERT / UPDATE:** Same facility scope as `referral_leads` — `organization_id = haven.organization_id()`, `facility_id ∈ haven.accessible_facility_ids()`, `deleted_at IS NULL` for reads; roles **`owner`**, **`org_admin`**, **`facility_admin`**, **`med_tech`** for writes unless policy tightened later (the `nurse` grant folded into `med_tech`, migration 468).
 - **Child table:** Policies require parent `admission_cases` row visible and in scope.
 - **No authenticated DELETE** on cases — soft-delete via `deleted_at` in application layers.
 

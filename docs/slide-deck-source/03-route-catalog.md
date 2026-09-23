@@ -15,7 +15,7 @@ This catalog is based on the route tree in `src/app` as of 2026-04-20.
 
 ## Canonical Admin Domains
 
-- Command and dashboards: `/admin`, `/admin/assistant-dashboard`, `/admin/coordinator-dashboard`, `/admin/nurse-dashboard`
+- Command and dashboards: `/admin`, `/admin/assistant-dashboard`, `/admin/coordinator-dashboard`, `/admin/nurse-dashboard` (route name kept; no nurse login role since COL-615)
 - Referral and intake: `/admin/referrals/*`, `/admin/admissions/*`, `/admin/discharge/*`
 - Resident care: `/admin/residents/*`, `/admin/assessments/overdue`, `/admin/care-plans/reviews-due`
 - Incidents and risk: `/admin/incidents/*`, `/admin/infection-control/*`, `/admin/compliance/*`
