@@ -9,6 +9,7 @@ import {
   AdminEmptyState,
   AdminLiveDataFallbackNotice,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { RiskHubNav } from "@/components/risk/RiskHubNav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,10 +142,7 @@ export default function RiskSurveyBundlePageClient({
       </div>
 
       {!facilityId ? (
-        <AdminEmptyState
-          title="Choose a facility to assemble a packet"
-          description="Survey bundles are facility-specific. Select a facility in the admin header, then reopen this page."
-        />
+        <FacilityGateNotice reason="A survey bundle packages one building's readiness, deficiencies and documents." />
       ) : null}
 
       {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => router.refresh()} /> : null}

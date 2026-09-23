@@ -131,7 +131,9 @@ function TemplateReportRun({
 
   useEffect(() => {
     if (facilitiesLoading) return;
-    if (!orgWide && scopeFacilityId === null && facilityOptions[0]) { setScopeFacilityId(facilityOptions[0].id); return; }
+    // COL-651: never pick a facility on the user's behalf. This used to take
+    // facilityOptions[0] whenever the role context had not resolved yet, so an
+    // owner on All facilities silently ran reports for the first building.
     if (
       scopeFacilityId !== null &&
       !facilityOptions.some((f) => f.id === scopeFacilityId)
@@ -274,7 +276,7 @@ function TemplateReportRun({
           </div>
           <div className="space-y-2">
             <div className="flex flex-wrap gap-3">
-              <Button onClick={() => void onRun()} disabled={running || !orgId}>
+              <Button onClick={() => void onRun()} disabled={running || !orgId || (!orgWide && !scopeFacilityId)}>
                 {running ? "Running…" : "Run report"}
               </Button>
               <Button variant="secondary" onClick={() => void onExportCsv()} disabled={!result}>
@@ -378,7 +380,9 @@ function PackReportRun({ packId }: { packId: string }) {
 
   useEffect(() => {
     if (facilitiesLoading) return;
-    if (!orgWide && scopeFacilityId === null && facilityOptions[0]) { setScopeFacilityId(facilityOptions[0].id); return; }
+    // COL-651: never pick a facility on the user's behalf. This used to take
+    // facilityOptions[0] whenever the role context had not resolved yet, so an
+    // owner on All facilities silently ran reports for the first building.
     if (
       scopeFacilityId !== null &&
       !facilityOptions.some((f) => f.id === scopeFacilityId)
@@ -631,7 +635,7 @@ function PackReportRun({ packId }: { packId: string }) {
           </div>
           <div className="space-y-2">
             <div className="flex flex-wrap gap-3">
-              <Button onClick={() => void runPack()} disabled={running || !orgId || loadingPack || slices.length === 0}>
+              <Button onClick={() => void runPack()} disabled={running || !orgId || loadingPack || slices.length === 0 || (!orgWide && !scopeFacilityId)}>
                 {running ? "Running pack…" : "Run pack"}
               </Button>
               <Button variant="secondary" onClick={() => void onExportCsvPack()} disabled={completedSlices.length === 0}>

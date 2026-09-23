@@ -9,6 +9,7 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchActorContext } from "@/lib/office/meetings";
 import { formatBinderLastSurveyLine } from "@/lib/office/survey-binder-display-copy";
@@ -167,15 +168,19 @@ export default function AdminSurveyBinderPage() {
             Survey-readiness binder
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Manual binder checklist status; live evidence availability is shown below. {readyCount} ready · {missingCount} missing across{" "}
-            {items.length} tracked item{items.length === 1 ? "" : "s"}.
+            Manual binder checklist status; live evidence availability is shown below.
+            {facilityReady ? (
+              <>
+                {" "}
+                {readyCount} ready · {missingCount} missing across {items.length} tracked item
+                {items.length === 1 ? "" : "s"}.
+              </>
+            ) : null}
           </p>
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — the binder is per-facility.
-          </p>
+          <FacilityGateNotice reason="The survey-readiness binder tracks one building's evidence for its surveyors." />
         ) : null}
 
         {notice ? (

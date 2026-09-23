@@ -137,7 +137,7 @@ describe("the visitor log", () => {
 
 describe("the survey pack chooser", () => {
   it("has no axe violations", async () => {
-    const { container } = render(<SurveyPackChooser />);
+    const { container } = render(<SurveyPackChooser facilityName="Homewood Lodge" />);
     await screen.findByText("Sections");
     expect(await violations(container)).toEqual([]);
   });
@@ -161,5 +161,12 @@ describe("errors are announced, not just coloured", () => {
       expect(name.getAttribute("aria-describedby")).toBe("visitor-problems");
     });
     expect(await violations(container)).toEqual([]);
+  });
+});
+
+describe("the survey pack chooser names its building (COL-651)", () => {
+  it("says which facility will print before anything prints", async () => {
+    render(<SurveyPackChooser facilityName="Homewood Lodge" />);
+    expect(await screen.findByRole("button", { name: "Print for Homewood Lodge" })).toBeInTheDocument();
   });
 });

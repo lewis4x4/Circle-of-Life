@@ -33,9 +33,11 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { StatuteCitation } from "@/components/ui/StatuteCitation";
 import {
-  complianceFacilityNotSelectedCopy,
+  complianceFacilityGateReason,
+  complianceRollupScopeCopy,
   compliancePocDueLine,
   complianceScoreEmptyCopy,
   complianceScoreLoadingCopy,
@@ -284,12 +286,7 @@ export function AdminCompliancePageClient({
         </div>
 
         {!facilityReady ? (
-          <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50">
-            <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
-            <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
-              {complianceFacilityNotSelectedCopy()}
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">{complianceRollupScopeCopy()}</p>
         ) : null}
 
         {snapError ? (
@@ -362,7 +359,7 @@ export function AdminCompliancePageClient({
           <p className="text-sm text-muted-foreground mb-6">Survey citations that still need correction or verification.</p>
 
           {!facilityReady ? (
-            <p className="text-sm text-muted-foreground">{complianceFacilityNotSelectedCopy()}</p>
+            <FacilityGateNotice reason={complianceFacilityGateReason()} />
           ) : defLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : defRows.length === 0 ? (

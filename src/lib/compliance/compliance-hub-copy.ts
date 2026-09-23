@@ -29,9 +29,14 @@ export function complianceSurveyVisitInactiveCopy(): string {
   return "No active session.";
 }
 
-/** One-line gap when no facility is selected in the header scope. */
-export function complianceFacilityNotSelectedCopy(): string {
-  return "Select a facility to load compliance data.";
+/** Under All facilities the tiles are an org-wide rollup; say so instead of gating them. */
+export function complianceRollupScopeCopy(): string {
+  return "Tile totals cover all your facilities. Findings, the compliance score and preparedness below are kept per building.";
+}
+
+/** Why the per-building sections of the hub need one facility (COL-651 gate reason). */
+export function complianceFacilityGateReason(): string {
+  return "Survey deficiencies, the compliance score, emergency preparedness and reminders belong to one building.";
 }
 
 /** One-line gap when rule-based compliance score is absent for the facility. */
@@ -46,7 +51,7 @@ export function complianceScoreLoadingCopy(): string {
 
 /** Survey visit status when no facility is scoped in the header selector. */
 export function complianceSurveyVisitNotScopedCopy(): string {
-  return "Select a facility to check survey visit status.";
+  return "Survey visit sessions run per building; choose one to see its status.";
 }
 
 /** Survey visit status line from snapshot — never fabricates inactive when unscoped. */
