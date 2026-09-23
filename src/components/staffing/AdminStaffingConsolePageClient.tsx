@@ -309,7 +309,7 @@ export function AdminStaffingConsolePageClient({
         : "text-amber-500";
   const ratioStatusCopy =
     latestVisibleSnapshot == null
-      ? "No staffing snapshot is available for the current slice."
+      ? "No staffing snapshot has been recorded for this view."
       : ratioDelta != null && ratioDelta > 0
         ? `${ratioDelta.toFixed(1)} above the required ratio on the latest ${latestVisibleSnapshot.shift} snapshot.`
         : ratioDelta != null

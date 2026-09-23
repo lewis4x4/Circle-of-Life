@@ -22,6 +22,7 @@ import {
   isFacilityOccupancyCensusLoaded,
 } from "@/lib/executive/facility-occupancy-census";
 import type { PortfolioOccupancyScope } from "@/lib/occupancy/portfolio-occupancy-display";
+import { fetchExecRegisterCoverage, type ExecRegisterCoverage } from "@/lib/executive/register-coverage";
 
 /** Versioned payload shape for `exec_kpi_snapshots.metrics` when persisted by cron (Module 24). */
 export const EXEC_KPI_METRICS_VERSION = 1 as const;
@@ -74,6 +75,11 @@ export type ExecKpiPayload = {
     openExceptions: number;
     activeWatchCount: number;
   };
+  /**
+   * Whether the registers behind the counts were ever used in scope (COL-649).
+   * Optional so cron-persisted snapshots written before this field validate.
+   */
+  registers?: ExecRegisterCoverage;
 };
 
 /** Quiet Operator gap copy when live loaders skip miss-rate aggregation. */
@@ -272,6 +278,7 @@ export async function fetchExecutiveKpiSnapshot(
     openExceptionsRes,
     activeWatchRes,
     bedCensusByFacility,
+    registers,
   ] = await Promise.all([
     residentsQuery,
     invoicesOpenQuery,
@@ -284,6 +291,11 @@ export async function fetchExecutiveKpiSnapshot(
     openExceptionsQuery,
     activeWatchQuery,
     fetchFacilityBedCensusById(supabase, facilityIds),
+    fetchExecRegisterCoverage(
+      supabase,
+      organizationId,
+      facilityScoped ? { facilityId: facilityId! } : { facilityIds },
+    ),
   ]);
 
   const batchErrors = [
@@ -364,5 +376,6 @@ export async function fetchExecutiveKpiSnapshot(
       openExceptions: openExceptionsRes.count ?? 0,
       activeWatchCount: activeWatchRes.count ?? 0,
     },
+    registers,
   };
 }

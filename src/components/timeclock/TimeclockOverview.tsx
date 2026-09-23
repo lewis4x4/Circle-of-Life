@@ -33,6 +33,7 @@ import {
   TIMECLOCK_PAGE_SUBTITLE,
   TIMECLOCK_PAGE_TITLE,
   TIMECLOCK_PAY_PERIOD_UNSET,
+  TIMECLOCK_PERIOD_UNSET_WEEK_NOTE,
   formatMinutesCompact,
   formatPeriodLabel,
   formatStatusNow,
@@ -64,7 +65,7 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savingPeriod, setSavingPeriod] = useState(false);
-  const [periodDraft, setPeriodDraft] = useState<{ kind: "weekly" | "biweekly"; anchor: string }>({ kind: "biweekly", anchor: "" });
+  const [periodDraft, setPeriodDraft] = useState<{ kind: "weekly" | "biweekly" | ""; anchor: string }>({ kind: "", anchor: "" });
 
   const canReview = canReviewTimeclock(appRole);
   const canSetPeriod = canChangeTimeclockSettings(appRole);
@@ -138,15 +139,16 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
 
   const savePeriod = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!organizationId || !user) return;
+    if (!organizationId || !user || !periodDraft.kind) return;
+    const kind = periodDraft.kind;
     setSavingPeriod(true);
     setError(null);
     try {
       const supabase = createClient();
-      const payload = { organization_id: organizationId, timeclock_pay_period: periodDraft.kind, timeclock_pay_period_anchor: periodDraft.anchor, updated_by: user.id };
+      const payload = { organization_id: organizationId, timeclock_pay_period: kind, timeclock_pay_period_anchor: periodDraft.anchor, updated_by: user.id };
       const { error: upsertError } = await supabase.from("timeclock_organization_settings").upsert(payload, { onConflict: "organization_id" });
       if (upsertError) throw new Error(upsertError.message);
-      const next: PayPeriodSettings = { timeclock_pay_period: periodDraft.kind, timeclock_pay_period_anchor: periodDraft.anchor };
+      const next: PayPeriodSettings = { timeclock_pay_period: kind, timeclock_pay_period_anchor: periodDraft.anchor };
       setSettings(next);
       setPeriod(payPeriodContaining(now(), next));
     } catch (e) {
@@ -183,6 +185,7 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
               </Button>
               <span className="px-2 text-sm tabular-nums" data-testid="period-label">
                 {formatPeriodLabel(period.startIso, period.endIso)}
+                {payPeriodSet ? null : <span className="text-muted-foreground"> ({TIMECLOCK_PERIOD_UNSET_WEEK_NOTE})</span>}
               </span>
               <Button type="button" variant="outline" size="sm" onClick={() => setPeriod(shiftPayPeriod(period, settings, 1))} aria-label="Next period">
                 →
@@ -229,8 +232,11 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
               id="pay-period-kind"
               className="mt-1 block h-9 rounded-[8px] border border-border bg-background px-2 text-sm"
               value={periodDraft.kind}
-              onChange={(e) => setPeriodDraft((d) => ({ ...d, kind: e.target.value as "weekly" | "biweekly" }))}
+              onChange={(e) => setPeriodDraft((d) => ({ ...d, kind: e.target.value as "weekly" | "biweekly" | "" }))}
+              required
             >
+              {/* No pre-selection: the frequency must match ADP, so empty stays empty (COL-659). */}
+              <option value="">Choose frequency</option>
               <option value="weekly">Weekly</option>
               <option value="biweekly">Biweekly</option>
             </select>
@@ -248,7 +254,7 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
               required
             />
           </div>
-          <Button type="submit" size="sm" disabled={savingPeriod || !periodDraft.anchor}>
+          <Button type="submit" size="sm" disabled={savingPeriod || !periodDraft.anchor || !periodDraft.kind}>
             Save pay period
           </Button>
         </form>
@@ -285,7 +291,7 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
                   </td>
                   <td className={TD}>{row.status}</td>
                   <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.weekMinutes)}</td>
-                  <td className={cn(TD, "text-right tabular-nums")}>{row.overtimeMinutes > 0 ? formatMinutesCompact(row.overtimeMinutes) : "0 min"}</td>
+                  <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.overtimeMinutes)}</td>
                   <td className={cn(TD, "text-right tabular-nums")}>{row.exceptions}</td>
                 </tr>
               ))}

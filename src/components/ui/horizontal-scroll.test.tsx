@@ -60,25 +60,14 @@ describe("HorizontalScroll (COL-657)", () => {
 
 /**
  * Guard: a TableRowHeader list outside TableRowList squeezes its columns to
- * the card width and clips on a phone. Lists still to convert are named here
- * with the follow-up that converts them; the list only shrinks.
+ * the card width and clips on a phone. The only exceptions are named here
+ * with the reason.
  */
-const NOT_YET_IN_TABLE_ROW_LIST = new Set<string>([
+const EXEMPT_FROM_TABLE_ROW_LIST = new Set<string>([
   // Native <table> markup rendered through TableRowHeader render={<tr />}; the table itself scrolls.
   "src/app/(admin)/admin/compliance/deficiencies/analysis/page.tsx",
   // Reflows to stacked cards below md; header is desktop-only by design.
   "src/components/residents/AdminResidentsPageClient.tsx",
-  // COL-657 part 2 converts these.
-  "src/app/(admin)/vendors/invoices/page.tsx",
-  "src/app/(admin)/vendors/contracts/page.tsx",
-  "src/app/(admin)/reputation/page.tsx",
-  "src/app/(admin)/admin/quality/page.tsx",
-  "src/app/(admin)/admin/infection-control/staff-illness/page.tsx",
-  "src/app/(admin)/finance/ledger/page.tsx",
-  "src/app/(admin)/certifications/page.tsx",
-  "src/app/(admin)/payroll/page.tsx",
-  "src/app/(admin)/time-records/page.tsx",
-  "src/components/dietary/AdminDietaryPageClient.tsx",
 ]);
 
 describe("TableRowHeader lists scroll on a phone (COL-657 guard)", () => {
@@ -86,11 +75,11 @@ describe("TableRowHeader lists scroll on a phone (COL-657 guard)", () => {
     .split("\n")
     .filter((file) => file && !file.includes("/components/ui/") && !/\.test\.tsx?$/.test(file));
 
-  it.each(users.filter((file) => !NOT_YET_IN_TABLE_ROW_LIST.has(file)))("%s wraps its rows in TableRowList", (file) => {
+  it.each(users.filter((file) => !EXEMPT_FROM_TABLE_ROW_LIST.has(file)))("%s wraps its rows in TableRowList", (file) => {
     expect(readFileSync(file, "utf8")).toContain("<TableRowList");
   });
 
-  it("keeps the pending list honest", () => {
-    for (const file of NOT_YET_IN_TABLE_ROW_LIST) expect(users, file).toContain(file);
+  it("keeps the exemption list honest", () => {
+    for (const file of EXEMPT_FROM_TABLE_ROW_LIST) expect(users, file).toContain(file);
   });
 });

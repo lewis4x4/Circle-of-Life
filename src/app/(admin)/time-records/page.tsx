@@ -14,7 +14,7 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
@@ -447,6 +447,7 @@ export default function AdminTimeRecordsPage() {
             </div>
           </div>
           <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <TableRowList label="Time records">
             <TableRowHeader>
               <span className="flex-[2] min-w-0">Staff</span>
               <span className="w-[130px] shrink-0">Clock In</span>
@@ -481,6 +482,7 @@ export default function AdminTimeRecordsPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         </div>
       ) : null}

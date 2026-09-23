@@ -88,3 +88,17 @@ export function formatFacilityTimestampEt(iso: string): string {
     minute: "2-digit",
   }).format(d);
 }
+
+/** "America/New_York" as staff say it: "Eastern Time". Falls back to the zone's own long name. */
+export function formatTimeZoneLabel(timeZone: string | null | undefined): string {
+  const zone = timeZone?.trim();
+  if (!zone) return "Eastern Time";
+  try {
+    const name = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "long" })
+      .formatToParts(new Date(Date.UTC(2026, 0, 15)))
+      .find((part) => part.type === "timeZoneName")?.value;
+    return name ? name.replace(/ Standard Time$/, " Time") : zone;
+  } catch {
+    return zone;
+  }
+}

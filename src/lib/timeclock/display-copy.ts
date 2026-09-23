@@ -1,6 +1,7 @@
 /** Operator copy for the timeclock manager surfaces (COL-352). No em dashes. */
 
-import { formatKioskTime, formatWorkedMinutes, type PunchType } from "@/lib/timeclock/kiosk-contract";
+import { formatDurationHoursMinutes } from "@/lib/format/datetime";
+import { formatKioskTime, type PunchType } from "@/lib/timeclock/kiosk-contract";
 import type { CorrectionReason, CorrectionType, ExceptionType, StatusNow } from "@/lib/timeclock/compute";
 
 export const TIMECLOCK_NAV_LABEL = "Timeclock";
@@ -9,6 +10,8 @@ export const TIMECLOCK_PAGE_SUBTITLE = "Who is in the building now, this period'
 export const TIMECLOCK_MANAGER_ONLY = "Timeclock review is for facility administrators and above. Your own punches are on your staff record.";
 export const TIMECLOCK_NO_ROWS = "No punches in this period yet.";
 export const TIMECLOCK_PAY_PERIOD_UNSET = "Set the pay period to export";
+/** Shown beside the period while no pay period is set, so a one-week view is not read as a pay period (COL-659). */
+export const TIMECLOCK_PERIOD_UNSET_WEEK_NOTE = "one week, pay period not set";
 export const TIMECLOCK_EXPORT_LABEL = "Export payroll CSV";
 export const TIMECLOCK_COMPARE_LABEL = "Compare with uPunch";
 export const TIMECLOCK_FULL_HISTORY = "Full history";
@@ -54,8 +57,9 @@ export function formatStatusNow(status: StatusNow, timeZone = "America/New_York"
   return "Out";
 }
 
+/** Manager-surface durations as h:mm ("7:05"), never a bare minute count (COL-659). */
 export function formatMinutesCompact(minutes: number): string {
-  return formatWorkedMinutes(minutes);
+  return formatDurationHoursMinutes(minutes);
 }
 
 export function formatPeriodLabel(startIso: string, endIso: string): string {

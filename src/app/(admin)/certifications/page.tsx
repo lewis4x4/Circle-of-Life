@@ -16,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
@@ -493,6 +493,7 @@ export default function AdminCertificationsPage() {
           </div>
           
           <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <TableRowList label="Certifications">
             <TableRowHeader>
               <span className="flex-[2] min-w-0">Staff / Credential</span>
               <span className="w-[140px] shrink-0">Timeline</span>
@@ -524,6 +525,7 @@ export default function AdminCertificationsPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         </div>
       ) : null}
