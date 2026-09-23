@@ -7,7 +7,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { PayPeriodSettings, RawCorrection, RawPunch, RawSyncRejection } from "@/lib/timeclock/compute";
+import type { PayPeriodSettings, RawCorrection, RawFloorUnlock, RawPunch, RawSyncRejection } from "@/lib/timeclock/compute";
 import type { Database } from "@/types/database";
 
 export type TimeclockStaff = {
@@ -24,6 +24,7 @@ export type TimeclockPeriodData = {
   punches: RawPunch[];
   corrections: RawCorrection[];
   rejections: RawSyncRejection[];
+  floorUnlocks: RawFloorUnlock[];
 };
 
 type Client = SupabaseClient<Database>;
@@ -106,6 +107,7 @@ export async function loadTimeclockPeriod(
 
   let corrections: RawCorrection[] = [];
   let rejections: RawSyncRejection[] = [];
+  let floorUnlocks: RawFloorUnlock[] = [];
   if (staffIds.length > 0) {
     const correctionsRes = await supabase
       .from("time_punch_corrections")
@@ -125,16 +127,28 @@ export async function loadTimeclockPeriod(
       .limit(1000);
     fail(rejectionsRes.error);
     rejections = (rejectionsRes.data ?? []) as RawSyncRejection[];
+
+    // Only off-clock unlocks become exceptions (unlock_without_punch).
+    const unlocksRes = await supabase
+      .from("floor_unlocks")
+      .select("id, staff_id, started_at, on_clock")
+      .eq("facility_id", input.facilityId)
+      .eq("on_clock", false)
+      .gte("started_at", from)
+      .lt("started_at", to)
+      .limit(1000);
+    fail(unlocksRes.error);
+    floorUnlocks = (unlocksRes.data ?? []) as RawFloorUnlock[];
   }
 
-  return { staff: [...staffMap.values()].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)), punches, corrections, rejections };
+  return { staff: [...staffMap.values()].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)), punches, corrections, rejections, floorUnlocks };
 }
 
 /** One person, all facilities, for the tier 2 timesheet. */
 export async function loadStaffTimeclock(
   supabase: Client,
   input: { staffId: string; periodStart: Date; periodEnd: Date },
-): Promise<{ staff: TimeclockStaff | null; punches: RawPunch[]; corrections: RawCorrection[]; rejections: RawSyncRejection[] }> {
+): Promise<{ staff: TimeclockStaff | null; punches: RawPunch[]; corrections: RawCorrection[]; rejections: RawSyncRejection[]; floorUnlocks: RawFloorUnlock[] }> {
   const from = new Date(input.periodStart.getTime() - LOOKBACK_MS).toISOString();
   const to = new Date(input.periodEnd.getTime() + LOOKBACK_MS).toISOString();
   const staffRes = await supabase
@@ -171,11 +185,21 @@ export async function loadStaffTimeclock(
     .lt("created_at", to)
     .limit(500);
   fail(rejectionsRes.error);
+  const unlocksRes = await supabase
+    .from("floor_unlocks")
+    .select("id, staff_id, started_at, on_clock")
+    .eq("staff_id", input.staffId)
+    .eq("on_clock", false)
+    .gte("started_at", from)
+    .lt("started_at", to)
+    .limit(500);
+  fail(unlocksRes.error);
   return {
     staff,
     punches: (punchesRes.data ?? []) as RawPunch[],
     corrections: (correctionsRes.data ?? []) as RawCorrection[],
     rejections: (rejectionsRes.data ?? []) as RawSyncRejection[],
+    floorUnlocks: (unlocksRes.data ?? []) as RawFloorUnlock[],
   };
 }
 

@@ -16,8 +16,9 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  476: "retired: COL-668 med_tech_shift_from_time_clock, PR #728 closed unmerged; applied to Haven HFO Staging only, never production. Never reuse this number.",
-  477: "held for open PR #729 (billing rate rules); remove this entry once #729 merges.",
+  478: "held for open PR #788 (policy_self_comparison_tautologies), already applied to production; remove once #788 merges.",
+  479: "held for open PR #789 (remove_dev_notes_and_acceptance_test_rows), already applied to production; remove once #789 merges.",
+  480: "held for med_tech_shift_follows_punch_corrections (COL-668 follow-up), applied to production and staging from a branch not yet pushed; remove once its file merges.",
 };
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
