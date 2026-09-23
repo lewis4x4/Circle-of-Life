@@ -25,6 +25,13 @@ import {
 } from "@/design-system/components/record-detail";
 import { formatAdmissionsHubTargetMoveInDateValue } from "@/lib/admissions/admissions-hub-display-copy";
 import {
+  ADMISSION_ONBOARDING_STATE_LABEL,
+  EMPTY_ADMISSION_ONBOARDING_COUNTS,
+  admissionOnboardingChecklist,
+  type AdmissionOnboardingCounts,
+} from "@/lib/admissions/admission-onboarding-checklist";
+import { headCountOrNull } from "@/lib/metrics/require-head-count";
+import {
   formatAdmissionDetailBedLabel,
   formatAdmissionDetailChecklistReceivedAt,
   formatAdmissionDetailCents,
@@ -38,13 +45,6 @@ type CaseDetail = Database["public"]["Tables"]["admission_cases"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
   referral_leads: { first_name: string; last_name: string } | null;
   beds: { bed_label: string } | null;
-};
-
-type OnboardingCounts = {
-  carePlans: number;
-  medications: number;
-  payers: number;
-  familyConsents: number;
 };
 
 type RateScheduleOption = Pick<
@@ -149,31 +149,6 @@ function onboardingLinks(residentId: string | null) {
   ];
 }
 
-function onboardingChecklist(counts: OnboardingCounts) {
-  return [
-    {
-      key: "care_plan",
-      label: "Care plan workspace has at least one plan",
-      passed: counts.carePlans > 0,
-    },
-    {
-      key: "meds",
-      label: "Medication profile exists",
-      passed: counts.medications > 0,
-    },
-    {
-      key: "billing",
-      label: "Resident payer is configured",
-      passed: counts.payers > 0,
-    },
-    {
-      key: "family",
-      label: "Family consent is on file",
-      passed: counts.familyConsents > 0,
-    },
-  ];
-}
-
 export default function AdminAdmissionCaseDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -185,12 +160,9 @@ export default function AdminAdmissionCaseDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [row, setRow] = useState<CaseDetail | null>(null);
   const [rateTerms, setRateTerms] = useState<Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]>([]);
-  const [onboardingCounts, setOnboardingCounts] = useState<OnboardingCounts>({
-    carePlans: 0,
-    medications: 0,
-    payers: 0,
-    familyConsents: 0,
-  });
+  const [onboardingCounts, setOnboardingCounts] = useState<AdmissionOnboardingCounts>(
+    EMPTY_ADMISSION_ONBOARDING_COUNTS,
+  );
   const [rateSchedules, setRateSchedules] = useState<RateScheduleOption[]>([]);
   const [beds, setBeds] = useState<BedOption[]>([]);
   const [form1823Record, setForm1823Record] = useState<Form1823Record | null>(null);
@@ -309,10 +281,10 @@ export default function AdminAdmissionCaseDetailPage() {
             .maybeSingle(),
         ]);
         setOnboardingCounts({
-          carePlans: carePlansRes.count ?? 0,
-          medications: medsRes.count ?? 0,
-          payers: payersRes.count ?? 0,
-          familyConsents: consentsRes.count ?? 0,
+          carePlans: headCountOrNull(carePlansRes),
+          medications: headCountOrNull(medsRes),
+          payers: headCountOrNull(payersRes),
+          familyConsents: headCountOrNull(consentsRes),
         });
         const resolvedForm1823Record = ((form1823CaseRes.data ?? form1823ResidentFallbackRes.data) ?? null) as Form1823Record | null;
         const resolvedChecklist = (form1823ChecklistRes.data ?? null) as AdmissionChecklistItem | null;
@@ -324,7 +296,7 @@ export default function AdminAdmissionCaseDetailPage() {
         setForm1823ExpirationDraft(resolvedForm1823Record?.expiration_date ?? "");
         setForm1823NotesDraft(resolvedChecklist?.notes ?? "");
       } else {
-        setOnboardingCounts({ carePlans: 0, medications: 0, payers: 0, familyConsents: 0 });
+        setOnboardingCounts(EMPTY_ADMISSION_ONBOARDING_COUNTS);
         setForm1823Record(null);
         setForm1823ChecklistItem(null);
         setForm1823StatusDraft("");
@@ -415,7 +387,7 @@ export default function AdminAdmissionCaseDetailPage() {
   const readiness = row ? admissionReadinessChecklist(row, rateTerms, form1823Satisfied) : [];
   const canReserveBed = Boolean(row?.financial_clearance_at && row?.physician_orders_received_at && row?.bed_id);
   const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0 && form1823Satisfied);
-  const onboarding = onboardingChecklist(onboardingCounts);
+  const onboarding = admissionOnboardingChecklist(onboardingCounts);
   const selectedRateSchedule = rateSchedules.find((schedule) => schedule.id === rateScheduleDraft) ?? null;
 
   function prefillQuotedTermsFromSchedule() {
@@ -927,11 +899,13 @@ export default function AdminAdmissionCaseDetailPage() {
                             <span className="text-sm font-medium text-foreground">{item.label}</span>
                             <span className={cn(
                               "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
-                              item.passed
+                              item.state === "complete"
                                 ? "bg-success/10 text-success"
-                                : "bg-warning/10 text-warning",
+                                : item.state === "missing"
+                                  ? "bg-warning/10 text-warning"
+                                  : "bg-muted text-muted-foreground",
                             )}>
-                              {item.passed ? "Complete" : "Missing"}
+                              {ADMISSION_ONBOARDING_STATE_LABEL[item.state]}
                             </span>
                           </div>
                         ))}

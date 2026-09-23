@@ -197,7 +197,7 @@ export function UpunchCompare({ now: nowProp, readFile }: UpunchCompareProps) {
                 CSV file
               </label>
               <input id="upunch-file" type="file" accept=".csv,text/csv" className="mt-1 block text-sm" onChange={(e) => void onFile(e)} />
-              {fileName ? <p className="mt-1 text-xs text-muted-foreground">{fileName}, {upload?.rows.length ?? 0} rows</p> : null}
+              {fileName && upload ? <p className="mt-1 text-xs text-muted-foreground">{fileName}, {upload.rows.length} rows</p> : null}
             </div>
             {upload ? (
               <div className="grid gap-3 md:grid-cols-3">

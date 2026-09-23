@@ -34,6 +34,7 @@ import {
 } from "@/lib/facility-wall-clock";
 import { Badge } from "@/components/ui/badge";
 import {
+  formatReferralsHubHl7Summary,
   formatReferralsHubOutreachWeek,
   formatReferralsHubReferralSource,
   formatReferralsHubTourScheduledFor,
@@ -298,7 +299,7 @@ export function AdminReferralsPageClient({
         outreachRows: [],
         activeAdmissionCaseByLeadId: {},
         handoffRollup: { blocked: 0, ready: 0, onboarding: 0 },
-        hl7Counts: { pending: 0, failed: 0 },
+        hl7Counts: { pending: null, failed: null },
         leadListTruncated: false,
       });
       setLoading(false);
@@ -318,7 +319,7 @@ export function AdminReferralsPageClient({
         outreachRows: [],
         activeAdmissionCaseByLeadId: {},
         handoffRollup: { blocked: 0, ready: 0, onboarding: 0 },
-        hl7Counts: { pending: 0, failed: 0 },
+        hl7Counts: { pending: null, failed: null },
         leadListTruncated: false,
       });
     } finally {
@@ -455,7 +456,7 @@ export function AdminReferralsPageClient({
   const admissionActiveTotal = Object.keys(activeAdmissionCaseByLeadId).length;
 
   const handoffCardMuted = handoffRollup.blocked === 0;
-  const hl7NeedsReview = hl7Counts.failed > 0;
+  const hl7NeedsReview = (hl7Counts.failed ?? 0) > 0;
 
   const kpiCtx: ReferralsHubKpiContext = {
     loading,
@@ -842,9 +843,7 @@ export function AdminReferralsPageClient({
             <div className="min-w-0 space-y-1">
               <p className="text-[15px] font-medium text-foreground">Referral inbox (HL7 ADT)</p>
               <p className="text-[13px] text-muted-foreground">
-                {loading
-                  ? "Loading queue counts…"
-                  : `Pending ${hl7Counts.pending}, failed ${hl7Counts.failed}. Open the inbox to triage, replay, or discard messages — this count is facility-scoped.`}
+                {formatReferralsHubHl7Summary({ loading, ...hl7Counts })}
               </p>
             </div>
             <Link

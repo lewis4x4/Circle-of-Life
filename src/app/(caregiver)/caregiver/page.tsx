@@ -30,6 +30,7 @@ import {
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { formatDisplayDate } from "@/lib/format/datetime";
+import { headCountOrNull } from "@/lib/metrics/require-head-count";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/display/enum-label";
@@ -46,7 +47,7 @@ export default function CaregiverHomePage() {
   const [shifts, setShifts] = useState<FacilityShiftDefinition[]>([]);
   const [brief, setBrief] = useState<CaregiverShiftBrief | null>(null);
   const [activeOutbreak, setActiveOutbreak] = useState<{ id: string; infection_type: string } | null>(null);
-  const [myOutbreakActions, setMyOutbreakActions] = useState(0);
+  const [myOutbreakActions, setMyOutbreakActions] = useState<number | null>(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,7 +96,8 @@ export default function CaregiverHomePage() {
           .eq("outbreak_id", first.id)
           .eq("assigned_to", user.id)
           .in("status", ["pending", "in_progress"]);
-        setMyOutbreakActions(cnt.count ?? 0);
+        // Null when the count could not be read; the banner says so instead of hiding the tasks (COL-649).
+        setMyOutbreakActions(headCountOrNull(cnt));
       } else {
         setMyOutbreakActions(0);
       }
@@ -265,7 +267,12 @@ export default function CaregiverHomePage() {
             <p className="mb-3 text-sm text-muted-foreground">
               Strict facility protocols are in effect. Check your assigned task list.
             </p>
-            {myOutbreakActions > 0 && (
+            {myOutbreakActions === null ? (
+              <p className="text-xs font-medium text-destructive">
+                Your assigned outbreak tasks could not be loaded. Check the task list directly.
+              </p>
+            ) : null}
+            {myOutbreakActions !== null && myOutbreakActions > 0 && (
               <div className="inline-flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5">
                 <CheckCircle2 className="h-4 w-4 text-destructive" />
                 <span className="text-xs font-semibold text-foreground">
