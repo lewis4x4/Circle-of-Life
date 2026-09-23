@@ -159,7 +159,7 @@ export default function AdminDriveCutoverPage() {
           </h1>
           <p className="text-sm text-muted-foreground max-w-2xl">
             Planned cutoff recorded in the rollout plan: <strong>{DRIVE_CUTOFF_DATE}</strong>. Confirm a current cutover date and verified content before relying on Haven as the sole document store.{" "}
-            <Link href="/admin/drive-import" className="text-info hover:underline">
+            <Link href="/admin/drive-import" className="text-info underline underline-offset-4 hover:decoration-2">
               Manage imports
             </Link>
             .

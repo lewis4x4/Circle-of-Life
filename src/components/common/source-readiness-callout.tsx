@@ -29,7 +29,7 @@ export function SourceReadinessCallout({
         href={action.href}
         className={cn(
           buttonVariants({ variant: "ghost", size: "sm" }),
-          "mt-3 h-8 px-0 text-xs font-medium text-warning hover:bg-transparent hover:text-warning",
+          "mt-3 h-8 px-0 text-xs font-medium text-warning underline underline-offset-4 hover:bg-transparent hover:text-warning hover:decoration-2",
         )}
       >
         {action.ctaLabel}
