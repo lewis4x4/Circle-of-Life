@@ -194,7 +194,7 @@ describe("buildFacilitySnapshotTiles", () => {
     expect(byKey.presence.value).toBe("38 in-house");
     expect(byKey.presence.detail).toBe("2 hospital · 0 on leave · 40 on the roster");
     expect(byKey.receivables.value).toBe("$4,525.00");
-    expect(byKey.receivables.detail).toBe("3 open invoices with a balance due");
+    expect(byKey.receivables.detail).toBe("3 sent invoices with a balance due");
     expect(byKey.safety.value).toBe("1 open incident");
     expect(byKey.safety.detail).toBe("2 medication errors month to date");
   });

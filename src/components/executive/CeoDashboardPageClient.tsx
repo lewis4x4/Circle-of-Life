@@ -29,6 +29,8 @@ import {
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
 import {
+  EXECUTIVE_AR_TILE_LABEL,
+  executiveArDraftsCaption,
   formatExecutiveArOutstandingCents,
   formatExecutiveOccupancyPctWithSuffix,
   formatExecutiveOpenIncidentCount,
@@ -134,7 +136,7 @@ export default function CeoDashboardPageClient({
 
   const lanes: OfficerLane[] = [
     {
-      stat: arCents == null ? "Financials" : `${money.format(arCents / 100)} AR`,
+      stat: arCents == null ? "Financials" : `${money.format(arCents / 100)} AR (sent)`,
       title: "Finance hub",
       description: "Billed revenue, labor pressure, and monthly financials.",
       href: "/admin/finance",
@@ -196,7 +198,7 @@ export default function CeoDashboardPageClient({
             <OfficerKpiStrip>
               <OfficerKpiTile label={occupancyLabel} value={occValue} />
               <OfficerKpiTile label="Open deficiencies" value={deficienciesValue} tone={officerAlarmTone(deficiencies, "warning")} />
-              <OfficerKpiTile label="Total AR outstanding" value={arValue} />
+              <OfficerKpiTile label={EXECUTIVE_AR_TILE_LABEL} value={arValue} caption={executiveArDraftsCaption(kpis?.financial)} />
               <OfficerKpiTile label="Open incidents" value={incidentsValue} tone={officerAlarmTone(openIncidents, "danger")} />
             </OfficerKpiStrip>
             {occupancyFootnote ? (

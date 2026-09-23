@@ -186,7 +186,7 @@ describe("snapshot evidence", () => {
 
   it("names the period billed revenue covers", () => {
     expect(billedRevenuePeriodLine(resolveSnapshotState({ row: RUN, todayIsoDate: "2026-09-15" }))).toBe(
-      "Invoices dated 2026-09-01 through 2026-09-15.",
+      "Sent invoices dated 2026-09-01 through 2026-09-15.",
     );
     expect(billedRevenuePeriodLine({ kind: "never_recorded" })).toBe(
       "No billing period is recorded with this figure.",

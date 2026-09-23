@@ -11,6 +11,7 @@ import { surveyResultDisplayLabel } from "@/lib/admin/facilities/facility-consta
 import { portfolioOccupancyKpiTextClass } from "@/lib/admin/facilities/portfolio-metrics";
 import { createClient } from "@/lib/supabase/client";
 import { fetchPresenceCensus, presenceSummaryText, type PresenceCensus } from "@/lib/executive/presence-census";
+import { formatDisplayDate } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
 import { formatFacilityOverviewEmail } from "@/lib/facilities/overview-tab-display-copy";
@@ -305,11 +306,7 @@ export function OverviewTab({
             <div className="flex justify-between text-sm">
               <span className="text-[13px] text-muted-foreground">AHCA license</span>
               <span className="font-medium tabular-nums text-foreground">
-                {new Date(facility.ahca_license_expiration).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
+                {formatDisplayDate(facility.ahca_license_expiration)}
               </span>
             </div>
           ) : (
@@ -323,13 +320,7 @@ export function OverviewTab({
           <div className="flex justify-between text-sm">
             <span className="text-[13px] text-muted-foreground">Survey date</span>
             <span className="font-medium text-foreground">
-              {facility.last_survey_date
-                ? new Date(facility.last_survey_date).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : "No survey yet"}
+              {formatDisplayDate(facility.last_survey_date, { fallback: "No survey yet" })}
             </span>
           </div>
           {facility.last_survey_result && (

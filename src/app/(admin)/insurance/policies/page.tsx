@@ -10,7 +10,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -208,7 +208,7 @@ export default function InsurancePoliciesPage() {
               <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or adding a new policy.</p>
             </div>
           ) : (
-            <>
+            <TableRowList label="Insurance policies">
               <TableRowHeader>
                 <span className="w-[110px] shrink-0">Status</span>
                 <span className="flex-[2] min-w-0">Carrier / policy no.</span>
@@ -264,7 +264,7 @@ export default function InsurancePoliciesPage() {
                   );
                 })}
               </MotionList>
-            </>
+            </TableRowList>
           )}
         </div>
       </div>
