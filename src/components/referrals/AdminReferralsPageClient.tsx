@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { format, subDays, startOfQuarter } from "date-fns";
 import { ClipboardList, Download, Search, Loader2, Mic } from "lucide-react";
 
-import { ReferralsHubNav } from "@/app/(admin)/admin/referrals/referrals-hub-nav";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -501,7 +500,6 @@ export function AdminReferralsPageClient({
             )}
           </div>
         </div>
-        <ReferralsHubNav />
       </header>
 
       {noFacility ? (

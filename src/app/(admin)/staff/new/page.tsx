@@ -204,19 +204,19 @@ export default function AdminNewStaffPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">First name</label>
-                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" />
+                  <label htmlFor="staff-first-name" className="text-xs font-medium text-slate-600 dark:text-slate-400">First name</label>
+                  <Input id="staff-first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Last name</label>
-                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" />
+                  <label htmlFor="staff-last-name" className="text-xs font-medium text-slate-600 dark:text-slate-400">Last name</label>
+                  <Input id="staff-last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Role</label>
-                  <select
+                  <label htmlFor="staff-role" className="text-xs font-medium text-slate-600 dark:text-slate-400">Role</label>
+                  <select id="staff-role"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={staffRole}
                     onChange={(e) => setStaffRole(e.target.value)}
@@ -229,8 +229,8 @@ export default function AdminNewStaffPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Employment status</label>
-                  <select
+                  <label htmlFor="staff-employment-status" className="text-xs font-medium text-slate-600 dark:text-slate-400">Employment status</label>
+                  <select id="staff-employment-status"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={employmentStatus}
                     onChange={(e) => setEmploymentStatus(e.target.value)}
@@ -263,8 +263,8 @@ export default function AdminNewStaffPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone (optional)</label>
-                  <Input
+                  <label htmlFor="staff-phone-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone (optional)</label>
+                  <Input id="staff-phone-optional"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -272,8 +272,8 @@ export default function AdminNewStaffPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Email (optional)</label>
-                  <Input
+                  <label htmlFor="staff-email-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">Email (optional)</label>
+                  <Input id="staff-email-optional"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
