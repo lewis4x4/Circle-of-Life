@@ -17,6 +17,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -148,22 +149,22 @@ export default function AdminMorningBriefingPage() {
               the stand-up meeting. Data is live for the facilities you have access to; times are Eastern.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider"
-            disabled={!data}
-            onClick={printBriefing}
-          >
-            <Printer className="h-4 w-4" aria-hidden />
-            Print one-pager
-          </Button>
+          {facilityReady ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider"
+              disabled={!data}
+              onClick={printBriefing}
+            >
+              <Printer className="h-4 w-4" aria-hidden />
+              Print one-pager
+            </Button>
+          ) : null}
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — the morning huddle is a per-facility briefing.
-          </p>
+          <FacilityGateNotice reason="The morning huddle is one building's briefing: its overnight incidents, census moves, shift roster and med flags." />
         ) : null}
 
         {facilityReady && isLoading ? <AdminTableLoadingState /> : null}
