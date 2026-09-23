@@ -6,9 +6,11 @@ import { ClipboardList, FileSignature, ShieldAlert } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
+  fetchActiveCarePlanCount,
   fetchCarePlanReviewsDue,
   type CarePlanReviewDueRow,
 } from "@/lib/care-plans/reviews-due";
+import { clinicalQueueCount, describeClinicalQueue, formatQueueChip } from "@/lib/clinical/clinical-queue-state";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -34,18 +36,21 @@ function StatusBadge({ row }: { row: CarePlanReviewDueRow }) {
 type CarePlanReviewsDuePageClientProps = {
   initialRows: CarePlanReviewDueRow[];
   initialError: string | null;
+  initialActivePlanCount: number | null;
   initialFacilityId: string | null;
 };
 
 export function CarePlanReviewsDuePageClient({
   initialRows,
   initialError,
+  initialActivePlanCount,
   initialFacilityId,
 }: CarePlanReviewsDuePageClientProps) {
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<CarePlanReviewDueRow[]>(initialRows);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
+  const [activePlanCount, setActivePlanCount] = useState<number | null>(initialActivePlanCount);
   const [dismissing, setDismissing] = useState<{ alertId: string; notes: string } | null>(null);
   const [busyAlertId, setBusyAlertId] = useState<string | null>(null);
   const [alertError, setAlertError] = useState<string | null>(null);
@@ -62,11 +67,16 @@ export function CarePlanReviewsDuePageClient({
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchCarePlanReviewsDue(selectedFacilityId);
+      const [data, planCount] = await Promise.all([
+        fetchCarePlanReviewsDue(selectedFacilityId),
+        fetchActiveCarePlanCount(selectedFacilityId),
+      ]);
       setRows(data);
+      setActivePlanCount(planCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load care plan reviews.");
       setRows([]);
+      setActivePlanCount(null);
     } finally {
       setIsLoading(false);
     }
@@ -104,6 +114,14 @@ export function CarePlanReviewsDuePageClient({
   const overdueCount = useMemo(() => rows.filter((row) => isDateDue(row) && row.daysOverdue > 0).length, [rows]);
   const dueTodayCount = useMemo(() => rows.filter((row) => isDateDue(row) && row.daysOverdue === 0).length, [rows]);
   const flaggedCount = useMemo(() => rows.filter((row) => row.reasons.some((r) => r.kind === "alert")).length, [rows]);
+  const queueState = describeClinicalQueue({
+    scopeReady: true,
+    error,
+    scopeSize: activePlanCount,
+    itemCount: rows.length,
+  });
+  const chip = (count: number, noun: string) =>
+    formatQueueChip(clinicalQueueCount(queueState, count, "No active care plans"), noun);
 
   if (isLoading) {
     return (
@@ -152,18 +170,36 @@ export function CarePlanReviewsDuePageClient({
 
         <div className="flex flex-wrap gap-3">
           <div className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold tracking-wide text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
-            {overdueCount} overdue
+            {chip(overdueCount, "overdue")}
           </div>
           <div className="rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-bold tracking-wide text-primary">
-            {dueTodayCount} due today
+            {chip(dueTodayCount, "due today")}
           </div>
           <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold tracking-wide text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
-            {flaggedCount} flagged by a change
+            {chip(flaggedCount, "flagged by a change")}
           </div>
         </div>
       </div>
 
-      {rows.length === 0 ? (
+      {queueState === "nothing_on_file" ? (
+        <div
+          data-queue-state={queueState}
+          className="rounded-lg border border-dashed border-border bg-muted/40 px-8 py-20 text-center"
+        >
+          <ClipboardList className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-foreground">No active care plans</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            No resident in this scope has an active care plan, so no review can be due. Plans start from the
+            Form 1823 alignment queue.
+          </p>
+          <Link
+            href="/admin/care-plans/form-1823-alignment"
+            className={cn(buttonVariants({ variant: "outline" }), "mt-6")}
+          >
+            Open Form 1823 alignment
+          </Link>
+        </div>
+      ) : rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-8 py-20 text-center dark:border-white/10 dark:bg-white/[0.02]">
           <ClipboardList className="mx-auto mb-4 h-14 w-14 text-slate-300 dark:text-slate-600" />
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">No reviews due</h2>

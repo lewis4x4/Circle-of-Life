@@ -76,5 +76,6 @@ it("reads the profile and the facility grants at the same time", async () => {
   expect(started).toEqual(["user_profiles", "user_facility_access"]);
   releaseProfile();
   const result = await pending;
-  expect(result).toEqual({ ok: true, ctx: { facilityId: "a", organizationId: "org", facilityName: "A", timeZone: "America/New_York" } });
+  // The same mock answers the later shift-definition read; this test is about the grant reads.
+  expect(result).toMatchObject({ ok: true, ctx: { facilityId: "a", organizationId: "org", facilityName: "A", timeZone: "America/New_York" } });
 });

@@ -93,8 +93,11 @@ describe("Form1823AlignmentPageClient", () => {
     expect(screen.getByRole("button", { name: "Form 1823 not recorded: 5 of 5 residents" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "No active care plan: 5 of 5 residents" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Alignment cannot be assessed: 5 of 5 residents" })).toBeInTheDocument();
-    // Nothing was compared, so the gaps count says so instead of implying a clean review.
-    expect(screen.getByRole("button", { name: "Needs the plan does not answer: 0 of 0 compared" })).toBeInTheDocument();
+    // Nothing was compared, so the gaps tile shows no count instead of a "(0)" that reads as a clean review.
+    const gaps = screen.getByRole("button", { name: "Needs the plan does not answer: none compared yet" });
+    expect(gaps).toBeInTheDocument();
+    expect(gaps.textContent).not.toContain("(0)");
+    expect(screen.getByRole("button", { name: "1823 expired or older than 3 years: none recorded" })).toBeInTheDocument();
     const rows = desktopRows();
     expect(rows).toHaveLength(5);
     for (const row of rows) {

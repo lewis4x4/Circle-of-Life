@@ -207,3 +207,47 @@ export async function fetchCarePlanReviewsDueFromSupabase(
     };
   });
 }
+
+/** How much the Clinical Desk queues actually examined (COL-649). */
+export type ClinicalDeskScope = {
+  /** Assessments on file for the facility, any date. */
+  assessmentsOnFile: number;
+  /** Active care plans for the facility. */
+  activeCarePlans: number;
+};
+
+type HeadCountResult = { count: number | null; error: QueryError | null };
+
+function requireCount(res: HeadCountResult, what: string): number {
+  if (res.error) throw res.error;
+  if (typeof res.count !== "number") throw new Error(`${what} count unavailable`);
+  return res.count;
+}
+
+/**
+ * An empty overdue queue only means "all clear" when there is something to be
+ * overdue. With no assessments or no active plans on file the queue is a gap.
+ */
+export async function fetchClinicalDeskScope(
+  selectedFacilityId: string,
+  supabase: SupabaseClient<Database> = createClient(),
+): Promise<ClinicalDeskScope> {
+  const [assessmentRes, planRes] = (await Promise.all([
+    supabase
+      .from("assessments" as never)
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .eq("facility_id", selectedFacilityId),
+    supabase
+      .from("care_plans" as never)
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .eq("status", "active")
+      .eq("facility_id", selectedFacilityId),
+  ])) as unknown as [HeadCountResult, HeadCountResult];
+
+  return {
+    assessmentsOnFile: requireCount(assessmentRes, "Assessments"),
+    activeCarePlans: requireCount(planRes, "Care plans"),
+  };
+}

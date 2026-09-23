@@ -5,7 +5,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => mocks.path, useRouter: ()
 vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: mocks.role, loading: false, organizationId: "org", user: { id: "user", app_metadata: { app_role: mocks.role } } }) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 vi.mock("@/lib/caregiver/facility-context", () => ({ loadCaregiverFacilityContextForUser: async () => ({ ok: true, ctx: { facilityId: "facility", facilityName: "Synthetic facility", timeZone: "America/New_York" } }) }));
-vi.mock("@/lib/rounding/live-board-fetch", () => ({ fetchLiveBoardShifts: mocks.shifts }));
+vi.mock("@/lib/caregiver/shift", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/caregiver/shift")>()), fetchFacilityShiftDefinitions: mocks.shifts }));
 vi.mock("@/hooks/useRoundingOfflineSync", () => ({ useRoundingOfflineSync: () => ({ ready: mocks.ready, lastError: mocks.lastError, online: true, pendingCount: 0, isSyncing: false, flush: vi.fn() }) }));
 vi.mock("@/components/caregiver/WorkingFacilitySelector", () => ({ WorkingFacilitySelector: () => null }));
 vi.mock("@/components/rounding/RoundingOutbox", () => ({ RoundingOutbox: () => null }));
@@ -13,16 +13,16 @@ vi.mock("@/components/feedback/PilotFeedbackLauncher", () => ({ PilotFeedbackLau
 import { CaregiverShell } from "./CaregiverShell";
 beforeEach(() => {
   mocks.ready = false; mocks.lastError = null; mocks.role = "med_tech"; mocks.path = "/caregiver/rounds";
-  mocks.shifts.mockResolvedValue([
-    { shift_key: "early", label: "Early crew", starts_at_local: "04:30", ends_at_local: "16:30" },
-    { shift_key: "late", label: "Late crew", starts_at_local: "16:30", ends_at_local: "04:30" },
-  ]);
+  mocks.shifts.mockResolvedValue(new Map([["facility", [
+    { shiftKey: "early", label: "Early crew", startsAtLocal: "04:30", endsAtLocal: "16:30", sortOrder: 0, rosterShiftType: "day" },
+    { shiftKey: "late", label: "Late crew", startsAtLocal: "16:30", endsAtLocal: "04:30", sortOrder: 1, rosterShiftType: "night" },
+  ]]]));
   vi.useFakeTimers({ toFake: ["Date"] });
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); });
 it.each([["2026-09-20T16:29:00-04:00", "Early crew shift"], ["2026-09-20T16:30:00-04:00", "Late crew shift"], ["2026-09-21T04:29:00-04:00", "Late crew shift"]])("uses the configured shift at %s", async (at, label) => {
   vi.setSystemTime(new Date(at)); render(<CaregiverShell>Content</CaregiverShell>);
-  await screen.findByText(label); expect(mocks.shifts).toHaveBeenCalledWith(expect.anything(), "facility");
+  await screen.findByText(label); expect(mocks.shifts).toHaveBeenCalledWith(expect.anything(), ["facility"]);
   expect(screen.queryByText(/evening shift/i)).toBeNull();
 });
 it("does not invent a shift when configuration fails and does not announce unverified sync", async () => {

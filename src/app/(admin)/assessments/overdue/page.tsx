@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 import { AdminOverdueAssessmentsPageClient } from "@/components/assessments/AdminOverdueAssessmentsPageClient";
 import {
   fetchCarePlanReviewsDueFromSupabase,
+  fetchClinicalDeskScope,
   fetchOverdueAssessmentsFromSupabase,
+  type ClinicalDeskScope,
   NO_FACILITY_SOURCE_NOTICE,
   type CarePlanReviewDueRow,
   type OverdueAssessmentRow,
@@ -26,14 +28,16 @@ export default async function OverdueAssessmentsPage() {
   let initialCarePlans: CarePlanReviewDueRow[] = [];
   let initialError: string | null = null;
   let initialSourceNotice: string | null = null;
+  let initialScope: ClinicalDeskScope | null = null;
 
   if (!isValidFacilityIdForQuery(initialFacilityId)) {
     initialSourceNotice = NO_FACILITY_SOURCE_NOTICE;
   } else {
     try {
-      [initialAssessments, initialCarePlans] = await Promise.all([
+      [initialAssessments, initialCarePlans, initialScope] = await Promise.all([
         fetchOverdueAssessmentsFromSupabase(initialFacilityId, supabase),
         fetchCarePlanReviewsDueFromSupabase(initialFacilityId, supabase),
+        fetchClinicalDeskScope(initialFacilityId, supabase),
       ]);
     } catch (error) {
       initialError =
@@ -47,6 +51,7 @@ export default async function OverdueAssessmentsPage() {
       initialCarePlans={initialCarePlans}
       initialError={initialError}
       initialFacilityId={initialFacilityId}
+      initialScope={initialScope}
       initialSourceNotice={initialSourceNotice}
     />
   );
