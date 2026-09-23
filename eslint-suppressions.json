@@ -324,7 +324,7 @@
       "count": 1
     },
     "haven-ui/no-mono-prose": {
-      "count": 12
+      "count": 5
     }
   },
   "src/app/(admin)/admin/referrals/[id]/page.tsx": {
@@ -845,7 +845,7 @@
       "count": 1
     },
     "haven-ui/no-mono-prose": {
-      "count": 4
+      "count": 3
     }
   },
   "src/app/(admin)/training/completions/new/page.tsx": {
@@ -1480,7 +1480,7 @@
       "count": 1
     },
     "haven-ui/no-mono-prose": {
-      "count": 12
+      "count": 8
     }
   },
   "src/components/staff/StaffTimeclockAccess.tsx": {
