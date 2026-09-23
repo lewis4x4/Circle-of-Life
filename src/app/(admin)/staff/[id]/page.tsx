@@ -452,7 +452,7 @@ function CertificationBadge({ certifications }: { certifications: CertificationS
       </Badge>
     );
   }
-  if (certifications === "none_on_file") {
+  if (certifications === "not_verified") {
     return (
       <Badge variant="outline" tone="none" className={RECORD_HEADER_CHIP}>
         {label}
