@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Banknote, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { fetchFamilyPaymentsList, formatUsd, type FamilyPaymentRow } from "@/lib/family/family-billing-data";
 import {
@@ -104,7 +104,9 @@ export default function FamilyPaymentsPage() {
   }
 
   return (
-    <div className="space-y-4 pb-16 md:pb-0">
+    // Same centred column as the other family pages, so the header is not
+    // pinned under the top edge and the card is not full-bleed (COL-687).
+    <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-16 pt-12 md:pb-8 md:pt-20">
       <FamilySectionIntro
         active="billing"
         title={FAMILY_PAYMENTS_PAGE_TITLE}
@@ -124,15 +126,6 @@ export default function FamilyPaymentsPage() {
 
       {/* Warm split-theme: muted surface softens the family list compared to admin. */}
       <div className="rounded-lg border border-border bg-muted p-6 md:p-8">
-        <div className="mb-5 flex items-center gap-3">
-          <Banknote className="h-6 w-6 text-warning" />
-          <div>
-            <h2 className="text-2xl font-serif text-foreground">Payments</h2>
-            <p className="text-sm text-muted-foreground">
-              Posted payments visible for linked residents. This page is for review only.
-            </p>
-          </div>
-        </div>
         <div className="mb-4">
           <Badge
             variant="outline"

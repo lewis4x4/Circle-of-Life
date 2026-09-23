@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
 import { formatDateTime } from "@/lib/timeclock/display-copy";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Device = { id: string; label: string; enrolled_at: string; last_seen_at: string | null; revoked_at: string | null; throttled_until: string | null };
 
@@ -143,33 +144,35 @@ export function TimeclockTab({ facilityId, fetchImpl }: TimeclockTabProps) {
         {loading ? null : active.length === 0 ? (
           <p className="text-sm text-muted-foreground">No tablets enrolled.</p>
         ) : (
-          <table className="w-full text-sm">
-            <caption className="sr-only">Enrolled tablets</caption>
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th scope="col" className="px-2 py-1">Tablet</th>
-                <th scope="col" className="px-2 py-1">Enrolled</th>
-                <th scope="col" className="px-2 py-1">Last seen</th>
-                <th scope="col" className="px-2 py-1"><span className="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {active.map((d) => (
-                <tr key={d.id} className="border-t border-border">
-                  <td className="px-2 py-2">{d.label}</td>
-                  <td className="px-2 py-2 tabular-nums text-muted-foreground">{formatDateTime(d.enrolled_at)}</td>
-                  <td className="px-2 py-2 tabular-nums text-muted-foreground">{d.last_seen_at ? formatDateTime(d.last_seen_at) : "Never"}</td>
-                  <td className="px-2 py-2 text-right">
-                    {canManage ? (
-                      <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void revoke(d.id)}>
-                        Revoke
-                      </Button>
-                    ) : null}
-                  </td>
+          <HorizontalScroll label="Timeclock tablets">
+            <table className="w-full text-sm">
+              <caption className="sr-only">Enrolled tablets</caption>
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th scope="col" className="px-2 py-1">Tablet</th>
+                  <th scope="col" className="px-2 py-1">Enrolled</th>
+                  <th scope="col" className="px-2 py-1">Last seen</th>
+                  <th scope="col" className="px-2 py-1"><span className="sr-only">Actions</span></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {active.map((d) => (
+                  <tr key={d.id} className="border-t border-border">
+                    <td className="px-2 py-2">{d.label}</td>
+                    <td className="px-2 py-2 tabular-nums text-muted-foreground">{formatDateTime(d.enrolled_at)}</td>
+                    <td className="px-2 py-2 tabular-nums text-muted-foreground">{d.last_seen_at ? formatDateTime(d.last_seen_at) : "Never"}</td>
+                    <td className="px-2 py-2 text-right">
+                      {canManage ? (
+                        <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void revoke(d.id)}>
+                          Revoke
+                        </Button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         )}
         {revoked.length > 0 ? <p className="mt-3 text-xs text-muted-foreground">{revoked.length} revoked tablet{revoked.length === 1 ? "" : "s"} kept for history.</p> : null}
       </RecordDetailSection>

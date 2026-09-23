@@ -10,6 +10,10 @@
  * StatCard / KpiCard / MetricCard / KPITile (`state={metricFromCount(...)}`),
  * and gate reassuring copy on `canClaimAllClear(...)`.
  *
+ * If a finding is genuinely not a displayed metric (a pagination total, an
+ * accumulator), put `false-all-clear-ok: <why>` on that line or the line
+ * above instead of leaving it in the baseline.
+ *
  * After removing debt, shrink the baseline:
  *   UPDATE_FALSE_ALL_CLEAR_BASELINE=1 npx vitest run src/lib/metrics/false-all-clear.source.test.ts
  * Never regenerate it to admit a new finding.

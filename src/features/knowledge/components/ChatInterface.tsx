@@ -242,7 +242,7 @@ export function ChatInterface({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                inputDisabled ? "Loading organization…" : "Ask about residents, meds, census, incidents, policies…"
+                inputDisabled ? "Loading organization…" : "Ask about residents, meds, policies…"
               }
               rows={1}
               disabled={inputDisabled}

@@ -25,6 +25,7 @@ import {
 } from "@/lib/rounding/cadence-settings";
 import { channelLabel, staffRoleLabel } from "@/lib/rounding/cadence-settings-copy";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export function CadenceLadderList({
   ladder,
@@ -56,88 +57,90 @@ export function CadenceLadderList({
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <table className="w-full text-[13px]">
-          <caption className="sr-only">{label}</caption>
-          <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th scope="col" className="h-9 px-4 font-medium">Step</th>
-              <th scope="col" className="h-9 px-4 font-medium">When</th>
-              <th scope="col" className="h-9 px-4 font-medium">Who hears</th>
-              <th scope="col" className="h-9 px-4 font-medium">How</th>
-              {onEdit || onTestSend ? <th scope="col" className="h-9 px-4 font-medium sr-only">Actions</th> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {ladder.map((rung) => (
-              <tr
-                key={rung.rung_key}
-                className={cn("border-b border-border/60 last:border-0", !rung.enabled && "opacity-60")}
-              >
-                <td className="h-10 px-4 align-middle text-foreground">
-                  {rung.label}
-                  {rung.is_terminal ? (
-                    <span className="ml-2 text-muted-foreground">final step</span>
-                  ) : null}
-                  {rung.assigned_staff_only ? (
-                    <span className="ml-2 text-muted-foreground">staff reminder, not an escalation</span>
-                  ) : null}
-                  {!rung.enabled ? <span className="ml-2 text-muted-foreground">turned off</span> : null}
-                </td>
-                <td className="h-10 px-4 align-middle tabular-nums text-muted-foreground">
-                  {reference ? (
-                    <>
-                      {formatMinuteOfDay(rungFireMinute(reference.closes_minute, rung.offset_minutes))}
-                      <span className="ml-2 text-[12px]">{formatOffsetFromClose(rung.offset_minutes)}</span>
-                    </>
-                  ) : (
-                    formatOffsetFromClose(rung.offset_minutes)
-                  )}
-                </td>
-                <td className="h-10 px-4 align-middle text-muted-foreground">
-                  <span className="flex flex-wrap items-baseline gap-x-2">
-                    {rung.include_assigned_staff ? <span>the staff member the check belongs to</span> : null}
-                    {rung.roles.map((role) => (
-                      <span
-                        key={role.staff_role}
-                        className={cn(role.holder_count === 0 && "text-warning")}
-                      >
-                        {staffRoleLabel(role.staff_role)} ({role.holder_count})
-                      </span>
-                    ))}
-                    {rung.use_standing_alert_routes ? (
-                      <span>standing alert audience ({rung.standing_alert_route_count})</span>
+        <HorizontalScroll label="Cadence ladders">
+          <table className="w-full text-[13px]">
+            <caption className="sr-only">{label}</caption>
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th scope="col" className="h-9 px-4 font-medium">Step</th>
+                <th scope="col" className="h-9 px-4 font-medium">When</th>
+                <th scope="col" className="h-9 px-4 font-medium">Who hears</th>
+                <th scope="col" className="h-9 px-4 font-medium">How</th>
+                {onEdit || onTestSend ? <th scope="col" className="h-9 px-4 font-medium sr-only">Actions</th> : null}
+              </tr>
+            </thead>
+            <tbody>
+              {ladder.map((rung) => (
+                <tr
+                  key={rung.rung_key}
+                  className={cn("border-b border-border/60 last:border-0", !rung.enabled && "opacity-60")}
+                >
+                  <td className="h-10 px-4 align-middle text-foreground">
+                    {rung.label}
+                    {rung.is_terminal ? (
+                      <span className="ml-2 text-muted-foreground">final step</span>
                     ) : null}
-                  </span>
-                </td>
-                <td className="h-10 px-4 align-middle text-muted-foreground">
-                  {rung.channels.map((channel) => channelLabel(channel)).join(", ")}
-                </td>
-                {onEdit || onTestSend ? (
-                  <td className="h-10 px-4 align-middle text-right">
-                    <span className="inline-flex gap-1">
-                      {onTestSend ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onTestSend(rung.rung_key)}
-                          disabled={testSendBusyRungKey === rung.rung_key}
+                    {rung.assigned_staff_only ? (
+                      <span className="ml-2 text-muted-foreground">staff reminder, not an escalation</span>
+                    ) : null}
+                    {!rung.enabled ? <span className="ml-2 text-muted-foreground">turned off</span> : null}
+                  </td>
+                  <td className="h-10 px-4 align-middle tabular-nums text-muted-foreground">
+                    {reference ? (
+                      <>
+                        {formatMinuteOfDay(rungFireMinute(reference.closes_minute, rung.offset_minutes))}
+                        <span className="ml-2 text-[12px]">{formatOffsetFromClose(rung.offset_minutes)}</span>
+                      </>
+                    ) : (
+                      formatOffsetFromClose(rung.offset_minutes)
+                    )}
+                  </td>
+                  <td className="h-10 px-4 align-middle text-muted-foreground">
+                    <span className="flex flex-wrap items-baseline gap-x-2">
+                      {rung.include_assigned_staff ? <span>the staff member the check belongs to</span> : null}
+                      {rung.roles.map((role) => (
+                        <span
+                          key={role.staff_role}
+                          className={cn(role.holder_count === 0 && "text-warning")}
                         >
-                          Test send
-                        </Button>
-                      ) : null}
-                      {onEdit ? (
-                        <Button type="button" variant="outline" size="sm" onClick={() => onEdit(rung.rung_key)}>
-                          Edit
-                        </Button>
+                          {staffRoleLabel(role.staff_role)} ({role.holder_count})
+                        </span>
+                      ))}
+                      {rung.use_standing_alert_routes ? (
+                        <span>standing alert audience ({rung.standing_alert_route_count})</span>
                       ) : null}
                     </span>
                   </td>
-                ) : null}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <td className="h-10 px-4 align-middle text-muted-foreground">
+                    {rung.channels.map((channel) => channelLabel(channel)).join(", ")}
+                  </td>
+                  {onEdit || onTestSend ? (
+                    <td className="h-10 px-4 align-middle text-right">
+                      <span className="inline-flex gap-1">
+                        {onTestSend ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onTestSend(rung.rung_key)}
+                            disabled={testSendBusyRungKey === rung.rung_key}
+                          >
+                            Test send
+                          </Button>
+                        ) : null}
+                        {onEdit ? (
+                          <Button type="button" variant="outline" size="sm" onClick={() => onEdit(rung.rung_key)}>
+                            Edit
+                          </Button>
+                        ) : null}
+                      </span>
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </HorizontalScroll>
       </div>
     </section>
   );

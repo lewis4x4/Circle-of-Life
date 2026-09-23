@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { RiskPageSnapshot, RiskSnapshotRow } from "@/lib/risk/load-risk-command";
 import { formatRiskDateTime, formatRiskScore, riskPortfolioTone } from "@/lib/risk/risk-display-copy";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type RiskCommandPageClientProps = {
   initialData: RiskPageSnapshot | null;
@@ -174,35 +175,37 @@ export default function RiskCommandPageClient({
                     description="No risk score has been computed for this scope. Scores appear the morning after the nightly risk scorer runs."
                   />
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 dark:border-slate-800">
-                          <th className="pb-2 pr-4 font-medium">Facility</th>
-                          <th className="pb-2 pr-4 font-medium">Score</th>
-                          <th className="pb-2 pr-4 font-medium">Level</th>
-                          <th className="pb-2 pr-4 font-medium">Delta</th>
-                          <th className="pb-2 pr-4 font-medium">Top driver</th>
-                          <th className="pb-2 font-medium">Last computed</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {snapshot.latestRows.map((row) => (
-                          <tr key={row.id} className="border-b border-slate-100 dark:border-slate-900">
-                            <td className="py-3 pr-4">{row.facilityName}</td>
-                            <td className="py-3 pr-4 font-medium">{row.risk_score}/100</td>
-                            <td className={cn("py-3 pr-4 capitalize", levelTone(row.risk_level))}>{row.risk_level}</td>
-                            <td className={cn("py-3 pr-4", row.score_delta != null && row.score_delta < 0 ? "text-red-600 dark:text-red-400" : "text-slate-600 dark:text-slate-400")}>
-                              {formatDelta(row.score_delta)}
-                            </td>
-                            <td className="py-3 pr-4">
-                              {row.topDrivers[0] ? `${row.topDrivers[0].label} (${row.topDrivers[0].count})` : "Stable"}
-                            </td>
-                            <td className="py-3">{formatRiskDateTime(row.computed_at)}</td>
+                  <div>
+                    <HorizontalScroll label="Risk by facility">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-slate-800">
+                            <th className="pb-2 pr-4 font-medium">Facility</th>
+                            <th className="pb-2 pr-4 font-medium">Score</th>
+                            <th className="pb-2 pr-4 font-medium">Level</th>
+                            <th className="pb-2 pr-4 font-medium">Delta</th>
+                            <th className="pb-2 pr-4 font-medium">Top driver</th>
+                            <th className="pb-2 font-medium">Last computed</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {snapshot.latestRows.map((row) => (
+                            <tr key={row.id} className="border-b border-slate-100 dark:border-slate-900">
+                              <td className="py-3 pr-4">{row.facilityName}</td>
+                              <td className="py-3 pr-4 font-medium">{row.risk_score}/100</td>
+                              <td className={cn("py-3 pr-4 capitalize", levelTone(row.risk_level))}>{row.risk_level}</td>
+                              <td className={cn("py-3 pr-4", row.score_delta != null && row.score_delta < 0 ? "text-red-600 dark:text-red-400" : "text-slate-600 dark:text-slate-400")}>
+                                {formatDelta(row.score_delta)}
+                              </td>
+                              <td className="py-3 pr-4">
+                                {row.topDrivers[0] ? `${row.topDrivers[0].label} (${row.topDrivers[0].count})` : "Stable"}
+                              </td>
+                              <td className="py-3">{formatRiskDateTime(row.computed_at)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </HorizontalScroll>
                   </div>
                 )}
               </CardContent>

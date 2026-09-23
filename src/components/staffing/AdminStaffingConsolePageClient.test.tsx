@@ -240,6 +240,16 @@ describe("<AdminStaffingConsolePageClient />", () => {
     expect(screen.getByText(/coverage is currently sufficient/i)).toBeInTheDocument();
   });
 
+  it("says the staffing ratio check is off and never shows a pass or fail (COL-675)", () => {
+    render(<AdminStaffingConsolePageClient {...loadedProps} />);
+
+    expect(screen.getAllByText(/Staffing ratio check is off/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/non-compliant/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^compliant/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/required \d/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/above the required ratio|below the required ratio/i)).not.toBeInTheDocument();
+  });
+
   it("names the current ratio gap instead of a dash glyph when no snapshot is in scope", () => {
     render(
       <AdminStaffingConsolePageClient

@@ -10,6 +10,7 @@ import { formatTrustLastEntryDate } from "@/lib/finance/trust-display-copy";
 import { loadFinanceTrustData, type ResidentTrustRow } from "@/lib/finance/load-trust-data";
 import { describeTrustSummary } from "@/lib/finance/trust-summary-display";
 import { createClient } from "@/lib/supabase/server";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export default async function FinanceTrustPage() {
   const roleContext = await loadFinanceRoleContextServer();
@@ -86,55 +87,57 @@ export default async function FinanceTrustPage() {
           <CardTitle>Resident trust positions</CardTitle>
           <CardDescription>{rows.length} resident-money record(s) in scope</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="pb-2 pr-4 font-medium">Resident</th>
-                <th className="pb-2 pr-4 font-medium">Trust balance</th>
-                <th className="pb-2 pr-4 font-medium">Legacy balance</th>
-                <th className="pb-2 pr-4 font-medium">Review state</th>
-                <th className="pb-2 pr-4 font-medium">Last entry</th>
-                <th className="pb-2 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.residentId} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-3 pr-4">{row.residentName}</td>
-                  <td className="py-3 pr-4">{row.currentBalanceCents === null ? "Not established" : billingCurrency.format(row.currentBalanceCents / 100)}</td>
-                  <td className="py-3 pr-4">{row.legacyBalanceCents === null ? "None" : billingCurrency.format(row.legacyBalanceCents / 100)}</td>
-                  <td className="py-3 pr-4">
-                    <span>{row.legacyReviewRequired ? "Legacy review required" : !row.ledgerMatchesBalance ? "Ledger difference" : "Bank and books not verified"}</span>
-                  </td>
-                  <td className="py-3 pr-4">{formatTrustLastEntryDate(row.lastEntryDate)}</td>
-                  <td className="py-3">
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/admin/residents/${row.residentId}/billing`}
-                        className="text-primary underline-offset-4 hover:underline"
-                      >
-                        Billing
-                      </Link>
-                      <Link
-                        href="/admin/finance/period-close"
-                        className="text-primary underline-offset-4 hover:underline"
-                      >
-                        Close
-                      </Link>
-                    </div>
-                  </td>
+        <CardContent>
+          <HorizontalScroll label="Trust accounts">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="pb-2 pr-4 font-medium">Resident</th>
+                  <th className="pb-2 pr-4 font-medium">Trust balance</th>
+                  <th className="pb-2 pr-4 font-medium">Legacy balance</th>
+                  <th className="pb-2 pr-4 font-medium">Review state</th>
+                  <th className="pb-2 pr-4 font-medium">Last entry</th>
+                  <th className="pb-2 font-medium">Actions</th>
                 </tr>
-              ))}
-              {rows.length === 0 && !error ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                    No resident-money records in the current scope.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.residentId} className="border-b border-slate-100 dark:border-slate-900">
+                    <td className="py-3 pr-4">{row.residentName}</td>
+                    <td className="py-3 pr-4">{row.currentBalanceCents === null ? "Not established" : billingCurrency.format(row.currentBalanceCents / 100)}</td>
+                    <td className="py-3 pr-4">{row.legacyBalanceCents === null ? "None" : billingCurrency.format(row.legacyBalanceCents / 100)}</td>
+                    <td className="py-3 pr-4">
+                      <span>{row.legacyReviewRequired ? "Legacy review required" : !row.ledgerMatchesBalance ? "Ledger difference" : "Bank and books not verified"}</span>
+                    </td>
+                    <td className="py-3 pr-4">{formatTrustLastEntryDate(row.lastEntryDate)}</td>
+                    <td className="py-3">
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/admin/residents/${row.residentId}/billing`}
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          Billing
+                        </Link>
+                        <Link
+                          href="/admin/finance/period-close"
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          Close
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {rows.length === 0 && !error ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                      No resident-money records in the current scope.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </CardContent>
       </Card>
     </div>

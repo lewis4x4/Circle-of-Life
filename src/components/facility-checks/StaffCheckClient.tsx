@@ -34,6 +34,7 @@ import type {
   StaffCheckHistoryEntry,
   StaffCheckSession,
 } from "@/lib/facility-checks/load-staff-check";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 /**
  * Staff Check — every identity with live access to this facility, resolved one
@@ -241,113 +242,115 @@ export function StaffCheckClient({
         </p>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
-          <caption className="sr-only">
-            Everyone with live access to this facility, with their role, grants, last sign in and decision.
-          </caption>
-          <thead>
-            <tr className="border-b border-border text-left text-xs text-muted-foreground">
-              <th scope="col" className="py-2 pr-3 font-medium">
-                Name
-              </th>
-              <th scope="col" className="py-2 pr-3 font-medium">
-                Role
-              </th>
-              <th scope="col" className="py-2 pr-3 font-medium">
-                Facilities
-              </th>
-              <th scope="col" className="py-2 pr-3 font-medium">
-                Last sign in
-              </th>
-              <th scope="col" className="py-2 pr-3 font-medium">
-                Active
-              </th>
-              <th scope="col" className="py-2 font-medium">
-                Decision
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const key = staffCheckSubjectKey(row);
-              return (
-                <tr key={key} className="border-b border-border align-top">
-                  <th scope="row" className="py-2.5 pr-3 text-left font-normal text-foreground">
-                    <span className="block font-medium">{row.display_name ?? "Unnamed identity"}</span>
-                    {hasDuplicateCandidates(row) ? (
-                      <Badge variant="outline" className="mt-1 text-[11px]">
-                        {DUPLICATE_BADGE_TEXT}
-                      </Badge>
-                    ) : null}
-                  </th>
-                  <td className="py-2.5 pr-3 text-muted-foreground">{row.role_label ?? "Not set"}</td>
-                  <td className="py-2.5 pr-3 text-muted-foreground">{row.facility_grant_count}</td>
-                  <td className="py-2.5 pr-3 text-muted-foreground">
-                    {lastSignInLabel(row.last_sign_in_at, formatFacilityTimestampEt)}
-                  </td>
-                  <td className="py-2.5 pr-3 text-muted-foreground">{row.is_active ? "Yes" : "No"}</td>
-                  <td className="py-2.5">
-                    <fieldset disabled={closed || busyKey === key} className="flex flex-wrap gap-1.5">
-                      <legend className="sr-only">
-                        Decision for {row.display_name ?? "this identity"}
-                      </legend>
-                      {STAFF_CHECK_RESULTS.map((result) => (
-                        <Button
-                          key={result}
-                          type="button"
-                          size="sm"
-                          variant={row.latest_result === result ? "default" : "outline"}
-                          aria-pressed={row.latest_result === result}
-                          className="text-[12px]"
-                          onClick={() => void record(row, result)}
-                        >
-                          {staffCheckResultLabel(result)}
-                        </Button>
-                      ))}
-                    </fieldset>
-                    {pickerKey === key ? (
-                      <div className="mt-2 space-y-2">
-                        <label className="block space-y-1">
-                          <span className="block text-xs text-muted-foreground">
-                            Which identity is this a duplicate of?
-                          </span>
-                          <Input
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            aria-label="Search identities in this organization"
-                            placeholder="Search by name"
-                            className="h-8 text-[12px]"
-                          />
-                        </label>
-                        <ul className="space-y-1">
-                          {duplicateTargetChoices(row, rows, search).map((choice) => (
-                            <li key={staffCheckSubjectKey(choice)}>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="text-[12px]"
-                                onClick={() => void record(row, "duplicate_of", choice)}
-                              >
-                                {choice.display_name ?? "Unnamed identity"}
-                              </Button>
-                            </li>
-                          ))}
-                          {duplicateTargetChoices(row, rows, search).length === 0 ? (
-                            <li className="text-xs text-muted-foreground">
-                              No suggestions. Search by name to pick another identity.
-                            </li>
-                          ) : null}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div>
+        <HorizontalScroll label="Staff check">
+          <table className="w-full min-w-[720px] border-collapse text-sm">
+            <caption className="sr-only">
+              Everyone with live access to this facility, with their role, grants, last sign in and decision.
+            </caption>
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  Name
+                </th>
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  Role
+                </th>
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  Facilities
+                </th>
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  Last sign in
+                </th>
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  Active
+                </th>
+                <th scope="col" className="py-2 font-medium">
+                  Decision
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const key = staffCheckSubjectKey(row);
+                return (
+                  <tr key={key} className="border-b border-border align-top">
+                    <th scope="row" className="py-2.5 pr-3 text-left font-normal text-foreground">
+                      <span className="block font-medium">{row.display_name ?? "Unnamed identity"}</span>
+                      {hasDuplicateCandidates(row) ? (
+                        <Badge variant="outline" className="mt-1 text-[11px]">
+                          {DUPLICATE_BADGE_TEXT}
+                        </Badge>
+                      ) : null}
+                    </th>
+                    <td className="py-2.5 pr-3 text-muted-foreground">{row.role_label ?? "Not set"}</td>
+                    <td className="py-2.5 pr-3 text-muted-foreground">{row.facility_grant_count}</td>
+                    <td className="py-2.5 pr-3 text-muted-foreground">
+                      {lastSignInLabel(row.last_sign_in_at, formatFacilityTimestampEt)}
+                    </td>
+                    <td className="py-2.5 pr-3 text-muted-foreground">{row.is_active ? "Yes" : "No"}</td>
+                    <td className="py-2.5">
+                      <fieldset disabled={closed || busyKey === key} className="flex flex-wrap gap-1.5">
+                        <legend className="sr-only">
+                          Decision for {row.display_name ?? "this identity"}
+                        </legend>
+                        {STAFF_CHECK_RESULTS.map((result) => (
+                          <Button
+                            key={result}
+                            type="button"
+                            size="sm"
+                            variant={row.latest_result === result ? "default" : "outline"}
+                            aria-pressed={row.latest_result === result}
+                            className="text-[12px]"
+                            onClick={() => void record(row, result)}
+                          >
+                            {staffCheckResultLabel(result)}
+                          </Button>
+                        ))}
+                      </fieldset>
+                      {pickerKey === key ? (
+                        <div className="mt-2 space-y-2">
+                          <label className="block space-y-1">
+                            <span className="block text-xs text-muted-foreground">
+                              Which identity is this a duplicate of?
+                            </span>
+                            <Input
+                              value={search}
+                              onChange={(event) => setSearch(event.target.value)}
+                              aria-label="Search identities in this organization"
+                              placeholder="Search by name"
+                              className="h-8 text-[12px]"
+                            />
+                          </label>
+                          <ul className="space-y-1">
+                            {duplicateTargetChoices(row, rows, search).map((choice) => (
+                              <li key={staffCheckSubjectKey(choice)}>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-[12px]"
+                                  onClick={() => void record(row, "duplicate_of", choice)}
+                                >
+                                  {choice.display_name ?? "Unnamed identity"}
+                                </Button>
+                              </li>
+                            ))}
+                            {duplicateTargetChoices(row, rows, search).length === 0 ? (
+                              <li className="text-xs text-muted-foreground">
+                                No suggestions. Search by name to pick another identity.
+                              </li>
+                            ) : null}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </HorizontalScroll>
       </div>
 
       {openItems.length > 0 ? (
