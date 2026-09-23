@@ -10,21 +10,21 @@ Roles are named by what they do. Signatures are collected on the printed packet,
 
 ## Preconditions
 
-Every one of these must hold before the first caregiver is shown the flow. None of them is this run's work to close.
+Every one of these must hold before the first Med-Tech is shown the flow. None of them is this run's work to close.
 
 | # | Precondition | Where it is tracked | State at the time of writing |
 |---|---|---|---|
 | P1 | Migrations 400 to 403 applied and ledgered on production | COL-426 | Met. Both production and Haven HFO Staging carry every object and ledger 400 to 403 by numbered version; COL-444 closed the gap COL-426 was opened for |
 | P2 | Migration 412 applied and ledgered on staging, then production | This run's PR | Not met. 412 is written, replayed and tested, and is deliberately not applied. Until it is, witness statements cannot be completed and the bucket still refuses a PDF |
 | P3 | `care-event-dispatcher` deployed and drift clean | COL-434 | Partly met. The function is deployed and ACTIVE. The Edge Function deploy workflow is still disabled, so a later change to it will not reach the project by itself |
-| P4 | `scripts/care-events/cron-schedules.sql` names the secret the dispatcher actually reads | COL-434 | Not met until PR #578 merges. Following the script as written sets `CARE_EVENT_DISPATCHER_CRON_SECRET` while the function reads `CARE_EVENT_DISPATCHER_SECRET`. The dispatcher then 401s on every cron run, silently, and every Level 2 and above alert sits queued while the caregiver's receipt says the Administrator was told |
+| P4 | `scripts/care-events/cron-schedules.sql` names the secret the dispatcher actually reads | COL-434 | Not met until PR #578 merges. Following the script as written sets `CARE_EVENT_DISPATCHER_CRON_SECRET` while the function reads `CARE_EVENT_DISPATCHER_SECRET`. The dispatcher then 401s on every cron run, silently, and every Level 2 and above alert sits queued while the reporter's receipt says the Administrator was told |
 | P5 | The two cron schedules exist on the project: `care_event_escalation_tick` every minute, and the dispatcher every minute | COL-434 | Verify before go live. Without the tick, an unacknowledged Urgent never escalates |
 | P6 | Forbidden patterns green on pull requests | COL-424 | Met. Fixed on main by PR #573 |
 | P7 | D1 decided: who the Level 2 target is at each building on each shift, and who is on the corporate route | COL-456 | Open |
 | P8 | D2 decided: the floor level for a witnessed fall with no injury | COL-457 | Open |
 | P9 | Routes configured for Homewood Lodge per D1, on the notification settings page | Follows COL-456 | Open |
 | P10 | Push works on the administrator's and the assistant's phones | Operations | Verify with a test event on staging, not in production |
-| P11 | SMS state decided per D5, and whichever way it goes is written down | COL-460 | Open. Until a BAA is signed, the dispatcher marks SMS rows `skipped` with `channel_not_enabled` and the receipt tells the caregiver which channels actually went out |
+| P11 | SMS state decided per D5, and whichever way it goes is written down | COL-460 | Open. Until a BAA is signed, the dispatcher marks SMS rows `skipped` with `channel_not_enabled` and the receipt tells the reporter which channels actually went out |
 
 P7, P8 and P11 are decisions. They are not engineering work and they do not become engineering work by waiting.
 
@@ -63,7 +63,7 @@ D3, D4, D6 and D7 do not block go live: each has a default, each default is what
 3. Walk one synthetic event end to end on staging: a Level 2 fall, a witness statement tapped by a second signed-in staff member, one photo and one PDF attached, the incident form and the physician sheet printed. Confirm a delivery row reached `sent` rather than sitting `queued`.
 4. Turn the flow on for the building.
 
-**Exit condition.** A real event has been captured by a real caregiver and acknowledged by the administrator, and the delivery ledger shows how and when.
+**Exit condition.** A real event has been captured by a real Med-Tech and acknowledged by the administrator, and the delivery ledger shows how and when.
 
 ---
 

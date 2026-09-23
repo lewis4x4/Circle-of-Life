@@ -11,6 +11,8 @@ Roster integrity is the Data Health panel's job (COL-361), not this script's.
 
 Re-run with `npm run homewood:verify-auth`. Set `BASE_URL` to additionally fetch each role's landing route.
 
+> **Roles note (2026-09-22, COL-615):** this is a generated report from 2026-09-16. `nurse`, `caregiver` and `dietary` are retired login roles (folded into `med_tech` and `cook` by migration 468); the CI account map's legacy keys now expect the role each account holds today. See the Roles section in `AGENTS.md`.
+
 ## Top-line
 
 - CI accounts verified: **7 / 7**

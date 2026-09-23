@@ -63,7 +63,7 @@ Transportation involves two distinct workflows at COL:
 
 **External sync** (bidirectional / subscribe URL) remains deferred.
 
-**Shipped (Track D15):** **`/admin/transportation/mileage-approvals`** — queue of **`mileage_logs`** with **`approved_at` IS NULL**; **owner / org_admin / facility_admin / nurse** can set **`approved_at`** / **`approved_by`**; **undo** when **`payroll_export_id`** is still null. Module 13 payroll file generation remains separate.
+**Shipped (Track D15):** **`/admin/transportation/mileage-approvals`** — queue of **`mileage_logs`** with **`approved_at` IS NULL**; **owner / org_admin / facility_admin / med_tech** (the `nurse` grant folded into `med_tech`, migration 468) can set **`approved_at`** / **`approved_by`**; **undo** when **`payroll_export_id`** is still null. Module 13 payroll file generation remains separate.
 
 **Shipped (Track D24):** **`/admin/transportation`** — **Download transport CSV** queries up to **500** **`resident_transport_requests`** rows for the **selected facility** (**`residents(first_name, last_name)`** join), RFC-style CSV of scheduling fields and staff/vehicle UUIDs. **No** new DDL.
 
@@ -353,7 +353,7 @@ CREATE POLICY "Clinical staff manage transport requests"
   ON resident_transport_requests FOR ALL
   USING (organization_id = haven.organization_id()
     AND facility_id = ANY(haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner','org_admin','facility_admin','nurse','caregiver'));
+    AND haven.app_role() IN ('owner','org_admin','facility_admin','med_tech'));
 ```
 
 ---

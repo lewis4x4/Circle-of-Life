@@ -339,21 +339,21 @@ CREATE POLICY "All authenticated users read tags" ON survey_tags FOR SELECT USIN
 
 ALTER TABLE compliance_scores ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see compliance scores" ON compliance_scores FOR SELECT
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE compliance_composite_scores ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see composite scores" ON compliance_composite_scores FOR SELECT
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE compliance_gap_alerts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see gap alerts" ON compliance_gap_alerts FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage gap alerts" ON compliance_gap_alerts FOR UPDATE
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE mock_surveys ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see mock surveys" ON mock_surveys FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE facility_policies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see active policies" ON facility_policies FOR SELECT
@@ -369,13 +369,13 @@ CREATE POLICY "Staff create own acks" ON policy_acknowledgments FOR INSERT
 
 ALTER TABLE actual_surveys ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see actual surveys" ON actual_surveys FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Admin manage actual surveys" ON actual_surveys FOR ALL
   USING (organization_id = auth.organization_id() AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin'));
 
 ALTER TABLE survey_deficiencies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see deficiencies" ON survey_deficiencies FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Admin manage deficiencies" ON survey_deficiencies FOR ALL
   USING (organization_id = auth.organization_id() AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin'));
 
@@ -471,15 +471,15 @@ This produces a report that mirrors what an actual AHCA survey would produce —
 
 | Method | Route | Auth | Roles | Description |
 |--------|-------|------|-------|-------------|
-| GET | `/facilities/:id/compliance/dashboard` | Required | facility_admin, nurse, owner, org_admin | Composite score, category breakdown, top risks, trend chart |
+| GET | `/facilities/:id/compliance/dashboard` | Required | facility_admin, med_tech, owner, org_admin | Composite score, category breakdown, top risks, trend chart |
 | GET | `/facilities/:id/compliance/scores` | Required | Same | Detailed per-tag scores. Params: `date`, `category` |
 | GET | `/facilities/:id/compliance/scores/history` | Required | Same | Score history for trend charts. Params: `tag_id`, `date_from`, `date_to` |
 | GET | `/organizations/compliance/dashboard` | Required | owner, org_admin | Cross-facility compliance comparison |
-| GET | `/facilities/:id/compliance/gap-alerts` | Required | facility_admin, nurse, owner, org_admin | Active gap alerts |
-| PUT | `/gap-alerts/:id/acknowledge` | Required | nurse, facility_admin | Acknowledge alert |
-| PUT | `/gap-alerts/:id/resolve` | Required | nurse, facility_admin | Resolve with notes |
+| GET | `/facilities/:id/compliance/gap-alerts` | Required | facility_admin, med_tech, owner, org_admin | Active gap alerts |
+| PUT | `/gap-alerts/:id/acknowledge` | Required | med_tech, facility_admin | Acknowledge alert |
+| PUT | `/gap-alerts/:id/resolve` | Required | med_tech, facility_admin | Resolve with notes |
 | POST | `/facilities/:id/mock-survey` | Required | facility_admin, owner, org_admin | Trigger mock survey |
-| GET | `/mock-surveys/:id` | Required | facility_admin, nurse, owner, org_admin | Mock survey results |
+| GET | `/mock-surveys/:id` | Required | facility_admin, med_tech, owner, org_admin | Mock survey results |
 | GET | `/facilities/:id/mock-surveys` | Required | Same | Mock survey history |
 | GET | `/facilities/:id/policies` | Required | All staff | List active policies |
 | GET | `/policies/:id` | Required | All staff | Policy detail |
@@ -544,7 +544,7 @@ INSERT INTO survey_tags (tag_number, tag_title, tag_category, description, regul
 
 ## UI SCREENS
 
-### Web (Admin/Nurse)
+### Web (Admin/Med-Tech)
 
 | Screen | Route | Description |
 |--------|-------|-------------|

@@ -10,7 +10,7 @@ The public reputation layer for review account management, review import, reply 
 ## Primary Users
 
 - Owners and org admins
-- Marketing or operations staff responsible for public-facing reputation
+- Recruiters or operations staff responsible for public-facing reputation
 
 ## Key Workflows
 

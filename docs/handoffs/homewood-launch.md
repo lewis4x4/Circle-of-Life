@@ -1,5 +1,7 @@
 # Homewood Go-Live Handoff
 
+> **Roles note (2026-09-22, COL-615):** this brief predates the role consolidation. The `caregiver` and `dietary` login roles it names are retired (folded into `med_tech` and `cook` by migration 468); the `/caregiver` floor-app route keeps its name. See the Roles section in `AGENTS.md`.
+
 Real customer launch, 4-week timeline. UI audit complete (DRIFT = 0). Homewood facility data already loaded into Supabase via onboarding flow. User accounts provisioned. Out of scope for this launch brief: visual design, UI cleanup, data import, training materials. In scope: code-side launch protection.
 
 ## Design sequencing update (2026-05-16)

@@ -45,6 +45,8 @@ No original sensitive PDF, completed employee information, SSN, bank details, me
 
 Source review on 2026-09-08 confirmed two reported integrity issues were corrected in migration 335: nurse/coordinator callers cannot assert supervisor/administrator capacity; trainer capacity is limited to manager or nurse; one actor cannot fill several signing capacities on one record. Attendance classification now requires an independent manager and rejects self-review. The source SQL review script includes negative cases for nurse-as-supervisor and self-exclusion. This paragraph records source verification, not a fresh hosted database execution result.
 
+> **Roles note (2026-09-22, COL-615):** the `nurse` login role above is retired; migration 468 folded it into `med_tech`, which now holds those capacities. See the Roles section in `AGENTS.md`.
+
 Countersigner record visibility is purpose-scoped in SQL and still excludes medical records without a confidential grant or employee self-access. The API uses the caller client for all data and commands. Reviewer roster reads require owner/org-admin and expose active organization choices with current facility grants. The medical reviewer UI uses named account choices rather than asking users to type UUIDs.
 
 Final executed results are recorded in `VERIFICATION.md`; delivered routes, schema reconciliation, and activation boundaries are in `IMPLEMENTATION.md`. Mocked API tests do not replace executed RLS, Storage, actor-revocation or hosted journey checks.

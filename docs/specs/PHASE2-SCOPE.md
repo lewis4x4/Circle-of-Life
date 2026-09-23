@@ -4,6 +4,8 @@
 **Weeks**: 13–20
 **Modules**: 4 (build order below)
 
+> **Role note (2026-09-22, COL-615):** this document records what was true when it was written. The login roles `nurse`, `caregiver`, `dietary` and `dietary_aide` it names are retired: `nurse` and `caregiver` folded into `med_tech`, `dietary` and `dietary_aide` into `cook` (migration 468). Current model: the "Roles" section of `AGENTS.md`.
+
 **Post-audit hardening:** Shipped Phase 2 modules receive **additive remediation** in **Phase 3.5** (migrations `061`–`064` for the four modules below). See **[README.md — Phase 3.5](./README.md)** (section *Phase 3.5: Platform Hardening & Shipped-Module Remediation*) for full segment IDs, DDL intent, and migration order. This document summarizes **what** lands where for **03-adv, 06, 08, 09** only.
 
 | Module | Phase 3.5 segment | Migration | Spec / notes |
@@ -331,7 +333,7 @@ Write the 4 individual spec files in build order, using this scope document and 
 
 ## Appendix A — Role Map
 
-Roles from `app_role` enum: `owner`, `org_admin`, `facility_admin`, `nurse`, `caregiver`, `dietary`, `maintenance_role`, `family`, `broker`.
+Roles from `app_role` enum: `owner`, `org_admin`, `facility_admin`, `nurse`, `caregiver`, `dietary`, `maintenance_role`, `family`, `broker`. *(Phase 2 record. Today every `nurse` and `caregiver` grant below belongs to `med_tech`, and `dietary` to `cook` — COL-615.)*
 
 Shorthand used below: **admin** = owner, org_admin, facility_admin. **clinical** = admin + nurse + caregiver.
 

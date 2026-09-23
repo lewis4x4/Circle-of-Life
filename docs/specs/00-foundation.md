@@ -44,6 +44,11 @@ CREATE TYPE shift_type AS ENUM ('day', 'evening', 'night', 'custom');
 
 -- App Roles (for RBAC, not staff operational roles)
 CREATE TYPE app_role AS ENUM ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver', 'dietary', 'maintenance_role', 'family', 'broker');
+-- As of 2026-09-22 (COL-615, migration 468) the assignable login roles are: owner, org_admin,
+-- facility_admin, manager, admin_assistant, coordinator, med_tech, cook, housekeeper,
+-- maintenance_role, recruiter, family, broker. nurse and caregiver are retired (folded into
+-- med_tech); dietary and dietary_aide are retired (folded into cook). The retired values stay
+-- in the enum, but nobody holds them and no migration may grant them. See AGENTS.md "Roles".
 
 -- Incidents
 CREATE TYPE incident_severity AS ENUM ('level_1', 'level_2', 'level_3', 'level_4');
@@ -507,7 +512,7 @@ CREATE POLICY "Family sees their own links"
   ON family_resident_links FOR SELECT
   USING (
     organization_id = auth.organization_id()
-    AND (user_id = auth.uid() OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'))
+    AND (user_id = auth.uid() OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'))
   );
 ```
 
@@ -766,10 +771,14 @@ All 5 facilities are under one organization (Circle of Life) with separate legal
 **RBAC role seeding for COL:** COL's operational roles map to Haven app_role enum as follows:
 - Owner/executive → `owner`
 - Administrator (per facility) → `facility_admin`
-- Nurses / LPNs → `nurse`
-- Caregivers / CNAs → `caregiver`
-- Dietary staff → `dietary`
+- Manager → `manager`; Admin Assistant → `admin_assistant`; Service Coordinator → `coordinator`
+- Med-Techs, and the nurses / LPNs / CNAs / resident aides who used to hold `nurse` or `caregiver` → `med_tech`
+- Cooks and dietary staff (formerly `dietary` "Lead Cook / Dietary" and `dietary_aide`) → `cook`
+- Unlicensed staff who are not Med-Techs → `housekeeper`
 - Maintenance → `maintenance_role`
+- Recruiters (find residents to place; referrals, pipeline, reputation only) → `recruiter`
 - Family members → `family`
+
+Updated 2026-09-22 (COL-615, owner rulings by Brian): `nurse`, `caregiver`, `dietary` and `dietary_aide` are retired login roles. Job titles (cna, lpn, rn, resident_aide, dietary_staff, ...) stay on `staff_role`; they are positions, not login roles.
 
 **Audit log immutability:** COL's compliance history and the requirement to produce audit trails for AHCA surveyors makes audit_log immutability non-negotiable. Never add UPDATE or DELETE policies to audit_log under any circumstances.
