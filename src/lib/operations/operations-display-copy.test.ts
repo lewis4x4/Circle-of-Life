@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   OPERATIONS_NO_FACILITY_COPY,
   OPERATIONS_NO_MISSED_AT_COPY,
+  formatOperationsAssetsCardDescription,
   formatOperationsFacilityName,
   formatOperationsMissedAt,
+  formatOperationsVendorsCardDescription,
 } from "./operations-display-copy";
 
 const EM_DASH = "—";
@@ -78,5 +80,37 @@ describe("formatOperationsMissedAt", () => {
     const expected = new Date(POSTED_MISSED_AT_ISO).toLocaleString();
     expect(formatOperationsMissedAt(POSTED_MISSED_AT_ISO)).toBe(expected);
     expect(formatOperationsMissedAt(`  ${POSTED_MISSED_AT_ISO}  `)).toBe(expected);
+  });
+});
+
+describe("formatOperationsAssetsCardDescription", () => {
+  it("names the facility when posted", () => {
+    expect(formatOperationsAssetsCardDescription(3, "Anon Facility A")).toBe(
+      "3 assets in Anon Facility A",
+    );
+    expect(formatOperationsAssetsCardDescription(1, "Anon Facility A")).toBe(
+      "1 asset in Anon Facility A",
+    );
+  });
+
+  it("uses this facility without selected-facility copy when missing", () => {
+    expect(formatOperationsAssetsCardDescription(0, null)).toBe("0 assets in this facility");
+    expect(formatOperationsAssetsCardDescription(2, "   ")).not.toContain("selected facility");
+  });
+});
+
+describe("formatOperationsVendorsCardDescription", () => {
+  it("names the facility when posted", () => {
+    expect(formatOperationsVendorsCardDescription(2, "Anon Facility A")).toBe(
+      "2 vendor links for Anon Facility A",
+    );
+    expect(formatOperationsVendorsCardDescription(1, "Anon Facility A")).toBe(
+      "1 vendor link for Anon Facility A",
+    );
+  });
+
+  it("uses this facility without selected-facility copy when missing", () => {
+    expect(formatOperationsVendorsCardDescription(0, null)).toBe("0 vendor links for this facility");
+    expect(formatOperationsVendorsCardDescription(4, null)).not.toContain("selected facility");
   });
 });

@@ -2,6 +2,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+import { LEGACY_REDIRECTS } from "./src/lib/routing/legacy-redirects";
 import { supabaseCspOrigins } from "./src/lib/supabase/env";
 
 // `__dirname` is undefined when this file is loaded as ESM (Next 16 + .ts config).
@@ -96,82 +97,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname_resolved,
   },
-  /**
-   * Route group `(admin)` omits `admin` from the path; `/training` etc. would bypass `/admin/...` URL expectations.
-   * Only segments with both `(admin)/<segment>/page.tsx` and `admin/<segment>/page.tsx` are listed.
-   */
+  // Short-path aliases and legacy URLs: see src/lib/routing/legacy-redirects.ts.
   async redirects() {
-    const segments = [
-      "billing",
-      "certifications",
-      // "dietary" intentionally omitted — /dietary is the dedicated Lead Cook
-      // Command Deck at (dietary)/dietary/page.tsx, not a redirect to admin.
-      // Admin dietary hub remains at /admin/dietary (direct path).
-      "executive",
-      "family-messages",
-      "finance",
-      "incidents",
-      "insurance",
-      "payroll",
-      "reports",
-      "reputation",
-      "residents",
-      "schedules",
-      "search",
-      "staff",
-      "staffing",
-      "time-records",
-      "training",
-      "transportation",
-      "vendors",
-    ];
-    return [
-      ...segments.flatMap((seg) => [
-        { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
-        { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
-      ]),
-      {
-        source: "/pipeline/discharge-transition/new",
-        destination: "/admin/discharge/new",
-        permanent: false,
-      },
-      {
-        source: "/pipeline/discharge-transition",
-        destination: "/pipeline/discharge-management",
-        permanent: false,
-      },
-      {
-        source: "/pipeline/family-portal/:path*",
-        destination: "/admin/family-portal/:path*",
-        permanent: false,
-      },
-      {
-        source: "/pipeline/family-portal",
-        destination: "/admin/family-portal",
-        permanent: false,
-      },
-      // Staff bookmarks often use /admin/family; canonical hub is /admin/family-portal.
-      {
-        source: "/admin/family/:path*",
-        destination: "/admin/family-portal/:path*",
-        permanent: false,
-      },
-      {
-        source: "/admin/family",
-        destination: "/admin/family-portal",
-        permanent: false,
-      },
-      {
-        source: "/admin/facilities/:facilityId/emergency-contacts",
-        destination: "/admin/facilities/:facilityId?tab=emergency",
-        permanent: false,
-      },
-      {
-        source: "/admin/facilities/:facilityId/surveys",
-        destination: "/admin/facilities/:facilityId?tab=licensing",
-        permanent: false,
-      },
-    ];
+    return LEGACY_REDIRECTS;
   },
   async headers() {
     return [

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { BILLED_INVOICE_STATUSES } from "@/lib/billing/receivables";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
 
@@ -35,7 +36,9 @@ export async function loadFinanceOverviewData(
       .from("invoices" as never)
       .select("id", { count: "exact", head: true })
       .eq("organization_id" as never, organizationId as never)
-      .is("deleted_at" as never, null as never),
+      .is("deleted_at" as never, null as never)
+      // Drafts cannot be posted (migration 340) and are not billed, so they are not "unposted".
+      .in("status" as never, [...BILLED_INVOICE_STATUSES] as never),
     supabase
       .from("journal_entries")
       .select("source_id")

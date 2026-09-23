@@ -7,6 +7,7 @@ import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { ReportRunResult } from "@/components/reports/report-run-result";
 import { Button } from "@/components/ui/button";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
+import { deriveReportRunState } from "@/lib/reports/report-status";
 import { detailRowsToCsv, summaryRowsToCsv } from "@/lib/reports/metric-presentation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -38,7 +39,7 @@ export default function SavedReportPage() {
         if(template) href=`/admin/reports/run/template/${template.slug}`;
       }
       if(alive) {
-        setStatus(run.status==="running" && Date.now()-new Date(run.started_at).getTime()>30*60*1000?"interrupted — rerun required":run.status);
+        setStatus(deriveReportRunState(run).label);
         setRetryHref(href);
         if(parsed.success) setSnapshot(parsed.data);
         else if(run.status==="completed") setError("This older run has no preserved output. Run it again to create a saved result.");

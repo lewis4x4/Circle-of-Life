@@ -99,18 +99,21 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
   // for cross-component side effects (e.g., portals rendering outside
   // this wrapper) but it is no longer the only guardrail.
   return (
+    // The links sit in a header row in normal flow, not a fixed overlay: fixed,
+    // they covered the title of every page under them on a phone (COL-639).
+    // `main` owns the remaining height so the full-bleed cockpit still fits.
     <div className="dark">
-      <div className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <div className="fixed right-4 top-4 z-50">
+      <div className="flex h-dvh flex-col bg-background font-sans text-foreground antialiased">
+        <header className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 border-b border-border px-4 py-2 md:px-6">
           {/* Med-techs also use the caregiver floor app (owner ruling 2026-09-22). */}
           {isMedTech ? (
-            <Link href="/caregiver" className="mr-3 text-sm underline">Floor app</Link>
+            <Link href="/caregiver" className="text-sm underline">Floor app</Link>
           ) : null}
-          <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
-              <Link href="/med-tech/acknowledgments" className="mr-3 rounded border border-border bg-background px-3 py-2 text-sm">Required reading</Link>
+          <Link href="/employee-file" className="text-sm underline">My employee file</Link>
+          <Link href="/med-tech/acknowledgments" className="rounded border border-border bg-background px-3 py-2 text-sm">Required reading</Link>
           <PilotFeedbackLauncher shellKind="med-tech" compact />
-        </div>
-        {children}
+        </header>
+        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );
