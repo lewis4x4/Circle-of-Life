@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -234,80 +235,80 @@ export default function AdminTrainingNewDemonstrationPage() {
         </Card>
       ) : null}
 
-      {!facilityReady && !authLoading ? (
-        <p className="text-sm text-warning">Select a facility first.</p>
-      ) : null}
-
       {fetchErrorBannerMessage ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
           {fetchErrorBannerMessage}
         </p>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Record demonstration</CardTitle>
-          <CardDescription>
-            Creates a draft row. You are recorded as the evaluator. Owner, org admin, or facility admin only.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="staff">Staff member</Label>
-              {loadingStaff || authLoading ? (
-                <p className="text-sm text-slate-500">{TRAINING_NEW_LOADING_STAFF_COPY}</p>
-              ) : showEmptyStaffGap ? (
-                <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                  {TRAINING_NEW_NO_STAFF_AT_FACILITY_COPY}
+      {facilityReady ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Record demonstration</CardTitle>
+            <CardDescription>
+              Creates a draft row. You are recorded as the evaluator. Owner, org admin, or facility admin only.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={submit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="staff">Staff member</Label>
+                {loadingStaff || authLoading ? (
+                  <p className="text-sm text-slate-500">{TRAINING_NEW_LOADING_STAFF_COPY}</p>
+                ) : showEmptyStaffGap ? (
+                  <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                    {TRAINING_NEW_NO_STAFF_AT_FACILITY_COPY}
+                  </p>
+                ) : (
+                  <select
+                    id="staff"
+                    required
+                    value={staffId}
+                    onChange={(e) => setStaffId(e.target.value)}
+                    disabled={!facilityReady || staffList.length === 0 || Boolean(organizationGapMessage)}
+                    className={selectClass}
+                  >
+                    <option value="">Select…</option>
+                    {staffList.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (optional)</Label>
+                <Input
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Context for auditors"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cert">Certificate PDF (optional)</Label>
+                <Input
+                  id="cert"
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  disabled={!facilityReady}
+                  className="text-sm file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2 file:py-1 dark:file:bg-slate-800"
+                  onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Baya or other competency certificate. Stored in org-scoped private Storage (PDF only, max 15 MB).
                 </p>
-              ) : (
-                <select
-                  id="staff"
-                  required
-                  value={staffId}
-                  onChange={(e) => setStaffId(e.target.value)}
-                  disabled={!facilityReady || staffList.length === 0 || Boolean(organizationGapMessage)}
-                  className={selectClass}
-                >
-                  <option value="">Select…</option>
-                  {staffList.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Input
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Context for auditors"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cert">Certificate PDF (optional)</Label>
-              <Input
-                id="cert"
-                type="file"
-                accept="application/pdf,.pdf"
-                disabled={!facilityReady}
-                className="text-sm file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2 file:py-1 dark:file:bg-slate-800"
-                onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
-              />
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Baya or other competency certificate. Stored in org-scoped private Storage (PDF only, max 15 MB).
-              </p>
-            </div>
-            <Button type="submit" disabled={submitBlocked}>
-              {resolveTrainingNewSubmitButtonLabel({ saving, authLoading })}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              </div>
+              <Button type="submit" disabled={submitBlocked}>
+                {resolveTrainingNewSubmitButtonLabel({ saving, authLoading })}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <FacilityGateNotice reason="Competency demonstrations are recorded for staff at one building, so this form opens once a facility is chosen." />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { StaffCheckClient } from "@/components/facility-checks/StaffCheckClient";
 import { fetchActorNames } from "@/lib/facility-checks/load-board-check";
 import {
@@ -59,19 +60,24 @@ export default async function StaffCheckPage() {
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
       <h1 className="text-lg font-medium text-foreground">Staff check</h1>
-      <StaffCheckClient
-        session={bootstrap.session}
-        initialRows={bootstrap.rows}
-        initialHistory={bootstrap.history}
-        closedByName={bootstrap.closedByName}
-        loadError={bootstrap.error}
+      <FacilityGate
         facilityId={facilityId}
-        organizationId={profile.organization_id}
-        actorId={profile.id}
-        staffHref="/staff"
-        grantsHref="/admin/settings/users"
-        onRefresh={refresh}
-      />
+        reason="A staff check walks one building's roster against who can sign in there, so it runs for one facility at a time."
+      >
+        <StaffCheckClient
+          session={bootstrap.session}
+          initialRows={bootstrap.rows}
+          initialHistory={bootstrap.history}
+          closedByName={bootstrap.closedByName}
+          loadError={bootstrap.error}
+          facilityId={facilityId}
+          organizationId={profile.organization_id}
+          actorId={profile.id}
+          staffHref="/staff"
+          grantsHref="/admin/settings/users"
+          onRefresh={refresh}
+        />
+      </FacilityGate>
     </main>
   );
 }

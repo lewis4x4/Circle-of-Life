@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { Users, Clock, FileWarning, CalendarPlus, Activity, Download, Loader2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import {
@@ -294,10 +295,6 @@ export function AdminStaffingConsolePageClient({
     certWarnings.length > 0
       ? `${certWarnings.length} expired ${certWarnings.length === 1 ? "credential" : "credentials"} require review.`
       : "No expired credentials in this scope.";
-  const scopeBlockerMessage =
-    selectedFacilityId == null
-      ? "Select a facility to load staffing metrics and enable requisition and attendance actions."
-      : null;
   const adpStaffBlocker =
     selectedFacilityId != null && staffOptions.length === 0
         ? "No active staff came back from the ADP-linked directory for this facility. Attendance logging is blocked until the feed syncs."
@@ -311,18 +308,13 @@ export function AdminStaffingConsolePageClient({
     { value: "compliant", label: `Compliant (${compliantCount})` },
   ];
 
-  const attendanceLocked = scopeBlockerMessage != null || adpStaffBlocker != null;
-  const requisitionLocked = scopeBlockerMessage != null;
+  const attendanceLocked = adpStaffBlocker != null;
   const attendanceEmptyTitle = attendanceLocked ? "Attendance logging blocked" : "No attendance events yet";
   const attendanceEmptyDescription = attendanceLocked
-    ? adpStaffBlocker != null
-      ? "Once the active staff directory syncs, attendance events will appear here."
-      : "Select a facility to begin logging attendance events."
+    ? "Once the active staff directory syncs, attendance events will appear here."
     : "Attendance logging will appear here once staff callouts or late arrivals are recorded for this scope.";
-  const requisitionEmptyTitle = requisitionLocked ? "Requisitions blocked" : "No open requisitions";
-  const requisitionEmptyDescription = requisitionLocked
-    ? "Select a facility to create requisitions and track hiring needs here."
-    : "Create a requisition when a shift opens up or a role needs to be backfilled.";
+  const requisitionEmptyTitle = "No open requisitions";
+  const requisitionEmptyDescription = "Create a requisition when a shift opens up or a role needs to be backfilled.";
 
   return (
     <div className="space-y-6 pb-12">
@@ -333,7 +325,7 @@ export function AdminStaffingConsolePageClient({
             {selectedFacilityId ? (
               <Badge variant="secondary">Facility scoped</Badge>
             ) : (
-              <Badge tone="warning">No facility selected</Badge>
+              <Badge variant="outline">All facilities</Badge>
             )}
           </div>
           <div>
@@ -386,15 +378,6 @@ export function AdminStaffingConsolePageClient({
           <Link href="/admin/staffing" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2")}>
             Clear filters
           </Link>
-        </div>
-      ) : null}
-
-      {scopeBlockerMessage ? (
-        <div
-          role="status"
-          className="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100"
-        >
-          {scopeBlockerMessage}
         </div>
       ) : null}
 
@@ -475,310 +458,305 @@ export function AdminStaffingConsolePageClient({
         </Link>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2" aria-label="Workforce actions">
-        <div className={panelClass}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-base font-semibold text-foreground">Log attendance event</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Capture callouts and exceptions for the current staffing scope.
-              </p>
+      {selectedFacilityId ? (
+        <section className="grid gap-6 xl:grid-cols-2" aria-label="Workforce actions">
+          <div className={panelClass}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">Log attendance event</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Capture callouts and exceptions for the current staffing scope.
+                </p>
+              </div>
+              <Badge variant="secondary">Standup input</Badge>
             </div>
-            <Badge variant="secondary">Standup input</Badge>
-          </div>
 
-          {adpStaffBlocker ? (
-            <div
-              role="status"
-              className="mt-4 rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground"
-            >
-              {adpStaffBlocker}
-            </div>
-          ) : null}
-
-          <div className="mt-4 grid gap-3">
-            <label className="grid gap-1.5 text-sm font-medium">
-              Staff member
-              <select
-                className={fieldClass}
-                value={attendanceStaffId}
-                onChange={(e) => setAttendanceStaffId(e.target.value)}
-                disabled={attendanceLocked || attendanceSaving}
+            {adpStaffBlocker ? (
+              <div
+                role="status"
+                className="mt-4 rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground"
               >
-                <option value="">Select staff member</option>
-                {staffOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
+                {adpStaffBlocker}
+              </div>
+            ) : null}
+
+            <div className="mt-4 grid gap-3">
               <label className="grid gap-1.5 text-sm font-medium">
-                Event type
+                Staff member
                 <select
                   className={fieldClass}
-                  value={attendanceEventType}
-                  onChange={(e) => setAttendanceEventType(e.target.value)}
+                  value={attendanceStaffId}
+                  onChange={(e) => setAttendanceStaffId(e.target.value)}
                   disabled={attendanceLocked || attendanceSaving}
                 >
-                  <option value="callout">Callout</option>
-                  <option value="late_callout">Late callout</option>
-                  <option value="no_show">No show</option>
-                  <option value="left_early">Left early</option>
+                  <option value="">Select staff member</option>
+                  {staffOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-sm font-medium">
+                  Event type
+                  <select
+                    className={fieldClass}
+                    value={attendanceEventType}
+                    onChange={(e) => setAttendanceEventType(e.target.value)}
+                    disabled={attendanceLocked || attendanceSaving}
+                  >
+                    <option value="callout">Callout</option>
+                    <option value="late_callout">Late callout</option>
+                    <option value="no_show">No show</option>
+                    <option value="left_early">Left early</option>
+                  </select>
+                </label>
+                <label className="grid gap-1.5 text-sm font-medium">
+                  Occurred at (ET)
+                  <input
+                    type="datetime-local"
+                    className={fieldClass}
+                    value={attendanceOccurredAt}
+                    onChange={(e) => setAttendanceOccurredAt(e.target.value)}
+                    disabled={attendanceLocked || attendanceSaving}
+                  />
+                </label>
+              </div>
               <label className="grid gap-1.5 text-sm font-medium">
-                Occurred at (ET)
+                Reason or note
                 <input
-                  type="datetime-local"
                   className={fieldClass}
-                  value={attendanceOccurredAt}
-                  onChange={(e) => setAttendanceOccurredAt(e.target.value)}
+                  placeholder="Reason / note"
+                  value={attendanceReason}
+                  onChange={(e) => setAttendanceReason(e.target.value)}
                   disabled={attendanceLocked || attendanceSaving}
                 />
               </label>
+              <Button
+                type="button"
+                className="mt-1 w-fit"
+                disabled={attendanceSaving || attendanceLocked || !attendanceStaffId || !selectedFacilityId}
+                onClick={() =>
+                  void createAttendanceEvent({
+                    supabase,
+                    selectedFacilityId,
+                    attendanceStaffId,
+                    attendanceEventType,
+                    attendanceOccurredAt,
+                    attendanceReason,
+                    setError,
+                    setAttendanceSaving,
+                    onSaved: async () => {
+                      setAttendanceStaffId("");
+                      setAttendanceReason("");
+                      await load();
+                    },
+                  })
+                }
+              >
+                {attendanceSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Save attendance event
+              </Button>
             </div>
-            <label className="grid gap-1.5 text-sm font-medium">
-              Reason or note
-              <input
-                className={fieldClass}
-                placeholder="Reason / note"
-                value={attendanceReason}
-                onChange={(e) => setAttendanceReason(e.target.value)}
-                disabled={attendanceLocked || attendanceSaving}
-              />
-            </label>
-            <Button
-              type="button"
-              className="mt-1 w-fit"
-              disabled={attendanceSaving || attendanceLocked || !attendanceStaffId || !selectedFacilityId}
-              onClick={() =>
-                void createAttendanceEvent({
-                  supabase,
-                  selectedFacilityId,
-                  attendanceStaffId,
-                  attendanceEventType,
-                  attendanceOccurredAt,
-                  attendanceReason,
-                  setError,
-                  setAttendanceSaving,
-                  onSaved: async () => {
-                    setAttendanceStaffId("");
-                    setAttendanceReason("");
-                    await load();
-                  },
-                })
-              }
-            >
-              {attendanceSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Save attendance event
-            </Button>
-          </div>
 
-          <div className="mt-6 border-t border-border pt-4">
-            <div className="flex items-center justify-between gap-3">
-              <h4 className="text-sm font-semibold text-foreground">Recent attendance events</h4>
-              <Badge variant="outline">{attendanceRows.length}</Badge>
-            </div>
-            {attendanceRows.length === 0 ? (
-              <div className="mt-3">
-                <AdminEmptyState
-                  title={attendanceEmptyTitle}
-                  description={attendanceEmptyDescription}
-                />
+            <div className="mt-6 border-t border-border pt-4">
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="text-sm font-semibold text-foreground">Recent attendance events</h4>
+                <Badge variant="outline">{attendanceRows.length}</Badge>
               </div>
-            ) : (
-              <div className={cn(listShellClass, "mt-3 divide-y divide-border")}>
-                {attendanceRows.map((row) => (
-                  <div key={row.id} className={cn(listRowClass, "flex items-start justify-between gap-4")}>
-                    <div className="min-w-0">
-                      <div className="font-medium text-foreground">
-                        {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Staff member"}
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <Badge variant="outline" className="capitalize">
-                          {row.event_type.replace(/_/g, " ")}
-                        </Badge>
-                        <span>{formatFacilityTimestampEt(row.occurred_at)} ET</span>
-                      </div>
-                      {row.reason ? <p className="mt-2 text-sm text-muted-foreground">{row.reason}</p> : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className={panelClass}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-base font-semibold text-foreground">Open positions</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Track requisitions and their status without leaving the staffing console.
-              </p>
-            </div>
-            <Badge variant="secondary">Requisitions</Badge>
-          </div>
-
-          {scopeBlockerMessage ? (
-            <div
-              role="status"
-              className="mt-4 rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground"
-            >
-              {scopeBlockerMessage}
-            </div>
-          ) : null}
-
-          <div className="mt-4 grid gap-3">
-            <label className="grid gap-1.5 text-sm font-medium">
-              Role title
-              <input
-                className={fieldClass}
-                placeholder="Role title"
-                value={requisitionTitle}
-                onChange={(e) => setRequisitionTitle(e.target.value)}
-                disabled={requisitionLocked || requisitionSaving}
-              />
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm font-medium">
-                Staff role target
-                <input
-                  className={fieldClass}
-                  placeholder="Staff role target"
-                  value={requisitionRoleTarget}
-                  onChange={(e) => setRequisitionRoleTarget(e.target.value)}
-                  disabled={requisitionLocked || requisitionSaving}
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm font-medium">
-                Department
-                <input
-                  className={fieldClass}
-                  placeholder="Department"
-                  value={requisitionDepartment}
-                  onChange={(e) => setRequisitionDepartment(e.target.value)}
-                  disabled={requisitionLocked || requisitionSaving}
-                />
-              </label>
-            </div>
-            <label className="grid gap-1.5 text-sm font-medium">
-              Target hire date (ET)
-              <input
-                type="date"
-                className={fieldClass}
-                value={requisitionTargetHireDate}
-                onChange={(e) => setRequisitionTargetHireDate(e.target.value)}
-                disabled={requisitionLocked || requisitionSaving}
-                aria-label="Target hire date (Eastern Time)"
-              />
-            </label>
-            <Button
-              type="button"
-              className="mt-1 w-fit"
-              disabled={requisitionSaving || requisitionLocked || !requisitionTitle.trim() || !selectedFacilityId}
-              onClick={() =>
-                void createStaffRequisition({
-                  supabase,
-                  selectedFacilityId,
-                  requisitionTitle,
-                  requisitionRoleTarget,
-                  requisitionDepartment,
-                  requisitionTargetHireDate,
-                  setError,
-                  setRequisitionSaving,
-                  onSaved: async () => {
-                    setRequisitionTitle("");
-                    setRequisitionRoleTarget("");
-                    setRequisitionDepartment("");
-                    setRequisitionTargetHireDate("");
-                    await load();
-                  },
-                })
-              }
-            >
-              {requisitionSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Create open position
-            </Button>
-          </div>
-
-          <div className="mt-6 border-t border-border pt-4">
-            <div className="flex items-center justify-between gap-3">
-              <h4 className="text-sm font-semibold text-foreground">Current requisitions</h4>
-              <Badge variant="outline">{requisitionRows.length}</Badge>
-            </div>
-            {requisitionRows.length === 0 ? (
-              <div className="mt-3">
-                <AdminEmptyState
-                  title={requisitionEmptyTitle}
-                  description={requisitionEmptyDescription}
-                />
-              </div>
-            ) : (
-              <div className={cn(listShellClass, "mt-3 divide-y divide-border")}>
-                {requisitionRows.map((row) => (
-                  <div key={row.id} className={cn(listRowClass, "space-y-3")}>
-                    <div className="flex items-start justify-between gap-3">
+              {attendanceRows.length === 0 ? (
+                <div className="mt-3">
+                  <AdminEmptyState
+                    title={attendanceEmptyTitle}
+                    description={attendanceEmptyDescription}
+                  />
+                </div>
+              ) : (
+                <div className={cn(listShellClass, "mt-3 divide-y divide-border")}>
+                  {attendanceRows.map((row) => (
+                    <div key={row.id} className={cn(listRowClass, "flex items-start justify-between gap-4")}>
                       <div className="min-w-0">
-                        <div className="font-medium text-foreground">{row.role_title}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {row.department ?? "No department"} / {row.target_hire_date ?? "No target date"}
+                        <div className="font-medium text-foreground">
+                          {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Staff member"}
                         </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="capitalize">
+                            {row.event_type.replace(/_/g, " ")}
+                          </Badge>
+                          <span>{formatFacilityTimestampEt(row.occurred_at)} ET</span>
+                        </div>
+                        {row.reason ? <p className="mt-2 text-sm text-muted-foreground">{row.reason}</p> : null}
                       </div>
-                      <Badge variant="outline" className="capitalize">
-                        {row.status}
-                      </Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <select
-                        className={cn(fieldClass, "w-auto min-w-40")}
-                        value={requisitionStatusDrafts[row.id] ?? row.status}
-                        onChange={(e) =>
-                          setRequisitionStatusDrafts((current) => ({
-                            ...current,
-                            [row.id]: e.target.value as RequisitionStatus,
-                          }))
-                        }
-                        disabled={requisitionSaving || requisitionUpdatingId === row.id}
-                      >
-                        <option value="open">Open</option>
-                        <option value="interviewing">Interviewing</option>
-                        <option value="offered">Offered</option>
-                        <option value="filled">Filled</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={
-                          requisitionUpdatingId === row.id ||
-                          (requisitionStatusDrafts[row.id] ?? row.status) === row.status
-                        }
-                        onClick={() =>
-                          void updateStaffRequisitionStatus({
-                            supabase,
-                            requisitionId: row.id,
-                            status: requisitionStatusDrafts[row.id] ?? row.status,
-                            setError,
-                            setRequisitionUpdatingId,
-                            onSaved: load,
-                          })
-                        }
-                      >
-                        {requisitionUpdatingId === row.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Save status
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+
+          <div className={panelClass}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">Open positions</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Track requisitions and their status without leaving the staffing console.
+                </p>
+              </div>
+              <Badge variant="secondary">Requisitions</Badge>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              <label className="grid gap-1.5 text-sm font-medium">
+                Role title
+                <input
+                  className={fieldClass}
+                  placeholder="Role title"
+                  value={requisitionTitle}
+                  onChange={(e) => setRequisitionTitle(e.target.value)}
+                  disabled={requisitionSaving}
+                />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-sm font-medium">
+                  Staff role target
+                  <input
+                    className={fieldClass}
+                    placeholder="Staff role target"
+                    value={requisitionRoleTarget}
+                    onChange={(e) => setRequisitionRoleTarget(e.target.value)}
+                    disabled={requisitionSaving}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-sm font-medium">
+                  Department
+                  <input
+                    className={fieldClass}
+                    placeholder="Department"
+                    value={requisitionDepartment}
+                    onChange={(e) => setRequisitionDepartment(e.target.value)}
+                    disabled={requisitionSaving}
+                  />
+                </label>
+              </div>
+              <label className="grid gap-1.5 text-sm font-medium">
+                Target hire date (ET)
+                <input
+                  type="date"
+                  className={fieldClass}
+                  value={requisitionTargetHireDate}
+                  onChange={(e) => setRequisitionTargetHireDate(e.target.value)}
+                  disabled={requisitionSaving}
+                  aria-label="Target hire date (Eastern Time)"
+                />
+              </label>
+              <Button
+                type="button"
+                className="mt-1 w-fit"
+                disabled={requisitionSaving || !requisitionTitle.trim() || !selectedFacilityId}
+                onClick={() =>
+                  void createStaffRequisition({
+                    supabase,
+                    selectedFacilityId,
+                    requisitionTitle,
+                    requisitionRoleTarget,
+                    requisitionDepartment,
+                    requisitionTargetHireDate,
+                    setError,
+                    setRequisitionSaving,
+                    onSaved: async () => {
+                      setRequisitionTitle("");
+                      setRequisitionRoleTarget("");
+                      setRequisitionDepartment("");
+                      setRequisitionTargetHireDate("");
+                      await load();
+                    },
+                  })
+                }
+              >
+                {requisitionSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Create open position
+              </Button>
+            </div>
+
+            <div className="mt-6 border-t border-border pt-4">
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="text-sm font-semibold text-foreground">Current requisitions</h4>
+                <Badge variant="outline">{requisitionRows.length}</Badge>
+              </div>
+              {requisitionRows.length === 0 ? (
+                <div className="mt-3">
+                  <AdminEmptyState
+                    title={requisitionEmptyTitle}
+                    description={requisitionEmptyDescription}
+                  />
+                </div>
+              ) : (
+                <div className={cn(listShellClass, "mt-3 divide-y divide-border")}>
+                  {requisitionRows.map((row) => (
+                    <div key={row.id} className={cn(listRowClass, "space-y-3")}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-medium text-foreground">{row.role_title}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {row.department ?? "No department"} / {row.target_hire_date ?? "No target date"}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="capitalize">
+                          {row.status}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          className={cn(fieldClass, "w-auto min-w-40")}
+                          value={requisitionStatusDrafts[row.id] ?? row.status}
+                          onChange={(e) =>
+                            setRequisitionStatusDrafts((current) => ({
+                              ...current,
+                              [row.id]: e.target.value as RequisitionStatus,
+                            }))
+                          }
+                          disabled={requisitionSaving || requisitionUpdatingId === row.id}
+                        >
+                          <option value="open">Open</option>
+                          <option value="interviewing">Interviewing</option>
+                          <option value="offered">Offered</option>
+                          <option value="filled">Filled</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            requisitionUpdatingId === row.id ||
+                            (requisitionStatusDrafts[row.id] ?? row.status) === row.status
+                          }
+                          onClick={() =>
+                            void updateStaffRequisitionStatus({
+                              supabase,
+                              requisitionId: row.id,
+                              status: requisitionStatusDrafts[row.id] ?? row.status,
+                              setError,
+                              setRequisitionUpdatingId,
+                              onSaved: load,
+                            })
+                          }
+                        >
+                          {requisitionUpdatingId === row.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Save status
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <FacilityGateNotice reason="Attendance events and open positions are recorded for one building. The staffing figures above cover all of your facilities." />
+      )}
 
       <section className="grid gap-6 xl:grid-cols-2" aria-label="Staffing exceptions">
         <div className={panelClass}>

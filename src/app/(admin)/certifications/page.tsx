@@ -282,8 +282,9 @@ export default function AdminCertificationsPage() {
         datasetRowCount: rows.length,
         whenDatasetEmpty: {
           title: "No certifications in this scope",
-          description:
-            "No certification rows for this facility yet. Use Add certification or import from your prior system.",
+          description: selectedFacilityId
+            ? "No certification rows for this facility yet. Use Add certification or import from your prior system."
+            : "No certification rows at any of your facilities yet. Use Add certification or import from your prior system.",
         },
         whenFiltersExcludeAll: {
           title: "No certifications match the current filters",
@@ -291,7 +292,7 @@ export default function AdminCertificationsPage() {
             "Try clearing search or broadening status filters. Rows respect your facility selector when a facility is chosen.",
         },
       }),
-    [rows.length],
+    [rows.length, selectedFacilityId],
   );
 
   const expiringCount = filteredRows.filter((r) => r.timeline === "expiring_soon").length;

@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { GraduationCap } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
@@ -651,26 +652,15 @@ export default function AdminTrainingHubPage() {
                    >
                      {exportingCsv ? "Preparing…" : "Download demonstrations CSV"}
                    </Button>
-                   {orgWideMode ? (
-                     <Button
-                       type="button"
-                       disabled
-                       className="h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-wider text-[10px] opacity-70 sm:whitespace-nowrap"
-                       title="Select a single facility in the header to record a new demonstration."
-                     >
-                       + New Demonstration
-                     </Button>
-                   ) : (
-                     <Link
-                       href="/admin/training/new"
-                     className={cn(
-                        buttonVariants({ size: "default" }),
-                        "h-auto min-h-10 whitespace-normal text-left font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none sm:whitespace-nowrap",
-                      )}
-                     >
-                       + New Demonstration
-                     </Link>
-                   )}
+                   <Link
+                     href="/admin/training/new"
+                   className={cn(
+                      buttonVariants({ size: "default" }),
+                      "h-auto min-h-10 whitespace-normal text-left font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none sm:whitespace-nowrap",
+                    )}
+                   >
+                     + New Demonstration
+                   </Link>
                  </div>
               </div>
             </V2Card>
@@ -691,26 +681,15 @@ export default function AdminTrainingHubPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                {orgWideMode ? (
-                  <Button
-                    type="button"
-                    disabled
-                    className="shrink-0 font-mono uppercase tracking-wider text-[10px] opacity-70"
-                    title="Select a single facility in the header to log a completion."
-                  >
-                    + Log completion
-                  </Button>
-                ) : (
-                  <Link
-                    href="/admin/training/completions/new"
-                    className={cn(
-                      buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
-                    )}
-                  >
-                    + Log completion
-                  </Link>
-                )}
+                <Link
+                  href="/admin/training/completions/new"
+                  className={cn(
+                    buttonVariants({ size: "default" }),
+                    "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
+                  )}
+                >
+                  + Log completion
+                </Link>
                 <Button
                   type="button"
                   variant="outline"
@@ -733,7 +712,7 @@ export default function AdminTrainingHubPage() {
               <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                 <p className="font-medium text-foreground">No completion rows yet</p>
                 <p className="mt-1 text-sm opacity-80">
-                  Florida catalog programs are ready to assign. Select a facility and use{" "}
+                  Florida catalog programs are ready to assign. Use{" "}
                   <span className="font-mono">+ Log completion</span> to add a live completion row.
                 </p>
               </div>
@@ -996,26 +975,15 @@ export default function AdminTrainingHubPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                {orgWideMode ? (
-                  <Button
-                    type="button"
-                    disabled
-                    className="shrink-0 font-mono uppercase tracking-wider text-[10px] opacity-70"
-                    title="Select a single facility in the header to record a new in-service session."
-                  >
-                    + New in-service session
-                  </Button>
-                ) : (
-                  <Link
-                    href="/admin/training/inservice/new"
-                    className={cn(
-                      buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
-                    )}
-                  >
-                    + New in-service session
-                  </Link>
-                )}
+                <Link
+                  href="/admin/training/inservice/new"
+                  className={cn(
+                    buttonVariants({ size: "default" }),
+                    "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
+                  )}
+                >
+                  + New in-service session
+                </Link>
                 <Button
                   type="button"
                   variant="outline"
@@ -1038,8 +1006,7 @@ export default function AdminTrainingHubPage() {
               <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                 <p className="font-medium text-foreground">No in-service sessions yet</p>
                 <p className="mt-1 text-sm opacity-80">
-                  Select a facility and use <span className="font-mono">+ New in-service session</span> to log
-                  attendance.
+                  Use <span className="font-mono">+ New in-service session</span> to log attendance.
                 </p>
               </div>
             ) : (
@@ -1099,9 +1066,7 @@ export default function AdminTrainingHubPage() {
         )}
 
       {!facilityReady && (
-        <p className="rounded-lg border border-amber-200/70 bg-amber-50/60 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100">
-          Facility selection is invalid. Choose a facility or &quot;All facilities&quot; in the header.
-        </p>
+        <FacilityGateNotice reason="The saved facility choice is no longer one of yours. Open one of your facilities below, or switch the header to All facilities for the organization-wide view." />
       )}
 
       {error && (

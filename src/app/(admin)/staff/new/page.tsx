@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -93,7 +94,6 @@ export default function AdminNewStaffPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header before adding staff.");
       return;
     }
     const fn = firstName.trim();
@@ -181,125 +181,124 @@ export default function AdminNewStaffPage() {
         </div>
       </div>
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Choose a facility from the header selector to enable this form.
-        </p>
-      )}
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
         Requires admin role: owner, org admin, or facility admin (per RLS). Nurses can view roster but cannot
         insert staff records.
       </p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile & role</CardTitle>
-          <CardDescription>
-            Compensation, certifications, and scheduling are managed from the staff profile after save.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 max-w-xl">
-            {error && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {error}
-              </p>
-            )}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">First name</label>
-                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Last name</label>
-                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" />
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Role</label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={staffRole}
-                  onChange={(e) => setStaffRole(e.target.value)}
-                >
-                  {STAFF_ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Employment status</label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={employmentStatus}
-                  onChange={(e) => setEmploymentStatus(e.target.value)}
-                >
-                  {EMPLOYMENT_STATUSES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label
-                htmlFor="hire-date"
-                className="text-xs font-medium text-slate-600 dark:text-slate-400"
-              >
-                Hire date (ET)
-              </label>
-              <Input
-                id="hire-date"
-                type="date"
-                value={hireDate}
-                onChange={(e) => setHireDate(e.target.value)}
-                required
-                aria-label="Hire date (Eastern Time)"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone (optional)</label>
-                <Input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  autoComplete="tel"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Email (optional)</label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                />
-              </div>
-            </div>
-
-            <Button type="submit" disabled={submitting || !facilityReady}>
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                "Create staff record"
+      {facilityReady ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile & role</CardTitle>
+            <CardDescription>
+              Compensation, certifications, and scheduling are managed from the staff profile after save.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 max-w-xl">
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {error}
+                </p>
               )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">First name</label>
+                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Last name</label>
+                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Role</label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={staffRole}
+                    onChange={(e) => setStaffRole(e.target.value)}
+                  >
+                    {STAFF_ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Employment status</label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={employmentStatus}
+                    onChange={(e) => setEmploymentStatus(e.target.value)}
+                  >
+                    {EMPLOYMENT_STATUSES.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="hire-date"
+                  className="text-xs font-medium text-slate-600 dark:text-slate-400"
+                >
+                  Hire date (ET)
+                </label>
+                <Input
+                  id="hire-date"
+                  type="date"
+                  value={hireDate}
+                  onChange={(e) => setHireDate(e.target.value)}
+                  required
+                  aria-label="Hire date (Eastern Time)"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone (optional)</label>
+                  <Input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    autoComplete="tel"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Email (optional)</label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" disabled={submitting || !facilityReady}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  "Create staff record"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <FacilityGateNotice reason="A staff record belongs to one building, so this form opens once a facility is chosen." />
+      )}
     </div>
   );
 }

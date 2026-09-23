@@ -7,7 +7,6 @@ export const TIMECLOCK_NAV_LABEL = "Timeclock";
 export const TIMECLOCK_PAGE_TITLE = "Timeclock";
 export const TIMECLOCK_PAGE_SUBTITLE = "Who is in the building now, this period's minutes, and the exceptions that need a manager.";
 export const TIMECLOCK_MANAGER_ONLY = "Timeclock review is for facility administrators and above. Your own punches are on your staff record.";
-export const TIMECLOCK_PICK_FACILITY = "Choose a facility to review its timeclock.";
 export const TIMECLOCK_NO_ROWS = "No punches in this period yet.";
 export const TIMECLOCK_PAY_PERIOD_UNSET = "Set the pay period to export";
 export const TIMECLOCK_EXPORT_LABEL = "Export payroll CSV";
