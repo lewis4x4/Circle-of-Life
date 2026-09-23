@@ -83,8 +83,11 @@ export function TimeclockKiosk(props: TimeclockKioskProps) {
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [device, setDevice] = useState<KioskDevice | null>(null);
-  const [online, setOnline] = useState<boolean>(props.online ?? (typeof navigator === "undefined" ? true : navigator.onLine));
-  const [clock, setClock] = useState<Date>(() => now());
+  // Both start from values the server can also produce; the browser's real
+  // clock and network state arrive after mount. Reading them during render made
+  // the server and client HTML differ (React error 418, COL-659).
+  const [online, setOnline] = useState<boolean>(props.online ?? true);
+  const [clock, setClock] = useState<Date | null>(null);
   const [code, setCode] = useState("");
   const [label, setLabel] = useState("");
   const [identifier, setIdentifier] = useState("");
@@ -130,6 +133,7 @@ export function TimeclockKiosk(props: TimeclockKioskProps) {
       setOnline(props.online);
       return;
     }
+    setOnline(navigator.onLine);
     const goOnline = () => setOnline(true);
     const goOffline = () => setOnline(false);
     window.addEventListener("online", goOnline);
@@ -145,6 +149,7 @@ export function TimeclockKiosk(props: TimeclockKioskProps) {
   }, [online, device, replay]);
 
   useEffect(() => {
+    setClock(now());
     const id = window.setInterval(() => setClock(now()), 1000);
     return () => window.clearInterval(id);
   }, [now]);
@@ -353,8 +358,10 @@ export function TimeclockKiosk(props: TimeclockKioskProps) {
   };
 
   const facilityName = device?.facilityName ?? "";
-  const clockText = formatKioskTime(clock, timeZone);
-  const dateText = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", timeZone }).format(clock);
+  const clockText = clock ? formatKioskTime(clock, timeZone) : "\u00a0";
+  const dateText = clock
+    ? new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", timeZone }).format(clock)
+    : "\u00a0";
 
   const keypad = (value: string) => {
     touch();

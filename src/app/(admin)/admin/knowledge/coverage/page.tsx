@@ -78,10 +78,10 @@ type FreshnessRow = {
 type Tab = "overview" | "gaps" | "freshness";
 
 const SIGNAL_LABELS: Record<GapRow["signal"], string> = {
-  kb_empty: "No evidence",
+  kb_empty: "No answer found",
   thumbs_down: "Thumbs down",
   low_confidence: "Low confidence",
-  router_no_grounded_source: "Router miss",
+  router_no_grounded_source: "Answered without a source",
 };
 
 const FRESHNESS_TONE: Record<FreshnessRow["freshness_status"], string> = {
@@ -158,8 +158,7 @@ export default function CoverageDashboardRoute() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Knowledge Coverage</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            What the KB should answer, what it missed, and what needs a refresh. Phase 4
-            of the KB-NEXT roadmap.
+            What the knowledge base should answer, what it missed, and what needs a refresh.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -291,17 +290,17 @@ function OverviewPanel({ rollup }: { rollup: DashboardRollup }) {
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="text-sm font-semibold text-foreground">Gaps by signal</h2>
         <ul className="mt-3 space-y-2 text-xs">
-          <BreakdownRow label="No evidence (kb_empty)" value={rollup.open_gaps_kb_empty} />
+          <BreakdownRow label="No answer found" value={rollup.open_gaps_kb_empty} />
           <BreakdownRow label="Thumbs down" value={rollup.open_gaps_thumbs_down} />
           <BreakdownRow label="Low confidence" value={rollup.open_gaps_low_confidence} />
           <BreakdownRow
-            label="Router no-source"
+            label="Answered without a source"
             value={rollup.open_gaps_router_no_source}
           />
         </ul>
         <p className="mt-3 text-[10px] text-muted-foreground">
-          Signals merge by normalized question; opening a gap from any surface
-          (chat, Haven Insight, router) bumps frequency rather than duplicating.
+          The same question asked in different places counts once; asking it again
+          raises its count instead of adding a new gap.
         </p>
       </div>
       <div className="rounded-xl border border-border bg-card p-4">

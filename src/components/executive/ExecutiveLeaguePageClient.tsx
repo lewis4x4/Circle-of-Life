@@ -13,7 +13,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { downloadBlobFromUrl } from "@/lib/download-blob";
-import type { BoardPacketSummary, LeagueFacilityRow } from "@/lib/executive/league";
+import { formatLeagueScore, summarizeLeague, type BoardPacketSummary, type LeagueFacilityRow } from "@/lib/executive/league";
 import type { ExecutiveLeagueData } from "@/lib/executive/load-league-data";
 import {
   formatExecutiveCompletenessPct,
@@ -51,14 +51,14 @@ function downloadLeagueCsv(rows: LeagueFacilityRow[]) {
   const body = rows.map((row) => [
     row.facilityName,
     row.entityName,
-    String(row.leagueScore),
+    row.leagueScore == null ? "" : String(row.leagueScore),
     row.leagueLabel,
     row.riskScore == null ? "" : String(row.riskScore),
     row.riskLevel ?? "",
     row.occupancyPct == null ? "" : String(row.occupancyPct),
     String(row.openInvoicesCount),
     String(row.totalBalanceDueCents),
-    String(row.insuranceScore),
+    row.insuranceScore == null ? "" : String(row.insuranceScore),
     row.primaryConcern,
   ]);
 
@@ -101,22 +101,13 @@ export default function ExecutiveLeaguePageClient({
   };
   const error = initialError;
 
-  const summary = useMemo(() => {
-    if (rows.length === 0) {
-      return {
-        averageLeagueScore: null as number | null,
-        watchFacilities: 0,
-        leadingFacility: null as LeagueFacilityRow | null,
-        insuranceReadyEntities: 0,
-      };
-    }
-    return {
-      averageLeagueScore: Math.round(rows.reduce((sum, row) => sum + row.leagueScore, 0) / rows.length),
-      watchFacilities: rows.filter((row) => row.leagueLabel === "watch" || row.leagueLabel === "critical").length,
-      leadingFacility: rows[0] ?? null,
+  const summary = useMemo(
+    () => ({
+      ...summarizeLeague(rows),
       insuranceReadyEntities: insuranceRows.filter((row) => row.readinessLabel === "ready").length,
-    };
-  }, [rows, insuranceRows]);
+    }),
+    [rows, insuranceRows],
+  );
 
   return (
     <div className="space-y-6">
@@ -184,7 +175,11 @@ export default function ExecutiveLeaguePageClient({
               icon={MessageSquare}
               label="Portfolio average"
               value={formatExecutiveLeagueScore(summary.averageLeagueScore)}
-              detail={summary.leadingFacility ? `Leader: ${summary.leadingFacility.facilityName}` : "No facility rows"}
+              detail={
+                summary.totalCount === 0
+                  ? "No facility rows"
+                  : `${summary.scoredCount} of ${summary.totalCount} facilities scored${summary.leadingFacility ? ` · Leader: ${summary.leadingFacility.facilityName}` : ""}`
+              }
               tone={summary.averageLeagueScore != null && summary.averageLeagueScore >= 80 ? "emerald" : "indigo"}
             />
             <LeagueMetricCard
@@ -244,8 +239,12 @@ export default function ExecutiveLeaguePageClient({
                           <div className="text-xs text-muted-foreground">{row.entityName}</div>
                         </td>
                         <td className="py-3 pr-4">
-                          <div className="font-semibold tabular-nums">{row.leagueScore}/100</div>
-                          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{row.leagueLabel}</div>
+                          <div className={row.leagueScore == null ? "text-sm text-muted-foreground" : "font-semibold tabular-nums"}>
+                            {formatLeagueScore(row.leagueScore)}
+                          </div>
+                          {row.leagueScore != null ? (
+                            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{row.leagueLabel}</div>
+                          ) : null}
                         </td>
                         <td className="py-3 pr-4">
                           <div className="tabular-nums">{formatExecutiveRiskScore(row.riskScore)}</div>
@@ -256,7 +255,7 @@ export default function ExecutiveLeaguePageClient({
                           <div className="tabular-nums">{formatCents(row.totalBalanceDueCents)}</div>
                           <div className="text-xs text-muted-foreground">{row.openInvoicesCount} open invoice(s)</div>
                         </td>
-                        <td className="py-3 pr-4 tabular-nums">{row.insuranceScore}/100</td>
+                        <td className="py-3 pr-4 tabular-nums">{formatLeagueScore(row.insuranceScore)}</td>
                         <td className="py-3">
                           <div className="text-sm text-foreground">{row.primaryConcern}</div>
                           <div className="mt-1 text-xs text-muted-foreground">{row.boardNote}</div>

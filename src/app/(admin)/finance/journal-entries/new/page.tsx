@@ -218,7 +218,7 @@ export default function NewJournalEntryPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Lines</CardTitle>
-          <CardDescription>Each line is debit XOR credit (USD). Minimum two lines.</CardDescription>
+          <CardDescription>Each line is either a debit or a credit, in dollars. At least two lines.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {lines.map((line, i) => (

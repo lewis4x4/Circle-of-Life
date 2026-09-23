@@ -64,6 +64,7 @@ import { deriveReportScheduleState } from "@/lib/reports/report-status";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { formatTimeZoneLabel } from "@/lib/facility-wall-clock";
 
 type PackRow = {
   id: string;
@@ -992,7 +993,7 @@ export function ReportPacksHub() {
                       <div className="hidden md:block" aria-hidden />
                     )}
                     <div className="grid gap-2">
-                      <Label htmlFor="pack-time">Time ({TZ_DEFAULT})</Label>
+                      <Label htmlFor="pack-time">Time ({formatTimeZoneLabel(TZ_DEFAULT)})</Label>
                       <Input id="pack-time" type="time" value={timeLocal} onChange={(e) => setTimeLocal(e.target.value)} />
                     </div>
                   </div>

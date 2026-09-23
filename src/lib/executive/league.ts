@@ -57,11 +57,14 @@ export type EntityInsuranceReadiness = {
 };
 
 export type LeagueFacilityRow = LeagueFacilityBase & {
-  leagueScore: number;
-  leagueLabel: "leading" | "stable" | "watch" | "critical";
-  operationalScore: number;
-  financialScore: number;
-  insuranceScore: number;
+  /** Null when any input is missing: a facility with no data is not scored (COL-649). */
+  leagueScore: number | null;
+  leagueLabel: "leading" | "stable" | "watch" | "critical" | "not_scored";
+  operationalScore: number | null;
+  financialScore: number | null;
+  insuranceScore: number | null;
+  /** Inputs the league score could not be computed from, in plain words. */
+  missingInputs: string[];
   occupancyPct: number | null;
   openInvoicesCount: number;
   totalBalanceDueCents: number;
@@ -163,8 +166,9 @@ export function computeEntityInsuranceReadiness(args: {
   };
 }
 
-function computeFinancialHealth(kpi: ExecKpiPayload) {
-  if (kpi.census.occupiedResidents <= 0) return 50;
+function computeFinancialHealth(kpi: ExecKpiPayload): number | null {
+  // Balance per resident needs a census; without one there is nothing to score.
+  if (kpi.census.occupancyPct == null || kpi.census.occupiedResidents <= 0) return null;
   const balancePerResident = kpi.financial.totalBalanceDueCents / kpi.census.occupiedResidents / 100;
   let score = 100;
   score -= Math.min(30, kpi.financial.openInvoicesCount * 2);
@@ -184,18 +188,31 @@ export function computeLeagueRows(args: {
       const kpi = args.kpis.get(facility.facilityId) ?? null;
       const risk = args.riskSnapshots.get(facility.facilityId) ?? null;
       const insurance = args.insuranceReadinessByEntity.get(facility.entityId) ?? null;
-      const occupancyScore = clampScore(kpi?.census.occupancyPct ?? 50);
-      const financialScore = kpi ? computeFinancialHealth(kpi) : 50;
-      const operationalScore = risk?.score ?? 70;
-      const insuranceScore = insurance?.readinessScore ?? 60;
-      const leagueScore = clampScore(
-        operationalScore * 0.45 +
-        occupancyScore * 0.2 +
-        financialScore * 0.2 +
-        insuranceScore * 0.15,
-      );
+      // Missing inputs used to be filled with 50 / 70 / 60, which ranked
+      // facilities with no data at all (COL-649). Now a missing input leaves
+      // the facility unscored and named.
+      const occupancyPct = kpi?.census.occupancyPct ?? null;
+      const occupancyScore = occupancyPct == null ? null : clampScore(occupancyPct);
+      const financialScore = kpi ? computeFinancialHealth(kpi) : null;
+      const operationalScore = risk?.score ?? null;
+      const insuranceScore = insurance?.readinessScore ?? null;
+      const missingInputs = [
+        operationalScore == null ? "no nightly risk score" : null,
+        occupancyScore == null ? "no census loaded" : null,
+        financialScore == null ? "no census for AR per resident" : null,
+        insuranceScore == null ? "no insurance readiness" : null,
+      ].filter((item): item is string => item !== null);
+      const leagueScore =
+        operationalScore == null || occupancyScore == null || financialScore == null || insuranceScore == null
+          ? null
+          : clampScore(
+              operationalScore * 0.45 +
+              occupancyScore * 0.2 +
+              financialScore * 0.2 +
+              insuranceScore * 0.15,
+            );
 
-      let primaryConcern = "Board-ready with no elevated signals.";
+      let primaryConcern = leagueScore == null ? "" : "Board-ready with no elevated signals.";
       if (risk?.level === "critical" || risk?.level === "high") {
         primaryConcern = `Risk lane ${risk.level} at ${risk.score}/100.`;
       } else if ((insurance?.readinessLabel === "critical" || insurance?.readinessLabel === "at_risk") && insurance) {
@@ -208,6 +225,11 @@ export function computeLeagueRows(args: {
         primaryConcern = `Open AR pressure: ${kpi?.financial.openInvoicesCount ?? 0} invoices remain outstanding.`;
       }
 
+      if (missingInputs.length > 0) {
+        const notScored = `Not scored: ${missingInputs.join(", ")}.`;
+        primaryConcern = primaryConcern ? `${primaryConcern} ${notScored}` : notScored;
+      }
+
       const boardNote = args.boardSummary.weekOf
         ? `Standup ${args.boardSummary.weekOf} · ${args.boardSummary.confidenceBand ?? "n/a"} confidence · ${Math.round(args.boardSummary.completenessPct ?? 0)}% complete`
         : "No published board packet yet";
@@ -215,11 +237,12 @@ export function computeLeagueRows(args: {
       return {
         ...facility,
         leagueScore,
-        leagueLabel: leagueLabel(leagueScore),
+        leagueLabel: leagueScore == null ? ("not_scored" as const) : leagueLabel(leagueScore),
         operationalScore,
         financialScore,
         insuranceScore,
-        occupancyPct: kpi?.census.occupancyPct ?? null,
+        missingInputs,
+        occupancyPct,
         openInvoicesCount: kpi?.financial.openInvoicesCount ?? 0,
         totalBalanceDueCents: kpi?.financial.totalBalanceDueCents ?? 0,
         riskScore: risk?.score ?? null,
@@ -229,5 +252,38 @@ export function computeLeagueRows(args: {
         riskDelta: risk?.scoreDelta ?? null,
       };
     })
-    .sort((left, right) => right.leagueScore - left.leagueScore);
+    .sort((left, right) => {
+      if (left.leagueScore == null || right.leagueScore == null) {
+        if (left.leagueScore != null) return -1;
+        if (right.leagueScore != null) return 1;
+        return left.facilityName.localeCompare(right.facilityName);
+      }
+      return right.leagueScore - left.leagueScore;
+    });
+}
+
+/** Portfolio summary over scored facilities only; unscored ones are counted, never averaged in. */
+export function summarizeLeague(rows: LeagueFacilityRow[]): {
+  averageLeagueScore: number | null;
+  scoredCount: number;
+  totalCount: number;
+  leadingFacility: LeagueFacilityRow | null;
+  watchFacilities: number;
+} {
+  const scored = rows.filter((row) => row.leagueScore != null);
+  return {
+    averageLeagueScore:
+      scored.length === 0
+        ? null
+        : Math.round(scored.reduce((sum, row) => sum + (row.leagueScore ?? 0), 0) / scored.length),
+    scoredCount: scored.length,
+    totalCount: rows.length,
+    leadingFacility: scored[0] ?? null,
+    watchFacilities: scored.filter((row) => row.leagueLabel === "watch" || row.leagueLabel === "critical").length,
+  };
+}
+
+/** "72/100", or "Not scored" when an input is missing. */
+export function formatLeagueScore(score: number | null): string {
+  return score == null ? "Not scored" : `${score}/100`;
 }
