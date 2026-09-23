@@ -21,6 +21,11 @@ import {
 } from "@/lib/residents/resident-detail-overview-load";
 import { dnhLabel, feedingTubeLabel } from "@/lib/residents/resident-record-edit";
 import { recordedDiagnoses } from "@/lib/residents/resident-diagnosis-display";
+import {
+  FACE_SHEET_UNAVAILABLE,
+  faceSheetPrintErrorMessage,
+  recordResidentFaceSheetPrint,
+} from "@/lib/residents/resident-face-sheet-print";
 import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
 import { presenceSinceSummary, presenceStatusLabel } from "@/lib/residents/resident-presence-history";
 import { RESPONSIBLE_PARTY_CONTACT_ID, RESPONSIBLE_PARTY_CONTACT_NOTE } from "@/lib/residents/resident-responsible-party";
@@ -37,7 +42,13 @@ import { cn } from "@/lib/utils";
  * not. Absent facts print as "Not recorded" — a blank on a transfer sheet reads
  * as "none", and "no allergies" is not the same as "never reviewed".
  * Served outside the app shell (see `(print)/layout.tsx`); `?auto=0` leaves the
- * print dialog closed. Nothing is written.
+ * print dialog closed.
+ *
+ * COL-627: every open is logged before the sheet renders, `?auto=0` included —
+ * `record_resident_face_sheet_print` writes the audit row first, and if it
+ * refuses or fails the page shows why and never loads the record. The Print
+ * button logs again before it opens the dialog, so each sheet sent to a
+ * printer from here has its own row.
  */
 const PAGE_CSS = `@page { margin: 0.5in; }`;
 
@@ -102,6 +113,8 @@ export default function ResidentFaceSheetPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [printedAt] = useState(() => new Date());
+  const [reprinting, setReprinting] = useState(false);
+  const [reprintError, setReprintError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,11 +125,22 @@ export default function ResidentFaceSheetPage() {
         return;
       }
       try {
+        // The print is logged before anything is read or rendered.
+        await recordResidentFaceSheetPrint(residentId);
+      } catch (err) {
+        if (!cancelled) {
+          setError(faceSheetPrintErrorMessage(err));
+          setLoading(false);
+        }
+        return;
+      }
+      if (cancelled) return;
+      try {
         // No facility filter: the sheet is opened from one resident's record,
         // and RLS still decides whether this operator may read it.
         const row = await loadResidentOverviewDetail(residentId, null);
         if (cancelled) return;
-        if (!row) setError("This resident could not be found, or is outside your facility access.");
+        if (!row) setError(FACE_SHEET_UNAVAILABLE);
         else setDetail(row);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "The face sheet could not be loaded.");
@@ -138,6 +162,19 @@ export default function ResidentFaceSheetPage() {
   }, [autoPrint, detail, authLoading]);
 
   const backHref = `/admin/residents/${residentId}`;
+
+  async function printAgain() {
+    setReprinting(true);
+    setReprintError(null);
+    try {
+      await recordResidentFaceSheetPrint(residentId);
+      window.print();
+    } catch (err) {
+      setReprintError(faceSheetPrintErrorMessage(err));
+    } finally {
+      setReprinting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -179,10 +216,15 @@ export default function ResidentFaceSheetPage() {
         <Link href={backHref} className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
           Back to resident
         </Link>
-        <Button size="sm" onClick={() => window.print()}>
+        <Button size="sm" onClick={() => void printAgain()} disabled={reprinting}>
           Print
         </Button>
-        <p className="text-xs text-neutral-600">Choose “Save as PDF” in the print dialog for a file.</p>
+        <p className="text-xs text-neutral-600">Choose “Save as PDF” in the print dialog for a file. Every print is logged.</p>
+        {reprintError ? (
+          <p role="alert" className="w-full text-sm text-red-700">
+            {reprintError}
+          </p>
+        ) : null}
       </div>
 
       <article id="resident-face-sheet" className="mx-auto max-w-3xl bg-white p-8 text-black print:p-0">
