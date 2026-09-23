@@ -20,7 +20,7 @@ type ResidentRecord = {
 };
 
 const mocks = vi.hoisted(() => ({
-  facilityId: "11111111-1111-4111-8111-111111111111",
+  facilityId: "11111111-1111-4111-8111-111111111111" as string | null,
   guards: [] as Array<(id: string | null) => boolean>,
   delayRoster: false,
   rosterRequests: [] as Array<{
@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: () => null }),
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -168,6 +169,17 @@ describe("staff family bulletin drafts", () => {
       messages: [],
       residentName: "Resident",
     });
+  });
+
+  it("under All facilities keeps every building's posted notes and gates only the composer (COL-651)", async () => {
+    mocks.facilityId = null;
+    mocks.fetchStaffMessageThreads.mockResolvedValue({ ok: true, threads: [thread(RESIDENT_A, "Ada Alpha")] });
+    render(<StaffFamilyMessagesPage />);
+
+    expect(await screen.findByText("Ada Alpha posted note", {}, CI_WAIT)).toBeInTheDocument();
+    expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Resident")).not.toBeInTheDocument();
+    expect(screen.queryByText(/selected facility scope/)).not.toBeInTheDocument();
   });
 
   it("keeps each resident's draft when switching away and back", async () => {

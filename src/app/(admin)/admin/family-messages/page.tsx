@@ -37,6 +37,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
+  FAMILY_BULLETIN_NO_FACILITY_ERROR,
   fetchStaffMessageThreads,
   fetchStaffMessagesForResident,
   postStaffMessage,
@@ -44,6 +45,7 @@ import {
 import { formatFamilyDeliveryMethod } from "@/lib/family/family-portal-notes-display";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { FamilyPortalUpdateLog } from "@/components/family-portal/FamilyPortalUpdateLog";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { StaffFamilyBulletinSection } from "@/components/family-portal/StaffFamilyBulletinSection";
 
 function bulletinItemsFromMessages(messages: StaffMessageRow[]) {
@@ -64,10 +66,15 @@ function bulletinItemsFromMessages(messages: StaffMessageRow[]) {
     }));
 }
 
+const FAMILY_BULLETIN_GATE_REASON =
+  "A bulletin note goes to a resident's family in one building. Posted notes below cover every building you can see.";
+
 export default function StaffFamilyMessagesPage() {
   const { user } = useHavenAuth();
   const searchParams = useSearchParams();
   const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
+  // Posted notes below are every building's; writing one is per building (COL-651).
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const [threads, setThreads] = useState<StaffMessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -239,7 +246,7 @@ export default function StaffFamilyMessagesPage() {
     });
     if (!claimed.ok) return;
     if (!isValidFacilityIdForQuery(facilityId)) {
-      setMsgError("Select a facility before posting this note.");
+      setMsgError(FAMILY_BULLETIN_NO_FACILITY_ERROR);
       return;
     }
 
@@ -518,6 +525,9 @@ export default function StaffFamilyMessagesPage() {
         ) : null}
 
         {unpostedNotice}
+        {!facilityReady ? (
+          <FacilityGateNotice reason={FAMILY_BULLETIN_GATE_REASON} />
+        ) : (
         <StaffFamilyBulletinSection
           residentId={selectedResidentId}
           recipientLabel={selectedThread?.residentName || residentName || null}
@@ -530,6 +540,7 @@ export default function StaffFamilyMessagesPage() {
           onDeliveryMethodChange={handleDeliveryMethodChange}
           onPost={() => { void handlePost(); }}
         />
+        )}
 
         {msgLoading ? (
           <FamilyPortalUpdateLog
@@ -562,6 +573,9 @@ export default function StaffFamilyMessagesPage() {
       </div>
 
       {unpostedNotice}
+      {!facilityReady ? (
+        <FacilityGateNotice reason={FAMILY_BULLETIN_GATE_REASON} />
+      ) : (
       <StaffFamilyBulletinSection
         residentId={composeResidentId}
         onResidentChange={handleComposeResidentChange}
@@ -574,6 +588,7 @@ export default function StaffFamilyMessagesPage() {
         onDeliveryMethodChange={handleDeliveryMethodChange}
         onPost={() => { void handlePost(); }}
       />
+      )}
 
       {threads.length === 0 ? (
         <div

@@ -11,6 +11,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -69,10 +70,8 @@ export default function NewVerbalOrderPage() {
 
   const submit = useCallback(async () => {
     setError(null);
-    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Please select a facility in the header first.");
-      return;
-    }
+    // The form only renders inside a facility scope (COL-651).
+    if (!isValidFacilityIdForQuery(selectedFacilityId)) return;
     if (!user?.id || !organizationId) {
       setError("Could not resolve your profile or organization.");
       return;
@@ -151,7 +150,6 @@ export default function NewVerbalOrderPage() {
   };
 
   const getFacilityName = (): string => {
-    if (!selectedFacilityId) return "Select a facility";
     const name = availableFacilities.find((f) => f.id === selectedFacilityId)?.name;
     return formatVerbalOrderFacilityName(name);
   };
@@ -239,6 +237,10 @@ export default function NewVerbalOrderPage() {
         </div>
       </div>
 
+      {!isValidFacilityIdForQuery(selectedFacilityId) ? (
+        <FacilityGateNotice reason="A verbal order is captured for a resident in one building." />
+      ) : (
+      <>
       {/* Error banner */}
       {error && (
         <div className="rounded-2xl border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 px-6 py-4 flex items-start gap-3">
@@ -425,6 +427,8 @@ export default function NewVerbalOrderPage() {
           </button>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

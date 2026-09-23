@@ -140,13 +140,9 @@ export function ResidentSelector({
         <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">{error}</p>
       )}
 
-      {/* Selected facility hint */}
-      {!loading && residents.length === 0 && !error && (
-        <p className="mt-2 text-xs text-slate-500 dark:text-zinc-500">
-          {selectedFacilityId
-            ? "No active residents at this facility"
-            : "Select a facility in the header first"}
-        </p>
+      {/* Its only caller renders it inside a FacilityGate (COL-651). */}
+      {!loading && residents.length === 0 && !error && selectedFacilityId && (
+        <p className="mt-2 text-xs text-slate-500 dark:text-zinc-500">No active residents at this facility</p>
       )}
     </div>
   );

@@ -67,27 +67,6 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
   ],
 
   "b4-clinical": [
-    "src/app/(admin)/admin/dietary/clinical-review/page.tsx",
-    "src/app/(admin)/admin/dietary/new/page.tsx",
-    "src/app/(admin)/admin/family-messages/page.tsx",
-    "src/app/(admin)/admin/family-portal/page.tsx",
-    "src/app/(admin)/admin/infection-control/new/page.tsx",
-    "src/app/(admin)/admin/infection-control/staff-illness/new/page.tsx",
-    "src/app/(admin)/admin/infection-control/staff-illness/page.tsx",
-    "src/app/(admin)/admin/medications/controlled/page.tsx",
-    "src/app/(admin)/admin/medications/errors/new/page.tsx",
-    "src/app/(admin)/admin/medications/verbal-orders/new/page.tsx",
-    "src/app/(admin)/admin/medications/verbal-orders/page.tsx",
-    "src/app/(admin)/admin/rounding/watchlist/[residentId]/page.tsx",
-    "src/components/dietary/AdminDietaryPageClient.tsx",
-    "src/components/medication/ResidentSelector.tsx",
-    "src/lib/admin/family-messages-data.ts",
-    "src/lib/assessments/load-overdue-assessments.ts",
-    "src/lib/family/family-portal-admin-display-copy.ts",
-    "src/lib/medications/load-medication-errors.ts",
-    "src/lib/rounding/live-board-display-copy.ts",
-    "src/lib/rounding/monitoring-orders-display-copy.ts",
-    "src/lib/rounding/rounding-scope-copy.ts",
   ],
 
   "b5-compliance": [

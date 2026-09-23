@@ -185,7 +185,8 @@ export function liveBoardFilterEmptyCopy(filter: LiveBoardFilter): LiveBoardEmpt
 /** Page subtitle. Names the building when it can and says so when it cannot. */
 export function liveBoardSubtitle(facilityName: string | null): string {
   if (!facilityName) {
-    return "Today's checks and yesterday's, per building. Select a facility first.";
+    // The board below is the facility gate (COL-651); the subtitle only says what the board is.
+    return "Today's checks and yesterday's, per building.";
   }
   return `Today's checks and yesterday's at ${facilityName}. Select a resident to record one.`;
 }

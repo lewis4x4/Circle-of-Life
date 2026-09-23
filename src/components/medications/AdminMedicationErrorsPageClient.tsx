@@ -7,8 +7,10 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
@@ -36,6 +38,7 @@ export function AdminMedicationErrorsPageClient({
 }: AdminMedicationErrorsPageClientProps) {
   const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
   const [rows, setRows] = useState<MedicationErrorRow[]>(initialRows);
@@ -49,6 +52,12 @@ export function AdminMedicationErrorsPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      // Gated below; a missing facility is not a load error.
+      setError(null);
+      setRows([]);
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -118,6 +127,10 @@ export function AdminMedicationErrorsPageClient({
         </Link>
       </div>
 
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Medication errors are reported and reviewed per building." />
+      ) : (
+      <>
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-[var(--radius)] border border-border bg-card p-4">
           <p className="text-xs font-medium uppercase text-muted-foreground">In view</p>
@@ -229,6 +242,8 @@ export function AdminMedicationErrorsPageClient({
             </MotionList>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

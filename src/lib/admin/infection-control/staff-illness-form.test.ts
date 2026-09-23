@@ -93,6 +93,6 @@ describe("staff illness routes", () => {
     expect(listSource).not.toContain("All Clear");
     expect(listSource).not.toContain("Surveillance Records");
     expect(listSource).toContain("loadError");
-    expect(listSource).toContain("Select a facility");
+    expect(listSource).toContain("<FacilityGateNotice");
   });
 });

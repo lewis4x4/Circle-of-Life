@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   ROUNDING_REPORT_NO_VALUE_COPY,
   ROUNDING_REPORTS_NO_FACILITY_NAME_COPY,
-  ROUNDING_REPORTS_SELECT_FACILITY_FIRST_COPY,
   formatRoundingReportKpiValue,
   formatRoundingReportsPageSubtitle,
   resolveRoundingReportsFacilityScope,
@@ -34,9 +33,9 @@ describe("resolveRoundingReportsFacilityScope", () => {
 });
 
 describe("formatRoundingReportsPageSubtitle", () => {
-  it("uses the shared select-facility gap when unscoped", () => {
+  it("leaves the facility ask to the page's FacilityGate when unscoped (COL-651)", () => {
     const subtitle = formatRoundingReportsPageSubtitle({ kind: "unscoped" });
-    expect(subtitle).toContain(ROUNDING_REPORTS_SELECT_FACILITY_FIRST_COPY);
+    expect(subtitle).not.toMatch(/select a facility/i);
     expect(subtitle).not.toContain("selected facility");
     expect(subtitle).not.toMatch(/ at selected facility/i);
   });
