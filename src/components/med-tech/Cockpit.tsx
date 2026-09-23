@@ -20,7 +20,7 @@ export function Cockpit() {
   const [activeResident, setActiveResident] = useState<ResidentItem | null>(null);
   const [incidentOpen, setIncidentOpen]     = useState(false);
 
-  const { userId, shift, passes, residents, tape, shiftId, loading, error, refresh } = useShiftCurrent();
+  const { userId, shift, passes, residents, tape, shiftId, shiftContext, loading, error, refresh } = useShiftCurrent();
 
   if (loading) {
     return (
@@ -126,6 +126,7 @@ export function Cockpit() {
           userId={userId}
           shiftId={shiftId}
           shiftType={shift.shiftType}
+          shiftContext={shiftContext}
           residents={residents}
           onClose={() => setIncidentOpen(false)}
         />
