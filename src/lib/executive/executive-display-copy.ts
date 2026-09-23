@@ -4,6 +4,7 @@
  */
 
 import { portfolioStripKpiEmptyCopy } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
+import { notYetSentCaption } from "@/lib/billing/receivables";
 import type { PresenceCensus } from "@/lib/executive/presence-census";
 import type { StandupMetricRow } from "@/lib/executive/standup";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
@@ -150,6 +151,18 @@ export function formatExecutiveArOutstandingCents(value: number | null | undefin
   return formatUsdFromCents(value);
 }
 
+/** Executive AR tiles count what Billing's Outstanding AR counts: sent invoices with a balance (COL-667). */
+export const EXECUTIVE_AR_TILE_LABEL = "Outstanding AR (sent)";
+export const EXECUTIVE_OPEN_INVOICES_TILE_LABEL = "Open invoices (sent)";
+
+/** The drafts an executive AR figure leaves out, or null when there are none (or the payload predates the split). */
+export function executiveArDraftsCaption(
+  financial: { notYetSentCount?: number; notYetSentCents?: number } | null | undefined,
+): string | null {
+  if (!financial?.notYetSentCount) return null;
+  return notYetSentCaption(financial.notYetSentCount, formatUsdFromCents(financial.notYetSentCents ?? 0));
+}
+
 /** Open survey deficiency count — real zero stays 0; missing names the gap. */
 export function formatExecutiveSurveyDeficiencyCount(value: number | null | undefined): string {
   if (value == null) return EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY;
@@ -250,6 +263,15 @@ export function formatStandupMetricValue(metric: StandupMetricRow | undefined, f
   if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
   if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
   return `${metric.valueNumeric}`;
+}
+
+/**
+ * The note a computed standup figure carries about what it includes (e.g. Current
+ * AR's drafts not yet sent, COL-665). Figures with no value already say why.
+ */
+export function standupMetricNote(metric: StandupMetricRow | undefined): string | null {
+  if (!metric || metric.valueNumeric == null) return null;
+  return metric.overrideNote?.trim() || null;
 }
 
 /** Week-over-week standup delta — missing either side names the gap. */

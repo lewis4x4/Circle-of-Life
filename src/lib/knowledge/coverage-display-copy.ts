@@ -29,13 +29,36 @@ export function coverageKpiEmptyCopy(key: CoverageKpiKey, ctx: CoverageKpiContex
   return NOT_LOADED_COPY[key];
 }
 
-/** Seed-target coverage % — real zero stays `0%`; null rollup gets explicit copy. */
+export const COVERAGE_NO_TOPICS_TRACKED_COPY = "No topics tracked";
+
+/**
+ * Seed-target coverage % — real zero stays `0%`; null rollup gets explicit copy.
+ * A null percentage means no active topic exists to cover, not 0% (COL-649).
+ */
 export function coverageKpiCoveragePctValue(
   rollup: { coverage_pct: number | null } | null,
   ctx: CoverageKpiContext,
 ): string {
   if (!rollup) return coverageKpiEmptyCopy("coverage_pct", ctx);
-  return `${rollup.coverage_pct ?? 0}%`;
+  if (rollup.coverage_pct === null) return COVERAGE_NO_TOPICS_TRACKED_COPY;
+  return `${rollup.coverage_pct}%`;
+}
+
+/**
+ * Line under the coverage %. A topic counts as covered only when someone marks
+ * it covered on Seed targets; nothing links published documents to topics, so
+ * "0/12" beside 20+ published documents means "none marked", not "none
+ * answered" (COL-649). Say which.
+ */
+export function coverageKpiCoverageSub(
+  rollup: { covered_targets: number; total_targets: number } | null,
+): string {
+  if (!rollup) return "loading…";
+  if (rollup.total_targets === 0) return "No seed topics defined";
+  if (rollup.covered_targets === 0) {
+    return `0/${rollup.total_targets} topics marked covered — none marked yet on Seed targets`;
+  }
+  return `${rollup.covered_targets}/${rollup.total_targets} topics marked covered`;
 }
 
 /** Open-gap count — real zero stays numeric. */

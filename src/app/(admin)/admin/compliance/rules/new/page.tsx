@@ -69,10 +69,14 @@ export default function NewComplianceRulePage() {
 
   const [usePreset, setUsePreset] = useState(true);
   const [selectedPreset, setSelectedPreset] = useState(0);
-  const [tagNumber, setTagNumber] = useState("220");
-  const [tagTitle, setTagTitle] = useState("");
-  const [ruleDescription, setRuleDescription] = useState("");
-  const [severity, setSeverity] = useState<"minor" | "standard" | "serious" | "immediate_jeopardy">("serious");
+  // The preset shown in the dropdown fills every field it names on first load, not only
+  // after the dropdown changes (COL-653).
+  const [tagNumber, setTagNumber] = useState<string>(PREDEFINED_RULES[0].tag_number);
+  const [tagTitle, setTagTitle] = useState<string>(PREDEFINED_RULES[0].tag_title);
+  const [ruleDescription, setRuleDescription] = useState<string>(PREDEFINED_RULES[0].rule_description);
+  const [severity, setSeverity] = useState<"minor" | "standard" | "serious" | "immediate_jeopardy">(
+    PREDEFINED_RULES[0].severity,
+  );
   const [checkQuery, setCheckQuery] = useState("");
   const [facilityScoped, setFacilityScoped] = useState(true);
   const [enabled, setEnabled] = useState(false);

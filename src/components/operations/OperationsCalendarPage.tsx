@@ -13,6 +13,8 @@ import { buildCalendarCells, getRangeForView, shiftRangeAnchor } from "@/lib/ope
 import { OPERATION_CATEGORY_LABELS, OPERATION_SHIFT_LABELS } from "@/lib/operations/constants";
 import { groupOperationTasksByDate, summarizeOperationTasks } from "@/lib/operations/server";
 import type { OperationTask, OperationTaskResponse } from "@/lib/operations/types";
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
+import { taskSummaryTileStates } from "@/lib/operations/operations-metric-states";
 import { cn } from "@/lib/utils";
 
 const statusColors = {
@@ -37,6 +39,7 @@ export function OperationsCalendarPage() {
   const calendarCells = useMemo(() => buildCalendarCells(anchorDate), [anchorDate]);
   const groupedTasks = useMemo(() => groupOperationTasksByDate(tasks), [tasks]);
   const summary = useMemo(() => summarizeOperationTasks(tasks, range.dateFrom, range.dateTo), [tasks, range.dateFrom, range.dateTo]);
+  const tiles = taskSummaryTileStates(summary, { error });
 
   useEffect(() => {
     if (!selectedDate || !groupedTasks.has(selectedDate)) {
@@ -118,12 +121,12 @@ export function OperationsCalendarPage() {
       <OperationsViewNav />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
-        <CalendarStatCard label="Total" value={String(summary.total_tasks)} />
-        <CalendarStatCard label="Pending" value={String(summary.pending)} className="bg-slate-100/50 border-slate-200 text-slate-800" />
-        <CalendarStatCard label="In Progress" value={String(summary.in_progress)} className="bg-blue-100/50 border-blue-200 text-blue-800" />
-        <CalendarStatCard label="Completed" value={String(summary.completed)} className="bg-green-100/50 border-green-200 text-green-800" />
-        <CalendarStatCard label="Overdue" value={String(summary.overdue)} className="bg-red-100/50 border-red-200 text-red-800" />
-        <CalendarStatCard label="Schedule needs confirmation" value={String(summary.schedule_unknown ?? 0)} className="bg-amber-100/50 border-amber-200 text-amber-900" />
+        <CalendarStatCard label="Total" state={tiles.total} />
+        <CalendarStatCard label="Pending" state={tiles.pending} className="bg-slate-100/50 border-slate-200 text-slate-800" />
+        <CalendarStatCard label="In Progress" state={tiles.in_progress} className="bg-blue-100/50 border-blue-200 text-blue-800" />
+        <CalendarStatCard label="Completed" state={tiles.completed} className="bg-green-100/50 border-green-200 text-green-800" />
+        <CalendarStatCard label="Overdue" state={tiles.overdue} className="bg-red-100/50 border-red-200 text-red-800" />
+        <CalendarStatCard label="Schedule needs confirmation" state={tiles.schedule_unknown} className="bg-amber-100/50 border-amber-200 text-amber-900" />
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-4">
@@ -249,17 +252,20 @@ export function OperationsCalendarPage() {
 
 function CalendarStatCard({
   label,
-  value,
+  state,
   className,
 }: {
   label: string;
-  value: string;
+  state: MetricState<number>;
   className?: string;
 }) {
+  const hasValue = state.status === "value";
   return (
-    <div className={cn("rounded-lg border bg-muted/30 p-4", className)}>
+    <div data-metric-state={state.status} className={cn("rounded-lg border bg-muted/30 p-4", hasValue && className)}>
       <div className="text-sm text-muted-foreground">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className={hasValue ? "text-2xl font-bold" : "text-base font-medium leading-8 text-muted-foreground"}>
+        {formatMetric(state)}
+      </div>
     </div>
   );
 }

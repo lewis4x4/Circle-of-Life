@@ -62,10 +62,13 @@ export function OfficerKpiTile({
   label,
   value,
   tone = "neutral",
+  caption,
 }: {
   label: string;
   value: ReactNode;
   tone?: OfficerKpiTone;
+  /** What the figure leaves out or how it is counted, under the value. */
+  caption?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
@@ -78,6 +81,7 @@ export function OfficerKpiTile({
       >
         {value}
       </span>
+      {caption ? <span className="text-xs text-muted-foreground">{caption}</span> : null}
     </div>
   );
 }
