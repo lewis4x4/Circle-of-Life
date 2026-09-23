@@ -38,6 +38,17 @@ describe("false-all-clear scan", () => {
     ).toEqual([]);
   });
 
+  it("exempts a finding only with a written reason on the same or previous line", () => {
+    expect(
+      rules("a.ts", `// false-all-clear-ok: pagination total for the list footer, never a KPI\nreturn count ?? 0;`),
+    ).toEqual([]);
+    expect(rules("a.ts", `return count ?? 0; // false-all-clear-ok: pagination total only`)).toEqual([]);
+    expect(rules("a.ts", `// false-all-clear-ok: ok\nreturn count ?? 0;`)).toEqual(["count-or-zero"]);
+    expect(rules("a.ts", `// false-all-clear-ok: pagination total only\n\n\nreturn count ?? 0;`)).toEqual([
+      "count-or-zero",
+    ]);
+  });
+
   it("skips comments", () => {
     expect(rules("a.ts", `// never return count ?? 0 here\n/** All clear is gated */`)).toEqual([]);
   });
