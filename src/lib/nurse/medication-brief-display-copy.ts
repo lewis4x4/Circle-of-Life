@@ -59,7 +59,7 @@ export function describeControlledCounts(value: number | null): NurseStatCardCop
 
 export function describeMedErrors7d(value: number | null): NurseStatCardCopy {
   return describeBriefCount(value, {
-    positive: "Requires review",
+    positive: "Reports and medication incidents",
     zero: "None reported",
     unavailable: "Med errors unavailable",
   });

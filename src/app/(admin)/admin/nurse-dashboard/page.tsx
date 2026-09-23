@@ -65,7 +65,7 @@ function NurseDashboardScope({ selectedFacilityId }: { selectedFacilityId: strin
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Active Medications" value={brief.activeMedications ?? NURSE_COUNT_UNAVAILABLE_COPY} icon={Pill} urgency="normal" subLabel={brief.activeMedications === null ? "Medication count unavailable" : "Currently prescribed"} href="/admin/residents" />
         <StatCard title="eMAR Compliance" {...describeEmarCompliance(brief.emarCompliancePct)} icon={Activity} href="/med-tech" />
-        <StatCard title="Med Errors (7d)" {...describeMedErrors7d(brief.medErrors7d)} icon={AlertTriangle} href="/admin/medications/errors?review=unreviewed" />
+        <StatCard title="Med Errors (7d)" {...describeMedErrors7d(brief.medErrors7d)} icon={AlertTriangle} href="/admin/medications/errors" />
         <StatCard title="Controlled Counts" {...describeControlledCounts(brief.controlledDiscrepancies)} icon={ShieldCheck} href="/med-tech/controlled-count" />
       </div>
 
