@@ -1,16 +1,4 @@
 {
-  "src/app/(admin)/admin/admissions/[id]/page.tsx": {
-    "count-or-zero": 4
-  },
-  "src/app/(admin)/admin/infection-control/page.tsx": {
-    "count-or-zero": 4
-  },
-  "src/app/(admin)/admin/meetings/page.tsx": {
-    "count-or-zero": 1
-  },
-  "src/app/(caregiver)/caregiver/page.tsx": {
-    "count-or-zero": 1
-  },
   "src/app/api/admin/facilities/[facilityId]/audit-log/route.ts": {
     "count-or-zero": 3
   },
@@ -26,47 +14,17 @@
   "src/components/admin-assistant/AssistantDashboardPageClient.tsx": {
     "silent-zero": 3
   },
-  "src/components/benefits/BenefitsQueue.tsx": {
-    "silent-zero": 1
-  },
   "src/components/coordinator/CoordinatorDashboardPageClient.tsx": {
     "silent-zero": 5
   },
   "src/components/home/PastDueStrip.tsx": {
     "silent-zero": 1
   },
-  "src/components/resident-intake/types.ts": {
-    "count-or-zero": 1
-  },
-  "src/components/rounding/CadenceCurrentSummary.tsx": {
-    "silent-zero": 6
-  },
-  "src/components/rounding/CadencePreviewPanel.tsx": {
-    "silent-zero": 3
-  },
-  "src/components/stand-up/editor.tsx": {
-    "silent-zero": 1
-  },
-  "src/components/timeclock/UpunchCompare.tsx": {
-    "silent-zero": 1
-  },
   "src/lib/admin-assistant/dashboard-brief.ts": {
     "count-or-zero": 3
   },
-  "src/lib/admissions/admissions-hub-bootstrap.ts": {
-    "count-or-zero": 8
-  },
-  "src/lib/assessments/record-assessment.ts": {
-    "count-or-zero": 1
-  },
-  "src/lib/caregiver/shift-brief.ts": {
-    "count-or-zero": 4
-  },
   "src/lib/coordinator/dashboard-brief.ts": {
     "count-or-zero": 6
-  },
-  "src/lib/dietary/dashboard-brief.ts": {
-    "count-or-zero": 4
   },
   "src/lib/exec-kpi-snapshot.ts": {
     "count-or-zero": 8
@@ -74,14 +32,8 @@
   "src/lib/office/morning-huddle.ts": {
     "count-or-zero": 2
   },
-  "src/lib/referrals/referrals-hub-bootstrap.ts": {
-    "count-or-zero": 2
-  },
   "src/lib/resident-assurance/command-center-brief.ts": {
     "count-or-zero": 8
-  },
-  "src/lib/residents/resident-detail-overview-load.ts": {
-    "count-or-zero": 1
   },
   "src/lib/workflows/workflow-events.ts": {
     "count-or-zero": 1

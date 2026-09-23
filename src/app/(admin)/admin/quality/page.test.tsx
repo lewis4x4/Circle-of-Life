@@ -150,7 +150,7 @@ describe("AdminQualityHubPage under All facilities (COL-651)", () => {
     render(<AdminQualityHubPage />);
 
     expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
-    expect(screen.queryByText("Active Measures")).not.toBeInTheDocument();
+    expect(screen.queryByText("Active measures")).not.toBeInTheDocument();
     expect(screen.queryByText(/select a facility/i)).not.toBeInTheDocument();
   });
 });

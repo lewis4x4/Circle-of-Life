@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { CalendarDays, Download } from "lucide-react";
+import { Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -25,10 +25,9 @@ import { formatSchedulePublishedAt } from "@/lib/schedules/schedules-display-cop
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { cn } from "@/lib/utils";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/v2-card";
+import { KPITile } from "@/design-system/components/KPITile";
+import { PageHeader } from "@/design-system/components/PageHeader";
+import { metricFromCount } from "@/lib/metrics/metric-state";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
@@ -176,8 +175,8 @@ export function AdminSchedulesPageClient({
         whenDatasetEmpty: {
           title: "No schedules in this scope",
           description: selectedFacilityId
-            ? "Live data returned no schedule weeks for the selected facility. Use + Initialize Week to start one."
-            : "Live data returned no schedule weeks at any of your facilities. Use + Initialize Week to start one.",
+            ? "Live data returned no schedule weeks for the selected facility. Use New week to start one."
+            : "Live data returned no schedule weeks at any of your facilities. Use New week to start one.",
         },
         whenFiltersExcludeAll: {
           title: "No schedules match the current filters",
@@ -194,39 +193,24 @@ export function AdminSchedulesPageClient({
       <></>
       
       <div className="relative z-10 space-y-6">
-        <header className="mb-8">
-          <div>
-            
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Schedule Engine {draftCount > 0 && <></>}
-            </h1>
-          </div>
-        </header>
+        <PageHeader
+          className="mb-8"
+          title="Schedules"
+          subtitle="Weekly schedule containers; shift assignments roll up under each published week."
+          actions={
+            <Link href="/admin/schedules/new" className={buttonVariants({ size: "default" })}>
+              New week
+            </Link>
+          }
+        />
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px]">
-            <V2Card hoverColor="indigo" className="border-primary/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
-              <></>
-              <MonolithicWatermark value={draftCount} className="text-primary/5 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary flex items-center gap-2">
-                  <CalendarDays className="h-3.5 w-3.5" /> Draft Weeks
-                </h3>
-                <p className="text-4xl font-mono tracking-tighter text-primary pb-1">{draftCount}</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="col-span-1 md:col-span-3 lg:h-[180px]">
-            <V2Card hoverColor="blue" className="p-5 lg:p-6">
-              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="max-w-md text-xs font-mono leading-relaxed text-slate-500">Weekly schedule containers; shift assignments roll up under each published week.</p>
-                 <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono text-[10px] tap-responsive whitespace-nowrap")} >
-                   + Initialize Week
-                 </Link>
-              </div>
-            </V2Card>
-          </div>
-        </KineticGrid>
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <KPITile
+            label="Draft weeks"
+            state={metricFromCount({ count: error ? null : draftCount, error, loading: isLoading })}
+            info="Schedule weeks in this facility that are still drafts and not yet published to staff."
+          />
+        </div>
 
       <AdminFilterBar
         searchValue={search}

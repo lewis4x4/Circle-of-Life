@@ -13,6 +13,7 @@ import {
   formatCaregiverShiftBriefRoomLabel,
 } from "@/lib/caregiver/shift-brief-display-copy";
 import type { CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { requireHeadCount } from "@/lib/metrics/require-head-count";
 import type { Database } from "@/types/database";
 
 type MedRow = Database["public"]["Tables"]["resident_medications"]["Row"] & {
@@ -185,10 +186,10 @@ export async function fetchCaregiverShiftBrief(
   }
 
   return {
-    census: censusRes.count ?? 0,
-    highSeverityConditionCount: highSevRes.count ?? 0,
-    openConditionCount: openCondRes.count ?? 0,
-    pendingPrnCount: prnRes.count ?? 0,
+    census: requireHeadCount(censusRes, "Census"),
+    highSeverityConditionCount: requireHeadCount(highSevRes, "High-severity conditions"),
+    openConditionCount: requireHeadCount(openCondRes, "Open conditions"),
+    pendingPrnCount: requireHeadCount(prnRes, "Pending PRN"),
     emarDueNow: dueNow,
     emarDueSoon: dueSoon,
     emarTotal: slots.length,

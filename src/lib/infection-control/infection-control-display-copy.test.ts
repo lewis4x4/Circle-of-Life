@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatInfectionControlHubKpiValue,
+  isPositiveCount,
   infectionControlHubKpiTileIsMetric,
 } from "./infection-control-display-copy";
 
@@ -58,5 +59,13 @@ describe("infectionControlHubKpiTileIsMetric", () => {
   it("treats gap copy as messages", () => {
     expect(infectionControlHubKpiTileIsMetric("Loading infection count…")).toBe(false);
     expect(infectionControlHubKpiTileIsMetric("No outbreak count posted")).toBe(false);
+  });
+});
+
+describe("isPositiveCount (COL-649)", () => {
+  it("never colours an unread count", () => {
+    expect(isPositiveCount(null)).toBe(false);
+    expect(isPositiveCount(0)).toBe(false);
+    expect(isPositiveCount(2)).toBe(true);
   });
 });

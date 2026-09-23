@@ -18,6 +18,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { requireHeadCount } from "@/lib/metrics/require-head-count";
 import type { Database } from "@/types/database";
 
 import {
@@ -105,7 +106,9 @@ export async function countSameDayAssessments(
     .eq("assessment_date", args.assessmentDate)
     .is("deleted_at", null);
   if (error) throw new Error(error.message);
-  return count ?? 0;
+  // A missing count is not "no duplicates": the caller shows the duplicate
+  // check as unknown rather than letting a second same-day record through quietly.
+  return requireHeadCount({ count }, "Same-day assessments");
 }
 
 export interface DownstreamInput {

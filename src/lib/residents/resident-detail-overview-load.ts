@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { headCountOrNull } from "@/lib/metrics/require-head-count";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { throwIfQueryError } from "@/lib/supabase/query-error";
@@ -141,7 +142,8 @@ export type ResidentOverviewDetail = {
   carePlanEffectiveDate: string | null;
   carePlanAnnualDeltaDays: number | null;
   polstMolstRawStatus: string | null;
-  specialistConsultActiveCount: number;
+  /** Null when the count could not be read (COL-649) — not "0 on file". */
+  specialistConsultActiveCount: number | null;
   assessmentsUpcomingJson: Array<{
     assessmentType: string;
     nextDue: string | null;
@@ -693,8 +695,7 @@ export async function loadResidentOverviewDetail(
         dueAt: r.due_at,
       }));
 
-  const specialistConsultActiveCount =
-    specialistCountResult.error ? 0 : specialistCountResult.count ?? 0;
+  const specialistConsultActiveCount = headCountOrNull(specialistCountResult);
 
   const profileUserIds = [
     ...new Set([

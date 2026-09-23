@@ -355,7 +355,7 @@ export function BenefitsQueue({
           </Button>
         )}
       </Panel>
-      {options && (options.uncased_medicaid_residents?.length ?? 0) > 0 && (
+      {options?.uncased_medicaid_residents && options.uncased_medicaid_residents.length > 0 && (
         <Panel
           title="Medicaid residents without a benefits case"
           description="These residents already have a Medicaid payer on file but no active case, so their renewals and authorizations are not being tracked here yet."

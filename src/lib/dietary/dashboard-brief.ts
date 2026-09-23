@@ -8,6 +8,7 @@ import {
   facilityDatetimeLocalToUtcIso,
   todayFacilityDateIso,
 } from "@/lib/facility-wall-clock";
+import { requireHeadCount, type HeadCountResponse } from "@/lib/metrics/require-head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -28,7 +29,6 @@ export type DietaryDashboardBrief = {
   }>;
 };
 
-type CountResponse = { count: number | null };
 type ScopedQuery<T> = { eq(column: string, value: string): T };
 type RecentDietChangeRow = {
   id: string;
@@ -45,9 +45,8 @@ export function dietaryMealsTodayStartUtcIso(now: Date = new Date()): string {
 
 export async function fetchDietaryDashboardBrief(
   facilityId: string | null,
+  supabase = createClient(),
 ): Promise<DietaryDashboardBrief> {
-  const supabase = createClient();
-
   const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
 
@@ -84,6 +83,10 @@ export async function fetchDietaryDashboardBrief(
       .is("deleted_at", null),
   ]);
 
+  // A failed read throws rather than reading as "no diet orders" (COL-649).
+  if (recentChangesRes.error) throw recentChangesRes.error;
+  if (breakdownRes.error) throw breakdownRes.error;
+
   const recentDietChanges = ((recentChangesRes.data ?? []) as RecentDietChangeRow[]).map((dietChange) => ({
     id: dietChange.id,
     residentName: formatDietaryDashboardBriefResidentName(dietChange.residents),
@@ -102,10 +105,10 @@ export async function fetchDietaryDashboardBrief(
     .sort((a, b) => b.count - a.count);
 
   return {
-    censusCount: (censusRes as CountResponse).count ?? 0,
-    specialDiets: (specialDietsRes as CountResponse).count ?? 0,
-    mealsToday: (mealsRes as CountResponse).count ?? 0,
-    dietChanges48h: (changesRes as CountResponse).count ?? 0,
+    censusCount: requireHeadCount(censusRes as HeadCountResponse, "Census"),
+    specialDiets: requireHeadCount(specialDietsRes as HeadCountResponse, "Special diets"),
+    mealsToday: requireHeadCount(mealsRes as HeadCountResponse, "Meals today"),
+    dietChanges48h: requireHeadCount(changesRes as HeadCountResponse, "Diet changes"),
     recentDietChanges,
     specialDietBreakdown,
   };
