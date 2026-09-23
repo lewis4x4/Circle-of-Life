@@ -38,6 +38,8 @@
   "src/components/onboarding/onboarding-question-field.tsx": 7,
   "src/components/rounding/RoundingTaskCard.tsx": 5,
   "src/components/web/builder-story.tsx": 1,
+  "src/components/web/cost-calculator.tsx": 3,
   "src/components/web/web-footer.tsx": 18,
-  "src/components/web/web-header.tsx": 9
+  "src/components/web/web-header.tsx": 9,
+  "src/lib/a11y/pale-text.ts": 2
 }

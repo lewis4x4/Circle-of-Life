@@ -247,7 +247,7 @@ export function AdminSchedulesPageClient({
           <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedule weeks</h3>
-              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-mono tracking-wide text-muted-foreground">
                 Monday-start weeks; publish when ready for floor use.
               </p>
             </div>
@@ -274,19 +274,19 @@ export function AdminSchedulesPageClient({
                         
                         <div className="flex items-center gap-4">
                            <div className="flex flex-col gap-1">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Status</span>
                              <div><ScheduleStatusBadge status={row.status} /></div>
                            </div>
                            
                            <div className="flex flex-col gap-1">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Published</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Published</span>
                              <span className="text-xs text-slate-600 dark:text-slate-400">{formatSchedulePublishedAt(row.publishedAt)}</span>
                            </div>
 
                            {row.notes && (
                            <div className="hidden md:flex flex-col gap-1 ml-4 border-l pl-4 border-slate-300 dark:border-slate-700">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Notes</span>
-                             <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] lg:max-w-md truncate">{row.notes.trim()}</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Notes</span>
+                             <span className="text-xs text-muted-foreground max-w-[200px] lg:max-w-md truncate">{row.notes.trim()}</span>
                            </div>
                            )}
                         </div>
