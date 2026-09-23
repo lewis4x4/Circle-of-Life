@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const INFECTION_TYPES: Database["public"]["Tables"]["infection_surveillance"]["Row"]["infection_type"][] = [
   "uti",
@@ -32,6 +33,15 @@ const INFECTION_TYPES: Database["public"]["Tables"]["infection_surveillance"]["R
   "other",
 ];
 
+const INFECTION_TYPE_LABELS: Record<string, string> = {
+  respiratory_upper: "Upper respiratory",
+  respiratory_lower: "Lower respiratory",
+  gi: "Gastrointestinal",
+  skin_wound: "Skin — wound",
+  skin_fungal: "Skin — fungal",
+  covid: "COVID-19",
+};
+
 export default function NewInfectionSurveillancePage() {
   const router = useRouter();
   const { user } = useHavenAuth();
@@ -41,10 +51,10 @@ export default function NewInfectionSurveillancePage() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [residents, setResidents] = useState<{ id: string; label: string }[]>([]);
   const [residentId, setResidentId] = useState("");
-  const [infectionType, setInfectionType] =
-    useState<Database["public"]["Tables"]["infection_surveillance"]["Row"]["infection_type"]>("uti");
+  // Type and symptoms start empty: a preset "uti" / "fever" saved as a real case (COL-653).
+  const [infectionType, setInfectionType] = useState<Database["public"]["Tables"]["infection_surveillance"]["Row"]["infection_type"] | "">("");
   const [onsetDate, setOnsetDate] = useState(() => todayFacilityDateIso());
-  const [symptomsText, setSymptomsText] = useState("fever");
+  const [symptomsText, setSymptomsText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +88,10 @@ export default function NewInfectionSurveillancePage() {
     setError(null);
     if (!selectedFacilityId || !orgId || !residentId) {
       setError("Select a resident.");
+      return;
+    }
+    if (!infectionType) {
+      setError("Choose the infection type.");
       return;
     }
     setSubmitting(true);
@@ -187,9 +201,12 @@ export default function NewInfectionSurveillancePage() {
                 setInfectionType(e.target.value as Database["public"]["Tables"]["infection_surveillance"]["Row"]["infection_type"])
               }
             >
+              <option value="" disabled>
+                Select infection type…
+              </option>
               {INFECTION_TYPES.map((t) => (
                 <option key={t} value={t}>
-                  {t}
+                  {enumLabel(t, { overrides: INFECTION_TYPE_LABELS })}
                 </option>
               ))}
             </select>
@@ -200,7 +217,7 @@ export default function NewInfectionSurveillancePage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="sx">Symptoms (comma-separated)</Label>
-            <Input id="sx" value={symptomsText} onChange={(e) => setSymptomsText(e.target.value)} placeholder="fever, cough" />
+            <Input id="sx" value={symptomsText} onChange={(e) => setSymptomsText(e.target.value)} placeholder="e.g. cough, sore throat" />
           </div>
           <Button type="button" disabled={submitting} onClick={() => void submit()}>
             {submitting ? (

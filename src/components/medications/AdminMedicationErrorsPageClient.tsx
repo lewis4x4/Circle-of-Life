@@ -45,6 +45,7 @@ export function AdminMedicationErrorsPageClient({
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
 
   const skipNextLoadRef = useRef(initialError == null);
+  const loadSequenceRef = useRef(0);
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -53,22 +54,33 @@ export function AdminMedicationErrorsPageClient({
     }
     skipNextLoadRef.current = false;
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      // Gated below; a missing facility is not a load error.
+      // Gated below (COL-651); a missing facility is not a load error, and a
+      // facility read still in flight must not land under the gate.
+      loadSequenceRef.current += 1;
+      setLoading(false);
       setError(null);
       setRows([]);
       return;
     }
 
+    // Reads overlap when the facility store hydrates just after the mount load
+    // starts (the hydration render reads the store's pre-hydration null). Only
+    // the most recent read may write state, or the unscoped read's "Select a
+    // facility." lands after the facility's read began and stays on screen
+    // under the selected facility (COL-673; the roster's COL-406 guard).
+    const sequence = ++loadSequenceRef.current;
     setLoading(true);
     setError(null);
     try {
       const list = await fetchMedicationErrors(selectedFacilityId);
+      if (sequence !== loadSequenceRef.current) return;
       setRows(list);
     } catch (e: unknown) {
+      if (sequence !== loadSequenceRef.current) return;
       setError(e instanceof Error ? e.message : "Load failed");
       setRows([]);
     } finally {
-      setLoading(false);
+      if (sequence === loadSequenceRef.current) setLoading(false);
     }
   }, [selectedFacilityId, initialFacilityId]);
 

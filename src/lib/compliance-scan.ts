@@ -1,3 +1,4 @@
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 
 export type ComplianceRule = {
@@ -242,7 +243,9 @@ export async function getEmergencyChecklistPreview(
     throw new Error(`Failed to fetch emergency checklist items: ${error.message}`);
   }
 
-  const todayIso = new Date().toISOString();
+  // next_due_date is a facility calendar date; comparing it to a UTC timestamp
+  // marked items due today as overdue (and shifted the day after 8pm ET).
+  const todayIso = todayFacilityDateIso();
   return ((data ?? []) as Array<{
     id: string;
     title: string;

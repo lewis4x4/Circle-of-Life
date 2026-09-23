@@ -205,12 +205,14 @@ export function AdminDietaryPageClient({
   const [snackLogs, setSnackLogs] = useState<SnackLogRow[]>(initialBootstrap.snackLogs);
   const [savingMeal, setSavingMeal] = useState(false);
   const [savingSnack, setSavingSnack] = useState(false);
+  // Resident, meal, outcome and intake start unchosen: a preselected first resident eating
+  // 100% of lunch was one click from a false intake record (COL-653).
   const [mealForm, setMealForm] = useState({
-    resident_id: initialBootstrap.residents[0]?.id ?? "",
+    resident_id: "",
     meal_date: todayFacilityDateIso(),
-    meal_type: "lunch" as MealLogType,
-    status: "ate" as MealLogStatus,
-    intake_percent: "100",
+    meal_type: "" as MealLogType | "",
+    status: "" as MealLogStatus | "",
+    intake_percent: "",
     notes: "",
   });
   const [snackForm, setSnackForm] = useState({
@@ -223,9 +225,6 @@ export function AdminDietaryPageClient({
     setResidents(bootstrap.residents);
     setMealLogs(bootstrap.mealLogs);
     setSnackLogs(bootstrap.snackLogs);
-    if (bootstrap.residents.length > 0) {
-      setMealForm((prev) => (prev.resident_id ? prev : { ...prev, resident_id: bootstrap.residents[0].id }));
-    }
   }, []);
 
   const load = useCallback(async () => {
@@ -345,6 +344,7 @@ export function AdminDietaryPageClient({
 
   const saveMealLog = useCallback(async () => {
     if (!facilityReady || !selectedFacilityId || !organizationId || !mealForm.resident_id) return;
+    if (!mealForm.meal_type || !mealForm.status) return;
     setSavingMeal(true);
     setError(null);
     try {
@@ -365,7 +365,7 @@ export function AdminDietaryPageClient({
         deleted_at: null,
       }) as never, { onConflict: "resident_id,meal_date,meal_type" });
       if (insertErr) throw insertErr;
-      setMealForm((prev) => ({ ...prev, notes: "" }));
+      setMealForm((prev) => ({ ...prev, resident_id: "", status: "", intake_percent: "", notes: "" }));
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save meal log.");
@@ -791,8 +791,12 @@ export function AdminDietaryPageClient({
                 <select
                   value={mealForm.resident_id}
                   onChange={(e) => setMealForm((prev) => ({ ...prev, resident_id: e.target.value }))}
+                  aria-label="Resident"
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                 >
+                  <option value="" disabled>
+                    Select resident…
+                  </option>
                   {residents.map((resident) => (
                     <option key={resident.id} value={resident.id}>
                       {`${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Resident"}
@@ -813,8 +817,12 @@ export function AdminDietaryPageClient({
                   <select
                     value={mealForm.meal_type}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, meal_type: e.target.value as MealLogType }))}
+                    aria-label="Meal"
                     className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10"
                   >
+                    <option value="" disabled>
+                      Select meal…
+                    </option>
                     {MEAL_TYPES.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
@@ -824,8 +832,12 @@ export function AdminDietaryPageClient({
                   <select
                     value={mealForm.status}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, status: e.target.value as MealLogStatus }))}
+                    aria-label="How much was eaten"
                     className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10"
                   >
+                    <option value="" disabled>
+                      Select outcome…
+                    </option>
                     {MEAL_STATUSES.map((option) => (
                       <option key={option} value={option}>{MEAL_STATUS_LABELS[option]}</option>
                     ))}
@@ -836,7 +848,8 @@ export function AdminDietaryPageClient({
                     max={100}
                     value={mealForm.intake_percent}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, intake_percent: e.target.value }))}
-                    placeholder="Intake %"
+                    placeholder="Intake % (optional)"
+                    aria-label="Intake percent (optional)"
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                 </div>
@@ -847,7 +860,7 @@ export function AdminDietaryPageClient({
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   rows={2}
                 />
-                <Button type="button" size="sm" disabled={!mealForm.resident_id || savingMeal} onClick={() => void saveMealLog()}>
+                <Button type="button" size="sm" disabled={!mealForm.resident_id || !mealForm.meal_type || !mealForm.status || savingMeal} onClick={() => void saveMealLog()}>
                   {savingMeal ? "Saving meal…" : "Log meal"}
                 </Button>
               </div>

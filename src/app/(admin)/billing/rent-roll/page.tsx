@@ -18,6 +18,7 @@ import {
   type RentRollPeriod,
   type RentRollRow,
 } from "@/lib/billing/rent-roll-model";
+import { rentRollResidentCountLabel } from "@/lib/billing/money-page-counts";
 import { isNotYetSentStatus } from "@/lib/billing/receivables";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -203,8 +204,8 @@ function RentRollPageContent() {
                 value={money(totals.contractedCents)}
                 caption={
                   totals.rowsWithoutRate > 0
-                    ? `${totals.residentCount} residents · ${totals.rowsWithoutRate} without a rate on file`
-                    : `${totals.residentCount} residents`
+                    ? `${rentRollResidentCountLabel(totals.residentCount, bounds.label)} · ${totals.rowsWithoutRate} without a rate on file`
+                    : rentRollResidentCountLabel(totals.residentCount, bounds.label)
                 }
               />
               <RentRollSummaryTile
@@ -302,7 +303,7 @@ function RentRollPageContent() {
                   <tfoot>
                     <tr className="border-t border-border bg-muted/30 text-[13px] font-semibold text-foreground">
                       <td className="px-3 py-2" colSpan={3}>
-                        Totals · {totals.residentCount} residents
+                        Totals · {rentRollResidentCountLabel(totals.residentCount, bounds.label)}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">{money(totals.contractedCents)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{money(totals.privateShareCents)}</td>

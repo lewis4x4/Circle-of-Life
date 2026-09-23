@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Food = Database["public"]["Enums"]["iddsi_food_level"];
 type Fluid = Database["public"]["Enums"]["iddsi_fluid_level"];
@@ -62,8 +63,9 @@ export default function AdminDietaryNewPage() {
   const { selectedFacilityId } = useFacilityStore();
   const [residents, setResidents] = useState<{ id: string; label: string }[]>([]);
   const [residentId, setResidentId] = useState("");
-  const [food, setFood] = useState<Food>("not_assessed");
-  const [fluid, setFluid] = useState<Fluid>("not_assessed");
+  // Unchosen until the cook picks one; "Not assessed" is a choice, not a default (COL-653).
+  const [food, setFood] = useState<Food | "">("");
+  const [fluid, setFluid] = useState<Fluid | "">("");
   const [allergies, setAllergies] = useState("");
   const [textures, setTextures] = useState("");
   const [aspiration, setAspiration] = useState("");
@@ -140,6 +142,10 @@ export default function AdminDietaryNewPage() {
       return;
     }
     if (!user || !organizationId || !selectedFacilityId) return;
+    if (!food || !fluid) {
+      setFetchError("Choose the IDDSI food and fluid levels (or Not assessed).");
+      return;
+    }
 
     setSaving(true);
     setFetchError(null);
@@ -257,20 +263,26 @@ export default function AdminDietaryNewPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="food">IDDSI food</Label>
-                <select id="food" className={selectClass} value={food} onChange={(e) => setFood(e.target.value as Food)}>
+                <select id="food" className={selectClass} required value={food} onChange={(e) => setFood(e.target.value as Food)}>
+                  <option value="" disabled>
+                    Select food level…
+                  </option>
                   {FOOD_OPTIONS.map((o) => (
                     <option key={o} value={o}>
-                      {o.replace(/_/g, " ")}
+                      {enumLabel(o)}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fluid">IDDSI fluid</Label>
-                <select id="fluid" className={selectClass} value={fluid} onChange={(e) => setFluid(e.target.value as Fluid)}>
+                <select id="fluid" className={selectClass} required value={fluid} onChange={(e) => setFluid(e.target.value as Fluid)}>
+                  <option value="" disabled>
+                    Select fluid level…
+                  </option>
                   {FLUID_OPTIONS.map((o) => (
                     <option key={o} value={o}>
-                      {o.replace(/_/g, " ")}
+                      {enumLabel(o)}
                     </option>
                   ))}
                 </select>
