@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Brain, Stethoscope, FileText, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -216,12 +217,7 @@ function RecentEntries({ heading, children }: { heading: string; children: React
 const RECENT_ENTRY_CLASS = "rounded-[var(--radius)] border border-border bg-muted/30 p-3 text-sm";
 
 function formatEntryStamp(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatShortDateTime(iso);
 }
 
 // ============================================================================

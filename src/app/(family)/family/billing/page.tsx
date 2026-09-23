@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CreditCard, FileText, Loader2, ShieldCheck, Banknote } from "lucide-react";
@@ -29,9 +30,7 @@ import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 import { cn } from "@/lib/utils";
 
 function formatDue(ymd: string): string {
-  const d = new Date(`${ymd}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return ymd;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(d);
+  return formatDateTimeWith(ymd.slice(0, 10), { month: "short", day: "numeric" }, { fallback: ymd });
 }
 
 export default function FamilyBillingSummaryPage() {

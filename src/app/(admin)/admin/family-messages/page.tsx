@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ClipboardList } from "lucide-react";
@@ -701,12 +702,7 @@ export default function StaffFamilyMessagesPage() {
                       {thread.latestFamilyAcknowledgedAt ? (
                         <p className="mt-1 text-xs text-muted-foreground">
                           Family viewed{" "}
-                          {new Intl.DateTimeFormat("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          }).format(new Date(thread.latestFamilyAcknowledgedAt))}
+                          {formatShortDateTime(thread.latestFamilyAcknowledgedAt)}
                         </p>
                       ) : null}
                       {thread.triageKeywords.length > 0 ? (

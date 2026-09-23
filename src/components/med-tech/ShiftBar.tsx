@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -66,11 +67,7 @@ export function ShiftBar({
     router.replace("/login");
   }, [router]);
 
-  const time = now.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const time = formatDateTimeWith(now, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   return (
     <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-950/80 ">

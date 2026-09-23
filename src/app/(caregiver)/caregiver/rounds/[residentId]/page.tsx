@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayTime } from "@/lib/format/datetime";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
@@ -318,7 +319,7 @@ export default function CaregiverResidentRoundPage() {
           pendingPayload={pending?.payload}
           reasonRequired={pending?.reasonRequired}
           residentName={residentName}
-          dueLabel={`Due at ${new Date(task.due_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}${facilityId ? ` · Facility ${facilityId.slice(-4)}` : ""}`}
+          dueLabel={`Due at ${formatDisplayTime(task.due_at)}${facilityId ? ` · Facility ${facilityId.slice(-4)}` : ""}`}
           facilityId={facilityId}
           submitting={submitting}
           onSubmit={submitRound}

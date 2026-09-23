@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -304,9 +305,8 @@ export function AdminSchedulesPageClient({
 }
 
 function formatWeekLabel(isoDate: string): string {
-  const parsed = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return `Week of ${new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(parsed)}`;
+  const label = formatDateTimeWith(isoDate.slice(0, 10), { weekday: "short", month: "short", day: "numeric", year: "numeric" }, { fallback: "" });
+  return label ? `Week of ${label}` : isoDate;
 }
 
 function ScheduleStatusBadge({ status }: { status: string }) {

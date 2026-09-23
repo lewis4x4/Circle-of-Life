@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -207,7 +208,7 @@ export function CoordinatorDashboardPageClient({
                     <span className="text-[15px] font-semibold text-foreground">{cp.residentName}</span>
                   </div>
                   <span className="text-xs font-medium text-warning">
-                    {new Date(cp.reviewDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {formatDateTimeWith(cp.reviewDate, { month: "short", day: "numeric" })}
                   </span>
                 </Link>
               ))}

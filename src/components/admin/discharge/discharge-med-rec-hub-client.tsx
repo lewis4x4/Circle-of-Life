@@ -5,6 +5,7 @@
  * (Quiet Operator). `/pipeline/discharge-management` redirects here (COL-644).
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -708,10 +709,7 @@ export function DischargeMedRecHubClient({
                               <p>{phase.helperText}</p>
                             </TableCell>
                             <TableCell className="align-top text-[13px] leading-snug text-muted-foreground">
-                              {new Date(r.updated_at).toLocaleString(undefined, {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })}
+                              {formatDisplayDateTime(r.updated_at)}
                             </TableCell>
                             <TableCell className="space-y-2 text-right align-top">
                               <div className="flex flex-wrap justify-end gap-2">

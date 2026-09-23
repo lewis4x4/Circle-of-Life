@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -490,12 +491,5 @@ async function fetchTimeRecordsFromSupabase(selectedFacilityId: string | null): 
 }
 
 function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatShortDateTime(iso, { fallback: iso });
 }

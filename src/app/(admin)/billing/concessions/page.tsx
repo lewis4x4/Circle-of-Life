@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BadgeDollarSign, FileSpreadsheet, UserCircle } from "lucide-react";
@@ -285,7 +286,7 @@ export default function BillingConcessionsPage() {
               A concession is a discount against the same payer&apos;s posted rate: a private-pay resident&apos;s rent against the posted rate for their room and care level. Residents whose rent is split with Medicaid, insurance or another payer are listed as payer splits, not concessions.
             </p>
             <p className="text-sm text-muted-foreground">
-              Rate schedules and agreements as of {asOfDate} Eastern.
+              Rate schedules and agreements as of {formatDisplayDate(asOfDate)}.
             </p>
             {!isLoading && rows.length > 0 ? (
               <p className="text-sm text-muted-foreground">{concessionsResidentCountLabel(rows.length)}.</p>

@@ -750,10 +750,7 @@ export function AdminReferralsPageClient({
                         </div>
                         <p className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
                           {row.scheduled_for
-                            ? new Date(row.scheduled_for).toLocaleString(undefined, {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })
+                            ? formatDisplayDateTime(row.scheduled_for)
                             : formatReferralsHubOutreachWeek(row.performed_for_week)}
                         </p>
                       </div>

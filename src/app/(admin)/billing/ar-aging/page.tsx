@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -935,7 +936,7 @@ function AdminArAgingPageContent() {
                         </td>
                         <td className="px-3 py-2 font-medium text-foreground">{r.residentName}</td>
                         {orgWideHub ? <td className="px-3 py-2 text-muted-foreground">{r.facilityName}</td> : null}
-                        <td className="px-3 py-2 tabular-nums text-muted-foreground">{r.oldestDueIso}</td>
+                        <td className="px-3 py-2 tabular-nums text-muted-foreground">{formatDisplayDate(r.oldestDueIso)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b0_30)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b31_60)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b61_90)}</td>
@@ -977,7 +978,7 @@ function AdminArAgingPageContent() {
                                     <Link href={`/admin/billing/invoices/${inv.id}`} className="text-primary underline">
                                       {formatInvoiceRowNumberForDisplay(inv)}
                                     </Link>{" "}
-                                    <span className="text-muted-foreground">due {inv.due_date.slice(0, 10)}</span>
+                                    <span className="text-muted-foreground">due {formatDisplayDate(inv.due_date.slice(0, 10))}</span>
                                   </span>
                                   <span>{billingCurrency.format(inv.balance_due / 100)}</span>
                                 </li>
@@ -1017,7 +1018,7 @@ function AdminArAgingPageContent() {
                     </td>
                     <td className="px-3 py-2">{inv.residentName}</td>
                     {orgWideHub ? <td className="px-3 py-2 text-muted-foreground">{inv.facilityName}</td> : null}
-                    <td className="px-3 py-2 tabular-nums text-muted-foreground">{inv.due_date.slice(0, 10)}</td>
+                    <td className="px-3 py-2 tabular-nums text-muted-foreground">{formatDisplayDate(inv.due_date.slice(0, 10))}</td>
                     <td className="px-3 py-2 text-right tabular-nums font-medium">
                       {billingCurrency.format(inv.balance_due / 100)}
                     </td>
