@@ -126,3 +126,28 @@ describe("equivalent query edits", () => {
     expect(screen.queryByText("No matching residents")).toBeNull();
   });
 });
+
+describe("theme tokens (COL-638)", () => {
+  // The page shipped dark-theme palette classes (zinc-9xx surfaces, white text) on the
+  // light theme and was unreadable. Every surface and label must come from theme tokens.
+  const RAW_PALETTE = /\b(?:text|bg|border|ring|placeholder:text|hover:bg|hover:border|group-hover:text)-(?:white|black|zinc|slate|gray|neutral|stone|red|amber)(?:-\d{2,3})?(?:\/\d+)?\b|\[#|rgba?\(/;
+  function rawPaletteClasses(root: HTMLElement): string[] {
+    return [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))]
+      .map((el) => el.getAttribute("class") ?? "")
+      .filter((cls) => RAW_PALETTE.test(cls));
+  }
+  it("renders the prompt, source cards and composer with theme tokens only", () => {
+    const { container } = render(<Page />);
+    expect(screen.getByRole("heading", { name: "What are you looking for?" })).toBeTruthy();
+    expect(rawPaletteClasses(container)).toEqual([]);
+  });
+  it("renders results, empty and error states with theme tokens only", async () => {
+    mocks.limit.mockResolvedValueOnce({ data: null, error: { message: "Unavailable" } }).mockResolvedValueOnce({ data: [resident("Synthetic Person")], error: null });
+    const { container } = render(<Page />); search("Synthetic");
+    await screen.findByText("Search failed.");
+    expect(rawPaletteClasses(container)).toEqual([]);
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    await screen.findByRole("link", { name: "Synthetic Person" });
+    expect(rawPaletteClasses(container)).toEqual([]);
+  });
+});

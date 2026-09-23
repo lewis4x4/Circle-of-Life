@@ -21,7 +21,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
-import { cn } from "@/lib/utils";
 
 type SearchDocRow = Pick<
   Database["public"]["Tables"]["search_documents"]["Row"],
@@ -128,13 +127,7 @@ export default function AdminSearchPage() {
 
   return (
     <div className="-mx-6 -mt-6 mb-0 flex min-h-0 max-h-[calc(100dvh-7.5rem)] h-[calc(100dvh-7.5rem)] flex-1 flex-col lg:-mx-10">
-      <div
-        className={cn(
-          "relative flex min-h-0 min-w-0 flex-1 flex-col",
-          "bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)]",
-          "dark:bg-[#050505]"
-        )}
-      >
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-background">
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-4xl px-4 pb-8 pt-6 sm:px-6">
             {/* Wayfinding — same voice as Knowledge, not “SYS module” */}
@@ -144,23 +137,23 @@ export default function AdminSearchPage() {
                   <MessageSquare className="size-3.5 text-primary" aria-hidden />
                   Find records
                 </div>
-                <h1 className="text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl">
+                <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                   Unified Search
                 </h1>
-                <p className="max-w-xl text-base leading-relaxed text-zinc-400">
+                <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
                   Resident names are searched here across facilities your account can access. Staff, vendors and incidents are available in their own modules below.
                 </p>
               </div>
               <Link
                 href="/admin/knowledge"
-                className="group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary/40 hover:bg-zinc-900/70"
+                className="group flex shrink-0 items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-card-foreground shadow-sm transition hover:border-primary/40 hover:bg-muted"
               >
-                <span className="flex size-10 items-center justify-center rounded-xl shadow-lg shadow-[var(--shadow-card)]">
-                  <BookOpen className="size-5 text-white" aria-hidden />
+                <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <BookOpen className="size-5" aria-hidden />
                 </span>
                 <span className="text-left">
-                  <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-500">Policies &amp; docs</span>
-                  <span className="flex items-center gap-1 text-sm font-medium text-zinc-200">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Policies &amp; docs</span>
+                  <span className="flex items-center gap-1 text-sm font-medium text-foreground">
                     Open Knowledge Base
                     <ArrowUpRight className="size-3.5 opacity-70 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   </span>
@@ -172,14 +165,14 @@ export default function AdminSearchPage() {
               <div className="mb-10 flex flex-col items-center gap-10">
                 <div className="flex flex-col items-center gap-4 text-center">
                   <div
-                    className="flex h-16 w-16 items-center justify-center rounded-2xl shadow-[0_0_32px_rgba(99,102,241,0.35)]"
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary"
                     aria-hidden
                   >
-                    <Search className="size-8 text-white" strokeWidth={2} />
+                    <Search className="size-8" strokeWidth={2} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-zinc-100 sm:text-2xl">What are you looking for?</h2>
-                    <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-zinc-500">
+                    <h2 className="text-xl font-semibold text-foreground sm:text-2xl">What are you looking for?</h2>
+                    <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
                       Type at least two characters of a resident name, or open a record module.
                     </p>
                   </div>
@@ -192,22 +185,22 @@ export default function AdminSearchPage() {
                       <Link
                         key={s.label}
                         href={s.href}
-                        className="group flex w-full flex-col items-start gap-2 rounded-2xl border border-zinc-700/80 bg-zinc-900/60 px-5 py-4 text-left shadow-sm transition hover:border-primary/50 hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="group flex w-full flex-col items-start gap-2 rounded-2xl border border-border bg-card px-5 py-4 text-left text-card-foreground shadow-sm transition hover:border-primary/50 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <div className="flex w-full items-center gap-3">
                           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-ring">
                             <Icon className="size-4" />
                           </span>
-                          <span className="text-sm font-semibold text-zinc-200">{s.label}</span>
+                          <span className="text-sm font-semibold text-foreground">{s.label}</span>
                         </div>
-                        <p className="pl-12 text-sm font-medium leading-snug text-primary/90">{s.mode === "indexed" ? "Available in this search" : "Available in its module"}</p>
-                        <p className="pl-12 text-xs text-zinc-500 group-hover:text-zinc-400">{s.hint}</p>
+                        <p className="pl-12 text-sm font-medium leading-snug text-primary">{s.mode === "indexed" ? "Available in this search" : "Available in its module"}</p>
+                        <p className="pl-12 text-xs text-muted-foreground group-hover:text-foreground">{s.hint}</p>
                       </Link>
                     );
                   })}
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-600">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Building2 className="size-3.5" aria-hidden />
                   <span>Limited to records your account can access.</span>
                 </div>
@@ -224,31 +217,31 @@ export default function AdminSearchPage() {
 
             {showResultsPanel && (
               <section className="space-y-4" aria-live="polite">
-                <div className="flex items-center justify-between gap-2 border-b border-zinc-800/90 pb-3">
-                  <h2 className="text-sm font-semibold text-zinc-300">Results</h2>
+                <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
+                  <h2 className="text-sm font-semibold text-foreground">Results</h2>
                   {!loading && !error && (
-                    <span className="font-mono text-xs tabular-nums text-zinc-500">
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
                       {rows.length} match{rows.length === 1 ? "" : "es"}
                     </span>
                   )}
                 </div>
 
                 {error && (
-                  <div className="rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">{error}</div>
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
                 )}
 
                 {loading && (
                   <div className="space-y-3">
-                    <Skeleton className="h-16 w-full rounded-xl border border-zinc-800/50 bg-zinc-900/80" />
-                    <Skeleton className="h-16 w-full rounded-xl border border-zinc-800/50 bg-zinc-900/80" />
-                    <Skeleton className="h-16 w-full rounded-xl border border-zinc-800/50 bg-zinc-900/80" />
+                    <Skeleton className="h-16 w-full rounded-xl border border-border bg-muted" />
+                    <Skeleton className="h-16 w-full rounded-xl border border-border bg-muted" />
+                    <Skeleton className="h-16 w-full rounded-xl border border-border bg-muted" />
                   </div>
                 )}
 
                 {!loading && !error && rows.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-zinc-700/80 bg-zinc-900/40 px-6 py-14 text-center">
-                    <p className="font-medium text-zinc-300">No matching residents</p>
-                    <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
+                  <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-14 text-center">
+                    <p className="font-medium text-foreground">No matching residents</p>
+                    <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                       Try another spelling or a shorter resident name. Staff, vendors and incidents are searched or browsed in their own modules; this result does not check those records.
                     </p>
                   </div>
@@ -262,12 +255,12 @@ export default function AdminSearchPage() {
                       return (
                         <li
                           key={r.id}
-                          className="rounded-2xl border border-zinc-800/90 bg-zinc-900/50 transition hover:border-primary/35 hover:bg-zinc-900/90"
+                          className="rounded-2xl border border-border bg-card text-card-foreground transition hover:border-primary/35 hover:bg-muted"
                         >
                           <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                             <div className="min-w-0 flex-1">
                               <div className="mb-1 flex flex-wrap items-center gap-2">
-                                <span className="rounded-md bg-zinc-800/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                                <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                                   {sourceLabel(r.source_table)}
                                 </span>
                               </div>
@@ -280,15 +273,15 @@ export default function AdminSearchPage() {
                                 </Link>
                               ) : (
                                 <>
-                                  <span className="font-medium text-zinc-100">{title}</span>
-                                  <p className="mt-1 text-xs text-amber-200/90">
+                                  <span className="font-medium text-foreground">{title}</span>
+                                  <p className="mt-1 text-xs text-warning">
                                     Deep link not configured for this record type yet.
                                   </p>
                                 </>
                               )}
                             </div>
-                            <div className="flex shrink-0 items-center gap-2 text-xs text-zinc-500">
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-zinc-800/80 px-2.5 py-1 text-zinc-300">
+                            <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2.5 py-1 text-foreground">
                                 {facName(r.facility_id)}
                               </span>
                             </div>
@@ -304,13 +297,13 @@ export default function AdminSearchPage() {
         </div>
 
         {/* Pinned composer — Knowledge Base pattern */}
-        <div className="shrink-0 border-t border-zinc-800/90 bg-zinc-950/95 px-4 py-4  pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="mx-auto flex w-full max-w-4xl items-end gap-2 rounded-2xl border border-zinc-700/90 bg-zinc-900/90 p-2 pl-3 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/5">
+        <div className="shrink-0 border-t border-border bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="mx-auto flex w-full max-w-4xl items-end gap-2 rounded-2xl border border-input bg-card p-2 pl-3 shadow-sm focus-within:ring-2 focus-within:ring-ring">
             <div className="relative mb-0.5 flex min-w-0 flex-1 items-center gap-2 pl-1">
-              <Search className="size-5 shrink-0 text-zinc-500" aria-hidden />
+              <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />
               <Input
                 id="admin-search-q"
-                className="h-11 border-0 bg-transparent px-0 text-base text-zinc-100 shadow-none placeholder:text-zinc-600 focus-visible:ring-0"
+                className="h-11 border-0 bg-transparent px-0 text-base text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
                 placeholder="Search resident names…"
                 value={q}
                 onChange={(e) => {
@@ -343,7 +336,7 @@ export default function AdminSearchPage() {
               )}
             </Button>
           </div>
-          <p className="mx-auto mt-2 max-w-4xl px-1 text-center text-[11px] text-zinc-600">
+          <p className="mx-auto mt-2 max-w-4xl px-1 text-center text-[11px] text-muted-foreground">
             Minimum 2 characters. For policy questions and document-grounded answers, use{" "}
             <Link href="/admin/knowledge" className="text-primary underline-offset-2 hover:text-primary hover:underline">
               Knowledge Base
