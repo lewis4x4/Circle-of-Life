@@ -1,3 +1,4 @@
+import { formatProfileName } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -202,7 +203,7 @@ export async function fetchIncidentsFromSupabase(
     const resident = row.resident_id ? residentById.get(row.resident_id) ?? null : null;
     const residentName = formatIncidentResidentName(resident);
     const reporter = reporterById.get(row.reported_by);
-    const reportedBy = reporter?.full_name?.trim() || "Staff";
+    const reportedBy = formatProfileName(reporter?.full_name, { fallback: "Staff" });
     const openFollowups = openFollowupsByIncident.get(row.id) ?? 0;
     const overdueFollowups = overdueFollowupsByIncident.get(row.id) ?? 0;
     const unassignedFollowups = unassignedFollowupsByIncident.get(row.id) ?? 0;

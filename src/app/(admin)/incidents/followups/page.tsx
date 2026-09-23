@@ -1,5 +1,6 @@
 "use client";
 
+import { formatProfileName } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -128,7 +129,7 @@ export default function AdminIncidentFollowupsPage() {
 
       const incidentById = new Map(((incidentsResult.data ?? []) as IncidentMini[]).map((row) => [row.id, row]));
       const residentById = new Map(((residentsResult.data ?? []) as ResidentMini[]).map((row) => [row.id, row]));
-      const assigneeById = new Map(((assigneesResult.data ?? []) as ProfileMini[]).map((row) => [row.id, row.full_name?.trim() || "Assigned"]));
+      const assigneeById = new Map(((assigneesResult.data ?? []) as ProfileMini[]).map((row) => [row.id, formatProfileName(row.full_name, { fallback: "Assigned" })]));
 
       setRows(
         followups.map((row) => {

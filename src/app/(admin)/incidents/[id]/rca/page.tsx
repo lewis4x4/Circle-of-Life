@@ -1,5 +1,6 @@
 "use client";
 
+import { formatProfileName } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -250,7 +251,7 @@ export default function AdminIncidentRcaPage() {
             .eq("id", rca.completed_by)
             .maybeSingle()) as unknown as QueryResult<{ full_name: string | null }>;
           if (prof.error) throw prof.error;
-          setCompleterName(prof.data?.full_name?.trim() || "Staff");
+          setCompleterName(formatProfileName(prof.data?.full_name, { fallback: "Staff" }));
         } else {
           setCompleterName(null);
         }
@@ -430,7 +431,7 @@ export default function AdminIncidentRcaPage() {
         .select("full_name")
         .eq("id", user.id)
         .maybeSingle()) as unknown as QueryResult<{ full_name: string | null }>;
-      setCompleterName(prof.data?.full_name?.trim() || "Staff");
+      setCompleterName(formatProfileName(prof.data?.full_name, { fallback: "Staff" }));
 
       if (typeof window !== "undefined") {
         try {

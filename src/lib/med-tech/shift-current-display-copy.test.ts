@@ -33,21 +33,21 @@ describe("formatShiftCurrentResidentName", () => {
     );
   });
 
-  it("returns last-name-first when posted", () => {
+  it("returns First Last when posted (COL-686)", () => {
     expect(
       formatShiftCurrentResidentName({
         first_name: "Jordan",
         last_name: "Lee",
         preferred_name: null,
       }),
-    ).toBe("Lee, Jordan");
+    ).toBe("Jordan Lee");
     expect(
       formatShiftCurrentResidentName({
         first_name: "Jordan",
         last_name: "Lee",
         preferred_name: "Jay",
       }),
-    ).toBe("Lee, Jay");
+    ).toBe("Jay Lee");
   });
 });
 
@@ -62,21 +62,21 @@ describe("formatShiftCurrentResidentCompactName", () => {
     );
   });
 
-  it("returns last-name-first initial when posted", () => {
+  it("returns first name and last initial when posted (COL-686)", () => {
     expect(
       formatShiftCurrentResidentCompactName({
         first_name: "Jordan",
         last_name: "Lee",
         preferred_name: null,
       }),
-    ).toBe("Lee, J.");
+    ).toBe("Jordan L.");
     expect(
       formatShiftCurrentResidentCompactName({
         first_name: "Jordan",
         last_name: "Lee",
         preferred_name: "Jay",
       }),
-    ).toBe("Lee, J.");
+    ).toBe("Jay L.");
   });
 });
 
