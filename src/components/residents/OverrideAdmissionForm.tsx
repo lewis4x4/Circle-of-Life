@@ -416,7 +416,7 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
                   onValueChange={(v) => {
                     setDob(v);
                   }}
-                  disabled={!facilityReady}
+                 
                   aria-invalid={!!fieldErrors.dob}
                   aria-describedby={fieldErrors.dob ? "ov-dob-err ov-dob-hint" : "ov-dob-hint"}
                 />
@@ -434,7 +434,7 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
                 <Select
                   value={gender === PICK ? undefined : gender}
                   onValueChange={(v) => setGender(v)}
-                  disabled={!facilityReady}
+                 
                   required
                 >
                   <SelectTrigger id="ov-gender" aria-invalid={!!fieldErrors.gender} aria-describedby={fieldErrors.gender ? "ov-gender-err" : undefined}>
@@ -468,7 +468,7 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
                 {label("ov-status", <>Residency status</>, true)}
-                <Select value={status === PICK ? undefined : status} onValueChange={setStatus} disabled={!facilityReady}>
+                <Select value={status === PICK ? undefined : status} onValueChange={setStatus}>
                   <SelectTrigger id="ov-status" aria-invalid={!!fieldErrors.status} aria-describedby={fieldErrors.status ? "ov-status-err" : undefined}>
                     <SelectValue placeholder="Select…" />
                   </SelectTrigger>
@@ -488,7 +488,7 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
               </div>
               <div className="space-y-2">
                 {label("ov-acuity", <>Acuity (initial)</>, true)}
-                <Select value={acuity === PICK ? undefined : acuity} onValueChange={setAcuity} disabled={!facilityReady}>
+                <Select value={acuity === PICK ? undefined : acuity} onValueChange={setAcuity}>
                   <SelectTrigger id="ov-acuity" aria-invalid={!!fieldErrors.acuity} aria-describedby={fieldErrors.acuity ? "ov-acuity-err" : undefined}>
                     <SelectValue placeholder="Select…" />
                   </SelectTrigger>
@@ -520,7 +520,7 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
                     admissionTouchedRef.current = true;
                   }}
                   initialVisibleMonthIso={formatInTimeZone(new Date(), "America/New_York", "yyyy-MM-dd")}
-                  disabled={!facilityReady}
+                 
                   aria-invalid={!!fieldErrors.admissionDate}
                   aria-describedby={fieldErrors.admissionDate ? "ov-adm-err ov-adm-hint" : "ov-adm-hint"}
                 />
@@ -544,7 +544,7 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
                 <Select
                   value={bedId === BED_UNASSIGNED && isActive ? undefined : bedId}
                   onValueChange={setBedId}
-                  disabled={!facilityReady || loadingBeds}
+                  disabled={loadingBeds}
                 >
                   <SelectTrigger id="ov-bed" aria-invalid={!!fieldErrors.bedId} aria-describedby={fieldErrors.bedId ? "ov-bed-err ov-bed-h" : "ov-bed-h"}>
                     <SelectValue placeholder={isActive ? "Select a bed…" : "Unassigned"} />
@@ -629,7 +629,7 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
           <Button
             type="button"
             variant="outline"
-            disabled={submitting || !facilityReady}
+            disabled={submitting}
             onClick={requestPreview}
             className="h-10 min-w-[200px] border-amber-700/40 bg-amber-100/90 text-amber-950 hover:bg-amber-200/90 dark:border-amber-600 dark:bg-amber-950/50 dark:text-amber-100 dark:hover:bg-amber-900/60"
           >
