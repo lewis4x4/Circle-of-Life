@@ -1,2 +1,167 @@
 {
+  "src/app/(admin)/admin/admissions/[id]/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 7
+    }
+  },
+  "src/app/(admin)/admin/medications/verbal-orders/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 7
+    }
+  },
+  "src/app/(admin)/admin/profile/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/admin/referrals/hl7-inbound/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/admin/residents/[id]/assessments/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/billing/collections/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 6
+    }
+  },
+  "src/app/(admin)/billing/payments/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 6
+    }
+  },
+  "src/app/(admin)/certifications/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 4
+    }
+  },
+  "src/app/(admin)/finance/journal-entries/[id]/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 4
+    }
+  },
+  "src/app/(admin)/finance/journal-entries/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 3
+    }
+  },
+  "src/app/(admin)/incidents/[id]/rca/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/incidents/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 8
+    }
+  },
+  "src/app/(admin)/residents/[id]/care-plan/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/schedules/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/staff/new/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 6
+    }
+  },
+  "src/app/(admin)/transportation/requests/[id]/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 13
+    }
+  },
+  "src/app/(caregiver)/prn-followup/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    }
+  },
+  "src/app/(caregiver)/resident/[id]/adl/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/app/(caregiver)/resident/[id]/behavior/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 8
+    }
+  },
+  "src/app/(caregiver)/resident/[id]/condition-change/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 3
+    }
+  },
+  "src/app/(caregiver)/resident/[id]/log/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 5
+    }
+  },
+  "src/app/contact/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 5
+    }
+  },
+  "src/app/login/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/app/tour/page.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 6
+    }
+  },
+  "src/components/caregiver/ResidentAdlCard.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/components/controlled-substance/ControlledCountConsole.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 6
+    }
+  },
+  "src/components/executive/time-range-selector.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/components/med-tech/IncidentModal.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 5
+    }
+  },
+  "src/components/medication/CountInitiationModal.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 5
+    }
+  },
+  "src/components/medication/DiscrepancyResolutionModal.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    }
+  },
+  "src/components/rounding/CadenceTemplatePortfolio.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    }
+  },
+  "src/components/staff/StaffProfileSections.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 20
+    }
+  },
+  "src/components/web/tour-scheduler-modal.tsx": {
+    "jsx-a11y/label-has-associated-control": {
+      "count": 6
+    }
+  }
 }

@@ -132,6 +132,35 @@ const eslintConfig = defineConfig([
       "react-hooks/incompatible-library": "off",
     },
   },
+  {
+    // COL-658: a visible <label> must name its control — either `htmlFor` the
+    // control's `id`, or wrap the control. A sibling label with neither leaves
+    // the select/input unnamed for screen readers (axe `label` / `select-name`,
+    // critical). Pre-existing violations are recorded in eslint-suppressions.json
+    // and are being fixed route by route; new ones fail lint.
+    files: ["src/**/*.{tsx,jsx}"],
+    rules: {
+      "jsx-a11y/label-has-associated-control": [
+        "error",
+        {
+          labelComponents: ["Label", "FormLabel"],
+          controlComponents: [
+            "Input",
+            "Textarea",
+            "Select",
+            "SelectTrigger",
+            "Checkbox",
+            "Switch",
+            "NumberInput",
+            "DateInput",
+            "Combobox",
+          ],
+          assert: "either",
+          depth: 4,
+        },
+      ],
+    },
+  },
 ]);
 
 // Pre-existing React Compiler-rule violations (react-hooks/set-state-in-effect
