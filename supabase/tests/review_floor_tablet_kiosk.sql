@@ -799,4 +799,53 @@ SET LOCAL ROLE anon;
 SELECT pg_temp.fk_fail(format('SELECT * FROM public.floor_staff_display_names(ARRAY[%L::uuid])', a_staff), 'permission denied') FROM fk;
 RESET ROLE;
 
+-- ---------------------------------------------------------------------------
+-- 17. The server reads the one-clock flag with service_role: three columns,
+--     read only. authenticated keeps exactly its 408 grants.
+-- ---------------------------------------------------------------------------
+DO $$ DECLARE c text; BEGIN
+  FOREACH c IN ARRAY ARRAY['organization_id', 'facility_id', 'timeclock_enabled'] LOOP
+    IF NOT has_column_privilege('service_role', 'public.timeclock_facility_settings', c, 'SELECT') THEN
+      RAISE EXCEPTION 'service_role cannot read timeclock_facility_settings.%', c;
+    END IF;
+  END LOOP;
+  FOR c IN SELECT a.attname FROM pg_attribute a
+           WHERE a.attrelid = 'public.timeclock_facility_settings'::regclass AND a.attnum > 0 AND NOT a.attisdropped
+             AND a.attname NOT IN ('organization_id', 'facility_id', 'timeclock_enabled') LOOP
+    IF has_column_privilege('service_role', 'public.timeclock_facility_settings', c, 'SELECT') THEN
+      RAISE EXCEPTION 'service_role can read timeclock_facility_settings.%', c;
+    END IF;
+  END LOOP;
+  IF has_table_privilege('service_role', 'public.timeclock_facility_settings', 'SELECT')
+     OR has_any_column_privilege('service_role', 'public.timeclock_facility_settings', 'INSERT')
+     OR has_any_column_privilege('service_role', 'public.timeclock_facility_settings', 'UPDATE')
+     OR has_table_privilege('service_role', 'public.timeclock_facility_settings', 'DELETE')
+     OR has_table_privilege('service_role', 'public.timeclock_facility_settings', 'TRUNCATE') THEN
+    RAISE EXCEPTION 'service_role holds more than a three-column read on timeclock_facility_settings';
+  END IF;
+  IF NOT has_table_privilege('authenticated', 'public.timeclock_facility_settings', 'SELECT')
+     OR NOT has_table_privilege('authenticated', 'public.timeclock_facility_settings', 'INSERT')
+     OR NOT has_table_privilege('authenticated', 'public.timeclock_facility_settings', 'UPDATE')
+     OR has_table_privilege('authenticated', 'public.timeclock_facility_settings', 'DELETE')
+     OR has_table_privilege('authenticated', 'public.timeclock_facility_settings', 'TRUNCATE')
+     OR has_any_column_privilege('anon', 'public.timeclock_facility_settings', 'SELECT') THEN
+    RAISE EXCEPTION 'authenticated or anon grants on timeclock_facility_settings changed';
+  END IF;
+END $$;
+-- And the read works under the role, reaching only the three columns. Hosted
+-- service_role bypasses RLS; the replay role does not until told to (rolled back).
+ALTER ROLE service_role BYPASSRLS;
+SELECT pg_temp.fk_service();
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+  IF (SELECT timeclock_enabled FROM public.timeclock_facility_settings WHERE facility_id = (SELECT facility FROM fk)) IS NOT TRUE THEN
+    RAISE EXCEPTION 'service_role flag read wrong';
+  END IF;
+  BEGIN
+    PERFORM floor_roster_roles FROM public.timeclock_facility_settings LIMIT 1;
+    RAISE EXCEPTION 'service_role read floor_roster_roles';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
+RESET ROLE;
+
 ROLLBACK;
