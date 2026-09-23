@@ -30,9 +30,6 @@
   "src/app/(admin)/reports/page.tsx": {
     "count-or-zero": 4
   },
-  "src/app/(admin)/transportation/page.tsx": {
-    "all-clear-copy": 1
-  },
   "src/app/(admin)/vendors/[id]/page.tsx": {
     "count-or-zero": 3
   },

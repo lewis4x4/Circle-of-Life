@@ -19,6 +19,8 @@ import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { fetchTransportationHubSnapshot } from "@/lib/transportation/load-transportation-hub";
+import { complianceQueueEmptyCopy, transportHubTileStates } from "@/lib/transportation/hub-metric-states";
+import { formatMetric } from "@/lib/metrics/metric-state";
 import { formatInspectionLogVehicleDisplayName } from "@/lib/transportation/inspection-log-display-copy";
 import {
   formatTransportationAppointmentTime,
@@ -236,6 +238,26 @@ export default function AdminTransportationHubPage() {
     }
   }, [supabase, selectedFacilityId, transportStatusFilter]);
 
+  const tiles = transportHubTileStates({
+    facilityReady,
+    loading,
+    error: queryError,
+    fleetCount: fleet.length,
+    driverCount: drivers.length,
+  });
+  const driverEmpty = complianceQueueEmptyCopy({
+    kind: "driver",
+    error: queryError,
+    scopeSize: drivers.length,
+    windowDays: COMPLIANCE_WINDOW_DAYS,
+  });
+  const vehicleEmpty = complianceQueueEmptyCopy({
+    kind: "vehicle",
+    error: queryError,
+    scopeSize: fleet.length,
+    windowDays: COMPLIANCE_WINDOW_DAYS,
+  });
+
   const driverAlerts = useMemo((): DriverAlert[] => {
     const out: DriverAlert[] = [];
     for (const row of drivers) {
@@ -382,7 +404,17 @@ export default function AdminTransportationHubPage() {
                 <h3 className="text-[11px] font-bold tracking-wider uppercase text-primary flex items-center gap-2">
                   <Bus className="h-4 w-4" /> Active Fleet Size
                 </h3>
-                <p className="text-2xl font-medium tracking-tight text-primary pb-1">{fleet.length}</p>
+                <p
+                  data-metric-state={tiles.fleet.status}
+                  className={cn(
+                    "pb-1",
+                    tiles.fleet.status === "value"
+                      ? "text-2xl font-medium tracking-tight text-primary"
+                      : "text-base font-medium text-muted-foreground",
+                  )}
+                >
+                  {formatMetric(tiles.fleet)}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -394,7 +426,17 @@ export default function AdminTransportationHubPage() {
                 <h3 className="text-[11px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Active Drivers
                 </h3>
-                <p className="text-2xl font-medium tracking-tight text-emerald-600 dark:text-emerald-400 pb-1">{drivers.length}</p>
+                <p
+                  data-metric-state={tiles.drivers.status}
+                  className={cn(
+                    "pb-1",
+                    tiles.drivers.status === "value"
+                      ? "text-2xl font-medium tracking-tight text-emerald-600 dark:text-emerald-400"
+                      : "text-base font-medium text-muted-foreground",
+                  )}
+                >
+                  {formatMetric(tiles.drivers)}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -575,14 +617,8 @@ export default function AdminTransportationHubPage() {
                 <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
               ) : driverAlerts.length === 0 ? (
                 <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 ">
-                  <p className="font-semibold text-lg">
-                    {drivers.length === 0 && fleet.length === 0 ? "Inbox Zero" : "No Driver Alerts"}
-                  </p>
-                  <p className="text-sm opacity-80 mt-1">
-                    {drivers.length === 0 && fleet.length === 0
-                      ? "Add fleet vehicles and driver credentials to track compliance."
-                      : `No license or medical card expiring within ${COMPLIANCE_WINDOW_DAYS} days.`}
-                  </p>
+                  <p className="font-semibold text-lg">{driverEmpty.title}</p>
+                  <p className="text-sm opacity-80 mt-1">{driverEmpty.body}</p>
                 </div>
               ) : (
                 driverAlerts.map((a) => {
@@ -659,14 +695,8 @@ export default function AdminTransportationHubPage() {
                 <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
               ) : vehicleAlerts.length === 0 ? (
                 <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 ">
-                  <p className="font-semibold text-lg">
-                    {fleet.length === 0 ? "No Fleet Units" : "No Vehicle Alerts"}
-                  </p>
-                  <p className="text-sm opacity-80 mt-1">
-                    {fleet.length === 0
-                      ? "Register a vehicle to track insurance and registration expirations."
-                      : `No insurance or registration expiring within ${COMPLIANCE_WINDOW_DAYS} days.`}
-                  </p>
+                  <p className="font-semibold text-lg">{vehicleEmpty.title}</p>
+                  <p className="text-sm opacity-80 mt-1">{vehicleEmpty.body}</p>
                 </div>
               ) : (
                 vehicleAlerts.map((a) => {
