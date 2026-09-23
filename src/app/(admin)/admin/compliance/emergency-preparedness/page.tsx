@@ -616,8 +616,8 @@ export default function EmergencyPreparednessPage() {
                   }`}
                 >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 flex-1">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
                         <div
                           className={`p-3 rounded-lg ${
                             isOverdue

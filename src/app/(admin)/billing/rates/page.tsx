@@ -130,7 +130,7 @@ export default function AdminBillingRatesPage() {
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2">
         <BillingHubNav />
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
+        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-5 md:p-8 rounded-lg border border-border shadow-sm mt-4">
           <div className="space-y-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
               Rate Schedules
@@ -142,7 +142,7 @@ export default function AdminBillingRatesPage() {
               Version history is read-only and reflects stored schedule fields.
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-3">
+          <div className="flex shrink-0 flex-col items-start gap-3 md:items-end">
              <Link className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px]")} href="/admin/billing/rates/new">
                + Add Schedule
              </Link>
