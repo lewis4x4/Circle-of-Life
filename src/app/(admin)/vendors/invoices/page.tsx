@@ -14,7 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
 
 type InvRow = Pick<
@@ -91,6 +91,7 @@ export default function VendorInvoicesPage() {
           <AdminEmptyState title="No vendor invoices" description="Vendor invoices will appear here once entered." />
         ) : (
           <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+            <TableRowList label="Vendor invoices">
             <TableRowHeader>
               <span className="w-[140px] shrink-0">Invoice #</span>
               <span className="w-[100px] shrink-0">Status</span>
@@ -117,6 +118,7 @@ export default function VendorInvoicesPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         )}
       </div>

@@ -18,6 +18,8 @@ import {
   OfficerLanes,
   OfficerLinkOutPanel,
   officerAlarmTone,
+  officerAlertsEmptyDescription,
+  officerRegisterKpi,
   type OfficerLane,
 } from "@/components/executive/officer-dashboard";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
@@ -29,6 +31,8 @@ import {
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
 import {
+  EXECUTIVE_AR_TILE_LABEL,
+  executiveArDraftsCaption,
   formatExecutiveArOutstandingCents,
   formatExecutiveOccupancyPctWithSuffix,
   formatExecutiveOpenIncidentCount,
@@ -49,7 +53,13 @@ function ceoSeverityTone(severity: CeoAlertDisplay["severity"]): StatusPillTone 
   return "info";
 }
 
-function CeoAlertsWatchlist({ alerts }: { alerts: CeoAlertDisplay[] }) {
+function CeoAlertsWatchlist({
+  alerts,
+  openRoundingEscalations,
+}: {
+  alerts: CeoAlertDisplay[];
+  openRoundingEscalations: number | null | undefined;
+}) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -62,8 +72,11 @@ function CeoAlertsWatchlist({ alerts }: { alerts: CeoAlertDisplay[] }) {
       </div>
       {alerts.length === 0 ? (
         <AdminEmptyState
-          title="No critical alerts"
-          description="Executive-level exceptions across the portfolio will appear here as they trigger."
+          title="No executive alerts raised"
+          description={
+            officerAlertsEmptyDescription(openRoundingEscalations) ??
+            "Executive-level exceptions across the portfolio will appear here as they trigger."
+          }
         />
       ) : (
         <AdminOperationalListPanel>
@@ -128,13 +141,16 @@ export default function CeoDashboardPageClient({
   const occValue = formatExecutiveOccupancyPctWithSuffix(occupancyPct);
   const occupancyLabel = resolveOfficerOccupancyTileLabel(false, occupancyScope);
   const occupancyFootnote = executivePortfolioOccupancyFootnote(occupancyScope);
-  const deficienciesValue = formatExecutiveSurveyDeficiencyCount(deficiencies);
+  const deficienciesTile =
+    kpis?.registers?.surveyDeficienciesRecorded === false
+      ? officerRegisterKpi(deficiencies, false, false, "Open deficiencies", "warning")
+      : { value: formatExecutiveSurveyDeficiencyCount(deficiencies), tone: officerAlarmTone(deficiencies, "warning") };
   const arValue = formatExecutiveArOutstandingCents(arCents);
   const incidentsValue = formatExecutiveOpenIncidentCount(openIncidents);
 
   const lanes: OfficerLane[] = [
     {
-      stat: arCents == null ? "Financials" : `${money.format(arCents / 100)} AR`,
+      stat: arCents == null ? "Financials" : `${money.format(arCents / 100)} AR (sent)`,
       title: "Finance hub",
       description: "Billed revenue, labor pressure, and monthly financials.",
       href: "/admin/finance",
@@ -195,8 +211,8 @@ export default function CeoDashboardPageClient({
           <div className="flex flex-col gap-2">
             <OfficerKpiStrip>
               <OfficerKpiTile label={occupancyLabel} value={occValue} />
-              <OfficerKpiTile label="Open deficiencies" value={deficienciesValue} tone={officerAlarmTone(deficiencies, "warning")} />
-              <OfficerKpiTile label="Total AR outstanding" value={arValue} />
+              <OfficerKpiTile label="Open deficiencies" value={deficienciesTile.value} tone={deficienciesTile.tone} />
+              <OfficerKpiTile label={EXECUTIVE_AR_TILE_LABEL} value={arValue} caption={executiveArDraftsCaption(kpis?.financial)} />
               <OfficerKpiTile label="Open incidents" value={incidentsValue} tone={officerAlarmTone(openIncidents, "danger")} />
             </OfficerKpiStrip>
             {occupancyFootnote ? (
@@ -208,10 +224,10 @@ export default function CeoDashboardPageClient({
         {!showKpiSkeleton && tab === "CEO View" ? (
           <>
             <OfficerLanes lanes={lanes} subheading="Leadership decisions and portfolio drill-ins." />
-            <CeoAlertsWatchlist alerts={displayAlerts} />
+            <CeoAlertsWatchlist alerts={displayAlerts} openRoundingEscalations={kpis?.registers?.openRoundingEscalations} />
           </>
         ) : !showKpiSkeleton && tab === "Alerts" ? (
-          <CeoAlertsWatchlist alerts={displayAlerts} />
+          <CeoAlertsWatchlist alerts={displayAlerts} openRoundingEscalations={kpis?.registers?.openRoundingEscalations} />
         ) : !showKpiSkeleton && tab === "Reports" ? (
           <OfficerLinkOutPanel
             title="Executive reports"

@@ -6,6 +6,7 @@ import noRawSpacing from "./eslint-rules/no-raw-spacing.mjs";
 import requireKpiInfo from "./eslint-rules/require-kpi-info.mjs";
 import noDirectPrimitiveImport from "./eslint-rules/no-direct-primitive-import.mjs";
 import primitiveEnforcementRoute from "./eslint-rules/primitive-enforcement-route.mjs";
+import requireTimeZone from "./eslint-rules/require-time-zone.mjs";
 
 const uiV2Plugin = {
   rules: {
@@ -19,6 +20,12 @@ const uiV2Plugin = {
 const quietOperatorPrimitivesPlugin = {
   rules: {
     "enforce-route-markup-quiet-operator": primitiveEnforcementRoute,
+  },
+};
+
+const havenTimePlugin = {
+  rules: {
+    "require-time-zone": requireTimeZone,
   },
 };
 
@@ -121,6 +128,19 @@ const eslintConfig = defineConfig([
     },
     rules: {
       "ui-v2/no-direct-primitive-import": "error",
+    },
+  },
+  {
+    // COL-659: display dates must name their time zone. Pre-existing call sites
+    // are baselined in `eslint-suppressions.json`; convert them to
+    // `@/lib/format/datetime` and prune.
+    files: ["src/**/*.{ts,tsx,js,jsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+    plugins: {
+      "haven-time": havenTimePlugin,
+    },
+    rules: {
+      "haven-time/require-time-zone": "error",
     },
   },
   {

@@ -10,7 +10,7 @@ const authMock = vi.hoisted(() => ({
 }));
 
 const execRoleKpisMock = vi.hoisted(() => ({
-  kpis: null,
+  kpis: null as unknown,
   alerts: [],
   facilities: [] as Array<{ id: string; name: string }>,
   loading: true,
@@ -46,7 +46,27 @@ describe("CfoDashboardPage auth hydration", () => {
     execRoleKpisMock.error = null;
     execRoleKpisMock.loading = true;
     execRoleKpisMock.facilities = [];
+    execRoleKpisMock.kpis = null;
     facilityStoreMock.selectedFacilityId = null;
+  });
+
+  it("labels AR as sent invoices and names the drafts it leaves out (COL-667)", () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    execRoleKpisMock.loading = false;
+    // Homewood 2026-09-22: $16,968.00 sent, 57 drafts ($117,108.16) not yet sent.
+    execRoleKpisMock.kpis = {
+      census: { occupancyPct: null },
+      financial: { openInvoicesCount: 10, totalBalanceDueCents: 1_696_800, notYetSentCount: 57, notYetSentCents: 11_710_816 },
+      workforce: { certificationsExpiring30d: 0 },
+    };
+
+    render(<CfoDashboardPage />);
+
+    expect(screen.getByText("Outstanding AR (sent)")).toBeInTheDocument();
+    expect(screen.getByText("Open invoices (sent)")).toBeInTheDocument();
+    expect(screen.getByText("57 drafts ($117,108.16) not yet sent — not included")).toBeInTheDocument();
+    expect(screen.queryByText("Total AR outstanding")).not.toBeInTheDocument();
   });
 
   it("does not show the legacy org crash banner while auth is hydrating", () => {

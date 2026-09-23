@@ -8,12 +8,16 @@ export const workingFacilityKey = (userId: string) => `haven:working-facility:${
 
 /** Every option is re-authorized from current database grants. Storage is only a preference. */
 export async function loadCaregiverFacilityOptions(supabase: SupabaseClient<Database>, userId: string): Promise<CaregiverFacilityContext[]> {
-  const profile = await supabase.from("user_profiles").select("organization_id, app_role").eq("id", userId).maybeSingle();
+  // The grant read does not depend on the profile, so both run at once (COL-674);
+  // owners and org admins simply ignore the grants.
+  const [profile, access] = await Promise.all([
+    supabase.from("user_profiles").select("organization_id, app_role").eq("id", userId).maybeSingle(),
+    supabase.from("user_facility_access").select("facility_id").eq("user_id", userId).is("revoked_at", null),
+  ]);
   if (profile.error) throw profile.error;
   if (!profile.data?.organization_id) throw new Error("Your staff profile is unavailable.");
   let facilityQuery = supabase.from("facilities").select("id, name, organization_id, timezone").eq("organization_id", profile.data.organization_id).is("deleted_at", null).order("name");
   if (!["owner", "org_admin"].includes(profile.data.app_role)) {
-    const access = await supabase.from("user_facility_access").select("facility_id").eq("user_id", userId).is("revoked_at", null);
     if (access.error) throw access.error;
     const ids = (access.data ?? []).map((row) => row.facility_id);
     if (!ids.length) return [];
@@ -56,7 +60,11 @@ export async function loadCaregiverFacilityContextForUser(supabase: SupabaseClie
 }
 
 export async function loadCaregiverFacilityContext(supabase: SupabaseClient<Database>): Promise<{ ok: true; ctx: CaregiverFacilityContext } | { ok: false; error: string }> {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return { ok: false, error: error?.message ?? "You need to sign in." };
-  return loadCaregiverFacilityContextForUser(supabase, { userId: user.id });
+  // Verified locally against the project's signing keys instead of an Auth
+  // server round trip per page (COL-674); every read below is still re-authorized
+  // by the database, which refuses a revoked session.
+  const { data, error } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub;
+  if (error || typeof userId !== "string") return { ok: false, error: error?.message ?? "You need to sign in." };
+  return loadCaregiverFacilityContextForUser(supabase, { userId });
 }

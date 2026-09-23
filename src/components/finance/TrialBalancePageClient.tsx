@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { formatCents } from "@/lib/finance/format-cents";
 import { loadTrialBalanceData, type EntityMini, type TrialBalanceRow } from "@/lib/finance/load-trial-balance-data";
+import { trialBalanceEmptyCopy, type TrialBalanceRun } from "@/lib/finance/trial-balance-display";
 
 type TrialBalancePageClientProps = {
   initialEntities: EntityMini[];
@@ -48,7 +49,21 @@ export default function TrialBalancePageClient({
   const [rows, setRows] = useState<TrialBalanceRow[]>(initialRows);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
+  const [lastRun, setLastRun] = useState<TrialBalanceRun | null>(
+    initialEntityId && !initialError
+      ? { entityId: initialEntityId, dateFrom: initialDateFrom, dateTo: initialDateTo }
+      : null,
+  );
   const ready = initialReady;
+  const emptyCopy = trialBalanceEmptyCopy({
+    error,
+    loading,
+    entityId,
+    dateFrom,
+    dateTo,
+    lastRun,
+    rowCount: rows.length,
+  });
 
   async function runReport() {
     if (!entityId) return;
@@ -57,6 +72,7 @@ export default function TrialBalancePageClient({
     try {
       const result = await loadTrialBalanceData(supabase, entityId, dateFrom, dateTo);
       setRows(result);
+      setLastRun({ entityId, dateFrom, dateTo });
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Failed to run trial balance.");
     } finally {
@@ -208,11 +224,9 @@ export default function TrialBalancePageClient({
         </Card>
       )}
 
-      {!loading && rows.length === 0 && ready && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          No posted entries in the selected range. Run the report to see results.
-        </p>
-      )}
+      {ready && emptyCopy ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">{emptyCopy}</p>
+      ) : null}
     </div>
   );
 }

@@ -1,17 +1,100 @@
 {
+  "src/app/(admin)/admin/activities/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/app/(admin)/admin/admissions/[id]/page.tsx": {
     "jsx-a11y/label-has-associated-control": {
       "count": 7
     }
   },
+  "src/app/(admin)/admin/approvals/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/admin/compliance/audit-export/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/admin/compliance/rules/[id]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/admin/compliance/rules/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/admin/compliance/scan/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/admin/family-messages/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/admin/feedback/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/admin/knowledge/admin/review/[id]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 3
+    }
+  },
+  "src/app/(admin)/admin/knowledge/coverage/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/app/(admin)/admin/medications/verbal-orders/new/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 7
+    }
+  },
+  "src/app/(admin)/admin/operations/missed/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 5
+    }
+  },
+  "src/app/(admin)/admin/operations/overdue/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/admin/operations/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/admin/operations/pager/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   },
   "src/app/(admin)/admin/profile/page.tsx": {
     "jsx-a11y/label-has-associated-control": {
       "count": 2
+    }
+  },
+  "src/app/(admin)/admin/quality/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   },
   "src/app/(admin)/admin/referrals/hl7-inbound/page.tsx": {
@@ -24,19 +107,85 @@
       "count": 2
     }
   },
+  "src/app/(admin)/admin/residents/[id]/vitals/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/admin/rounding/watchlist/[residentId]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 4
+    }
+  },
+  "src/app/(admin)/admin/shift-swaps/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/app/(admin)/billing/collections/new/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 6
     }
   },
+  "src/app/(admin)/billing/invoices/[id]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/app/(admin)/billing/payments/new/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 6
+    }
+  },
+  "src/app/(admin)/billing/payments/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/billing/rates/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/billing/revenue/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   },
   "src/app/(admin)/certifications/new/page.tsx": {
     "jsx-a11y/label-has-associated-control": {
       "count": 4
+    }
+  },
+  "src/app/(admin)/certifications/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/executive/reports/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/executive/standup/[week]/board/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/executive/standup/[week]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/executive/standup/history/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 5
     }
   },
   "src/app/(admin)/finance/journal-entries/[id]/page.tsx": {
@@ -50,8 +199,16 @@
     }
   },
   "src/app/(admin)/incidents/[id]/rca/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 2
+    }
+  },
+  "src/app/(admin)/incidents/followups/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   },
   "src/app/(admin)/incidents/new/page.tsx": {
@@ -59,9 +216,54 @@
       "count": 8
     }
   },
+  "src/app/(admin)/incidents/overdue-followups/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/insurance/renewal-packages/[id]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/app/(admin)/insurance/renewal-packages/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/reports/admin/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/reports/history/[id]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/reports/history/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/reports/saved/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(admin)/residents/[id]/billing/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/app/(admin)/residents/[id]/care-plan/page.tsx": {
     "jsx-a11y/label-has-associated-control": {
       "count": 1
+    }
+  },
+  "src/app/(admin)/schedules/[id]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
     }
   },
   "src/app/(admin)/schedules/new/page.tsx": {
@@ -69,9 +271,19 @@
       "count": 2
     }
   },
+  "src/app/(admin)/staff/[id]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/app/(admin)/staff/new/page.tsx": {
     "jsx-a11y/label-has-associated-control": {
       "count": 6
+    }
+  },
+  "src/app/(admin)/time-records/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   },
   "src/app/(admin)/transportation/requests/[id]/page.tsx": {
@@ -79,29 +291,94 @@
       "count": 13
     }
   },
+  "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(caregiver)/caregiver/schedules/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(caregiver)/clock/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(caregiver)/followups/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(caregiver)/handoff/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(caregiver)/meds/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/app/(caregiver)/prn-followup/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 1
     }
   },
   "src/app/(caregiver)/resident/[id]/adl/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 2
     }
   },
   "src/app/(caregiver)/resident/[id]/behavior/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 8
     }
   },
   "src/app/(caregiver)/resident/[id]/condition-change/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 3
     }
   },
   "src/app/(caregiver)/resident/[id]/log/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 5
+    }
+  },
+  "src/app/(family)/family/billing/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(family)/family/invoices/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(onboarding)/onboarding/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/app/(print)/print/residents/[id]/face-sheet/page.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   },
   "src/app/contact/page.tsx": {
@@ -119,8 +396,58 @@
       "count": 6
     }
   },
+  "src/components/admin-assistant/AssistantDashboardPageClient.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/admin/discharge/discharge-med-rec-hub-client.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/admin/facilities/shared/ExpirationBadge.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/admin/facilities/tabs/AuditTab.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/admin/facilities/tabs/DocumentsTab.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/admin/facilities/tabs/ObservationCadenceTab.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/components/admin/resident-log-modals.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/admin/users/UserDataTable.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/admin/users/UserEditSheet.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/components/caregiver/ResidentAdlCard.tsx": {
     "jsx-a11y/label-has-associated-control": {
+      "count": 2
+    }
+  },
+  "src/components/caregiver/ShiftHandoffBoard.tsx": {
+    "haven-time/require-time-zone": {
       "count": 2
     }
   },
@@ -129,14 +456,47 @@
       "count": 6
     }
   },
+  "src/components/coordinator/CoordinatorDashboardPageClient.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/discharge/DischargeMedicationReview.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/executive/ExecutiveBenchmarksPageClient.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 3
+    }
+  },
+  "src/components/executive/facility-drill-down.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 3
+    }
+  },
   "src/components/executive/time-range-selector.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 3
+    },
     "jsx-a11y/label-has-associated-control": {
       "count": 2
+    }
+  },
+  "src/components/family-portal/StaffFamilyBulletinSection.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   },
   "src/components/med-tech/IncidentModal.tsx": {
     "jsx-a11y/label-has-associated-control": {
       "count": 5
+    }
+  },
+  "src/components/med-tech/ShiftBar.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   },
   "src/components/medication/CountInitiationModal.tsx": {
@@ -149,8 +509,73 @@
       "count": 1
     }
   },
+  "src/components/medications/AdminMedicationErrorsPageClient.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/operations/OperationsCalendarPage.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/operations/OperationsTaskRangePage.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/referrals/AdminReferralsPageClient.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/components/resident-intake/ResidentIntakeLinks.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/resident-intake/ResidentMatchReview.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/residents/ResidentDetailOverviewClient.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/rounding/CadencePreviewPanel.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/components/rounding/CadenceTemplatePortfolio.tsx": {
     "jsx-a11y/label-has-associated-control": {
+      "count": 1
+    }
+  },
+  "src/components/rounding/CadenceVersionHistory.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 4
+    }
+  },
+  "src/components/rounding/IntegrityFlagCard.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 5
+    }
+  },
+  "src/components/rounding/QuickCheckDrawer.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/components/rounding/WatchlistDispositionLedger.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/schedules/AdminSchedulesPageClient.tsx": {
+    "haven-time/require-time-zone": {
       "count": 1
     }
   },
@@ -159,9 +584,229 @@
       "count": 20
     }
   },
+  "src/components/staff/StaffTimeclockAccess.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/components/staffing/AdminStaffingConsolePageClient.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
   "src/components/web/tour-scheduler-modal.tsx": {
     "jsx-a11y/label-has-associated-control": {
       "count": 6
+    }
+  },
+  "src/features/knowledge/components/DoctrineReviewQueue.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/features/knowledge/components/DocumentTable.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/features/knowledge/components/KnowledgeGapsPanel.tsx": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/hooks/med-tech/useShiftCurrent.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/hooks/useObservationCadenceSettings.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/admin/admin-dashboard-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/admin/family-messages-data.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/admissions/admissions-hub-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/lib/assessments/load-overdue-assessments.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/billing/concessions-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/billing/generate-monthly-invoices.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/billing/invoice-generate-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/billing/invoices-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/lib/billing/load-invoices.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/care-plans/care-plan-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/care-plans/reviews-due.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/dietary/dietary-batch-stats-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/executive/executive-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 3
+    }
+  },
+  "src/lib/executive/league-print.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/executive/standup-pdf.ts": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/lib/facilities/documents-tab-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/facilities/vendors-tab-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/family/family-billing-data.ts": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/lib/family/family-calendar-data.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/family/family-care-plan-data.ts": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/lib/finance/finance-period-close-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/incidents/incident-detail-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/office/letters.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/office/morning-huddle-print.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/referrals/referrals-hub-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/reports/metric-presentation.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/resident-assurance/assurance-coverage-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/residents/resident-detail-overview-load.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/residents/resident-overview-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/lib/risk/risk-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/risk/survey-bundle-print.ts": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/lib/rounding/watchlist-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/schedules/schedules-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/staff/staff-detail-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 2
+    }
+  },
+  "src/lib/staff/staff-roster-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/time-records/time-records-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
+    }
+  },
+  "src/lib/training/training-hub-display-copy.ts": {
+    "haven-time/require-time-zone": {
+      "count": 1
     }
   }
 }

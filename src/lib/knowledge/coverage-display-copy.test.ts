@@ -4,7 +4,9 @@ import {
   COVERAGE_NO_COMPLIANCE_CATEGORY_COPY,
   COVERAGE_NO_REFRESH_AGE_COPY,
   COVERAGE_REVIEW_NOT_OVERDUE_COPY,
+  COVERAGE_NO_TOPICS_TRACKED_COPY,
   coverageKpiCoveragePctValue,
+  coverageKpiCoverageSub,
   coverageKpiEmptyCopy,
   coverageKpiOpenGapsValue,
   coverageKpiReviewOverdueValue,
@@ -49,8 +51,8 @@ describe("coverageKpiCoveragePctValue", () => {
     expect(coverageKpiCoveragePctValue({ coverage_pct: 0 }, ctx())).toBe("0%");
   });
 
-  it("treats null pct as 0% when rollup exists", () => {
-    expect(coverageKpiCoveragePctValue({ coverage_pct: null }, ctx())).toBe("0%");
+  it("names no tracked topics instead of 0% when the percentage is null (COL-649)", () => {
+    expect(coverageKpiCoveragePctValue({ coverage_pct: null }, ctx())).toBe(COVERAGE_NO_TOPICS_TRACKED_COPY);
   });
 
   it("returns loaded percentage unchanged", () => {
@@ -135,5 +137,19 @@ describe("formatCoverageReviewStatus", () => {
 
   it("returns overdue label for overdue documents", () => {
     expect(formatCoverageReviewStatus(true)).toBe("Overdue");
+  });
+});
+
+describe("coverageKpiCoverageSub (COL-649)", () => {
+  it("says topics are marked by hand when none is marked", () => {
+    expect(coverageKpiCoverageSub({ covered_targets: 0, total_targets: 12 })).toBe(
+      "0/12 topics marked covered — none marked yet on Seed targets",
+    );
+  });
+
+  it("counts marked topics", () => {
+    expect(coverageKpiCoverageSub({ covered_targets: 3, total_targets: 12 })).toBe("3/12 topics marked covered");
+    expect(coverageKpiCoverageSub({ covered_targets: 0, total_targets: 0 })).toBe("No seed topics defined");
+    expect(coverageKpiCoverageSub(null)).toBe("loading…");
   });
 });
