@@ -14,6 +14,7 @@ import {
   caregiverIncidentShiftValues,
   type CaregiverIncidentFormData,
 } from "@/lib/validation/caregiver-incident";
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -129,24 +130,12 @@ function AdminIncidentFormInner() {
         return;
       }
 
-      let resolvedFacilityId: string | null = selectedFacilityId;
-      let resolvedOrgId = authOrganizationId;
-
-      if (!resolvedFacilityId) {
-        const facResult = await supabase
-          .from("facilities" as never)
-          .select("id, name, organization_id")
-          .eq("organization_id", resolvedOrgId)
-          .is("deleted_at", null)
-          .order("name")
-          .limit(1)
-          .maybeSingle();
-        const row = facResult.data as { id: string; name: string; organization_id: string } | null;
-        if (facResult.error) throw facResult.error;
-        if (row) { resolvedFacilityId = row.id; resolvedOrgId = row.organization_id; }
-      }
-
-      if (!resolvedFacilityId) { setLoadError("No facility found."); setLoadingContext(false); return; }
+      // COL-651: the page is gated on the header's facility. It used to fall
+      // back to the organization's first facility, filing under a building
+      // nobody chose.
+      const resolvedFacilityId = selectedFacilityId;
+      const resolvedOrgId = authOrganizationId;
+      if (!resolvedFacilityId) { setLoadingContext(false); return; }
 
       setFacilityId(resolvedFacilityId);
       setOrganizationId(resolvedOrgId);
@@ -409,7 +398,9 @@ function AdminIncidentFormInner() {
 export default function AdminIncidentNewPage() {
   return (
     <Suspense fallback={<div className="flex h-[40vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-      <AdminIncidentFormInner />
+      <FacilityGate title="Report incident" reason="An incident is filed under one building, and its resident list is that building's.">
+        <AdminIncidentFormInner />
+      </FacilityGate>
     </Suspense>
   );
 }
