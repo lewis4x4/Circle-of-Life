@@ -41,11 +41,8 @@ describe("medication errors follow the selected facility when the cookie and sto
   });
 
   it("does not leave the unscoped read's 'Select a facility.' on screen once the facility's read has started", async () => {
-    const unscoped = deferred<never>();
     const scoped = deferred<unknown[]>();
-    fetchMedicationErrors.mockImplementation((facilityId: string | null) =>
-      facilityId == null ? unscoped.promise : scoped.promise,
-    );
+    fetchMedicationErrors.mockImplementation(() => scoped.promise);
 
     // The server rendered Homewood from the scope cookie; the store's first
     // (pre-hydration) read is null, then it hydrates to Homewood.
@@ -60,11 +57,7 @@ describe("medication errors follow the selected facility when the cookie and sto
     expect(fetchMedicationErrors).not.toHaveBeenCalledWith(null);
     expect(fetchMedicationErrors).toHaveBeenCalledWith(HOMEWOOD);
 
-    // The unscoped read fails after the facility's read began, then the facility's read lands.
-    await act(async () => {
-      unscoped.reject(new Error("Select a facility."));
-      await Promise.resolve();
-    });
+    // Only the facility's read exists; it lands.
     await act(async () => {
       scoped.resolve([{ id: "e1", error_type: "wrong_time", severity: "low", occurred_at: "2026-09-22T12:00:00Z", reviewed_at: null }]);
       await Promise.resolve();
