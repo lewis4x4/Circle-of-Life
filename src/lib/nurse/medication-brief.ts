@@ -40,6 +40,51 @@ function countOrNull(res: unknown): number | null {
 }
 type ScopedQuery<T> = { eq(column: string, value: string): T };
 
+type BrowserClient = ReturnType<typeof createClient>;
+type FacilityScope = <T extends ScopedQuery<T>>(q: T) => T;
+
+/**
+ * Medication errors reported since `sinceIso`, from both intake paths:
+ * structured reports in `medication_errors` (the record of truth — the
+ * /admin/medications/errors review queue and the admin command center count
+ * this table) plus incidents filed with category `medication_error` (the
+ * med-tech incident modal and /admin/incidents/new) that no report already
+ * links through `medication_errors.linked_incident_id`. `null` when any read
+ * fails — a partial count would understate errors.
+ */
+async function countMedErrorsSince(
+  supabase: BrowserClient,
+  f: FacilityScope,
+  sinceIso: string,
+): Promise<number | null> {
+  const [reportsRes, linkedRes] = await Promise.all([
+    f(supabase.from("medication_errors" as never).select("id", { count: "exact", head: true }))
+      .gte("occurred_at", sinceIso)
+      .is("deleted_at", null),
+    f(supabase.from("medication_errors" as never).select("linked_incident_id"))
+      .gte("occurred_at", sinceIso)
+      .not("linked_incident_id", "is", null)
+      .is("deleted_at", null),
+  ]);
+  const reports = countOrNull(reportsRes);
+  const linked = linkedRes as { data: Array<{ linked_incident_id: string | null }> | null; error?: unknown };
+  if (reports === null || linked.error || !linked.data) return null;
+
+  const linkedIncidentIds = [
+    ...new Set(linked.data.map((row) => row.linked_incident_id).filter((id): id is string => Boolean(id))),
+  ];
+  let incidentsQuery = f(supabase.from("incidents" as never).select("id", { count: "exact", head: true }))
+    .gte("occurred_at", sinceIso)
+    .eq("category", "medication_error")
+    .is("deleted_at", null);
+  if (linkedIncidentIds.length > 0) {
+    incidentsQuery = incidentsQuery.not("id", "in", `(${linkedIncidentIds.join(",")})`);
+  }
+  const unlinkedIncidents = countOrNull(await incidentsQuery);
+  if (unlinkedIncidents === null) return null;
+  return reports + unlinkedIncidents;
+}
+
 export async function fetchNurseMedicationBrief(
   facilityId: string | null,
 ): Promise<NurseMedicationBrief> {
@@ -72,10 +117,7 @@ export async function fetchNurseMedicationBrief(
       .gte("scheduled_time", todayStart)
       .in("status", ["given", "self_administered"])
       .is("deleted_at", null),
-    f(supabase.from("incidents" as never).select("id", { count: "exact", head: true }))
-      .gte("occurred_at", sevenDaysAgo)
-      .eq("category", "medication_error")
-      .is("deleted_at", null),
+    countMedErrorsSince(supabase, f, sevenDaysAgo),
     f(supabase.from("controlled_substance_counts" as never).select("id", { count: "exact", head: true }))
       .neq("discrepancy", 0)
       .not("discrepancy_resolved", "is", true)
@@ -100,7 +142,7 @@ export async function fetchNurseMedicationBrief(
       : emarTotal > 0
         ? Math.round((emarGiven / emarTotal) * 100)
         : 100;
-  const medErrors7d = countOrNull(medErrorsRes);
+  const medErrors7d = medErrorsRes;
   // Open discrepancy = discrepancy <> 0 and not resolved (NULL counts as open,
   // matching /admin/medications/controlled).
   const controlledDiscrepancies = countOrNull(controlledRes);
