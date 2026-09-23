@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
   canFinance: false,
   journal: null as { id: string; status: string } | null,
   receipt: null as { result: { journal_entry_id: string } } | null,
+  invoiceStatus: "sent",
+  invoiceTotal: 0,
+  glAccountCount: 5,
   client: { from: (table: string) => ({ table }) as unknown },
 }));
 
@@ -39,7 +42,10 @@ vi.mock("../../billing-invoice-ledger", () => ({
   mapDbInvoiceStatusToUi: (s: string) => s,
   mapDbPayerTypeToUi: () => "private_pay",
 }));
-vi.mock("@/lib/finance/post-to-gl", () => ({ postInvoiceToGl: vi.fn() }));
+vi.mock("@/lib/finance/post-to-gl", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/finance/post-to-gl")>()),
+  postInvoiceToGl: vi.fn(),
+}));
 vi.mock("@/lib/finance/load-finance-context", () => ({ canMutateFinance: () => mocks.canFinance }));
 vi.mock("@/design-system/components/record-detail", () => ({
   RecordDetailHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
@@ -51,16 +57,17 @@ function makeClient() {
     id: mocks.invoiceId,
     resident_id: mocks.residentId,
     facility_id: mocks.facilityId,
+    entity_id: "e0000000-0000-0000-0000-000000000001",
     invoice_number: "00000000-2026-08-c0000000-0000-0000-0000-0000000000a1",
     invoice_date: "2026-08-01",
     due_date: "2026-08-15",
     period_start: "2026-08-01",
     period_end: "2026-08-31",
-    status: "sent",
+    status: mocks.invoiceStatus,
     subtotal: 0,
     adjustments: 0,
     tax: 0,
-    total: 0,
+    total: mocks.invoiceTotal,
     amount_paid: 0,
     balance_due: 0,
     payer_type: "private_pay",
@@ -89,6 +96,16 @@ function makeClient() {
       if (table === "residents") return builder({ id: mocks.residentId, first_name: "A", last_name: "B" });
       if (table === "journal_entries") return builder(mocks.journal);
       if (table === "finance_command_receipts") return builder(mocks.receipt);
+      if (table === "gl_accounts") {
+        const q: Record<string, unknown> = {
+          select: () => q,
+          eq: () => q,
+          is: () => q,
+          then: (resolve: (v: { count: number; error: null }) => unknown) =>
+            Promise.resolve({ count: mocks.glAccountCount, error: null }).then(resolve),
+        };
+        return q;
+      }
       return builder(null);
     },
   };
@@ -97,6 +114,7 @@ function makeClient() {
 describe("AdminInvoiceDetailPage invoice title", () => {
   beforeEach(() => {
     mocks.canFinance = false; mocks.journal = null; mocks.receipt = null;
+    mocks.invoiceStatus = "sent"; mocks.invoiceTotal = 10_000; mocks.glAccountCount = 5;
     mocks.params = { id: mocks.invoiceId };
     mocks.selectedFacilityId = mocks.facilityId;
     mocks.client = makeClient();
@@ -128,5 +146,30 @@ describe("AdminInvoiceDetailPage invoice title", () => {
 
     expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Invoice Aug 2026 · …00a1");
     expect(screen.queryByText(/00000000-2026-08/)).toBeNull();
+  });
+
+  it("COL-650 disables Post to GL on a draft and says why", async () => {
+    mocks.canFinance = true;
+    mocks.invoiceStatus = "draft";
+    mocks.client = makeClient();
+    render(<AdminInvoiceDetailPage />);
+    expect(await screen.findByRole("button", { name: /post to gl/i })).toBeDisabled();
+    expect(screen.getByText(/Drafts are not billed/)).toBeInTheDocument();
+  });
+
+  it("COL-650 disables Post to GL when the entity has no chart of accounts", async () => {
+    mocks.canFinance = true;
+    mocks.glAccountCount = 0;
+    render(<AdminInvoiceDetailPage />);
+    expect(await screen.findByText(/no chart of accounts/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /post to gl/i })).toBeDisabled();
+    expect(screen.getByRole("link", { name: /open chart of accounts/i })).toHaveAttribute("href", "/admin/finance/chart-of-accounts");
+  });
+
+  it("COL-650 enables Post to GL for a sent invoice with accounts", async () => {
+    mocks.canFinance = true;
+    render(<AdminInvoiceDetailPage />);
+    const button = await screen.findByRole("button", { name: /post to gl/i });
+    await vi.waitFor(() => expect(button).toBeEnabled());
   });
 });
