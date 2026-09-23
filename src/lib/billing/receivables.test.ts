@@ -81,8 +81,7 @@ describe("no second receivable definition", () => {
     "src/lib/billing/receivables.ts": "the definition itself",
     "src/lib/billing/load-invoices.ts": "the InvoiceStatusUi union type, not a filter",
     "src/app/(admin)/billing/billing-invoice-ledger.tsx": "HUB_LEDGER_STATUS_CHIPS lists every status as a filter chip",
-    "src/lib/executive/standup.ts":
-      "Stand Up 'Current AR' definition is the pending COL-374 decision; published snapshots carry it (follow-up linked on COL-650)",
+    "src/lib/executive/standup.ts": "Stand Up Current AR waits on the COL-374 definition; tracked in COL-665",
   };
 
   function walk(dir: string): string[] {
