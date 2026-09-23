@@ -72,8 +72,10 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
   if (role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
-  if (isDietaryRole(role) && nextUrl.pathname === "/admin/dietary-dashboard") {
-    return NextResponse.redirect(new URL("/dietary", nextUrl.origin));
+  // Cook is not admin-eligible; send it to its own app rather than to a login
+  // screen that reads as "you are signed out" (COL-627 matrix).
+  if (isDietaryRole(role)) {
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (role === "family") {
     return NextResponse.redirect(new URL("/family", nextUrl.origin));
