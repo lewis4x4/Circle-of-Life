@@ -43,7 +43,8 @@ describe("role hooks and family messages do not hydrate seeded facility labels",
     expect(dietarySource).toContain("facility_name: facilityName");
     expect(dietarySource).toContain('UNRESOLVED_FACILITY_LABEL = "Assigned facility"');
 
-    expect(medTechSource).toContain('q("facilities", "name"');
+    // The cockpit also reads the facility's zone for its configured shifts (COL-685).
+    expect(medTechSource).toContain('q("facilities", "name, timezone"');
     expect(medTechSource).toContain("unitLabel: facilityLabel");
     expect(medTechSource).toContain('UNRESOLVED_UNIT_LABEL = "Assigned facility"');
 
