@@ -28,6 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 type BoardScope = "all" | "active" | "open";
 
 type AdminIncidentsPageClientProps = {
@@ -569,7 +570,7 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
         <div className="grid grid-cols-2 gap-3 text-xs bg-muted/40 p-3 rounded-[var(--radius)] border border-border">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Class</span>
-            <span className="font-medium capitalize text-foreground">{incident.category.replace(/_/g, ' ')}</span>
+            <span className="font-medium text-foreground">{enumLabel(incident.category)}</span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Reported</span>

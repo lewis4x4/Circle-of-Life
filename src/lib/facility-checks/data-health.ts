@@ -78,7 +78,7 @@ export function dataHealthCounts(health: FacilityDataHealth): DataHealthCount[] 
       count: health.beds_occupied_with_no_resident,
       href: "/admin/admissions",
       meaning:
-        "A bed reads occupied but no resident holds it. This should be zero; migration 388 keeps the two in step.",
+        "A bed reads occupied but no resident holds it. This should be zero; Haven keeps the bed and the resident in step.",
     },
     {
       key: "residents_holding_no_bed",

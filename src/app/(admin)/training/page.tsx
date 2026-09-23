@@ -31,6 +31,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
@@ -38,7 +39,7 @@ type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] 
 };
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 /** Demonstrations that still need staff or evaluator action (Core workflow). */
@@ -690,7 +691,7 @@ export default function AdminTrainingHubPage() {
                   Staff training completions
                 </h3>
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  Last 50 completion records per facility scope (RLS). Log new completions for a single
+                  The 50 most recent completions for the facilities you have access to. Log new completions for a single
                   facility; export supports audits.
                 </p>
               </div>
@@ -816,8 +817,7 @@ export default function AdminTrainingHubPage() {
                   Staff attestations (compliance)
                 </h3>
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  Last 50 attestation records from <span className="font-mono">staff_attestations</span>.
-                  Includes annual med-tech attestation visibility for COL-HR-008 review.
+                  The 50 most recent staff attestations, including each med-tech&apos;s annual attestation.
                 </p>
               </div>
             </div>
@@ -969,7 +969,7 @@ export default function AdminTrainingHubPage() {
                           {formatTrainingHubStaffName(row.staff)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[10px] uppercase tracking-wider">
-                          {row.attestation_type.replace(/_/g, " ")}
+                          {enumLabel(row.attestation_type)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {formatTrainingHubDate(row.signed_at)}
@@ -998,7 +998,7 @@ export default function AdminTrainingHubPage() {
                   In-service sessions
                 </h3>
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  Last 50 in-service events (RLS). Create a session for one facility at a time; export for
+                  The 50 most recent in-service sessions. Create a session for one facility at a time; export for
                   audits.
                 </p>
               </div>
@@ -1300,8 +1300,8 @@ export default function AdminTrainingHubPage() {
             
             <div className="space-y-4">
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Counts below are from the last 50 competency demonstrations in this view (not scheduled{" "}
-                <span className="font-mono">training_compliance_snapshots</span>).
+                Counts below are from the 50 most recent competency demonstrations in this view, not the scheduled
+                compliance snapshots.
               </p>
               <div className="p-4 rounded-xl border border-border bg-card flex flex-col gap-2">
                 <div className="flex justify-between items-center">

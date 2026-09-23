@@ -56,6 +56,7 @@ import {
 import { formatCorrectiveActionNotes } from "@/lib/care-events/admin-copy";
 import { toObligationDelivery } from "@/lib/care-events/admin-data";
 import { IncidentCareEventNotifications } from "@/components/incidents/IncidentCareEventNotifications";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type AdminIncidentDetailPageClientProps = {
   initialDetail?: IncidentDetailView | null;
@@ -479,10 +480,10 @@ export function AdminIncidentDetailPageClient({
                           {watch.resident_watch_protocols?.name ?? "Watch protocol"}
                         </Badge>
                         <Badge variant="outline" className="font-normal">
-                          {watch.status.replace(/_/g, " ")}
+                          {enumLabel(watch.status)}
                         </Badge>
                         <Badge variant="outline" className="font-normal">
-                          {watch.triggered_by_type.replace(/_/g, " ")}
+                          {enumLabel(watch.triggered_by_type)}
                         </Badge>
                       </div>
                       <div className="grid gap-2 text-sm sm:grid-cols-2">
@@ -524,7 +525,7 @@ export function AdminIncidentDetailPageClient({
                         {watch.events.map((event) => (
                           <li key={event.id} className="rounded-[8px] border border-border bg-card px-3 py-2">
                             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                              <span className="font-medium">{event.event_type.replace(/_/g, " ")}</span>
+                              <span className="font-medium">{enumLabel(event.event_type)}</span>
                               <span className="text-xs tabular-nums text-muted-foreground">{formatIncidentDetailTimestamp(event.occurred_at)}</span>
                             </div>
                             {event.note ? <p className="mt-1 text-xs text-muted-foreground">{event.note}</p> : null}
@@ -557,9 +558,9 @@ export function AdminIncidentDetailPageClient({
                         <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
                           Level {escalation.escalation_level}
                         </Badge>
-                        <Badge variant="outline">{escalation.escalation_type.replace(/_/g, " ")}</Badge>
-                        <Badge variant="outline">{escalation.status.replace(/_/g, " ")}</Badge>
-                        <Badge variant="outline">{escalation.task_status.replace(/_/g, " ")}</Badge>
+                        <Badge variant="outline">{enumLabel(escalation.escalation_type)}</Badge>
+                        <Badge variant="outline">{enumLabel(escalation.status)}</Badge>
+                        <Badge variant="outline">{enumLabel(escalation.task_status)}</Badge>
                       </div>
                       <p className="text-sm tabular-nums text-foreground">
                         Triggered {formatIncidentDetailTimestamp(escalation.triggered_at)} · Task due {formatIncidentDetailTimestamp(escalation.task_due_at)}
@@ -1076,7 +1077,7 @@ function formatShift(value: string): string {
 }
 
 function formatSnake(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatCategoryRaw(value: string): string {

@@ -162,7 +162,7 @@ export default function AdminMasterCalendarPage() {
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               One calendar layering transportation, meetings, in-services, drills and emergency
               checks, document expirations (license/insurance vault), and survey history.
-              Per-facility, RLS-scoped, exportable as .ics.
+              Per facility, limited to the facilities you have access to, and exportable to your calendar app (.ics).
             </p>
           </div>
           <Button

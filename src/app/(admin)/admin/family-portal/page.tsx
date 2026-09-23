@@ -28,6 +28,7 @@ import {
   resolveFamilyPortalAdminFacilityScope,
 } from "@/lib/family/family-portal-admin-display-copy";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type TriageRow = Database["public"]["Tables"]["family_message_triage_items"]["Row"] & {
   family_portal_messages: { body: string } | null;
@@ -46,7 +47,7 @@ type TriageFilter = "all" | Database["public"]["Enums"]["family_message_triage_s
 type ConferenceFilter = "upcoming" | "completed" | "cancelled";
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function consentExpiresWithinDays(metadata: Json | null, days: number): boolean {

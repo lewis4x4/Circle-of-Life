@@ -54,6 +54,7 @@ import {
   type DietaryHubResidentOption as ResidentOption,
   type DietaryHubSnackLogRow as SnackLogRow,
 } from "@/lib/dietary/load-dietary-hub-bootstrap";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type DietOrderStatus = Database["public"]["Enums"]["diet_order_status"];
 
@@ -712,10 +713,10 @@ export function AdminDietaryPageClient({
                             {formatDietaryHubResidentDisplay(row.residents?.first_name, row.residents?.last_name)}
                           </span>
                           <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
-                            {String(row.iddsi_food_level ?? "not assessed").replace(/_/g, " ")}
+                            {enumLabel(String(row.iddsi_food_level ?? "not assessed"))}
                           </span>
                           <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
-                            {row.iddsi_fluid_level.replace(/_/g, " ")}
+                            {enumLabel(row.iddsi_fluid_level)}
                           </span>
                           <span className="w-[110px] shrink-0 flex justify-end">
                             {fluidIsThickened(row.iddsi_fluid_level) ? (

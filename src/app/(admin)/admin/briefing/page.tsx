@@ -33,9 +33,10 @@ import {
 import { buildMorningHuddlePrintHtml } from "@/lib/office/morning-huddle-print";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function humanize(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatEtTime(iso: string): string {
@@ -146,7 +147,7 @@ export default function AdminMorningBriefingPage() {
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Per-facility daily briefing: overnight incidents, census moves, today&apos;s shift
               roster, open operations tasks, and medication flags — printable as a one-pager for
-              the stand-up meeting. Data is live and RLS-scoped; times are America/New_York.
+              the stand-up meeting. Data is live for the facilities you have access to; times are Eastern.
             </p>
           </div>
           {facilityReady ? (

@@ -30,6 +30,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const SOURCE_TYPES = [
   { value: "hospital", label: "Hospital" },
@@ -498,7 +499,7 @@ export default function AdminReferralSourcesPage() {
                         )}
                       >
                         <TableCell className="max-w-[14rem] text-[13px] font-medium text-foreground">{r.name}</TableCell>
-                        <TableCell className="capitalize text-[13px] text-muted-foreground">{r.source_type.replace(/_/g, " ")}</TableCell>
+                        <TableCell className="capitalize text-[13px] text-muted-foreground">{enumLabel(r.source_type)}</TableCell>
                         <TableCell className="text-[13px] text-muted-foreground">{facilityLabel(r.facility_id)}</TableCell>
                         <TableCell>
                           {r.is_active ? <StatusPill tone="muted">Active</StatusPill> : <StatusPill tone="warning">Inactive</StatusPill>}

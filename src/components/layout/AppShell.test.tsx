@@ -202,6 +202,26 @@ describe("AppShell all-sections jump list", () => {
     expect(executiveLinks.every((link) => link.getAttribute("aria-current") !== "page")).toBe(true);
   });
 
+  it("puts the phone pillar strip in a sideways scroller and scrolls the current pillar into view (COL-657)", () => {
+    const scrollIntoView = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      pathMock.pathname = "/admin/staff";
+      const { container } = renderAppShell();
+      const strip = [...container.querySelectorAll('nav[aria-label="Primary"]')]
+        .find((nav) => nav.querySelector('[data-slot="horizontal-scroll-viewport"]'));
+      expect(strip).toBeDefined();
+      const viewport = strip!.querySelector('[data-slot="horizontal-scroll-viewport"]')!;
+      expect(viewport.className).toContain("overflow-x-auto");
+      const current = viewport.querySelector('a[aria-current="page"]');
+      expect(current).toHaveTextContent("Workforce");
+      expect(scrollIntoView.mock.contexts).toContain(current);
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
   it("closes when the trigger is clicked again", async () => {
     const user = userEvent.setup();
     renderAppShell();

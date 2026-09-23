@@ -3,6 +3,8 @@
  * The resident assurance payload has no room field — name the gap instead of a silent dash.
  */
 
+import { canClaimAllClear } from "@/lib/metrics/metric-state";
+
 export const NURSE_WATCHLIST_NO_ROOM_COPY = "No room posted";
 
 const LEGACY_NO_ROOM_SENTINEL = "—";
@@ -49,12 +51,26 @@ export function describeBriefCount(
     : { value, urgency: "normal", subLabel: copy.zero };
 }
 
-export function describeControlledCounts(value: number | null): NurseStatCardCopy {
-  return describeBriefCount(value, {
+/**
+ * "All verified" goes through canClaimAllClear: the discrepancy read worked
+ * and at least one count is on file. Zero discrepancies over zero counts is
+ * "no counts on file", not a verified narcotics count (COL-649).
+ */
+export function describeControlledCounts(
+  openDiscrepancies: number | null,
+  countsOnFile: number | null,
+): NurseStatCardCopy {
+  const card = describeBriefCount(openDiscrepancies, {
     positive: "Discrepancies found",
     zero: "All verified",
     unavailable: "Controlled counts unavailable — check the count log",
   });
+  if (openDiscrepancies === 0 && !canClaimAllClear({ scopeSize: countsOnFile, issueCount: openDiscrepancies })) {
+    return countsOnFile === 0
+      ? { value: "No counts", urgency: "normal", subLabel: "No controlled substance counts on file" }
+      : { value: NURSE_COUNT_UNAVAILABLE_COPY, urgency: "critical", subLabel: "Count log unavailable — check the count log" };
+  }
+  return card;
 }
 
 export function describeMedErrors7d(value: number | null): NurseStatCardCopy {
@@ -65,7 +81,10 @@ export function describeMedErrors7d(value: number | null): NurseStatCardCopy {
   });
 }
 
-export function describeEmarCompliance(pct: number | null): NurseStatCardCopy {
+export function describeEmarCompliance(pct: number | null, scheduledToday: number | null): NurseStatCardCopy {
+  if (scheduledToday === 0) {
+    return { value: "No doses", urgency: "normal", subLabel: "No eMAR doses scheduled today" };
+  }
   if (pct === null) {
     return { value: NURSE_COUNT_UNAVAILABLE_COPY, urgency: "critical", subLabel: "eMAR compliance unavailable" };
   }

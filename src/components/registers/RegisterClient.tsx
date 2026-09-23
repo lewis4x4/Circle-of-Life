@@ -23,6 +23,7 @@ import {
   formatRegisterEventTime,
   isCompleteDateInput,
 } from "@/lib/registers/register-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Props = {
@@ -202,7 +203,7 @@ export function RegisterClient({
                           {row.admissionSource ? <p>Admission source: {row.admissionSource}</p> : null}
                           {row.dischargeReason ? (
                             <p>
-                              Discharge reason: {row.dischargeReason.replace(/_/g, " ")}
+                              Discharge reason: {enumLabel(row.dischargeReason)}
                               {row.dischargeDestination ? ` to ${row.dischargeDestination}` : ""}
                             </p>
                           ) : null}

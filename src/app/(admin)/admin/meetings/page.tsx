@@ -29,6 +29,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type RawMeeting = Omit<MeetingRow, "agenda" | "attendees"> & {
   agenda: unknown;
@@ -197,8 +198,7 @@ export default function AdminMeetingsHubPage() {
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Recurring meeting templates, agendas, in-app minutes, and action items that become
-              escalation-chased operations tasks. Replaces the standup call log spreadsheet.
-              Per-facility, RLS-scoped; minutes are audit-logged.
+              escalation-chased operations tasks. Per facility; every change to the minutes is recorded.
             </p>
           </div>
           <Link
@@ -307,7 +307,7 @@ export default function AdminMeetingsHubPage() {
                       >
                         {["daily", "weekly", "biweekly", "monthly", "quarterly", "ad_hoc"].map((c) => (
                           <option key={c} value={c}>
-                            {c.replace(/_/g, " ")}
+                            {enumLabel(c)}
                           </option>
                         ))}
                       </select>
@@ -349,7 +349,7 @@ export default function AdminMeetingsHubPage() {
                     <div key={t.id} className="rounded-[var(--radius)] border border-border bg-card p-4 space-y-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-semibold text-foreground truncate">{t.name}</span>
-                        <StatusPill tone="muted">{t.cadence.replace(/_/g, " ")}</StatusPill>
+                        <StatusPill tone="muted">{enumLabel(t.cadence)}</StatusPill>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {t.default_agenda.length} agenda item{t.default_agenda.length === 1 ? "" : "s"}
@@ -390,7 +390,7 @@ export default function AdminMeetingsHubPage() {
                             {m.minutes ? " · minutes recorded" : ""}
                           </span>
                         </div>
-                        <StatusPill tone={meetingStatusTone(m.status)}>{m.status.replace(/_/g, " ")}</StatusPill>
+                        <StatusPill tone={meetingStatusTone(m.status)}>{enumLabel(m.status)}</StatusPill>
                       </Link>
                     </MotionItem>
                   ))}

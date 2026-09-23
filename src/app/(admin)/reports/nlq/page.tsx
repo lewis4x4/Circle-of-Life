@@ -177,7 +177,7 @@ export default function ReportsNlqPage() {
             <CardDescription className="flex items-start gap-2 text-[13px] leading-relaxed font-normal [&_svg]:mt-0.5 [&_svg]:size-4 [&_svg]:shrink-0">
               <ShieldCheck aria-hidden className="text-muted-foreground" />
               <span className="text-foreground/90">
-                AI assistance suggests templates only — RBAC and official metrics remain enforced.
+                AI assistance suggests templates only — your access and the official metric definitions still apply.
               </span>
             </CardDescription>
           </CardHeader>

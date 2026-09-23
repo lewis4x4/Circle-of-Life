@@ -44,6 +44,7 @@ import {
   aggregateCertStatus,
   type CertificationStatus,
 } from "@/lib/staff/certification-aggregate";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type StaffRoleUi = "nurse" | "caregiver" | "med_tech" | "admin";
 type StaffStatusUi = StaffStatus;
@@ -306,7 +307,7 @@ export default function AdminStaffDetailPage() {
                       <span>Issued: {formatStaffDetailCertIssueDate(c.issue_date)}</span>
                       <span>Exp: {formatStaffDetailCertExpirationDate(c.expiration_date)}</span>
                       <Badge variant="outline" className="text-[9px]">
-                        {c.status.replace(/_/g, " ")}
+                        {enumLabel(c.status)}
                       </Badge>
                     </div>
                   </li>
@@ -383,7 +384,7 @@ function mapDbStaffRoleToUi(role: string): StaffRoleUi {
 
 
 function formatSnake(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatShiftLabel(shiftDate: string, shiftType: string): string {

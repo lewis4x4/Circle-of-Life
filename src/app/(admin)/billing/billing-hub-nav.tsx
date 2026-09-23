@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { activeSectionTabHref } from "@/lib/navigation/section-tabs";
 import { cn } from "@/lib/utils";
 
 /** Destination tabs only — workflows live in Billing overview header actions. */
@@ -10,6 +11,7 @@ const DEST_LINKS = [
   { href: "/admin/billing", label: "Overview" },
   { href: "/admin/billing/invoices", label: "Invoices" },
   { href: "/admin/billing/payments", label: "Payments" },
+  { href: "/admin/billing/collections", label: "Collections" },
   { href: "/admin/billing/invoices/opening-balance", label: "Opening balance" },
   { href: "/admin/billing/ar-aging", label: "AR aging" },
   { href: "/admin/billing/rent-roll", label: "Rent roll" },
@@ -21,6 +23,7 @@ const DEST_LINKS = [
 
 export function BillingHubNav() {
   const pathname = usePathname();
+  const activeHref = activeSectionTabHref(pathname, DEST_LINKS.map((item) => item.href));
 
   return (
     <nav
@@ -28,7 +31,7 @@ export function BillingHubNav() {
       aria-label="Billing sections"
     >
       {DEST_LINKS.map((item) => {
-        const active = pathname === item.href;
+        const active = item.href === activeHref;
         return (
           <Link
             key={item.href}

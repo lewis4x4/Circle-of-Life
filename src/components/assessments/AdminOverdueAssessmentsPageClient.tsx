@@ -25,13 +25,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { CarePlanDiffModal } from "@/components/care-plans/care-plan-diff-modal";
+import { enumLabel } from "@/lib/display/enum-label";
 
 // Types
 type AssessmentRow = OverdueAssessmentRow;
 type CarePlanRow = CarePlanReviewDueRow;
 
 function formatType(t: string): string {
-  return t.replace(/_/g, " ");
+  return enumLabel(t);
 }
 
 type AdminOverdueAssessmentsPageClientProps = {

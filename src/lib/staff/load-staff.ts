@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { enumLabel } from "@/lib/display/enum-label";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -274,11 +275,8 @@ function mapDbStaffRoleToUi(role: string): StaffRole {
 }
 
 export function formatStaffRoleLabel(role: string): string {
-  const normalized = role.trim().toLowerCase();
-  if (normalized === "cna") return "CNA";
-  if (normalized === "rn") return "RN";
-  if (normalized === "lpn") return "LPN";
-  return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  // Title case with acronyms kept: "CNA", "CEO", "Medication Tech" (never "Ceo"; COL-652).
+  return enumLabel(role, { case: "title" });
 }
 
 export function mapEmploymentToUiStatus(employment: string): StaffStatus {

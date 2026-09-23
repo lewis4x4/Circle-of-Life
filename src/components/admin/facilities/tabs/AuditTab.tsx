@@ -30,6 +30,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { enumLabel } from "@/lib/display/enum-label";
 const LS_VIEWS = "haven:facility-audit-log:saved-view";
 const PER_PAGE = 50;
 
@@ -652,7 +653,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
                             {link.label}
                           </Link>
                         ) : (
-                          <span className="truncate text-muted-foreground">{entry.table_name.replace(/_/g, " ")}</span>
+                          <span className="truncate text-muted-foreground">{enumLabel(entry.table_name)}</span>
                         )}
                       </td>
                       <td className="min-w-[12rem] px-3 py-1.5 align-middle">{entry.summary}</td>

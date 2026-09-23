@@ -30,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type SwapRow = Database["public"]["Tables"]["shift_swap_requests"]["Row"];
 type TimeRecordRow = Database["public"]["Tables"]["time_records"]["Row"];
@@ -404,7 +405,7 @@ export default function AdminApprovalsInboxPage() {
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Everything waiting on an approver, in one queue: shift swaps, completed time punches,
             mileage reimbursements, and knowledge-base publish reviews. Actions here write the same
-            records as the source hubs (RLS-scoped).
+            records as the source hubs, and you see only the facilities you have access to.
             {facilityScoped
               ? " Staff queues follow your facility selector; KB reviews are organization-wide."
               : " Showing all facilities your role can access."}
@@ -595,7 +596,7 @@ export default function AdminApprovalsInboxPage() {
             </div>
             {!canApproveMileage && appRole !== null ? (
               <p className="text-sm text-warning rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3">
-                Your role ({appRole.replace(/_/g, " ")}) can view mileage rows; approval is limited to
+                Your role ({enumLabel(appRole)}) can view mileage rows; approval is limited to
                 owner, org admin, facility admin, and nurse.
               </p>
             ) : null}

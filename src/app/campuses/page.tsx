@@ -9,6 +9,7 @@ import { RegionalMap } from "@/components/web/regional-map";
 import { CampusGrid } from "@/components/web/campus-grid";
 import { Compass } from "lucide-react";
 import Image from "next/image";
+import { TOTAL_COMMUNITIES, TOTAL_COUNTIES, TOTAL_NETWORK_BEDS } from "@/lib/data/facilities-data";
 
 export default function CampusesPage() {
   const [tourModalOpen, setTourModalOpen] = useState(false);
@@ -36,7 +37,7 @@ export default function CampusesPage() {
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-300/30">
               <Compass className="w-3.5 h-3.5 text-[#B04F2C]" />
-              <span>5 Campuses • 258 Licensed Beds • 3 Counties</span>
+              <span>{TOTAL_COMMUNITIES} Campuses • {TOTAL_NETWORK_BEDS} Licensed Beds • {TOTAL_COUNTIES} Counties</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
               Our North Florida Sanctuaries
