@@ -41,9 +41,14 @@ import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import {
   CERT_STATUS_LABEL,
-  aggregateCertStatus,
+  evaluateStaffCertifications,
   type CertificationStatus,
 } from "@/lib/staff/certification-aggregate";
+import {
+  loadCertificationRules,
+  resolveCertificationPolicy,
+  type CertificationRules,
+} from "@/lib/staff/certification-policy";
 import { enumLabel } from "@/lib/display/enum-label";
 
 type StaffRoleUi = "nurse" | "caregiver" | "med_tech" | "admin";
@@ -83,6 +88,7 @@ export default function AdminStaffDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [staff, setStaff] = useState<SupabaseStaff | null>(null);
   const [certs, setCerts] = useState<SupabaseCertRow[]>([]);
+  const [certRules, setCertRules] = useState<CertificationRules | null>(null);
   const [shifts, setShifts] = useState<SupabaseShiftRow[]>([]);
 
   const load = useCallback(async () => {
@@ -91,6 +97,7 @@ export default function AdminStaffDetailPage() {
     setNotFound(false);
     setStaff(null);
     setCerts([]);
+    setCertRules(null);
     setShifts([]);
 
     if (!staffId || !UUID_STRING_RE.test(staffId)) {
@@ -133,6 +140,7 @@ export default function AdminStaffDetailPage() {
         .order("expiration_date", { ascending: true })) as unknown as QueryListResult<SupabaseCertRow>;
       if (certRes.error) throw certRes.error;
       setCerts(certRes.data ?? []);
+      setCertRules(await loadCertificationRules(supabase));
 
       const today = todayFacilityDateIso();
       let shiftQ = supabase
@@ -247,12 +255,13 @@ export default function AdminStaffDetailPage() {
   // initials retained for potential avatar future use
   const roleUi = mapDbStaffRoleToUi(staff.staff_role);
   const statusUi = mapEmploymentToUiStatus(staff.employment_status);
-  const certAgg = aggregateCertStatus(
-    certs.map((c) => ({
-      status: c.status,
-      expiration_date: c.expiration_date,
-    })),
-  );
+  const certAgg = certRules
+    ? evaluateStaffCertifications({
+        staffRole: staff.staff_role,
+        certs,
+        policy: resolveCertificationPolicy(certRules, staff.facility_id ?? null),
+      }).status
+    : null;
   return (
     <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
       <RecordDetailHeader
@@ -262,7 +271,7 @@ export default function AdminStaffDetailPage() {
           <>
             <StatusBadge status={statusUi} />
             <RoleBadge role={roleUi} />
-            <CertificationBadge certifications={certAgg} />
+            {certAgg ? <CertificationBadge certifications={certAgg} /> : null}
             {staff.is_float_pool ? (
               <Badge variant="outline" className="text-[10px] font-medium uppercase tracking-wider">
                 Float pool
@@ -458,14 +467,14 @@ function CertificationBadge({ certifications }: { certifications: CertificationS
       </Badge>
     );
   }
-  if (certifications === "not_verified") {
+  if (certifications === "not_required" || certifications === "not_set_up") {
     return (
       <Badge variant="outline" tone="none" className={RECORD_HEADER_CHIP}>
         {label}
       </Badge>
     );
   }
-  if (certifications === "expiring_soon") {
+  if (certifications === "expiring_soon" || certifications === "missing_required") {
     return (
       <Badge variant="default" tone="warning" className={RECORD_HEADER_CHIP}>
         {label}

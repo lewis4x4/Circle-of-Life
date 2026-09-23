@@ -1,46 +1,53 @@
-import { metricNoData, metricValue, type MetricState } from "@/lib/metrics/metric-state";
-import type { CertificationStatus } from "@/lib/staff/load-staff";
+import {
+  metricNoData,
+  metricNotConfigured,
+  metricValue,
+  type MetricState,
+} from "@/lib/metrics/metric-state";
+import { certificationNeedsAttention, type CertificationStatus } from "@/lib/staff/certification-aggregate";
 
 /**
- * Roster "Cert attention" tile (COL-649).
+ * Roster "Cert attention" tile (COL-649, COL-709).
  *
- * The tile counted every row whose status was not "current", so a staff member
- * with no certification on file ("not_verified") counted as needing attention
- * the same as one with an expired licence. With nobody's credentials recorded
- * the tile read "Cert attention 56" — the whole roster, owners included — which
- * says nothing about who actually needs a renewal. Attention is now expired or
- * expiring certifications; "no certification on file" is named separately as a
- * gap in the records.
+ * Attention follows the configured requirements for each job role: a required
+ * certification that is missing, expired or expiring. A role that needs none
+ * is never counted, so owners and executives are not flagged unless an admin
+ * sets a requirement for their role (Brian's ruling, 2026-09-23). Staff at a
+ * building with no requirement recorded are not judged at all, and the tile
+ * says the requirements are not set up rather than showing a count.
  */
 export type RosterCertSummary = {
   attention: MetricState<number>;
-  /** Staff with no certification on file at all. */
-  notOnFile: number;
+  /** Staff at buildings where no certification requirement is recorded. */
+  notSetUp: number;
   description: string | null;
 };
 
-export function summarizeRosterCerts(rows: ReadonlyArray<{ certifications: CertificationStatus }>): RosterCertSummary {
-  const notOnFile = rows.filter((row) => row.certifications === "not_verified").length;
-  const attention = rows.filter(
-    (row) => row.certifications === "expired" || row.certifications === "expiring_soon",
-  ).length;
+export const CERT_REQUIREMENTS_NOT_SET_UP = "Requirements not set up";
 
+export function summarizeRosterCerts(
+  rows: ReadonlyArray<{ certifications: CertificationStatus; certRequirementsSetUp: boolean }>,
+): RosterCertSummary {
   if (rows.length === 0) {
-    return { attention: metricNoData("No staff"), notOnFile, description: null };
+    return { attention: metricNoData("No staff"), notSetUp: 0, description: null };
   }
-  if (notOnFile === rows.length) {
+  const judged = rows.filter((row) => row.certRequirementsSetUp);
+  const notSetUp = rows.length - judged.length;
+  if (judged.length === 0) {
     return {
-      attention: metricNoData("No certs on file"),
-      notOnFile,
-      description: `None of the ${rows.length} staff shown has a certification on file.`,
+      attention: metricNotConfigured(CERT_REQUIREMENTS_NOT_SET_UP),
+      notSetUp,
+      description: "No job role has a certification requirement yet, so nobody is flagged.",
     };
   }
-  return {
-    attention: metricValue(attention),
-    notOnFile,
-    description:
-      notOnFile > 0
-        ? `Expired or expiring. ${notOnFile} more ${notOnFile === 1 ? "has" : "have"} no certification on file.`
-        : "Expired or expiring.",
-  };
+  const attention = judged.filter((row) => certificationNeedsAttention(row.certifications)).length;
+  const notRequired = judged.filter((row) => row.certifications === "not_required").length;
+  const parts = ["Required certifications missing, expired or expiring."];
+  if (notRequired > 0) {
+    parts.push(`${notRequired} ${notRequired === 1 ? "holds a role that needs" : "hold roles that need"} none.`);
+  }
+  if (notSetUp > 0) {
+    parts.push(`${notSetUp} ${notSetUp === 1 ? "is" : "are"} at a building with no requirements set.`);
+  }
+  return { attention: metricValue(attention), notSetUp, description: parts.join(" ") };
 }

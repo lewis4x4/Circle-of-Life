@@ -29,6 +29,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
 import {
+  CERT_REQUIREMENTS_HREF,
   describeCredentialPanel,
   describeShiftGapPanel,
   type StaffingCoverageScope,
@@ -813,9 +814,14 @@ export function AdminStaffingConsolePageClient({
                 Expired credentials block assignment until they are cleared.
               </p>
             </div>
-            <Link href="/admin/certifications?timeline=expired" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0")}>
-              Expired certs
-            </Link>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Link href={CERT_REQUIREMENTS_HREF} className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+                Requirements
+              </Link>
+              <Link href="/admin/certifications?timeline=expired" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                Expired certs
+              </Link>
+            </div>
           </div>
           {certWarnings.length === 0 ? (
             <div className="mt-4">
