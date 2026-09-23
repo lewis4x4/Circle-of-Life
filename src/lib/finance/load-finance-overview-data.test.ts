@@ -11,6 +11,7 @@ function createQuery(result: object, gte: (column: string, value: string) => unk
       return query;
     }),
     is: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
     then: (resolve: (value: object) => unknown) => Promise.resolve(result).then(resolve),
   };
   return query;
