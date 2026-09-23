@@ -343,8 +343,8 @@ export default function BillingConcessionsPage() {
                         <>
                           <MoneyCell label="Monthly terms" value={row.agreedCents} />
                           <div className="lg:col-span-2">
-                            <p className="text-[10px] uppercase tracking-widest text-slate-500">Paid by</p>
-                            <ul className="text-sm text-slate-700 dark:text-slate-300">
+                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Paid by</p>
+                            <ul className="text-sm text-foreground">
                               {row.splits.map((split, index) => (
                                 <li key={`${split.label}-${index}`}>
                                   {split.label}: {split.cents == null ? "amount not on file" : billingCurrency.format(split.cents / 100)}
@@ -410,8 +410,8 @@ function MoneyCell({ label, value }: { label: string; value: number }) {
 function TextCell({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
-      <p className="text-sm text-slate-600 dark:text-slate-300">{value}</p>
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="text-sm text-muted-foreground">{value}</p>
     </div>
   );
 }
