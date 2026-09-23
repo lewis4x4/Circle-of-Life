@@ -80,12 +80,14 @@ import { getRoleDashboardConfig, getResolvedRoleLabel } from "@/lib/auth/dashboa
 import {
   AUXILIARY_ROUTES,
   applyFacilityOperatorNav,
+  PILLARS,
   pillarsForRole,
   REPORT_INCIDENT_HREF,
-  findActivePillar,
+  resolveNavAnchor,
   type Pillar,
   type PillarItem,
 } from "@/lib/navigation/pillars";
+import { isStaffLaunchHiddenKey } from "@/lib/navigation/staff-launch-hidden";
 import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { cn } from "@/lib/utils";
 
@@ -225,7 +227,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const catalogActivePillar = useMemo(() => findActivePillar(pathname), [pathname]);
+  const navAnchor = useMemo(() => resolveNavAnchor(pathname), [pathname]);
   // Route-dependent client-only survey chrome must have the same empty SSR
   // and first-hydration shape. Redirected owner entry can resolve a different
   // pathname on the client; its Suspense boundary must not shift the following
@@ -430,18 +432,23 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       ? "All facilities"
       : (currentFacility?.name ?? "Select facility");
 
-  const isItemActive = useCallback(
-    (href: string) => {
-      const resolved = resolveRouteHref(href);
-      if (href === "/admin") return pathname === resolved;
-      // When a role's home aliases an existing destination (for example an
-      // owner landing on Executive), give the role-home item sole ownership
-      // of the active state instead of highlighting both links.
-      if (roleConfig.route !== "/admin" && href === roleConfig.route) return false;
-      return pathname === resolved || pathname.startsWith(`${resolved}/`);
-    },
-    [pathname, resolveRouteHref, roleConfig.route],
-  );
+  // One lit item per route (COL-655): the catalog entry that owns the path.
+  // When a role's home aliases an existing destination (for example an owner
+  // landing on Executive), the role-home item owns that whole tree instead of
+  // lighting both links — or neither on its sub-pages.
+  const activeItemKey = useMemo(() => {
+    if (!navAnchor) return null;
+    if (
+      roleConfig.route !== "/admin" &&
+      navAnchor.pillarId === PILLARS[0].id &&
+      navAnchor.item.href === roleConfig.route
+    ) {
+      return "owner-home";
+    }
+    return navAnchor.item.key;
+  }, [navAnchor, roleConfig.route]);
+
+  const isItemActive = useCallback((item: PillarItem) => item.key === activeItemKey, [activeItemKey]);
 
   const openPillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
     // On mobile, tapping any pillar opens its sub-routes in a sheet instead
@@ -745,7 +752,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
   const renderRailItem = (item: PillarItem) => {
     const Icon = item.icon;
-    const active = isItemActive(item.href);
+    const active = isItemActive(item);
     return (
       <HavenNavLink
         key={item.key}
@@ -788,14 +795,25 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     !roleConfig.visibleItemKeys || roleConfig.visibleItemKeys.includes(item.key) || item.key === "pilot-feedback" || item.key === "settings-notifications"
   ), [roleConfig]);
 
-  const activePillar = useMemo(
-    () =>
-      catalogActivePillar
-        ? (visiblePillars.find((pillar) => pillar.id === catalogActivePillar.id) ??
-          null)
-        : null,
-    [catalogActivePillar, visiblePillars],
-  );
+  const activePillar = useMemo(() => {
+    const pillar = navAnchor?.pillarId
+      ? (visiblePillars.find((candidate) => candidate.id === navAnchor.pillarId) ?? null)
+      : null;
+    if (!pillar || !navAnchor || !activeItemKey) return pillar;
+    if (pillar.items.some((item) => item.key === activeItemKey)) return pillar;
+    if (activeItemKey === "owner-home" && pillar.items.some((item) => item.href === "/admin")) return pillar;
+    // The route's owner is off the menus (⌘K-only, anchor-only, or a
+    // staff-launch hold). Show it in the rail while the operator is on it so
+    // the page they are looking at is always the lit item. Items a role is
+    // denied (Executive for facility operators, keys outside the role's
+    // allowlist) are never added back.
+    const isCatalogItem = PILLARS.some((candidate) => candidate.items.some((item) => item.key === activeItemKey));
+    const heldForLaunch =
+      isStaffLaunchHiddenKey(activeItemKey) &&
+      (!roleConfig.visibleItemKeys || roleConfig.visibleItemKeys.includes(activeItemKey));
+    if (isCatalogItem && !heldForLaunch) return pillar;
+    return { ...pillar, items: [...pillar.items, navAnchor.item] };
+  }, [activeItemKey, navAnchor, roleConfig.visibleItemKeys, visiblePillars]);
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground antialiased">
@@ -1055,7 +1073,7 @@ function PillarTabWithDropdown({
   pillar: Pillar;
   active: boolean;
   firstHref: string;
-  isItemActive: (href: string) => boolean;
+  isItemActive: (item: PillarItem) => boolean;
   resolveHref: (href: string) => string;
   onActivePillarTap: (pillarId: Pillar["id"]) => boolean;
 }) {
@@ -1147,7 +1165,7 @@ function PillarTabWithDropdown({
         <div className="rounded-md border border-border bg-popover p-1.5 shadow-lg ring-1 ring-foreground/10">
           {pillar.items.map((item) => {
             const Icon = item.icon;
-            const itemActive = isItemActive(item.href);
+            const itemActive = isItemActive(item);
             return (
               <HavenNavLink
                 key={item.key}
