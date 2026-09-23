@@ -32,10 +32,8 @@ import {
   resolveQualityHubQueryErrorMessage,
 } from "@/lib/quality/quality-hub-page-state";
 import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
-import { cn } from "@/lib/utils";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/v2-card";
+import { KPITile } from "@/design-system/components/KPITile";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { enumLabel } from "@/lib/display/enum-label";
 
@@ -108,12 +106,7 @@ export default function AdminQualityHubPage() {
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
       <div className="relative z-10 space-y-8 max-w-6xl mx-auto">
-      <div>
-        
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Measure Catalog
-        </h1>
-      </div>
+      <PageHeader title="Measure catalog" />
 
       <QualityHubNav />
 
@@ -144,41 +137,23 @@ export default function AdminQualityHubPage() {
       ) : null}
 
       {noFacility ? null : (
-      <KineticGrid className="grid-cols-1 sm:grid-cols-3 gap-5" staggerMs={60}>
-        <div className="h-[140px]">
-          <V2Card className="border-primary/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]" hoverColor="indigo">
-            <MonolithicWatermark value={hubLoading ? 0 : measures.length} className="text-info/10 opacity-50" />
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary">
-                 Active Measures
-              </h3>
-              <p className="text-4xl font-mono tracking-tighter text-primary pb-1">{qualityHubMetricValue(measures.length, metricCtx)}</p>
-            </div>
-          </V2Card>
-        </div>
-        <div className="h-[140px]">
-          <V2Card className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]" hoverColor="emerald">
-            <MonolithicWatermark value={hubLoading ? 0 : latest.length} className="text-success/10 opacity-50" />
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
-                 Latest Snapshot Rows
-              </h3>
-              <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{qualityHubMetricValue(latest.length, metricCtx)}</p>
-            </div>
-          </V2Card>
-        </div>
-        <div className="h-[140px]">
-          <V2Card className="border-slate-500/20 shadow-[inset_0_0_15px_rgba(100,116,139,0.05)]" hoverColor="slate">
-            <MonolithicWatermark value={hubLoading ? 0 : pbjRows.length} className="text-muted-foreground/10 opacity-50" />
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
-                 PBJ Batches
-              </h3>
-              <p className="text-4xl font-mono tracking-tighter text-slate-600 dark:text-slate-400 pb-1">{qualityHubMetricValue(pbjRows.length, metricCtx)}</p>
-            </div>
-          </V2Card>
-        </div>
-      </KineticGrid>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <KPITile
+          label="Active measures"
+          value={qualityHubMetricValue(measures.length, metricCtx)}
+          info="Quality measures in the catalog for this building's organization."
+        />
+        <KPITile
+          label="Latest snapshot rows"
+          value={qualityHubMetricValue(latest.length, metricCtx)}
+          info="Measure results in the most recent snapshot for this building."
+        />
+        <KPITile
+          label="PBJ batches"
+          value={qualityHubMetricValue(pbjRows.length, metricCtx)}
+          info="Payroll-based journal staffing batches recorded for this building."
+        />
+      </div>
       )}
 
       {showHubContent ? (
@@ -200,7 +175,7 @@ export default function AdminQualityHubPage() {
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <ClipboardList className="h-6 w-6 text-primary drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-          <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Measure Catalog</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Measures</h2>
         </div>
         
         {measures.length === 0 ? (
@@ -314,9 +289,8 @@ export default function AdminQualityHubPage() {
         </>
       ) : null}
 
-      <div className="flex flex-wrap gap-2 text-sm text-slate-500 font-mono tracking-wider uppercase mt-4">
-        <span>Dashboard:</span>
-        <Link href={homeHref} className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-[10px] text-primary leading-none pb-0.5")}>
+      <div className="mt-4 text-sm">
+        <Link href={homeHref} className={buttonVariants({ variant: "link", size: "sm" })}>
           Back to dashboard
         </Link>
       </div>
