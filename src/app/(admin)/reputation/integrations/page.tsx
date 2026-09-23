@@ -195,12 +195,8 @@ export default function ReputationIntegrationsPage() {
         <CardHeader>
           <CardTitle>Google Business Profile</CardTitle>
           <CardDescription>
-            OAuth scope: Business Profile API (read reviews). Only the <strong>organization owner</strong> can
-            connect, disconnect, or run import. For automated runs, ops can schedule{" "}
-            <code className="rounded bg-slate-100 px-1 text-xs dark:bg-slate-800">POST /api/cron/reputation/google-reviews</code>{" "}
-            with header <code className="rounded bg-slate-100 px-1 text-xs dark:bg-slate-800">x-cron-secret</code> (see{" "}
-            <code className="rounded bg-slate-100 px-1 text-xs dark:bg-slate-800">REPUTATION_GOOGLE_CRON_SECRET</code>
-            ).
+            Reads your facilities&apos; Google reviews into Haven. Only the organization owner can connect,
+            disconnect, or import.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -210,14 +206,10 @@ export default function ReputationIntegrationsPage() {
             </p>
           ) : status ? (
             <>
-              <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1 list-disc pl-5">
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
                 <li>
-                  Env vars set:{" "}
-                  <strong>{status.googleOAuthEnvConfigured ? "Yes (client + secret + redirect)" : "No"}</strong>
-                </li>
-                <li>
-                  State signing secret:{" "}
-                  <strong>{status.stateSecretConfigured ? "Yes" : "No (REPUTATION_OAUTH_STATE_SECRET)"}</strong>
+                  Set up in Haven:{" "}
+                  <strong>{status.googleOAuthEnvConfigured && status.stateSecretConfigured ? "Yes" : "Not set up"}</strong>
                 </li>
                 <li>
                   Status:{" "}
@@ -230,11 +222,9 @@ export default function ReputationIntegrationsPage() {
               </ul>
 
               {!status.googleOAuthEnvConfigured || !status.stateSecretConfigured ? (
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Configure server env vars (see <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">docs/specs/23-reputation.md</code>{" "}
-                  Track D D44) then redeploy. Redirect URI in Google Cloud must match{" "}
-                  <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">REPUTATION_GOOGLE_REDIRECT_URI</code>{" "}
-                  exactly.
+                <p role="status" className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                  Google review import is not set up for Haven yet, so no Google reviews can be imported. Your Haven
+                  administrator has to connect Haven to Google first.
                 </p>
               ) : null}
 
@@ -245,7 +235,7 @@ export default function ReputationIntegrationsPage() {
                   </a>
                 ) : status.canManage ? (
                   <Button type="button" disabled>
-                    Connect Google (configure env first)
+                    Connect Google (not set up yet)
                   </Button>
                 ) : (
                   <Button type="button" variant="secondary" disabled>
@@ -291,11 +281,8 @@ export default function ReputationIntegrationsPage() {
         <CardHeader>
           <CardTitle>Yelp (Fusion API)</CardTitle>
           <CardDescription>
-            Server-only <strong>YELP_FUSION_API_KEY</strong> (import). Optional <strong>YELP_PARTNER_API_KEY</strong>{" "}
-            for posting public replies via Yelp Partner API; otherwise the Fusion key is tried. Add a{" "}
-            <strong>Yelp</strong> reputation account per facility with <strong>External place ID</strong> = Yelp
-            business id. Fusion returns up to <strong>three</strong> review excerpts per import. Only the{" "}
-            <strong>owner</strong> can run import.
+            Imports recent Yelp review excerpts (up to three per facility per import) for each facility that has a
+            Yelp reputation account with its Yelp business ID. Only the organization owner can import.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -305,17 +292,19 @@ export default function ReputationIntegrationsPage() {
             </p>
           ) : status ? (
             <>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Fusion import key:{" "}
-                <strong>{status.yelpFusionConfigured ? "Yes" : "No (set YELP_FUSION_API_KEY)"}</strong>
-                <br />
-                Reply post (Partner API Bearer):{" "}
-                <strong>
-                  {status.yelpPartnerPostConfigured
-                    ? "Yes (YELP_PARTNER_API_KEY or Fusion fallback)"
-                    : "No (set YELP_FUSION_API_KEY or YELP_PARTNER_API_KEY)"}
-                </strong>
-              </p>
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
+                <li>
+                  Review import set up: <strong>{status.yelpFusionConfigured ? "Yes" : "Not set up"}</strong>
+                </li>
+                <li>
+                  Replying to reviews set up: <strong>{status.yelpPartnerPostConfigured ? "Yes" : "Not set up"}</strong>
+                </li>
+              </ul>
+              {!status.yelpFusionConfigured ? (
+                <p role="status" className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                  Yelp review import is not set up for Haven yet, so no Yelp reviews can be imported.
+                </p>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 {status.canManage && status.yelpFusionConfigured ? (
                   <Button
@@ -328,7 +317,7 @@ export default function ReputationIntegrationsPage() {
                   </Button>
                 ) : status.canManage ? (
                   <Button type="button" disabled>
-                    Import Yelp (configure API key first)
+                    Import Yelp (not set up yet)
                   </Button>
                 ) : (
                   <Button type="button" variant="secondary" disabled>
