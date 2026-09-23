@@ -24,6 +24,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
 import { BillingHubNav } from "../billing-hub-nav";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 
 function money(cents: number | null): string {
@@ -242,7 +243,7 @@ function RentRollPageContent() {
                 No residents were in {facilityName ?? "this facility"} during {bounds.label}.
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-border">
+              <HorizontalScroll label="Rent roll" className="rounded-lg border border-border">
                 <table className="w-full min-w-[1180px] border-collapse text-[13px]">
                   <thead>
                     <tr className="border-b border-border bg-muted/30 text-left text-[12px] font-medium text-muted-foreground">
@@ -315,7 +316,7 @@ function RentRollPageContent() {
                     </tr>
                   </tfoot>
                 </table>
-              </div>
+              </HorizontalScroll>
             )}
 
             {load && load.planRates.length > 0 ? (
