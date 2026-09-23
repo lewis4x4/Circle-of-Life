@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { billingCurrency } from "@/lib/billing/currency";
@@ -189,9 +190,7 @@ function RentRollPageContent() {
         </header>
 
         {!facilityScoped ? (
-          <div className="rounded-xl border border-border bg-card p-4 text-[13px] text-muted-foreground shadow-[var(--shadow-card)] ring-1 ring-border/60">
-            The rent roll is kept per building, the way the office keeps it. Pick a facility in the header to open its month.
-          </div>
+          <FacilityGateNotice reason="The rent roll is kept per building, the way the office keeps it." />
         ) : null}
 
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void reload()} /> : null}
