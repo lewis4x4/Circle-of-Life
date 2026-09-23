@@ -40,7 +40,7 @@ export default function CaregiverHomePage() {
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [, setFacilityName] = useState<string | null>(null);
+  const [facilityName, setFacilityName] = useState<string | null>(null);
   const [timeZone, setTimeZone] = useState("America/New_York");
   const [brief, setBrief] = useState<CaregiverShiftBrief | null>(null);
   const [activeOutbreak, setActiveOutbreak] = useState<{ id: string; infection_type: string } | null>(null);
@@ -154,8 +154,8 @@ export default function CaregiverHomePage() {
     notesToFinish: docPending,
   };
   const boardIsEmpty = caregiverShiftBoardIsEmpty(overviewMetrics);
-  const emptyNotice = caregiverShiftOverviewEmptyNotice();
-  const kpiStripHelperLine = caregiverShiftOverviewKpiStripHelperLine(overviewMetrics);
+  const emptyNotice = caregiverShiftOverviewEmptyNotice(overviewMetrics, facilityName);
+  const kpiStripHelperLine = caregiverShiftOverviewKpiStripHelperLine(overviewMetrics, facilityName);
 
   return (
     <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-4 pb-6 md:grid-cols-4 md:gap-6">
