@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export default function CaregiverPendingPoliciesPage() {
   const supabase = createClient();
@@ -99,7 +100,7 @@ export default function CaregiverPendingPoliciesPage() {
                     <div>
                       <CardTitle className="text-base">{r.title}</CardTitle>
                       <CardDescription className="text-muted-foreground">
-                        {r.category.replace(/_/g, " ")}
+                        {enumLabel(r.category)}
                       </CardDescription>
                     </div>
                   </div>

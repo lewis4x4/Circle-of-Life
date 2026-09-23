@@ -14,6 +14,7 @@ import {
 } from "@/features/knowledge/lib/knowledge-api";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { formatDocumentWordCount } from "@/lib/knowledge/document-word-count-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type ReviewDocument = Pick<
   DocumentRow,
@@ -58,7 +59,7 @@ const STATUS_LABELS: Record<DocumentStatus, string> = {
 };
 
 function formatEventTitle(eventType: string): string {
-  return eventType.replace(/_/g, " ");
+  return enumLabel(eventType);
 }
 
 function formatMetadata(metadata: unknown): string[] {

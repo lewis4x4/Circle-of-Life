@@ -53,6 +53,7 @@ import {
   type ReferralsOutreachRow,
   type ReferralLeadStatus,
 } from "@/lib/referrals/referrals-hub-bootstrap";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type LeadRow = ReferralsHubLeadRow;
 type UpcomingTourRow = ReferralsHubUpcomingTourRow;
@@ -166,7 +167,7 @@ function buildReferralLeadsCsv(rows: LeadExportRow[]): string {
 }
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function leadPriority(status: ReferralLeadStatus, handoffPhase: HandoffPhase | null): number {
@@ -740,10 +741,10 @@ export function AdminReferralsPageClient({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium text-foreground">
-                            {row.external_partner_name ?? row.activity_type.replace(/_/g, " ")}
+                            {row.external_partner_name ?? enumLabel(row.activity_type)}
                           </p>
                           <p className="mt-0.5 text-[12px] capitalize text-muted-foreground">
-                            {row.activity_type.replace(/_/g, " ")} · {row.status}
+                            {enumLabel(row.activity_type)} · {row.status}
                           </p>
                         </div>
                         <p className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
@@ -879,7 +880,7 @@ export function AdminReferralsPageClient({
               title={
                 (statusFilter === "all"
                   ? "Export up to 500 leads (all statuses), most recently updated first."
-                  : `Export up to 500 ${statusFilter.replace(/_/g, " ")} leads, most recently updated first.`) +
+                  : `Export up to 500 ${enumLabel(statusFilter, { case: "lower" })} leads, most recently updated first.`) +
                 " Search does not narrow the CSV."
               }
               onClick={() => void exportReferralLeadsCsv()}

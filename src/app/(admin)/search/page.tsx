@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type SearchDocRow = Pick<
   Database["public"]["Tables"]["search_documents"]["Row"],
@@ -59,7 +60,7 @@ function sourceLabel(table: string): string {
     vendors: "Vendor",
     incidents: "Incident",
   };
-  return map[table] ?? table.replace(/_/g, " ");
+  return map[table] ?? enumLabel(table);
 }
 
 export default function AdminSearchPage() {

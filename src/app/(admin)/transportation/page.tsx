@@ -30,6 +30,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requests"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -115,7 +116,7 @@ function buildTransportRequestsCsv(rows: TransportRequestExportRow[]): string {
 }
 
 function formatEnum(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 /** Group label for an appointment_date (YYYY-MM-DD): Today / Tomorrow / weekday. */

@@ -22,6 +22,7 @@ import { V2Card } from "@/components/ui/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -245,7 +246,7 @@ export default function ExecutiveAlertsPage() {
                                 </span>
                              </div>
                              <p className={cn("text-xs font-medium uppercase tracking-wider opacity-70", isCrit ? "text-destructive" : isWarn ? "text-warning" : "text-muted-foreground")}>
-                                Module • {a.source_module.replace(/_/g, " ")}
+                                Module • {enumLabel(a.source_module)}
                              </p>
                           </div>
                           

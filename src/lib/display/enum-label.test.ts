@@ -25,6 +25,8 @@ describe("enumLabel", () => {
 
   it("title-cases on request and names an empty value", () => {
     expect(enumLabel("general_liability", { case: "title" })).toBe("General Liability");
+    expect(enumLabel("wrong_medication", { case: "lower" })).toBe("wrong medication");
+    expect(enumLabel("uti_follow_up", { case: "lower" })).toBe("UTI follow up");
     expect(enumLabel(null)).toBe("—");
     expect(enumLabel("  ", { empty: "Not set" })).toBe("Not set");
   });

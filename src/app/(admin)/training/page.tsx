@@ -31,6 +31,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
@@ -38,7 +39,7 @@ type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] 
 };
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 /** Demonstrations that still need staff or evaluator action (Core workflow). */
@@ -969,7 +970,7 @@ export default function AdminTrainingHubPage() {
                           {formatTrainingHubStaffName(row.staff)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[10px] uppercase tracking-wider">
-                          {row.attestation_type.replace(/_/g, " ")}
+                          {enumLabel(row.attestation_type)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {formatTrainingHubDate(row.signed_at)}

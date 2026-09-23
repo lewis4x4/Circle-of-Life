@@ -21,6 +21,7 @@ import {
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = Database["public"]["Tables"]["certificates_of_insurance"]["Row"] & {
   entities: { name: string } | null;
@@ -120,7 +121,7 @@ export default function InsuranceCoiPage() {
                   <td className="py-2 pr-4 font-medium">{r.entities?.name ?? "Entity not recorded"}</td>
                   <td className="py-2 pr-4 font-mono text-xs">{r.policy_number ?? "Not recorded"}</td>
                   <td className="py-2 pr-4">{r.holder_name}</td>
-                  <td className="py-2 pr-4">{r.holder_type.replace(/_/g, " ")}</td>
+                  <td className="py-2 pr-4">{enumLabel(r.holder_type)}</td>
                   <td className="py-2 pr-4">{r.carrier_name}</td>
                   <td className="py-2 pr-4">{formatInsuranceCoiExpirationDate(r.expiration_date)}</td>
                   <td className="py-2 tabular-nums">{formatUsdFromCents(r.aggregate_limit_cents)}</td>

@@ -27,6 +27,7 @@ import {
   INSURANCE_RENEWALS_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = Database["public"]["Tables"]["insurance_renewals"]["Row"] & {
   insurance_policies: { policy_number: string; carrier_name: string; policy_type: string } | null;
@@ -148,7 +149,7 @@ export default function InsuranceRenewalsPage() {
                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" 
                              : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-400 dark:border-white/10"
                          )}>
-                           {r.status.replace(/_/g, " ")}
+                           {enumLabel(r.status)}
                          </span>
                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                            Effective {formattedDate}

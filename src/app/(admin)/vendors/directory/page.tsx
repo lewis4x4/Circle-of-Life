@@ -19,6 +19,7 @@ import {
   VENDOR_HUB_LIST_LIMIT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
+import { vendorStatusUiLabel } from "@/lib/vendors/vendor-category-ui";
 
 type VendorRow = Database["public"]["Tables"]["vendors"]["Row"];
 
@@ -156,7 +157,7 @@ export default function VendorDirectoryPage() {
                     </Link>
                   </td>
                   <td className="py-2 pr-4 capitalize text-slate-600 dark:text-slate-400">{v.category}</td>
-                  <td className="py-2 capitalize text-slate-600 dark:text-slate-400">{v.status}</td>
+                  <td className="py-2 text-slate-600 dark:text-slate-400">{vendorStatusUiLabel(v.status)}</td>
                 </tr>
               ))}
               {!loading && rows.length === 0 && (

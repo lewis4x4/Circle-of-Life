@@ -1,4 +1,5 @@
-export const RESIDENT_DOCUMENT_TYPES = [
+
+import { enumLabel } from "@/lib/display/enum-label";export const RESIDENT_DOCUMENT_TYPES = [
   ["demographics_face_sheet", "Demographics / face sheet"],
   ["form_1823", "AHCA Form 1823"],
   ["photo_identification", "Photo identification"],
@@ -37,5 +38,5 @@ export const SOURCE_CLASSIFICATIONS = [
 export function humanizeToken(value: string | null | undefined): string {
   const text = value?.trim();
   if (!text) return "Not reviewed";
-  return text.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return enumLabel(text, { case: "title" });
 }

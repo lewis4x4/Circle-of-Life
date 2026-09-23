@@ -27,6 +27,7 @@ import {
 } from "@/lib/executive/executive-display-copy";
 import { formatCents } from "@/lib/finance/format-cents";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type ExecutiveLeaguePageClientProps = {
   initialData: ExecutiveLeagueData | null;
@@ -313,7 +314,7 @@ export default function ExecutiveLeaguePageClient({
                       <td className="py-3 pr-4">{row.entityName}</td>
                       <td className="py-3 pr-4">
                         <div className="font-medium tabular-nums">{row.readinessScore}/100</div>
-                        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{row.readinessLabel}</div>
+                        <div className="text-[11px] font-medium text-muted-foreground">{enumLabel(row.readinessLabel)}</div>
                       </td>
                       <td className="py-3 pr-4 tabular-nums">{row.activePolicies}</td>
                       <td className="py-3 pr-4 tabular-nums">{row.expiringPolicies60d}</td>

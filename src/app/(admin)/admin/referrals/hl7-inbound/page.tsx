@@ -56,6 +56,7 @@ import {
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Note } from "@/design-system/components/Note";
 import { Pagination } from "@/design-system/components/Pagination";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = Database["public"]["Tables"]["referral_hl7_inbound"]["Row"];
 type Hl7Status = Database["public"]["Enums"]["referral_hl7_inbound_status"];
@@ -70,7 +71,7 @@ function previewRaw(s: string) {
 }
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function duplicateControlIds(rows: Row[]): Set<string> {

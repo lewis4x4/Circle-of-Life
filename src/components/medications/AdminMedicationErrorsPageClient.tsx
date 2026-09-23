@@ -20,6 +20,7 @@ import {
   type MedicationErrorRow,
 } from "@/lib/medications/load-medication-errors";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type ReviewFilter = "all" | "unreviewed" | "reviewed";
 
@@ -194,7 +195,7 @@ export function AdminMedicationErrorsPageClient({
                     <div className="flex flex-col min-w-0 pr-4">
                       <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Type</span>
                       <span className="font-semibold text-lg text-foreground capitalize tracking-tight">
-                        {r.error_type.replace(/_/g, " ")}
+                        {enumLabel(r.error_type)}
                       </span>
                     </div>
 
@@ -205,7 +206,7 @@ export function AdminMedicationErrorsPageClient({
                         r.severity === "high" ? "bg-warning/10 text-warning border-warning/20" :
                         "bg-muted text-muted-foreground border-border"
                       )}>
-                        {r.severity.replace(/_/g, " ")}
+                        {enumLabel(r.severity)}
                       </Badge>
                     </div>
 

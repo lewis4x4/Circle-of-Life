@@ -43,6 +43,7 @@ import {
   complianceSurveyVisitLoadingCopy,
   complianceSurveyVisitStatusCopy,
 } from "@/lib/compliance/compliance-hub-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type DefRow = {
   id: string;
@@ -383,7 +384,7 @@ export function AdminCompliancePageClient({
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-wider bg-card">Severity {row.severity}</Badge>
-                          <span className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{row.status.replace(/_/g, " ")}</span>
+                          <span className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{enumLabel(row.status)}</span>
                         </div>
                         <span className="text-sm text-muted-foreground font-medium">{compliancePocDueLine(row.submission_due_date)}</span>
                       </div>

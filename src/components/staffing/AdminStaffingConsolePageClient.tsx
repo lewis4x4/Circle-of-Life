@@ -41,6 +41,7 @@ import type { Database } from "@/types/database";
 import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
 import { ADMIN_STAFFING_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 import { AdminEmptyState, AdminErrorState } from "@/components/common/admin-list-patterns";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type ComplianceFilter = "all" | "non_compliant" | "compliant";
 type WindowFilter = "all" | "24h";
@@ -598,7 +599,7 @@ export function AdminStaffingConsolePageClient({
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline" className="capitalize">
-                          {row.event_type.replace(/_/g, " ")}
+                          {enumLabel(row.event_type)}
                         </Badge>
                         <span>{formatFacilityTimestampEt(row.occurred_at)} ET</span>
                       </div>

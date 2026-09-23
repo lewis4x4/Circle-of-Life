@@ -92,6 +92,7 @@ import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-over
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type ResidentOverviewWorkspace = "admin" | "clinical";
 
@@ -140,7 +141,7 @@ function verificationLabel(verb: string, iso: string | null, actor: string | nul
 }
 
 function severityClinicalLabel(raw: string): string {
-  return diagnosisDisplayTitle(raw.replace(/_/g, " "));
+  return diagnosisDisplayTitle(enumLabel(raw));
 }
 
 function AcuityChip({ acuityLevel }: { acuityLevel: string | null }) {
@@ -205,7 +206,7 @@ export function buildTaskItems(
     }
     items.push({
       id: `asm-${idx}`,
-      title: diagnosisDisplayTitle(row.assessmentType.replace(/_/g, " ")) || row.assessmentType,
+      title: diagnosisDisplayTitle(enumLabel(row.assessmentType)) || row.assessmentType,
       tone,
       sub,
       href: hrefs.assessmentsHref,
@@ -307,7 +308,7 @@ export function buildFeedItems(detail: ResidentOverviewDetail): FeedItem[] {
         kind: "note" as const,
         id: n.id,
         atIso: n.logDate,
-        label: `${isoDayLabel(n.logDate) ?? n.logDate} · ${n.shift.replace(/_/g, " ")} shift`,
+        label: `${isoDayLabel(n.logDate) ?? n.logDate} · ${enumLabel(n.shift)} shift`,
         content: { snippet: n.snippet, shift: n.shift, loggedByLabel: n.loggedByLabel },
       })),
   ];

@@ -14,6 +14,7 @@ import type { Database } from "@/types/database";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type AssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
 
@@ -161,11 +162,11 @@ export default function CaregiverSchedulesPage() {
                 <div>
                   <p className="text-sm font-semibold text-foreground">{formatShiftDate(r.shift_date)}</p>
                   <p className="text-xs capitalize text-muted-foreground">
-                    {String(r.shift_type).replace(/_/g, " ")}
+                    {enumLabel(String(r.shift_type))}
                   </p>
                 </div>
                 <Badge variant="outline" className="border-border capitalize text-foreground">
-                  {r.status.replace(/_/g, " ")}
+                  {enumLabel(r.status)}
                 </Badge>
               </CardContent>
             </Card>

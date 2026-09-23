@@ -24,6 +24,7 @@ import {
 } from "@/lib/office/survey-binder";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type QueryResult<T> = { data: T[] | null; error: { message: string } | null };
 
@@ -274,7 +275,7 @@ export default function AdminSurveyBinderPage() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <StatusPill tone={binderStatusTone(row.status)}>
-                            {row.status.replace(/_/g, " ")}
+                            {enumLabel(row.status)}
                           </StatusPill>
                           <select
                             value={row.status}

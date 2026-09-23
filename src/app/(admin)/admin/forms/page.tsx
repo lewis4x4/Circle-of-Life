@@ -32,6 +32,7 @@ import { fetchActorContext } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const ET_FMT = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -519,7 +520,7 @@ export default function AdminInternalFormsPage() {
                     const expanded = expandedId === s.id;
                     const template = templateById.get(s.template_id);
                     const fieldLabel = (key: string) =>
-                      template?.fields.find((f) => f.key === key)?.label ?? key.replace(/_/g, " ");
+                      template?.fields.find((f) => f.key === key)?.label ?? enumLabel(key);
                     return (
                       <li
                         key={s.id}
@@ -544,7 +545,7 @@ export default function AdminInternalFormsPage() {
                             </span>
                           </div>
                           <StatusPill tone={submissionStatusTone(s.status)}>
-                            {s.status.replace(/_/g, " ")}
+                            {enumLabel(s.status)}
                           </StatusPill>
                         </button>
 

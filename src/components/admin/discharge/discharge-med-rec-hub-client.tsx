@@ -56,6 +56,7 @@ import {
   formatDischargeMedRecHubKpiValue,
   formatDischargeMedRecResidentName,
 } from "@/lib/discharge/discharge-med-rec-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const NEW_MED_REC_PATH = "/admin/discharge/new";
 
@@ -71,7 +72,7 @@ type DischargePhase =
 type PhaseFilter = "all" | DischargePhase;
 
 function formatStatusSentence(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function describeDischargePhase(row: RowT): {
