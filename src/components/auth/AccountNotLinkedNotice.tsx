@@ -15,7 +15,7 @@ export function AccountNotLinkedNotice({
   kind: "staff" | "family";
   contact: AccountLinkContact | null;
 }) {
-  const who = contact?.administratorName ?? "your administrator";
+  const who = contact?.administratorName ?? (kind === "staff" ? "your administrator" : "the facility office");
   const where = contact?.facilityName ? ` at ${contact.facilityName}` : "";
   const what =
     kind === "staff"
