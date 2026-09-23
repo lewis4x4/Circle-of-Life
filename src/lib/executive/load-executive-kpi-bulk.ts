@@ -2,7 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { EXEC_KPI_METRICS_VERSION, getExecutiveKpiDateWindow, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { UNSETTLED_INVOICE_STATUSES } from "@/lib/billing/receivables";
+import {
+  EXEC_KPI_METRICS_VERSION,
+  EXECUTIVE_OPEN_INVOICE_COLUMNS,
+  getExecutiveKpiDateWindow,
+  summarizeExecutiveFinancial,
+  type ExecKpiPayload,
+  type ExecutiveOpenInvoiceRow,
+} from "@/lib/exec-kpi-snapshot";
 import {
   computeFacilityOccupancyPct,
   computeFacilityOccupiedResidents,
@@ -17,11 +25,6 @@ type FacilityMini = {
   total_licensed_beds: number | null;
 };
 
-type OpenInvoiceRow = {
-  facility_id: string;
-  balance_due: number;
-};
-
 type CountByFacilityRow = {
   facility_id: string;
 };
@@ -30,7 +33,7 @@ function emptyKpi(): ExecKpiPayload {
   return {
     version: EXEC_KPI_METRICS_VERSION,
     census: { occupiedResidents: 0, licensedBeds: 0, occupancyPct: null },
-    financial: { openInvoicesCount: 0, totalBalanceDueCents: 0 },
+    financial: { openInvoicesCount: 0, totalBalanceDueCents: 0, notYetSentCount: 0, notYetSentCents: 0 },
     clinical: { openIncidents: 0, medicationErrorsMtd: 0 },
     compliance: { openSurveyDeficiencies: 0 },
     workforce: { certificationsExpiring30d: 0 },
@@ -100,10 +103,11 @@ export async function loadExecutiveKpiBulk(
     scope(
       supabase
         .from("invoices")
-        .select("facility_id, balance_due")
+        .select(EXECUTIVE_OPEN_INVOICE_COLUMNS)
         .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .is("voided_at", null)
+        .in("status", [...UNSETTLED_INVOICE_STATUSES])
         .gt("balance_due", 0),
     ),
     scope(
@@ -213,12 +217,12 @@ export async function loadExecutiveKpiBulk(
   const openExceptionsByFacility = countRows((openExceptionsRes.data ?? []) as CountByFacilityRow[]);
   const activeWatchByFacility = countRows((activeWatchRes.data ?? []) as CountByFacilityRow[]);
 
-  const invoiceRows = (invoicesRes.data ?? []) as OpenInvoiceRow[];
-  const invoiceCountByFacility = new Map<string, number>();
-  const balanceByFacility = new Map<string, number>();
+  const invoiceRows = (invoicesRes.data ?? []) as unknown as ExecutiveOpenInvoiceRow[];
+  const invoiceRowsByFacility = new Map<string, ExecutiveOpenInvoiceRow[]>();
   for (const row of invoiceRows) {
-    invoiceCountByFacility.set(row.facility_id, (invoiceCountByFacility.get(row.facility_id) ?? 0) + 1);
-    balanceByFacility.set(row.facility_id, (balanceByFacility.get(row.facility_id) ?? 0) + (row.balance_due ?? 0));
+    const rows = invoiceRowsByFacility.get(row.facility_id) ?? [];
+    rows.push(row);
+    invoiceRowsByFacility.set(row.facility_id, rows);
   }
 
   const facilityKpis = new Map<string, ExecKpiPayload>();
@@ -236,10 +240,7 @@ export async function loadExecutiveKpiBulk(
         licensedBeds,
         occupancyPct,
       },
-      financial: {
-        openInvoicesCount: invoiceCountByFacility.get(facility.id) ?? 0,
-        totalBalanceDueCents: balanceByFacility.get(facility.id) ?? 0,
-      },
+      financial: summarizeExecutiveFinancial(invoiceRowsByFacility.get(facility.id) ?? [], today),
       clinical: {
         openIncidents: incidentsByFacility.get(facility.id) ?? 0,
         medicationErrorsMtd: medErrorsByFacility.get(facility.id) ?? 0,
@@ -274,8 +275,7 @@ export async function loadExecutiveKpiBulk(
     postedFacilityCount: portfolioOccupancy.postedFacilityCount,
     totalFacilityCount: portfolioOccupancy.totalFacilityCount,
   };
-  orgKpi.financial.openInvoicesCount = invoiceRows.length;
-  orgKpi.financial.totalBalanceDueCents = invoiceRows.reduce((sum, row) => sum + (row.balance_due ?? 0), 0);
+  orgKpi.financial = summarizeExecutiveFinancial(invoiceRows, today);
   orgKpi.clinical.openIncidents = (incidentsRes.data ?? []).length;
   orgKpi.clinical.medicationErrorsMtd = (medErrorsRes.data ?? []).length;
   orgKpi.compliance.openSurveyDeficiencies = (deficienciesRes.data ?? []).length;

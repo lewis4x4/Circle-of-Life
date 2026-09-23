@@ -8,6 +8,7 @@ import {
   todayFacilityDateIso,
 } from "@/lib/facility-wall-clock";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { UNSETTLED_INVOICE_STATUSES, summarizeReceivables } from "@/lib/billing/receivables";
 import {
   EMPTY_PRESENCE_CENSUS,
   summarizePresenceCensus,
@@ -42,9 +43,17 @@ export type ExecKpiPayload = {
      */
     presence?: PresenceCensus;
   };
+  /**
+   * Receivables in the COL-650 sense: sent, partly paid and overdue invoices
+   * with a balance, the same figure Billing's Outstanding AR shows. Drafts are
+   * counted apart in `notYetSent*` (optional so snapshots persisted before
+   * COL-667 still validate; those counted drafts inside the two totals).
+   */
   financial: {
     openInvoicesCount: number;
     totalBalanceDueCents: number;
+    notYetSentCount?: number;
+    notYetSentCents?: number;
   };
   clinical: {
     openIncidents: number;
@@ -79,6 +88,33 @@ export const EXECUTIVE_LIVE_MISSED_RATE_NOT_COMPUTED_COPY = "Miss rate not on li
 export function formatExecutiveLiveMissedRate(missedRate: number | null): string {
   if (missedRate === null) return EXECUTIVE_LIVE_MISSED_RATE_NOT_COMPUTED_COPY;
   return `${Math.round(missedRate * 100)}%`;
+}
+
+/** The invoice columns the executive AR figures read. */
+export const EXECUTIVE_OPEN_INVOICE_COLUMNS = "facility_id, balance_due, status, due_date";
+
+export type ExecutiveOpenInvoiceRow = {
+  facility_id: string;
+  balance_due: number | null;
+  status: string;
+  due_date: string | null;
+};
+
+/** Executive AR from open invoice rows, through the shared receivable definition (COL-667). */
+export function summarizeExecutiveFinancial(
+  rows: ReadonlyArray<ExecutiveOpenInvoiceRow>,
+  asOfIso: string,
+): ExecKpiPayload["financial"] {
+  const summary = summarizeReceivables(
+    rows.map((row) => ({ status: row.status, balanceDueCents: row.balance_due ?? 0, dueDateIso: row.due_date ?? asOfIso })),
+    asOfIso,
+  );
+  return {
+    openInvoicesCount: summary.receivableCount,
+    totalBalanceDueCents: summary.receivableCents,
+    notYetSentCount: summary.notYetSentCount,
+    notYetSentCents: summary.notYetSentCents,
+  };
 }
 
 /** Eastern calendar windows for operator-facing today, +30 cert expiry, and MTD medication errors. */
@@ -120,7 +156,7 @@ export async function fetchExecutiveKpiSnapshot(
     return {
       version: EXEC_KPI_METRICS_VERSION,
       census: { occupiedResidents: 0, licensedBeds: 0, occupancyPct: null, presence: EMPTY_PRESENCE_CENSUS },
-      financial: { openInvoicesCount: 0, totalBalanceDueCents: 0 },
+      financial: { openInvoicesCount: 0, totalBalanceDueCents: 0, notYetSentCount: 0, notYetSentCents: 0 },
       clinical: { openIncidents: 0, medicationErrorsMtd: 0 },
       compliance: { openSurveyDeficiencies: 0 },
       workforce: { certificationsExpiring30d: 0 },
@@ -151,10 +187,11 @@ export async function fetchExecutiveKpiSnapshot(
 
   let invoicesOpenQuery = supabase
     .from("invoices")
-    .select("id, balance_due")
+    .select(EXECUTIVE_OPEN_INVOICE_COLUMNS)
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .is("voided_at", null)
+    .in("status", [...UNSETTLED_INVOICE_STATUSES])
     .gt("balance_due", 0);
 
   let incidentsOpenQuery = supabase
@@ -305,9 +342,10 @@ export async function fetchExecutiveKpiSnapshot(
     };
   }
 
-  const invoiceRows = invoicesOpenRes.data ?? [];
-  const openInvoicesCount = invoiceRows.length;
-  const totalBalanceDueCents = invoiceRows.reduce((sum, row) => sum + (row.balance_due ?? 0), 0);
+  const financial = summarizeExecutiveFinancial(
+    (invoicesOpenRes.data ?? []) as unknown as ExecutiveOpenInvoiceRow[],
+    today,
+  );
 
   return {
     version: EXEC_KPI_METRICS_VERSION,
@@ -318,10 +356,7 @@ export async function fetchExecutiveKpiSnapshot(
       occupancyScope,
       presence,
     },
-    financial: {
-      openInvoicesCount,
-      totalBalanceDueCents,
-    },
+    financial,
     clinical: {
       openIncidents: incidentsOpenRes.count ?? 0,
       medicationErrorsMtd: medErrorsMtdRes.count ?? 0,

@@ -1,15 +1,20 @@
 /**
- * Day-by-day reads of `public.observation_compliance_for_range`.
+ * Chunked reads of `public.observation_compliance_for_range`.
  *
  * The function runs with invoker rights on purpose (see the compliance route),
- * so under a signed-in caller every row passes through RLS. Measured on hosted
- * Haven 2026-09-22 for one 34-resident building: one day ~1.7 s, seven days
- * ~6.8 s as `authenticated` (0.26 s as `postgres`). `authenticated` has an 8 s
- * statement_timeout, and every page of a paginated seven-day read re-runs the
- * whole range, so the range read died with 57014 and the route answered 500.
- * One call per service date keeps each statement to a single day; rows are
- * keyed by service_date, so the union of the days is the range.
+ * so under a signed-in caller every row passes through RLS. Before migration
+ * 474 that cost ~1.7 s per day for one 34-resident building (seven days ~6.8 s
+ * as `authenticated`, 0.26 s as `postgres`) against an 8 s statement_timeout,
+ * so COL-646 read one service date per statement. Migration 474 (COL-664)
+ * evaluates the RLS helpers once per statement and projects windows once per
+ * facility-day: seven days now take ~0.36 s and thirty-one ~0.71 s on
+ * production. Reads still go in bounded chunks (every page of a paginated read
+ * re-runs the whole chunk, and a year-long range should not be one statement);
+ * rows are keyed by service_date, so the union of the chunks is the range.
  */
+
+/** Service dates per `observation_compliance_for_range` call. */
+export const COMPLIANCE_CHUNK_DAYS = 7;
 
 /** Calendar dates from `from` to `to` inclusive (YYYY-MM-DD, no time zone arithmetic). */
 function calendarDate(isoDate: string): Date {
@@ -28,6 +33,18 @@ export function complianceServiceDates(from: string, to: string): string[] {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return dates;
+}
+
+/** Consecutive inclusive `{ from, to }` date spans covering `from`..`to`, each at most `days` long. */
+export function complianceDateChunks(from: string, to: string, days: number = COMPLIANCE_CHUNK_DAYS): { from: string; to: string }[] {
+  const dates = complianceServiceDates(from, to);
+  const size = Math.max(1, Math.floor(days));
+  const chunks: { from: string; to: string }[] = [];
+  for (let i = 0; i < dates.length; i += size) {
+    const span = dates.slice(i, i + size);
+    chunks.push({ from: span[0] as string, to: span[span.length - 1] as string });
+  }
+  return chunks;
 }
 
 /** Runs `task` over `items` with at most `limit` in flight; results keep input order. Rejects on the first failure. */
