@@ -16,8 +16,7 @@ import { hasLinkedStaffRecord, loadAccountLinkContact, type AccountLinkContact }
 import { getAppRoleFromClaims, isMedTechRole } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath, isStaffLinkOptionalPath } from "@/lib/auth/caregiver-route-access";
 import { loadCaregiverFacilityContextForUser } from "@/lib/caregiver/facility-context";
-import { fetchLiveBoardShifts } from "@/lib/rounding/live-board-fetch";
-import { shiftSpanAt } from "@/lib/rounding/observation-cadence";
+import { currentShiftFor, fetchFacilityShiftDefinitions } from "@/lib/caregiver/shift";
 import { routeIsWithin } from "@/lib/navigation/route-match";
 import { createClient } from "@/lib/supabase/client";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
@@ -121,12 +120,13 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         refreshShift = () => {
           const attempt = ++shiftRequest;
           if (shiftTimer) clearTimeout(shiftTimer);
-          void fetchLiveBoardShifts(supabase, resolved.ctx.facilityId).then((rows) => {
+          // Same model the caregiver pages use (currentShiftFor), so the header and page agree (COL-659).
+          void fetchFacilityShiftDefinitions(supabase, [resolved.ctx.facilityId]).then((byFacility) => {
             if (cancelled || attempt !== shiftRequest) return;
             const now = new Date();
-            const span = shiftSpanAt(rows.map((row, index) => ({ shiftKey: row.shift_key, label: row.label, startsAtLocal: row.starts_at_local, endsAtLocal: row.ends_at_local, sortOrder: index })), now, resolved.ctx.timeZone);
-            setShiftLabel(span ? `${span.label} shift` : null);
-            if (span) shiftTimer = setTimeout(refreshShift, span.endsAt.getTime() - now.getTime() + 1);
+            const current = currentShiftFor({ timeZone: resolved.ctx.timeZone, shifts: byFacility.get(resolved.ctx.facilityId) ?? [] }, now);
+            setShiftLabel(current.configured ? `${current.label} shift` : null);
+            if (current.endsAt) shiftTimer = setTimeout(refreshShift, current.endsAt.getTime() - now.getTime() + 1);
           }).catch(() => {
             if (!cancelled && attempt === shiftRequest) setShiftLabel(null);
           });

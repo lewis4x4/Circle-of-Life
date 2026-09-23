@@ -77,7 +77,6 @@ export function EntityCombobox({
           type="button"
           disabled={disabled || loading}
           data-testid={dataTestId}
-          aria-required={required}
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
             "h-10 w-full justify-between px-3 font-normal shadow-none",

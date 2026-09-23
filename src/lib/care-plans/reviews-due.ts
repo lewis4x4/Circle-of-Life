@@ -222,3 +222,24 @@ export async function fetchCarePlanReviewsDue(
 
   return mergeCarePlanReviewRows({ duePlans, alertPlans, alerts, residents: resRes.data ?? [], today });
 }
+
+/**
+ * Active care plans in scope (COL-649). An empty review queue over zero plans
+ * is "no plans exist", not "0 overdue". RLS limits an unscoped read to the
+ * caller's facilities, the same scope as fetchCarePlanReviewsDue.
+ */
+export async function fetchActiveCarePlanCount(
+  selectedFacilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
+): Promise<number> {
+  let query = supabase
+    .from("care_plans" as never)
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .eq("status", "active");
+  if (isValidFacilityIdForQuery(selectedFacilityId)) query = query.eq("facility_id", selectedFacilityId);
+  const res = (await query) as unknown as { count: number | null; error: QueryError | null };
+  if (res.error) throw res.error;
+  if (typeof res.count !== "number") throw new Error("Care plan count unavailable");
+  return res.count;
+}

@@ -8,7 +8,7 @@ import { ArrowLeft, Loader2, Stethoscope } from "lucide-react";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -60,6 +60,7 @@ export default function CaregiverResidentConditionChangePage() {
     facilityId: string;
     organizationId: string;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
   const [residentLabel, setResidentLabel] = useState<string | null>(null);
@@ -173,7 +174,7 @@ export default function CaregiverResidentConditionChangePage() {
     setSubmitting(true);
     setLoadError(null);
     try {
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const nowIso = new Date().toISOString();
       const row: Database["public"]["Tables"]["condition_changes"]["Insert"] = {
         resident_id: residentId,

@@ -9,7 +9,7 @@ import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options"
 import { formatCaregiverResidentLogGeneralNotes } from "@/lib/caregiver/resident-log-display-copy";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { appendShiftNote as persistShiftNote, parseVitalMeasurements, recordVitals } from "@/lib/caregiver/clinical-writes";
 import { requestEvaluateVitals } from "@/lib/infection-control/request-evaluate-vitals";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
@@ -45,6 +45,7 @@ export default function CaregiverResidentLogPage() {
     organizationId: string;
     facilityName: string | null;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
   const [residentLabel, setResidentLabel] = useState<string | null>(null);
@@ -295,7 +296,7 @@ export default function CaregiverResidentLogPage() {
                   <>
                     {" "}
                     · today ({zonedYmd(new Date(), ctx.timeZone)}) · shift{" "}
-                    <span className="text-zinc-200">{currentShiftForTimezone(ctx.timeZone)}</span>
+                    <span className="text-zinc-200">{currentShiftFor(ctx).label.toLowerCase()}</span>
                   </>
                 ) : null}
               </>

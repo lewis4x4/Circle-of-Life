@@ -168,8 +168,8 @@ export default function ComplianceRuleDetailPage() {
       <RecordDetailSection
         title="Recent scan results"
         action={
-          <Button variant="outline" size="sm" onClick={() => void loadRuleAndResults()}>
-            <RefreshCw className="h-4 w-4" />
+          <Button variant="outline" size="sm" aria-label="Refresh scan results" onClick={() => void loadRuleAndResults()}>
+            <RefreshCw className="h-4 w-4" aria-hidden />
           </Button>
         }
       >

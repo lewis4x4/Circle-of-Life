@@ -9,7 +9,7 @@ import { ADL_OPTIONS, ASSIST_OPTIONS, adlTypeLabel, assistanceLabel } from "@/li
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -39,6 +39,7 @@ export default function CaregiverResidentAdlPage() {
     organizationId: string;
     facilityName: string | null;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
   const [residentLabel, setResidentLabel] = useState<string | null>(null);
@@ -152,7 +153,7 @@ export default function CaregiverResidentAdlPage() {
     setLoadError(null);
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const dailyLogId = await fetchShiftDailyLogId(supabase, {
         residentId,
         facilityId: ctx.facilityId,
@@ -261,7 +262,7 @@ export default function CaregiverResidentAdlPage() {
                   <>
                     {" "}
                     · today ({zonedYmd(new Date(), ctx.timeZone)}) · shift{" "}
-                    <span className="text-zinc-200">{currentShiftForTimezone(ctx.timeZone)}</span>
+                    <span className="text-zinc-200">{currentShiftFor(ctx).label.toLowerCase()}</span>
                   </>
                 ) : null}
               </>

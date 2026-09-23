@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Award, Loader2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -136,7 +137,6 @@ export default function AdminNewCertificationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header first.");
       return;
     }
     if (staffLoading || visibleStaffError || !eligibleStaffId) {
@@ -241,134 +241,132 @@ export default function AdminNewCertificationPage() {
         certifications; med-techs can view the register.
       </p>
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Choose a facility from the header selector to load staff and enable this form.
-        </p>
-      )}
+      {facilityReady ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Credential</CardTitle>
+            <CardDescription>Required: staff, issue date, and credential name.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 max-w-xl">
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Credential</CardTitle>
-          <CardDescription>Required: staff, issue date, and credential name.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 max-w-xl">
-            {error && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {error}
-              </p>
-            )}
-
-            <div className="space-y-1.5">
-              <label htmlFor="certification-staff-member" className="text-xs font-medium text-slate-600 dark:text-slate-400">Staff member</label>
-              <select id="certification-staff-member"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={eligibleStaffId}
-                onChange={(e) => setStaffId(e.target.value)}
-                disabled={staffLoading || !staffScopeCurrent || !facilityReady}
-                required
-              >
-                <option value="">Select staff…</option>
-                {visibleStaff.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-              {visibleStaffError ? (
-                <div className="flex items-center justify-between gap-3" role="alert">
-                  <p className="text-xs text-red-700 dark:text-red-300">
-                    Eligible staff could not be loaded: {visibleStaffError}
-                  </p>
-                  <Button type="button" variant="outline" size="sm" onClick={() => void loadStaff()}>
-                    Retry staff load
-                  </Button>
-                </div>
-              ) : facilityReady && staffScopeCurrent && !staffLoading && visibleStaff.length === 0 ? (
-                <p className="text-xs text-amber-700 dark:text-amber-300">No active staff in this facility.</p>
-              ) : null}
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label htmlFor="certification-category" className="text-xs font-medium text-slate-600 dark:text-slate-400">Category</label>
-                <select id="certification-category"
+                <label htmlFor="certification-staff-member" className="text-xs font-medium text-slate-600 dark:text-slate-400">Staff member</label>
+                <select id="certification-staff-member"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={certType}
-                  onChange={(e) => setCertType(e.target.value)}
+                  value={eligibleStaffId}
+                  onChange={(e) => setStaffId(e.target.value)}
+                  disabled={staffLoading || !staffScopeCurrent || !facilityReady}
+                  required
                 >
-                  {CERT_TYPE_PRESETS.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
+                  <option value="">Select staff…</option>
+                  {visibleStaff.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
                     </option>
                   ))}
                 </select>
+                {visibleStaffError ? (
+                  <div className="flex items-center justify-between gap-3" role="alert">
+                    <p className="text-xs text-red-700 dark:text-red-300">
+                      Eligible staff could not be loaded: {visibleStaffError}
+                    </p>
+                    <Button type="button" variant="outline" size="sm" onClick={() => void loadStaff()}>
+                      Retry staff load
+                    </Button>
+                  </div>
+                ) : facilityReady && staffScopeCurrent && !staffLoading && visibleStaff.length === 0 ? (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">No active staff in this facility.</p>
+                ) : null}
               </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <label htmlFor="certification-credential-name" className="text-xs font-medium text-slate-600 dark:text-slate-400">Credential name</label>
-                <Input id="certification-credential-name"
-                  value={certName}
-                  onChange={(e) => setCertName(e.target.value)}
-                  placeholder="e.g. American Heart BLS — Healthcare Provider"
-                  required
-                />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="certification-category" className="text-xs font-medium text-slate-600 dark:text-slate-400">Category</label>
+                  <select id="certification-category"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={certType}
+                    onChange={(e) => setCertType(e.target.value)}
+                  >
+                    {CERT_TYPE_PRESETS.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label htmlFor="certification-credential-name" className="text-xs font-medium text-slate-600 dark:text-slate-400">Credential name</label>
+                  <Input id="certification-credential-name"
+                    value={certName}
+                    onChange={(e) => setCertName(e.target.value)}
+                    placeholder="e.g. American Heart BLS — Healthcare Provider"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="certification-issuing-authority-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Issuing authority (optional)
-              </label>
-              <Input id="certification-issuing-authority-optional"
-                value={issuingAuthority}
-                onChange={(e) => setIssuingAuthority(e.target.value)}
-                placeholder="e.g. AHA Training Center, FL BON"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label htmlFor="certification-issue-date" className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Issue date (ET)
+                <label htmlFor="certification-issuing-authority-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  Issuing authority (optional)
                 </label>
-                <Input
-                  id="certification-issue-date"
-                  type="date"
-                  value={issueDate}
-                  onChange={(e) => setIssueDate(e.target.value)}
-                  required
+                <Input id="certification-issuing-authority-optional"
+                  value={issuingAuthority}
+                  onChange={(e) => setIssuingAuthority(e.target.value)}
+                  placeholder="e.g. AHA Training Center, FL BON"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="certification-expiration-date"
-                  className="text-xs font-medium text-slate-600 dark:text-slate-400"
-                >
-                  Expiration (optional, ET)
-                </label>
-                <Input
-                  id="certification-expiration-date"
-                  type="date"
-                  value={expirationDate}
-                  onChange={(e) => setExpirationDate(e.target.value)}
-                />
-              </div>
-            </div>
 
-            <Button type="submit" disabled={submitting || !facilityReady || staffLoading || Boolean(visibleStaffError) || !eligibleStaffId}>
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                "Save certification"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="certification-issue-date" className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Issue date (ET)
+                  </label>
+                  <Input
+                    id="certification-issue-date"
+                    type="date"
+                    value={issueDate}
+                    onChange={(e) => setIssueDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="certification-expiration-date"
+                    className="text-xs font-medium text-slate-600 dark:text-slate-400"
+                  >
+                    Expiration (optional, ET)
+                  </label>
+                  <Input
+                    id="certification-expiration-date"
+                    type="date"
+                    value={expirationDate}
+                    onChange={(e) => setExpirationDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" disabled={submitting || !facilityReady || staffLoading || Boolean(visibleStaffError) || !eligibleStaffId}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  "Save certification"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <FacilityGateNotice reason="Credentials are recorded against a staff member at one building, so the staff list and this form load once a facility is chosen." />
+      )}
     </div>
   );
 }

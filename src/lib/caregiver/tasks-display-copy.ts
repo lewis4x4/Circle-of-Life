@@ -1,5 +1,4 @@
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
-import { enumLabel } from "@/lib/display/enum-label";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 
 /**
  * Quiet Operator copy for caregiver task queue shift bucket.
@@ -9,8 +8,12 @@ import { enumLabel } from "@/lib/display/enum-label";
 export const CAREGIVER_TASKS_NO_SHIFT_COPY = "No shift posted";
 
 /** Shift bucket label for the task queue metric — never a silent dash when timezone is missing. */
-export function formatCaregiverTasksShiftBucket(timeZone: string | null | undefined): string {
+export function formatCaregiverTasksShiftBucket(
+  timeZone: string | null | undefined,
+  shifts?: readonly FacilityShiftDefinition[] | null,
+): string {
   const trimmed = timeZone?.trim();
   if (!trimmed) return CAREGIVER_TASKS_NO_SHIFT_COPY;
-  return enumLabel(currentShiftForTimezone(trimmed));
+  // The facility's configured shift label ("Day", "Night"), the same one the header names (COL-659).
+  return currentShiftFor({ timeZone: trimmed, shifts }).label;
 }
