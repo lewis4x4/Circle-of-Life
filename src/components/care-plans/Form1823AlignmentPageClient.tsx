@@ -14,6 +14,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import {
+  formatForm1823AlignmentEmptyRosterCopy,
+  formatForm1823AlignmentFacilityTitle,
+} from "@/lib/care-plans/form-1823-alignment-display-copy";
+
 import { FORM_1823_MAX_AGE_YEARS } from "@/lib/care-plans/form-1823-alignment";
 import {
   fetchForm1823AlignmentRoster,
@@ -231,9 +236,13 @@ export function Form1823AlignmentPageClient({ initialRoster, initialError, initi
     return () => clearTimeout(timer);
   }, [load]);
 
-  const facilityName = selectedFacilityId
+  const postedFacilityName = selectedFacilityId
     ? (availableFacilities.find((facility) => facility.id === selectedFacilityId)?.name ?? null)
-    : "All facilities";
+    : null;
+  const facilityTitle = formatForm1823AlignmentFacilityTitle(
+    selectedFacilityId,
+    postedFacilityName,
+  );
 
   const normalizedQuery = query.trim().toLowerCase();
   const visibleRows = useMemo(
@@ -264,7 +273,7 @@ export function Form1823AlignmentPageClient({ initialRoster, initialError, initi
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Form 1823 and care plans</h1>
         <p className="text-sm text-muted-foreground">
-          {facilityName ?? "Selected facility"}
+          {facilityTitle}
           {roster ? ` · ${roster.counts.residents} current resident${roster.counts.residents === 1 ? "" : "s"}` : ""}
         </p>
         <p className="max-w-3xl text-sm text-muted-foreground">
@@ -295,7 +304,7 @@ export function Form1823AlignmentPageClient({ initialRoster, initialError, initi
             <ClipboardList className="size-8 text-muted-foreground" aria-hidden />
             <h2 className="text-base font-semibold text-foreground">No current residents in scope</h2>
             <p className="max-w-md text-sm text-muted-foreground">
-              Residents with status active, hospital hold, or leave of absence appear here once they exist in the selected facility.
+              {formatForm1823AlignmentEmptyRosterCopy(postedFacilityName)}
             </p>
           </CardContent>
         </Card>

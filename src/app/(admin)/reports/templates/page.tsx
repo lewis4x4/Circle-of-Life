@@ -20,6 +20,7 @@ import {
   parsePinnedTemplateIds,
   togglePinnedTemplateId as prefsTogglePinnedTemplateId,
 } from "@/lib/reports/hub-preferences";
+import { deriveTemplateScheduleLabel, type ScheduleListRow } from "@/lib/reports/report-status";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
 import type { Json } from "@/types/database";
@@ -29,13 +30,6 @@ type DbTemplateRow = {
   slug: string;
   created_at: string;
   short_description: string | null;
-};
-
-type ScheduleRow = {
-  source_type: string;
-  source_id: string;
-  recurrence_rule: string;
-  status: string;
 };
 
 type RunRow = {
@@ -50,37 +44,6 @@ type EnrichedRow = (typeof PHASE1_TEMPLATE_SEED)[number] & {
   scheduledSummary: string | null;
   isNew: boolean;
 };
-
-function scheduleMatchesTemplate(sourceId: string, templateId: string | null, slug: string): boolean {
-  const sid = sourceId.trim();
-  if (templateId && sid === templateId) return true;
-  return sid === slug;
-}
-
-function humanizeRecurrence(rule: string): string {
-  const lower = rule.trim().toLowerCase();
-  const known: Record<string, string> = {
-    daily: "Daily",
-    weekly: "Weekly",
-    monthly: "Monthly",
-    quarterly: "Quarterly",
-  };
-  if (known[lower]) return known[lower];
-  const raw = rule.trim();
-  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase() : "Recurring";
-}
-
-function deriveScheduledSummary(schedules: ScheduleRow[], templateId: string | null, slug: string): string | null {
-  const rows = schedules.filter(
-    (s) => s.source_type === "template" && scheduleMatchesTemplate(s.source_id, templateId, slug),
-  );
-  const active = rows.find((s) => s.status === "active");
-  const paused = rows.find((s) => s.status === "paused");
-  const pick = active ?? paused;
-  if (!pick) return null;
-  const cadence = humanizeRecurrence(pick.recurrence_rule);
-  return active ? `Scheduled — ${cadence}` : `Paused — ${cadence}`;
-}
 
 const NEW_TEMPLATE_DAYS = 14;
 
@@ -109,7 +72,7 @@ export default function ReportTemplatesPage() {
 
       const slugs = PHASE1_TEMPLATE_SEED.map((t) => t.slug);
 
-      const [profileRes, templatesRes, runsRes, schedulesRes] = await Promise.all([
+      const [profileRes, templatesRes, runsRes, schedulesRes, packItemsRes] = await Promise.all([
         supabase.from("user_profiles").select("settings").eq("id", uId).maybeSingle(),
         supabase
           .from("report_templates")
@@ -126,13 +89,18 @@ export default function ReportTemplatesPage() {
           .limit(800),
         supabase
           .from("report_schedules")
-          .select("source_type, source_id, recurrence_rule, status")
+          .select("source_type, source_id, recurrence_rule, status, output_format, next_run_at, last_error")
+          .eq("organization_id", orgId)
+          .is("deleted_at", null),
+        supabase
+          .from("report_pack_items")
+          .select("pack_id, source_id")
           .eq("organization_id", orgId)
           .is("deleted_at", null),
       ]);
 
       const err =
-        profileRes.error ?? templatesRes.error ?? runsRes.error ?? schedulesRes.error ?? null;
+        profileRes.error ?? templatesRes.error ?? runsRes.error ?? schedulesRes.error ?? packItemsRes.error ?? null;
       if (err) throw new Error(err.message);
 
       const settings = profileRes.data?.settings ?? null;
@@ -149,7 +117,13 @@ export default function ReportTemplatesPage() {
         }
       }
 
-      const scheduleRows = (schedulesRes.data ?? []) as ScheduleRow[];
+      const scheduleRows = (schedulesRes.data ?? []) as ScheduleListRow[];
+      const packTemplateIds = new Map<string, Set<string>>();
+      for (const item of (packItemsRes.data ?? []) as { pack_id: string; source_id: string }[]) {
+        const set = packTemplateIds.get(item.pack_id) ?? new Set<string>();
+        set.add(item.source_id);
+        packTemplateIds.set(item.pack_id, set);
+      }
 
       const now = Date.now();
       const enriched: EnrichedRow[] = PHASE1_TEMPLATE_SEED.map((seed) => {
@@ -168,7 +142,11 @@ export default function ReportTemplatesPage() {
           lastRunRelative = formatDistanceToNow(new Date(iso), { addSuffix: true });
         }
 
-        const scheduledSummary = deriveScheduledSummary(scheduleRows, templateId, seed.slug);
+        // Same schedule judgement as the hub and the Scheduled page, including packs that contain this template.
+        const scheduleLabel = templateId
+          ? deriveTemplateScheduleLabel({ id: templateId, slug: seed.slug }, scheduleRows, packTemplateIds)
+          : "Not scheduled";
+        const scheduledSummary = scheduleLabel === "Not scheduled" ? null : scheduleLabel;
 
         const description = db?.short_description?.trim() || seed.description;
 

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StatusPill } from "@/components/ui/status-pill";
 import {
   Select,
   SelectContent,
@@ -51,6 +52,7 @@ import {
   buildRecommendedStarterPacks,
   SURVEY_VISIT_PACK_NAME,
   surveyVisitTemplateSlugs,
+  enabledStarterPackIds,
 } from "@/lib/reports/recommended-packs";
 import {
   computeNextRunUtc,
@@ -58,6 +60,7 @@ import {
   encodeScheduleRule,
 } from "@/lib/reports/schedule-preview";
 import { formatReportPackCadenceSummary } from "@/lib/reports/reports-display-copy";
+import { deriveReportScheduleState } from "@/lib/reports/report-status";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -80,7 +83,9 @@ type ScheduleRow = {
   recurrence_rule: string;
   timezone: string;
   status: string;
+  output_format: string;
   next_run_at: string | null;
+  last_error: string | null;
 };
 
 const TZ_DEFAULT = "America/New_York";
@@ -177,6 +182,8 @@ export function ReportPacksHub() {
   }, []);
 
   const recommended = useMemo(() => buildRecommendedStarterPacks(PHASE1_TEMPLATE_SEED), []);
+  // A starter already enabled must not be offered again (COL-643): enabling twice creates a duplicate pack.
+  const enabledStarterIds = useMemo(() => enabledStarterPackIds(packs), [packs]);
 
   const toggleSlug = useCallback((slug: string) => {
     setSelectedSlugs((prev) => {
@@ -243,7 +250,7 @@ export function ReportPacksHub() {
       if (packIds.length > 0) {
         const { data: schRows, error: schErr } = await supabase
           .from("report_schedules")
-          .select("id, source_id, recurrence_rule, timezone, status, next_run_at")
+          .select("id, source_id, recurrence_rule, timezone, status, output_format, next_run_at, last_error")
           .eq("organization_id", oid)
           .eq("source_type", "pack")
           .in("source_id", packIds)
@@ -838,15 +845,19 @@ export function ReportPacksHub() {
                 <p className="mt-3 text-xs text-muted-foreground">
                   {starter.templateSlugs.length} reports · {starter.cadenceLabel}
                 </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="mt-4"
-                  disabled={!canManage || busy}
-                  onClick={() => void enableStarter(starter.id)}
-                >
-                  Enable
-                </Button>
+                {enabledStarterIds.has(starter.id) ? (
+                  <p className="mt-4 text-sm font-medium text-foreground">Already enabled — see the pack registry below</p>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-4"
+                    disabled={!canManage || busy}
+                    onClick={() => void enableStarter(starter.id)}
+                  >
+                    Enable
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -1120,7 +1131,9 @@ export function ReportPacksHub() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedPacks.map(({ pack, cadenceLabel, count }) => (
+                  {sortedPacks.map(({ pack, cadenceLabel, count, sch }) => {
+                    const scheduleState = pack.active && sch ? deriveReportScheduleState(sch) : null;
+                    return (
                     <TableRow key={pack.id}>
                       <TableCell className="font-medium text-foreground">{pack.name}</TableCell>
                       <TableCell>
@@ -1131,9 +1144,15 @@ export function ReportPacksHub() {
                       <TableCell className="text-sm text-muted-foreground">{cadenceLabel}</TableCell>
                       <TableCell className="text-right tabular-nums">{count}</TableCell>
                       <TableCell>
-                        <Badge variant={pack.active ? "default" : "outline"} className="font-normal">
-                          {pack.active ? "Active" : "Paused"}
-                        </Badge>
+                        {scheduleState && scheduleState.kind !== "active" ? (
+                          <span title={scheduleState.problem ?? undefined}>
+                            <StatusPill tone={scheduleState.tone}>{scheduleState.label}</StatusPill>
+                          </span>
+                        ) : (
+                          <Badge variant={pack.active ? "default" : "outline"} className="font-normal">
+                            {pack.active ? "Active" : "Paused"}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-wrap justify-end gap-2">
@@ -1174,7 +1193,8 @@ export function ReportPacksHub() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
