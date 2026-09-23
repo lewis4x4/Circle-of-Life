@@ -5,6 +5,7 @@
 
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useState, useEffect, useCallback, useRef, type ElementType } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -711,7 +712,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-medium capitalize">{enumLabel(entry.action)}</span>
                           <span className="text-xs text-muted-foreground">
-                            {new Date(entry.created_at).toLocaleString()}
+                            {formatDisplayDateTime(entry.created_at)}
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">

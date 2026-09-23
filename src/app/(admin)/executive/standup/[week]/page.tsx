@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -405,8 +406,8 @@ export default function ExecutiveStandupWeekDetailPage() {
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[
-              { label: "Generated", value: new Date(detail.snapshot.generatedAt).toLocaleString() },
-              { label: "Published", value: detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet" },
+              { label: "Generated", value: formatDisplayDateTime(detail.snapshot.generatedAt) },
+              { label: "Published", value: detail.snapshot.publishedAt ? formatDisplayDateTime(detail.snapshot.publishedAt) : "Not yet" },
               { label: "Completeness", value: `${detail.snapshot.completenessPct.toFixed(0)}%` },
               { label: "Confidence", value: <span className="capitalize">{detail.snapshot.confidenceBand}</span> },
             ].map(({ label, value }) => (

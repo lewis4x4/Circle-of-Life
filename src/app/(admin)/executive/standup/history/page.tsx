@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -270,8 +271,8 @@ export default function ExecutiveStandupHistoryPage() {
                         <div>
                           <CardTitle className="text-xl">{row.weekOf}</CardTitle>
                           <CardDescription className="mt-1">
-                            Generated {new Date(row.generatedAt).toLocaleString()}
-                            {row.publishedAt ? ` · Published ${new Date(row.publishedAt).toLocaleString()}` : ""}
+                            Generated {formatDisplayDateTime(row.generatedAt)}
+                            {row.publishedAt ? ` · Published ${formatDisplayDateTime(row.publishedAt)}` : ""}
                           </CardDescription>
                         </div>
                         <Badge variant="outline" className={badgeClass(row.status)}>
@@ -353,8 +354,8 @@ export default function ExecutiveStandupHistoryPage() {
                       <div>
                         <div className="font-medium text-slate-900 dark:text-white">{job.sourceFileName}</div>
                         <div className="mt-1 text-sm text-muted-foreground">
-                          Created {new Date(job.createdAt).toLocaleString()}
-                          {job.finishedAt ? ` · Finished ${new Date(job.finishedAt).toLocaleString()}` : ""}
+                          Created {formatDisplayDateTime(job.createdAt)}
+                          {job.finishedAt ? ` · Finished ${formatDisplayDateTime(job.finishedAt)}` : ""}
                         </div>
                       </div>
                       <Badge variant="outline" className={badgeClass(job.status)}>
@@ -376,7 +377,7 @@ export default function ExecutiveStandupHistoryPage() {
                       </div>
                       <div>
                         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Started</div>
-                        <div className="mt-1 text-slate-900 dark:text-white">{job.startedAt ? new Date(job.startedAt).toLocaleString() : "Queued"}</div>
+                        <div className="mt-1 text-slate-900 dark:text-white">{job.startedAt ? formatDisplayDateTime(job.startedAt) : "Queued"}</div>
                       </div>
                     </div>
                     {job.errorText ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
@@ -1031,7 +1032,7 @@ export function AdminReferralsPageClient({
                             <span className="lg:hidden text-[12px] font-medium text-muted-foreground">Updated</span>
                           <div className="flex flex-col items-end">
                             <span className="text-[12px] font-mono tracking-wide tabular-nums text-muted-foreground">
-                              {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                              {formatDisplayDateTime(r.updated_at)}
                             </span>
                             {(() => {
                               const tourLabel = formatReferralsHubTourScheduledFor(r.tour_scheduled_for);

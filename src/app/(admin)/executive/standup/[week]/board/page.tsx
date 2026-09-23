@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, Printer, RefreshCw } from "lucide-react";
@@ -247,12 +248,12 @@ export default function ExecutiveStandupBoardPage() {
                   <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Prepared</div>
                     <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
-                    <div className="mt-2 tabular-nums text-muted-foreground">{new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{formatDisplayDateTime(detail.snapshot.generatedAt)}</div>
                   </div>
                   <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Published</div>
                     <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
-                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? formatDisplayDateTime(detail.snapshot.publishedAt) : "Not yet"}</div>
                     <div className="mt-2 tabular-nums text-muted-foreground">Version {detail.snapshot.publishedVersion}</div>
                   </div>
                 </div>

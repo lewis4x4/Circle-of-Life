@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -228,7 +229,7 @@ export default function SavedReportsPage() {
                            </div>
                            <div className="flex flex-col gap-2 align-right text-left md:text-right">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Last Modified</span>
-                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-medium">{new Date(view.updated_at).toLocaleString()}</span>
+                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-medium">{formatDisplayDateTime(view.updated_at)}</span>
                            </div>
                         </div>
 

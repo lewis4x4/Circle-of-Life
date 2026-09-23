@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -190,7 +191,7 @@ export default function ResidentVitalsPage() {
                       <span className="font-medium uppercase tracking-wider text-[11px] text-destructive">{a.vital_type}</span>
                       <Badge className="bg-destructive text-primary-foreground uppercase tracking-wider font-bold text-[9px] px-2 shadow-none border-none">{a.status}</Badge>
                     </div>
-                    <span className="text-xs tabular-nums text-destructive/70 mt-2">{new Date(a.created_at).toLocaleString()}</span>
+                    <span className="text-xs tabular-nums text-destructive/70 mt-2">{formatDisplayDateTime(a.created_at)}</span>
                   </li>
                 ))}
                 {alertsPanel.emptyCopy && (

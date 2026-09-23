@@ -1,4 +1,5 @@
 "use client";
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -57,6 +58,6 @@ export default function SavedReportPage() {
  return <div className="space-y-6"><ReportsHubNav/><h1 className="text-2xl font-semibold">{snapshot?.title??"Saved report"}</h1>
   <p>Status: {status}</p>{error?<p role="alert" className="text-destructive">{error}</p>:null}
   <div className="flex gap-4"><Link href="/admin/reports/history">Back to history</Link>{retryHref?<Link href={retryHref}>Run again</Link>:null}{snapshot?<Button onClick={download}>Download saved CSV</Button>:null}</div>
-  {snapshot?<><p>Scope: {snapshot.scopeLabel} · Generated {new Date(snapshot.generatedAt).toLocaleString()}</p>{snapshot.slices.map((slice,index)=><section key={`${slice.slug}-${index}`} className="space-y-3"><h2 className="text-lg font-medium">{slice.name}</h2>{slice.error?<p className="text-destructive">{slice.error}</p>:null}{slice.result?<><ReportRunResult summary={slice.result.summary} detailRows={slice.result.rows}/>{slice.result.footnotes?.map((note,i)=><p key={i} className="text-sm text-muted-foreground">{note}</p>)}</>:null}</section>)}</>:null}
+  {snapshot?<><p>Scope: {snapshot.scopeLabel} · Generated {formatDisplayDateTime(snapshot.generatedAt)}</p>{snapshot.slices.map((slice,index)=><section key={`${slice.slug}-${index}`} className="space-y-3"><h2 className="text-lg font-medium">{slice.name}</h2>{slice.error?<p className="text-destructive">{slice.error}</p>:null}{slice.result?<><ReportRunResult summary={slice.result.summary} detailRows={slice.result.rows}/>{slice.result.footnotes?.map((note,i)=><p key={i} className="text-sm text-muted-foreground">{note}</p>)}</>:null}</section>)}</>:null}
  </div>;
 }
