@@ -83,7 +83,7 @@ export default function ResidentVitalsPage() {
   });
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       {loading && <p role="status">Loading clinical data…</p>}
       {(logsError || alertsError) && <div role="alert" className="rounded border border-amber-500 p-4">{logsError && <p>Vitals unavailable: {logsError}</p>}{alertsError && <p>Alerts unavailable: {alertsError}</p>}<button onClick={() => void load()}>Retry</button></div>}
       <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)] ease-[var(--motion-ease)]">
