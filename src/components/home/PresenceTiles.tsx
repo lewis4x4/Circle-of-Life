@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Users } from "lucide-react";
 
 import type { PresenceCensus } from "@/lib/executive/presence-census";
+import { censusDisagreementCopy, emptyRosterCopy } from "@/lib/residents/empty-roster-copy";
 import { cn } from "@/lib/utils";
 
 import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
@@ -11,16 +12,30 @@ export type PresenceTilesProps = {
   available: boolean;
   licensedBeds: number | null;
   standUpCensus: { value: number; weekStart: string } | null;
+  facilityName?: string | null;
 };
 
 /**
  * Residents today: counts only, never names. Each tile opens the roster
  * filtered to that residency status. A Stand Up figure that disagrees with the
- * roster is shown on the tile, not hidden (COL-555).
+ * roster is shown on the tile, not hidden (COL-555), as one message with a next
+ * step; an empty roster says so and links to the roster and to admissions
+ * (COL-670).
  */
-export function PresenceTiles({ presence, available, licensedBeds, standUpCensus }: PresenceTilesProps) {
+export function PresenceTiles({ presence, available, licensedBeds, standUpCensus, facilityName = null }: PresenceTilesProps) {
   const openBeds = licensedBeds == null ? null : Math.max(0, licensedBeds - presence.total);
   const disagreement = standUpCensus && available && standUpCensus.value !== presence.total ? standUpCensus : null;
+  const rosterEmpty = available && presence.total === 0;
+  const note = disagreement
+    ? censusDisagreementCopy({
+        facilityName,
+        rosterTotal: presence.total,
+        standUpValue: disagreement.value,
+        standUpWeekStart: disagreement.weekStart,
+      })
+    : rosterEmpty
+      ? emptyRosterCopy(facilityName)
+      : null;
   const subtitle = !available
     ? "Roster counts unavailable right now."
     : `${presence.total} on census${licensedBeds != null ? ` · ${licensedBeds} licensed beds · ${openBeds} open` : ""}. Every held bed counts.`;
@@ -56,10 +71,19 @@ export function PresenceTiles({ presence, available, licensedBeds, standUpCensus
           </Link>
         ))}
       </div>
-      {disagreement ? (
-        <p className="border-t border-dashed border-border bg-background/40 px-4 py-2.5 text-xs text-warning" role="note">
-          Weekly Stand Up reported {disagreement.value} for the week of {disagreement.weekStart}; the roster shows {presence.total}. The difference is being reconciled — neither number is hidden.
-        </p>
+      {note ? (
+        <div className="border-t border-dashed border-border bg-background/40 px-4 py-2.5 text-xs" role="note" data-testid="presence-note">
+          <p className={disagreement ? "text-warning" : "text-foreground"}>{note}</p>
+          <div className="mt-2 flex flex-wrap gap-3 font-medium">
+            <Link href="/admin/residents" className="text-primary underline-offset-4 hover:underline">Open the roster</Link>
+            {rosterEmpty ? (
+              <Link href="/pipeline/admissions/new" className="text-primary underline-offset-4 hover:underline">Start an admission</Link>
+            ) : null}
+            {disagreement ? (
+              <Link href="/admin/stand-up" className="text-primary underline-offset-4 hover:underline">Open Stand Up</Link>
+            ) : null}
+          </div>
+        </div>
       ) : null}
     </section>
   );

@@ -27,6 +27,7 @@ import {
 } from "@/lib/executive/executive-display-copy";
 import { formatCents } from "@/lib/finance/format-cents";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type ExecutiveLeaguePageClientProps = {
   initialData: ExecutiveLeagueData | null;
@@ -221,8 +222,9 @@ export default function ExecutiveLeaguePageClient({
                   Higher league scores indicate stronger board-readiness. Ranking blends nightly risk, occupancy, AR pressure, and entity insurance readiness.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+              <CardContent>
+                <HorizontalScroll label="Facility league table">
+                <table className="w-full min-w-[44rem] text-left text-sm">
                   <thead>
                     <tr className="border-b border-border">
                       <th className="pb-2 pr-4 font-medium">Facility</th>
@@ -263,6 +265,7 @@ export default function ExecutiveLeaguePageClient({
                     ))}
                   </tbody>
                 </table>
+                </HorizontalScroll>
               </CardContent>
             </Card>
 
@@ -294,8 +297,9 @@ export default function ExecutiveLeaguePageClient({
                 Renewal posture summarized once per legal entity so board review can see packet freshness and expiring coverage without bouncing into the insurance hub.
               </CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+            <CardContent>
+              <HorizontalScroll label="Insurance readiness by entity">
+              <table className="w-full min-w-[44rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="pb-2 pr-4 font-medium">Entity</th>
@@ -324,6 +328,7 @@ export default function ExecutiveLeaguePageClient({
                   ))}
                 </tbody>
               </table>
+              </HorizontalScroll>
             </CardContent>
           </Card>
         </>

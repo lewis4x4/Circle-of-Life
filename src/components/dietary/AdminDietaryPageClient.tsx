@@ -22,24 +22,28 @@ import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import { formatMetric } from "@/lib/metrics/metric-state";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import {
+  computeDietaryBatchStats,
   dietaryBatchStatBarWidthPct,
   formatDietaryBatchStatPct,
   formatDietaryHubRelativeUpdatedAt,
 } from "@/lib/dietary/dietary-batch-stats-display-copy";
 import {
+  dietaryActiveOrdersMetric,
+  dietaryAttentionQueueIsClear,
   dietOrdersHubLoadCapNotice,
   formatDietaryHubResidentDisplay,
 } from "@/lib/dietary/dietary-hub-display-copy";
@@ -313,22 +317,7 @@ export function AdminDietaryPageClient({
     [displayRows, attentionIds],
   );
 
-  const batchStats = useMemo(() => {
-    const n = displayRows.length;
-    if (n === 0) {
-      return { thickenedPct: 0, swallowPct: 0, allergyPct: 0, medTexturePct: 0 };
-    }
-    const thickened = displayRows.filter((r) => fluidIsThickened(r.iddsi_fluid_level)).length;
-    const swallow = displayRows.filter((r) => r.requires_swallow_eval).length;
-    const allergy = displayRows.filter((r) => r.allergy_constraints.length > 0).length;
-    const medTexture = displayRows.filter((r) => r.medication_texture_review_notes?.trim()).length;
-    return {
-      thickenedPct: Math.round((thickened / n) * 100),
-      swallowPct: Math.round((swallow / n) * 100),
-      allergyPct: Math.round((allergy / n) * 100),
-      medTexturePct: Math.round((medTexture / n) * 100),
-    };
-  }, [displayRows]);
+  const batchStats = useMemo(() => computeDietaryBatchStats(displayRows, fluidIsThickened), [displayRows]);
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
@@ -421,6 +410,22 @@ export function AdminDietaryPageClient({
     finally { setActivatingId(null); }
   }
 
+  const activeOrdersMetric = dietaryActiveOrdersMetric({
+    facilityReady,
+    loading,
+    error,
+    count: displayRows.length,
+  });
+  const activeOrdersDisplay = formatMetric(activeOrdersMetric);
+  // "All Clear" on the attention queue goes through canClaimAllClear: orders loaded, none need attention.
+  const attentionQueueClear = dietaryAttentionQueueIsClear({
+    facilityReady,
+    loading,
+    error,
+    ordersInView: displayRows.length,
+    attentionCount: attentionRows.length,
+  });
+
   const snackPreviewFootnote = snackPassRecentPreviewFootnote(snackLogs.length);
   const dietOrderLoadCapNotice = dietOrdersHubLoadCapNotice(rows.length);
 
@@ -504,12 +509,22 @@ export function AdminDietaryPageClient({
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] md:col-span-3">
             <V2Card hoverColor="indigo" className="border-primary/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
-              <MonolithicWatermark value={displayRows.length} className="text-info/10 opacity-50" />
+              <MonolithicWatermark value={activeOrdersDisplay} className="text-info/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between p-2">
                 <h3 className="text-[11px] font-bold tracking-wider uppercase text-primary flex items-center gap-2">
                   <Utensils className="h-4 w-4" /> Active Diet Orders
                 </h3>
-                <p className="text-2xl tracking-tight font-medium text-primary pb-1">{displayRows.length}</p>
+                <p
+                  data-metric-state={activeOrdersMetric.status}
+                  className={cn(
+                    "pb-1",
+                    activeOrdersMetric.status === "value"
+                      ? "text-2xl tracking-tight font-medium text-primary"
+                      : "text-base font-medium text-muted-foreground",
+                  )}
+                >
+                  {activeOrdersDisplay}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -611,6 +626,11 @@ export function AdminDietaryPageClient({
             <MotionList className="space-y-4">
               {loading ? (
                 <p className="text-sm font-mono text-slate-500">Loading…</p>
+              ) : error ? (
+                <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
+                  <p className="font-semibold text-lg text-foreground">Couldn&apos;t load diet orders</p>
+                  <p className="text-sm opacity-80 mt-1">The attention queue is unknown until diet orders load.</p>
+                </div>
               ) : rows.length === 0 ? (
                 <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                    <p className="font-semibold text-lg text-foreground">No diet orders</p>
@@ -621,7 +641,7 @@ export function AdminDietaryPageClient({
                   <p className="font-semibold text-lg text-foreground">No orders match this status</p>
                   <p className="text-sm opacity-80 mt-1">Try &quot;All statuses&quot; or another filter.</p>
                 </div>
-              ) : attentionRows.length === 0 ? (
+              ) : attentionQueueClear ? (
                 <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                   <p className="font-semibold text-lg text-foreground">All Clear</p>
                   <p className="text-sm opacity-80 mt-1">
@@ -677,6 +697,7 @@ export function AdminDietaryPageClient({
               <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
                 <div className="rounded-lg border border-border bg-card overflow-hidden">
+                  <TableRowList label="Other active diet orders" minWidthClassName="min-w-[34rem]">
                   <TableRowHeader>
                     <span className="flex-[2] min-w-0">Resident</span>
                     <span className="flex-1 min-w-0">Food</span>
@@ -707,6 +728,7 @@ export function AdminDietaryPageClient({
                       </MotionItem>
                     ))}
                   </MotionList>
+                  </TableRowList>
                 </div>
               </div>
             )}
