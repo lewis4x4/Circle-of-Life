@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   REPUTATION_NO_LISTING_COPY,
+  formatReputationHubCardSubtitle,
   formatReputationListingLabel,
 } from "./reputation-display-copy";
 
@@ -45,5 +46,23 @@ describe("formatReputationListingLabel", () => {
   it("keeps posted listing label trimmed as-is", () => {
     expect(formatReputationListingLabel(POSTED_LISTING)).toBe(POSTED_LISTING);
     expect(formatReputationListingLabel(`  ${POSTED_LISTING}  `)).toBe(POSTED_LISTING);
+  });
+});
+
+describe("formatReputationHubCardSubtitle", () => {
+  it("names the facility when posted", () => {
+    expect(formatReputationHubCardSubtitle("Anon Facility A")).toBe(
+      "Connected listings and reply workflow for Anon Facility A.",
+    );
+  });
+
+  it("names the gap without selected-facility copy when missing", () => {
+    expect(formatReputationHubCardSubtitle(null)).toBe(
+      "Connected listings and reply workflow for this facility.",
+    );
+    expect(formatReputationHubCardSubtitle("   ")).toBe(
+      "Connected listings and reply workflow for this facility.",
+    );
+    expect(formatReputationHubCardSubtitle(null)).not.toContain("selected facility");
   });
 });
