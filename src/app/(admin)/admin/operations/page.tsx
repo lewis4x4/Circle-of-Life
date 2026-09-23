@@ -105,6 +105,9 @@ export default function OperationsTodayPage() {
   const [stats, setStats] = useState<StatsBar | null>(null);
   const [selectedShift, setSelectedShift] = useState<"day" | "evening" | "night" | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus | "all">("all");
+  // COL-651: "No tasks match the selected filters" only when a filter is set;
+  // at the defaults the queue is simply empty for this scope.
+  const filtersActive = selectedShift !== "all" || selectedStatus !== "all";
   const [autoShiftApplied, setAutoShiftApplied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -677,19 +680,29 @@ export default function OperationsTodayPage() {
         <div className="text-center py-16">
           <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">No tasks in view</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            No tasks match the selected filters. Adjust shift or status filters to review the full queue.
-          </p>
-          <Button
-            variant="outline"
-            className="mt-6"
-            onClick={() => {
-              setSelectedShift("all");
-              setSelectedStatus("all");
-            }}
-          >
-            Clear Filters
-          </Button>
+          {filtersActive ? (
+            <>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                No tasks match the selected filters. Adjust shift or status filters to review the full queue.
+              </p>
+              <Button
+                variant="outline"
+                className="mt-6"
+                onClick={() => {
+                  setSelectedShift("all");
+                  setSelectedStatus("all");
+                }}
+              >
+                Clear Filters
+              </Button>
+            </>
+          ) : (
+            <p className="text-muted-foreground max-w-md mx-auto">
+              {selectedFacilityId
+                ? "No operations tasks are scheduled for this facility today."
+                : "No operations tasks are scheduled today across your facilities."}
+            </p>
+          )}
         </div>
       )}
 

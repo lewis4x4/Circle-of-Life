@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -213,7 +214,7 @@ export default function NewResidentTransportRequestPage() {
       ) : null}
 
       {!facilityReady && !authLoading ? (
-        <p className="text-sm text-warning">Select a facility first.</p>
+        <FacilityGateNotice reason="Transport requests are booked for residents of one building." />
       ) : null}
 
       {fetchErrorBannerMessage ? (
@@ -222,6 +223,7 @@ export default function NewResidentTransportRequestPage() {
         </p>
       ) : null}
 
+      {facilityReady ? (
       <Card className="border-slate-200/80 dark:border-slate-800">
         <CardHeader>
           <CardTitle>Resident trip</CardTitle>
@@ -361,6 +363,7 @@ export default function NewResidentTransportRequestPage() {
           </form>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }

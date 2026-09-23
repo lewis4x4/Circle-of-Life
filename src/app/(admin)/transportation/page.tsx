@@ -13,6 +13,7 @@ import {
 } from "date-fns";
 import { Bus, CalendarDays, CircleDollarSign, Download, MapPin, Clock, Settings2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
@@ -373,6 +374,7 @@ export default function AdminTransportationHubPage() {
            </div>
         </div>
 
+        {facilityReady && (
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] lg:col-span-2">
             <V2Card hoverColor="indigo" className="border-primary/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
@@ -399,6 +401,7 @@ export default function AdminTransportationHubPage() {
             </V2Card>
           </div>
         </KineticGrid>
+        )}
 
       {facilityReady && (
         <div className="rounded-lg border border-slate-200/60 bg-card p-6 md:p-8 shadow-sm dark:border-white/5 dark:bg-white/[0.015]">
@@ -548,9 +551,7 @@ export default function AdminTransportationHubPage() {
       )}
 
       {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
-          Select a facility to load fleet and driver records.
-        </p>
+        <FacilityGateNotice reason="Fleet, drivers, inspections and trips are kept per building." />
       )}
 
       {displayError && (

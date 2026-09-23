@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CalendarClock, Cog, Hammer, Plus } from "lucide-react";
 
+import { FacilityGateNotice, useFacilityGateScope } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ type VendorOption = {
 export default function OperationsAssetsPage() {
   const router = useRouter();
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const { ready: facilityReady } = useFacilityGateScope();
   const scopedFacilityName = useMemo(() => {
     if (!selectedFacilityId) return null;
     return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
@@ -159,6 +161,8 @@ export default function OperationsAssetsPage() {
 
       <OperationsViewNav />
 
+      {facilityReady ? (
+        <>
       <div className="grid gap-4 md:grid-cols-4">
         <SummaryCard label="Tracked assets" value={String(summary.total)} icon={Cog} />
         <SummaryCard label="Overdue service" value={String(summary.overdue)} icon={AlertTriangle} tone="red" />
@@ -272,6 +276,10 @@ export default function OperationsAssetsPage() {
           )}
         </CardContent>
       </Card>
+        </>
+      ) : (
+        <FacilityGateNotice reason="An asset register is kept per building: its equipment, service windows and vendors." />
+      )}
     </div>
   );
 }

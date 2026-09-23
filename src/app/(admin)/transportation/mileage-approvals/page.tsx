@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Bus, CheckCircle2, CircleDollarSign, Download, Undo2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -272,6 +273,8 @@ export default function MileageApprovalsPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {facilityReady && (
+            <>
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="whitespace-nowrap font-bold uppercase tracking-wider">CSV</span>
               <select
@@ -290,13 +293,15 @@ export default function MileageApprovalsPage() {
             <Button
               type="button"
               variant="outline"
-              disabled={!facilityReady || exportingCsv}
+              disabled={exportingCsv}
               className="h-11 gap-2 rounded-[var(--radius)] text-[10px] font-bold uppercase tracking-wider"
               onClick={() => void exportMileageLogsCsv()}
             >
               <Download className="h-4 w-4" aria-hidden />
               {exportingCsv ? "Preparing…" : "Download mileage CSV"}
             </Button>
+            </>
+            )}
             <Link
               href="/admin/transportation"
               className={cn(
@@ -311,9 +316,7 @@ export default function MileageApprovalsPage() {
         </div>
 
         {!facilityReady && (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first.
-          </p>
+          <FacilityGateNotice reason="Mileage is logged and approved per building before payroll export." />
         )}
 
         {error && (

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ClipboardCheck, Plus, Wrench } from "lucide-react";
 
+import { FacilityGateNotice, useFacilityGateScope } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ type VendorRow = {
 
 export default function OperationsVendorBookingsPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const { ready: facilityReady } = useFacilityGateScope();
   const scopedFacilityName = useMemo(() => {
     if (!selectedFacilityId) return null;
     return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
@@ -142,6 +144,8 @@ export default function OperationsVendorBookingsPage() {
 
       <OperationsViewNav />
 
+      {facilityReady ? (
+        <>
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard label="Facility vendors" value={String(summary.total)} icon={Wrench} />
         <SummaryCard label="Booking enabled" value={String(summary.bookingEnabled)} icon={ClipboardCheck} tone="emerald" />
@@ -224,6 +228,10 @@ export default function OperationsVendorBookingsPage() {
           )}
         </CardContent>
       </Card>
+        </>
+      ) : (
+        <FacilityGateNotice reason="Vendor bookings are configured per building, against that facility's vendors." />
+      )}
     </div>
   );
 }
