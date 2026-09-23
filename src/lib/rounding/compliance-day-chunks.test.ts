@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { complianceServiceDates, mapWithConcurrency } from "./compliance-day-chunks";
+import { complianceDateChunks, complianceServiceDates, mapWithConcurrency } from "./compliance-day-chunks";
 
 describe("complianceServiceDates", () => {
   it("lists every calendar date inclusive, across a month end and a DST change", () => {
@@ -11,6 +11,25 @@ describe("complianceServiceDates", () => {
       "2026-11-02",
     ]);
     expect(complianceServiceDates("2026-09-22", "2026-09-22")).toEqual(["2026-09-22"]);
+  });
+});
+
+describe("complianceDateChunks", () => {
+  it("covers the range in consecutive week-long spans with no gap or overlap", () => {
+    expect(complianceDateChunks("2026-08-24", "2026-09-23")).toEqual([
+      { from: "2026-08-24", to: "2026-08-30" },
+      { from: "2026-08-31", to: "2026-09-06" },
+      { from: "2026-09-07", to: "2026-09-13" },
+      { from: "2026-09-14", to: "2026-09-20" },
+      { from: "2026-09-21", to: "2026-09-23" },
+    ]);
+    expect(complianceDateChunks("2026-09-22", "2026-09-22")).toEqual([{ from: "2026-09-22", to: "2026-09-22" }]);
+  });
+
+  it("never asks for more than the chunk size in one call", () => {
+    for (const chunk of complianceDateChunks("2026-01-01", "2026-12-31", 7)) {
+      expect(complianceServiceDates(chunk.from, chunk.to).length).toBeLessThanOrEqual(7);
+    }
   });
 });
 

@@ -2,7 +2,7 @@ import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { NextResponse } from "next/server";
 
 import { logError } from "@/lib/observability/logger";
-import { complianceServiceDates, mapWithConcurrency } from "@/lib/rounding/compliance-day-chunks";
+import { complianceDateChunks, mapWithConcurrency } from "@/lib/rounding/compliance-day-chunks";
 import {
   assertRoundingFacilityAccess,
   getRoundingRequestContext,
@@ -69,13 +69,12 @@ export async function GET(request: Request) {
   const client = context.actor.client;
 
   try {
-    // One statement per service date: a whole-range call under RLS outruns the
-    // 8 s statement_timeout (COL-646). See compliance-day-chunks.ts.
-    const perDay = await mapWithConcurrency(complianceServiceDates(from, to), COMPLIANCE_DAY_CONCURRENCY, (day) =>
+    // Bounded week-long statements (COL-646, COL-664). See compliance-day-chunks.ts.
+    const perDay = await mapWithConcurrency(complianceDateChunks(from, to), COMPLIANCE_DAY_CONCURRENCY, (chunk) =>
       readAllPages((start, end) => client.rpc("observation_compliance_for_range", {
         p_facility_id: facilityId,
-        p_from: day,
-        p_to: day,
+        p_from: chunk.from,
+        p_to: chunk.to,
       }, { count: "exact" }).order("resident_id").order("service_date").order("window_key").order("cadence_version_id").range(start, end)),
     );
     const rows = perDay.flatMap((day) => (day.data ?? []) as unknown as ComplianceRow[]);
