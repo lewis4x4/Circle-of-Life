@@ -368,15 +368,38 @@ async function readAllRows<T>(
   fetchPage: (from: number, to: number) => PromiseLike<PagedReply<T>>,
 ): Promise<{ data: T[] | null; error: { message: string } | null }> {
   const rows: T[] = [];
+  const done = (data: T[], total: number | null) =>
+    data.length === 0 || (total !== null ? rows.length >= total : data.length < TREND_PAGE_SIZE);
+
+  const first = await fetchPage(0, TREND_PAGE_SIZE - 1);
+  if (first.error) return { data: null, error: first.error };
+  const firstData = first.data ?? [];
+  rows.push(...firstData);
+  const total = first.count ?? null;
+  if (done(firstData, total)) return { data: rows, error: null };
+
+  // COL-674: with the total known, read the remaining pages at once instead of
+  // one round trip each. The stride is what the server actually returned, so a
+  // lower hosted row cap shrinks the pages rather than skipping rows.
+  if (total !== null) {
+    const stride = firstData.length;
+    const offsets: number[] = [];
+    for (let from = stride; from < total; from += stride) offsets.push(from);
+    const pages = await Promise.all(offsets.map((from) => fetchPage(from, from + stride - 1)));
+    for (const page of pages) {
+      if (page.error) return { data: null, error: page.error };
+      rows.push(...(page.data ?? []));
+    }
+    if (rows.length >= total) return { data: rows, error: null };
+  }
+
+  // Rows changed between pages, or no total: finish one page at a time.
   for (;;) {
     const page = await fetchPage(rows.length, rows.length + TREND_PAGE_SIZE - 1);
     if (page.error) return { data: null, error: page.error };
     const data = page.data ?? [];
     rows.push(...data);
-    const total = page.count ?? null;
-    if (data.length === 0 || (total !== null ? rows.length >= total : data.length < TREND_PAGE_SIZE)) {
-      return { data: rows, error: null };
-    }
+    if (done(data, page.count ?? null)) return { data: rows, error: null };
   }
 }
 
