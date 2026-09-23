@@ -252,7 +252,7 @@ CREATE POLICY "Admin manage rates" ON rate_schedules FOR ALL
 
 ALTER TABLE resident_payers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see payers" ON resident_payers FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Admin manage payers" ON resident_payers FOR ALL
   USING (organization_id = auth.organization_id() AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin'));
 
