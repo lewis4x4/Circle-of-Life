@@ -52,7 +52,9 @@ export const FACILITY_ROUTES = {
   incidents: "/admin/incidents",
   medicationErrors: "/admin/medications/errors",
   invoices: "/admin/billing/invoices",
-  deficiencies: "/admin/compliance/deficiencies",
+  // No index page lives at /admin/compliance/deficiencies; the open list is on the
+  // compliance hub, scoped by the facility selector this page syncs (COL-641).
+  deficiencies: "/admin/compliance#open-deficiencies",
   certifications: "/admin/certifications",
   infectionControl: "/admin/infection-control",
   rounding: "/admin/rounding",
