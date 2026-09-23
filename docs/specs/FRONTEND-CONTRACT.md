@@ -183,6 +183,8 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 
 ### Caregiver shell routes
 
+The floor app. The route keeps its `/caregiver` name, but the `caregiver` login role is retired (2026-09-22, COL-615). Med-Techs (`med_tech`) use it alongside `/med-tech`, where they land; Housekeepers (`housekeeper`) land on `/caregiver/housekeeper` and may use only the housekeeper, clock, schedules, me, policies, acknowledgments and shift-swap paths, never clinical ones.
+
 - `/caregiver`
 - `/caregiver/meds`
 - `/caregiver/rounds`
@@ -246,7 +248,7 @@ This replaces `"/facilities/:id/*"` as a UI routing pattern. Keep `facility_id` 
 
 - Every new page ships with loading, empty, and error states.
 - Keyboard and screen-reader pass for Admin shell critical flows.
-- Mobile tap targets minimum 44x44 for caregiver flows.
+- Mobile tap targets minimum 44x44 for floor-app (`/caregiver`) and med-tech flows.
 - Route-level design review coverage updated in `.agents/design-review-runner.mjs`.
 - Segment gate with `--ui` must pass for UI segments.
 
@@ -268,7 +270,7 @@ Applies to **Attio-derived record detail pages** (`RecordDetailHeader` + `Record
 
 - **Field rows (`DetailRow`):** When a field is **missing** or displays only **`—`** (including derived formatting), both **label and value** use **`text-muted-foreground/50`**. Populated rows use **`text-muted-foreground`** labels and **`text-foreground`** values. Never surface internal storage hints (e.g. “stored in cents”) in user-visible copy — convert/format silently.
 
-- **Header badges / chips:** **Binary positive operational states** (e.g. active employment, certs healthy) MAY use **`Badge`** with **`tone="success"`**. **Taxonomy-only labels** (job family / role: Nurse, Caregiver, Admin, Med Tech) use **`Badge variant="outline"`** neutral — **never** reuse success/warning tint for role metadata. Severity states (terminated, expired cert, leave) remain warning/danger/neutral per meaning.
+- **Header badges / chips:** **Binary positive operational states** (e.g. active employment, certs healthy) MAY use **`Badge`** with **`tone="success"`**. **Taxonomy-only labels** (job family / role: Med-Tech, Cook, Housekeeper, Administrator) use **`Badge variant="outline"`** neutral — **never** reuse success/warning tint for role metadata. Severity states (terminated, expired cert, leave) remain warning/danger/neutral per meaning.
 
 ## 8) Table / List surface (Quiet Operator · S7+)
 

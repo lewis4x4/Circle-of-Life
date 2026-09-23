@@ -1,5 +1,7 @@
 # Homewood — Staff Auth Provisioning Log
 
+> **Roles note (2026-09-22, COL-615):** this is a 2026-08-19 log. The `caregiver`, `nurse` and `dietary` login roles it maps positions onto are retired (folded into `med_tech` and `cook` by migration 468); staff positions are unchanged. See the Roles section in `AGENTS.md`.
+
 _Generated: `2026-08-19T19:55:12.939Z` — mode: **INVITE**_
 
 - Facility: `Homewood Lodge ALF` (00000000-0000-0000-0002-000000000003)

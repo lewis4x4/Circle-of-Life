@@ -11,7 +11,7 @@ The central resident record: demographics, clinical context, payers, contacts, a
 
 - Facility admins
 - Coordinators
-- Nurses
+- Med-Techs
 - Family members in read-only portal views
 
 ## Key Workflows

@@ -3,6 +3,8 @@
 **Dependencies:** 00-foundation, 03-resident-profile, 04-daily-operations
 **Build Week:** 7-8
 
+> **Roles updated 2026-09-22 (COL-615):** the retired `nurse` and `caregiver` login roles are now `med_tech`, which holds everything both held; `dietary` / `dietary_aide` are now `cook`. Follow-up "responsible" columns below name the Haven role that gets the task. Policy names are kept as written. See the Roles section in `AGENTS.md`.
+
 ---
 
 ## DATABASE SCHEMA
@@ -182,7 +184,7 @@ CREATE POLICY "Staff see incidents in accessible facilities"
     organization_id = auth.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() NOT IN ('family', 'dietary', 'maintenance_role')
+    AND auth.app_role() NOT IN ('family', 'cook', 'maintenance_role')
   );
 
 -- Family can see incidents involving their linked resident (limited fields via API, not RLS)
@@ -201,7 +203,7 @@ CREATE POLICY "Caregivers+ can create incidents"
   WITH CHECK (
     organization_id = auth.organization_id()
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver')
+    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY "Nurse+ can update incidents"
@@ -211,7 +213,7 @@ CREATE POLICY "Nurse+ can update incidents"
     AND facility_id IN (SELECT auth.accessible_facility_ids())
     AND (
       reported_by = auth.uid()  -- reporter can update their own
-      OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+      OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
     )
   );
 
@@ -219,11 +221,11 @@ ALTER TABLE incident_followups ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see followups" ON incident_followups FOR SELECT
   USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()));
 CREATE POLICY "Clinical staff manage followups" ON incident_followups FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE incident_photos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see photos" ON incident_photos FOR SELECT
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('family', 'dietary', 'maintenance_role'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('family', 'cook', 'maintenance_role'));
 
 -- Audit triggers
 CREATE TRIGGER audit_incidents AFTER INSERT OR UPDATE OR DELETE ON incidents FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
@@ -247,8 +249,8 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON incident_followups FOR EACH ROW E
 | Severity | Criteria | Auto-Notifications | Auto-Follow-ups |
 |----------|----------|-------------------|-----------------|
 | Level 1 | No injury. No elopement. No abuse allegation. Minor behavioral event. | Log only. Show on shift handoff. | None required. |
-| Level 2 | Minor injury (bruise, scrape). Medication refusal (not error). Repeated behavioral event. Unwitnessed fall without injury. | Alert nurse. Alert administrator. | 72-hour monitoring if fall. Fall risk reassessment within 24h. |
-| Level 3 | Moderate injury (laceration needing treatment, sprain). Medication error. Witnessed fall with injury. Abuse/neglect allegation. Elopement (resolved safely). | Alert nurse (immediate). Alert administrator (immediate). Alert owner. Alert physician. Alert family. | 72-hour neuro checks (head involvement). Fall risk reassessment within 24h. Care plan review within 48h. Root cause analysis within 72h. Environment assessment within 24h. |
+| Level 2 | Minor injury (bruise, scrape). Medication refusal (not error). Repeated behavioral event. Unwitnessed fall without injury. | Alert the Med-Tech on shift. Alert administrator. | 72-hour monitoring if fall. Fall risk reassessment within 24h. |
+| Level 3 | Moderate injury (laceration needing treatment, sprain). Medication error. Witnessed fall with injury. Abuse/neglect allegation. Elopement (resolved safely). | Alert the Med-Tech on shift (immediate). Alert administrator (immediate). Alert owner. Alert physician. Alert family. | 72-hour neuro checks (head involvement). Fall risk reassessment within 24h. Care plan review within 48h. Root cause analysis within 72h. Environment assessment within 24h. |
 | Level 4 | Major injury (fracture, head injury). Elopement with injury. Hospitalization required. Death. Any incident requiring AHCA reporting. | All Level 3 notifications + AHCA reporting trigger + Insurance carrier notification trigger. | All Level 3 follow-ups + AHCA report preparation. Formal root cause analysis. Staff debriefing. |
 
 ### Post-Fall Protocol (Auto-Generated Follow-ups)
@@ -256,16 +258,16 @@ WHEN an incident with category LIKE 'fall_%' is created:
 
 | Task | Due | Assigned To |
 |------|-----|-------------|
-| Vital signs check | Immediately (0 hours) | Reporting caregiver |
-| Vital signs recheck | +4 hours | On-shift caregiver |
-| Vital signs recheck | +8 hours | On-shift caregiver |
-| Neuro check (if head involvement) | Every 2 hours for 24 hours | On-shift nurse/caregiver |
-| Physician notification | Within 1 hour of discovery | Nurse |
-| Family notification | Within 2 hours of discovery | Nurse or administrator |
-| Fall risk reassessment (Morse) | Within 24 hours | Nurse |
-| Environment assessment | Within 24 hours | Nurse or administrator |
-| Care plan review | Within 48 hours | Nurse |
-| 72-hour enhanced monitoring | 72 hours from incident | All shift caregivers |
+| Vital signs check | Immediately (0 hours) | Reporting Med-Tech |
+| Vital signs recheck | +4 hours | On-shift Med-Tech |
+| Vital signs recheck | +8 hours | On-shift Med-Tech |
+| Neuro check (if head involvement) | Every 2 hours for 24 hours | On-shift Med-Tech |
+| Physician notification | Within 1 hour of discovery | Med-Tech |
+| Family notification | Within 2 hours of discovery | Med-Tech or administrator |
+| Fall risk reassessment (Morse) | Within 24 hours | Med-Tech |
+| Environment assessment | Within 24 hours | Med-Tech or administrator |
+| Care plan review | Within 48 hours | Med-Tech |
+| 72-hour enhanced monitoring | 72 hours from incident | All shift Med-Techs |
 | Root cause analysis | Within 72 hours | Administrator |
 
 ### AHCA Reportable Events (Florida-Specific)
@@ -293,14 +295,14 @@ The system flags `insurance_reportable = true` when:
 |--------|-------|------|-------|-------------|
 | GET | `/incidents` | Required | Clinical staff | List incidents. Params: `facility_id`, `resident_id`, `category`, `severity`, `status`, `date_from`, `date_to` |
 | GET | `/incidents/:id` | Required | Clinical staff | Get incident full detail |
-| POST | `/incidents` | Required | caregiver, nurse, facility_admin | Create incident |
-| PUT | `/incidents/:id` | Required | Reporter or nurse+ | Update incident |
-| POST | `/incidents/:id/photos` | Required | caregiver, nurse | Upload incident photo |
+| POST | `/incidents` | Required | med_tech, facility_admin | Create incident |
+| PUT | `/incidents/:id` | Required | Reporter or med_tech+ | Update incident |
+| POST | `/incidents/:id/photos` | Required | med_tech | Upload incident photo |
 | GET | `/incidents/:id/followups` | Required | Clinical staff | List follow-up tasks |
-| PUT | `/incident-followups/:id/complete` | Required | Assigned staff or nurse+ | Complete follow-up task |
-| GET | `/facilities/:id/incidents/dashboard` | Required | facility_admin, nurse, owner, org_admin | Incident dashboard: open incidents, overdue follow-ups, trend data |
+| PUT | `/incident-followups/:id/complete` | Required | Assigned staff or med_tech+ | Complete follow-up task |
+| GET | `/facilities/:id/incidents/dashboard` | Required | facility_admin, med_tech, owner, org_admin | Incident dashboard: open incidents, overdue follow-ups, trend data |
 | GET | `/organizations/incidents/trends` | Required | owner, org_admin | Cross-facility incident trends |
-| GET | `/incidents/overdue-followups` | Required | nurse, facility_admin | List overdue follow-up tasks across facility |
+| GET | `/incidents/overdue-followups` | Required | med_tech, facility_admin | List overdue follow-up tasks across facility |
 
 ### Incident Creation Request
 ```json
@@ -374,14 +376,14 @@ The system flags `insurance_reportable = true` when:
 
 Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 
-### Mobile (Caregiver — Primary Incident Reporting Interface)
+### Mobile (floor app at `/caregiver`, Med-Tech — primary incident reporting interface)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
 | Report Incident | `/caregiver/incident-draft` | Step-through guided form: 1) Resident (or "Environmental"), 2) Category picker (large icons), 3) When/where, 4) Description, 5) Fall-specific fields (conditional), 6) Injury assessment, 7) Immediate actions, 8) Photos, 9) Review & submit |
 | My Follow-ups | `/caregiver/followups` | List of assigned follow-up tasks: due time, resident, task type. Tap to complete with notes. |
 
-### Web (Admin/Nurse Dashboard)
+### Web (Admin/Med-Tech Dashboard)
 
 | Screen | Route | Description |
 |--------|-------|-------------|

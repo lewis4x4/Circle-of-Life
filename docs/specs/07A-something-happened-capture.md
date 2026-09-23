@@ -6,6 +6,8 @@
 **Date:** 2026-09-16
 **Status:** Draft for Speedy's review, then Jessica for thresholds and vocabulary
 
+> **Roles updated 2026-09-22 (COL-615):** the retired `nurse` and `caregiver` login roles are now `med_tech`; `dietary` / `dietary_aide` are now `cook`. The Section 1 problem table records the code as it stood on 2026-09-16 and is left as written. See the Roles section in `AGENTS.md`.
+
 ---
 
 ## 1. Diagnosis: what the code and the screenshots say
@@ -36,11 +38,11 @@ Haven should do steps 2, 4, and the "follow up" verification automatically, and 
 
 ## 2. The design: one door, three taps
 
-**One door.** On the caregiver home and on every resident hub, one primary button: **Something happened**. It replaces the incident tile and absorbs Behavior and Condition as branches. Quick Note stays for "nothing happened, just a note." ADL, meds, and rounds are routine work and stay where they are.
+**One door.** On the floor-app home (`/caregiver`) and on every resident hub, one primary button: **Something happened**. It replaces the incident tile and absorbs Behavior and Condition as branches. Quick Note stays for "nothing happened, just a note." ADL, meds, and rounds are routine work and stay where they are.
 
 **Three taps.**
 
-| Tap | Screen | What the caregiver does | What Haven does |
+| Tap | Screen | What the reporter does | What Haven does |
 |---|---|---|---|
 | 1 | **Who** | Taps a resident face from "My residents" (today's `shift_assignments.assigned_resident_ids` for the signed-in staff row), searches, or taps "No resident / the building." Pre-filled when launched from a resident hub. | Loads resident risk flags (`residents.fall_risk_level`, `elopement_risk`, active `resident_watch_instances`) to tune the questions. |
 | 2 | **What** | Taps one of eight tiles: Fall, Hurt, Sick or not themselves, Upset or behavior, Wandering or left, Medicine, Family or complaint, Building or other. | Selects the question set. |
@@ -132,7 +134,7 @@ No one touched, over = L1. That is most behavior events, and today they evaporat
 | What happened? | Water leak or flood / Smoke, fire, or alarm / Power out / Broken equipment / Something missing or damaged / Other | Smoke or fire = L4. Leak or power = L2. Equipment, missing, damaged, other = L1. |
 | Is anyone in danger? | No / Yes | Yes = L4. |
 
-**I'm worried** raises the derived level by one (never above 4) and stores `level_bumped_by_reporter = true`. Caregivers can always escalate. Only an administrator can lower, with a reason, and the original stays on the row.
+**I'm worried** raises the derived level by one (never above 4) and stores `level_bumped_by_reporter = true`. Reporters can always escalate. Only an administrator can lower, with a reason, and the original stays on the row.
 
 ---
 
@@ -163,7 +165,7 @@ Flags derived alongside the level:
 | `neuro_checks` | Fall with head Yes or Not sure. |
 | `call_911_prompt` | Any Level 4 from Fall, Sick, Wandering, Building danger. |
 
-**The factual sentence.** The engine composes Section 1 of the paper form from the answers so `incidents.description` and `immediate_actions` are satisfied without typing: *"Found on the floor in the resident room at 10:05 PM. Not witnessed. Hurt a little: bruise. Did not hit head. Not going out. First aid given."* The optional voice note is appended verbatim under "Staff note:". Facts, not assumptions, in the caregiver's tap choices.
+**The factual sentence.** The engine composes Section 1 of the paper form from the answers so `incidents.description` and `immediate_actions` are satisfied without typing: *"Found on the floor in the resident room at 10:05 PM. Not witnessed. Hurt a little: bruise. Did not hit head. Not going out. First aid given."* The optional voice note is appended verbatim under "Staff note:". Facts, not assumptions, in the reporter's tap choices.
 
 ---
 
@@ -182,7 +184,7 @@ Also on every Level 2 and above: `incidents` row with `allocate_incident_number`
 
 Delivery is recorded per target per channel in `care_event_deliveries` so "was the Administrator told" is a query, not a checkbox. The manual notified flags on `incidents` become derived: `nurse_notified`/`administrator_notified` are set by the acknowledgment RPC with the acknowledging user and time, never by hand.
 
-SMS and voice go through Twilio. The Twilio BAA is a Day One vendor item. Until it is signed, the dispatcher writes those rows as `skipped` with `reason = 'channel_not_enabled'` and push plus in-app carry the load. The receipt screen tells the caregiver which channels actually went out.
+SMS and voice go through Twilio. The Twilio BAA is a Day One vendor item. Until it is signed, the dispatcher writes those rows as `skipped` with `reason = 'channel_not_enabled'` and push plus in-app carry the load. The receipt screen tells the reporter which channels actually went out.
 
 ---
 
@@ -325,13 +327,13 @@ ALTER TABLE public.notification_routes ADD COLUMN IF NOT EXISTS user_targets uui
 
 `notification_routes.user_targets` is the "approved explicit-recipient extension" HAVEN_BRAIN §6.4 allows, so Michelle and Jessica can be routed by subscription without a role hack. Both still appear as configuration rows, never in code.
 
-**`401_care_events_rls.sql`**: RLS on all four tables. Insert `care_events`: `owner, org_admin, facility_admin, manager, admin_assistant, coordinator, nurse, caregiver, med_tech` within `haven.accessible_facility_ids()`. Select: same roles within facility, `family` excluded. Update: reporter may set `note` within 24 hours; admin roles (`owner, org_admin, facility_admin, admin_assistant, manager`) may update status and level fields. Deliveries: select for admin roles and the reporter; insert and update only through definer functions. Protocols and policies: admin roles. Audit triggers `haven_capture_audit_log()` on `care_events` and `care_event_deliveries`; `haven_set_updated_at()` on `care_events`.
+**`401_care_events_rls.sql`**: RLS on all four tables. Insert `care_events`: `owner, org_admin, facility_admin, manager, admin_assistant, coordinator, med_tech` (the retired `nurse` and `caregiver` folded into `med_tech`, migration 468) within `haven.accessible_facility_ids()`. Select: same roles within facility, `family` excluded. Update: reporter may set `note` within 24 hours; admin roles (`owner, org_admin, facility_admin, admin_assistant, manager`) may update status and level fields. Deliveries: select for admin roles and the reporter; insert and update only through definer functions. Protocols and policies: admin roles. Audit triggers `haven_capture_audit_log()` on `care_events` and `care_event_deliveries`; `haven_set_updated_at()` on `care_events`.
 
 **`402_care_events_functions.sql`**
 
 - `public.care_event_derive(p_kind text, p_answers jsonb, p_context jsonb) RETURNS jsonb` (`IMMUTABLE`): the SQL mirror of the level engine. Returns `{level, category, flags, sentence}`.
 - `public.submit_care_event(p_payload jsonb) RETURNS jsonb` (`SECURITY DEFINER`, `SET search_path = public, pg_temp`): validates facility access with `haven.accessible_facility_ids()`, upserts on `(organization_id, client_event_id)` for idempotent offline replay, calls `care_event_derive`, applies the reporter bump, inserts `care_events`, then fans out inside the same transaction: `behavioral_logs` row for `behavior`, `condition_changes` row for `condition_change`, `incidents` row for `final_level >= level_2` using `allocate_incident_number` (sets `condition_changes.linked_incident_id` when both), `incident_followups` from `incident_followup_protocols`, `regulatory_reporting_obligations` when `flags.ahca_reportable`, `exec_alerts` row for level 2 and above, `care_event_deliveries` step 0 rows from `care_event_escalation_policies` and `on_call_schedules`. Returns the receipt: `{care_event_id, level, incident_number, deliveries: [{target_name, channel, status}], next_check_at}`.
-- `public.acknowledge_care_event(p_care_event_id uuid) RETURNS void`: sets `status = 'acknowledged'`, `acknowledged_by/at`, marks that user's queued deliveries `acknowledged`, sets `incidents.administrator_notified = true, administrator_notified_at = now()` (and `nurse_notified` when the acknowledging user's `app_role = 'nurse'`), cancels unsent escalation rows.
+- `public.acknowledge_care_event(p_care_event_id uuid) RETURNS void`: sets `status = 'acknowledged'`, `acknowledged_by/at`, marks that user's queued deliveries `acknowledged`, sets `incidents.administrator_notified = true, administrator_notified_at = now()` (and `nurse_notified` when the acknowledging user's `app_role = 'med_tech'`), cancels unsent escalation rows.
 - `public.complete_care_event_admin_section(p_care_event_id uuid, p_section jsonb) RETURNS void`: writes the §5 fields, lowers level only with a reason, closes when the level's required fields are present.
 - `public.care_event_escalation_tick() RETURNS integer`: called by `pg_cron` every minute; for open events past `ack_within_minutes`, inserts the next step's deliveries from `care_event_escalation_policies`.
 - `public.v_resident_timeline` view: union of `care_events`, `incidents` (pre-launch rows without a care event), `condition_changes`, `behavioral_logs`, `daily_logs` notes, `resident_observation_logs` exceptions, ordered by time. This is the digital Resident Observation Log.
@@ -351,9 +353,9 @@ ALTER TABLE public.notification_routes ADD COLUMN IF NOT EXISTS user_targets uui
 - `src/lib/incidents/incidents-display-copy.ts`: add `formatLevelWord(level)` returning Note, Heads-up, Urgent, Emergency. Every surface that shows `L1`..`L4` uses it. Raw `level_2` never reaches the screen (Quiet Operator rule 4).
 - `AdminIncidentsPageClient.tsx`: "Begin Triage" calls `acknowledge_care_event` when the incident has a care event, otherwise keeps the link. Add the **Today** strip above the follow-up pressure band: acknowledgment queue (events past `ack_within_minutes` with no acknowledgment, red), open AHCA clocks with hours remaining, events by level today.
 - `AdminIncidentDetailPageClient.tsx`: notification log reads `care_event_deliveries`; the notify buttons become the §5 completion form.
-- `AppShell.tsx` "Report incident" and the caregiver home tile route to `/caregiver/report`. `/caregiver/incident-draft` becomes a redirect. The resident hub gains the primary **Something happened** button above the action grid; Behavior and Condition tiles deep-link into `/caregiver/report?resident=<id>&kind=behavior` and `&kind=condition_change`.
+- `AppShell.tsx` "Report incident" and the floor-app home tile route to `/caregiver/report`. `/caregiver/incident-draft` becomes a redirect. The resident hub gains the primary **Something happened** button above the action grid; Behavior and Condition tiles deep-link into `/caregiver/report?resident=<id>&kind=behavior` and `&kind=condition_change`.
 - `shift_handoffs.auto_summary` builder includes every `care_events` row from the outgoing shift grouped by level, so Level 1 notes reach the next shift without anyone re-typing them.
-- Resident profile (admin and caregiver): new **Timeline** tab reading `v_resident_timeline` (Tier 3).
+- Resident profile (admin and floor app): new **Timeline** tab reading `v_resident_timeline` (Tier 3).
 
 ### 6.4 New routes and components
 
@@ -388,7 +390,7 @@ Metrics that only exist because Level 1 is now captured instead of lost:
 | Falls per 1,000 resident-days (spec 07, exists) | Survey and insurance baseline |
 | Events per resident, 30 days, with "3 or more" surfacing a care plan review | Finds the resident whose pattern nobody has connected |
 | Near-miss ratio: Notes to Heads-up and above | A building with many Notes per Urgent is reporting. A building with none is hiding. This is the culture gauge. |
-| Reporting rate per caregiver per shift | The silence detector. A shift that logs nothing for a week is a training or trust problem, not a quiet week. |
+| Reporting rate per reporter per shift | The silence detector. A shift that logs nothing for a week is a training or trust problem, not a quiet week. |
 | Acknowledgment latency p50 and p90 by building and shift | Whether the Administrator or Assistant is reachable on nights and weekends |
 | Escalations that reached step 2 or later | The on-call ladder is real or it is not |
 | Time-of-day and shift heat map by kind | Staffing and med-pass timing decisions |
@@ -405,7 +407,7 @@ Label these `Darren Decision` or route to Jessica per the operating system spec.
 
 | # | Decision | Owner | Default if unanswered |
 |---|---|---|---|
-| D1 | Who is the Level 2 target at each building on each shift, and who is on the corporate route. "Administrator or Assistant" per the 2019 procedure, plus Michelle and Jessica by role or explicit subscription. Nurse is not a COL escalation target unless Jessica says a building has one. | Jessica | Routes seeded to `facility_admin` and `admin_assistant`; corporate route empty until named |
+| D1 | Who is the Level 2 target at each building on each shift, and who is on the corporate route. "Administrator or Assistant" per the 2019 procedure, plus Michelle and Jessica by role or explicit subscription. Nurse is not a COL escalation target unless Jessica says a building has one (and since COL-615 there is no nurse login role). | Jessica | Routes seeded to `facility_admin` and `admin_assistant`; corporate route empty until named |
 | D2 | Floor level for a witnessed fall with no injury. Spec 07 says Level 1 (log only). The 2019 procedure says notify the Administrator for every incident. | Jessica | Level 2 (Heads-up). Safer, and the Administrator sees a push instead of finding it on the board |
 | D3 | Acknowledgment windows: 30, 10, and 5 minutes for Levels 2, 3, 4. | Jessica | As written in §4 |
 | D4 | Does a Level 1 Note appear in the family portal activity feed. | Jessica, then Milton | No. Portal shows activities, billing, admin notes only (§5.8) |
@@ -422,11 +424,11 @@ Each item is a transcript-visible check for the build run.
 1. `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build` exit 0. `npm run test` includes `level-cases.json` parity across TS and SQL.
 2. Migrations `400` to `403` replay clean on a throwaway Postgres (`npm run migrations:verify:pg`) and `npm run migrations:check` passes.
 3. Playwright (`playwright.homewood.config.ts` project) walks the three taps for each of the eight tiles and asserts: no text input is required to submit; the level word in the banner matches `level-cases.json`; submit returns a receipt with an incident number for Level 2 and above and none for Level 1.
-4. A Level 3 Fall submitted as `caregiver` produces, visible in the transcript by query: one `care_events` row, one `incidents` row with `fall_witnessed` and `injury_severity` set from the answers, `incident_followups` rows matching the seeded protocol, one `resident_watch_instances` row, one `care_plan_review_alerts` row, one `exec_alerts` row, and `care_event_deliveries` rows for push and in_app with `sms` marked `skipped` when Twilio is not configured.
+4. A Level 3 Fall submitted as `med_tech` produces, visible in the transcript by query: one `care_events` row, one `incidents` row with `fall_witnessed` and `injury_severity` set from the answers, `incident_followups` rows matching the seeded protocol, one `resident_watch_instances` row, one `care_plan_review_alerts` row, one `exec_alerts` row, and `care_event_deliveries` rows for push and in_app with `sms` marked `skipped` when Twilio is not configured.
 5. A Level 4 Wandering "Not found yet" produces `regulatory_reporting_obligations` rows at plus 1 business day and plus 15 days and `flags.ahca_reportable = true`.
 6. `acknowledge_care_event` as `facility_admin` sets `incidents.administrator_notified_at` and cancels queued step 1 deliveries; `care_event_escalation_tick` inserts step 1 rows for an unacknowledged Level 3 after 10 minutes in a clock-advanced test.
 7. Offline replay: submitting the same `client_event_id` twice returns the same `care_event_id` and creates no second incident.
-8. RLS: `family` cannot select `care_events`; `caregiver` at facility A cannot read facility B's rows; `caregiver` cannot update `final_level`.
+8. RLS: `family` cannot select `care_events`; `med_tech` at facility A cannot read facility B's rows; `med_tech` cannot update `final_level`.
 9. No surface renders `level_1`..`level_4` raw; `formatLevelWord` covers every read path (grep in the transcript).
 10. `v_incident_reports_log` returns the paper log's columns for Homewood for a seeded month.
 

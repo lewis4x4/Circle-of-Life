@@ -68,7 +68,7 @@ CREATE TYPE discharge_med_reconciliation_status AS ENUM (
 
 ## RLS (normative)
 
-- **`discharge_med_reconciliation`:** SELECT/INSERT/UPDATE consistent with other clinical facility tables — `organization_id = haven.organization_id()`, `facility_id ∈ haven.accessible_facility_ids()`, roles **`owner`**, **`org_admin`**, **`facility_admin`**, **`nurse`** for writes (aligned with admission/referral patterns).
+- **`discharge_med_reconciliation`:** SELECT/INSERT/UPDATE consistent with other clinical facility tables — `organization_id = haven.organization_id()`, `facility_id ∈ haven.accessible_facility_ids()`, roles **`owner`**, **`org_admin`**, **`facility_admin`**, **`med_tech`** for writes (the `nurse` grant folded into `med_tech`, migration 468; aligned with admission/referral patterns).
 - **Residents:** existing `clinical_staff_update_residents` continues to govern new columns; no separate policy in `080` unless a migration tightens column-level rules (out of Core scope).
 
 ---

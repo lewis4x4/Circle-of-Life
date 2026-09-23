@@ -21,7 +21,7 @@ to agree with it.
   and that the migration is applied to the production project and recorded in
   the ledger.
 - Sign in as someone who can admit and discharge residents: owner, org admin,
-  facility admin or nurse. A caregiver cannot run a board check.
+  facility admin or Med-Tech. A Housekeeper cannot run a board check.
 - Select Homewood Lodge as the facility. The check reads whatever facility the
   selector is on, so a wrong selection walks the wrong building.
 - Open the facility overview and read the Data health panel. Write down every
