@@ -172,6 +172,31 @@ export function ExecutiveOverviewPageClient({
   // Skip the first client-side fetch when the server already supplied scoped
   // live data. If the server returned empty arrays, the client retries once;
   // it must still render blanks rather than demo fallback values.
+  // COL-674: the three hand-off panels mount only after the overview has
+  // loaded, so their reads used to start one full round trip after everything
+  // else. They now start alongside the overview and each panel consumes its own
+  // promise when it mounts. What each panel reads and renders is unchanged.
+  const panelReadsRef = useRef<Map<ExecutivePanelRpc, Promise<unknown>> | null>(null);
+  useEffect(() => {
+    if (authLoading || !organizationId || panelReadsRef.current) return;
+    panelReadsRef.current = new Map(
+      EXECUTIVE_PANEL_RPCS.map((name) => [name, startExecutivePanelRead(supabase, name)] as const),
+    );
+  }, [authLoading, organizationId, supabase]);
+  const panelLoads = useMemo<ExecutivePanelLoads>(() => {
+    // Each prefetched read is handed over once; a later remount reads fresh.
+    const take = (name: ExecutivePanelRpc) => () => {
+      const started = panelReadsRef.current?.get(name);
+      panelReadsRef.current?.delete(name);
+      return started ?? startExecutivePanelRead(supabase, name);
+    };
+    return {
+      escalations: take("home_escalations_for_executive"),
+      censusNotices: take("home_census_notices_for_executive"),
+      collectionEscalations: take("home_collection_escalations_for_executive"),
+    };
+  }, [supabase]);
+
   const skipNextLoadRef = useRef(initialHasServerData);
   const requestGeneration = useRef(0);
   useEffect(() => { startupMark("executive-mounted"); }, []);
@@ -329,6 +354,7 @@ export function ExecutiveOverviewPageClient({
           metricChanges={metricChanges}
           metricDates={metricDates}
           coverage={coverage}
+          panelLoads={panelLoads}
         />
       )}
     </div>
@@ -1686,7 +1712,33 @@ type DashboardBodyProps = {
   metricChanges: Record<string, MetricChange>;
   metricDates: Record<string, string>;
   coverage: CoverageRow[];
+  panelLoads: ExecutivePanelLoads;
 };
+
+const EXECUTIVE_PANEL_RPCS = [
+  "home_escalations_for_executive",
+  "home_census_notices_for_executive",
+  "home_collection_escalations_for_executive",
+] as const;
+type ExecutivePanelRpc = (typeof EXECUTIVE_PANEL_RPCS)[number];
+type ExecutivePanelLoads = {
+  escalations: () => Promise<unknown>;
+  censusNotices: () => Promise<unknown>;
+  collectionEscalations: () => Promise<unknown>;
+};
+
+/** Same read each panel makes on its own; started early (COL-674). */
+function startExecutivePanelRead(supabase: ReturnType<typeof createClient>, name: ExecutivePanelRpc): Promise<unknown> {
+  const read = (async () => {
+    const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+    const { data, error } = await rpc(name);
+    if (error) throw new Error(error.message);
+    return data;
+  })();
+  // A panel that never mounts (error or empty state) must not leave an unhandled rejection.
+  read.catch(() => undefined);
+  return read;
+}
 
 function ExecutiveDashboardBody({
   metrics,
@@ -1701,6 +1753,7 @@ function ExecutiveDashboardBody({
   metricChanges,
   metricDates,
   coverage,
+  panelLoads,
 }: DashboardBodyProps): ReactNode {
   return (
     <>
@@ -1710,10 +1763,10 @@ function ExecutiveDashboardBody({
 
       {/* COL-593 §5.4: what a building did not clear by the end of its operator
           day lands with its Facility Executive here. Renders nothing otherwise. */}
-      <EscalatedFromFacilitiesPanel />
+      <EscalatedFromFacilitiesPanel load={panelLoads.escalations} />
       {/* COL-569: monthly census confirmations from the buildings this executive owns. */}
-      <CensusNoticesPanel />
-      <CollectionEscalationsPanel />
+      <CensusNoticesPanel load={panelLoads.censusNotices} />
+      <CollectionEscalationsPanel load={panelLoads.collectionEscalations} />
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 lg:col-span-7">
