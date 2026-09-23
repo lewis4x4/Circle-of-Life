@@ -36,3 +36,10 @@ export async function fetchHomePastDue(supabase: SupabaseClient, facilityId: str
 export function pastDueTotalCents(pastDue: HomePastDue): number {
   return pastDue.residents.reduce((sum, resident) => sum + resident.openCents, 0);
 }
+
+/** Rule clause for the strip. A missing grace value is named, never read as "plus 0 days". */
+export function pastDueRuleClause(pastDue: Pick<HomePastDue, "graceDays">): string {
+  return typeof pastDue.graceDays === "number"
+    ? `past the due day plus ${pastDue.graceDays} ${pastDue.graceDays === 1 ? "day" : "days"}`
+    : "past the due day plus the grace period";
+}

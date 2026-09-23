@@ -35,7 +35,7 @@ export default function PricingPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
               Simple, Predictable All-Inclusive Living
             </h1>
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
               We believe families deserve honest, transparent pricing without hidden tier spikes,
               entrance community fees, or surprise monthly nursing add-ons.
             </p>
@@ -70,7 +70,7 @@ export default function PricingPage() {
                   <div className="space-y-2">
                     <div className="text-3xl font-bold font-serif text-[#B04F2C]">
                       ${offset.monthlySavings.toLocaleString()}
-                      <span className="text-xs text-stone-500 font-sans font-normal"> / mo</span>
+                      <span className="text-xs text-muted-foreground font-sans font-normal"> / mo</span>
                     </div>
                     <h3 className="font-bold text-base text-[#1C2822]">{offset.name}</h3>
                     <p className="text-xs text-stone-600 leading-relaxed">{offset.description}</p>
@@ -86,7 +86,7 @@ export default function PricingPage() {
             <div className="mt-12 p-8 rounded-3xl bg-[#1C2822] text-white max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl border border-stone-700">
               <div className="space-y-1 text-center sm:text-left">
                 <div className="font-bold text-base font-serif">Need assistance applying for VA benefits?</div>
-                <div className="text-xs text-stone-300">
+                <div className="text-xs text-chrome-foreground-muted">
                   Our on-site administrative staff helps North Florida families with application paperwork at no cost.
                 </div>
               </div>

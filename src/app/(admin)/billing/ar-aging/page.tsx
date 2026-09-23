@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { requireCount } from "@/lib/metrics/require-count";
 import { billingNyTodayIso, daysPastDueAsOf } from "@/lib/billing/ar-aging-as-of";
 import {
   formatArAgingBucketCents,
@@ -258,8 +259,7 @@ function AdminArAgingPageContent() {
         rq = rq.in("facility_id", facilityIds);
       }
       const rcount = (await rq) as unknown as { count: number | null; error: { message: string } | null };
-      if (rcount.error) throw rcount.error;
-      setResidentCount(rcount.count ?? 0);
+      setResidentCount(requireCount(rcount, "Resident count"));
 
       let iq = supabase
         .from("invoices" as never)
@@ -269,8 +269,7 @@ function AdminArAgingPageContent() {
         iq = iq.in("facility_id", facilityIds);
       }
       const icount = (await iq) as unknown as { count: number | null; error: { message: string } | null };
-      if (icount.error) throw icount.error;
-      setAnyInvoiceCount(icount.count ?? 0);
+      setAnyInvoiceCount(requireCount(icount, "Invoice count"));
 
       if (payerSelection.length > 0) {
         const allow = new Set(payerSelection);
@@ -544,8 +543,10 @@ function AdminArAgingPageContent() {
     if (isLoading) return "loading";
     if (error) return "error";
     if (!isLoading && rawInvoices.length > 0) return null;
+    // Counts are only null before the first successful read; never read them as "none".
+    if (residentCount === null || anyInvoiceCount === null) return "loading";
     if (residentCount === 0) return "no_residents";
-    if ((anyInvoiceCount ?? 0) === 0) return "no_billing";
+    if (anyInvoiceCount === 0) return "no_billing";
     return "paid_through";
   })();
 
@@ -851,7 +852,7 @@ function AdminArAgingPageContent() {
         {!isLoading && emptyKind === "no_billing" ? (
           <div className="rounded-lg border border-border bg-card px-5 py-8">
             <p className="text-[15px] font-semibold text-foreground">
-              No open AR — but {(residentCount ?? 0).toLocaleString()} resident{(residentCount ?? 0) === 1 ? "" : "s"} exist at{" "}
+              No open AR — but {residentCount?.toLocaleString()} resident{residentCount === 1 ? "" : "s"} exist at{" "}
               {facilityCountPhrase}.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">

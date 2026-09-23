@@ -17,12 +17,14 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import {
+  countDistinctStaffPeople,
   fetchStaffFromSupabase,
   type CertificationStatus,
   type StaffRow,
   type StaffStatus,
 } from "@/lib/staff/load-staff";
 import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -141,7 +143,7 @@ export function AdminStaffPageClient({
   initialFacilityId,
 }: AdminStaffPageClientProps) {
   const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const [rows, setRows] = useState<StaffRow[]>(initialRows);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
@@ -271,7 +273,14 @@ export function AdminStaffPageClient({
     [rows.length],
   );
 
-  const activeCount = rows.filter((row) => row.status === "active").length;
+  // One person can hold an employment record at several buildings; the tile
+  // counts people and names the record count when they differ (COL-662).
+  const activeRows = rows.filter((row) => row.status === "active");
+  const activeCount = countDistinctStaffPeople(activeRows);
+  const activeDescription =
+    activeRows.length !== activeCount ? `${activeRows.length} employment records across facilities` : undefined;
+  const showFacility = !isValidFacilityIdForQuery(selectedFacilityId);
+  const facilityNames = new Map(availableFacilities.map((facility) => [facility.id, facility.name]));
   const certSummary = summarizeRosterCerts(rows);
   // While loading or after a failed read the tiles say so instead of counting an empty list.
   const rosterRead = isLoading ? metricLoading() : error ? metricUnavailable() : null;
@@ -318,6 +327,7 @@ export function AdminStaffPageClient({
         <StatCard
           label="Active roster"
           state={rosterRead ?? metricValue(activeCount)}
+          description={rosterRead ? undefined : activeDescription}
           icon={<UserRoundCheck aria-hidden />}
         />
         <StatCard
@@ -442,6 +452,11 @@ export function AdminStaffPageClient({
                       <span className="hidden md:inline truncate text-[11px] text-muted-foreground">
                         {staff.roleLabel}
                       </span>
+                      {showFacility && staff.facilityId ? (
+                        <span className="truncate text-[11px] text-muted-foreground">
+                          {facilityNames.get(staff.facilityId) ?? "Facility not listed"}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 

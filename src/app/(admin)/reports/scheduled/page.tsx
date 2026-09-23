@@ -149,7 +149,7 @@ export default function ScheduledReportsPage() {
         <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-visible mb-6 z-10 w-full transition-all">
           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Create Schedule</h3>
-            <p className="text-sm font-mono tracking-wide mt-1 text-slate-500 dark:text-slate-400">Reports are saved in-app with CSV download. No email delivery is configured.</p>
+            <p className="text-sm font-mono tracking-wide mt-1 text-muted-foreground">Reports are saved in-app with CSV download. No email delivery is configured.</p>
           </div>
           <div className="grid gap-4 flex-col lg:flex-row lg:grid-cols-4 items-center">
             <div className="w-full relative">
@@ -164,7 +164,7 @@ export default function ScheduledReportsPage() {
                   </option>
                 ))}
               </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 font-bold">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-muted-foreground font-bold">
                  ↓
               </div>
             </div>

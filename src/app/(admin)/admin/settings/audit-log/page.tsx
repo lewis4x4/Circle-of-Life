@@ -7,6 +7,7 @@ import {
   formatAuditLogNoteDisplay,
 } from "@/lib/admin/settings/audit-log-display-copy";
 import { loadV2AuditLog } from "@/lib/v2-audit-log";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export const dynamic = "force-dynamic";
 
@@ -29,58 +30,60 @@ export default async function SettingsAuditLogPage() {
               No alert audit entries in scope yet.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-surface-elevated">
-                  <tr>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">When</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Action</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Alert</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Facility</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Actor</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Note</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {load.rows.map((row) => (
-                    <tr key={row.id} className="border-b border-border last:border-b-0">
-                      <td className="px-3 py-2 align-top text-xs text-text-muted">
-                        <time dateTime={row.createdAt}>
-                          {row.createdAt.replace("T", " ").slice(0, 19)}
-                        </time>
-                      </td>
-                      <td className="px-3 py-2 align-top">
-                        <span className="inline-flex items-center rounded-sm border border-border bg-surface-elevated px-2 py-0.5 text-xs font-semibold text-text-primary">
-                          {row.action}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 align-top text-xs text-text-secondary">
-                        <code>{row.alertId.slice(0, 8)}…</code>
-                      </td>
-                      <td className="px-3 py-2 align-top text-xs text-text-secondary">
-                        {auditLogFacilityIdIsPosted(row.facilityId) ? (
-                          <code>{formatAuditLogFacilityIdDisplay(row.facilityId)}</code>
-                        ) : (
-                          formatAuditLogFacilityIdDisplay(row.facilityId)
-                        )}
-                      </td>
-                      <td className="px-3 py-2 align-top text-xs text-text-secondary">
-                        {auditLogActorIdIsPosted(row.actorId) ? (
-                          <code>{formatAuditLogActorIdDisplay(row.actorId)}</code>
-                        ) : (
-                          formatAuditLogActorIdDisplay(row.actorId)
-                        )}
-                        {row.actorRole && (
-                          <span className="ml-2 text-text-muted">{row.actorRole}</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 align-top text-xs text-text-secondary">
-                        {formatAuditLogNoteDisplay(row.note)}
-                      </td>
+            <div>
+              <HorizontalScroll label="Audit log">
+                <table className="w-full text-sm">
+                  <thead className="bg-surface-elevated">
+                    <tr>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">When</th>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Action</th>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Alert</th>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Facility</th>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Actor</th>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-caps text-text-muted">Note</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {load.rows.map((row) => (
+                      <tr key={row.id} className="border-b border-border last:border-b-0">
+                        <td className="px-3 py-2 align-top text-xs text-text-muted">
+                          <time dateTime={row.createdAt}>
+                            {row.createdAt.replace("T", " ").slice(0, 19)}
+                          </time>
+                        </td>
+                        <td className="px-3 py-2 align-top">
+                          <span className="inline-flex items-center rounded-sm border border-border bg-surface-elevated px-2 py-0.5 text-xs font-semibold text-text-primary">
+                            {row.action}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 align-top text-xs text-text-secondary">
+                          <code>{row.alertId.slice(0, 8)}…</code>
+                        </td>
+                        <td className="px-3 py-2 align-top text-xs text-text-secondary">
+                          {auditLogFacilityIdIsPosted(row.facilityId) ? (
+                            <code>{formatAuditLogFacilityIdDisplay(row.facilityId)}</code>
+                          ) : (
+                            formatAuditLogFacilityIdDisplay(row.facilityId)
+                          )}
+                        </td>
+                        <td className="px-3 py-2 align-top text-xs text-text-secondary">
+                          {auditLogActorIdIsPosted(row.actorId) ? (
+                            <code>{formatAuditLogActorIdDisplay(row.actorId)}</code>
+                          ) : (
+                            formatAuditLogActorIdDisplay(row.actorId)
+                          )}
+                          {row.actorRole && (
+                            <span className="ml-2 text-text-muted">{row.actorRole}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 align-top text-xs text-text-secondary">
+                          {formatAuditLogNoteDisplay(row.note)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </HorizontalScroll>
             </div>
           ),
         },

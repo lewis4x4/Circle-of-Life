@@ -155,9 +155,12 @@ describe("AdminStaffDetailPage profile edit", () => {
 
     const editButtons = screen.getAllByRole("button", { name: /^edit$/i });
     expect(editButtons.length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /^offboard$/i })).toBeInTheDocument();
+    const offboardButton = screen.getByRole("button", { name: /^offboard$/i });
+    expect(offboardButton).toBeInTheDocument();
 
     const contactSection = screen.getByRole("region", { name: "Contact" });
+    // The destructive block comes after who the person is, never first (COL-662).
+    expect(contactSection.compareDocumentPosition(offboardButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const contactEdit = withinContactEdit(contactSection, editButtons);
     await user.click(contactEdit);
 

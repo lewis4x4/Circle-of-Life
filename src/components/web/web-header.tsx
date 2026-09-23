@@ -84,7 +84,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
               <Phone className="w-3.5 h-3.5 text-[#E5A952]" />
               (386) 406-0887
             </a>
-            <span className="hidden md:inline text-stone-400 text-xs font-normal">
+            <span className="hidden md:inline text-chrome-foreground-muted text-xs font-normal">
               • Mayo, Live Oak & Lake City, FL
             </span>
           </div>
@@ -97,7 +97,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
               className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
                 isPlayingAudio
                   ? "bg-emerald-800/80 text-emerald-100 ring-1 ring-emerald-400"
-                  : "bg-stone-800/80 text-stone-300 hover:bg-stone-700 hover:text-white"
+                  : "bg-stone-800/80 text-chrome-foreground-muted hover:bg-stone-700 hover:text-white"
               }`}
               title="Toggle calming front-porch nature sounds"
             >
@@ -108,7 +108,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
                 </>
               ) : (
                 <>
-                  <VolumeX className="w-3.5 h-3.5 text-stone-400" />
+                  <VolumeX className="w-3.5 h-3.5 text-stone-800" />
                   <span>Play Porch Sounds</span>
                 </>
               )}
@@ -116,7 +116,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
 
             {/* Font Scaler for Aging Eyes */}
             <div className="hidden lg:flex items-center gap-1 bg-stone-800/90 rounded-full px-2 py-0.5 border border-stone-700">
-              <span className="text-[10px] uppercase tracking-wider text-stone-400 font-semibold mr-1">
+              <span className="text-[10px] uppercase tracking-wider text-chrome-foreground-muted font-semibold mr-1">
                 Text:
               </span>
               <button
@@ -124,7 +124,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
                 className={`px-1.5 py-0.5 rounded text-xs font-bold ${
                   fontSizeLevel === "normal"
                     ? "bg-[#E5A952] text-stone-950"
-                    : "text-stone-300 hover:text-white"
+                    : "text-chrome-foreground-muted hover:text-white"
                 }`}
               >
                 A
@@ -134,7 +134,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
                 className={`px-1.5 py-0.5 rounded text-xs font-bold ${
                   fontSizeLevel === "large"
                     ? "bg-[#E5A952] text-stone-950"
-                    : "text-stone-300 hover:text-white"
+                    : "text-chrome-foreground-muted hover:text-white"
                 }`}
               >
                 A+
@@ -144,7 +144,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
                 className={`px-1.5 py-0.5 rounded text-xs font-bold ${
                   fontSizeLevel === "xlarge"
                     ? "bg-[#E5A952] text-stone-950"
-                    : "text-stone-300 hover:text-white"
+                    : "text-chrome-foreground-muted hover:text-white"
                 }`}
               >
                 A++
@@ -195,7 +195,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
                 <Compass className="w-4 h-4 text-[#3D5A4C]" />
                 <span>Our 5 Communities</span>
                 <ChevronDown
-                  className={`w-4 h-4 text-stone-500 transition-transform duration-200 ${
+                  className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
                     campusDropdownOpen ? "rotate-180 text-[#A94724]" : ""
                   }`}
                 />
@@ -227,7 +227,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
                         <div className="font-bold text-xs sm:text-sm text-[#1C2822] group-hover:text-[#A94724] transition-colors truncate">
                           {facility.name}
                         </div>
-                        <div className="text-[11px] text-stone-500 flex items-center gap-1.5 mt-0.5">
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
                           <span>{facility.address.city}, FL</span>
                           <span>•</span>
                           <span className="text-emerald-700 font-semibold">{PUBLIC_AVAILABILITY_COPY}</span>

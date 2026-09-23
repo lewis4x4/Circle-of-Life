@@ -15,6 +15,11 @@
  *    asks `canClaimAllClear`, so nothing proves the read succeeded over a
  *    non-empty scope before the reassurance renders.
  *
+ * A finding that is genuinely not a displayed metric (a pagination total, an
+ * arithmetic accumulator) is exempt when the same line or the line above
+ * carries `false-all-clear-ok: <reason>` with a reason of at least ten
+ * characters. The reason is the review record; there is no bare opt-out.
+ *
  * Arrow functions and function bodies inside JSX (event handlers, reducers)
  * are skipped for rule 1: `(prev ?? 0) + 1` in an onClick is arithmetic, not a
  * displayed metric.
@@ -163,13 +168,21 @@ export function findAllClearCopy(file: string, source: string): FalseAllClearFin
   return findings;
 }
 
+/** `false-all-clear-ok: <reason>` — the reason must say why (10+ characters). */
+export const JUSTIFIED_EXEMPTION = /false-all-clear-ok:\s*\S.{9,}/;
+
+function isJustified(lines: string[], line: number): boolean {
+  return [lines[line - 1], lines[line - 2]].some((text) => text !== undefined && JUSTIFIED_EXEMPTION.test(text));
+}
+
 export function scanSource(file: string, source: string): FalseAllClearFinding[] {
+  const lines = source.split("\n");
   return [
     ...findSilentZeros(file, source),
     ...lineFindings(file, source, "count-or-zero", COUNT_OR_ZERO),
     ...lineFindings(file, source, "empty-is-ok", EMPTY_IS_OK),
     ...findAllClearCopy(file, source),
-  ];
+  ].filter((finding) => !isJustified(lines, finding.line));
 }
 
 export type FalseAllClearCounts = Record<string, Partial<Record<FalseAllClearRule, number>>>;

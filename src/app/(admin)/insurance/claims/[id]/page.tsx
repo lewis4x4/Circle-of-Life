@@ -27,6 +27,7 @@ import { formatInsuranceClaimNumber } from "@/lib/insurance/claims-display-copy"
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Claim = Database["public"]["Tables"]["insurance_claims"]["Row"];
 type Activity = Database["public"]["Tables"]["claim_activities"]["Row"];
@@ -213,24 +214,26 @@ export default function InsuranceClaimDetailPage() {
           {activities.length === 0 ? (
             <p className="text-sm text-muted-foreground">No activities logged.</p>
           ) : (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="py-2 pr-4 font-medium">Date</th>
-                  <th className="py-2 pr-4 font-medium">Type</th>
-                  <th className="py-2 font-medium">Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activities.map((a) => (
-                  <tr key={a.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4 align-top">{a.activity_date}</td>
-                    <td className="py-2 pr-4 align-top">{a.activity_type}</td>
-                    <td className="py-2 align-top">{a.description}</td>
+            <HorizontalScroll label="Claim activity">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-2 pr-4 font-medium">Date</th>
+                    <th className="py-2 pr-4 font-medium">Type</th>
+                    <th className="py-2 font-medium">Description</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {activities.map((a) => (
+                    <tr key={a.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4 align-top">{a.activity_date}</td>
+                      <td className="py-2 pr-4 align-top">{a.activity_type}</td>
+                      <td className="py-2 align-top">{a.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           )}
         </div>
       </RecordDetailSection>

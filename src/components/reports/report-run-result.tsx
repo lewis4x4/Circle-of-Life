@@ -47,11 +47,11 @@ const GROUP_ICONS: Record<string, ReactNode> = {
   "Smart rounding": <Shield className="h-4 w-4 text-teal-400" aria-hidden />,
   "Smart rounding heat": <Shield className="h-4 w-4 text-teal-400" aria-hidden />,
   "Executive pack": <Landmark className="h-4 w-4 text-primary" aria-hidden />,
-  Other: <ClipboardList className="h-4 w-4 text-slate-400" aria-hidden />,
+  Other: <ClipboardList className="h-4 w-4 text-muted-foreground" aria-hidden />,
 };
 
 function groupIcon(groupName: string) {
-  return GROUP_ICONS[groupName] ?? <Activity className="h-4 w-4 text-slate-400" aria-hidden />;
+  return GROUP_ICONS[groupName] ?? <Activity className="h-4 w-4 text-muted-foreground" aria-hidden />;
 }
 
 function buildGrouped(summary: SummaryRow[]) {
@@ -111,7 +111,7 @@ export function ReportRunResult({ summary, detailRows }: ReportRunResultProps) {
       {detailRows.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-slate-400" aria-hidden />
+            <ClipboardList className="h-4 w-4 text-muted-foreground" aria-hidden />
             <h4 className="text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100">
               Detail rows
             </h4>
@@ -147,7 +147,7 @@ export function ReportRunResult({ summary, detailRows }: ReportRunResultProps) {
             </Table>
           </div>
           {detailRows.length > 500 && (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted-foreground">
               Showing first 500 rows. Export CSV for the full extract.
             </p>
           )}

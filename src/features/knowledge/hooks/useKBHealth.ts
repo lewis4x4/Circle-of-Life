@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { buildKBHealth } from "../lib/kb-health";
 import type { KBHealthMetrics, ChatInsight } from "../lib/types";
 
 export function useKBHealth() {
@@ -51,28 +52,19 @@ export function useKBHealth() {
 
       if (firstError) throw firstError;
 
-      const total = totalDocsRes.count ?? 0;
-      const chunks = totalChunksRes.count ?? 0;
-
-      setHealth({
-        totalDocuments: total,
-        publishedDocuments: publishedDocsRes.count ?? 0,
-        totalChunks: chunks,
-        embeddingCoverage: chunks > 0 ? ((embeddedChunksRes.count ?? 0) / chunks) * 100 : 0,
-        staleDocuments: 0,
-        failedIngestions: failedDocsRes.count ?? 0,
-        avgChunksPerDoc: total > 0 ? chunks / total : 0,
+      const built = buildKBHealth({
+        totalDocs: totalDocsRes,
+        publishedDocs: publishedDocsRes,
+        failedDocs: failedDocsRes,
+        totalChunks: totalChunksRes,
+        embeddedChunks: embeddedChunksRes,
+        queryCount: queryCountRes,
+        positiveFeedback: positiveFbRes,
+        negativeFeedback: negativeFbRes,
+        gapCount: gapCountRes,
       });
-
-      setInsights({
-        totalQueries: queryCountRes.count ?? 0,
-        uniqueUsers: 0,
-        avgTokensPerQuery: 0,
-        topTopics: [],
-        positiveFeedback: positiveFbRes.count ?? 0,
-        negativeFeedback: negativeFbRes.count ?? 0,
-        gapCount: gapCountRes.count ?? 0,
-      });
+      setHealth(built.health);
+      setInsights(built.insights);
     } catch (loadError) {
       setHealth(null);
       setInsights(null);

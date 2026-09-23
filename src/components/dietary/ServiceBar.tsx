@@ -33,7 +33,7 @@ export function ServiceBar({ data }: { data: ServiceBarData }) {
           </div>
           <div>
             <div className="text-sm font-semibold text-white">{data.cook_name}</div>
-            <div className="text-xs text-stone-400">{data.facility_name}</div>
+            <div className="text-xs text-muted-foreground">{data.facility_name}</div>
           </div>
         </div>
 
@@ -42,7 +42,7 @@ export function ServiceBar({ data }: { data: ServiceBarData }) {
         <div className="flex items-center gap-2">
           <Utensils className="w-4 h-4 text-amber-400" />
           <span className="text-base font-semibold text-white">{data.meal_period}</span>
-          <span className="text-xs text-stone-400">· bell at {data.scheduled_time}</span>
+          <span className="text-xs text-muted-foreground">· bell at {data.scheduled_time}</span>
         </div>
 
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/40">
@@ -57,10 +57,10 @@ export function ServiceBar({ data }: { data: ServiceBarData }) {
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wider text-stone-500">Plated</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Plated</div>
             <div className="text-lg font-mono font-semibold text-white">
               {data.plated}
-              <span className="text-stone-500 text-sm">/{data.expected}</span>
+              <span className="text-muted-foreground text-sm">/{data.expected}</span>
             </div>
           </div>
           <div className="w-32 h-2 rounded-full bg-stone-800 overflow-hidden">
@@ -85,7 +85,7 @@ export function ServiceBar({ data }: { data: ServiceBarData }) {
 
         <div className="text-2xl font-mono font-semibold tabular-nums text-white">{time}</div>
 
-        <div className="flex items-center gap-2 text-stone-400">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Bluetooth className="w-4 h-4 text-sky-400" />
           <Wifi className="w-4 h-4 text-emerald-400" />
           <Printer className="w-4 h-4 text-emerald-400" />

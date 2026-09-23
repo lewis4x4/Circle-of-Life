@@ -232,9 +232,18 @@ export function DataTable<T>({
         savingPrefs={!disablePreferences && prefsHook.saving}
       />
 
+      {/* The virtualizer scrolls this box on both axes, so it cannot be a
+          HorizontalScroll; it is still a named, keyboard-focusable region so
+          arrow keys reach every column on a phone (COL-687). */}
       <div
         ref={containerRef}
-        className={cn("relative overflow-auto", shouldVirtualize ? "max-h-[480px]" : "")}
+        role="region"
+        aria-label={caption ?? userPreferencesKey}
+        tabIndex={0}
+        className={cn(
+          "relative overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+          shouldVirtualize ? "max-h-[480px]" : "",
+        )}
       >
         <table aria-label={caption ?? userPreferencesKey} className="w-full text-sm text-text-primary">
           {caption && <caption className="sr-only">{caption}</caption>}

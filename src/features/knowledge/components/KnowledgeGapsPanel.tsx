@@ -12,7 +12,7 @@ interface KnowledgeGapsPanelProps {
 
 export function KnowledgeGapsPanel({ gaps, loading, onResolve }: KnowledgeGapsPanelProps) {
   if (loading) {
-    return <div className="text-sm text-slate-400 py-8 text-center">Loading knowledge gaps…</div>;
+    return <div className="text-sm text-muted-foreground py-8 text-center">Loading knowledge gaps…</div>;
   }
 
   const unresolved = gaps.filter((g) => !g.resolved);
@@ -33,7 +33,7 @@ export function KnowledgeGapsPanel({ gaps, loading, onResolve }: KnowledgeGapsPa
             <HelpCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-sm text-slate-800 dark:text-zinc-200">{gap.question}</div>
-              <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 dark:text-zinc-500">
+              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                 <span>Asked {gap.frequency}x</span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
@@ -55,14 +55,14 @@ export function KnowledgeGapsPanel({ gaps, loading, onResolve }: KnowledgeGapsPa
 
       {resolved.length > 0 && (
         <details className="text-sm">
-          <summary className="text-slate-500 dark:text-zinc-400 cursor-pointer py-2">
+          <summary className="text-muted-foreground cursor-pointer py-2">
             {resolved.length} resolved gap{resolved.length !== 1 ? "s" : ""}
           </summary>
           <div className="space-y-2 mt-2">
             {resolved.map((gap) => (
               <div
                 key={gap.id}
-                className="flex items-center gap-2 rounded-lg bg-slate-50 dark:bg-zinc-800/50 px-3 py-2 text-sm text-slate-500 dark:text-zinc-400 line-through"
+                className="flex items-center gap-2 rounded-lg bg-slate-50 dark:bg-zinc-800/50 px-3 py-2 text-sm text-muted-foreground line-through"
               >
                 {gap.question}
               </div>
@@ -72,7 +72,7 @@ export function KnowledgeGapsPanel({ gaps, loading, onResolve }: KnowledgeGapsPa
       )}
 
       {gaps.length === 0 && (
-        <div className="text-center py-8 text-slate-400 dark:text-zinc-500 text-sm">
+        <div className="text-center py-8 text-muted-foreground text-sm">
           No knowledge gaps detected yet. Gaps are logged when the AI cannot find relevant documents.
         </div>
       )}

@@ -1,34 +1,12 @@
 /**
- * COL-651 ratchet for `FacilityGate.guard.test.ts`.
+ * COL-651 exceptions for `FacilityGate.guard.test.ts`.
  *
- * `LEGACY_FACILITY_GATES` lists files that still carry their own "select a
- * facility" dead end. It may only shrink: convert a file to `<FacilityGate>`
- * and delete its line here (the guard fails while a converted file is still
- * listed). Each audit area has its own list so parallel conversions do not
- * collide.
- *
- * `NOT_A_GATE` is for copy that matches the pattern but is not a page gate —
- * a form's own facility field, or a builder that asks for a building among
- * other inputs. Say why.
+ * Every page that needs one facility now renders `<FacilityGate>`; the
+ * per-area conversion ratchet is finished and gone. Copy that matches the
+ * guard's pattern is allowed only in the files below — a form's own facility
+ * field, or a builder that asks for a building among other inputs — each with
+ * the reason it is not a page gate.
  */
-
-export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
-  "b1-executive": [],
-
-  "b2-money": [],
-
-  "b3-operations": [],
-
-  "b4-clinical": [
-  ],
-
-  "b5-compliance": [],
-
-  "b6-office": [],
-
-  "b7-workforce": [
-  ],
-};
 
 export const NOT_A_GATE: Record<string, string> = {
   "src/app/(admin)/reports/run/[sourceType]/[id]/page.tsx":

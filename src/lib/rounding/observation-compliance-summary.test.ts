@@ -6,6 +6,7 @@ import {
   COMPLIANCE_NO_HALL_LABEL,
   COMPLIANCE_NO_SHIFT_LABEL,
   COMPLIANCE_NO_STAFF_LABEL,
+  COMPLIANCE_NO_TASK_LABEL,
   complianceRate,
   formatComplianceRate,
   onTimeRate,
@@ -97,8 +98,22 @@ describe("observation compliance summary", () => {
     const noHall = summary.byHall.find((cut) => cut.label === COMPLIANCE_NO_HALL_LABEL);
     expect(noHall?.unconfigured).toBe(1);
 
-    const noStaff = summary.byStaff.find((cut) => cut.label === COMPLIANCE_NO_STAFF_LABEL);
-    expect(noStaff?.unconfigured).toBe(1);
+    const noTask = summary.byStaff.find((cut) => cut.label === COMPLIANCE_NO_TASK_LABEL);
+    expect(noTask?.unconfigured).toBe(1);
+  });
+
+  it("never shows two staff rows with the same name (COL-662)", () => {
+    const summary = summarizeObservationCompliance({
+      from: "2026-09-17",
+      to: "2026-09-17",
+      rows: [row({ task_id: null }), row({ task_id: "task-unassigned" })],
+      shiftLabels,
+      hallByResident: new Map(),
+      staffByTask: new Map([["task-unassigned", { key: "no_staff", label: COMPLIANCE_NO_STAFF_LABEL }]]),
+    });
+    const labels = summary.byStaff.map((cut) => cut.label);
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(labels).toEqual(expect.arrayContaining([COMPLIANCE_NO_TASK_LABEL, COMPLIANCE_NO_STAFF_LABEL]));
   });
 
   it("names a window whose shift has no definition row rather than borrowing a shift", () => {

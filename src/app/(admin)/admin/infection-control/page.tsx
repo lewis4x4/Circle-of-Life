@@ -8,7 +8,9 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   formatInfectionControlHubKpiValue,
   infectionControlHubKpiTileIsMetric,
+  isPositiveCount,
 } from "@/lib/infection-control/infection-control-display-copy";
+import { headCountOrNull } from "@/lib/metrics/require-head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
@@ -21,19 +23,19 @@ export default function AdminInfectionControlHubPage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
-  const [activeInf, setActiveInf] = useState(0);
-  const [activeOut, setActiveOut] = useState(0);
-  const [openAlerts, setOpenAlerts] = useState(0);
-  const [staffOut, setStaffOut] = useState(0);
+  const [activeInf, setActiveInf] = useState<number | null>(null);
+  const [activeOut, setActiveOut] = useState<number | null>(null);
+  const [openAlerts, setOpenAlerts] = useState<number | null>(null);
+  const [staffOut, setStaffOut] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-        setActiveInf(0);
-        setActiveOut(0);
-        setOpenAlerts(0);
-        setStaffOut(0);
+        setActiveInf(null);
+        setActiveOut(null);
+        setOpenAlerts(null);
+        setStaffOut(null);
         return;
       }
       const [inf, out, va, ill] = await Promise.all([
@@ -62,10 +64,11 @@ export default function AdminInfectionControlHubPage() {
           .is("deleted_at", null)
           .is("absent_to", null),
       ]);
-      setActiveInf(inf.count ?? 0);
-      setActiveOut(out.count ?? 0);
-      setOpenAlerts(va.count ?? 0);
-      setStaffOut(ill.count ?? 0);
+      // A refused or failed count stays null and the tile names the gap, never 0 (COL-649).
+      setActiveInf(headCountOrNull(inf));
+      setActiveOut(headCountOrNull(out));
+      setOpenAlerts(headCountOrNull(va));
+      setStaffOut(headCountOrNull(ill));
     } finally {
       setLoading(false);
     }
@@ -89,7 +92,7 @@ export default function AdminInfectionControlHubPage() {
           <div>
             
             <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
-              Infection Control {activeOut > 0 && <></>}
+              Infection Control {isPositiveCount(activeOut) && <></>}
             </h1>
           </div>
         </header>
@@ -97,19 +100,19 @@ export default function AdminInfectionControlHubPage() {
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card
-              className={cn(activeInf > 0 ? "border-destructive/20" : "border-border")}
+              className={cn(isPositiveCount(activeInf) ? "border-destructive/20" : "border-border")}
               hoverColor="red"
             >
               <></>
               <MonolithicWatermark
-                value={loading ? 0 : activeInf}
-                className={cn("opacity-50", activeInf > 0 ? "text-destructive/10" : "text-muted-foreground/10")}
+                value={loading || activeInf === null ? 0 : activeInf}
+                className={cn("opacity-50", isPositiveCount(activeInf) ? "text-destructive/10" : "text-muted-foreground/10")}
               />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3
                   className={cn(
                     "text-[10px] tracking-wider uppercase flex items-center gap-2",
-                    activeInf > 0 ? "text-destructive" : "text-muted-foreground",
+                    isPositiveCount(activeInf) ? "text-destructive" : "text-muted-foreground",
                   )}
                 >
                    Active Infections
@@ -120,7 +123,7 @@ export default function AdminInfectionControlHubPage() {
                       ? "text-4xl font-mono tracking-tighter pb-1"
                       : "text-[13px] font-medium leading-snug pb-1",
                     kpisReady && infectionControlHubKpiTileIsMetric(activeInfDisplay)
-                      ? activeInf > 0
+                      ? isPositiveCount(activeInf)
                         ? "text-destructive"
                         : "text-foreground"
                       : "text-muted-foreground",
@@ -133,23 +136,23 @@ export default function AdminInfectionControlHubPage() {
           </div>
 
           <div className="h-[160px]">
-            <V2Card className={activeOut > 0 ? "border-warning/30" : "border-border"} hoverColor="amber">
+            <V2Card className={isPositiveCount(activeOut) ? "border-warning/30" : "border-border"} hoverColor="amber">
               <></>
               <MonolithicWatermark
-                value={loading ? 0 : activeOut}
-                className={cn("opacity-50", activeOut > 0 ? "text-warning/10" : "text-muted-foreground/10")}
+                value={loading || activeOut === null ? 0 : activeOut}
+                className={cn("opacity-50", isPositiveCount(activeOut) ? "text-warning/10" : "text-muted-foreground/10")}
               />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
                   <h3
                     className={cn(
                       "text-[10px] tracking-wider uppercase flex items-center gap-2",
-                      activeOut > 0 ? "text-warning" : "text-muted-foreground",
+                      isPositiveCount(activeOut) ? "text-warning" : "text-muted-foreground",
                     )}
                   >
                      Active Outbreaks
                   </h3>
-                  {activeOut > 0 && <></>}
+                  {isPositiveCount(activeOut) && <></>}
                 </div>
                 <p
                   className={cn(
@@ -157,7 +160,7 @@ export default function AdminInfectionControlHubPage() {
                       ? "text-4xl font-mono tracking-tighter pb-1"
                       : "text-[13px] font-medium leading-snug pb-1",
                     kpisReady && infectionControlHubKpiTileIsMetric(activeOutDisplay)
-                      ? activeOut > 0
+                      ? isPositiveCount(activeOut)
                         ? "text-warning"
                         : "text-foreground"
                       : "text-muted-foreground",
@@ -172,7 +175,7 @@ export default function AdminInfectionControlHubPage() {
           <div className="h-[160px]">
             <V2Card hoverColor="blue" className="border-info/20">
               <></>
-              <MonolithicWatermark value={loading ? 0 : openAlerts} className="text-info/10 opacity-50" />
+              <MonolithicWatermark value={loading || openAlerts === null ? 0 : openAlerts} className="text-info/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] tracking-wider uppercase text-info">
                   Open Vital Alerts
@@ -193,7 +196,7 @@ export default function AdminInfectionControlHubPage() {
           <div className="h-[160px]">
             <V2Card hoverColor="slate" className="border-border">
               <></>
-              <MonolithicWatermark value={loading ? 0 : staffOut} className="text-muted-foreground/10 opacity-30" />
+              <MonolithicWatermark value={loading || staffOut === null ? 0 : staffOut} className="text-muted-foreground/10 opacity-30" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] tracking-wider uppercase text-muted-foreground">
                   Staff Out Sick
@@ -252,7 +255,7 @@ export default function AdminInfectionControlHubPage() {
         </span>
       </div>
 
-      {activeOut > 0 && !loading && (
+      {isPositiveCount(activeOut) && !loading && (
         <div className="flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/10 px-4 py-3 text-[13px] text-warning">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>There is an active outbreak in this facility scope. Open the related surveillance record to jump into the outbreak detail workflow.</span>

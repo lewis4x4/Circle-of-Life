@@ -45,6 +45,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { V2Card } from "@/components/ui/v2-card";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 /* MAINTENANCE: CHART_COLORS uses hex literals required by Recharts SVG attrs
    (stroke, fill, tick.fill). These cannot be replaced with CSS variables because
    Recharts resolves SVG attributes at render time, not via CSS. Do NOT replace
@@ -77,7 +78,7 @@ function CustomTooltip({
   if (active && payload && payload.length) {
     return (
       <div className="bg-popover border border-border p-3 rounded-lg shadow-lg">
-        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">{label}</p>
         {payload.map((p, idx) => (
           <div key={idx} className="flex items-center gap-2 mb-1 last:mb-0">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
@@ -174,12 +175,12 @@ export default function DeficienciesAnalysisPage() {
               <BarChart3 className="h-8 w-8 text-primary" />
               Deficiencies Analysis
             </h1>
-            <p className="text-sm text-slate-500 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               Historical deficiency trends, recurrence tracking, and gap analysis
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href={homeHref} className="text-[10px] uppercase tracking-wider font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <Link href={homeHref} className="text-[10px] uppercase tracking-wider font-mono text-muted-foreground hover:text-slate-700 dark:hover:text-slate-200">
               ← Back to Dashboard
             </Link>
           </div>
@@ -197,7 +198,7 @@ export default function DeficienciesAnalysisPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-sm font-mono text-slate-500">Loading analysis data…</p>
+            <p className="text-sm font-mono text-muted-foreground">Loading analysis data…</p>
           </div>
         ) : null}
 
@@ -206,7 +207,7 @@ export default function DeficienciesAnalysisPage() {
             {/* Time Period Selector */}
             <div className="flex items-center gap-4 justify-between">
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-slate-500" />
+                <Calendar className="h-5 w-5 text-muted-foreground" />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Analysis Period</span>
               </div>
               <div className="flex gap-2">
@@ -272,7 +273,7 @@ export default function DeficienciesAnalysisPage() {
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Deficiency Trend Over Time
                     </h2>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       Monthly deficiency counts by tag
                     </p>
                   </div>
@@ -307,7 +308,7 @@ export default function DeficienciesAnalysisPage() {
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Most Cited Tags
                     </h2>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       Top {Math.min(10, tagCounts.length)} most frequently cited tags
                     </p>
                   </div>
@@ -335,77 +336,79 @@ export default function DeficienciesAnalysisPage() {
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Recurring Tags Analysis
                     </h2>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       Tags cited multiple times with gap analysis
                     </p>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <TableRowHeader render={<tr />}>
-                        <th className="text-left w-24 font-semibold">Tag</th>
-                        <th className="text-left flex-1 font-semibold">Title</th>
-                        <th className="text-center w-28 font-semibold">Occurrences</th>
-                        <th className="text-center w-32 font-semibold">Avg Gap (Days)</th>
-                        <th className="text-center w-28 font-semibold">Last Status</th>
-                        <th className="text-center w-24 font-semibold">Action</th>
-                      </TableRowHeader>
-                    </thead>
-                    <tbody>
-                      {recurringTags.map((recurrence) => {
-                        const lastStatus = recurrence.occurrences[recurrence.occurrences.length - 1]?.status ?? "unknown";
-                        const averageGapValue = formatRecurringTagAverageGapDays(
-                          recurrence.total_occurrences,
-                          recurrence.days_between_average,
-                        );
-                        const averageGapCopy =
-                          typeof averageGapValue === "number"
-                            ? `~${averageGapValue} days`
-                            : averageGapValue;
-                        return (
-                        <TableRow key={recurrence.tag_number} render={<tr tabIndex={0} />} className="mt-1">
-                          <td className="w-24">
-                            <Badge variant="outline" className="font-mono">
-                              Tag {recurrence.tag_number}
-                            </Badge>
-                          </td>
-                          <td className="flex-1 text-[13px] text-foreground truncate">{recurrence.tag_title}</td>
-                          <td className="w-28 text-center font-mono font-bold text-[13px] text-foreground tabular-nums">
-                            {recurrence.total_occurrences}
-                          </td>
-                          <td className="w-32 text-center">
-                            <span
-                              className={
-                                typeof averageGapValue === "number"
-                                  ? "font-mono text-[12px] text-warning"
-                                  : "text-[12px] text-muted-foreground"
-                              }
-                            >
-                              {averageGapCopy}
-                            </span>
-                          </td>
-                          <td className="w-28 text-center">
-                            <StatusPill
-                              tone={
-                                lastStatus === "verified" || lastStatus === "corrected"
-                                  ? "muted"
-                                  : "danger"
-                              }
-                            >
-                              {lastStatus}
-                            </StatusPill>
-                          </td>
-                          <td className="w-24 text-center">
-                            <Button variant="outline" size="sm" className="text-[10px] uppercase tracking-wider">
-                              View Details
-                            </Button>
-                          </td>
-                        </TableRow>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div>
+                  <HorizontalScroll label="Deficiency analysis">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <TableRowHeader render={<tr />}>
+                          <th className="text-left w-24 font-semibold">Tag</th>
+                          <th className="text-left flex-1 font-semibold">Title</th>
+                          <th className="text-center w-28 font-semibold">Occurrences</th>
+                          <th className="text-center w-32 font-semibold">Avg Gap (Days)</th>
+                          <th className="text-center w-28 font-semibold">Last Status</th>
+                          <th className="text-center w-24 font-semibold">Action</th>
+                        </TableRowHeader>
+                      </thead>
+                      <tbody>
+                        {recurringTags.map((recurrence) => {
+                          const lastStatus = recurrence.occurrences[recurrence.occurrences.length - 1]?.status ?? "unknown";
+                          const averageGapValue = formatRecurringTagAverageGapDays(
+                            recurrence.total_occurrences,
+                            recurrence.days_between_average,
+                          );
+                          const averageGapCopy =
+                            typeof averageGapValue === "number"
+                              ? `~${averageGapValue} days`
+                              : averageGapValue;
+                          return (
+                          <TableRow key={recurrence.tag_number} render={<tr tabIndex={0} />} className="mt-1">
+                            <td className="w-24">
+                              <Badge variant="outline" className="font-mono">
+                                Tag {recurrence.tag_number}
+                              </Badge>
+                            </td>
+                            <td className="flex-1 text-[13px] text-foreground truncate">{recurrence.tag_title}</td>
+                            <td className="w-28 text-center font-mono font-bold text-[13px] text-foreground tabular-nums">
+                              {recurrence.total_occurrences}
+                            </td>
+                            <td className="w-32 text-center">
+                              <span
+                                className={
+                                  typeof averageGapValue === "number"
+                                    ? "font-mono text-[12px] text-warning"
+                                    : "text-[12px] text-muted-foreground"
+                                }
+                              >
+                                {averageGapCopy}
+                              </span>
+                            </td>
+                            <td className="w-28 text-center">
+                              <StatusPill
+                                tone={
+                                  lastStatus === "verified" || lastStatus === "corrected"
+                                    ? "muted"
+                                    : "danger"
+                                }
+                              >
+                                {lastStatus}
+                              </StatusPill>
+                            </td>
+                            <td className="w-24 text-center">
+                              <Button variant="outline" size="sm" className="text-[10px] uppercase tracking-wider">
+                                View Details
+                              </Button>
+                            </td>
+                          </TableRow>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </HorizontalScroll>
                 </div>
               </V2Card>
             ) : (

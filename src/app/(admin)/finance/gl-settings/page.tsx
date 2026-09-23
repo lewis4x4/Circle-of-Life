@@ -177,7 +177,7 @@ export default function GlSettingsPage() {
       </Card>
 
       {loading ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : !canWrite ? (
         <p className="text-sm text-slate-600 dark:text-slate-400">
           GL settings are read-only for your role. Owner or org admin can configure.

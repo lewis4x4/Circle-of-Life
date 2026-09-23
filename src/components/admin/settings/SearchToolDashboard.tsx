@@ -34,6 +34,7 @@ import {
 import { formatSearchToolUserEmailDisplay } from "@/lib/admin/settings/search-tool-display-copy";
 import { ROLE_LABELS } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 // ── Sub-components ───────────────────────────────────────────
 
@@ -67,7 +68,7 @@ function StatCard({
           <p className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white font-mono">
             {value}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">
             {label}
           </p>
         </div>
@@ -111,7 +112,7 @@ function PolicyToggle({
         {enabled ? (
           <Check className="h-4 w-4 text-emerald-500" aria-hidden />
         ) : (
-          <X className="h-4 w-4 text-slate-300 dark:text-slate-600" aria-hidden />
+          <X className="h-4 w-4 text-muted-foreground" aria-hidden />
         )}
         <span className="sr-only">{`${label}: ${enabled ? "allowed" : "not allowed"}`}</span>
       </div>
@@ -130,7 +131,7 @@ function PolicyToggle({
         "group/toggle relative flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200",
         enabled
           ? "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500"
-          : "bg-slate-100/50 hover:bg-slate-200/50 text-slate-300 dark:bg-slate-800/50 dark:hover:bg-slate-700/50 dark:text-slate-600",
+          : "bg-slate-100/50 hover:bg-slate-200/50 text-muted-foreground dark:bg-slate-800/50 dark:hover:bg-slate-700/50",
         saving && "opacity-50 cursor-wait",
       )}
     >
@@ -174,7 +175,7 @@ function AuditRow({ entry }: { entry: SearchAuditEntry }) {
           <TierBadge tier={entry.tool_tier} />
         </div>
         {entry.query_text && (
-          <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400 font-mono">
+          <p className="mt-0.5 truncate text-xs text-muted-foreground font-mono">
             &quot;{entry.query_text}&quot;
           </p>
         )}
@@ -185,7 +186,7 @@ function AuditRow({ entry }: { entry: SearchAuditEntry }) {
         <p className="text-xs text-slate-700 dark:text-slate-300 truncate max-w-[140px]">
           {formatSearchToolUserEmailDisplay(entry.user_email)}
         </p>
-        <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
           {roleLabel}
         </p>
       </div>
@@ -195,7 +196,7 @@ function AuditRow({ entry }: { entry: SearchAuditEntry }) {
         <p className="text-xs font-mono text-slate-600 dark:text-slate-300">
           {entry.results_count} results
         </p>
-        <div className="flex items-center justify-end gap-1.5 text-[10px] text-slate-400 dark:text-slate-500">
+        <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
           {entry.duration_ms != null && (
             <>
               <Zap className="h-2.5 w-2.5" />
@@ -306,7 +307,7 @@ export function SearchToolDashboard() {
           <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Search Tool Access
           </h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage which roles can access each search tool and monitor usage in
             real-time.
           </p>
@@ -386,7 +387,7 @@ export function SearchToolDashboard() {
             Access Control Matrix
           </h3>
           {canEdit && (
-            <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <span className="ml-auto text-[10px] text-muted-foreground uppercase tracking-wider">
               Click to toggle
             </span>
           )}
@@ -399,112 +400,114 @@ export function SearchToolDashboard() {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 w-[200px]">
-                    Tool
-                  </th>
-                  <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 w-[100px]">
-                    Tier
-                  </th>
-                  {MATRIX_DISPLAY_ROLES.map((role) => (
-                    <th
-                      key={role}
-                      className="pb-3 text-center text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 min-w-[70px]"
-                    >
-                      {ROLE_LABELS[role]?.split(" ")[0] ?? role}
+          <div>
+            <HorizontalScroll label="Search tools">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-muted-foreground w-[200px]">
+                      Tool
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(
-                  Object.entries(toolsByTier) as [
-                    SearchToolTier,
-                    typeof SEARCH_TOOLS,
-                  ][]
-                ).map(([tier, tools]) => {
-                  if (tools.length === 0) return null;
-                  const isExpanded = expandedTiers.has(tier);
-                  const meta = TIER_META[tier];
+                    <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-muted-foreground w-[100px]">
+                      Tier
+                    </th>
+                    {MATRIX_DISPLAY_ROLES.map((role) => (
+                      <th
+                        key={role}
+                        className="pb-3 text-center text-[10px] font-mono uppercase tracking-wider text-muted-foreground min-w-[70px]"
+                      >
+                        {ROLE_LABELS[role]?.split(" ")[0] ?? role}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(
+                    Object.entries(toolsByTier) as [
+                      SearchToolTier,
+                      typeof SEARCH_TOOLS,
+                    ][]
+                  ).map(([tier, tools]) => {
+                    if (tools.length === 0) return null;
+                    const isExpanded = expandedTiers.has(tier);
+                    const meta = TIER_META[tier];
 
-                  return (
-                    <React.Fragment key={tier}>
-                      {/* Tier group header */}
-                      <tr>
-                        <td colSpan={2 + MATRIX_DISPLAY_ROLES.length}>
-                          <button
-                            onClick={() => toggleTier(tier)}
-                            className="flex w-full items-center gap-2 rounded-lg py-2 text-left transition-colors hover:bg-white/5"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown
-                                className="h-3.5 w-3.5"
-                                style={{ color: meta.color }}
-                              />
-                            ) : (
-                              <ChevronRight
-                                className="h-3.5 w-3.5"
-                                style={{ color: meta.color }}
-                              />
-                            )}
-                            <span
-                              className="text-xs font-semibold uppercase tracking-wider"
-                              style={{ color: meta.color }}
+                    return (
+                      <React.Fragment key={tier}>
+                        {/* Tier group header */}
+                        <tr>
+                          <td colSpan={2 + MATRIX_DISPLAY_ROLES.length}>
+                            <button
+                              onClick={() => toggleTier(tier)}
+                              className="flex w-full items-center gap-2 rounded-lg py-2 text-left transition-colors hover:bg-white/5"
                             >
-                              {meta.label}
-                            </span>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                              ({tools.length} tool{tools.length > 1 ? "s" : ""})
-                            </span>
-                          </button>
-                        </td>
-                      </tr>
-
-                      {/* Tool rows */}
-                      {isExpanded &&
-                        tools.map((tool) => (
-                          <tr
-                            key={tool.name}
-                            className="group/row border-t border-white/5 transition-colors hover:bg-white/[0.02]"
-                          >
-                            <td className="py-2.5 pr-3">
-                              <div>
-                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                                  {tool.label}
-                                </p>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                                  {tool.description}
-                                </p>
-                              </div>
-                            </td>
-                            <td className="py-2.5">
-                              <TierBadge tier={tool.tier} />
-                            </td>
-                            {MATRIX_DISPLAY_ROLES.map((role) => (
-                              <td key={role} className="py-2.5 text-center">
-                                <PolicyToggle
-                                  label={`${tool.label} for ${ROLE_LABELS[role] ?? role}`}
-                                  enabled={
-                                    policyMap[tool.name]?.[role] ?? false
-                                  }
-                                  saving={saving}
-                                  canEdit={canEdit}
-                                  onToggle={() =>
-                                    togglePolicy(tool.name, role)
-                                  }
+                              {isExpanded ? (
+                                <ChevronDown
+                                  className="h-3.5 w-3.5"
+                                  style={{ color: meta.color }}
                                 />
+                              ) : (
+                                <ChevronRight
+                                  className="h-3.5 w-3.5"
+                                  style={{ color: meta.color }}
+                                />
+                              )}
+                              <span
+                                className="text-xs font-semibold uppercase tracking-wider"
+                                style={{ color: meta.color }}
+                              >
+                                {meta.label}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                ({tools.length} tool{tools.length > 1 ? "s" : ""})
+                              </span>
+                            </button>
+                          </td>
+                        </tr>
+
+                        {/* Tool rows */}
+                        {isExpanded &&
+                          tools.map((tool) => (
+                            <tr
+                              key={tool.name}
+                              className="group/row border-t border-white/5 transition-colors hover:bg-white/[0.02]"
+                            >
+                              <td className="py-2.5 pr-3">
+                                <div>
+                                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                                    {tool.label}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {tool.description}
+                                  </p>
+                                </div>
                               </td>
-                            ))}
-                          </tr>
-                        ))}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                              <td className="py-2.5">
+                                <TierBadge tier={tool.tier} />
+                              </td>
+                              {MATRIX_DISPLAY_ROLES.map((role) => (
+                                <td key={role} className="py-2.5 text-center">
+                                  <PolicyToggle
+                                    label={`${tool.label} for ${ROLE_LABELS[role] ?? role}`}
+                                    enabled={
+                                      policyMap[tool.name]?.[role] ?? false
+                                    }
+                                    saving={saving}
+                                    canEdit={canEdit}
+                                    onToggle={() =>
+                                      togglePolicy(tool.name, role)
+                                    }
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           </div>
         )}
       </div>
@@ -525,7 +528,7 @@ export function SearchToolDashboard() {
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/50 bg-white/50 px-2.5 dark:border-slate-800/50 dark:bg-black/40 ">
-              <Search className="h-3.5 w-3.5 text-slate-400" />
+              <Search className="h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -574,12 +577,12 @@ export function SearchToolDashboard() {
         ) : filteredEntries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-              <Eye className="h-5 w-5 text-slate-400" />
+              <Eye className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            <p className="text-sm font-medium text-muted-foreground">
               No search activity yet
             </p>
-            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Searches will appear here in real-time as users query the system.
             </p>
           </div>

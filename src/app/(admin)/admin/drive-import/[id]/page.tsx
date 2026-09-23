@@ -27,6 +27,7 @@ import {
 import { wordCount } from "@/lib/office/publish";
 import { type OrgUserMini, type TeamSpaceRow, userLabel } from "@/lib/office/teams";
 import { createClient } from "@/lib/supabase/client";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export default function AdminDriveImportBatchPage() {
   const supabase = createClient();
@@ -360,84 +361,86 @@ export default function AdminDriveImportBatchPage() {
               </Button>
             </div>
 
-            <div className="overflow-x-auto rounded-[var(--radius)] border border-border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-xs text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium">File</th>
-                    <th className="px-3 py-2 text-left font-medium">Destination</th>
-                    <th className="px-3 py-2 text-left font-medium">Owner / team</th>
-                    <th className="px-3 py-2 text-left font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {files.map((f) => (
-                    <tr key={f.id} className="border-t border-border align-top">
-                      <td className="px-3 py-2">
-                        <span className="block text-foreground">{f.source_name}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {f.source_path ? `${f.source_path} · ` : ""}
-                          {f.mime_type ?? "unknown type"}
-                        </span>
-                        {f.error ? <span className="block text-xs text-danger">{f.error}</span> : null}
-                      </td>
-                      <td className="px-3 py-2">
-                        <select
-                          value={f.destination}
-                          disabled={f.status === "imported"}
-                          onChange={(e) => void updateFile(f.id, { destination: e.target.value as ImportDestination })}
-                          aria-label={`Destination for ${f.source_name}`}
-                          className={inputCls}
-                        >
-                          {IMPORT_DESTINATIONS.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.label}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2">
-                        {f.destination === "private_page" ? (
-                          <select
-                            value={f.owner_user_id ?? ""}
-                            disabled={f.status === "imported"}
-                            onChange={(e) => void updateFile(f.id, { owner_user_id: e.target.value || null })}
-                            aria-label={`Owner for ${f.source_name}`}
-                            className={inputCls}
-                          >
-                            <option value="">Select employee…</option>
-                            {orgUsers.map((u) => (
-                              <option key={u.id} value={u.id}>
-                                {userLabel(u.id, orgUsers)}
-                              </option>
-                            ))}
-                          </select>
-                        ) : f.destination === "team_page" ? (
-                          <select
-                            value={f.team_space_id ?? ""}
-                            disabled={f.status === "imported"}
-                            onChange={(e) => void updateFile(f.id, { team_space_id: e.target.value || null })}
-                            aria-label={`Team space for ${f.source_name}`}
-                            className={inputCls}
-                          >
-                            <option value="">Select team…</option>
-                            {spaces.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {s.name}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">{destinationLabel(f.destination)}</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
-                        <StatusPill tone={importStatusTone(f.status)}>{f.status}</StatusPill>
-                      </td>
+            <div className="rounded-[var(--radius)] border border-border">
+              <HorizontalScroll label="Drive import items">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">File</th>
+                      <th className="px-3 py-2 text-left font-medium">Destination</th>
+                      <th className="px-3 py-2 text-left font-medium">Owner / team</th>
+                      <th className="px-3 py-2 text-left font-medium">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {files.map((f) => (
+                      <tr key={f.id} className="border-t border-border align-top">
+                        <td className="px-3 py-2">
+                          <span className="block text-foreground">{f.source_name}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {f.source_path ? `${f.source_path} · ` : ""}
+                            {f.mime_type ?? "unknown type"}
+                          </span>
+                          {f.error ? <span className="block text-xs text-danger">{f.error}</span> : null}
+                        </td>
+                        <td className="px-3 py-2">
+                          <select
+                            value={f.destination}
+                            disabled={f.status === "imported"}
+                            onChange={(e) => void updateFile(f.id, { destination: e.target.value as ImportDestination })}
+                            aria-label={`Destination for ${f.source_name}`}
+                            className={inputCls}
+                          >
+                            {IMPORT_DESTINATIONS.map((d) => (
+                              <option key={d.id} value={d.id}>
+                                {d.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-3 py-2">
+                          {f.destination === "private_page" ? (
+                            <select
+                              value={f.owner_user_id ?? ""}
+                              disabled={f.status === "imported"}
+                              onChange={(e) => void updateFile(f.id, { owner_user_id: e.target.value || null })}
+                              aria-label={`Owner for ${f.source_name}`}
+                              className={inputCls}
+                            >
+                              <option value="">Select employee…</option>
+                              {orgUsers.map((u) => (
+                                <option key={u.id} value={u.id}>
+                                  {userLabel(u.id, orgUsers)}
+                                </option>
+                              ))}
+                            </select>
+                          ) : f.destination === "team_page" ? (
+                            <select
+                              value={f.team_space_id ?? ""}
+                              disabled={f.status === "imported"}
+                              onChange={(e) => void updateFile(f.id, { team_space_id: e.target.value || null })}
+                              aria-label={`Team space for ${f.source_name}`}
+                              className={inputCls}
+                            >
+                              <option value="">Select team…</option>
+                              {spaces.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{destinationLabel(f.destination)}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <StatusPill tone={importStatusTone(f.status)}>{f.status}</StatusPill>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </HorizontalScroll>
             </div>
           </>
         ) : null}

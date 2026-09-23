@@ -13,6 +13,7 @@ import { logError } from "@/lib/observability/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -253,17 +254,23 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ error: "Failed to fetch audit log" }, { status: 500 });
     }
 
+    const total = headCountOrNull({ count });
+    if (total === null) {
+      // A page with no total cannot say how many pages exist; never report 0.
+      return NextResponse.json({ error: "Failed to fetch audit log" }, { status: 500 });
+    }
+
     const rows = (logs ?? []) as AuditDbRow[];
     const enriched = await enrichAuditRows(admin, rows);
 
     return NextResponse.json({
       data: enriched,
       pagination: {
-        total: count ?? 0,
+        total,
         page,
         per_page,
-        total_pages: Math.ceil((count ?? 0) / per_page),
-        has_next: offset + per_page < (count ?? 0),
+        total_pages: Math.ceil(total / per_page),
+        has_next: offset + per_page < total,
       },
     });
   } catch (err) {

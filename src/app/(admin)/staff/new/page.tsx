@@ -172,7 +172,7 @@ export default function AdminNewStaffPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <UserPlus className="h-6 w-6 text-slate-500" />
+        <UserPlus className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Add staff</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -181,7 +181,7 @@ export default function AdminNewStaffPage() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-muted-foreground">
         Only an owner, org admin, or facility admin can add staff. Med-techs can view the roster but cannot
         add to it.
       </p>

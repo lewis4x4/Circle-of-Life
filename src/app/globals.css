@@ -457,6 +457,13 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* A link inside running text is underlined, not told apart by colour alone
+     (WCAG 1.4.1, axe link-in-text-block — COL-705). Zero specificity, so a
+     utility such as no-underline on a deliberate exception still wins. */
+  :where(p, dd, blockquote) :where(a) {
+    text-decoration-line: underline;
+    text-underline-offset: 0.2em;
+  }
   html {
     font-feature-settings: "cv11", "ss01", "ss03", "cv02";
     font-size: 14px;

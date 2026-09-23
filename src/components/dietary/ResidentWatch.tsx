@@ -16,7 +16,7 @@ export function ResidentWatch({
     <div className="w-[400px] shrink-0 border-l border-stone-800 bg-stone-950/40 flex flex-col overflow-hidden">
       <div className="px-5 py-3 border-b border-stone-800">
         <h2 className="text-sm font-semibold text-white">Resident Watch</h2>
-        <p className="text-xs text-stone-500">Latest loaded clinical and caregiver records</p>
+        <p className="text-xs text-muted-foreground">Latest loaded clinical and caregiver records</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -27,7 +27,7 @@ export function ResidentWatch({
             <div className="flex items-center gap-2 mb-2">
               <MessageSquare className="w-4 h-4 text-amber-400" />
               <h3 className="text-xs font-semibold text-amber-300 uppercase tracking-wider">Fortify Today</h3>
-              <span className="text-[10px] text-stone-500">{fortification.length}</span>
+              <span className="text-[10px] text-muted-foreground">{fortification.length}</span>
             </div>
             <div className="space-y-2">
               {fortification.map((f) => (
@@ -36,7 +36,7 @@ export function ResidentWatch({
                     <div>
                       <div className="text-sm font-semibold text-white">
                         {f.resident_name}
-                        <span className="text-stone-500 font-mono text-xs ml-1">· {f.room}</span>
+                        <span className="text-muted-foreground font-mono text-xs ml-1">· {f.room}</span>
                       </div>
                       <div className="text-[11px] text-rose-300 flex items-center gap-1 mt-0.5">
                         <TrendingDown className="w-3 h-3" /> {f.trigger}
@@ -44,8 +44,8 @@ export function ResidentWatch({
                     </div>
                     <span className="text-xs font-mono font-semibold text-amber-300">{f.cal} kcal</span>
                   </div>
-                  <div className="text-xs text-stone-300 mt-1.5">{f.add}</div>
-                  <p className="mt-2 text-xs text-stone-400">Ask the nurse to review this recommendation before changing the diet order.</p>
+                  <div className="text-xs text-muted-foreground mt-1.5">{f.add}</div>
+                  <p className="mt-2 text-xs text-muted-foreground">Ask the nurse to review this recommendation before changing the diet order.</p>
                 </div>
               ))}
             </div>
@@ -58,7 +58,7 @@ export function ResidentWatch({
             <div className="flex items-center gap-2 mb-2">
               <X className="w-4 h-4 text-rose-400" />
               <h3 className="text-xs font-semibold text-rose-300 uppercase tracking-wider">NPO / Hospital</h3>
-              <span className="text-[10px] text-stone-500">{npo.length}</span>
+              <span className="text-[10px] text-muted-foreground">{npo.length}</span>
             </div>
             <div className="space-y-1.5">
               {npo.map((n) => (
@@ -66,11 +66,11 @@ export function ResidentWatch({
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-semibold text-white">
                       {n.name}
-                      <span className="text-stone-500 font-mono text-xs ml-1">· {n.room}</span>
+                      <span className="text-muted-foreground font-mono text-xs ml-1">· {n.room}</span>
                     </div>
                     <span className="text-[10px] font-mono text-rose-300">until {n.until}</span>
                   </div>
-                  <div className="text-[11px] text-stone-400 mt-0.5">{n.reason}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{n.reason}</div>
                 </div>
               ))}
             </div>
@@ -83,7 +83,7 @@ export function ResidentWatch({
             <div className="flex items-center gap-2 mb-2">
               <Bell className="w-4 h-4 text-sky-400" />
               <h3 className="text-xs font-semibold text-sky-300 uppercase tracking-wider">Recent Refusals</h3>
-              <span className="text-[10px] text-stone-500">{refusals.length}</span>
+              <span className="text-[10px] text-muted-foreground">{refusals.length}</span>
             </div>
             <div className="space-y-1.5">
               {refusals.map((r, i) => (
@@ -91,11 +91,11 @@ export function ResidentWatch({
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-semibold text-white">
                       {r.name}
-                      <span className="text-stone-500 font-mono text-xs ml-1">· {r.room}</span>
+                      <span className="text-muted-foreground font-mono text-xs ml-1">· {r.room}</span>
                     </div>
-                    <span className="text-[10px] font-mono text-stone-500">{r.at}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground">{r.at}</span>
                   </div>
-                  <div className="text-[11px] text-stone-400 mt-0.5">
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
                     Refused: <span className="text-stone-200">{r.item}</span>
                   </div>
                   <div className="text-[11px] text-emerald-300 mt-0.5 flex items-center gap-1">

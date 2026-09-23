@@ -175,7 +175,7 @@ export default function CaregiverTasksPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading queue…
       </div>
@@ -231,7 +231,7 @@ export default function CaregiverTasksPage() {
 
       {sortedResidents.length === 0 ? (
         <div className="p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center">
-          <p className="text-sm font-mono text-zinc-400">No active residents in this facility scope. Add census in the admin console.</p>
+          <p className="text-sm font-mono text-muted-foreground">No active residents in this facility scope. Add census in the admin console.</p>
         </div>
       ) : (
         <MotionList className="space-y-3">
@@ -271,7 +271,7 @@ function MetricPill({
 
   return (
     <div className={`rounded-xl border p-4  ${toneClass}`}>
-      <p className="text-[9px] uppercase tracking-wider font-mono text-zinc-400">{label}</p>
+      <p className="text-[9px] uppercase tracking-wider font-mono text-muted-foreground">{label}</p>
       <p className="mt-1.5 text-2xl font-semibold text-white">{value}</p>
     </div>
   );

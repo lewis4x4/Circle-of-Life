@@ -74,7 +74,7 @@ describe("Medicaid payer card lines (COL-667)", () => {
   it("explains why a Homewood Medicaid draft is less than the resident's terms", () => {
     // Terms $2,437.00 = Medicaid $1,600.00 + resident share $837.00; the draft is $1,600.00 (COL-678).
     expect(residentBillingMedicaidSplitLine(160_000, 83_700)).toBe(
-      "Medicaid pays $1,600.00 · resident share $837.00 a month. Monthly invoices bill the Medicaid portion only; the resident share is not on any Haven invoice yet.",
+      "Medicaid pays $1,600.00 · resident share $837.00 a month. From October 2026 the resident share is billed on its own invoice to the resident or responsible party; earlier invoices carry the Medicaid portion only.",
     );
     expect(residentBillingMedicaidSplitLine(160_000, 0)).toBe("Medicaid pays $1,600.00 · resident share $0.00 a month.");
     expect(residentBillingMedicaidSplitLine(null, null)).toBeNull();

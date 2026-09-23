@@ -25,7 +25,7 @@ import { formatSchedulePublishedAt } from "@/lib/schedules/schedules-display-cop
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { cn } from "@/lib/utils";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
@@ -191,14 +191,12 @@ export function AdminSchedulesPageClient({
       <></>
       
       <div className="relative z-10 space-y-6">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight">Schedule</h1>
-            <p className="text-sm text-muted-foreground">Plan the week, review each person’s shifts, then publish to My schedule.</p>
-            {!error && !isLoading && <p className="text-xs text-muted-foreground">{draftCount} draft {draftCount === 1 ? "week" : "weeks"}</p>}
-          </div>
-          <Link href="/admin/schedules/new" className={cn(buttonVariants())}>Create week</Link>
-        </header>
+        <PageHeader
+          title="Schedule"
+          subtitle="Plan the week, review each person’s shifts, then publish to My schedule."
+          actions={<Link href="/admin/schedules/new" className={buttonVariants()}>Create week</Link>}
+        />
+        {!error && !isLoading && <p className="text-xs text-muted-foreground">{draftCount} draft {draftCount === 1 ? "week" : "weeks"}</p>}
 
       <AdminFilterBar
         searchValue={search}
@@ -235,7 +233,7 @@ export function AdminSchedulesPageClient({
           <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedule weeks</h3>
-              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-mono tracking-wide text-muted-foreground">
                 Monday-start weeks; publish when ready for floor use.
               </p>
             </div>
@@ -262,19 +260,19 @@ export function AdminSchedulesPageClient({
                         
                         <div className="flex items-center gap-4">
                            <div className="flex flex-col gap-1">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Status</span>
                              <div><ScheduleStatusBadge status={row.status} /></div>
                            </div>
                            
                            <div className="flex flex-col gap-1">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Published</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Published</span>
                              <span className="text-xs text-slate-600 dark:text-slate-400">{formatSchedulePublishedAt(row.publishedAt)}</span>
                            </div>
 
                            {row.notes && (
                            <div className="hidden md:flex flex-col gap-1 ml-4 border-l pl-4 border-slate-300 dark:border-slate-700">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Notes</span>
-                             <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] lg:max-w-md truncate">{row.notes.trim()}</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Notes</span>
+                             <span className="text-xs text-muted-foreground max-w-[200px] lg:max-w-md truncate">{row.notes.trim()}</span>
                            </div>
                            )}
                         </div>

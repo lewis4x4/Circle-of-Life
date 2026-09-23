@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { headCountOrNull } from "@/lib/metrics/require-head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { loadAuthorizedReferralLeads } from "@/lib/referrals/referral-authority";
@@ -76,7 +77,8 @@ export type ReferralsHubBootstrap = {
   outreachRows: ReferralsOutreachRow[];
   activeAdmissionCaseByLeadId: Record<string, ReferralsActiveAdmissionCase>;
   handoffRollup: ReferralsHandoffRollup;
-  hl7Counts: { pending: number; failed: number };
+  /** Null when that count could not be read (COL-649) — never shown as 0. */
+  hl7Counts: { pending: number | null; failed: number | null };
   leadListTruncated: boolean;
 };
 
@@ -87,7 +89,7 @@ export function emptyReferralsHubBootstrap(): ReferralsHubBootstrap {
     outreachRows: [],
     activeAdmissionCaseByLeadId: {},
     handoffRollup: { blocked: 0, ready: 0, onboarding: 0 },
-    hl7Counts: { pending: 0, failed: 0 },
+    hl7Counts: { pending: null, failed: null },
     leadListTruncated: false,
   };
 }
@@ -240,8 +242,8 @@ export async function loadReferralsHubBootstrap(
       onboarding: handoffOnboarding,
     },
     hl7Counts: {
-      pending: hl7Pending.count ?? 0,
-      failed: hl7Failed.count ?? 0,
+      pending: headCountOrNull(hl7Pending),
+      failed: headCountOrNull(hl7Failed),
     },
     leadListTruncated,
   };

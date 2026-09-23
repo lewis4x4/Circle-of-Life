@@ -2,15 +2,19 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { BackLink } from "../BackLink";
+
 export type PageHeaderProps = {
   title: string;
   subtitle?: ReactNode;
   actions?: ReactNode;
+  /** Rendered above the title with the shared {@link BackLink}. */
+  backLink?: { label: string; href: string };
   className?: string;
 };
 
-/** Page masthead — h1 + optional subtitle + right actions. No Card wrapper (Quiet Operator). */
-export function PageHeader({ title, subtitle, actions, className }: PageHeaderProps) {
+/** Page masthead — optional back link, h1, optional subtitle, right actions. No Card wrapper (Quiet Operator). */
+export function PageHeader({ title, subtitle, actions, backLink, className }: PageHeaderProps) {
   return (
     <header
       className={cn(
@@ -19,6 +23,7 @@ export function PageHeader({ title, subtitle, actions, className }: PageHeaderPr
       )}
     >
       <div className="min-w-0 space-y-3">
+        {backLink ? <BackLink label={backLink.label} href={backLink.href} /> : null}
         <h1 className="text-4xl font-semibold tracking-tight text-foreground md:text-5xl md:leading-[1.1]">
           {title}
         </h1>

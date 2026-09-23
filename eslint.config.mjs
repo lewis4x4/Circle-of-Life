@@ -7,6 +7,8 @@ import requireKpiInfo from "./eslint-rules/require-kpi-info.mjs";
 import noDirectPrimitiveImport from "./eslint-rules/no-direct-primitive-import.mjs";
 import primitiveEnforcementRoute from "./eslint-rules/primitive-enforcement-route.mjs";
 import requireTimeZone from "./eslint-rules/require-time-zone.mjs";
+import noAdhocBackLink from "./eslint-rules/no-adhoc-back-link.mjs";
+import noMonoProse from "./eslint-rules/no-mono-prose.mjs";
 import iconButtonNeedsName from "./eslint-rules/icon-button-needs-name.mjs";
 
 const uiV2Plugin = {
@@ -27,6 +29,18 @@ const quietOperatorPrimitivesPlugin = {
 const havenTimePlugin = {
   rules: {
     "require-time-zone": requireTimeZone,
+  },
+};
+
+const havenBackLinkPlugin = {
+  rules: {
+    "no-adhoc-back-link": noAdhocBackLink,
+  },
+};
+
+const havenUiPlugin = {
+  rules: {
+    "no-mono-prose": noMonoProse,
   },
 };
 
@@ -142,6 +156,31 @@ const eslintConfig = defineConfig([
     },
     rules: {
       "haven-time/require-time-zone": "error",
+    },
+  },
+  {
+    // COL-656: one back-link style. Pre-existing ad-hoc back links are
+    // baselined in `eslint-suppressions.json`; convert them to BackLink and prune.
+    files: ["src/**/*.{tsx,jsx}"],
+    ignores: ["src/**/*.test.tsx", "src/**/*.spec.tsx", "src/design-system/components/BackLink/**"],
+    plugins: {
+      "haven-back-link": havenBackLinkPlugin,
+    },
+    rules: {
+      "haven-back-link/no-adhoc-back-link": "error",
+    },
+  },
+  {
+    // COL-656: monospace is for code and identifiers, not a house style. Pre-
+    // existing uses are baselined in `eslint-suppressions.json`; convert them
+    // (KPITile, PageHeader, IdText, tabular-nums) and prune.
+    files: ["src/**/*.{ts,tsx,js,jsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+    plugins: {
+      "haven-ui": havenUiPlugin,
+    },
+    rules: {
+      "haven-ui/no-mono-prose": "error",
     },
   },
   {

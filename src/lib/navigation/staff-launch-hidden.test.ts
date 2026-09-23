@@ -32,7 +32,7 @@ describe("staff-launch hidden nav", () => {
     ).toEqual(["vendors"]);
   });
 
-  it("removes the hold-offs from owner menus and leaves Vendors & AP on Business", () => {
+  it("removes the hold-offs from menus when no role is given and leaves Vendors & AP on Business", () => {
     const items = pillarsForRole(getRoleDashboardConfig("owner")).flatMap((pillar) => pillar.items);
     const keys = items.map((item) => item.key);
 
@@ -46,6 +46,24 @@ describe("staff-launch hidden nav", () => {
     expect(keys).toContain("vendors");
     expect(keys).toContain("transportation");
     expect(keys).toContain("referrals");
+  });
+
+  it.each(["owner", "org_admin", "facility_admin", "manager"])(
+    "shows Finance and Insurance to %s — hold lifted for owners and admins (Brian, 2026-09-23)",
+    (role) => {
+      const keys = pillarsForRole(getRoleDashboardConfig(role), role).flatMap((pillar) => pillar.items).map((item) => item.key);
+      expect(keys).toContain("finance");
+      expect(keys).toContain("insurance");
+      // The rest of the hold stands.
+      expect(keys).not.toContain("discharge");
+      expect(keys).not.toContain("medications");
+    },
+  );
+
+  it("keeps Finance and Insurance held for roles the ruling does not name", () => {
+    expect(isStaffLaunchHiddenKey("finance", undefined, "admin_assistant")).toBe(true);
+    expect(isStaffLaunchHiddenKey("insurance", ["facilities", "vendors", "insurance"], "maintenance_role")).toBe(true);
+    expect(isStaffLaunchHiddenKey("finance", undefined, "owner")).toBe(false);
   });
 
   it("still gives brokers Insurance when that is their only allowlisted tool", () => {

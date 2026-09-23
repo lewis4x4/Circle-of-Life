@@ -15,6 +15,7 @@ import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canOperateFacilityVendorWorkflow } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type PayRow = Pick<
   Database["public"]["Tables"]["vendor_payments"]["Row"],
@@ -247,32 +248,34 @@ export default function VendorPaymentsPage() {
           <CardTitle className="text-base">Recent payments</CardTitle>
           <CardDescription>{loading ? "Loading…" : `${rows.length} shown`}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="pb-2 pr-4 font-medium">Date</th>
-                <th className="pb-2 pr-4 font-medium">Amount</th>
-                <th className="pb-2 font-medium">Method</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-2 pr-4 tabular-nums">{r.payment_date}</td>
-                  <td className="py-2 pr-4">{formatUsdFromCents(r.amount_cents)}</td>
-                  <td className="py-2">{r.payment_method}</td>
+        <CardContent>
+          <HorizontalScroll label="Vendor payments">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="pb-2 pr-4 font-medium">Date</th>
+                  <th className="pb-2 pr-4 font-medium">Amount</th>
+                  <th className="pb-2 font-medium">Method</th>
                 </tr>
-              ))}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="py-6 text-slate-500">
-                    No payments yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
+                    <td className="py-2 pr-4 tabular-nums">{r.payment_date}</td>
+                    <td className="py-2 pr-4">{formatUsdFromCents(r.amount_cents)}</td>
+                    <td className="py-2">{r.payment_method}</td>
+                  </tr>
+                ))}
+                {!loading && rows.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-muted-foreground">
+                      No payments yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </CardContent>
       </Card>
     </div>

@@ -171,7 +171,7 @@ export default function CaregiverClockPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading time clock…
       </div>
@@ -198,7 +198,7 @@ export default function CaregiverClockPage() {
         <div className="w-full space-y-6">
           {staff ? (
             <div className="py-2">
-              <p className="text-[10px] uppercase tracking-wider font-mono text-zinc-500 font-bold mb-1">Authenticated As</p>
+              <p className="text-[10px] uppercase tracking-wider font-mono text-muted-foreground font-bold mb-1">Authenticated As</p>
               <p className="text-xl text-white">
                 {staff.first_name} {staff.last_name}
               </p>
@@ -214,7 +214,7 @@ export default function CaregiverClockPage() {
                   Clocked in at {new Date(openPunch.clock_in).toLocaleTimeString()}
                 </div>
               ) : (
-                <div className="rounded-full border border-white/10 bg-black/40 px-5 py-3 text-[11px] uppercase tracking-wider font-mono text-zinc-400 font-bold w-fit mx-auto shadow-inner">
+                <div className="rounded-full border border-white/10 bg-black/40 px-5 py-3 text-[11px] uppercase tracking-wider font-mono text-muted-foreground font-bold w-fit mx-auto shadow-inner">
                   You are not clocked in
                 </div>
               )}
@@ -253,7 +253,7 @@ export default function CaregiverClockPage() {
 
           <Link
             href={homeHref}
-            className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-wider font-mono font-bold text-zinc-300 hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner mt-4"
+            className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-[11px] uppercase tracking-wider font-mono font-bold text-muted-foreground hover:bg-white/[0.08] hover:text-white transition-colors tap-responsive shadow-inner mt-4"
           >
             Back to shift home
           </Link>

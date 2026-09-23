@@ -45,7 +45,7 @@ export function KnowledgeAdminPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-sm"
-                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300"
+                  : "text-muted-foreground hover:text-slate-700 dark:hover:text-zinc-300"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -77,7 +77,7 @@ export function KnowledgeAdminPage() {
             Uploaded documents may finish indexing in the background. In this table, <span className="font-semibold">Pending Review</span> means indexing finished and the document is ready for human review, while <span className="font-semibold">Ingest Failed</span> means the document needs a <span className="font-semibold">Re-index</span> retry after the source issue is fixed.
           </div>
           {docsLoading ? (
-            <div className="text-sm text-slate-400 py-8 text-center">Loading documents…</div>
+            <div className="text-sm text-muted-foreground py-8 text-center">Loading documents…</div>
           ) : docsError ? (
             <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-4 text-sm text-red-800 dark:text-red-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>

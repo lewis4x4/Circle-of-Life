@@ -130,7 +130,7 @@ export default function CaregiverFollowupsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading follow-ups…
       </div>
@@ -187,7 +187,7 @@ export default function CaregiverFollowupsPage() {
 
       {rows.length === 0 ? (
         <div className="p-8 rounded-lg border border-white/5 bg-slate-900/40 text-center">
-          <p className="text-sm font-mono text-zinc-400">No open follow-ups right now.</p>
+          <p className="text-sm font-mono text-muted-foreground">No open follow-ups right now.</p>
         </div>
       ) : (
         <MotionList className="space-y-4">
@@ -212,7 +212,7 @@ export default function CaregiverFollowupsPage() {
                     </div>
                   </div>
                   
-                  <p className="text-[11px] uppercase tracking-wider font-mono font-bold text-zinc-400">
+                  <p className="text-[11px] uppercase tracking-wider font-mono font-bold text-muted-foreground">
                     <span className="text-zinc-200">{r.name}</span> <span className="mx-2 opacity-50">·</span> Rm {r.roomLabel}
                   </p>
                   
@@ -227,7 +227,7 @@ export default function CaregiverFollowupsPage() {
                 <div className="md:border-l border-white/5 md:pl-6 pt-4 md:pt-0 mt-2 md:mt-0 relative top-1 flex justify-end">
                   <Link
                     href={`/caregiver/resident/${r.residentId}/condition-change`}
-                    className="w-12 h-12 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors tap-responsive shadow-inner shrink-0"
+                    className="w-12 h-12 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-muted-foreground hover:text-white hover:bg-white/10 transition-colors tap-responsive shadow-inner shrink-0"
                     aria-label={`Open ${r.name}`}
                   >
                     <ChevronRight className="h-5 w-5" />

@@ -24,6 +24,7 @@ import {
 } from "@/lib/facilities/staffing-tab-display-copy";
 import type { FacilityDetailRow } from "@/types/facility";
 import type { FacilityStaffKpiPayload } from "@/hooks/useFacilityStaffKpis";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 interface StaffingTabProps {
   facilityId: string;
@@ -62,36 +63,38 @@ function CoveragePreviewGrid({ configured }: { configured: boolean }) {
           Ratio rules are configured. Coverage cells stay neutral until schedule coverage data is available for this view.
         </p>
       )}
-      <div className="overflow-x-auto rounded-[8px] border border-border">
-        <table className="w-full min-w-[520px] border-collapse text-[12px]">
-          <thead>
-            <tr className="border-b border-border bg-muted/20">
-              <th className="px-2 py-2 text-left font-medium text-muted-foreground">Shift</th>
-              {days.map((d) => (
-                <th key={d} className="px-1 py-2 text-center font-medium text-muted-foreground">
-                  {d}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {shifts.map((shift) => (
-              <tr key={shift} className="border-b border-border last:border-b-0">
-                <td className="px-2 py-2 font-medium text-foreground">{shift}</td>
+      <div className="rounded-[8px] border border-border">
+        <HorizontalScroll label="Facility staffing">
+          <table className="w-full min-w-[520px] border-collapse text-[12px]">
+            <thead>
+              <tr className="border-b border-border bg-muted/20">
+                <th className="px-2 py-2 text-left font-medium text-muted-foreground">Shift</th>
                 {days.map((d) => (
-                  <td key={`${shift}-${d}`} className="p-1">
-                    <div
-                      className={`h-10 rounded-[6px] border border-border ${
-                        configured ? "bg-muted/40" : "bg-muted/20 opacity-70"
-                      }`}
-                      title={configured ? "Coverage pending schedule data" : "Awaiting ratio rule set"}
-                    />
-                  </td>
+                  <th key={d} className="px-1 py-2 text-center font-medium text-muted-foreground">
+                    {d}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {shifts.map((shift) => (
+                <tr key={shift} className="border-b border-border last:border-b-0">
+                  <td className="px-2 py-2 font-medium text-foreground">{shift}</td>
+                  {days.map((d) => (
+                    <td key={`${shift}-${d}`} className="p-1">
+                      <div
+                        className={`h-10 rounded-[6px] border border-border ${
+                          configured ? "bg-muted/40" : "bg-muted/20 opacity-70"
+                        }`}
+                        title={configured ? "Coverage pending schedule data" : "Awaiting ratio rule set"}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </HorizontalScroll>
       </div>
       {configured ? (
         <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
