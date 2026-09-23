@@ -308,7 +308,7 @@ export default function AdminInvoiceGeneratePage() {
                 </TableHeader>
                 <TableBody>
                   {preview.map((line) => (
-                    <TableRow key={line.residentId}>
+                    <TableRow key={`${line.residentId}-${line.invoiceShare}`}>
                       <TableCell className="font-medium">
                         {line.residentName}
                         {line.prorated && (
@@ -352,7 +352,9 @@ export default function AdminInvoiceGeneratePage() {
 
               <div className="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
                 <div className="text-sm text-slate-600 dark:text-slate-400">
-                  {preview.length} resident{preview.length !== 1 ? "s" : ""} ·{" "}
+                  {preview.length} invoice{preview.length !== 1 ? "s" : ""} for{" "}
+                  {new Set(preview.map((line) => line.residentId)).size} resident
+                  {new Set(preview.map((line) => line.residentId)).size !== 1 ? "s" : ""} ·{" "}
                   {formatGeneratePreviewBillingPeriodRange(meta.periodStart, meta.periodEnd)}
                   <span className="ml-2 block text-xs sm:inline">
                     {days} days in {billingLabel} · Standard{" "}

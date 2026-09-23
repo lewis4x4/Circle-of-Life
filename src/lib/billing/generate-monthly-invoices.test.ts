@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildMonthlyInvoicePreview,
   persistMonthlyInvoicesFromPreview,
+  medicaidResidentShareInvoiced,
   prorationFactorForResident,
   type PreviewLine,
 } from "./generate-monthly-invoices";
@@ -363,7 +364,7 @@ describe("buildMonthlyInvoicePreview", () => {
     });
 
     expect(result.preview).toHaveLength(0);
-    expect(result.error).toContain("Skipped 1 Medicaid resident");
+    expect(result.error).toContain("Skipped the Medicaid invoice for 1 Medicaid resident");
     expect(result.error).toContain("Unlinked, Nia");
   });
 
@@ -544,5 +545,97 @@ describe("persistMonthlyInvoicesFromPreview", () => {
     await expect(persistMonthlyInvoicesFromPreview(supabase, baseParams)).rejects.toThrow(
       "The latest invoice outcome is unknown",
     );
+  });
+});
+
+describe("Medicaid resident share invoice (COL-678)", () => {
+  // Homewood: terms $2,437.00 = Medicaid $1,600.00 + resident share $837.00.
+  const org = "org-1";
+  const rules = [
+    { organization_id: org, facility_id: null, effective_from: "2026-01-01", created_at: "2026-09-23T00:00:00Z", medicaid_resident_share_invoice: false },
+    { organization_id: org, facility_id: null, effective_from: "2026-10-01", created_at: "2026-09-23T00:00:01Z", medicaid_resident_share_invoice: true },
+  ];
+  const resident = (id: string, last: string) => ({
+    id, first_name: "Test", last_name: last, acuity_level: "level_1", status: "active",
+    admission_date: "2025-01-01", discharge_date: null, facility_id: "facility-1", organization_id: org,
+    monthly_base_rate: null, monthly_care_surcharge: null, monthly_total_rate: 243700, rate_effective_date: null,
+  });
+  const payer = (residentId: string, rate: number | null, share: number | null) => ({
+    id: `payer-${residentId}`, effective_date: "2020-01-01", end_date: null, resident_id: residentId,
+    payer_type: "medicaid_oss", payer_name: "UHC", medicaid_rate: rate, medicaid_patient_responsibility: share,
+    facility_medicaid_provider_id: null,
+  });
+
+  function client(invoices: { resident_id: string; payer_type: string | null }[] = [], ruleRows = rules) {
+    const queryResults = new Map<string, MockQueryResult>([
+      ["residents", { data: [resident("r-split", "Split"), resident("r-noRate", "NoRate")], error: null }],
+      ["rate_schedules", { data: [{ id: "rate-1", base_rate_private: 555000, base_rate_semi_private: 440000, care_surcharge_level_1: 0, care_surcharge_level_2: 0, care_surcharge_level_3: 0 }], error: null }],
+      ["resident_payers", { data: [payer("r-split", 160000, 83700), payer("r-noRate", null, 251000)], error: null }],
+      ["facility_medicaid_providers", { data: [], error: null }],
+      ["resident_rate_agreements", { data: [], error: null }],
+      ["invoices", { data: invoices, error: null }],
+      ["billing_rate_rules", { data: ruleRows, error: null }],
+    ]);
+    return { from: vi.fn((table: string) => new PreviewQueryMock(queryResults.get(table) ?? { data: [], error: null })) } as never;
+  }
+
+  it("resolves the rule by the period it bills: off for September, on from October", () => {
+    expect(medicaidResidentShareInvoiced(rules, "facility-1", "2026-09-01")).toBe(false);
+    expect(medicaidResidentShareInvoiced(rules, "facility-1", "2026-10-01")).toBe(true);
+    expect(medicaidResidentShareInvoiced([], "facility-1", "2026-10-01")).toBe(false);
+    expect(
+      medicaidResidentShareInvoiced(
+        [...rules, { facility_id: "facility-1", effective_from: "2026-10-01", created_at: "2026-09-24T00:00:00Z", medicaid_resident_share_invoice: false }],
+        "facility-1",
+        "2026-10-01",
+      ),
+    ).toBe(false);
+  });
+
+  it("drafts the Medicaid invoice and a separate resident-share invoice for October", async () => {
+    const result = await buildMonthlyInvoicePreview(client(), { facilityId: "facility-1", billingYear: 2026, billingMonth: 10 });
+    const lines = result.preview.map((line) => [line.residentId, line.invoiceShare, line.payerType, line.total]);
+    expect(lines).toEqual([
+      ["r-split", "primary", "medicaid_oss", 160000],
+      ["r-split", "resident_share", "private_pay", 83700],
+      // No Medicaid rate: the Medicaid half is skipped with a warning, the share is still billed.
+      ["r-noRate", "resident_share", "private_pay", 251000],
+    ]);
+    expect(result.error).toContain("Skipped the Medicaid invoice for 1 Medicaid resident");
+    expect(result.error).toContain("Their own share is still invoiced");
+  });
+
+  it("does not back-fill: September keeps the Medicaid-only invoice", async () => {
+    const result = await buildMonthlyInvoicePreview(client(), { facilityId: "facility-1", billingYear: 2026, billingMonth: 9 });
+    expect(result.preview.map((line) => [line.residentId, line.invoiceShare])).toEqual([["r-split", "primary"]]);
+  });
+
+  it("adds only the missing invoice when one already exists for the period", async () => {
+    const primaryOnly = await buildMonthlyInvoicePreview(client([{ resident_id: "r-split", payer_type: "medicaid_oss" }]), {
+      facilityId: "facility-1", billingYear: 2026, billingMonth: 10,
+    });
+    expect(primaryOnly.preview.filter((line) => line.residentId === "r-split").map((line) => line.invoiceShare)).toEqual(["resident_share"]);
+    const both = await buildMonthlyInvoicePreview(
+      client([{ resident_id: "r-split", payer_type: "medicaid_oss" }, { resident_id: "r-split", payer_type: "private_pay" }]),
+      { facilityId: "facility-1", billingYear: 2026, billingMonth: 10 },
+    );
+    expect(both.preview.filter((line) => line.residentId === "r-split")).toEqual([]);
+  });
+
+  it("persists the share under its own invoice number, billed to the resident", async () => {
+    const result = await buildMonthlyInvoicePreview(client(), { facilityId: "facility-1", billingYear: 2026, billingMonth: 10 });
+    const rpc = vi.fn().mockResolvedValue({ data: [{ invoice_id: "inv", inserted: true }], error: null });
+    await persistMonthlyInvoicesFromPreview({ rpc, from: vi.fn() } as never, {
+      facilityId: "facility-1", billingYear: 2026, billingMonth: 10, preview: result.preview,
+      periodStart: result.periodStart, periodEnd: result.periodEnd, dueDate: result.dueDate,
+    });
+    const calls = rpc.mock.calls.map(([, params]) => params as Record<string, unknown>);
+    expect(calls.map((params) => [params.p_invoice_number, params.p_payer_type, params.p_total])).toEqual([
+      ["FACILITY-2026-10-r-split", "medicaid_oss", 160000],
+      ["FACILITY-2026-10-r-split-RS", "private_pay", 83700],
+      ["FACILITY-2026-10-r-noRate-RS", "private_pay", 251000],
+    ]);
+    const share = calls[1].p_line_items as { description: string }[];
+    expect(share[0].description).toBe("Resident share of Medicaid room and board");
   });
 });

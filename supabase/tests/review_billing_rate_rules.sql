@@ -62,8 +62,8 @@ BEGIN
   SET CONSTRAINTS tr_rate_schedules_overlap_guard DEFERRED;
 
   -- The rule is runtime: a facility override to "latest effective wins" lets an overlap through.
-  INSERT INTO public.billing_rate_rules (organization_id, facility_id, effective_from, rate_overlap_rule, payer_split_is_concession, ruled_by)
-  VALUES (v_org, v_facility, DATE '1900-01-01', 'latest_effective_wins', false, 'probe');
+  INSERT INTO public.billing_rate_rules (organization_id, facility_id, effective_from, rate_overlap_rule, payer_split_is_concession, medicaid_resident_share_invoice, ruled_by)
+  VALUES (v_org, v_facility, DATE '1900-01-01', 'latest_effective_wins', false, false, 'probe');
   SELECT * INTO v_rule FROM public.haven_billing_rate_rule(v_org, v_facility, current_date);
   IF v_rule.rate_overlap_rule IS DISTINCT FROM 'latest_effective_wins' THEN
     RAISE EXCEPTION 'Facility override does not take precedence';
