@@ -55,8 +55,8 @@ function statusTone(status: TaskStatus) {
     default:
       return {
         card: "bg-white/[0.03] border-white/5 shadow-sm",
-        badge: "border-white/10 bg-white/5 text-zinc-300",
-        icon: <UserRound aria-hidden className="h-4 w-4 text-zinc-400" />,
+        badge: "border-white/10 bg-white/5 text-muted-foreground",
+        icon: <UserRound aria-hidden className="h-4 w-4 text-muted-foreground" />,
       };
   }
 }
@@ -99,7 +99,7 @@ export function RoundingTaskCard({
               </div>
               <div className="flex flex-col">
                 <h3 className="text-lg text-white tracking-wide font-semibold">{task.residentName}</h3>
-                <p className="text-xs text-zinc-400/80 font-medium tracking-wide">
+                <p className="text-xs text-muted-foreground/80 font-medium tracking-wide">
                   {task.roomLabel ? `${task.roomLabel} · ` : ""}
                   {task.assignedStaffName ? `Assigned to ${task.assignedStaffName}` : "Open assignment"}
                 </p>
@@ -114,11 +114,11 @@ export function RoundingTaskCard({
           <div className="flex items-center justify-between pl-[3.25rem] border-t border-white/5 pt-3">
              <div className="flex flex-col">
                 <span className="text-sm font-semibold text-zinc-200">{formatDueLabel(task.dueAt)}</span>
-                {task.note && <span className="text-xs text-zinc-500 mt-0.5">{task.note}</span>}
+                {task.note && <span className="text-xs text-muted-foreground mt-0.5">{task.note}</span>}
              </div>
              
              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors shrink-0">
-               <ArrowRight className="h-4 w-4 text-zinc-300" />
+               <ArrowRight className="h-4 w-4 text-muted-foreground" />
              </div>
           </div>
 

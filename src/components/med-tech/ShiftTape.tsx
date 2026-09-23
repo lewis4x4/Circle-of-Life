@@ -44,15 +44,15 @@ export function ShiftTape({
         <div className="px-6 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Radio className="w-3.5 h-3.5 text-primary" />
-            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Shift Tape
             </h3>
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-muted-foreground">
               {events.length} events · live
             </span>
           </div>
           {handoffTime && (
-            <div className="text-[10px] text-slate-500 font-mono">
+            <div className="text-[10px] text-muted-foreground font-mono">
               auto-handoff at {handoffTime}
             </div>
           )}
@@ -87,13 +87,13 @@ export function ShiftTape({
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ring-1 ${tapeColor[expanded.kind] ?? tapeColor.shift}`}>
                   {kindLabel[expanded.kind] ?? expanded.kind}
                 </span>
-                <span className="text-xs font-mono text-slate-400">{expanded.t}</span>
+                <span className="text-xs font-mono text-muted-foreground">{expanded.t}</span>
               </div>
               <button
                 type="button"
                 aria-label="Close"
                 onClick={() => setExpanded(null)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-muted-foreground hover:text-white transition"
               >
                 <X className="w-4 h-4" />
               </button>

@@ -48,7 +48,7 @@ export default function ContactPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
               Contact Our Care Directors
             </h1>
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
               Whether you need rapid 24-hour hospital placement triage or simply want to ask a few
               gentle questions about caring for mom, we are always here to listen.
             </p>
@@ -68,7 +68,7 @@ export default function ContactPage() {
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-bold font-serif">Need Placement Today?</h2>
-                <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+                <p className="text-xs sm:text-sm text-chrome-foreground-muted leading-relaxed">
                   Hospital discharge planners, case managers, and family members facing sudden emergencies can reach our on-call admissions team 24 hours a day.
                 </p>
 
@@ -91,7 +91,7 @@ export default function ContactPage() {
                     <div key={f.id} className="flex items-center justify-between text-xs pb-3 border-b border-stone-100 last:border-0 last:pb-0">
                       <div>
                         <div className="font-bold text-sm text-[#1C2822]">{f.name}</div>
-                        <div className="text-stone-500 text-[11px]">{f.address.city}, FL • {f.administrator.name}</div>
+                        <div className="text-muted-foreground text-[11px]">{f.address.city}, FL • {f.administrator.name}</div>
                       </div>
                       <a href={`tel:${f.phone}`} className="font-bold text-[#B04F2C] hover:underline text-xs">
                         {f.phone}
@@ -109,7 +109,7 @@ export default function ContactPage() {
                   <fieldset disabled={pending} className="space-y-6">
                   <div>
                     <h2 className="text-2xl sm:text-3xl font-bold text-[#1C2822] font-serif">Send Us a Gentle Note</h2>
-                    <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Send your request to our admissions team for review and follow-up.
                     </p>
                   </div>

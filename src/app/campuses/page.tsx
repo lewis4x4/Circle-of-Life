@@ -42,7 +42,7 @@ export default function CampusesPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
               Our North Florida Sanctuaries
             </h1>
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
               Explore our five residential estates across Lake City, Live Oak, and Mayo.
               Every campus offers 24-hour loving care, home-cooked Southern meals, and single-story accessibility.
             </p>

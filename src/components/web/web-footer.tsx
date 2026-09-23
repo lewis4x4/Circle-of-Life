@@ -28,13 +28,13 @@ export function WebFooter() {
                 <span className="text-xl font-bold text-white font-serif tracking-tight">
                   Circle of Life
                 </span>
-                <span className="block text-[11px] uppercase tracking-widest text-stone-400 font-medium">
+                <span className="block text-[11px] uppercase tracking-widest text-chrome-foreground-muted font-medium">
                   Assisted Living Communities
                 </span>
               </div>
             </div>
 
-            <p className="text-sm leading-relaxed text-stone-300 pr-4">
+            <p className="text-sm leading-relaxed text-chrome-foreground-muted pr-4">
               Providing non-institutional, dignity-centered assisted living across North Florida.
               Built on 50 years of craftsmanship by Milton Smith, our five sanctuaries offer loving,
               24-hour attentive care where elders age with purpose, fellowship, and joy.
@@ -62,10 +62,10 @@ export function WebFooter() {
                 <li key={f.id}>
                   <Link
                     href={`/campuses/${f.slug}`}
-                    className="hover:text-white transition-colors flex items-center justify-between text-stone-300 group"
+                    className="hover:text-white transition-colors flex items-center justify-between text-chrome-foreground-muted group"
                   >
                     <span className="group-hover:text-amber-300">{f.name}</span>
-                    <span className="text-[11px] text-stone-400">{f.address.city}</span>
+                    <span className="text-[11px] text-chrome-foreground-muted">{f.address.city}</span>
                   </Link>
                 </li>
               ))}
@@ -85,7 +85,7 @@ export function WebFooter() {
             <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400">
               Family Resources
             </h3>
-            <ul className="space-y-2 text-sm text-stone-300">
+            <ul className="space-y-2 text-sm text-chrome-foreground-muted">
               <li>
                 <Link href="/pricing" className="hover:text-white transition-colors">
                   Transparent Pricing & VA Aid
@@ -135,20 +135,20 @@ export function WebFooter() {
                     24/7 Admissions Line
                   </div>
                   <div className="text-base font-bold text-amber-300">(386) 406-0887</div>
-                  <div className="text-[11px] text-stone-400">Immediate hospital placement triage</div>
+                  <div className="text-[11px] text-chrome-foreground-muted">Immediate hospital placement triage</div>
                 </div>
               </a>
 
               <a
                 href="mailto:info@circleoflifecommunities.com"
-                className="flex items-center gap-2 text-stone-300 hover:text-white transition-colors text-xs"
+                className="flex items-center gap-2 text-chrome-foreground-muted hover:text-white transition-colors text-xs"
               >
-                <Mail className="w-3.5 h-3.5 text-stone-400" />
+                <Mail className="w-3.5 h-3.5 text-chrome-foreground-muted" />
                 info@circleoflifecommunities.com
               </a>
 
-              <div className="flex items-center gap-2 text-stone-400 text-xs">
-                <MapPin className="w-3.5 h-3.5 text-stone-400" />
+              <div className="flex items-center gap-2 text-chrome-foreground-muted text-xs">
+                <MapPin className="w-3.5 h-3.5 text-chrome-foreground-muted" />
                 Regional Headquarters: Lake City, FL
               </div>
             </div>
@@ -156,8 +156,8 @@ export function WebFooter() {
         </div>
 
         {/* Middle Tier: Legal Entities & Florida AHCA Licenses */}
-        <div className="py-8 border-b border-stone-800/80 text-xs text-stone-400 space-y-3">
-          <div className="font-semibold text-stone-300 uppercase tracking-wider text-[11px]">
+        <div className="py-8 border-b border-stone-800/80 text-xs text-chrome-foreground-muted space-y-3">
+          <div className="font-semibold text-chrome-foreground-muted uppercase tracking-wider text-[11px]">
             Florida AHCA Licensed Facilities & Legal Entities:
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -165,37 +165,37 @@ export function WebFooter() {
               <div className="font-bold text-stone-200">The Plantation on Summers</div>
               <div>The Plantation on Summers, LLC</div>
               <div className="text-amber-400/90 font-mono text-[10px]">License # AL12480 • 64 Beds</div>
-              <div className="text-stone-400 text-[10px]">Columbia County</div>
+              <div className="text-chrome-foreground-muted text-[10px]">Columbia County</div>
             </div>
             <div className="p-2.5 rounded-lg bg-stone-900/60 border border-stone-800/80">
               <div className="font-bold text-stone-200">Grande Cypress ALF</div>
               <div>Grande Cypress ALF, LLC</div>
               <div className="text-amber-400/90 font-mono text-[10px]">License # AL13421 • 54 Beds</div>
-              <div className="text-stone-400 text-[10px]">Columbia County</div>
+              <div className="text-chrome-foreground-muted text-[10px]">Columbia County</div>
             </div>
             <div className="p-2.5 rounded-lg bg-stone-900/60 border border-stone-800/80">
               <div className="font-bold text-stone-200">Rising Oaks ALF</div>
               <div>Smith & Sorensen, LLC</div>
               <div className="text-amber-400/90 font-mono text-[10px]">License # AL13041 • 52 Beds</div>
-              <div className="text-stone-400 text-[10px]">Suwannee County</div>
+              <div className="text-chrome-foreground-muted text-[10px]">Suwannee County</div>
             </div>
             <div className="p-2.5 rounded-lg bg-stone-900/60 border border-stone-800/80">
               <div className="font-bold text-stone-200">Oakridge ALF</div>
               <div>Pine House, Inc.</div>
               <div className="text-amber-400/90 font-mono text-[10px]">License # AL9863 • 52 Beds</div>
-              <div className="text-stone-400 text-[10px]">Lafayette County</div>
+              <div className="text-chrome-foreground-muted text-[10px]">Lafayette County</div>
             </div>
             <div className="p-2.5 rounded-lg bg-stone-900/60 border border-stone-800/80">
               <div className="font-bold text-stone-200">Homewood Lodge ALF</div>
               <div>Sorensen, Smith & Bay, LLC</div>
               <div className="text-amber-400/90 font-mono text-[10px]">License # AL12528 • 36 Beds</div>
-              <div className="text-stone-400 text-[10px]">Lafayette County</div>
+              <div className="text-chrome-foreground-muted text-[10px]">Lafayette County</div>
             </div>
           </div>
         </div>
 
         {/* Bottom Tier: Copyright, Non-Discrimination & Equal Housing */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-400">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-chrome-foreground-muted">
           <p>
             © {new Date().getFullYear()} Circle of Life Assisted Living Communities. All rights
             reserved. GSMS Developers development.

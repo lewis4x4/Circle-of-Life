@@ -32,7 +32,7 @@ export default function AboutPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
               Our Story, Our Craft & Our Sacred Promise
             </h1>
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
               We are not a Wall Street private-equity investment conglomerate. We are local builders
               and dedicated caregivers who believe our elders deserve a life filled with dignity, love, and wonder.
             </p>
@@ -96,7 +96,7 @@ export default function AboutPage() {
                   </div>
 
                   <div className="pt-3 border-t border-stone-200 text-xs flex items-center justify-between">
-                    <span className="text-stone-500">Direct Campus Phone:</span>
+                    <span className="text-muted-foreground">Direct Campus Phone:</span>
                     <a href={`tel:${f.phone}`} className="font-bold text-[#1C2822] hover:text-[#B04F2C]">
                       {f.phone}
                     </a>

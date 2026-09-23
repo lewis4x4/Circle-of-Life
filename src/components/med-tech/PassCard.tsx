@@ -55,7 +55,7 @@ export function PassCard({
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono text-slate-400">
+            <span className="text-xs font-mono text-muted-foreground">
               Room {p.room}
             </span>
             {p.controlled && (
@@ -70,9 +70,9 @@ export function PassCard({
             )}
           </div>
           <div className="text-base font-semibold text-white">{p.resident}</div>
-          <div className="text-sm text-slate-300 mt-0.5 flex items-center gap-1.5">
-            <Pill className="w-3.5 h-3.5 text-slate-400" /> {p.med} ·{" "}
-            <span className="text-slate-400">{p.dose}</span>
+          <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
+            <Pill className="w-3.5 h-3.5 text-muted-foreground" /> {p.med} ·{" "}
+            <span className="text-muted-foreground">{p.dose}</span>
           </div>
           {isHold && p.hold && (
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-rose-500/10 ring-1 ring-rose-500/40 px-3 py-2">
@@ -89,11 +89,11 @@ export function PassCard({
             {p.time}
           </div>
           <div
-            className={`text-xs mt-0.5 ${isOverdue ? "text-rose-400 font-semibold" : "text-slate-400"}`}
+            className={`text-xs mt-0.5 ${isOverdue ? "text-rose-400 font-semibold" : "text-muted-foreground"}`}
           >
             {minutesLabel(p.minutes)}
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-white transition mt-2 ml-auto" />
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-white transition mt-2 ml-auto" />
         </div>
       </div>
     </button>

@@ -42,7 +42,7 @@ export default function CareServicesPage() {
               Care That Honors Their Dignity & Story
             </h1>
 
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
               We never reduce human beings to clinical checklists or room numbers. From gentle morning
               medications to scratch-made Southern meals and afternoon hymn singing, our care is loving,
               attentive, and around the clock.
@@ -127,7 +127,7 @@ export default function CareServicesPage() {
 
                   <div className="pt-5 border-t border-stone-200 flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] text-stone-400 block uppercase tracking-wider font-semibold">
+                      <span className="text-[11px] text-white/80 block uppercase tracking-wider font-semibold">
                         All-Inclusive Rates From
                       </span>
                       <span className="text-2xl font-bold text-[#B04F2C] font-serif">$4,000 / mo</span>
@@ -186,7 +186,7 @@ export default function CareServicesPage() {
 
                   <div className="pt-5 border-t border-stone-200 flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] text-stone-400 block uppercase tracking-wider font-semibold">
+                      <span className="text-[11px] text-chrome-foreground-muted block uppercase tracking-wider font-semibold">
                         Availability
                       </span>
                       <span className="text-xl font-bold text-[#3D5A4C] font-serif">Immediate Move-In</span>
