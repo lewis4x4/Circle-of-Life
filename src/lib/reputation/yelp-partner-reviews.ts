@@ -23,7 +23,7 @@ export function yelpPartnerPostEnvReady(): boolean {
 export async function postYelpPublicReviewResponse(reviewId: string, responseText: string): Promise<void> {
   const key = yelpPartnerReviewPostKey();
   if (!key) {
-    throw new Error("Yelp API key not configured (set YELP_PARTNER_API_KEY or YELP_FUSION_API_KEY)");
+    throw new Error("Replying on Yelp is not set up for Haven yet. Ask support to finish the setup.");
   }
   const trimmed = responseText.trim();
   if (!trimmed) {

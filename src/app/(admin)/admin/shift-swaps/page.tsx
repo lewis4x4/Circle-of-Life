@@ -236,7 +236,7 @@ export default function AdminShiftSwapsPage() {
         whenDatasetEmpty: {
           title: "No shift swap requests in this scope",
           description:
-            "When staff submit swaps, they appear here for scheduling oversight (RLS-scoped).",
+            "When staff submit swaps, they appear here for scheduling oversight.",
         },
         whenFiltersExcludeAll: {
           title: "No requests match filters",
@@ -325,8 +325,8 @@ export default function AdminShiftSwapsPage() {
             Shift swaps {pendingCount > 0 ? <></> : null}
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Oversight queue for COL’s shift swap workflow. Pending requests can be approved or denied when your role
-            allows (facility admin or med-tech per RLS). Export supports audits.
+            Oversight queue for COL’s shift swap workflow. Facility admins and med-techs can approve or deny pending
+            requests. Export supports audits.
           </p>
         </header>
 

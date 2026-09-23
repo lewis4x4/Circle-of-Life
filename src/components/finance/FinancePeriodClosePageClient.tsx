@@ -188,7 +188,7 @@ export default function FinancePeriodClosePageClient({
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Period close</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Month-end GL period status per legal entity (Module 17 Enhanced). Owner and org admin only.
+          Month-end GL period status per legal entity. Owner and org admin only.
         </p>
       </div>
 

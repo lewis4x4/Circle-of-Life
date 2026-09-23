@@ -295,7 +295,7 @@ export default function AdminScheduleWeekDetailPage() {
           role="status"
         >
           This schedule belongs to another facility. Choose the matching facility in the header to align with
-          operations context (RLS may still limit what you see).
+          operations context (your access may still limit what you see).
         </div>
       ) : null}
 

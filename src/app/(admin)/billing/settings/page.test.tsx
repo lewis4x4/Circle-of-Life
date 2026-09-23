@@ -22,7 +22,7 @@ describe("AdminBillingSettingsPage", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/Pilot placeholder/i)).not.toBeInTheDocument();
     expect(
-      screen.getByText(/Automated invoice scheduling is not live in this pilot build/i),
+      screen.getByText(/Automated invoice scheduling is not available yet/i),
     ).toBeInTheDocument();
   });
 

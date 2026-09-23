@@ -172,7 +172,7 @@ export async function PUT(
     return NextResponse.json(
       {
         error: denied
-          ? "Forbidden — RLS denied facility access"
+          ? "You do not have access to this facility."
           : "Failed to save threshold",
         detail: upsertResult.error?.message,
       },

@@ -194,7 +194,7 @@ export default function AdminQualityHubPage() {
             <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-primary">
               Define a measure
             </h3>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Org admins add catalog rows (<code className="text-[10px] bg-slate-100 px-1 py-0.5 rounded text-slate-500">measure_key</code>, CMS tag optional).</p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Org admins add measures to the catalog (a short code for each, CMS tag optional).</p>
           </div>
         </div>
       </Link>

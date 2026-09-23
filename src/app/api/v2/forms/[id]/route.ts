@@ -179,7 +179,7 @@ async function handleNewResident(
     return NextResponse.json(
       {
         error: denied
-          ? "Forbidden — RLS denied facility access."
+          ? "You do not have access to this facility."
           : "Could not create resident",
         detail: insertResult.error?.message,
       },
@@ -241,7 +241,7 @@ async function handleNewAdmission(
     return NextResponse.json(
       {
         error: denied
-          ? "Forbidden — RLS denied facility access."
+          ? "You do not have access to this facility."
           : "Could not create admission case",
         detail: insertResult.error?.message,
       },
@@ -312,7 +312,7 @@ async function handleNewIncident(
     return NextResponse.json(
       {
         error: denied
-          ? "Forbidden — RLS denied facility access."
+          ? "You do not have access to this facility."
           : "Could not create incident",
         detail: insertResult.error?.message,
       },

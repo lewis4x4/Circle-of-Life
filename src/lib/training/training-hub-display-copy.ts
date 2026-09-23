@@ -72,7 +72,7 @@ export function resolveTrainingHubFacilityScope(
 }
 
 const TRAINING_HUB_ORG_WIDE_DEMO_CARD_SUBTITLE =
-  "Last 50 competency demonstrations across your accessible facilities (ordered by date). RLS enforces scope.";
+  "Last 50 competency demonstrations across your accessible facilities (ordered by date).";
 
 /** Competency demo action-card subtitle — names the facility when scoped. */
 export function formatTrainingHubDemoCardSubtitle(scope: TrainingHubFacilityScope): string {

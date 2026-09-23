@@ -198,8 +198,7 @@ export default function AdminMeetingsHubPage() {
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Recurring meeting templates, agendas, in-app minutes, and action items that become
-              escalation-chased operations tasks. Replaces the standup call log spreadsheet.
-              Per-facility, RLS-scoped; minutes are audit-logged.
+              escalation-chased operations tasks. Per facility; every change to the minutes is recorded.
             </p>
           </div>
           <Link
