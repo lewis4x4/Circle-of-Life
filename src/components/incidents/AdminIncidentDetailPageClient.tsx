@@ -36,7 +36,6 @@ import {
   type IncidentDetailView,
   type IncidentSeverityUi,
   type IncidentStatusUi,
-  type RcaInvestigationUi,
   type SupabaseIncidentDetail,
 } from "@/lib/incidents/load-incident-detail";
 import {
@@ -50,9 +49,14 @@ import {
 } from "@/lib/incidents/incident-detail-display-copy";
 import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import { buildIncidentAcknowledgmentLine, buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
+import {
+  INCIDENT_OPERATIONALLY_CLEAR_COPY,
+  buildIncidentWorkflowSummary,
+} from "@/lib/incidents/incident-workflow-summary";
 import { formatCorrectiveActionNotes } from "@/lib/care-events/admin-copy";
 import { toObligationDelivery } from "@/lib/care-events/admin-data";
 import { IncidentCareEventNotifications } from "@/components/incidents/IncidentCareEventNotifications";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type AdminIncidentDetailPageClientProps = {
   initialDetail?: IncidentDetailView | null;
@@ -451,11 +455,9 @@ export function AdminIncidentDetailPageClient({
                   ))}
                 </ul>
               </div>
-            ) : (
-              <p className="text-sm text-success">
-                This incident is operationally clear. Follow-ups, reporting, RCA, and care-plan expectations are in a good state.
-              </p>
-            )}
+            ) : workflowSummary.operationallyClear ? (
+              <p className="text-sm text-success">{INCIDENT_OPERATIONALLY_CLEAR_COPY}</p>
+            ) : null}
           </div>
         </RecordDetailSection>
 
@@ -478,10 +480,10 @@ export function AdminIncidentDetailPageClient({
                           {watch.resident_watch_protocols?.name ?? "Watch protocol"}
                         </Badge>
                         <Badge variant="outline" className="font-normal">
-                          {watch.status.replace(/_/g, " ")}
+                          {enumLabel(watch.status)}
                         </Badge>
                         <Badge variant="outline" className="font-normal">
-                          {watch.triggered_by_type.replace(/_/g, " ")}
+                          {enumLabel(watch.triggered_by_type)}
                         </Badge>
                       </div>
                       <div className="grid gap-2 text-sm sm:grid-cols-2">
@@ -523,7 +525,7 @@ export function AdminIncidentDetailPageClient({
                         {watch.events.map((event) => (
                           <li key={event.id} className="rounded-[8px] border border-border bg-card px-3 py-2">
                             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                              <span className="font-medium">{event.event_type.replace(/_/g, " ")}</span>
+                              <span className="font-medium">{enumLabel(event.event_type)}</span>
                               <span className="text-xs tabular-nums text-muted-foreground">{formatIncidentDetailTimestamp(event.occurred_at)}</span>
                             </div>
                             {event.note ? <p className="mt-1 text-xs text-muted-foreground">{event.note}</p> : null}
@@ -556,9 +558,9 @@ export function AdminIncidentDetailPageClient({
                         <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
                           Level {escalation.escalation_level}
                         </Badge>
-                        <Badge variant="outline">{escalation.escalation_type.replace(/_/g, " ")}</Badge>
-                        <Badge variant="outline">{escalation.status.replace(/_/g, " ")}</Badge>
-                        <Badge variant="outline">{escalation.task_status.replace(/_/g, " ")}</Badge>
+                        <Badge variant="outline">{enumLabel(escalation.escalation_type)}</Badge>
+                        <Badge variant="outline">{enumLabel(escalation.status)}</Badge>
+                        <Badge variant="outline">{enumLabel(escalation.task_status)}</Badge>
                       </div>
                       <p className="text-sm tabular-nums text-foreground">
                         Triggered {formatIncidentDetailTimestamp(escalation.triggered_at)} · Task due {formatIncidentDetailTimestamp(escalation.task_due_at)}
@@ -1075,7 +1077,7 @@ function formatShift(value: string): string {
 }
 
 function formatSnake(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatCategoryRaw(value: string): string {
@@ -1083,76 +1085,6 @@ function formatCategoryRaw(value: string): string {
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
-}
-
-function buildIncidentWorkflowSummary(
-  incident: SupabaseIncidentDetail,
-  rcaInvestigation: RcaInvestigationUi,
-  followups: IncidentDetailView["followups"],
-  openObligations: string[],
-) {
-  const openFollowups = followups.filter((item) => !item.isCompleted);
-  const overdueFollowups = openFollowups.filter((item) => item.isOverdue).length;
-  const unassignedFollowups = openFollowups.filter((item) => !item.assignedToId).length;
-  const escalatedFollowups = openFollowups.filter((item) => isFollowupEscalated(item.escalationLevel)).length;
-  const rootCauseExpected =
-    incident.severity === "level_3" ||
-    incident.severity === "level_4" ||
-    followups.some((item) => item.taskType === "root_cause_analysis");
-  const carePlanPending =
-    Boolean(incident.resolved_at) &&
-    !incident.care_plan_updated &&
-    (incident.severity === "level_3" || incident.severity === "level_4" || openFollowups.length > 0);
-
-  const nextActions: string[] = [];
-  if (openObligations.length > 0) {
-    nextActions.push(...openObligations);
-  }
-  if (escalatedFollowups > 0) {
-    nextActions.push("Work the escalated follow-ups before closure or sign-off.");
-  } else if (overdueFollowups > 0) {
-    nextActions.push("Clear overdue follow-ups before the incident can move cleanly toward closure.");
-  }
-  if (unassignedFollowups > 0) {
-    nextActions.push("Assign the remaining unassigned follow-up work.");
-  }
-  if (rootCauseExpected && rcaInvestigation !== "complete") {
-    nextActions.push("Complete the root cause investigation for this incident.");
-  }
-  if (carePlanPending) {
-    nextActions.push("Document the care-plan update before closing the incident loop.");
-  }
-
-  let summary = "No outstanding workflow pressure.";
-  let tone: "clear" | "warning" = "clear";
-  if (openObligations.length > 0) {
-    summary = "Notifications or regulatory reporting are still incomplete.";
-    tone = "warning";
-  } else if (escalatedFollowups > 0) {
-    summary = "Chronically overdue follow-up work is driving the current incident risk.";
-    tone = "warning";
-  } else if (overdueFollowups > 0 || unassignedFollowups > 0) {
-    summary = "Follow-up execution still needs operator attention.";
-    tone = "warning";
-  } else if (rootCauseExpected && rcaInvestigation !== "complete") {
-    summary = "Root cause analysis is the main remaining incident workflow step.";
-    tone = "warning";
-  } else if (carePlanPending) {
-    summary = "Care-plan closure is the last operational step still pending.";
-    tone = "warning";
-  }
-
-  return {
-    summary,
-    tone,
-    openFollowups: openFollowups.length,
-    overdueFollowups,
-    unassignedFollowups,
-    escalatedFollowups,
-    openObligations: openObligations.length,
-    rcaLabel: rcaInvestigation === "complete" ? "complete" : rcaInvestigation === "draft" ? "draft" : "not started",
-    nextActions,
-  };
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {

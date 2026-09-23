@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 
 import { Sparkline, type SparklineTone } from "../Sparkline";
 import { TrendDelta } from "../TrendDelta";
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
 import { cn } from "@/lib/utils";
 
 export type KPITileTone =
@@ -24,7 +25,14 @@ export type KPITileTrend = {
 
 export type KPITileProps = {
   label: string;
-  value: string | number;
+  /** Prefer `state` for read-backed figures. */
+  value?: string | number;
+  /**
+   * What the read actually knows (COL-649). A non-value state renders its
+   * phrase ("Unavailable", "Select a facility", "No data") in muted text, with
+   * default tone, no unit, no trend and no breach message.
+   */
+  state?: MetricState<string | number>;
   unit?: string;
   trend?: KPITileTrend;
   tone?: KPITileTone;
@@ -64,16 +72,24 @@ const TONE_TO_SPARKLINE: Record<KPITileTone, SparklineTone> = {
 
 export function KPITile({
   label,
-  value,
-  unit,
-  trend,
-  tone = "default",
-  sparkline,
+  value: valueProp,
+  state,
+  unit: unitProp,
+  trend: trendProp,
+  tone: toneProp = "default",
+  sparkline: sparklineProp,
   info,
-  breachMessage,
+  breachMessage: breachMessageProp,
   onClick,
   className,
 }: KPITileProps) {
+  const placeholder = state && state.status !== "value" ? formatMetric(state) : null;
+  const value = placeholder ?? (state?.status === "value" ? state.value : (valueProp ?? "—"));
+  const unit = placeholder === null ? unitProp : undefined;
+  const trend = placeholder === null ? trendProp : undefined;
+  const tone: KPITileTone = placeholder === null ? toneProp : "default";
+  const sparkline = placeholder === null ? sparklineProp : undefined;
+  const breachMessage = placeholder === null ? breachMessageProp : undefined;
   const [infoOpen, setInfoOpen] = useState(false);
   const infoId = useId();
   const validSparkline = sparkline?.filter(Number.isFinite);
@@ -92,6 +108,7 @@ export function KPITile({
     <Tag
       {...tagProps}
       data-tone={tone}
+      data-metric-state={state?.status}
       className={cn(
         "group relative flex min-w-0 flex-col gap-2 rounded-md border px-4 py-3 text-left",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary",
@@ -136,8 +153,9 @@ export function KPITile({
       <div className="flex items-baseline gap-1">
         <span
           className={cn(
-            "text-2xl font-semibold tabular-nums tracking-tight",
-            TONE_TO_VALUE_TEXT[tone],
+            placeholder !== null
+              ? "text-base font-medium leading-8 text-text-muted"
+              : cn("text-2xl font-semibold tabular-nums tracking-tight", TONE_TO_VALUE_TEXT[tone]),
           )}
         >
           {value}

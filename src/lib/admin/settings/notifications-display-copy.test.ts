@@ -40,13 +40,13 @@ describe("formatNotificationsRoleTargetsDisplay", () => {
     expect(formatNotificationsRoleTargetsDisplay([])).toBe(NOTIFICATIONS_NO_ROLE_TARGETS_COPY);
   });
 
-  it("joins one role target", () => {
-    expect(formatNotificationsRoleTargetsDisplay(["nurse"])).toBe("nurse");
+  it("names one role target in words", () => {
+    expect(formatNotificationsRoleTargetsDisplay(["administrator"])).toBe("Administrator");
   });
 
-  it("joins several role targets with comma separation", () => {
-    expect(formatNotificationsRoleTargetsDisplay(["nurse", "admin", "med_tech"])).toBe(
-      "nurse, admin, med_tech",
+  it("joins several role targets in words, never raw keys (COL-652)", () => {
+    expect(formatNotificationsRoleTargetsDisplay(["administrator", "assistant_administrator", "cna"])).toBe(
+      "Administrator, Assistant administrator, CNA",
     );
   });
 });

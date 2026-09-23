@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import {
   fetchOpenVisitors,
   fetchVisitorLog,
@@ -48,7 +49,8 @@ type Props = {
   /** Signs a visitor in. The insert lives with the page that owns the actor. */
   onSignIn: (draft: VisitorSignInDraft) => Promise<void>;
   /** Lets the page header say how many people are in the building. */
-  onOpenCountChange?: (count: number) => void;
+  /** Visitors in the building now; null while loading or when the log could not be read (COL-649). */
+  onOpenCountChange?: (count: number | null) => void;
 };
 
 const inputCls =
@@ -125,8 +127,8 @@ export function VisitorLogClient({
   }, [load]);
 
   useEffect(() => {
-    onOpenCountChange?.(openNow.length);
-  }, [openNow.length, onOpenCountChange]);
+    onOpenCountChange?.(loading || error ? null : openNow.length);
+  }, [openNow.length, loading, error, onOpenCountChange]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -175,7 +177,7 @@ export function VisitorLogClient({
   }
 
   if (!facilityId) {
-    return <p className="text-sm text-muted-foreground">Choose a facility to open its visitor log.</p>;
+    return <FacilityGateNotice reason="The visitor log is kept per building." />;
   }
 
   const voided = rows.filter((row) => row.voidedAt);

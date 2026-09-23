@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
-import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
+import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import {
@@ -11,14 +9,11 @@ import {
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
 import {
-  HavenInsightPanel,
   OfficerAlertsPanel,
   OfficerHeader,
   OfficerKpiStrip,
   OfficerKpiTile,
   OfficerLanes,
-  OfficerLinkOutPanel,
-  OfficerLiveViewsNotice,
   officerAlarmTone,
   useFacilityNameMap,
   type OfficerLane,
@@ -26,6 +21,9 @@ import {
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
+  EXECUTIVE_AR_TILE_LABEL,
+  EXECUTIVE_OPEN_INVOICES_TILE_LABEL,
+  executiveArDraftsCaption,
   formatExecutiveArOutstandingCents,
   formatExecutiveCertsExpiringCount,
   formatExecutiveOccupancyPctWithSuffix,
@@ -34,13 +32,9 @@ import {
   resolveOfficerOccupancyTileLabel,
 } from "@/lib/executive/executive-display-copy";
 
-/** Pills with live pane content on the CFO board (stub tabs are hidden for training-week click-around). */
-export const CFO_LIVE_TABS = ["Overview", "Scenarios", "Haven Insight"] as const;
-
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default function CfoDashboardPage() {
-  const [tab, setTab] = useState("Overview");
   const { organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const { kpis, alerts, facilities, loading, error, refetch } = useExecRoleKpis(selectedFacilityId);
@@ -78,10 +72,11 @@ export default function CfoDashboardPage() {
   const occupancyFootnote = executivePortfolioOccupancyFootnote(occupancyScope);
   const invoicesValue = loading ? "…" : formatExecutiveOpenInvoiceCount(openInvoices);
   const certsValue = loading ? "…" : formatExecutiveCertsExpiringCount(certsExpiring);
+  const draftsCaption = loading ? null : executiveArDraftsCaption(kpis?.financial);
 
   const lanes: OfficerLane[] = [
     {
-      stat: openInvoices == null ? formatExecutiveOpenInvoiceCount(null) : `${openInvoices} open invoices`,
+      stat: openInvoices == null ? formatExecutiveOpenInvoiceCount(null) : `${openInvoices} open sent invoices`,
       title: "Finance hub",
       description: "Billed revenue, labor pressure, and monthly financials.",
       href: "/admin/finance",
@@ -108,21 +103,13 @@ export default function CfoDashboardPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <div className="border-b border-border">
-        <ExecutiveNavV2
-          showTopNav={false}
-          activeTopNav="finance"
-          activePillMenu={tab}
-          onPillMenuChange={setTab}
-          customPillTabs={[...CFO_LIVE_TABS]}
-        />
+      <div className="border-b border-border px-6 py-3 sm:px-12">
+        <ExecutiveHubNav />
       </div>
 
       <OfficerHeader title="Chief Financial Officer" subtitle={subtitle} />
 
       <div className="flex flex-col gap-6 px-6 py-8 sm:px-12">
-        <OfficerLiveViewsNotice count={CFO_LIVE_TABS.length} />
-
         {organizationGapMessage ? (
           <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
             <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
@@ -135,9 +122,9 @@ export default function CfoDashboardPage() {
 
         <div className="flex flex-col gap-2">
           <OfficerKpiStrip>
-            <OfficerKpiTile label="Total AR outstanding" value={arValue} />
+            <OfficerKpiTile label={EXECUTIVE_AR_TILE_LABEL} value={arValue} caption={draftsCaption} />
             <OfficerKpiTile label={occupancyLabel} value={occValue} />
-            <OfficerKpiTile label="Open invoices" value={invoicesValue} />
+            <OfficerKpiTile label={EXECUTIVE_OPEN_INVOICES_TILE_LABEL} value={invoicesValue} />
             <OfficerKpiTile label="Certs expiring 30d" value={certsValue} tone={officerAlarmTone(certsExpiring, "warning")} />
           </OfficerKpiStrip>
           {occupancyFootnote ? (
@@ -145,30 +132,17 @@ export default function CfoDashboardPage() {
           ) : null}
         </div>
 
-        {tab === "Overview" ? (
-          <>
-            <OfficerLanes lanes={lanes} subheading="Jump into the live finance queues." />
-            <OfficerAlertsPanel
-              heading="Finance & risk alerts"
-              emptyTitle="No open finance alerts"
-              emptyDescription="Finance and risk exceptions across your facilities will appear here as they trigger."
-              alerts={alerts}
-              facilityNameById={facilityNameById}
-              loading={loading}
-              error={fetchErrorBannerMessage}
-              onRetry={refetch}
-            />
-          </>
-        ) : tab === "Scenarios" ? (
-          <OfficerLinkOutPanel
-            title="Scenario planner"
-            description="The full what-if forecasting engine — occupancy, rate, labor, and debt-service assumptions with revenue / NOI / cash-flow projections."
-            href="/admin/executive/scenarios"
-            cta="Open scenario planner"
-          />
-        ) : tab === "Haven Insight" ? (
-          <HavenInsightPanel domain="finance" />
-        ) : null}
+        <OfficerLanes lanes={lanes} subheading="Jump into the live finance queues." />
+        <OfficerAlertsPanel
+          heading="Finance & risk alerts"
+          emptyTitle="No open finance alerts"
+          emptyDescription="Finance and risk exceptions across your facilities will appear here as they trigger."
+          alerts={alerts}
+          facilityNameById={facilityNameById}
+          loading={loading}
+          error={fetchErrorBannerMessage}
+          onRetry={refetch}
+        />
       </div>
     </div>
   );

@@ -130,10 +130,10 @@ export default function PilotFeedbackInboxPage() {
     <div className="mx-auto max-w-7xl space-y-8 pb-12">
       <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-sm">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          Pilot Feedback
+          Staff feedback
         </div>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground">
-          COL Feedback Inbox
+          Feedback inbox
         </h1>
         <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
           Structured likes, dislikes, bugs, confusion, and feature requests captured from live testing inside Haven.

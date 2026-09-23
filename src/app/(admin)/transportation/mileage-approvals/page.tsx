@@ -14,6 +14,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type MileageRow = Database["public"]["Tables"]["mileage_logs"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
@@ -356,7 +357,7 @@ export default function MileageApprovalsPage() {
 
             {!canApprove && appRole !== null && (
               <p className="text-sm text-warning rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3">
-                Your role ({appRole.replace(/_/g, " ")}) can view this list; approval is limited to owner, org admin,
+                Your role ({enumLabel(appRole)}) can view this list; approval is limited to owner, org admin,
                 administrator, and Med-Tech.
               </p>
             )}

@@ -16,7 +16,12 @@
 import { FilterPill } from "@/components/ui/filter-pill";
 import { MetricCard } from "@/components/ui/metric-card";
 import type { LiveBoardFilter } from "@/lib/rounding/live-board-display-copy";
-import type { LiveBoardCounts } from "@/lib/rounding/live-board-state";
+import {
+  liveBoardCountMetric,
+  liveBoardOverdueHint,
+  type LiveBoardCounts,
+  type LiveBoardLoadState,
+} from "@/lib/rounding/live-board-state";
 
 const FILTERS: Array<{
   value: LiveBoardFilter;
@@ -36,11 +41,14 @@ const FILTERS: Array<{
 export function LiveBoardSummary({
   counts,
   rosterCount,
+  loadState,
   filter,
   onFilterChange,
 }: {
   counts: LiveBoardCounts;
   rosterCount: number;
+  /** Counts are only numbers once the board read succeeded (COL-649). */
+  loadState: LiveBoardLoadState;
   filter: LiveBoardFilter;
   onFilterChange: (next: LiveBoardFilter) => void;
 }) {
@@ -50,36 +58,31 @@ export function LiveBoardSummary({
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <MetricCard
             label="Critical"
-            value={counts.critical}
-            numericValue={counts.critical}
+            state={liveBoardCountMetric(loadState, counts.critical)}
             thresholds={{ type: "critical-count" }}
             hint="Critically overdue or missed checks"
           />
           <MetricCard
             label="Overdue"
-            value={counts.overdue}
-            numericValue={counts.overdue}
+            state={liveBoardCountMetric(loadState, counts.overdue)}
             thresholds={{ type: "overdue-count" }}
-            hint="Past the window and its grace"
+            hint={liveBoardOverdueHint(counts)}
           />
           <MetricCard
             label="Escalated"
-            value={counts.escalated}
-            numericValue={counts.escalated}
+            state={liveBoardCountMetric(loadState, counts.escalated)}
             thresholds={{ type: "critical-count" }}
             hint="Checks with an escalation nobody has closed"
           />
           <MetricCard
             label="Still due"
-            value={counts.pending}
-            numericValue={counts.pending}
+            state={liveBoardCountMetric(loadState, counts.pending)}
             thresholds={{ type: "informational" }}
             hint="Inside the window, or not open yet"
           />
           <MetricCard
             label="Residents on the roster"
-            value={rosterCount}
-            numericValue={rosterCount}
+            state={liveBoardCountMetric(loadState, rosterCount)}
             thresholds={{ type: "informational" }}
             hint="Active residents at this building, the population checks generate for"
           />
@@ -94,7 +97,7 @@ export function LiveBoardSummary({
               <FilterPill
                 key={entry.value}
                 label={entry.label}
-                count={entry.count(counts)}
+                count={loadState === "ready" ? entry.count(counts) : undefined}
                 tone={entry.tone}
                 active={filter === entry.value}
                 onClick={() =>

@@ -30,12 +30,13 @@ import {
   resolveQualityHubOrganizationGapMessage,
   resolveQualityHubQueryErrorMessage,
 } from "@/lib/quality/quality-hub-page-state";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export default function AdminQualityHubPage() {
   const { selectedFacilityId } = useFacilityStore();
@@ -193,7 +194,7 @@ export default function AdminQualityHubPage() {
             <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-primary">
               Define a measure
             </h3>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Org admins add catalog rows (<code className="text-[10px] bg-slate-100 px-1 py-0.5 rounded text-slate-500">measure_key</code>, CMS tag optional).</p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Org admins add measures to the catalog (a short code for each, CMS tag optional).</p>
           </div>
         </div>
       </Link>
@@ -211,6 +212,7 @@ export default function AdminQualityHubPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <TableRowList label="Quality measures" minWidthClassName="min-w-[28rem]">
             <TableRowHeader>
               <span className="flex-[2] min-w-0">Measure</span>
               <span className="flex-1 min-w-0">Key / Domain</span>
@@ -230,6 +232,7 @@ export default function AdminQualityHubPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         )}
       </div>
@@ -247,6 +250,7 @@ export default function AdminQualityHubPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <TableRowList label="Latest facility results" minWidthClassName="min-w-[28rem]">
             <TableRowHeader>
               <span className="flex-[2] min-w-0">Measure</span>
               <span className="flex-1 min-w-0">Period</span>
@@ -267,6 +271,7 @@ export default function AdminQualityHubPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         )}
       </div>
@@ -296,7 +301,7 @@ export default function AdminQualityHubPage() {
                 <MotionItem key={p.id}>
                   <TableRow>
                     <span className="flex-[2] min-w-0 text-[12px] font-mono text-foreground tabular-nums truncate">{p.period_start} → {p.period_end}</span>
-                    <span className="flex-1 min-w-0 text-[12px] text-foreground capitalize truncate">{p.status.replace(/_/g, " ")}</span>
+                    <span className="flex-1 min-w-0 text-[12px] text-foreground capitalize truncate">{enumLabel(p.status)}</span>
                     <span className="w-[80px] shrink-0 text-right text-[12px] font-medium text-foreground tabular-nums">{formatQualityHubPbjRowCount(p.row_count)}</span>
                     <span className="w-[140px] shrink-0 text-right text-[11px] text-muted-foreground font-mono tabular-nums truncate">
                       {new Date(p.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}

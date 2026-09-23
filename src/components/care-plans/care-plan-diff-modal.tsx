@@ -21,6 +21,7 @@ import {
 } from "@/lib/care-plans/care-plan-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
@@ -67,7 +68,7 @@ interface DiffItem {
 }
 
 function formatSnakeLabel(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatCategoryLabel(category: string): string {

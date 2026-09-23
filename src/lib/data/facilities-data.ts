@@ -22,9 +22,8 @@ export interface Facility {
     email: string;
     bio: string;
   };
+  /** AHCA licensed capacity. Not availability: nothing here knows who has moved in. */
   licensedBeds: number;
-  occupancyPct: number;
-  availableBeds: number;
   pricing: {
     semiPrivate: number;
     privateSuite: number;
@@ -71,8 +70,6 @@ export const FACILITIES: Facility[] = [
       bio: "Dedicated senior living director with over 15 years serving Columbia County families with Southern warmth and clinical excellence.",
     },
     licensedBeds: 64,
-    occupancyPct: 98,
-    availableBeds: 2,
     pricing: {
       semiPrivate: 4000,
       privateSuite: 5550,
@@ -130,8 +127,6 @@ export const FACILITIES: Facility[] = [
       bio: "Passionate about creating a family atmosphere where every resident feels valued, heard, and cherished every day.",
     },
     licensedBeds: 54,
-    occupancyPct: 80,
-    availableBeds: 6,
     pricing: {
       semiPrivate: 4000,
       privateSuite: 5550,
@@ -139,7 +134,7 @@ export const FACILITIES: Facility[] = [
     highlights: [
       "Modern single-story residential architecture designed for easy mobility",
       "Lush lakeside and cypress grove views with peaceful outdoor seating",
-      "Immediate move-in availability in select deluxe private suites",
+      "Select deluxe private suites — call for current availability",
       "Active daily activity calendar with gardening, crafts, and musical guests",
     ],
     features: [
@@ -189,8 +184,6 @@ export const FACILITIES: Facility[] = [
       bio: "Lifelong Suwannee County resident dedicated to honoring our elders with genuine small-town fellowship and deep dignity.",
     },
     licensedBeds: 52,
-    occupancyPct: 94,
-    availableBeds: 3,
     pricing: {
       semiPrivate: 4000,
       privateSuite: 5550,
@@ -248,8 +241,6 @@ export const FACILITIES: Facility[] = [
       bio: "Over 12 years of leadership at Oakridge, known by every resident and family member for her boundless empathy and hands-on care.",
     },
     licensedBeds: 52,
-    occupancyPct: 94,
-    availableBeds: 2,
     pricing: {
       semiPrivate: 4000,
       privateSuite: 5550,
@@ -307,8 +298,6 @@ export const FACILITIES: Facility[] = [
       bio: "Passionate advocate for personalized elder care with an exceptional focus on individualized dignity and comforting daily routines.",
     },
     licensedBeds: 36,
-    occupancyPct: 94,
-    availableBeds: 2,
     pricing: {
       semiPrivate: 4000,
       privateSuite: 5550,
@@ -343,6 +332,13 @@ export const FACILITIES: Facility[] = [
   },
 ];
 
-export const TOTAL_NETWORK_BEDS = 258;
-export const TOTAL_COUNTIES = 3;
-export const TOTAL_COMMUNITIES = 5;
+export const TOTAL_NETWORK_BEDS = FACILITIES.reduce((sum, facility) => sum + facility.licensedBeds, 0);
+export const TOTAL_COUNTIES = new Set(FACILITIES.map((facility) => facility.address.county)).size;
+export const TOTAL_COMMUNITIES = FACILITIES.length;
+
+/**
+ * The public site has no live source for open suites (census is behind RLS and
+ * is not published), so it never states a number of available suites
+ * (COL-649). The per-campus counts it used to show were fixed literals.
+ */
+export const PUBLIC_AVAILABILITY_COPY = "Call for current availability";

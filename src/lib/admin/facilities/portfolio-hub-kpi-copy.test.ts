@@ -60,12 +60,12 @@ describe("facilityLicensedBedsOnFile", () => {
 });
 
 describe("facilityOccupancyLoaded", () => {
-  it("detects census from bed grid or occupied count", () => {
+  it("detects census from occupied count; an empty bed grid is not a census (COL-649)", () => {
     expect(
       facilityOccupancyLoaded(
         facility({ id: "1", name: "Oakridge", total_beds: 48, occupancy_count: 0 }),
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       facilityOccupancyLoaded(
         facility({ id: "1", name: "Oakridge", total_beds: 0, occupancy_count: 12 }),
@@ -80,7 +80,7 @@ describe("facilityOccupancyLoaded", () => {
 });
 
 describe("facilityPortfolioCensusLoaded", () => {
-  it("treats a live bed-grid count as loaded census when row totals are stale zero", () => {
+  it("treats a live occupied count as loaded census when row totals are stale zero", () => {
     const staleRow = facility({
       id: "1",
       name: "Site Alpha",
@@ -93,17 +93,18 @@ describe("facilityPortfolioCensusLoaded", () => {
     expect(facilityPortfolioCensusLoaded(staleRow, 0)).toBe(false);
   });
 
-  it("keeps posted-empty bed grid at loaded zero occupancy", () => {
-    const postedEmpty = facility({
+  it("does not count a bed grid with nobody in it as a posted 0% census (COL-649)", () => {
+    // Plantation 2026-09-22: 64 beds set up, 0 residents loaded, averaged in as 0%.
+    const bedsOnly = facility({
       id: "2",
       name: "Site Beta",
-      total_beds: 48,
-      total_licensed_beds: 52,
+      total_beds: 64,
+      total_licensed_beds: 64,
       occupancy_count: 0,
     });
 
-    expect(facilityPortfolioCensusLoaded(postedEmpty)).toBe(true);
-    expect(facilityPortfolioOccupancyPct(postedEmpty)).toBe(0);
+    expect(facilityPortfolioCensusLoaded(bedsOnly)).toBe(false);
+    expect(facilityPortfolioOccupancyPct(bedsOnly)).toBeNull();
   });
 });
 
@@ -215,7 +216,7 @@ describe("portfolio strip empty-copy guards", () => {
 
   it("returns null when occupied census is loaded", () => {
     const loaded = buildPortfolioStripTotals([
-      facility({ id: "1", name: "Oakridge", total_beds: 10, occupancy_count: 0 }),
+      facility({ id: "1", name: "Oakridge", total_beds: 10, occupancy_count: 4 }),
     ]);
     expect(portfolioStripOccupiedBedsEmptyCopy(loaded)).toBeNull();
     expect(portfolioStripOccupiedBedsEmptyCopy(emptyTotals)).toBe("Census not loaded yet");
@@ -244,7 +245,7 @@ describe("portfolioStripPortfolioOccupancyDisplay", () => {
     expect(portfolioStripPortfolioOccupancyDisplay(emptyTotals)).toBe("No occupancy posted");
   });
 
-  it("shows 0% when census is loaded with zero occupied beds", () => {
+  it("names the gap instead of 0% when the bed grid has nobody in it (COL-649)", () => {
     const zeroTotals = buildPortfolioStripTotals([
       facility({
         id: "1",
@@ -254,7 +255,7 @@ describe("portfolioStripPortfolioOccupancyDisplay", () => {
         occupancy_count: 0,
       }),
     ]);
-    expect(portfolioStripPortfolioOccupancyDisplay(zeroTotals)).toBe("0%");
+    expect(portfolioStripPortfolioOccupancyDisplay(zeroTotals)).toBe("No occupancy posted");
   });
 
   it("shows rounded pct when portfolio occupancy is posted", () => {
@@ -280,7 +281,7 @@ describe("portfolioFacilityCardFieldEmptyCopy", () => {
     expect(portfolioFacilityCardFieldEmptyCopy("occupancy", row)).toBe("Census not loaded yet");
   });
 
-  it("does not name a posted-empty census gap when bed grid exists with zero occupied", () => {
+  it("names the census gap when the bed grid exists with zero occupied (COL-649)", () => {
     const postedEmpty = facility({
       id: "2",
       name: "Site Beta",
@@ -289,8 +290,8 @@ describe("portfolioFacilityCardFieldEmptyCopy", () => {
       occupancy_count: 0,
     });
 
-    expect(portfolioFacilityCardFieldEmptyCopy("occupancy", postedEmpty)).toBeNull();
-    expect(facilityPortfolioOccupancyPct(postedEmpty)).toBe(0);
+    expect(portfolioFacilityCardFieldEmptyCopy("occupancy", postedEmpty)).toBe("Census not loaded yet");
+    expect(facilityPortfolioOccupancyPct(postedEmpty)).toBeNull();
   });
 
   it("returns null when real values are present", () => {
@@ -385,13 +386,13 @@ describe("portfolioComparisonHelperLine", () => {
     );
   });
 
-  it("clarifies that posted 0% sites are loaded when some facilities are still missing census", () => {
+  it("says how many sites are reporting and that the rest are left out", () => {
     const entries: PortfolioComparisonEntry[] = [
       { id: "1", name: "Site Alpha", occupancyPct: 0, occupancyLoaded: true },
       { id: "2", name: "Site Beta", occupancyPct: 0, occupancyLoaded: false },
     ];
     expect(portfolioComparisonHelperLine(entries)).toBe(
-      "1 of 2 facilities have census posted — a site at 0% is loaded, not missing. Others name the gap inline.",
+      "1 of 2 facilities have census posted. Sites with no residents recorded are left out and name the gap inline.",
     );
   });
 

@@ -11,6 +11,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type PoRow = Pick<
   Database["public"]["Tables"]["purchase_orders"]["Row"],
@@ -93,7 +94,7 @@ export default function PurchaseOrdersListPage() {
                       {r.po_number}
                     </Link>
                   </td>
-                  <td className="py-2 pr-4 capitalize">{r.status.replace(/_/g, " ")}</td>
+                  <td className="py-2 pr-4 capitalize">{enumLabel(r.status)}</td>
                   <td className="py-2 pr-4 tabular-nums">{r.order_date}</td>
                   <td className="py-2">{formatUsdFromCents(r.total_cents)}</td>
                 </tr>

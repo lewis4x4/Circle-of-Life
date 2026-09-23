@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BILLING_RATE_NO_AMOUNT_COPY,
+  BILLING_RATE_ZERO_COPY,
   formatBillingRateSurchargeCents,
 } from "./rates-display-copy";
 
@@ -14,8 +15,9 @@ describe("formatBillingRateSurchargeCents", () => {
     expect(formatBillingRateSurchargeCents(null)).not.toBe(EM_DASH);
   });
 
-  it("preserves numeric zero as formatted USD", () => {
-    expect(formatBillingRateSurchargeCents(0)).toBe("$0.00");
+  it("says a stored zero is not set, not a bare $0.00 (COL-649)", () => {
+    expect(formatBillingRateSurchargeCents(0)).toBe(BILLING_RATE_ZERO_COPY);
+    expect(BILLING_RATE_ZERO_COPY).toContain("$0.00");
   });
 
   it("formats posted surcharge cents as USD", () => {

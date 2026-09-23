@@ -23,6 +23,7 @@ import {
 } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type RawMeeting = Omit<MeetingRow, "agenda" | "attendees"> & {
   agenda: unknown;
@@ -273,7 +274,7 @@ export default function AdminMeetingDetailPage() {
           <>
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill tone={meetingStatusTone(meeting.status)}>
-                {meeting.status.replace(/_/g, " ")}
+                {enumLabel(meeting.status)}
               </StatusPill>
               {meeting.status === "scheduled" ? (
                 <Button

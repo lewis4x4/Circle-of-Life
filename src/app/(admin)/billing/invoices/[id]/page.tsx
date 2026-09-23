@@ -8,6 +8,7 @@ import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/component
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
@@ -369,7 +370,7 @@ export default function AdminInvoiceDetailPage() {
                     </div>
                     <div className="flex flex-col">
                       <span className="sm:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Type</span>
-                      <span className="text-xs font-mono tracking-wider text-muted-foreground uppercase">{line.line_type}</span>
+                      <span className="text-xs text-muted-foreground">{enumLabel(line.line_type)}</span>
                     </div>
                     <div className="flex flex-col sm:items-end">
                       <span className="sm:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Qty</span>

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Umbrella } from "lucide-react";
 
+import { CoverageLapseBanner } from "@/components/insurance/coverage-lapse-banner";
 import { InsuranceHubNav } from "./insurance-hub-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -27,9 +28,10 @@ import type { Database } from "@/types/database";
 type EntityMini = { id: string; name: string };
 
 type InsuranceHubSnapshot = {
-  activePolicies: number;
-  renewalsInFlight: number;
-  openClaims: number;
+  /** Null when PostgREST returned no count: the tile says "not loaded", never 0. */
+  activePolicies: number | null;
+  renewalsInFlight: number | null;
+  openClaims: number | null;
   entities: EntityMini[];
 };
 
@@ -82,9 +84,9 @@ export default function AdminInsuranceHubPage() {
       if (err) throw new Error(err.message);
       return {
         entities: (entRows ?? []) as EntityMini[],
-        activePolicies: polCount ?? 0,
-        renewalsInFlight: renCount ?? 0,
-        openClaims: clCount ?? 0,
+        activePolicies: polCount ?? null,
+        renewalsInFlight: renCount ?? null,
+        openClaims: clCount ?? null,
       };
     },
   });
@@ -137,12 +139,13 @@ export default function AdminInsuranceHubPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <InsuranceHubNav />
+        <CoverageLapseBanner />
         <div className="flex items-center gap-3">
           <Umbrella className="h-8 w-8 text-muted-foreground" aria-hidden />
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Insurance & risk</h1>
             <p className="text-sm text-muted-foreground">
-              Corporate policies, renewals, claims, COIs, and workers&apos; compensation (Module 18).
+              Corporate policies, renewals, claims, COIs, and workers&apos; compensation.
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {authLoading
@@ -190,7 +193,7 @@ export default function AdminInsuranceHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="slate">
-              <MonolithicWatermark value={activePolicies ?? 0} className="text-muted-foreground/10 opacity-50" />
+              <MonolithicWatermark value={activePolicies ?? ""} className="text-muted-foreground/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Active Policies
@@ -203,7 +206,7 @@ export default function AdminInsuranceHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald">
-              <MonolithicWatermark value={renewalsInFlight ?? 0} className="text-success/10 opacity-50" />
+              <MonolithicWatermark value={renewalsInFlight ?? ""} className="text-success/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Renewals in Flight
@@ -220,7 +223,7 @@ export default function AdminInsuranceHubPage() {
               className={openClaims && openClaims > 0 ? "border-destructive/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "border-border"}
             >
               <MonolithicWatermark
-                value={openClaims ?? 0}
+                value={openClaims ?? ""}
                 className={openClaims && openClaims > 0 ? "text-destructive/10 opacity-50" : "text-muted-foreground/10 opacity-50"}
               />
               <div className="relative z-10 flex flex-col h-full justify-between">
@@ -252,7 +255,7 @@ export default function AdminInsuranceHubPage() {
           <div className="p-4 sm:p-6 mb-4 rounded-lg border border-border bg-card shadow-sm">
             <h3 className="text-xl font-semibold text-foreground mb-1">Total cost of risk (TCoR)</h3>
             <p className="text-sm font-mono tracking-wide text-muted-foreground">
-              Module 18 Enhanced — rolling ~12 months. Premiums sum stated policy premiums for in-force policies
+              Rolling ~12 months. Premiums sum stated policy premiums for in-force policies
               overlapping the window; losses sum paid + reserve on claims whose loss date (or reported date) falls in the
               window. Operational estimate, not GAAP.
             </p>

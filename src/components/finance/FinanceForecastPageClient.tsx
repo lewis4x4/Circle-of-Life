@@ -27,6 +27,7 @@ import {
 } from "@/lib/finance/forecast-display-copy";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { ForecastSnapshot } from "@/lib/finance/load-forecast-data";
+import { forecastResidentCountLabel } from "@/lib/billing/money-page-counts";
 
 type FinanceForecastPageClientProps = {
   initialData: ForecastSnapshot | null;
@@ -124,7 +125,7 @@ export default function FinanceForecastPageClient({
               detail={
                 costRecordCount === 0
                   ? "No approved payroll or vendor invoices in the last 30 days"
-                  : `${snapshot.cost.summary.activeResidents} active residents in scope`
+                  : forecastResidentCountLabel(snapshot.cost.summary.activeResidents)
               }
             />
             <ForecastMetricCard
@@ -264,7 +265,7 @@ export default function FinanceForecastPageClient({
                       <thead>
                         <tr className="border-b border-slate-200 dark:border-slate-800">
                           <th className="pb-2 pr-4 font-medium">Facility</th>
-                          <th className="pb-2 pr-4 font-medium">Residents</th>
+                          <th className="pb-2 pr-4 font-medium">Active residents today</th>
                           <th className="pb-2 pr-4 font-medium">Labor</th>
                           <th className="pb-2 pr-4 font-medium">Vendor</th>
                           <th className="pb-2 pr-4 font-medium">Total</th>

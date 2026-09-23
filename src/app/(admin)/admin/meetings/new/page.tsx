@@ -18,6 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type RawTemplate = Omit<MeetingTemplateRow, "default_agenda"> & { default_agenda: unknown };
 
@@ -134,10 +135,10 @@ export default function AdminNewMeetingPage() {
       <div className="relative z-10 space-y-6 max-w-2xl">
         <header className="mb-2 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <NotebookPen className="h-8 w-8 text-info shrink-0" aria-hidden />
               New meeting
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Pick a template to prefill the agenda, or start blank.
             </p>
@@ -179,7 +180,7 @@ export default function AdminNewMeetingPage() {
                 <option value="">No template — blank meeting</option>
                 {templates.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.name} ({t.cadence.replace(/_/g, " ")})
+                    {t.name} ({enumLabel(t.cadence)})
                   </option>
                 ))}
               </select>

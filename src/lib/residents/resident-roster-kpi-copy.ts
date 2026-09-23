@@ -14,12 +14,12 @@ const EMPTY_COPY: Record<
   { noScope: string; notLoaded: string; partial?: string }
 > = {
   open_beds: {
-    noScope: "Select a facility to load capacity",
+    noScope: "Counted per building",
     notLoaded: "Capacity not loaded yet",
     partial: "Licensed beds not on file",
   },
   care_plan_reviews: {
-    noScope: "Select a facility to load reviews",
+    noScope: "Counted per building",
     notLoaded: "Review schedule not loaded yet",
   },
 };
@@ -82,7 +82,9 @@ export function residentRosterKpiStripHelperLine(
   const loadedCount = (openBedsLoaded ? 1 : 0) + (careReviewsLoaded ? 1 : 0);
 
   if (!residentRosterFacilityScopeReady(facilityId)) {
-    return "Select a facility in the header — capacity and care plan figures load per site.";
+    // COL-651: the roster itself is the all-facilities rollup; only these two
+    // figures are per building. Say so instead of asking for a facility.
+    return "Unoccupied beds and care plan reviews are counted per building. The roster below covers all your facilities.";
   }
   if (loadedCount >= serverKpiTotal) {
     return null;

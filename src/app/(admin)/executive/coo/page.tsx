@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
-import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
+import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import {
@@ -11,27 +9,23 @@ import {
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
 import {
-  HavenInsightPanel,
   OfficerAlertsPanel,
   OfficerHeader,
   OfficerKpiStrip,
   OfficerKpiTile,
   OfficerLanes,
-  OfficerLiveViewsNotice,
   officerAlarmTone,
   officerCountLabel,
+  officerAlertsEmptyDescription,
   officerKpiValue,
+  officerRegisterKpi,
   useFacilityNameMap,
   type OfficerLane,
 } from "@/components/executive/officer-dashboard";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 
-/** Pills with live pane content on the COO board (stub tabs are hidden for training-week click-around). */
-export const COO_LIVE_TABS = ["Operations Hub", "Haven Insight"] as const;
-
 export default function CooDashboardPage() {
-  const [tab, setTab] = useState("Operations Hub");
   const { organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const { kpis, alerts, facilities, loading, error, refetch } = useExecRoleKpis(selectedFacilityId);
@@ -62,10 +56,19 @@ export default function CooDashboardPage() {
   const overdue = kpis?.residentAssurance.overdueTasksCount;
   const certsExpiring = kpis?.workforce.certificationsExpiring30d;
   const deficiencies = kpis?.compliance.openSurveyDeficiencies;
+  const registers = kpis?.registers;
+  const openEscalations = registers?.openRoundingEscalations ?? null;
+  const medErrorsTile = officerRegisterKpi(medErrors, registers?.medicationErrorsRecorded, loading, "Med errors (MTD)", "warning");
+  const outbreaksTile = officerRegisterKpi(outbreaks, registers?.outbreaksRecorded, loading, "Active outbreaks", "danger");
+  const deficienciesLane =
+    registers?.surveyDeficienciesRecorded === false ? "No deficiencies recorded yet" : officerCountLabel(deficiencies, "deficiencies");
 
   const lanes: OfficerLane[] = [
     {
-      stat: officerCountLabel(overdue, "overdue"),
+      stat:
+        openEscalations != null && openEscalations > 0
+          ? `${officerCountLabel(overdue, "overdue")} · ${openEscalations} open escalations`
+          : officerCountLabel(overdue, "overdue"),
       title: "Operations queue",
       description: "Recurring tasks, escalations, and missed checks.",
       href: "/admin/operations",
@@ -77,7 +80,7 @@ export default function CooDashboardPage() {
       href: "/admin/staffing",
     },
     {
-      stat: officerCountLabel(deficiencies, "deficiencies"),
+      stat: deficienciesLane,
       title: "Compliance & readiness",
       description: "Survey readiness and emergency preparedness.",
       href: "/admin/compliance/emergency-preparedness",
@@ -92,21 +95,13 @@ export default function CooDashboardPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <div className="border-b border-border">
-        <ExecutiveNavV2
-          showTopNav={false}
-          activeTopNav="clinical"
-          activePillMenu={tab}
-          onPillMenuChange={setTab}
-          customPillTabs={[...COO_LIVE_TABS]}
-        />
+      <div className="border-b border-border px-6 py-3 sm:px-12">
+        <ExecutiveHubNav />
       </div>
 
       <OfficerHeader title="Chief Operating Officer" subtitle={subtitle} />
 
       <div className="flex flex-col gap-6 px-6 py-8 sm:px-12">
-        <OfficerLiveViewsNotice count={COO_LIVE_TABS.length} />
-
         {organizationGapMessage ? (
           <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
             <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
@@ -119,27 +114,22 @@ export default function CooDashboardPage() {
 
         <OfficerKpiStrip>
           <OfficerKpiTile label="Open incidents" value={officerKpiValue(openIncidents, loading, "Open incidents")} tone={officerAlarmTone(openIncidents, "danger")} />
-          <OfficerKpiTile label="Med errors (MTD)" value={officerKpiValue(medErrors, loading, "Med errors (MTD)")} tone={officerAlarmTone(medErrors, "warning")} />
-          <OfficerKpiTile label="Active outbreaks" value={officerKpiValue(outbreaks, loading, "Active outbreaks")} tone={officerAlarmTone(outbreaks, "danger")} />
+          <OfficerKpiTile label="Med errors (MTD)" value={medErrorsTile.value} tone={medErrorsTile.tone} />
+          <OfficerKpiTile label="Active outbreaks" value={outbreaksTile.value} tone={outbreaksTile.tone} />
           <OfficerKpiTile label="Overdue tasks" value={officerKpiValue(overdue, loading, "Overdue tasks")} tone={officerAlarmTone(overdue, "warning")} />
         </OfficerKpiStrip>
 
-        {tab === "Operations Hub" ? (
-          <>
-            <OfficerLanes lanes={lanes} subheading="Jump into the live operating queues." />
-            <OfficerAlertsPanel
-              heading="Operational alerts"
-              emptyTitle="No open operational alerts"
-              alerts={alerts}
-              facilityNameById={facilityNameById}
-              loading={loading}
-              error={fetchErrorBannerMessage}
-              onRetry={refetch}
-            />
-          </>
-        ) : tab === "Haven Insight" ? (
-          <HavenInsightPanel domain="operations" />
-        ) : null}
+        <OfficerLanes lanes={lanes} subheading="Jump into the live operating queues." />
+        <OfficerAlertsPanel
+          heading="Operational alerts"
+          emptyTitle="No open operational alerts"
+          emptyDescription={officerAlertsEmptyDescription(openEscalations)}
+          alerts={alerts}
+          facilityNameById={facilityNameById}
+          loading={loading}
+          error={fetchErrorBannerMessage}
+          onRetry={refetch}
+        />
       </div>
     </div>
   );

@@ -202,6 +202,26 @@ describe("AppShell all-sections jump list", () => {
     expect(executiveLinks.every((link) => link.getAttribute("aria-current") !== "page")).toBe(true);
   });
 
+  it("puts the phone pillar strip in a sideways scroller and scrolls the current pillar into view (COL-657)", () => {
+    const scrollIntoView = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      pathMock.pathname = "/admin/staff";
+      const { container } = renderAppShell();
+      const strip = [...container.querySelectorAll('nav[aria-label="Primary"]')]
+        .find((nav) => nav.querySelector('[data-slot="horizontal-scroll-viewport"]'));
+      expect(strip).toBeDefined();
+      const viewport = strip!.querySelector('[data-slot="horizontal-scroll-viewport"]')!;
+      expect(viewport.className).toContain("overflow-x-auto");
+      const current = viewport.querySelector('a[aria-current="page"]');
+      expect(current).toHaveTextContent("Workforce");
+      expect(scrollIntoView.mock.contexts).toContain(current);
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
   it("closes when the trigger is clicked again", async () => {
     const user = userEvent.setup();
     renderAppShell();
@@ -308,6 +328,18 @@ describe("AppShell all-sections jump list", () => {
     expect(within(jumpList).queryByText("Med-Tech cockpit")).not.toBeInTheDocument();
   });
 
+  it("defaults any user with exactly one facility to it instead of All facilities (COL-651)", async () => {
+    authMock.appRole = "owner";
+    const { useFacilityStore } = await import("@/hooks/useFacilityStore");
+    const setSelectedFacility = useFacilityStore.getState().setSelectedFacility as ReturnType<typeof vi.fn>;
+    setSelectedFacility.mockClear();
+    renderAppShell();
+
+    await waitFor(() => expect(setSelectedFacility).toHaveBeenCalledWith("fac-1"));
+    expect(screen.queryByTestId("admin-facility-filter-trigger")).not.toBeInTheDocument();
+    expect(screen.getByTestId("admin-facility-static-chip")).toHaveTextContent("Oakridge ALF");
+  });
+
   it("hides executive command nav for roles that cannot open standup or overview", async () => {
     authMock.appRole = "med_tech";
     const user = userEvent.setup();
@@ -336,4 +368,47 @@ it("marks the same pillar before and after hydration through the rounding rewrit
   authMock.appRole = "facility_admin";
   expect(activeLinks("/admin/v2/rounding")).toEqual(["Clinical", "Smart Rounding"]);
   expect(activeLinks("/admin/rounding")).toEqual(["Clinical", "Smart Rounding"]);
+});
+
+describe("AppShell nav anchoring (COL-655)", () => {
+  const litLinks = (pathname: string, role = "owner") => {
+    pathMock.pathname = pathname;
+    authMock.loading = false;
+    authMock.appRole = role;
+    const { container, unmount } = renderAppShell();
+    const labels = (selector: string) =>
+      [...new Set([...container.querySelectorAll(selector)].map((link) => link.textContent?.trim()))];
+    const result = {
+      pillars: labels('nav[aria-label="Primary"] a[aria-current="page"]'),
+      rail: labels('aside a[aria-current="page"]'),
+      railItems: labels("aside a"),
+    };
+    unmount();
+    return result;
+  };
+
+  it("lights exactly one rail item on executive sub-pages (the owner's Home)", () => {
+    expect(litLinks("/admin/executive/cfo").rail).toEqual(["Home"]);
+    expect(litLinks("/admin/v2/executive/cfo").rail).toEqual(["Home"]);
+  });
+
+  it("lights the owning pillar, not Command, on ⌘K-only routes", () => {
+    const meetings = litLinks("/admin/meetings");
+    expect(meetings.pillars).toEqual(["Workforce"]);
+    expect(meetings.rail).toEqual(["Meetings"]);
+  });
+
+  it("shows a staff-launch-held Finance item in the rail while the operator is inside Finance", () => {
+    const ledger = litLinks("/admin/finance/ledger", "facility_admin");
+    expect(ledger.pillars).toEqual(["Business"]);
+    expect(ledger.rail).toEqual(["Finance"]);
+    // Off Finance pages the hold still keeps it off the rail.
+    expect(litLinks("/admin/vendors", "facility_admin").railItems).not.toContain("Finance");
+  });
+
+  it("gives account routes no pillar and no rail", () => {
+    const users = litLinks("/admin/settings/users");
+    expect(users.pillars).toEqual([]);
+    expect(users.railItems).toEqual([]);
+  });
 });

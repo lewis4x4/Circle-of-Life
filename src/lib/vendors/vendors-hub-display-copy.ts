@@ -43,11 +43,19 @@ export function vendorsHubKpiTileValue(
   return vendorsHubKpiEmptyCopy(key, ctx);
 }
 
-/** MTD spend KPI tile body — real zero stays formatted; null/missing gets explicit copy. */
+export const VENDORS_HUB_NO_PAYMENTS_COPY = "No payments recorded this month";
+
+/**
+ * MTD spend KPI tile body. With no vendor payment rows this month there is no
+ * spend to total, so it says so instead of "$0.00" (COL-649); a zero total over
+ * real rows stays formatted. Null/missing gets explicit copy.
+ */
 export function vendorsHubMtdSpendTileValue(
   value: number | null,
   ctx: VendorsHubKpiContext,
+  paymentCount?: number | null,
 ): string {
+  if (value !== null && paymentCount === 0) return VENDORS_HUB_NO_PAYMENTS_COPY;
   if (value !== null) return formatUsdFromCents(value);
   return vendorsHubKpiEmptyCopy("mtd_spend", ctx);
 }
