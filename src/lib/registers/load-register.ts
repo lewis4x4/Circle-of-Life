@@ -117,6 +117,66 @@ type VisitorDbRow = {
   left_open: boolean;
 };
 
+function visitorRow(row: VisitorDbRow): import("@/lib/registers/visitor-log").VisitorLogRow {
+  return {
+    id: row.id,
+    visitorName: row.visitor_name,
+    visitorPhone: row.visitor_phone,
+    visitorType: row.visitor_type,
+    visitingType: row.visiting_type,
+    visitingResidentId: row.visiting_resident_id,
+    visitingResidentName: row.visiting_resident_name,
+    signedInAt: row.signed_in_at,
+    signedInByName: row.signed_in_by_name,
+    signedOutAt: row.signed_out_at,
+    signedOutByName: row.signed_out_by_name,
+    signOutMethod: row.sign_out_method,
+    voidedAt: row.voided_at,
+    voidReason: row.void_reason,
+    leftOpen: row.left_open,
+  };
+}
+
+type KioskDetailRow = { id: string; visitor_company: string | null; visiting_name_text: string | null; kiosk_device_id: string | null };
+
+/**
+ * `visitor_log()` and `visitor_log_open()` predate the kiosk columns (migration
+ * 481) and stay as they are. A kiosk row has no staff signer, so only rows with
+ * no signer are looked up, straight from the table under the staff SELECT policy.
+ */
+async function withKioskDetails(
+  supabase: Client,
+  rows: import("@/lib/registers/visitor-log").VisitorLogRow[],
+): Promise<import("@/lib/registers/visitor-log").VisitorLogRow[]> {
+  const ids = rows.filter((row) => !row.signedInByName).map((row) => row.id);
+  if (ids.length === 0) return rows;
+  const details = new Map<string, KioskDetailRow>();
+  for (let start = 0; start < ids.length; start += 200) {
+    const { data, error } = await supabase
+      .from("visitor_log_entries" as never)
+      .select("id, visitor_company, visiting_name_text, kiosk_device_id")
+      .in("id", ids.slice(start, start + 200));
+    if (error) throw new Error(error.message);
+    for (const row of (data ?? []) as unknown as KioskDetailRow[]) details.set(row.id, row);
+  }
+  return rows.map((row) => {
+    const detail = details.get(row.id);
+    if (!detail) return row;
+    return {
+      ...row,
+      visitorCompany: detail.visitor_company,
+      visitingNameText: detail.visiting_name_text,
+      fromKiosk: detail.kiosk_device_id !== null,
+    };
+  });
+}
+
+/** The desk matches a kiosk entry's typed name to a resident of that building, once (migration 481). */
+export async function matchVisitorResident(supabase: Client, entryId: string, residentId: string): Promise<void> {
+  const { error } = await supabase.rpc("visitor_match_resident" as never, { p_entry_id: entryId, p_resident_id: residentId } as never);
+  if (error) throw new Error(error.message);
+}
+
 export async function fetchVisitorLog(
   supabase: Client,
   args: {
@@ -135,23 +195,7 @@ export async function fetchVisitorLog(
     p_include_voided: args.includeVoided,
   } as never);
   if (error) throw new Error(error.message);
-  return ((data ?? []) as unknown as VisitorDbRow[]).map((row) => ({
-    id: row.id,
-    visitorName: row.visitor_name,
-    visitorPhone: row.visitor_phone,
-    visitorType: row.visitor_type,
-    visitingType: row.visiting_type,
-    visitingResidentId: row.visiting_resident_id,
-    visitingResidentName: row.visiting_resident_name,
-    signedInAt: row.signed_in_at,
-    signedInByName: row.signed_in_by_name,
-    signedOutAt: row.signed_out_at,
-    signedOutByName: row.signed_out_by_name,
-    signOutMethod: row.sign_out_method,
-    voidedAt: row.voided_at,
-    voidReason: row.void_reason,
-    leftOpen: row.left_open,
-  }));
+  return withKioskDetails(supabase, ((data ?? []) as unknown as VisitorDbRow[]).map(visitorRow));
 }
 
 export async function signOutVisitor(supabase: Client, entryId: string): Promise<void> {
@@ -206,21 +250,5 @@ export async function fetchOpenVisitors(
     p_facility_id: args.facilityId,
   } as never);
   if (error) throw new Error(error.message);
-  return ((data ?? []) as unknown as VisitorDbRow[]).map((row) => ({
-    id: row.id,
-    visitorName: row.visitor_name,
-    visitorPhone: row.visitor_phone,
-    visitorType: row.visitor_type,
-    visitingType: row.visiting_type,
-    visitingResidentId: row.visiting_resident_id,
-    visitingResidentName: row.visiting_resident_name,
-    signedInAt: row.signed_in_at,
-    signedInByName: row.signed_in_by_name,
-    signedOutAt: row.signed_out_at,
-    signedOutByName: row.signed_out_by_name,
-    signOutMethod: row.sign_out_method,
-    voidedAt: row.voided_at,
-    voidReason: row.void_reason,
-    leftOpen: row.left_open,
-  }));
+  return withKioskDetails(supabase, ((data ?? []) as unknown as VisitorDbRow[]).map(visitorRow));
 }

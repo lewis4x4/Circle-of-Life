@@ -4,6 +4,8 @@ const mock = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("@/lib/supabase/service-role", () => ({ createServiceRoleClient: () => ({ rpc: mock.rpc }) }));
 vi.mock("@/lib/observability/logger", () => ({ logError: vi.fn(), logWarn: vi.fn() }));
 
+import { validateKioskSignIn } from "@/lib/kiosk/contract";
+
 import { POST } from "./route";
 
 const ENTRY = "11111111-1111-4111-8111-111111111111";
@@ -66,6 +68,15 @@ describe("POST /api/kiosk/visitor/sign-in", () => {
       expect(Object.keys(json.fields), field).toContain(field);
     }
     expect(mock.rpc).not.toHaveBeenCalled();
+  });
+
+  it("answers with the same words the kiosk screen shows, from the one contract", async () => {
+    const response = await POST(request({ ...VISIT, visiting_name: "", symptoms: undefined }));
+    const json = await response.json();
+    const screen = validateKioskSignIn("visitor", { name: VISIT.name, phone: VISIT.phone, visiting_name: "", symptoms: null });
+    expect(screen.ok).toBe(false);
+    if (!screen.ok) expect(json.fields).toEqual(screen.errors);
+    expect(json.fields).toMatchObject({ visiting_name: "Enter the name of the person you are visiting.", symptoms: "Choose Yes or No." });
   });
 
   it("refuses an unknown kind, a bad entry id and a missing token", async () => {

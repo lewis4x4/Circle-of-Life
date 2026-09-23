@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { KIOSK_KINDS, KIOSK_VISITOR_TYPE, kioskPrefixLetterCount, validateKioskSignIn } from "./contract";
+import { KIOSK_KINDS, KIOSK_SICK_QUESTION, KIOSK_VISITOR_COPY, KIOSK_VISITOR_TYPE, kioskPrefixLetterCount, validateKioskSignIn } from "./contract";
 
 describe("kiosk visitor kinds (spec 40 §7)", () => {
   it("maps each kiosk kind to its visitor_type", () => {
@@ -20,6 +20,41 @@ describe("kiosk visitor kinds (spec 40 §7)", () => {
   it("never offers a resident picker: who they visit is typed text", () => {
     for (const kind of Object.values(KIOSK_KINDS)) {
       expect(kind.fields.map((f) => f.name)).not.toContain("resident_id");
+    }
+  });
+});
+
+describe("kiosk copy is the approved prototype's (DESIGN §1, one source for screen and route)", () => {
+  it("uses the rendered card titles and subtitles", () => {
+    expect(Object.values(KIOSK_KINDS).map((k) => [k.title, k.subtitle])).toEqual([
+      ["Visiting a resident", "Family and friends"],
+      ["Healthcare provider", "Doctors, nurses, hospice, home health, therapy"],
+      ["Vendor or contractor", "Deliveries, repairs, service"],
+      ["Inspector or official", "AHCA surveyors, fire marshal"],
+    ]);
+    expect(KIOSK_KINDS.visitor.formSubtitle).toBe("Sign in so staff know you are in the building.");
+    expect(KIOSK_KINDS.provider.formSubtitle).toBe("Doctors, nurses, hospice, home health and therapy sign in here.");
+  });
+
+  it("asks the rendered sick question and labels phone as optional by placeholder", () => {
+    for (const kind of ["visitor", "provider"] as const) {
+      expect(KIOSK_KINDS[kind].fields.find((f) => f.name === "symptoms")?.label).toBe(KIOSK_SICK_QUESTION);
+    }
+    expect(KIOSK_SICK_QUESTION).toBe("Do you have a fever, cough or feel sick today?");
+    expect(KIOSK_KINDS.visitor.fields.find((f) => f.name === "phone")).toMatchObject({ label: "Phone", placeholder: "Optional" });
+    expect(KIOSK_VISITOR_COPY.visitorLogLine).toBe("Your name and times go in the facility visitor log.");
+    expect(KIOSK_VISITOR_COPY.signOutHint).toBe("Type the first 3 letters of your first name");
+  });
+
+  it("says what is missing in plain words", () => {
+    const result = validateKioskSignIn("visitor", { name: "", visiting_name: "", symptoms: null });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual({
+        name: "Enter your name.",
+        visiting_name: "Enter the name of the person you are visiting.",
+        symptoms: "Choose Yes or No.",
+      });
     }
   });
 });

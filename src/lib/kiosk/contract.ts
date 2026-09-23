@@ -49,63 +49,91 @@ export const KIOSK_VISITOR_TYPE: Record<KioskVisitorKind, "family_friend" | "hea
 
 export type KioskFieldName = "name" | "phone" | "company" | "visiting_name" | "purpose" | "symptoms";
 
-export type KioskFieldRule = { name: KioskFieldName; label: string; required: boolean };
+export type KioskFieldRule = {
+  name: KioskFieldName;
+  label: string;
+  required: boolean;
+  placeholder?: string;
+  hint?: string;
+  /** The error when a required field is empty; defaults to "Enter <label>." */
+  missing?: string;
+  /** Show "(required)" after the label, as the provider form does for its agency. */
+  markRequired?: boolean;
+};
 
 export type KioskKindDefinition = {
   kind: KioskVisitorKind;
   title: string;
+  /** Under the title on the home card. */
   subtitle: string;
+  /** The line under the form's header. */
+  formSubtitle: string;
   /** Fields in form order. A field not listed must be empty for this kind. */
   fields: KioskFieldRule[];
 };
 
-const NAME_FIELD: KioskFieldRule = { name: "name", label: "Your name", required: true };
-const SYMPTOMS_FIELD: KioskFieldRule = { name: "symptoms", label: "Are you feeling sick today?", required: true };
+/** Asked on the visit and provider forms; "Yes" records screening_passed = false. */
+export const KIOSK_SICK_QUESTION = "Do you have a fever, cough or feel sick today?";
+
+const NAME_FIELD: KioskFieldRule = { name: "name", label: "Your name", required: true, placeholder: "First and last name", missing: "Enter your name." };
+const SYMPTOMS_FIELD: KioskFieldRule = { name: "symptoms", label: KIOSK_SICK_QUESTION, required: true, missing: "Choose Yes or No." };
+const RESIDENT_HINT = "Type their name. Staff will match it.";
 
 /**
- * Spec 40 §7 field table. The database (`visitor_kiosk_sign_in`) enforces the
- * same rules; the route checks them first so the kiosk gets field errors.
+ * Spec 40 §7 field table, in the approved prototype's words
+ * (`docs/designs/floor-tablet-kiosk/reference/10`, `14`, `15`). The database
+ * (`visitor_kiosk_sign_in`) enforces the same rules; the route checks them
+ * first so the kiosk gets field errors.
  */
 export const KIOSK_KINDS: Record<KioskVisitorKind, KioskKindDefinition> = {
   visitor: {
     kind: "visitor",
     title: "Visiting a resident",
     subtitle: "Family and friends",
+    formSubtitle: "Sign in so staff know you are in the building.",
     fields: [
       NAME_FIELD,
-      { name: "phone", label: "Phone (optional)", required: false },
-      { name: "visiting_name", label: "Who are you visiting?", required: true },
+      { name: "phone", label: "Phone", required: false, placeholder: "Optional", hint: "Only used if the building needs to reach you." },
+      { name: "visiting_name", label: "Who are you visiting?", required: true, placeholder: "Resident's name", hint: RESIDENT_HINT, missing: "Enter the name of the person you are visiting." },
       SYMPTOMS_FIELD,
     ],
   },
   provider: {
     kind: "provider",
     title: "Healthcare provider",
-    subtitle: "Doctors, nurses, therapists, hospice",
+    subtitle: "Doctors, nurses, hospice, home health, therapy",
+    formSubtitle: "Doctors, nurses, hospice, home health and therapy sign in here.",
     fields: [
       NAME_FIELD,
-      { name: "company", label: "Agency or practice", required: true },
-      { name: "visiting_name", label: "Resident you are seeing", required: false },
+      { name: "company", label: "Agency or practice", required: true, markRequired: true, placeholder: "Hospice, home health, physician office" },
+      { name: "visiting_name", label: "Resident you are seeing", required: false, placeholder: "Resident's name", hint: RESIDENT_HINT },
       SYMPTOMS_FIELD,
     ],
   },
   vendor: {
     kind: "vendor",
     title: "Vendor or contractor",
-    subtitle: "Deliveries, repairs, services",
+    subtitle: "Deliveries, repairs, service",
+    formSubtitle: "Deliveries, repairs and service sign in here.",
     fields: [
       NAME_FIELD,
-      { name: "company", label: "Company", required: true },
-      { name: "purpose", label: "Purpose of visit", required: false },
+      { name: "company", label: "Company", required: true, markRequired: true, placeholder: "Company name" },
+      { name: "purpose", label: "What are you here for?", required: false, placeholder: "Delivery, repair or service" },
     ],
   },
   inspector: {
     kind: "inspector",
     title: "Inspector or official",
-    subtitle: "Surveyors, fire marshal, state and county",
-    fields: [NAME_FIELD, { name: "company", label: "Agency", required: true }],
+    subtitle: "AHCA surveyors, fire marshal",
+    formSubtitle: "Surveyors, fire marshals and other officials sign in here.",
+    fields: [NAME_FIELD, { name: "company", label: "Agency", required: true, markRequired: true, placeholder: "AHCA, fire marshal, county" }],
   },
 };
+
+/** The error for an empty required field. */
+export function kioskMissingCopy(rule: KioskFieldRule): string {
+  return rule.missing ?? `Enter ${rule.label.toLowerCase()}.`;
+}
 
 export const KIOSK_FIELD_LIMITS = { name: 120, company: 120, visiting_name: 120, purpose: 280 } as const;
 /** Same pattern as the database check. */
@@ -117,7 +145,7 @@ export type KioskSignInForm = {
   company?: string | null;
   visiting_name?: string | null;
   purpose?: string | null;
-  /** Answer to "Are you feeling sick today?"; null until answered. */
+  /** Answer to KIOSK_SICK_QUESTION; null until answered. */
   symptoms?: boolean | null;
 };
 
@@ -160,7 +188,7 @@ export function validateKioskSignIn(
   const visiting = clean(form.visiting_name);
   const purpose = clean(form.purpose);
 
-  if (!name) errors.name = "Enter your name.";
+  if (!name) errors.name = kioskMissingCopy(NAME_FIELD);
   else if (name.length > KIOSK_FIELD_LIMITS.name) errors.name = "Use a shorter name.";
 
   const checkText = (field: "company" | "visiting_name" | "purpose", value: string | null) => {
@@ -169,7 +197,7 @@ export function validateKioskSignIn(
       if (value) errors[field] = "This form does not ask for that.";
       return;
     }
-    if (rule.required && !value) errors[field] = `Enter ${rule.label.toLowerCase()}.`;
+    if (rule.required && !value) errors[field] = kioskMissingCopy(rule);
     else if (value && value.length > KIOSK_FIELD_LIMITS[field]) errors[field] = "That is too long.";
   };
   checkText("company", company);
@@ -182,7 +210,7 @@ export function validateKioskSignIn(
   }
 
   if (has("symptoms")) {
-    if (typeof form.symptoms !== "boolean") errors.symptoms = "Choose Yes or No.";
+    if (typeof form.symptoms !== "boolean") errors.symptoms = kioskMissingCopy(SYMPTOMS_FIELD);
   } else if (form.symptoms === true) {
     errors.symptoms = "This form does not ask for that.";
   }
@@ -249,10 +277,12 @@ export const KIOSK_VISITOR_ERROR_COPY: Record<KioskVisitorErrorCode, string> = {
   unavailable: "The kiosk could not reach Haven. Please see the front desk.",
 };
 
+/** Rendered kiosk visitor copy (`10`, `14b`, `16`, `17`). */
 export const KIOSK_VISITOR_COPY = {
   sickWarning: "Please see the front desk before you go in.",
-  visitorLogLine: "Your name and time go in the visitor log the building keeps for the state.",
-  signOutReminder: "Please sign out here when you leave.",
+  visitorLogLine: "Your name and times go in the facility visitor log.",
+  /** "When you leave, tap **Leaving? Sign out here** on this tablet." */
+  signOutReminder: { before: "When you leave, tap ", strong: "Leaving? Sign out here", after: " on this tablet." },
   signOutPrompt: "Leaving? Sign out here",
-  signOutHint: "Type the first 3 letters of your name.",
+  signOutHint: "Type the first 3 letters of your first name",
 } as const;

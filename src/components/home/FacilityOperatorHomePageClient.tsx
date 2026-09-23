@@ -28,6 +28,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 import { GlanceStrip } from "./GlanceStrip";
+import { InspectorOnSiteBanner } from "./InspectorOnSiteBanner";
 import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
 import { ClearedRow, OnTapRow } from "./OnTapRow";
 import { PresenceTiles } from "./PresenceTiles";
@@ -218,6 +219,8 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
           </span>
         ) : null}
       </header>
+
+      <InspectorOnSiteBanner inspections={data.openInspections} timeZone={feed.timezone} />
 
       <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => {
           if (key === "record_payment") { setPaymentResident(null); setPaymentOpen(true); }

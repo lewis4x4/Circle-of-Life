@@ -9,6 +9,7 @@ import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import {
   fetchOpenVisitors,
   fetchVisitorLog,
+  matchVisitorResident,
   signOutEveryone,
   signOutVisitor,
   voidVisitorEntry,
@@ -21,8 +22,12 @@ import {
   VISITOR_TYPES,
   VOID_REASONS,
   inTheBuildingNow,
+  needsResidentMatch,
+  signedInByDisplay,
   signOutEveryoneConfirmation,
   validateVisitorSignIn,
+  visitingDisplay,
+  visitorDisplayName,
   visitorTypeLabel,
   voidReasonLabel,
   type VisitingTypeId,
@@ -39,6 +44,8 @@ import {
   formatRegisterEventTime,
   isCompleteDateInput,
 } from "@/lib/registers/register-display-copy";
+
+import { KioskVisitMatch } from "./KioskVisitMatch";
 
 export type VisitableResident = { id: string; firstName: string; lastName: string };
 
@@ -332,11 +339,10 @@ export function VisitorLogClient({
                 className="flex flex-col gap-2 rounded-[9px] border border-border bg-card px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">{row.visitorName}</p>
+                  <p className="truncate text-sm font-medium text-foreground">{visitorDisplayName(row)}</p>
                   <p className="text-xs text-muted-foreground">
                     {visitorTypeLabel(row.visitorType)}
-                    {row.visitingResidentName ? ` · visiting ${row.visitingResidentName}` : null}
-                    {!row.visitingResidentName && row.visitingType ? ` · visiting ${row.visitingType}` : null}
+                    {visitingDisplay(row) ? ` · visiting ${visitingDisplay(row)}` : null}
                     {" · in "}
                     {formatRegisterEventTime(row.signedInAt)}
                     {" · "}
@@ -348,17 +354,27 @@ export function VisitorLogClient({
                     </p>
                   ) : null}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={busyId === row.id}
-                  onClick={() =>
-                    void act(row.id, () => signOutVisitor(createClient(), row.id), "The visitor could not be signed out.")
-                  }
-                >
-                  Sign out
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {needsResidentMatch(row) ? (
+                    <KioskVisitMatch
+                      typedName={row.visitingNameText ?? ""}
+                      residents={residents}
+                      busy={busyId === row.id}
+                      onMatch={(residentId) => void act(row.id, () => matchVisitorResident(createClient(), row.id, residentId), "The resident could not be matched.")}
+                    />
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={busyId === row.id}
+                    onClick={() =>
+                      void act(row.id, () => signOutVisitor(createClient(), row.id), "The visitor could not be signed out.")
+                    }
+                  >
+                    Sign out
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
@@ -407,10 +423,21 @@ export function VisitorLogClient({
                   .filter((row) => !row.voidedAt)
                   .map((row) => (
                     <tr key={row.id} className="border-b border-border align-top">
-                      <td className="py-2 pr-3 text-foreground">{row.visitorName}</td>
+                      <td className="py-2 pr-3 text-foreground">{visitorDisplayName(row)}</td>
                       <td className="py-2 pr-3 text-muted-foreground">{visitorTypeLabel(row.visitorType)}</td>
                       <td className="py-2 pr-3 text-muted-foreground">
-                        {row.visitingResidentName ?? row.visitingType ?? ""}
+                        <div className="flex flex-col items-start gap-1">
+                          <span>{visitingDisplay(row)}</span>
+                          {/* Open entries are matched from "In the building now" above; this covers visits already over. */}
+                          {needsResidentMatch(row) && row.signedOutAt ? (
+                            <KioskVisitMatch
+                              typedName={row.visitingNameText ?? ""}
+                              residents={residents}
+                              busy={busyId === row.id}
+                              onMatch={(residentId) => void act(row.id, () => matchVisitorResident(createClient(), row.id, residentId), "The resident could not be matched.")}
+                            />
+                          ) : null}
+                        </div>
                       </td>
                       <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
                         {formatRegisterEventTime(row.signedInAt)}
@@ -419,7 +446,7 @@ export function VisitorLogClient({
                         {row.signedOutAt ? formatRegisterEventTime(row.signedOutAt) : ""}
                         {row.signOutMethod === "bulk_end_of_day" ? " (end of day)" : ""}
                       </td>
-                      <td className="py-2 pr-3 text-muted-foreground">{row.signedInByName ?? ""}</td>
+                      <td className="py-2 pr-3 text-muted-foreground">{signedInByDisplay(row)}</td>
                       <td className="py-2 pr-3">
                         {voidingId === row.id ? (
                           <div className="flex flex-wrap items-center gap-2">

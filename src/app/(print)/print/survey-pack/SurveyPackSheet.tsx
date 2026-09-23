@@ -32,7 +32,13 @@ import {
   parseSurveyPackRequest,
   surveyPackSectionLabel,
 } from "@/lib/registers/survey-pack";
-import { visitorTypeLabel, type VisitorLogRow } from "@/lib/registers/visitor-log";
+import {
+  signedInByDisplay,
+  visitingDisplay,
+  visitorDisplayName,
+  visitorTypeLabel,
+  type VisitorLogRow,
+} from "@/lib/registers/visitor-log";
 
 import styles from "./survey-pack-print.module.css";
 
@@ -299,11 +305,11 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
                   {pack.visitors.map((row) => (
                     <tr key={row.id}>
                       <td>{formatRegisterEventTime(row.signedInAt)}</td>
-                      <td>{row.visitorName}</td>
+                      <td>{visitorDisplayName(row)}</td>
                       <td>{visitorTypeLabel(row.visitorType)}</td>
-                      <td>{row.visitingResidentName ?? row.visitingType ?? ""}</td>
+                      <td>{visitingDisplay(row)}</td>
                       <td>{row.signedOutAt ? formatRegisterEventTime(row.signedOutAt) : ""}</td>
-                      <td>{row.signedInByName ?? ""}</td>
+                      <td>{signedInByDisplay(row)}</td>
                     </tr>
                   ))}
                 </tbody>

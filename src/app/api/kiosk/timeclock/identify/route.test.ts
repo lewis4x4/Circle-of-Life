@@ -44,3 +44,20 @@ describe("POST /api/kiosk/timeclock/identify", () => {
     expect((await POST(request({ identifier: "A-100", pin: "123456" }))).status).toBe(403);
   });
 });
+
+describe("identify: front-door kiosk display fields (COL-692)", () => {
+  it("passes display_name and last_out_at through when the database returns them", async () => {
+    mock.rpc.mockResolvedValue({
+      data: { ok: true, first_name: "Ashley", display_name: "Ashley W.", last_out_at: "2026-09-30T23:06:00Z", state: "out", next_actions: ["in"], today_worked_minutes: 0 },
+      error: null,
+    });
+    const response = await POST(request({ identifier: "1042", pin: "123456" }));
+    expect(await response.json()).toMatchObject({ display_name: "Ashley W.", last_out_at: "2026-09-30T23:06:00Z" });
+  });
+
+  it("returns null for a person with no clock out yet", async () => {
+    mock.rpc.mockResolvedValue({ data: { ok: true, first_name: "Ashley", display_name: "Ashley W.", last_out_at: null, state: "out", next_actions: ["in"], today_worked_minutes: 0 }, error: null });
+    const response = await POST(request({ identifier: "1042", pin: "123456" }));
+    expect((await response.json()).last_out_at).toBeNull();
+  });
+});

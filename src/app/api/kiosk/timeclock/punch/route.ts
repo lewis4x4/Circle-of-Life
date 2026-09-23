@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { logError } from "@/lib/observability/logger";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
-import { KIOSK_DEVICE_HEADER, isPunchType, type KioskPunchReceipt, type PunchType } from "@/lib/timeclock/kiosk-contract";
+import { KIOSK_DEVICE_HEADER, isPunchType, kioskStaffDisplay, type KioskPunchReceipt, type PunchType } from "@/lib/timeclock/kiosk-contract";
 import { badgeLookupHmac, isRecord, kioskErrorResponse } from "@/lib/timeclock/server";
 
 /** Database codes that mean "recorded as a sync rejection for the manager" on an offline replay. */
@@ -86,6 +86,7 @@ export async function POST(request: Request) {
     state: (result.state as KioskPunchReceipt["state"]) ?? "out",
     next_actions: Array.isArray(result.next_actions) ? (result.next_actions as PunchType[]) : ["in"],
     today_worked_minutes: Number(result.today_worked_minutes ?? 0),
+    ...kioskStaffDisplay(result),
   };
   return NextResponse.json(receipt, { headers: { "Cache-Control": "no-store" } });
 }

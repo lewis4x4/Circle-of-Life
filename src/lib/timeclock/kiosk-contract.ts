@@ -32,7 +32,15 @@ export type KioskErrorCode =
 
 export type KioskStaffState = "out" | "in" | "meal";
 
-export type KioskIdentifyResponse = {
+/** Optional fields the database adds for the front-door kiosk (COL-692). Absent from an older database. */
+export type KioskStaffDisplay = {
+  /** "Ashley W.": first name and last initial. */
+  display_name?: string | null;
+  /** The last effective clock out, ISO; null when there is none. */
+  last_out_at?: string | null;
+};
+
+export type KioskIdentifyResponse = KioskStaffDisplay & {
   first_name: string;
   state: KioskStaffState;
   next_actions: PunchType[];
@@ -48,7 +56,7 @@ export type KioskPunchRequest = {
   captured_offline: boolean;
 };
 
-export type KioskPunchReceipt = {
+export type KioskPunchReceipt = KioskStaffDisplay & {
   punch_id: string;
   replayed: boolean;
   first_name: string;
@@ -141,6 +149,14 @@ export const KIOSK_COPY = {
   } satisfies Record<KioskErrorCode, string>,
   idleReset: "Cleared after 30 seconds without input.",
 } as const;
+
+/** Copies display_name and last_out_at from a database result when it carries them; an older result adds nothing. */
+export function kioskStaffDisplay(result: Record<string, unknown>): KioskStaffDisplay {
+  const display: KioskStaffDisplay = {};
+  if ("display_name" in result) display.display_name = typeof result.display_name === "string" && result.display_name.trim() ? result.display_name.trim() : null;
+  if ("last_out_at" in result) display.last_out_at = typeof result.last_out_at === "string" ? result.last_out_at : null;
+  return display;
+}
 
 /** `4 h 12 min` for the receipt. Integer minutes in, no rounding. */
 export function formatWorkedMinutes(minutes: number): string {
