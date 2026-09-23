@@ -10,6 +10,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { executiveArDraftsCaption } from "@/lib/executive/executive-display-copy";
 import { FACILITY_OPERATOR_TZ } from "@/lib/facility-wall-clock";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { TcorSnapshot } from "@/lib/insurance/compute-tcor";
@@ -351,13 +352,14 @@ export function buildFacilitySnapshotTiles(kpi: ExecKpiPayload, facilityId: stri
         linkLabel: "View residents",
       };
 
+  const draftsCaption = executiveArDraftsCaption(kpi.financial);
   const receivablesTile: FacilitySnapshotTile =
     kpi.financial.openInvoicesCount === 0
       ? {
           key: "receivables",
           label: "Open receivables",
           value: "None open",
-          detail: "No invoices with a balance due.",
+          detail: draftsCaption ? `No sent invoices with a balance due. ${draftsCaption}.` : "No sent invoices with a balance due.",
           state: "recorded",
           href: FACILITY_ROUTES.invoices,
           linkLabel: "View invoices",
@@ -366,7 +368,9 @@ export function buildFacilitySnapshotTiles(kpi: ExecKpiPayload, facilityId: stri
           key: "receivables",
           label: "Open receivables",
           value: formatUsdFromCents(kpi.financial.totalBalanceDueCents),
-          detail: `${plural(kpi.financial.openInvoicesCount, "open invoice")} with a balance due`,
+          detail: draftsCaption
+            ? `${plural(kpi.financial.openInvoicesCount, "sent invoice")} with a balance due. ${draftsCaption}.`
+            : `${plural(kpi.financial.openInvoicesCount, "sent invoice")} with a balance due`,
           state: "recorded",
           href: FACILITY_ROUTES.invoices,
           linkLabel: "View invoices",
