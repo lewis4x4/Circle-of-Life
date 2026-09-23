@@ -225,23 +225,23 @@ CREATE POLICY "All authenticated see definitions" ON quality_metric_definitions 
 
 ALTER TABLE quality_scores ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see quality scores" ON quality_scores FOR SELECT
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE quality_composite_scores ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see composite" ON quality_composite_scores FOR SELECT
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE qip_projects ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see QIPs" ON qip_projects FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Admin manage QIPs" ON qip_projects FOR ALL
-  USING (organization_id = auth.organization_id() AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE qip_cycles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see cycles" ON qip_cycles FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Admin manage cycles" ON qip_cycles FOR ALL
-  USING (organization_id = auth.organization_id() AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE satisfaction_surveys ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see surveys" ON satisfaction_surveys FOR SELECT
@@ -331,16 +331,16 @@ This report is what Brian Lewis presents to Dan Myer at CRC Group to justify pre
 
 | Method | Route | Auth | Roles | Description |
 |--------|-------|------|-------|-------------|
-| GET | `/facilities/:id/quality/dashboard` | Required | facility_admin, nurse, owner, org_admin | Quality dashboard: composite score, all metric scores, trends |
+| GET | `/facilities/:id/quality/dashboard` | Required | facility_admin, med_tech, owner, org_admin | Quality dashboard: composite score, all metric scores, trends |
 | GET | `/facilities/:id/quality/metrics` | Required | Same | Individual metric detail. Params: `metric_key`, `period_type`, `date_from`, `date_to` |
 | GET | `/facilities/:id/quality/metrics/:metricKey/history` | Required | Same | Historical trend for a specific metric |
 | GET | `/organizations/quality/dashboard` | Required | owner, org_admin | Cross-facility quality comparison |
 | GET | `/organizations/quality/benchmark` | Required | owner, org_admin | Facility-vs-facility benchmarking |
-| GET | `/facilities/:id/qip` | Required | facility_admin, nurse | List QIP projects |
-| POST | `/facilities/:id/qip` | Required | facility_admin, nurse | Create QIP project |
-| PUT | `/qip/:id` | Required | facility_admin, nurse | Update QIP |
-| POST | `/qip/:id/cycles` | Required | facility_admin, nurse | Add PDSA cycle |
-| PUT | `/qip-cycles/:id` | Required | facility_admin, nurse | Update PDSA cycle |
+| GET | `/facilities/:id/qip` | Required | facility_admin, med_tech | List QIP projects |
+| POST | `/facilities/:id/qip` | Required | facility_admin, med_tech | Create QIP project |
+| PUT | `/qip/:id` | Required | facility_admin, med_tech | Update QIP |
+| POST | `/qip/:id/cycles` | Required | facility_admin, med_tech | Add PDSA cycle |
+| PUT | `/qip-cycles/:id` | Required | facility_admin, med_tech | Update PDSA cycle |
 | GET | `/facilities/:id/satisfaction/surveys` | Required | facility_admin | List surveys |
 | POST | `/facilities/:id/satisfaction/surveys` | Required | facility_admin | Create survey |
 | POST | `/satisfaction-surveys/:id/respond` | Required | Any | Submit survey response |

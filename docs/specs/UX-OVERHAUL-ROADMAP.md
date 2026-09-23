@@ -53,7 +53,7 @@ Refactor the flat `<Link>` map into an accordion/group-based navigation model:
 Implement redirect logic immediately upon detecting the `user.role` claim:
 - `owner` / `org_admin` -> `/admin/executive`
 - `facility_admin` -> `/admin/triage`
-- `nurse` / `caregiver` -> `/admin/desk` (My Shift)
+- `med_tech` -> `/med-tech` (as built; the retired `nurse` / `caregiver` roles folded into `med_tech`, COL-615)
 - `finance` / `billing` -> `/admin/finance`
 
 ---

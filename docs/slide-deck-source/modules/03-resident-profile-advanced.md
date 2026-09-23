@@ -10,7 +10,7 @@ The extension of resident profile into generated tasks, acuity-aware review aler
 ## Primary Users
 
 - Coordinators
-- Nurses
+- Med-Techs
 - Clinical leaders
 
 ## Key Workflows

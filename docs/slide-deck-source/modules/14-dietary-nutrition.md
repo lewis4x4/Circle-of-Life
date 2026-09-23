@@ -9,9 +9,8 @@ Diet orders, restrictions, status tracking, nutrition operations, and the bridge
 
 ## Primary Users
 
-- Dietary lead
-- Dietary aides
-- Nurses and admins reviewing diet safety
+- Cooks
+- Med-Techs and admins reviewing diet safety
 
 ## Key Workflows
 

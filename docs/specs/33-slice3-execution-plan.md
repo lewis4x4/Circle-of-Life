@@ -1,5 +1,7 @@
 # Slice 3 Execution Plan
 
+> **Role note (2026-09-22, COL-615):** this is a historical record. The `nurse`, `caregiver`, `dietary` and `dietary_aide` login roles it names were retired by migration 468 (nurse and caregiver folded into `med_tech`, dietary and dietary_aide into `cook`). For the current role model see the Roles section in `AGENTS.md`.
+
 **Status:** FORMALLY CLOSED — PASS  
 **Roadmap source:** [29-col-demo-roadmap.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/29-col-demo-roadmap.md)  
 **Previous slice:** [32-slice2-closeout-record.md](/Users/brianlewis/Circle%20of%20Life/Circle-of-Life/docs/specs/32-slice2-closeout-record.md)  

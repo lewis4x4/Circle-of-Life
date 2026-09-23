@@ -942,3 +942,7 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 - Real PostgREST exposed `safeupdate` rejecting an unconditional temporary-table delete. Forward435 resets only the session-local working table; real staging and production worker checks now pass5/5facilities.
 - [Required gate PASS](../test-results/agent-gates/2026-09-19T21-51-39-728Z-SMART-ROUNDING-HOSTED-WATCHLIST-20260919.json); [activation handoff](../HANDOFFS/2026-09-19__smart-rounding-production-activation.md); [live machine evidence](../test-results/production-activation/2026-09-19-smart-rounding.json).
 - Limits remain explicit: Homewood night roster unassigned25residents; SMS credentials and push subscriptions absent; authenticated production browser witness unavailable. Frontend publication is tracked in the handoff.
+
+## RECORD — Role consolidation docs sweep (2026-09-22)
+
+- COL-615 / COL-627: login roles consolidated per Brian's 2026-09-22 rulings (migration 468): `nurse` and `caregiver` folded into `med_tech`, `dietary` and `dietary_aide` into `cook`, `recruiter` added (briefly `marketing`). Entries above record what was true when written. Current model and migration rule: the **Roles (as of 2026-09-22, COL-615)** section in `AGENTS.md`.
