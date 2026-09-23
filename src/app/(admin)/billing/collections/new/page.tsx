@@ -20,6 +20,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display-copy";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import { RECEIVABLE_INVOICE_STATUSES } from "@/lib/billing/receivables";
 
 import { BillingHubNav } from "../../billing-hub-nav";
 import { billingCurrency } from "../../billing-invoice-ledger";
@@ -154,7 +155,7 @@ export default function AdminNewCollectionActivityPage() {
           .select("id, invoice_number, invoice_date, balance_due, status, period_start, period_end")
           .eq("resident_id", rid)
           .is("deleted_at", null)
-          .in("status", ["draft", "sent", "partial", "overdue"])
+          .in("status", [...RECEIVABLE_INVOICE_STATUSES])
           .order("invoice_date", { ascending: false })
           .limit(50)) as {
           data: InvoiceOption[] | null;

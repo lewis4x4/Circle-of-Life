@@ -1,3 +1,8 @@
+import {
+  BILLED_INVOICE_STATUSES,
+  NOT_YET_SENT_INVOICE_STATUSES,
+  RECEIVABLE_INVOICE_STATUSES,
+} from "@/lib/billing/receivables";
 import { loadResidentMoneySnapshot } from "@/lib/finance/resident-money";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -21,6 +26,8 @@ export type ForecastSnapshot = {
   facilities: ForecastFacility[];
   residentMoneyNeedsReview: boolean;
   residentMoneyReviewFacilityIds: string[];
+  /** Drafts in scope — not billed, so outside every receivable figure, but named on the page. */
+  notYetSent: { count: number; cents: number };
   dso: {
     summary: DsoSummary;
     rows: DsoFacilityRow[];
@@ -66,7 +73,14 @@ export async function loadFinanceForecastData(
     .select("id, facility_id, resident_id, invoice_date, due_date, total, balance_due, status")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
-    .in("status", ["sent", "partial", "overdue"]);
+    .in("status", [...RECEIVABLE_INVOICE_STATUSES]);
+
+  let draftInvoicesQuery = supabase
+    .from("invoices")
+    .select("balance_due")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .in("status", [...NOT_YET_SENT_INVOICE_STATUSES]);
 
   let billedInvoicesQuery = supabase
     .from("invoices")
@@ -74,7 +88,7 @@ export async function loadFinanceForecastData(
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .gte("invoice_date", billedStart)
-    .in("status", ["sent", "paid", "partial", "overdue"]);
+    .in("status", [...BILLED_INVOICE_STATUSES]);
 
   let paymentsQuery = supabase
     .from("payments")
@@ -123,6 +137,7 @@ export async function loadFinanceForecastData(
   if (facilityId) {
     facilitiesQuery = facilitiesQuery.eq("id", facilityId);
     openInvoicesQuery = openInvoicesQuery.eq("facility_id", facilityId);
+    draftInvoicesQuery = draftInvoicesQuery.eq("facility_id", facilityId);
     billedInvoicesQuery = billedInvoicesQuery.eq("facility_id", facilityId);
     paymentsQuery = paymentsQuery.eq("facility_id", facilityId);
     timeRecordsQuery = timeRecordsQuery.eq("facility_id", facilityId);
@@ -135,6 +150,7 @@ export async function loadFinanceForecastData(
   const [
     facilitiesRes,
     openInvoicesRes,
+    draftInvoicesRes,
     billedInvoicesRes,
     paymentsRes,
     residentMoney,
@@ -146,6 +162,7 @@ export async function loadFinanceForecastData(
   ] = await Promise.all([
     facilitiesQuery,
     openInvoicesQuery,
+    draftInvoicesQuery,
     billedInvoicesQuery,
     paymentsQuery,
     loadResidentMoneySnapshot(supabase, organizationId, facilityId),
@@ -159,6 +176,7 @@ export async function loadFinanceForecastData(
   const responses = [
     facilitiesRes,
     openInvoicesRes,
+    draftInvoicesRes,
     billedInvoicesRes,
     paymentsRes,
     timeRecordsRes,
@@ -176,6 +194,7 @@ export async function loadFinanceForecastData(
   const openInvoices = (openInvoicesRes.data ?? []) as Array<
     Pick<Tables<"invoices">, "id" | "facility_id" | "resident_id" | "invoice_date" | "due_date" | "total" | "balance_due" | "status">
   >;
+  const draftInvoices = (draftInvoicesRes.data ?? []) as Array<Pick<Tables<"invoices">, "balance_due">>;
   const billedInvoices = (billedInvoicesRes.data ?? []) as Array<
     Pick<Tables<"invoices">, "id" | "facility_id" | "resident_id" | "invoice_date" | "due_date" | "total" | "balance_due" | "status">
   >;
@@ -202,6 +221,10 @@ export async function loadFinanceForecastData(
     facilities,
     residentMoneyNeedsReview,
     residentMoneyReviewFacilityIds,
+    notYetSent: {
+      count: draftInvoices.length,
+      cents: draftInvoices.reduce((sum, invoice) => sum + Math.max(0, invoice.balance_due), 0),
+    },
     dso: buildDsoForecast({
       facilities,
       openInvoices,

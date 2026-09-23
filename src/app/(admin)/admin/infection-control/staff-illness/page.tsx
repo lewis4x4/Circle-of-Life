@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +14,10 @@ import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { format, parseISO } from "date-fns";
 
 import { formatStaffIllnessStaffLabel } from "@/lib/admin/infection-control/staff-illness-display-copy";
+import { STAFF_ILLNESS_TYPE_OPTIONS } from "@/lib/admin/infection-control/staff-illness-form";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+
+const ILLNESS_TYPE_LABEL = new Map<string, string>(STAFF_ILLNESS_TYPE_OPTIONS.map((o) => [o.value, o.label]));
 
 type Row = {
   id: string;
@@ -28,12 +32,15 @@ type Row = {
 
 export default function StaffIllnessListPage() {
   const { selectedFacilityId } = useFacilityStore();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const facilityReady = Boolean(selectedFacilityId) && isValidFacilityIdForQuery(selectedFacilityId);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
         setRows([]);
@@ -48,6 +55,9 @@ export default function StaffIllnessListPage() {
         .limit(50);
       if (error) throw error;
       setRows((data ?? []) as unknown as Row[]);
+    } catch (e) {
+      setRows([]);
+      setLoadError(formatLiveDataLoadError(e, "Could not load staff illness records."));
     } finally {
       setLoading(false);
     }
@@ -66,33 +76,52 @@ export default function StaffIllnessListPage() {
               ← Infection control
             </Link>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
-              Staff Illness {rows.some(r => !r.return_cleared) && <></>}
+              Staff Illness
             </h1>
             <p className="mt-2 text-[13px] text-muted-foreground max-w-2xl">
               Track absences, symptoms, and return-to-work clearances for your workforce.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/admin/infection-control/staff-illness/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-4 text-[10px] font-semibold uppercase tracking-wider bg-destructive hover:bg-destructive/90 text-destructive-foreground")} >
-               + Log Illness
-            </Link>
+            {facilityReady ? (
+              <Link href="/admin/infection-control/staff-illness/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-4 text-[10px] font-semibold uppercase tracking-wider bg-destructive hover:bg-destructive/90 text-destructive-foreground")} >
+                 + Log Illness
+              </Link>
+            ) : null}
           </div>
         </header>
 
         <div className="p-6 rounded-lg border border-border bg-card/60">
            <div className="flex items-center justify-between pb-4 mb-4 border-b border-border pl-2">
              <h3 className="text-[12px] font-semibold uppercase tracking-wider text-foreground">
-               Recent Surveillance Records
+               Recent staff illness
              </h3>
-             <span className="text-[12px] text-muted-foreground">{loading ? "Loading…" : `${rows.length} shown`}</span>
+             <span className="text-[12px] text-muted-foreground">
+               {loading ? "Loading…" : facilityReady && !loadError ? `${rows.length} shown` : ""}
+             </span>
            </div>
 
            {loading ? (
              <p className="text-[13px] text-muted-foreground pl-2">Loading records…</p>
+           ) : !facilityReady ? (
+             <div className="p-12 text-center text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
+               <p className="font-semibold text-[13px] text-foreground">Select a facility</p>
+               <p className="text-[12px] text-muted-foreground mt-1">
+                 Staff illness is logged and reviewed one building at a time. Choose a facility in the header.
+               </p>
+             </div>
+           ) : loadError ? (
+             <div role="alert" className="p-12 text-center bg-muted/40 rounded-lg border border-dashed border-border">
+               <p className="font-semibold text-[13px] text-foreground">Couldn&apos;t load staff illness</p>
+               <p className="text-[12px] text-muted-foreground mt-1">{loadError}</p>
+               <button type="button" onClick={() => void load()} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-4")}>
+                 Retry
+               </button>
+             </div>
            ) : rows.length === 0 ? (
              <div className="p-12 text-center text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
-                <p className="font-semibold text-[13px] text-foreground">All Clear</p>
-               <p className="text-[12px] opacity-80 mt-1">No staff illnesses reported recently.</p>
+                <p className="font-semibold text-[13px] text-foreground">None logged</p>
+               <p className="text-[12px] text-muted-foreground mt-1">No staff illnesses logged at this facility.</p>
              </div>
            ) : (
              <>
@@ -122,8 +151,8 @@ export default function StaffIllnessListPage() {
                          <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
                            {name}
                          </span>
-                         <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
-                           {r.illness_type}
+                         <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground">
+                           {ILLNESS_TYPE_LABEL.get(r.illness_type) ?? r.illness_type}
                          </span>
                          <span className="flex-[1.5] min-w-0 truncate font-mono text-[12px] tabular-nums text-muted-foreground">
                            {formatD(r.absent_from)} {r.absent_to ? `→ ${formatD(r.absent_to)}` : "→ Present"}
