@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { ReferralsHubNav } from "../../referrals-hub-nav";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -113,9 +114,7 @@ export default function AdminReferralsHl7InboundNewPage() {
       ) : null}
 
       {!facilityReady && !authLoading ? (
-        <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-          Select a facility in the header before adding a referral.
-        </p>
+        <FacilityGateNotice reason="An inbound referral is received at one building." />
       ) : null}
 
       {fetchErrorBannerMessage ? (
@@ -124,6 +123,7 @@ export default function AdminReferralsHl7InboundNewPage() {
         </p>
       ) : null}
 
+      {facilityReady ? (
       <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
         <CardHeader>
           <CardTitle className="text-lg">Message</CardTitle>
@@ -176,6 +176,7 @@ export default function AdminReferralsHl7InboundNewPage() {
           </form>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }
