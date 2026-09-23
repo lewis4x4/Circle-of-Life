@@ -48,10 +48,12 @@ export interface KBHealthMetrics {
   totalDocuments: number;
   publishedDocuments: number;
   totalChunks: number;
-  embeddingCoverage: number;
+  /** Percent of chunks with an embedding; null when there are no chunks to cover. */
+  embeddingCoverage: number | null;
   staleDocuments: number;
   failedIngestions: number;
-  avgChunksPerDoc: number;
+  /** Null when there are no documents to average over. */
+  avgChunksPerDoc: number | null;
 }
 
 export interface ChatInsight {

@@ -48,7 +48,8 @@ const PAGE_TITLE_SOURCES = [
 
 describe("page titles are h1s (COL-658)", () => {
   it.each(PAGE_TITLE_SOURCES)("%s renders an h1", (file) => {
-    expect(readFileSync(file, "utf8")).toMatch(/<h1\b/);
+    // The design-system PageHeader renders the title as the page's h1 (COL-656).
+    expect(readFileSync(file, "utf8")).toMatch(/<h1\b|<PageHeader\b/);
   });
 
   it.each(["src/app/(admin)/admin/staff/staff-check/page.tsx", "src/app/(admin)/admin/residents/board-check/page.tsx"])(

@@ -22,7 +22,7 @@ export function CommandDeck() {
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
-        <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-stone-300">
+        <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin text-amber-400" />
           Loading kitchen data...
         </div>
@@ -35,7 +35,7 @@ export function CommandDeck() {
       <div className="h-screen w-full flex items-center justify-center">
         <div className="max-w-md rounded-2xl border border-rose-500/30 bg-rose-500/10 px-6 py-5 text-center">
           <h2 className="text-lg font-semibold text-rose-300 mb-2">Kitchen Data Unavailable</h2>
-          <p role="alert" className="text-sm text-stone-400">{error}</p>
+          <p role="alert" className="text-sm text-muted-foreground">{error}</p>
           <button className="mt-3 rounded border px-3 py-2" type="button" onClick={() => void refresh()}>Retry kitchen data</button>
         </div>
       </div>
@@ -52,7 +52,7 @@ export function CommandDeck() {
 
       <div className="px-4 pb-4 md:px-6">
         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 ">
-          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
             <span>Kitchen priorities</span>
             <span className="text-stone-600">/</span>
             <span>{tickets.length} tray tickets</span>
@@ -63,7 +63,7 @@ export function CommandDeck() {
             <span className="text-stone-600">/</span>
             <span>{refusals.length} refusals</span>
           </div>
-          <p className="mt-2 text-sm text-stone-300">
+          <p className="mt-2 text-sm text-muted-foreground">
             Keep service timing, tray execution, resident dietary watch items, and HACCP logging in one kitchen lane.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">

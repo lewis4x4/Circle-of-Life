@@ -454,7 +454,7 @@ export default function AdminTransportationHubPage() {
                 <></>
                 Upcoming Resident Transport
               </h3>
-              <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+              <p className="mt-2 text-sm font-medium text-muted-foreground">
                 Appointments on or after today. Open a row to assign a vehicle, driver, and complete.
                 {transportRequests.length > 0 && (
                   <span className="block mt-1 text-xs">
@@ -466,7 +466,7 @@ export default function AdminTransportationHubPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2 items-center">
-              <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="whitespace-nowrap font-bold uppercase tracking-wider">Status</span>
                 <select
                   className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
@@ -512,14 +512,14 @@ export default function AdminTransportationHubPage() {
             </div>
           </div>
           {loading ? (
-            <p className="text-sm font-mono text-slate-500 py-10 pl-2">Loading trips…</p>
+            <p className="text-sm font-mono text-muted-foreground py-10 pl-2">Loading trips…</p>
           ) : transportRequests.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
+            <div className="p-16 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
                <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No scheduled trips</p>
               <p className="text-sm opacity-80 mt-1">No upcoming transport requests on file.</p>
             </div>
           ) : filteredTransportRequests.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
+            <div className="p-16 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
               <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No trips match this status</p>
               <p className="text-sm opacity-80 mt-1">Try &quot;All statuses&quot; or another filter.</p>
             </div>
@@ -527,9 +527,9 @@ export default function AdminTransportationHubPage() {
             <div className="space-y-12">
               {upcomingByDay.map((group) => (
                 <div key={group.dateStr}>
-                  <p className="mb-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 pl-2">
+                  <p className="mb-4 text-xs font-bold uppercase tracking-wider text-muted-foreground pl-2">
                     {formatUpcomingDayLabel(group.dateStr)}
-                    <span className="ml-2 font-normal text-slate-400">
+                    <span className="ml-2 font-normal text-muted-foreground">
                       — {group.rows.length} Trip{group.rows.length === 1 ? "" : "s"}
                     </span>
                   </p>
@@ -563,14 +563,14 @@ export default function AdminTransportationHubPage() {
                             </div>
                             <div className="flex shrink-0 flex-wrap items-center gap-4">
                               <div className="flex flex-col items-end">
-                                <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Time</span>
+                                <span className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1">Time</span>
                                 <span className="rounded-full bg-primary/5 px-3 py-1 text-xs font-bold text-primary flex items-center gap-1.5 border border-primary/10">
                                   <Clock className="w-3 h-3" />
                                   {format(apptDate, "EEE MMM d")} · {formatTransportationAppointmentTime(row.appointment_time)}
                                 </span>
                               </div>
                               <div className="flex flex-col items-end">
-                                <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Status</span>
+                                <span className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1">Status</span>
                                 <span className={cn(
                                   "rounded-full px-4 py-1 text-xs font-bold uppercase tracking-wider border",
                                   row.status === "scheduled" ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
@@ -616,9 +616,9 @@ export default function AdminTransportationHubPage() {
             
             <MotionList className="space-y-3">
               {loading ? (
-                <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
+                <p className="text-sm font-mono text-muted-foreground pl-2">Loading…</p>
               ) : driverAlerts.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 ">
+                <div className="p-12 text-center text-muted-foreground bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 ">
                   <p className="font-semibold text-lg">{driverEmpty.title}</p>
                   <p className="text-sm opacity-80 mt-1">{driverEmpty.body}</p>
                 </div>
@@ -652,7 +652,7 @@ export default function AdminTransportationHubPage() {
                         >
                           {a.daysUntil < 0 ? "Expired" : a.daysUntil <= 14 ? "Action needed" : "Upcoming"}
                         </span>
-                        <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                        <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                           {formatAlertDeadline(a.daysUntil)}
                         </span>
                       </div>
@@ -694,9 +694,9 @@ export default function AdminTransportationHubPage() {
             
             <MotionList className="space-y-3">
               {loading ? (
-                <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
+                <p className="text-sm font-mono text-muted-foreground pl-2">Loading…</p>
               ) : vehicleAlerts.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 ">
+                <div className="p-12 text-center text-muted-foreground bg-white/30 rounded-lg border border-dashed border-white/20 dark:border-white/5 ">
                   <p className="font-semibold text-lg">{vehicleEmpty.title}</p>
                   <p className="text-sm opacity-80 mt-1">{vehicleEmpty.body}</p>
                 </div>
@@ -730,7 +730,7 @@ export default function AdminTransportationHubPage() {
                         >
                           {a.title}
                         </span>
-                        <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                        <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                           {formatAlertDeadline(a.daysUntil)}
                         </span>
                       </div>
@@ -761,7 +761,7 @@ export default function AdminTransportationHubPage() {
 
               {/* Real historical inspections */}
               <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
-                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Recent Logs</h4>
+                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-4 ml-2">Recent Logs</h4>
                  <MotionList className="space-y-3">
                    {inspections.slice(0, 3).map(row => (
                      <MotionItem key={row.id} className="p-4 rounded-lg border border-slate-200/60 dark:border-white/5 bg-white flex gap-4 items-center shadow-sm">
@@ -769,7 +769,7 @@ export default function AdminTransportationHubPage() {
                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-300 tracking-tight truncate">
                            {formatInspectionLogVehicleDisplayName(row.fleet_vehicles)}
                          </p>
-                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate capitalize mt-1">
+                         <p className="text-xs font-medium text-muted-foreground truncate capitalize mt-1">
                            Result: {formatEnum(row.result)}
                          </p>
                        </div>
@@ -779,7 +779,7 @@ export default function AdminTransportationHubPage() {
                      </MotionItem>
                    ))}
                    {inspections.length === 0 && !loading && (
-                     <p className="text-sm text-slate-500 dark:text-zinc-500 font-medium px-2 py-4">No historical inspections have been logged.</p>
+                     <p className="text-sm text-muted-foreground font-medium px-2 py-4">No historical inspections have been logged.</p>
                    )}
                  </MotionList>
               </div>

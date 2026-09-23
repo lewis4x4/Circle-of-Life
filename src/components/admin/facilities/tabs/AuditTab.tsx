@@ -558,7 +558,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
                   Clear filters
                 </button>
               </p>
-            ) : !filtersActive && total === 0 && (metricsSummary?.events_all_time ?? 0) > 0 ? (
+            ) : !filtersActive && total === 0 && eventsAllTime !== null && eventsAllTime > 0 ? (
               <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 No audit events fall in this date range, but older facility events exist. Widen the range (try{" "}
                 <button type="button" className="text-primary underline underline-offset-4 hover:underline" onClick={() => applyPreset("90d")}>

@@ -10,6 +10,7 @@ import {
   billingOverviewNinetyPlusShareEmptyCopy,
   billingOverviewOutstandingArEmptyCopy,
   billingOverviewOverdueCountEmptyCopy,
+  billingOverviewPercentText,
   type BillingOverviewKpiContext,
 } from "./billing-overview-kpi-copy";
 
@@ -197,5 +198,21 @@ describe("billingOverviewKpiStripHelperLine", () => {
         }),
       ),
     ).toBe("2 of 4 AR snapshot tiles loaded — empty tiles name what is still missing.");
+  });
+});
+
+describe("billingOverviewPercentText (COL-708)", () => {
+  it("prefers the empty-state copy", () => {
+    expect(billingOverviewPercentText("No payments recorded", null)).toBe("No payments recorded");
+  });
+
+  it("never turns a missing percentage into 0%", () => {
+    expect(billingOverviewPercentText(null, null)).toBe("Not available");
+    expect(billingOverviewPercentText(null, Number.NaN)).toBe("Not available");
+  });
+
+  it("rounds a real percentage, including a real 0%", () => {
+    expect(billingOverviewPercentText(null, 42.6)).toBe("43%");
+    expect(billingOverviewPercentText(null, 0)).toBe("0%");
   });
 });

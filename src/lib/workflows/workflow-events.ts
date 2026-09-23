@@ -6,6 +6,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 
 type AdminClient = SupabaseClient<Database>;
 
@@ -154,7 +155,7 @@ export async function loadAdmissionRateTermCount(admin: AdminClient, admissionCa
     .eq("admission_case_id", admissionCaseId);
 
   if (error) throw error;
-  return count ?? 0;
+  return requireHeadCount({ count }, "Admission rate terms");
 }
 
 export async function loadForm1823State(admin: AdminClient, args: {

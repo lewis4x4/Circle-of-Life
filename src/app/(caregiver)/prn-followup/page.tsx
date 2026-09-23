@@ -198,7 +198,7 @@ export default function CaregiverPrnFollowupPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading PRN follow-ups…
       </div>
@@ -244,8 +244,8 @@ export default function CaregiverPrnFollowupPage() {
 
       {rows.length === 0 ? (
         <div className="p-8 rounded-lg border border-white/5 bg-slate-900/40 text-center space-y-2">
-          <p className="text-sm font-mono text-zinc-400">{caregiverPrnFollowupEmptyNoticeTitle()}</p>
-          <p className="text-xs font-mono text-zinc-500">{caregiverPrnFollowupEmptyNoticeHelper()}</p>
+          <p className="text-sm font-mono text-muted-foreground">{caregiverPrnFollowupEmptyNoticeTitle()}</p>
+          <p className="text-xs font-mono text-muted-foreground">{caregiverPrnFollowupEmptyNoticeHelper()}</p>
         </div>
       ) : (
         <MotionList className="space-y-4">
@@ -270,19 +270,19 @@ export default function CaregiverPrnFollowupPage() {
                     </div>
                   </div>
                   
-                  <p className="text-[11px] uppercase tracking-wider font-mono font-bold text-zinc-400">
+                  <p className="text-[11px] uppercase tracking-wider font-mono font-bold text-muted-foreground">
                     <span className="text-zinc-200">{r.name}</span> <span className="mx-2 opacity-50">·</span> Rm {r.room}
                   </p>
                   
                   <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-white/5">
-                    <p className="flex items-center gap-2 text-[11px] font-mono leading-relaxed text-zinc-300 bg-black/40 w-fit px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+                    <p className="flex items-center gap-2 text-[11px] font-mono leading-relaxed text-muted-foreground bg-black/40 w-fit px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
                       <Activity className="h-3.5 w-3.5 text-primary" />
-                      Given {r.givenLabel} <span className="text-zinc-500 mx-1">/</span> Target by {r.reassessLabel} ({r.minutes} min)
+                      Given {r.givenLabel} <span className="text-muted-foreground mx-1">/</span> Target by {r.reassessLabel} ({r.minutes} min)
                     </p>
                   </div>
                   
                   {!r.canDocument ? (
-                    <p className="text-xs text-zinc-500 mt-2 font-mono">
+                    <p className="text-xs text-muted-foreground mt-2 font-mono">
                       Only the administering staff or a nurse can document effectiveness for this dose.
                     </p>
                   ) : null}
@@ -290,7 +290,7 @@ export default function CaregiverPrnFollowupPage() {
                   {r.canDocument && openId === r.id ? (
                     <div className="mt-4 space-y-4 rounded-2xl border border-white/5 bg-black/40 p-5 shadow-inner">
                       <div className="space-y-2">
-                        <Label htmlFor="prn-effectiveness-result" className="text-[10px] font-bold uppercase tracking-wider font-mono text-zinc-500 pl-1">Effectiveness Result</Label>
+                        <Label htmlFor="prn-effectiveness-result" className="text-[10px] font-bold uppercase tracking-wider font-mono text-muted-foreground pl-1">Effectiveness Result</Label>
                         <select id="prn-effectiveness-result"
                           className="flex h-14 w-full appearance-none rounded-2xl border border-white/10 bg-black/60 px-5 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-ring shadow-inner tap-responsive"
                           value={result}
@@ -319,7 +319,7 @@ export default function CaregiverPrnFollowupPage() {
                           {savingId === r.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Save Result
                         </Button>
-                        <Button type="button" className="h-12 px-6 rounded-full font-mono text-xs font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
+                        <Button type="button" className="h-12 px-6 rounded-full font-mono text-xs font-bold bg-black/40 hover:bg-white/10 text-muted-foreground border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
                           Cancel
                         </Button>
                       </div>
@@ -329,7 +329,7 @@ export default function CaregiverPrnFollowupPage() {
                   {r.canDocument && openId !== r.id ? (
                     <Button
                       type="button"
-                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono text-xs font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 tap-responsive shadow-inner"
+                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono text-xs font-bold bg-black/40 hover:bg-white/10 text-muted-foreground border border-white/10 tap-responsive shadow-inner"
                       onClick={() => {
                         setOpenId(r.id);
                         setResult("effective");
@@ -344,7 +344,7 @@ export default function CaregiverPrnFollowupPage() {
                 <div className="md:border-l border-white/5 md:pl-6 pt-4 md:pt-0 mt-2 md:mt-0 relative top-1 flex justify-end">
                    <Link
                      href={`/caregiver/meds`}
-                     className="w-12 h-12 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors tap-responsive shadow-inner"
+                     className="w-12 h-12 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-muted-foreground hover:text-white hover:bg-white/10 transition-colors tap-responsive shadow-inner"
                      aria-label="Open eMAR"
                    >
                      <ChevronRight className="h-5 w-5" />

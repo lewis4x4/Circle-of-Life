@@ -78,7 +78,7 @@ function CustomTooltip({
   if (active && payload && payload.length) {
     return (
       <div className="bg-popover border border-border p-3 rounded-lg shadow-lg">
-        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">{label}</p>
         {payload.map((p, idx) => (
           <div key={idx} className="flex items-center gap-2 mb-1 last:mb-0">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
@@ -175,12 +175,12 @@ export default function DeficienciesAnalysisPage() {
               <BarChart3 className="h-8 w-8 text-primary" />
               Deficiencies Analysis
             </h1>
-            <p className="text-sm text-slate-500 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               Historical deficiency trends, recurrence tracking, and gap analysis
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href={homeHref} className="text-[10px] uppercase tracking-wider font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <Link href={homeHref} className="text-[10px] uppercase tracking-wider font-mono text-muted-foreground hover:text-slate-700 dark:hover:text-slate-200">
               ← Back to Dashboard
             </Link>
           </div>
@@ -198,7 +198,7 @@ export default function DeficienciesAnalysisPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-sm font-mono text-slate-500">Loading analysis data…</p>
+            <p className="text-sm font-mono text-muted-foreground">Loading analysis data…</p>
           </div>
         ) : null}
 
@@ -207,7 +207,7 @@ export default function DeficienciesAnalysisPage() {
             {/* Time Period Selector */}
             <div className="flex items-center gap-4 justify-between">
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-slate-500" />
+                <Calendar className="h-5 w-5 text-muted-foreground" />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Analysis Period</span>
               </div>
               <div className="flex gap-2">
@@ -273,7 +273,7 @@ export default function DeficienciesAnalysisPage() {
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Deficiency Trend Over Time
                     </h2>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       Monthly deficiency counts by tag
                     </p>
                   </div>
@@ -308,7 +308,7 @@ export default function DeficienciesAnalysisPage() {
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Most Cited Tags
                     </h2>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       Top {Math.min(10, tagCounts.length)} most frequently cited tags
                     </p>
                   </div>
@@ -336,7 +336,7 @@ export default function DeficienciesAnalysisPage() {
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       Recurring Tags Analysis
                     </h2>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       Tags cited multiple times with gap analysis
                     </p>
                   </div>

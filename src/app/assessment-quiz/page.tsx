@@ -34,7 +34,7 @@ export default function AssessmentQuizPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
               Is It Time for Assisted Living?
             </h1>
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
               Caregiver exhaustion is real. Take 60 seconds to objectively evaluate your loved one&apos;s
                                         medication safety, nutrition, and daily support needs.
                                       </p>

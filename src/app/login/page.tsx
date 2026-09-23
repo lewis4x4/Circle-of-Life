@@ -254,7 +254,7 @@ export default function LoginPage() {
           </div>
           <span className="font-serif text-2xl tracking-tight text-white drop-shadow-md">Haven</span>
         </div>
-        <p className="hidden text-xs uppercase tracking-[0.22em] text-slate-300 sm:block">
+        <p className="hidden text-xs uppercase tracking-[0.22em] text-chrome-foreground-muted sm:block">
           Operations Platform
         </p>
       </header>
@@ -266,7 +266,7 @@ export default function LoginPage() {
             <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-white drop-shadow-sm sm:text-6xl">
               Elevating <span className="text-emerald-400">Human Care.</span>
             </h1>
-            <p className="mx-auto max-w-md text-base leading-relaxed text-slate-300">
+            <p className="mx-auto max-w-md text-base leading-relaxed text-chrome-foreground-muted">
               The unified platform for assisted living operators — clinical, compliance, and family engagement on one secure layer.
             </p>
           </div>
@@ -287,7 +287,7 @@ export default function LoginPage() {
               <Form {...form}>
                 <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   {!hydrated ? (
-                    <p role="status" className="flex items-center gap-2 text-sm text-slate-300">
+                    <p role="status" className="flex items-center gap-2 text-sm text-chrome-foreground-muted">
                       <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                       Preparing secure sign-in…
                     </p>
@@ -346,7 +346,7 @@ export default function LoginPage() {
                     )}
                   />
 
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <label className="flex items-center gap-2 text-sm text-chrome-foreground-muted">
                     <input className="h-4 w-4 rounded border-slate-600 bg-slate-950/70" type="checkbox" disabled={!hydrated || form.formState.isSubmitting} />
                     Remember me
                   </label>
@@ -392,7 +392,7 @@ export default function LoginPage() {
             </CardContent>
           </Card>
 
-          <p className="text-center text-sm text-slate-300">
+          <p className="text-center text-sm text-chrome-foreground-muted">
             Need access? Contact your facility administrator.
           </p>
         </div>

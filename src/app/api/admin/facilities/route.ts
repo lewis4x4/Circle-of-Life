@@ -9,6 +9,7 @@ import { listFacilitiesQuerySchema } from "@/lib/validation/facility-admin";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
 import { pickSurveyReadinessPct, portfolioOccupancyPercent } from "@/lib/admin/facilities/portfolio-metrics";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 
 type StaffAdminRow = {
   id: string;
@@ -118,7 +119,8 @@ export async function GET(request: NextRequest) {
   query = query.range(offset, offset + page_size - 1);
 
   const { data: facilities, count, error: queryErr } = await query;
-  if (queryErr) {
+  const total = headCountOrNull({ count, error: queryErr });
+  if (queryErr || total === null) {
     return NextResponse.json({ error: "Failed to fetch facilities" }, { status: 500 });
   }
 
@@ -296,8 +298,8 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     facilities: data,
-    total: count ?? 0,
+    total,
     page,
-    has_next: offset + page_size < (count ?? 0),
+    has_next: offset + page_size < total,
   });
 }

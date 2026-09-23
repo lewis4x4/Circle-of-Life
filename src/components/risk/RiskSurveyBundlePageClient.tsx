@@ -70,7 +70,7 @@ export default function RiskSurveyBundlePageClient({
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
+          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
             AHCA survey bundle and legal packet
           </p>
           <div>
@@ -244,7 +244,7 @@ export default function RiskSurveyBundlePageClient({
                             <tr key={row.id} className="border-b border-slate-100 dark:border-slate-900">
                               <td className="py-3 pr-4">
                                 <div className="font-medium">{row.tagNumber}</div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400">{row.tagDescription}</div>
+                                <div className="text-xs text-muted-foreground">{row.tagDescription}</div>
                               </td>
                               <td className="py-3 pr-4">{row.severity}</td>
                               <td className="py-3 pr-4">{row.status}</td>
@@ -288,7 +288,7 @@ export default function RiskSurveyBundlePageClient({
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-medium text-slate-900 dark:text-white">{document.name}</p>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                             {document.category.replaceAll("_", " ")}
                           </p>
                         </div>
@@ -468,7 +468,7 @@ function BundleMetricCard({
     <Card className={toneClass}>
       <CardContent className="flex items-start justify-between gap-4 p-5">
         <div className="space-y-1.5">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
           <p className="text-2xl font-semibold text-slate-900 dark:text-white">{value}</p>
           <p className="text-sm text-slate-600 dark:text-slate-400">{detail}</p>
         </div>
@@ -483,7 +483,7 @@ function BundleMetricCard({
 function PacketValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/50">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
       <p className="mt-2 text-base font-medium text-slate-900 dark:text-white">{value}</p>
     </div>
   );

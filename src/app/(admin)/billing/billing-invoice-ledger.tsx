@@ -75,6 +75,7 @@ import {
   billingOverviewNinetyPlusShareEmptyCopy,
   billingOverviewOutstandingArEmptyCopy,
   billingOverviewOverdueCountEmptyCopy,
+  billingOverviewPercentText,
   type BillingOverviewKpiContext,
 } from "@/lib/billing/billing-overview-kpi-copy";
 import {
@@ -1143,7 +1144,7 @@ function BillingInvoiceLedgerInner({
               href="/admin/billing/ar-aging?bucket=91-plus"
               label="90+ days past due share"
               value={
-                ninetyPlusEmptyCopy ?? `${Math.round(ninetyPlusSharePct ?? 0)}%`
+                billingOverviewPercentText(ninetyPlusEmptyCopy, ninetyPlusSharePct)
               }
               valuePresentation={ninetyPlusEmptyCopy != null ? "message" : "metric"}
               valueClassName={
@@ -1157,7 +1158,7 @@ function BillingInvoiceLedgerInner({
               href="/admin/billing/invoices"
               label="Applied (sent this period)"
               value={
-                appliedPeriodEmptyCopy ?? `${Math.round(periodInvoiceSnapshot.ratePct ?? 0)}%`
+                billingOverviewPercentText(appliedPeriodEmptyCopy, periodInvoiceSnapshot.ratePct)
               }
               valuePresentation={appliedPeriodEmptyCopy != null ? "message" : "metric"}
               valueClassName={

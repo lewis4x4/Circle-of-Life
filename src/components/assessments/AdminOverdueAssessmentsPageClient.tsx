@@ -191,16 +191,16 @@ export function AdminOverdueAssessmentsPageClient({
         {/* Left Drawer: Overdue Assessments */}
         <div className="lg:col-span-4 flex flex-col h-full overflow-hidden">
           <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-slate-100/40 shadow-sm p-6 flex flex-col h-full">
-            <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-4 pl-2">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-4 pl-2">
               Action Required: Assessments
             </h3>
             <ScrollArea className="flex-1 -mx-2 px-2">
               {assessmentQueue !== "items" ? (
                 <div
                   data-queue-state={assessmentQueue}
-                  className="p-12 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
+                  className="p-12 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
                 >
-                  <ClipboardCheck className="w-12 h-12 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
+                  <ClipboardCheck className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">
                     {clinicalDeskEmptyCopy("assessments", assessmentQueue).title}
                   </p>
@@ -214,7 +214,7 @@ export function AdminOverdueAssessmentsPageClient({
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                              <UserSquare2 className="w-4 h-4 text-slate-500" />
+                              <UserSquare2 className="w-4 h-4 text-muted-foreground" />
                             </div>
                             <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">{a.residentName}</span>
                           </div>
@@ -245,7 +245,7 @@ export function AdminOverdueAssessmentsPageClient({
                                </span>
                              )}
                            </div>
-                           <span className="text-[11px] font-mono font-medium tracking-wide text-slate-500 dark:text-zinc-500">Due: {a.nextDueDate}</span>
+                           <span className="text-[11px] font-mono font-medium tracking-wide text-muted-foreground">Due: {a.nextDueDate}</span>
                         </div>
                       </div>
                     </MotionItem>
@@ -259,7 +259,7 @@ export function AdminOverdueAssessmentsPageClient({
         {/* Right Pane: Care Plan Drafts */}
         <div className="lg:col-span-8 flex flex-col h-full overflow-hidden">
           <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-sm p-6 flex flex-col h-full">
-            <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-4 pl-2 flex items-center gap-2">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-4 pl-2 flex items-center gap-2">
               <></>
               Generated Care Plan Drafts
             </h3>
@@ -267,9 +267,9 @@ export function AdminOverdueAssessmentsPageClient({
               {carePlanQueue !== "items" ? (
                 <div
                   data-queue-state={carePlanQueue}
-                  className="p-20 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
+                  className="p-20 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
                 >
-                  <CalendarClock className="w-16 h-16 text-slate-300 dark:text-zinc-600 mx-auto mb-4" />
+                  <CalendarClock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <p className="font-semibold text-xl text-slate-900 dark:text-slate-100">
                     {clinicalDeskEmptyCopy("carePlans", carePlanQueue).title}
                   </p>
@@ -285,7 +285,7 @@ export function AdminOverdueAssessmentsPageClient({
                             <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">
                               {p.residentName}
                             </span>
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Due: {p.reviewDueDate}</span>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Due: {p.reviewDueDate}</span>
                           </div>
                           <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">
                             Care Plan v{p.version} Update (Triggered by MDS)

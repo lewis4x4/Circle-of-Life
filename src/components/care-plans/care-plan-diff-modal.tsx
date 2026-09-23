@@ -312,11 +312,11 @@ export function CarePlanDiffModal({
                     </div>
                     <div className="space-y-2 text-sm">
                       <div>
-                        <span className="text-slate-500 dark:text-slate-500">Effective:</span>{" "}
+                        <span className="text-muted-foreground">Effective:</span>{" "}
                         <span className="font-medium">{formatCarePlanDateOnly(oldPlan.effective_date)}</span>
                       </div>
                       <div>
-                        <span className="text-slate-500 dark:text-slate-500">Status:</span>{" "}
+                        <span className="text-muted-foreground">Status:</span>{" "}
                         <span className="font-medium">{formatSnakeLabel(oldPlan.status ?? "")}</span>
                       </div>
                     </div>
@@ -334,18 +334,18 @@ export function CarePlanDiffModal({
                     </div>
                     <div className="space-y-2 text-sm">
                       <div>
-                        <span className="text-slate-500 dark:text-slate-500">Effective:</span>{" "}
+                        <span className="text-muted-foreground">Effective:</span>{" "}
                         <span className="font-medium">{formatCarePlanDateOnly(newPlan?.effective_date)}</span>
                       </div>
                       <div>
-                        <span className="text-slate-500 dark:text-slate-500">Status:</span>{" "}
+                        <span className="text-muted-foreground">Status:</span>{" "}
                         <span className="font-medium">{formatSnakeLabel(newPlan?.status ?? "")}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="p-6 text-center text-slate-500 dark:text-slate-400">
+                <div className="p-6 text-center text-muted-foreground">
                   <p>Previous version not found. This appears to be the initial care plan.</p>
                 </div>
               )}
@@ -363,9 +363,9 @@ export function CarePlanDiffModal({
                         {formatCategoryLabel(category)}
                       </h3>
                       {expandedCategories.has(category) ? (
-                        <ChevronDown className="w-4 h-4 text-slate-500" />
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-slate-500" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       )}
                     </button>
                     {expandedCategories.has(category) && (
@@ -442,17 +442,17 @@ function DiffItemRow({ diff }: { diff: DiffItem }) {
           <div className="space-y-1 text-sm">
             {diff.changes.map((change) => (
               <div key={change.field} className="flex gap-4">
-                <span className="text-slate-500 dark:text-slate-500 text-xs uppercase w-20 shrink-0">
+                <span className="text-muted-foreground text-xs uppercase w-20 shrink-0">
                   {change.field}:
                 </span>
                 <div className="flex-1 flex gap-3">
                   {change.oldValue !== null && (
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs text-slate-400 block mb-0.5">Old</span>
+                      <span className="text-xs text-muted-foreground block mb-0.5">Old</span>
                       <span
                         className={cn(
                           "block truncate",
-                          isRemoved && "line-through text-slate-400"
+                          isRemoved && "line-through text-muted-foreground"
                         )}
                       >
                         {formatDiffChangeValue(change.field, change.oldValue)}
@@ -460,11 +460,11 @@ function DiffItemRow({ diff }: { diff: DiffItem }) {
                     </div>
                   )}
                   {change.newValue !== null && change.oldValue !== null && (
-                    <ArrowRight className="w-4 h-4 text-slate-400 mt-4 shrink-0" />
+                    <ArrowRight className="w-4 h-4 text-muted-foreground mt-4 shrink-0" />
                   )}
                   {change.newValue !== null && (
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs text-slate-400 block mb-0.5">New</span>
+                      <span className="text-xs text-muted-foreground block mb-0.5">New</span>
                       <span
                         className={cn(
                           "block truncate",

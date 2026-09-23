@@ -300,9 +300,9 @@ export default function FinancePeriodClosePageClient({
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-slate-500">Loading…</p>
+            <p className="text-sm text-muted-foreground">Loading…</p>
           ) : history.length === 0 ? (
-            <p className="text-sm text-slate-500">No period records yet.</p>
+            <p className="text-sm text-muted-foreground">No period records yet.</p>
           ) : (
             <Table>
               <TableHeader>

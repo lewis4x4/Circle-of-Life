@@ -94,11 +94,11 @@ export function ShiftBar({
             </div>
             <div className="text-left">
               <div className="text-sm font-semibold text-white">{techName}</div>
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-muted-foreground">
                 {shiftLabel} · {unitLabel} · {shiftType.toUpperCase()}
               </div>
             </div>
-            <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${menuOpen ? "rotate-180" : ""}`} />
           </button>
 
           {menuOpen && menuPos && typeof document !== "undefined" && createPortal(
@@ -109,7 +109,7 @@ export function ShiftBar({
             >
               <div className="px-4 py-3 border-b border-slate-800">
                 <div className="text-xs font-semibold text-white truncate">{techName}</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">{unitLabel}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">{unitLabel}</div>
               </div>
               <button
                 onClick={handleSignOut}
@@ -124,7 +124,7 @@ export function ShiftBar({
           )}
         </div>
         <div className="h-8 w-px bg-slate-800" />
-        <div className="flex items-center gap-4 text-xs text-slate-400">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5" /> {assignedCount} residents
           </span>
@@ -138,7 +138,7 @@ export function ShiftBar({
         <div className="text-2xl font-mono font-semibold tabular-nums text-white tracking-tight">
           {time}
         </div>
-        <div className="flex items-center gap-2 text-slate-400">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Bluetooth className="w-4 h-4 text-sky-400" />
           <Wifi className="w-4 h-4 text-emerald-400" />
           <Battery className="w-4 h-4 text-emerald-400" />

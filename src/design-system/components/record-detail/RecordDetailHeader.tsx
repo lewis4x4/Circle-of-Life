@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { BackLink } from "../BackLink";
+
 /**
  * RecordDetailHeader
  *
@@ -13,10 +15,8 @@ import { cn } from "@/lib/utils";
  *   - The entity name (`title`) is rendered as an <h1>. Every detail page
  *     contains exactly one <h1> (this component). Do not add a second <h1>
  *     on the same page.
- *   - `backLink` renders a plain <a href> (not next/link) so the primitive
- *     stays framework-agnostic. The consumer may wrap children in Link if
- *     client-side navigation is required; the rendered <a> is functional
- *     either way and remains keyboard-reachable as a standard anchor.
+ *   - `backLink` renders the shared design-system BackLink (COL-656), a
+ *     keyboard-reachable anchor with client-side navigation.
  *   - `statusChips` consumers should supply appropriate aria-label or role
  *     attributes on their chip elements (e.g. role="status" or role="img").
  *   - `actions` consumers should ensure each interactive element is
@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
  * Constraints:
  *   - 100% semantic Tailwind tokens — zero hardcoded colors.
  *   - No "use client" directive; purely presentational.
- *   - No next/link or any Next.js import (framework-agnostic primitive).
  */
 export interface RecordDetailHeaderProps {
   /** Primary entity name. Rendered as <h1>. Must not be empty. */
@@ -91,16 +90,7 @@ export function RecordDetailHeader({
         className,
       )}
     >
-      {backLink && (
-        <a
-          href={backLink.href}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] hover:text-foreground"
-        >
-          {/* Arrow is decorative — aria-hidden prevents duplicate reading */}
-          <span aria-hidden="true">←</span>
-          {backLink.label}
-        </a>
-      )}
+      {backLink && <BackLink label={backLink.label} href={backLink.href} />}
 
       {/* Title row: [heading + chips] and [actions]. The heading column keeps
           a readable minimum width, so on a phone the actions wrap below it
