@@ -333,44 +333,44 @@ CREATE INDEX idx_surveillance_facility ON infection_surveillance_metrics(facilit
 ```sql
 ALTER TABLE infections ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see infections" ON infections FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage infections" ON infections FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE outbreak_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see outbreaks" ON outbreak_events FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Admin manage outbreaks" ON outbreak_events FOR ALL
   USING (organization_id = auth.organization_id() AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin'));
 
 ALTER TABLE vital_sign_records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see vitals" ON vital_sign_records FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('dietary', 'maintenance_role'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('cook', 'maintenance_role'));
 -- Family can see vitals for their linked residents (limited view via API)
 CREATE POLICY "Family see linked resident vitals" ON vital_sign_records FOR SELECT
   USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND auth.app_role() = 'family' AND auth.can_access_resident(resident_id));
 CREATE POLICY "Caregivers+ document vitals" ON vital_sign_records FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE vital_sign_thresholds ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see thresholds" ON vital_sign_thresholds FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage thresholds" ON vital_sign_thresholds FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE immunization_records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see immunizations" ON immunization_records FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('dietary', 'maintenance_role'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('cook', 'maintenance_role'));
 CREATE POLICY "Nurse+ manage immunizations" ON immunization_records FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE staff_illness_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see staff illness" ON staff_illness_logs FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE infection_surveillance_metrics ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin see surveillance" ON infection_surveillance_metrics FOR SELECT
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 -- Audit triggers
 CREATE TRIGGER audit_infections AFTER INSERT OR UPDATE OR DELETE ON infections FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
@@ -411,7 +411,7 @@ When a vital_sign_record is created, compare each value against the resident's v
 
 **When alert triggers:**
 1. Set has_alert=true, alert_type on the vital_sign_record
-2. Generate notification to on-shift nurse
+2. Generate notification to on-shift Med-Tech
 3. If temperature ≥100.4°F → also check: is this the 2nd+ resident on the same unit with elevated temperature in 72 hours? If yes → trigger outbreak detection logic.
 
 ### Outbreak Detection Algorithm
@@ -426,7 +426,7 @@ When a vital_sign_record is created, compare each value against the resident's v
 **When outbreak threshold is met:**
 1. Create outbreak_event with status='active'
 2. Link all involved infections and/or vital sign records
-3. Immediate notifications: administrator, owner, on-shift nurse
+3. Immediate notifications: administrator, owner, on-shift Med-Tech
 4. Generate containment recommendation based on infection_type:
    - GI (cdiff, norovirus-like): contact isolation, enhanced cleaning, hand hygiene audit, visitor restriction to affected unit
    - Respiratory (influenza, covid, URI cluster): droplet precautions, consider facility-wide mask requirement, visitor screening
@@ -475,26 +475,26 @@ The system auto-flags `health_department_reportable = true` for:
 
 | Method | Route | Auth | Roles | Description |
 |--------|-------|------|-------|-------------|
-| GET | `/residents/:id/infections` | Required | nurse, facility_admin | Infection history |
-| POST | `/residents/:id/infections` | Required | nurse, facility_admin | Report infection |
-| PUT | `/infections/:id` | Required | nurse, facility_admin | Update infection (treatment, status, outcome) |
-| GET | `/facilities/:id/infections/active` | Required | nurse, facility_admin | Active infections across facility |
+| GET | `/residents/:id/infections` | Required | med_tech, facility_admin | Infection history |
+| POST | `/residents/:id/infections` | Required | med_tech, facility_admin | Report infection |
+| PUT | `/infections/:id` | Required | med_tech, facility_admin | Update infection (treatment, status, outcome) |
+| GET | `/facilities/:id/infections/active` | Required | med_tech, facility_admin | Active infections across facility |
 | GET | `/facilities/:id/outbreaks` | Required | facility_admin, owner | Outbreak events |
-| POST | `/facilities/:id/outbreaks` | Required | facility_admin, nurse | Manually declare outbreak |
+| POST | `/facilities/:id/outbreaks` | Required | facility_admin, med_tech | Manually declare outbreak |
 | PUT | `/outbreaks/:id` | Required | facility_admin | Update outbreak (containment, resolution) |
 | GET | `/residents/:id/vitals` | Required | Clinical staff + family (limited) | Vital sign history. Params: `date_from`, `date_to` |
-| POST | `/residents/:id/vitals` | Required | caregiver, nurse | Record vital signs |
-| GET | `/facilities/:id/vitals/alerts` | Required | nurse, facility_admin | Unacknowledged vital sign alerts |
-| PUT | `/vital-sign-records/:id/acknowledge-alert` | Required | nurse | Acknowledge alert |
-| GET | `/residents/:id/vital-thresholds` | Required | nurse, facility_admin | Get resident's thresholds |
-| PUT | `/residents/:id/vital-thresholds` | Required | nurse, facility_admin | Set/update thresholds |
-| GET | `/residents/:id/immunizations` | Required | nurse, facility_admin | Immunization records |
-| POST | `/residents/:id/immunizations` | Required | nurse | Record immunization or declination |
-| GET | `/facilities/:id/immunizations/compliance` | Required | nurse, facility_admin | Immunization compliance rates by type |
+| POST | `/residents/:id/vitals` | Required | med_tech | Record vital signs |
+| GET | `/facilities/:id/vitals/alerts` | Required | med_tech, facility_admin | Unacknowledged vital sign alerts |
+| PUT | `/vital-sign-records/:id/acknowledge-alert` | Required | med_tech | Acknowledge alert |
+| GET | `/residents/:id/vital-thresholds` | Required | med_tech, facility_admin | Get resident's thresholds |
+| PUT | `/residents/:id/vital-thresholds` | Required | med_tech, facility_admin | Set/update thresholds |
+| GET | `/residents/:id/immunizations` | Required | med_tech, facility_admin | Immunization records |
+| POST | `/residents/:id/immunizations` | Required | med_tech | Record immunization or declination |
+| GET | `/facilities/:id/immunizations/compliance` | Required | med_tech, facility_admin | Immunization compliance rates by type |
 | GET | `/facilities/:id/staff-illness` | Required | facility_admin | Staff illness log |
-| POST | `/staff/:id/illness` | Required | facility_admin, nurse | Log staff illness |
+| POST | `/staff/:id/illness` | Required | facility_admin, med_tech | Log staff illness |
 | PUT | `/staff-illness-logs/:id` | Required | facility_admin | Update (return to work clearance) |
-| GET | `/facilities/:id/infection-surveillance` | Required | facility_admin, nurse, owner | Surveillance dashboard data. Params: `date_from`, `date_to` |
+| GET | `/facilities/:id/infection-surveillance` | Required | facility_admin, med_tech, owner | Surveillance dashboard data. Params: `date_from`, `date_to` |
 | GET | `/organizations/infection-surveillance` | Required | owner, org_admin | Cross-facility surveillance comparison |
 
 ---
@@ -503,10 +503,10 @@ The system auto-flags `health_department_reportable = true` for:
 
 | Function | Trigger | Logic |
 |----------|---------|-------|
-| `vital-sign-alert-check` | INSERT on vital_sign_records | Compare values to resident thresholds. Set has_alert and alert_type. Generate nurse notification. Check for outbreak temperature pattern. |
+| `vital-sign-alert-check` | INSERT on vital_sign_records | Compare values to resident thresholds. Set has_alert and alert_type. Generate on-shift Med-Tech notification. Check for outbreak temperature pattern. |
 | `outbreak-detection` | INSERT on infections, vital_sign_records with temperature alert | Run outbreak detection algorithm. Create outbreak_event if threshold met. |
 | `infection-surveillance-daily` | Cron (midnight ET) | Calculate daily infection_surveillance_metrics for each facility: active infections, rates, antibiotic usage, etc. |
-| `immunization-compliance-check` | Cron (weekly, Monday 7 AM ET) | Scan immunization_records for all active residents. Identify missing or overdue immunizations. Generate alerts for nurse/administrator. Calculate facility compliance rates. |
+| `immunization-compliance-check` | Cron (weekly, Monday 7 AM ET) | Scan immunization_records for all active residents. Identify missing or overdue immunizations. Generate alerts for Med-Tech/administrator. Calculate facility compliance rates. |
 | `antibiotic-stewardship-alert` | Cron (monthly, 1st of month) | Calculate antibiotic usage metrics. Flag outliers. Generate stewardship report for each facility. |
 | `staff-illness-outbreak-link` | INSERT on staff_illness_logs | Check if symptoms match any active outbreak. If yes, auto-link to outbreak_event, increment affected_staff_count. |
 
@@ -514,7 +514,7 @@ The system auto-flags `health_department_reportable = true` for:
 
 ## UI SCREENS
 
-### Web (Admin/Nurse)
+### Web (Admin/Med-Tech)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
@@ -528,17 +528,17 @@ The system auto-flags `health_department_reportable = true` for:
 | Antibiotic Stewardship Report | `/facilities/:id/antibiotic-stewardship` | Current residents on antibiotics (list). Average course duration. Antibiotic days per 1,000 resident-days (trend). Flagged long courses. Flagged recurrent courses. |
 | Org Infection Overview | `/organization/infection-control` | Cross-facility comparison: infection rates, active outbreaks, immunization compliance, antibiotic usage. |
 
-### Mobile (Caregiver)
+### Mobile (Med-Tech floor app)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Record Vitals | `/shift/residents/:id/vitals` | Large input fields for each vital. Auto-alert if threshold exceeded — screen turns warning color with clear message: "Temperature 101.2°F exceeds threshold. Nurse has been notified." |
+| Record Vitals | `/shift/residents/:id/vitals` | Large input fields for each vital. Auto-alert if threshold exceeded — screen turns warning color with clear message: "Temperature 101.2°F exceeds threshold. The on-shift Med-Tech has been notified." |
 | Infection Precautions Badge | Shown on resident card | If resident has active infection with isolation: prominent badge on their card in the shift dashboard showing isolation type and required precautions (e.g., "CONTACT ISOLATION — Gown and gloves required"). |
 
 ### Offline Behavior
 
 | Operation | Offline | Sync |
 |-----------|---------|------|
-| Record vital signs | Yes (queued) | Submit on reconnect. Alert check runs on sync — if threshold exceeded, nurse notification fires at sync time, not local save time. Display "pending sync — alert check will run when online" if values appear abnormal. |
+| Record vital signs | Yes (queued) | Submit on reconnect. Alert check runs on sync — if threshold exceeded, Med-Tech notification fires at sync time, not local save time. Display "pending sync — alert check will run when online" if values appear abnormal. |
 | View vital sign history | Yes (cached last 30 days) | Background refresh |
 | Report infection | No (requires current outbreak data for context) | Show offline indicator |

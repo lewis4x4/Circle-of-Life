@@ -1,5 +1,7 @@
 # Phase 2 acceptance checklist
 
+> **Role note (2026-09-22, COL-615):** this is a historical record. The `nurse`, `caregiver`, `dietary` and `dietary_aide` login roles it names were retired by migration 468 (nurse and caregiver folded into `med_tech`, dietary and dietary_aide into `cook`). For the current role model see the Roles section in `AGENTS.md`.
+
 **Authority:** Maps to [PHASE2-SCOPE.md](./PHASE2-SCOPE.md) “Success criteria for Phase 2 complete” (lines 279–288).
 
 **How to use:** For each row, record **PASS** or **FAIL** with date, tester, and notes (screenshot, command output, or issue link). Phase 2 is accepted only when every applicable row is **PASS** or has an approved waiver per `agents/registry.yaml` mission gate rules.

@@ -65,7 +65,7 @@ COL runs two 12-hour shifts at all five facilities: `day` 06:00 to 18:00, `night
 
 ### 2.4 Task generation
 
-`observation-task-generator` generates one shift ahead, not eight hours. Generating a full 12-hour shift means a caregiver coming on at 06:00 sees all three of their windows immediately. The Plans page control reads **Generate next shift**.
+`observation-task-generator` generates one shift ahead, not eight hours. Generating a full 12-hour shift means a Med-Tech coming on at 06:00 sees all three of their windows immediately. The Plans page control reads **Generate next shift**.
 
 Generation is idempotent per `(resident_id, window_key, service_date)`. Re-running produces no duplicates.
 
@@ -111,7 +111,7 @@ Free-text-required observations are forbidden. This spec does not violate that. 
 
 ### 3.4 Speed target
 
-A caregiver covering half a 36-bed building records one window for 18 residents in one pass. Target is 10 seconds per resident with no typing. The capture surface stays on one screen with no navigation between chip groups and no browser-native select or textarea chrome.
+A Med-Tech covering half a 36-bed building records one window for 18 residents in one pass. Target is 10 seconds per resident with no typing. The capture surface stays on one screen with no navigation between chip groups and no browser-native select or textarea chrome.
 
 ### 3.5 Assignment
 
@@ -174,7 +174,7 @@ Add an `AFTER INSERT` trigger on `resident_watch_instances` that creates a corre
 
 ### 4.5 Entry surface
 
-A **Monitoring Order** button on the resident record, tier 2. Not buried in Smart Rounding. A caregiver holding discharge paperwork at 21:00 opens the resident and enters the order in under a minute on a phone.
+A **Monitoring Order** button on the resident record, tier 2. Not buried in Smart Rounding. A Med-Tech holding discharge paperwork at 21:00 opens the resident and enters the order in under a minute on a phone.
 
 Active orders render on the resident record as a persistent band showing interval, reason, ordering party, and remaining window.
 
@@ -371,7 +371,7 @@ Lives in facility administration, not in the Smart Rounding tab strip. The strip
 | 2 | Editing one window or one rung, with the preview and the simulate action |
 | 3 | Version history, the change log with reasons, and rollback |
 
-A read-only view of the current cadence renders on the Smart Rounding Live board header so a caregiver can see the times in force without leaving the board.
+A read-only view of the current cadence renders on the Smart Rounding Live board header so a Med-Tech can see the times in force without leaving the board.
 
 ---
 
@@ -518,8 +518,8 @@ See `HANDOFFS/2026-09-20__smart-rounding-plan-closeout.md` for executed proof an
 
 | Action | Roles |
 |---|---|
-| Record an observation | Resident Aide (`caregiver`) and above, any resident at an accessible facility |
-| Create a Monitoring Order | Resident Aide (`caregiver`) and above |
+| Record an observation | Med-Tech (`med_tech`) and above, any resident at an accessible facility |
+| Create a Monitoring Order | Med-Tech (`med_tech`) and above |
 | Cancel a Monitoring Order | `facility_admin`, `manager`, `org_admin`, `owner` |
 | Disposition a Watchlist signal | `facility_admin`, `manager`, `org_admin`, `owner` |
 | View portfolio tier 1 | `org_admin`, `owner`, and roles with access to more than one facility |
@@ -551,7 +551,7 @@ RLS enforces organization scope first, then facility access, on every new table.
 3. No surface in the module renders the string "Evening", a migration number, or a raw enum value.
 4. A chip-composed observation stores a non-empty `composed_summary` and succeeds with an empty free-text note.
 5. Creating a Monitoring Order at interval 30 produces order tasks at 30-minute spacing with 10-minute grace, stops standard window generation for that resident, and marks the standard windows satisfied where an order check falls inside them.
-6. A Monitoring Order created by a user with the Resident Aide role succeeds and is `active` immediately, with no pending state.
+6. A Monitoring Order created by a user with the Med-Tech role succeeds and is `active` immediately, with no pending state.
 7. A missed `mid_morning` window produces escalation rows at `window_close` plus 30, 60, and 90, and a nudge at `window_close` minus 15, with a clock-advanced test.
 8. The Watchlist returns ranked signal rows for seeded data, every signal traces to a rule row, and a disposition transition writes an append-only row with user and timestamp.
 9. Acute signal volume at Homewood against seeded data is at or under 5 per day, with the measured number stated.
