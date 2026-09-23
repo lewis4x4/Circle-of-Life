@@ -613,7 +613,7 @@ export default function ResidentBillingPage() {
                             Current: {formatResidentBillingMedicaidProviderCurrent(p.facility_medicaid_provider_id, providers, p.payer_name)} · {formatResidentBillingMedicaidRateUnitLabel(p.medicaid_rate_unit)}
                           </p>
                           {residentBillingMedicaidSplitLine(p.medicaid_rate, p.medicaid_patient_responsibility) ? (
-                            <p className="text-xs text-slate-500 sm:col-span-2">
+                            <p className="text-xs text-muted-foreground sm:col-span-2">
                               {residentBillingMedicaidSplitLine(p.medicaid_rate, p.medicaid_patient_responsibility)}
                             </p>
                           ) : null}
