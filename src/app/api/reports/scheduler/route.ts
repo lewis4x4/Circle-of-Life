@@ -5,6 +5,7 @@ import { actorCanAccessFacility, type AdminApiActor } from "@/lib/admin/api-auth
 import { computeNextRunUtc, decodeScheduleRule } from "@/lib/reports/schedule-preview";
 import { runTemplateAndPersist, finishReportRun, failReportRun, type ReportRunSnapshot } from "@/lib/reports/run-persistence";
 import { executeReportTemplate } from "@/lib/reports/executors";
+import { REPORT_RUN_INTERRUPTED_AFTER_MS, isReportRunInterrupted } from "@/lib/reports/report-status";
 
 export const runtime="nodejs";
 export async function POST(request:NextRequest) {
@@ -12,6 +13,13 @@ export async function POST(request:NextRequest) {
   const supplied=request.headers.get("x-cron-secret")??"";
   if(!expected || Buffer.byteLength(expected)!==Buffer.byteLength(supplied) || !timingSafeEqual(Buffer.from(expected),Buffer.from(supplied))) return NextResponse.json({error:"Unauthorized"},{status:401});
   const admin=createServiceRoleClient();
+  // Manual runs whose browser tab closed mid-run never finish on their own (COL-643). Close them as
+  // interrupted so History, the hub and the run detail all show the same state.
+  const staleBefore=new Date(Date.now()-REPORT_RUN_INTERRUPTED_AFTER_MS).toISOString();
+  const {data:interrupted,error:sweepError}=await admin.from("report_runs").update({status:"failed",completed_at:new Date().toISOString(),error_json:{message:"Interrupted before it finished. Run it again."}})
+    .eq("status","running").is("schedule_id",null).lt("started_at",staleBefore).select("id");
+  if(sweepError) return NextResponse.json({error:"Could not close interrupted runs"},{status:500});
+  const interruptedClosed=interrupted?.length??0;
   const {data:schedules,error}=await admin.from("report_schedules").select("*").eq("status","active").is("deleted_at",null).lte("next_run_at",new Date().toISOString()).order("next_run_at").limit(20);
   if(error) return NextResponse.json({error:"Could not read schedules"},{status:500});
   let processed=0,failed=0;
@@ -35,7 +43,7 @@ export async function POST(request:NextRequest) {
       const {data:existing,error:lookupError}=await admin.from("report_runs").select("id,status,started_at").eq("schedule_id",schedule.id).eq("scheduled_for",schedule.next_run_at!).maybeSingle();
       if(lookupError) throw new Error(lookupError.message);
       if(existing?.status==="running") {
-        if(Date.now()-new Date(existing.started_at).getTime()<30*60*1000) continue;
+        if(!isReportRunInterrupted(existing)) continue;
         await failReportRun(admin,schedule.organization_id,existing.id,"Scheduled execution was interrupted. Review and resume the schedule.");
         throw new Error("Scheduled execution was interrupted. Review and resume the schedule.");
       }
@@ -76,9 +84,9 @@ export async function POST(request:NextRequest) {
       if(message==="schedule_occurrence_already_claimed") continue;
       if(runId && !outputCompleted) { try { await failReportRun(admin,schedule.organization_id,runId,message); } catch { /* schedule error remains visible below */ } }
       const {error:stateError}=await admin.from("report_schedules").update({status:"failed",last_error:message}).eq("id",schedule.id);
-      if(stateError) return NextResponse.json({error:"Could not save scheduled failure",processed,failed:failed+1},{status:500});
+      if(stateError) return NextResponse.json({error:"Could not save scheduled failure",processed,failed:failed+1,interruptedClosed},{status:500});
       failed++;
     }
   }
-  return NextResponse.json({ok:failed===0,processed,failed},{status:failed?500:200});
+  return NextResponse.json({ok:failed===0,processed,failed,interruptedClosed},{status:failed?500:200});
 }
