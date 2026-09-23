@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
@@ -71,14 +72,6 @@ export type ResidentAssuranceFacilityTrendRow = {
   lastObservedDate: string | null;
 };
 
-type RiskScoreRow = {
-  resident_id: string;
-  score: number;
-  risk_tier: "low" | "moderate" | "high" | "critical";
-  computed_at: string;
-  residents?: { first_name: string; last_name: string; preferred_name: string | null } | null;
-};
-
 function residentName(
   resident: { first_name: string; last_name: string; preferred_name: string | null } | null | undefined,
   fallback: string,
@@ -125,6 +118,65 @@ function computeHeatScore(parts: {
   );
 }
 
+type LatestScoreRow = {
+  facility_id: string;
+  resident_id: string;
+  score: number;
+  risk_tier: "low" | "moderate" | "high" | "critical";
+  computed_at: string;
+  resident?: { first_name: string; last_name: string; preferred_name: string | null };
+};
+
+type CountReply = { count: number | null; error: { message: string } | null };
+
+type ResidentLatestScoreRow = {
+  id: string;
+  facility_id: string;
+  first_name: string;
+  last_name: string;
+  preferred_name: string | null;
+  resident_safety_scores: Array<Pick<LatestScoreRow, "score" | "risk_tier" | "computed_at">> | null;
+};
+
+/**
+ * The newest safety score of every resident in scope: one row per resident
+ * (paged, so no cap can drop anyone) with the score history limited to its
+ * newest row per resident by PostgREST. Critical / high safety figures are
+ * tallied from this — never from a capped select of score history, which
+ * dropped residents once history outgrew the cap (COL-640).
+ */
+async function readLatestSafetyScores(
+  supabase: SupabaseClient<Database>,
+  scope: { organizationId?: string; facilityId?: string | null },
+): Promise<LatestScoreRow[]> {
+  const residents = await readAllPages<ResidentLatestScoreRow>((start, end) => {
+    let query = supabase
+      .from("residents" as never)
+      .select(
+        "id, facility_id, first_name, last_name, preferred_name, resident_safety_scores(score, risk_tier, computed_at)",
+        { count: "exact" },
+      )
+      .is("deleted_at", null)
+      .is("resident_safety_scores.deleted_at", null)
+      .order("computed_at", { referencedTable: "resident_safety_scores", ascending: false })
+      .limit(1, { referencedTable: "resident_safety_scores" });
+    if (scope.organizationId) query = query.eq("organization_id", scope.organizationId);
+    if (scope.facilityId && isValidFacilityIdForQuery(scope.facilityId)) query = query.eq("facility_id", scope.facilityId);
+    return query.order("id", { ascending: true }).range(start, end) as unknown as PromiseLike<{
+      data: ResidentLatestScoreRow[] | null;
+      count: number | null;
+      error: { message: string } | null;
+    }>;
+  });
+  const latest: LatestScoreRow[] = [];
+  for (const resident of residents.data) {
+    const score = resident.resident_safety_scores?.[0];
+    if (!score) continue;
+    latest.push({ ...score, facility_id: resident.facility_id, resident_id: resident.id, resident });
+  }
+  return latest;
+}
+
 export async function fetchResidentAssuranceCommandBrief(
   facilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
@@ -138,7 +190,7 @@ export async function fetchResidentAssuranceCommandBrief(
     pendingWatchApprovalsRes,
     openEscalationsRes,
     openIntegrityFlagsRes,
-    riskScoresRes,
+    latestScores,
   ] = await Promise.all([
     scoped(
       supabase
@@ -168,14 +220,7 @@ export async function fetchResidentAssuranceCommandBrief(
         .in("status", ["open", "in_progress"])
         .is("deleted_at", null),
     ),
-    scoped(
-      supabase
-        .from("resident_safety_scores" as never)
-        .select("resident_id, score, risk_tier, computed_at, residents(first_name, last_name, preferred_name)")
-        .is("deleted_at", null)
-        .order("computed_at", { ascending: false })
-        .limit(200),
-    ) as unknown as Promise<{ data: RiskScoreRow[] | null; error: { message: string } | null }>,
+    readLatestSafetyScores(supabase, { facilityId }),
   ]);
 
   const firstError = [
@@ -183,41 +228,29 @@ export async function fetchResidentAssuranceCommandBrief(
     pendingWatchApprovalsRes.error,
     openEscalationsRes.error,
     openIntegrityFlagsRes.error,
-    riskScoresRes.error,
   ].find(Boolean);
   if (firstError) {
     throw new Error(firstError.message);
   }
 
-  const latestByResident = new Map<string, RiskScoreRow>();
-  for (const row of riskScoresRes.data ?? []) {
-    if (!latestByResident.has(row.resident_id)) {
-      latestByResident.set(row.resident_id, row);
-    }
-  }
-
-  const latestScores = Array.from(latestByResident.values());
-  const criticalSafetyResidents = latestScores.filter((row) => row.risk_tier === "critical").length;
-  const highOrCriticalSafetyResidents = latestScores.filter((row) => row.risk_tier === "critical" || row.risk_tier === "high").length;
-  const highRiskResidents = latestScores
-    .filter((row) => row.risk_tier === "critical" || row.risk_tier === "high")
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 4)
-    .map((row) => ({
-      id: row.resident_id,
-      name: residentName(row.residents, row.resident_id.slice(0, 8)),
-      riskTier: row.risk_tier,
-      score: row.score,
-    }));
+  const highOrCritical = latestScores.filter((row) => row.risk_tier === "critical" || row.risk_tier === "high");
 
   return {
     activeWatches: activeWatchesRes.count ?? 0,
     pendingWatchApprovals: pendingWatchApprovalsRes.count ?? 0,
     openEscalations: openEscalationsRes.count ?? 0,
     openIntegrityFlags: openIntegrityFlagsRes.count ?? 0,
-    criticalSafetyResidents,
-    highOrCriticalSafetyResidents,
-    highRiskResidents,
+    criticalSafetyResidents: latestScores.filter((row) => row.risk_tier === "critical").length,
+    highOrCriticalSafetyResidents: highOrCritical.length,
+    highRiskResidents: highOrCritical
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 4)
+      .map((row) => ({
+        id: row.resident_id,
+        name: residentName(row.resident, row.resident_id.slice(0, 8)),
+        riskTier: row.risk_tier,
+        score: row.score,
+      })),
   };
 }
 
@@ -225,89 +258,57 @@ export async function fetchResidentAssuranceFacilityHeatMap(
   supabase: SupabaseClient<Database>,
   organizationId: string,
 ): Promise<ResidentAssuranceFacilityRollup[]> {
-  const [facilitiesRes, watchesRes, escalationsRes, integrityRes] = await Promise.all([
-    supabase
-      .from("facilities")
-      .select("id, name")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null)
-      .order("name", { ascending: true }),
-    supabase
-      .from("resident_watch_instances")
-      .select("facility_id, status")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null)
-      .in("status", ["active", "pending_approval"]),
-    supabase
-      .from("resident_observation_escalations")
-      .select("facility_id, status")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null)
-      .in("status", ["open", "in_progress"]),
-    supabase
-      .from("resident_observation_integrity_flags")
-      .select("facility_id, status")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null)
-      .in("status", ["open", "in_progress"]),
-  ]);
-
-  const scoresRes = await (supabase
-    .from("resident_safety_scores" as never)
-    .select("facility_id, resident_id, risk_tier, computed_at")
+  const facilitiesRequest = supabase
+    .from("facilities")
+    .select("id, name")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
-    .order("computed_at", { ascending: false })
-    .limit(5000) as unknown as Promise<{
-    data: Array<{
-      facility_id: string;
-      resident_id: string;
-      risk_tier: "low" | "moderate" | "high" | "critical";
-      computed_at: string;
-    }> | null;
-    error: { message: string } | null;
-  }>);
+    .order("name", { ascending: true });
+  const latestScoresRequest = readLatestSafetyScores(supabase, { organizationId });
 
-  const firstError = [
-    facilitiesRes.error,
-    watchesRes.error,
-    escalationsRes.error,
-    integrityRes.error,
-    scoresRes.error,
-  ].find(Boolean);
-  if (firstError) {
-    throw new Error(firstError.message);
+  const facilitiesRes = await facilitiesRequest;
+  if (facilitiesRes.error) {
+    throw new Error(facilitiesRes.error.message);
+  }
+  const facilities = facilitiesRes.data ?? [];
+
+  const countFor = (table: string, facilityId: string, statuses: string[]) =>
+    supabase
+      .from(table as never)
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", organizationId)
+      .eq("facility_id", facilityId)
+      .in("status", statuses)
+      .is("deleted_at", null) as unknown as PromiseLike<CountReply>;
+
+  const [perFacility, latestScores] = await Promise.all([
+    Promise.all(
+      facilities.map((facility) =>
+        Promise.all([
+          countFor("resident_watch_instances", facility.id, ["active"]),
+          countFor("resident_watch_instances", facility.id, ["pending_approval"]),
+          countFor("resident_observation_escalations", facility.id, ["open", "in_progress"]),
+          countFor("resident_observation_integrity_flags", facility.id, ["open", "in_progress"]),
+        ]),
+      ),
+    ),
+    latestScoresRequest,
+  ]);
+
+  const countError = perFacility.flat().find((reply) => reply.error)?.error;
+  if (countError) {
+    throw new Error(countError.message);
   }
 
-  const activeWatchesByFacility = new Map<string, number>();
-  const pendingWatchesByFacility = new Map<string, number>();
-  for (const row of watchesRes.data ?? []) {
-    if (row.status === "active") {
-      activeWatchesByFacility.set(row.facility_id, (activeWatchesByFacility.get(row.facility_id) ?? 0) + 1);
-    }
-    if (row.status === "pending_approval") {
-      pendingWatchesByFacility.set(row.facility_id, (pendingWatchesByFacility.get(row.facility_id) ?? 0) + 1);
-    }
-  }
-
-  const escalationsByFacility = new Map<string, number>();
-  for (const row of escalationsRes.data ?? []) {
-    escalationsByFacility.set(row.facility_id, (escalationsByFacility.get(row.facility_id) ?? 0) + 1);
-  }
-
-  const integrityByFacility = new Map<string, number>();
-  for (const row of integrityRes.data ?? []) {
-    integrityByFacility.set(row.facility_id, (integrityByFacility.get(row.facility_id) ?? 0) + 1);
-  }
-
-  const latestScoreByResident = new Map<string, { facility_id: string; risk_tier: "low" | "moderate" | "high" | "critical" }>();
+  const criticalByFacility = new Map<string, number>();
+  const highOrCriticalByFacility = new Map<string, number>();
   const lastScoredAtByFacility = new Map<string, string>();
-  for (const row of scoresRes.data ?? []) {
-    if (!latestScoreByResident.has(row.resident_id)) {
-      latestScoreByResident.set(row.resident_id, {
-        facility_id: row.facility_id,
-        risk_tier: row.risk_tier,
-      });
+  for (const row of latestScores) {
+    if (row.risk_tier === "critical") {
+      criticalByFacility.set(row.facility_id, (criticalByFacility.get(row.facility_id) ?? 0) + 1);
+    }
+    if (row.risk_tier === "critical" || row.risk_tier === "high") {
+      highOrCriticalByFacility.set(row.facility_id, (highOrCriticalByFacility.get(row.facility_id) ?? 0) + 1);
     }
     const seen = lastScoredAtByFacility.get(row.facility_id);
     if (!seen || row.computed_at > seen) {
@@ -315,22 +316,12 @@ export async function fetchResidentAssuranceFacilityHeatMap(
     }
   }
 
-  const criticalByFacility = new Map<string, number>();
-  const highOrCriticalByFacility = new Map<string, number>();
-  for (const row of latestScoreByResident.values()) {
-    if (row.risk_tier === "critical") {
-      criticalByFacility.set(row.facility_id, (criticalByFacility.get(row.facility_id) ?? 0) + 1);
-    }
-    if (row.risk_tier === "critical" || row.risk_tier === "high") {
-      highOrCriticalByFacility.set(row.facility_id, (highOrCriticalByFacility.get(row.facility_id) ?? 0) + 1);
-    }
-  }
-
-  return (facilitiesRes.data ?? []).map((facility) => {
-    const activeWatches = activeWatchesByFacility.get(facility.id) ?? 0;
-    const pendingWatchApprovals = pendingWatchesByFacility.get(facility.id) ?? 0;
-    const openEscalations = escalationsByFacility.get(facility.id) ?? 0;
-    const openIntegrityFlags = integrityByFacility.get(facility.id) ?? 0;
+  return facilities.map((facility, index) => {
+    const [activeRes, pendingRes, escalationsRes, integrityRes] = perFacility[index]!;
+    const activeWatches = activeRes.count ?? 0;
+    const pendingWatchApprovals = pendingRes.count ?? 0;
+    const openEscalations = escalationsRes.count ?? 0;
+    const openIntegrityFlags = integrityRes.count ?? 0;
     const criticalSafetyResidents = criticalByFacility.get(facility.id) ?? 0;
     const highOrCriticalSafetyResidents = highOrCriticalByFacility.get(facility.id) ?? 0;
     const heatScore =
@@ -365,6 +356,30 @@ export async function fetchResidentAssuranceFacilityHeatMap(
   });
 }
 
+type PagedReply<T> = { data: T[] | null; count?: number | null; error: { message: string } | null };
+
+const TREND_PAGE_SIZE = 500;
+
+/**
+ * Every row a paged read has, answered in the `{ data, error }` shape of a single
+ * select so response errors keep their priority; transport rejections still reject.
+ */
+async function readAllRows<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<PagedReply<T>>,
+): Promise<{ data: T[] | null; error: { message: string } | null }> {
+  const rows: T[] = [];
+  for (;;) {
+    const page = await fetchPage(rows.length, rows.length + TREND_PAGE_SIZE - 1);
+    if (page.error) return { data: null, error: page.error };
+    const data = page.data ?? [];
+    rows.push(...data);
+    const total = page.count ?? null;
+    if (data.length === 0 || (total !== null ? rows.length >= total : data.length < TREND_PAGE_SIZE)) {
+      return { data: rows, error: null };
+    }
+  }
+}
+
 export async function fetchResidentAssuranceFacilityTrendSeries(
   supabase: SupabaseClient<Database>,
   organizationId: string,
@@ -373,6 +388,9 @@ export async function fetchResidentAssuranceFacilityTrendSeries(
   const dates = buildTrailingDates(days);
   const startDate = `${dates[0]}T00:00:00.000Z`;
 
+  // Dated rows are paged: at Homewood one week of escalations is already past
+  // PostgREST's 1000-row cap, and a truncated select tallied per day understates
+  // every day it drops (COL-640).
   const results = await Promise.allSettled([
     supabase
       .from("facilities")
@@ -380,48 +398,57 @@ export async function fetchResidentAssuranceFacilityTrendSeries(
       .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .order("name", { ascending: true }),
-    supabase
-      .from("resident_watch_instances" as never)
-      .select("facility_id, starts_at")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null)
-      .gte("starts_at", startDate) as unknown as Promise<{
-      data: Array<{ facility_id: string; starts_at: string }> | null;
-      error: { message: string } | null;
-    }>,
-    supabase
-      .from("resident_observation_escalations" as never)
-      .select("facility_id, triggered_at")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null)
-      .gte("triggered_at", startDate) as unknown as Promise<{
-      data: Array<{ facility_id: string; triggered_at: string }> | null;
-      error: { message: string } | null;
-    }>,
-    supabase
-      .from("resident_observation_integrity_flags" as never)
-      .select("facility_id, detected_at")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null)
-      .gte("detected_at", startDate) as unknown as Promise<{
-      data: Array<{ facility_id: string; detected_at: string }> | null;
-      error: { message: string } | null;
-    }>,
-    supabase
-      .from("resident_safety_scores" as never)
-      .select("facility_id, resident_id, risk_tier, computed_at")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null)
-      .gte("computed_at", startDate)
-      .order("computed_at", { ascending: false }) as unknown as Promise<{
-      data: Array<{
+    readAllRows<{ facility_id: string; starts_at: string }>((from, to) =>
+      supabase
+        .from("resident_watch_instances" as never)
+        .select("id, facility_id, starts_at", { count: "exact" })
+        .eq("organization_id", organizationId)
+        .is("deleted_at", null)
+        .gte("starts_at", startDate)
+        .order("id", { ascending: true })
+        .range(from, to) as unknown as PromiseLike<PagedReply<{ facility_id: string; starts_at: string }>>,
+    ),
+    readAllRows<{ facility_id: string; triggered_at: string }>((from, to) =>
+      supabase
+        .from("resident_observation_escalations" as never)
+        .select("id, facility_id, triggered_at", { count: "exact" })
+        .eq("organization_id", organizationId)
+        .is("deleted_at", null)
+        .gte("triggered_at", startDate)
+        .order("id", { ascending: true })
+        .range(from, to) as unknown as PromiseLike<PagedReply<{ facility_id: string; triggered_at: string }>>,
+    ),
+    readAllRows<{ facility_id: string; detected_at: string }>((from, to) =>
+      supabase
+        .from("resident_observation_integrity_flags" as never)
+        .select("id, facility_id, detected_at", { count: "exact" })
+        .eq("organization_id", organizationId)
+        .is("deleted_at", null)
+        .gte("detected_at", startDate)
+        .order("id", { ascending: true })
+        .range(from, to) as unknown as PromiseLike<PagedReply<{ facility_id: string; detected_at: string }>>,
+    ),
+    readAllRows<{
+      facility_id: string;
+      resident_id: string;
+      risk_tier: "low" | "moderate" | "high" | "critical";
+      computed_at: string;
+    }>((from, to) =>
+      supabase
+        .from("resident_safety_scores" as never)
+        .select("facility_id, resident_id, risk_tier, computed_at", { count: "exact" })
+        .eq("organization_id", organizationId)
+        .is("deleted_at", null)
+        .gte("computed_at", startDate)
+        .order("computed_at", { ascending: false })
+        .order("id", { ascending: true })
+        .range(from, to) as unknown as PromiseLike<PagedReply<{
         facility_id: string;
         resident_id: string;
         risk_tier: "low" | "moderate" | "high" | "critical";
         computed_at: string;
-      }> | null;
-      error: { message: string } | null;
-    }>,
+      }>>,
+    ),
   ]);
 
   // Preserve sequential rejection priority, then the existing response-error priority.
