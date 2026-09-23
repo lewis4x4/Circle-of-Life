@@ -504,7 +504,8 @@ export function DischargeMedRecHubClient({
             role="status"
             className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
           >
-            Select a facility in the header to load medication reconciliation for that site.
+            {/* COL-651: the list already loads every accessible facility under All facilities. */}
+            Showing medication reconciliation for all your facilities.
           </div>
         ) : null}
 
