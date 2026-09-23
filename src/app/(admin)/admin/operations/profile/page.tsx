@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { isOperationsViewRole } from "@/lib/operations/constants";
 import type { FacilityProfileReply } from "@/lib/operations/facility-profile";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { CONTROL } from "../work/_components/work-inputs";
+import { useHeaderBoundFacility } from "../_components/use-header-bound-facility";
 
 type Entry = FacilityProfileReply["entries"][number];
 type Fields = Entry["components"][number]["fields"];
@@ -35,8 +37,14 @@ export default function FacilityProfilePage() {
 
 function PersonProfile({ actorName }: { actorName: string | null }) {
   const router = useRouter();
-  const params = useSearchParams();
-  const facilityId = params.get("facility_id") ?? "";
+  // COL-651: the facility is the header's; `?facility_id=` links set it.
+  const facilityId = useHeaderBoundFacility(
+    useCallback((next: string | null) => {
+      const query = new URLSearchParams();
+      if (next) query.set("facility_id", next);
+      router.replace(`/admin/operations/profile${query.size ? `?${query}` : ""}`, { scroll: false });
+    }, [router]),
+  );
   const [facilities, setFacilities] = useState<{ id: string; name: string }[] | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -50,6 +58,7 @@ function PersonProfile({ actorName }: { actorName: string | null }) {
     return () => { active = false; };
   }, [attempt]);
   const accessible = facilities?.some(facility => facility.id === facilityId);
+  const gate = <FacilityGateNotice reason="A facility profile describes one site's checklist coverage and decisions." />;
   return <div className="space-y-5 p-4 sm:p-6">
     <header className="space-y-2">
       <h1 className="text-2xl font-semibold">Facility profile</h1>
@@ -60,19 +69,10 @@ function PersonProfile({ actorName }: { actorName: string | null }) {
     {error ? <div role="alert" className="space-y-2">
       <p>Facility options are unavailable. Access has not been confirmed.</p>
       <button className={CONTROL} onClick={() => { setError(false); setFacilities(null); setAttempt(n => n + 1); }}>Retry facilities</button>
-    </div> : facilities === null ? <p role="status">Loading facilities…</p> : facilities.length === 0 ? <p>No accessible facilities.</p> : <>
-      <label className="flex max-w-lg flex-col gap-1">Facility
-        <select className={CONTROL} value={accessible ? facilityId : ""} onChange={event => {
-          const query = new URLSearchParams();
-          if (event.target.value) query.set("facility_id", event.target.value);
-          router.replace(`/admin/operations/profile${query.size ? `?${query}` : ""}`, { scroll: false });
-        }}>
-          <option value="">Choose a facility</option>
-          {facilities.map(facility => <option key={facility.id} value={facility.id}>{facility.name}</option>)}
-        </select>
-      </label>
-      {accessible ? <ProfileScope key={facilityId} facilityId={facilityId} /> : <p>{facilityId ? "The selected facility is no longer accessible. Choose an available facility." : "Choose a facility to review its profile."}</p>}
-    </>}
+    </div> : facilities === null ? <p role="status">Loading facilities…</p> : facilities.length === 0 ? <p>No accessible facilities.</p>
+      : !facilityId ? gate
+      : accessible ? <ProfileScope key={facilityId} facilityId={facilityId} />
+      : <><p>The selected facility is no longer accessible.</p>{gate}</>}
   </div>;
 }
 

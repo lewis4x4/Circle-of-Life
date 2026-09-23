@@ -132,6 +132,27 @@ describe("FacilityGate", () => {
     await waitFor(() => expect(screen.getByText(/could not be loaded/)).toBeInTheDocument());
   });
 
+  it("a facility fetch that throws or returns nothing reads as a load failure, not a crash", async () => {
+    fetchOptionsMock.mockReturnValue(undefined);
+    const { unmount } = render(
+      <FacilityGate title="Clinical Desk" reason="Assessments are due per building.">
+        <Page />
+      </FacilityGate>,
+    );
+    await waitFor(() => expect(screen.getByText(/could not be loaded/)).toBeInTheDocument());
+    unmount();
+
+    fetchOptionsMock.mockImplementation(() => {
+      throw new Error("sync");
+    });
+    render(
+      <FacilityGate title="Clinical Desk" reason="Assessments are due per building.">
+        <Page />
+      </FacilityGate>,
+    );
+    await waitFor(() => expect(screen.getByText(/could not be loaded/)).toBeInTheDocument());
+  });
+
   it("respects a form's facility-change guard", async () => {
     seedStore([HOMEWOOD, OAKRIDGE]);
     const release = useFacilityStore.getState().registerFacilityChangeGuard(() => false);

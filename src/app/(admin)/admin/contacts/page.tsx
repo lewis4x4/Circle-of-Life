@@ -7,6 +7,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -241,9 +242,9 @@ export default function AdminContactsPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — contacts and on-call are per-facility.
-          </p>
+
+          <FacilityGateNotice reason="Contacts and the on-call schedule are kept per building: each facility has its own pharmacy, physicians and after-hours rota." />
+
         ) : null}
 
         {notice ? (

@@ -106,6 +106,9 @@ export default function OperationsTodayPage() {
   const [stats, setStats] = useState<StatsBar | null>(null);
   const [selectedShift, setSelectedShift] = useState<"day" | "evening" | "night" | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus | "all">("all");
+  // COL-651: "No tasks match the selected filters" only when a filter is set;
+  // at the defaults the queue is simply empty for this scope.
+  const filtersActive = selectedShift !== "all" || selectedStatus !== "all";
   const [autoShiftApplied, setAutoShiftApplied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -371,7 +374,7 @@ export default function OperationsTodayPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-muted/30 rounded-lg border">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <select
+        <select aria-label="Shift"
           value={selectedShift}
           onChange={(e) => setSelectedShift(e.target.value as typeof selectedShift)}
           className="bg-background border rounded-md px-3 py-2 text-sm"
@@ -381,7 +384,7 @@ export default function OperationsTodayPage() {
           <option value="evening">Evening Shift</option>
           <option value="night">Night Shift</option>
         </select>
-        <select
+        <select aria-label="Status"
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value as typeof selectedStatus)}
           className="bg-background border rounded-md px-3 py-2 text-sm"
@@ -680,19 +683,29 @@ export default function OperationsTodayPage() {
         <div className="text-center py-16">
           <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">No tasks in view</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            No tasks match the selected filters. Adjust shift or status filters to review the full queue.
-          </p>
-          <Button
-            variant="outline"
-            className="mt-6"
-            onClick={() => {
-              setSelectedShift("all");
-              setSelectedStatus("all");
-            }}
-          >
-            Clear Filters
-          </Button>
+          {filtersActive ? (
+            <>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                No tasks match the selected filters. Adjust shift or status filters to review the full queue.
+              </p>
+              <Button
+                variant="outline"
+                className="mt-6"
+                onClick={() => {
+                  setSelectedShift("all");
+                  setSelectedStatus("all");
+                }}
+              >
+                Clear Filters
+              </Button>
+            </>
+          ) : (
+            <p className="text-muted-foreground max-w-md mx-auto">
+              {selectedFacilityId
+                ? "No operations tasks are scheduled for this facility today."
+                : "No operations tasks are scheduled today across your facilities."}
+            </p>
+          )}
         </div>
       )}
 

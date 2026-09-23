@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { isOperationsViewRole } from "@/lib/operations/constants";
 import {
   listPendingDrafts,
@@ -19,6 +18,7 @@ import { LegacyRow } from "./_components/legacy-row";
 import { CONTROL } from "./_components/work-inputs";
 import { readJson } from "./_components/receipt-history";
 import { CorporateUnresolvedComponents } from "./_components/corporate-unresolved-components";
+import { useHeaderBoundFacility } from "../_components/use-header-bound-facility";
 
 export default function SiteWorkPage() {
   const auth = useHavenAuth();
@@ -51,21 +51,14 @@ function PersonWorkspace({
 }) {
   const router = useRouter();
   const params = useSearchParams();
-  const store = useFacilityStore();
-  const [facilities, setFacilities] = useState<{ id: string; name: string }[]>(
-    store.facilitiesCacheUserId === actorId ? store.availableFacilities : [],
-  );
-  const [facilityError, setFacilityError] = useState("");
   const [drafts, setDrafts] = useState<DraftSummary[]>([]);
   const [draftError, setDraftError] = useState("");
   const [listedDraftScope, setListedDraftScope] = useState<string | null>(null);
   const [draftAttempt, setDraftAttempt] = useState(0);
-  const facilityId =
-    params.get("facility_id") ??
-    (store.facilitiesCacheUserId === actorId
-      ? store.selectedFacilityId
-      : null) ??
-    "";
+  // COL-651: the site is the header's facility; `?facility_id=` links set it.
+  const facilityId = useHeaderBoundFacility((next) =>
+    navigate({ facility_id: next, cursor: null, instance: null }),
+  );
   const view: WorkspaceView =
     params.get("view") === "upcoming"
       ? "upcoming"
@@ -96,19 +89,6 @@ function PersonWorkspace({
   }
   useEffect(() => {
     let active = true;
-    void fetchAdminFacilityOptions()
-      .then((rows) => {
-        if (active) setFacilities(rows);
-      })
-      .catch(() => {
-        if (active) setFacilityError("Site options unavailable");
-      });
-    return () => {
-      active = false;
-    };
-  }, [actorId]);
-  useEffect(() => {
-    let active = true;
     void listPendingDrafts().then((answer) => {
       if (!active) return;
       setListedDraftScope(draftScope);
@@ -126,27 +106,6 @@ function PersonWorkspace({
   }, [actorId, draftAttempt, draftScope]);
   const filters = (
     <div className="flex flex-col gap-3 md:flex-row md:items-end">
-      <label className="flex flex-col gap-1">
-        Site
-        <select
-          className={CONTROL}
-          value={facilityId}
-          onChange={(event) =>
-            navigate({ facility_id: event.target.value, cursor: null })
-          }
-        >
-          <option value="">Choose a site</option>
-          {facilityId &&
-          !facilities.some((facility) => facility.id === facilityId) ? (
-            <option value={facilityId}>Selected site</option>
-          ) : null}
-          {facilities.map((facility) => (
-            <option key={facility.id} value={facility.id}>
-              {facility.name}
-            </option>
-          ))}
-        </select>
-      </label>
       <div className="flex flex-wrap gap-2" aria-label="Work views">
         {(["today", "upcoming", "history"] as const).map((tab) => (
           <button
@@ -179,7 +138,6 @@ function PersonWorkspace({
   return (
     <div className="space-y-4">
       <CorporateUnresolvedComponents authorized={appRole === "owner" || appRole === "org_admin"} />
-      {facilityError ? <p role="alert">{facilityError}</p> : null}
       {draftError ? (
         <div>
           <p role="alert">{draftError}</p>
@@ -308,7 +266,7 @@ function WorkspaceData({
           device. Site shows all work by default, including unassigned duties.
         </Note>
         {!facilityId ? (
-          <p>Choose a site to see its work.</p>
+          <FacilityGateNotice reason="Site work is scheduled and recorded per site." />
         ) : error ? (
           <div>
             <p role="alert">{error}</p>

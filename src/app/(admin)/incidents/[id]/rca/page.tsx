@@ -773,10 +773,10 @@ export default function AdminIncidentRcaPage() {
             </div>
           </div>
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <label htmlFor="rca-corrective-actions-immediate" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Corrective actions (immediate)
             </label>
-            <textarea
+            <textarea id="rca-corrective-actions-immediate"
               className={cn(textareaClass, "mt-1.5")}
               value={correctiveActions}
               disabled={locked}
@@ -785,10 +785,10 @@ export default function AdminIncidentRcaPage() {
             />
           </div>
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <label htmlFor="rca-preventative-actions-systemic" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Preventative actions (systemic)
             </label>
-            <textarea
+            <textarea id="rca-preventative-actions-systemic"
               className={cn(textareaClass, "mt-1.5")}
               value={preventativeActions}
               disabled={locked}
