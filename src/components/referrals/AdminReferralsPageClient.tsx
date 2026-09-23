@@ -54,6 +54,7 @@ import {
   type ReferralLeadStatus,
 } from "@/lib/referrals/referrals-hub-bootstrap";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type LeadRow = ReferralsHubLeadRow;
 type UpcomingTourRow = ReferralsHubUpcomingTourRow;
@@ -201,6 +202,7 @@ export function AdminReferralsPageClient({
   const supabase = createClient();
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
+  const beginLoad = useLatestLoad();
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(initialLoadError);
   const [rows, setRows] = useState<LeadRow[]>(initialBootstrap.rows);
@@ -285,6 +287,7 @@ export function AdminReferralsPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setLoading(true);
     setLoadError(null);
@@ -304,8 +307,10 @@ export function AdminReferralsPageClient({
 
     try {
       const bootstrap = await loadReferralsHubBootstrap(selectedFacilityId, supabase);
+      if (!isCurrent()) return;
       applyBootstrap(bootstrap);
     } catch (e) {
+      if (!isCurrent()) return;
       setLoadError(e instanceof Error ? e.message : "Could not load referrals.");
       applyBootstrap({
         rows: [],
@@ -317,9 +322,9 @@ export function AdminReferralsPageClient({
         leadListTruncated: false,
       });
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [applyBootstrap, initialFacilityId, selectedFacilityId, supabase]);
+  }, [beginLoad, applyBootstrap, initialFacilityId, selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();

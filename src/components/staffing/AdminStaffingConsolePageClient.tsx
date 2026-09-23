@@ -50,6 +50,7 @@ import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-lo
 import { ADMIN_STAFFING_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 import { AdminEmptyState, AdminErrorState } from "@/components/common/admin-list-patterns";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type ComplianceFilter = "all" | "non_compliant" | "compliant";
 type WindowFilter = "all" | "24h";
@@ -162,6 +163,7 @@ export function AdminStaffingConsolePageClient({
   // Skip the first client-side load when the server already supplied data for
   // the current facility. Facility scope changes still refetch client-side.
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -169,6 +171,7 @@ export function AdminStaffingConsolePageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
@@ -190,6 +193,7 @@ export function AdminStaffingConsolePageClient({
         fetchAttendanceEvents(selectedFacilityId),
         fetchCoverageScopeOrNull(selectedFacilityId),
       ]);
+      if (!isCurrent()) return;
       setSnapshots(liveSnapshots);
       setCertWarnings(liveCertWarnings);
       setShiftGaps(liveShiftGaps);
@@ -201,6 +205,7 @@ export function AdminStaffingConsolePageClient({
         Object.fromEntries(liveRequisitions.map((row) => [row.id, row.status])),
       );
     } catch (err) {
+      if (!isCurrent()) return;
       setError(err instanceof Error ? err.message : "Failed to load staffing metrics");
       setCertWarnings([]);
       setShiftGaps([]);
@@ -209,9 +214,9 @@ export function AdminStaffingConsolePageClient({
       setRequisitionRows([]);
       setAttendanceRows([]);
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

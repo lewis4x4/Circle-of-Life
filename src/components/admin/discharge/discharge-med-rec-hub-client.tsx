@@ -57,6 +57,7 @@ import {
   formatDischargeMedRecResidentName,
 } from "@/lib/discharge/discharge-med-rec-display-copy";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 const NEW_MED_REC_PATH = "/admin/discharge/new";
 
@@ -204,6 +205,7 @@ export function DischargeMedRecHubClient({
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility and scope. Any later scope change falls through.
   const skipNextLoadRef = useRef(serverBootstrapped && !initialLoadFailed);
+  const beginLoad = useLatestLoad();
 
   type QueryPatch =
     | { mode: "set"; pairs: Record<string, string | undefined> }
@@ -244,23 +246,26 @@ export function DischargeMedRecHubClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setLoading(true);
     setLoadFailed(false);
 
     try {
       const bootstrap = await loadDischargeHubBootstrap(selectedFacilityId, scopeKey);
+      if (!isCurrent()) return;
       setRows(bootstrap.rows);
       setIsRowsCapped(bootstrap.isRowsCapped);
     } catch (e) {
+      if (!isCurrent()) return;
       logSupabasePostgrestError("discharge-hub.list", e, { facilityId: selectedFacilityId });
       setLoadFailed(true);
       setRows([]);
       setIsRowsCapped(false);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [initialFacilityId, initialScope, scopeKey, selectedFacilityId]);
+  }, [beginLoad, initialFacilityId, initialScope, scopeKey, selectedFacilityId]);
 
   useEffect(() => {
     void load();

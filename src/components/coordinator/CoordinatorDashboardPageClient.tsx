@@ -23,6 +23,7 @@ import {
 import { FAMILY_BULLETIN_ONE_WAY_HELPER } from "@/lib/admin/family-messages-copy";
 import { ClipboardList, FileCheck, MessageSquare, UserPlus, Activity, CalendarClock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type CoordinatorDashboardPageClientProps = {
   initialBrief: CoordinatorDashboardBrief | null;
@@ -40,6 +41,7 @@ export function CoordinatorDashboardPageClient({
   const [isLoading, setIsLoading] = useState(initialBrief == null && initialError == null);
   const [error, setError] = useState<string | null>(initialError);
   const skipNextLoadRef = useRef(initialBrief != null);
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -47,20 +49,23 @@ export function CoordinatorDashboardPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setError(null);
     setIsLoading(true);
     try {
       const data = await fetchCoordinatorDashboardBrief(selectedFacilityId);
+      if (!isCurrent()) return;
       setBrief(data);
     } catch (e) {
+      if (!isCurrent()) return;
       console.error("[coordinator-dashboard]", e);
       setBrief(null);
       setError("Unable to load coordinator dashboard.");
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

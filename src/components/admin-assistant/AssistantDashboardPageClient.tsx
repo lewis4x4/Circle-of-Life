@@ -25,6 +25,7 @@ import {
 import { FAMILY_BULLETIN_ONE_WAY_HELPER } from "@/lib/admin/family-messages-copy";
 import { Users, FileText, MessageSquare, Truck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type AssistantDashboardPageClientProps = {
   initialBrief: AdminAssistantDashboardBrief | null;
@@ -42,6 +43,7 @@ export function AssistantDashboardPageClient({
   const [isLoading, setIsLoading] = useState(initialBrief == null && initialError == null);
   const [error, setError] = useState<string | null>(initialError);
   const skipNextLoadRef = useRef(initialBrief != null);
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -49,20 +51,23 @@ export function AssistantDashboardPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setError(null);
     setIsLoading(true);
     try {
       const data = await fetchAdminAssistantDashboardBrief(selectedFacilityId);
+      if (!isCurrent()) return;
       setBrief(data);
     } catch (e) {
+      if (!isCurrent()) return;
       console.error("[assistant-dashboard]", e);
       setBrief(null);
       setError("Unable to load assistant dashboard.");
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

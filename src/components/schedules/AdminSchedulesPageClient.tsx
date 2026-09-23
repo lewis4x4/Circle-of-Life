@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
@@ -95,6 +96,7 @@ export function AdminSchedulesPageClient({
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility. Any later facility scope change falls through.
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -102,18 +104,21 @@ export function AdminSchedulesPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
     try {
       const live = await fetchSchedulesFromSupabase(selectedFacilityId);
+      if (!isCurrent()) return;
       setRows(live);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(formatLiveDataLoadError(err, "Failed to load data"));
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();
