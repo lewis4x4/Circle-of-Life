@@ -118,7 +118,9 @@ export default function FamilyInvoicesPage() {
   if (!data) return null;
 
   return (
-    <div className="space-y-4 pb-16 md:pb-0">
+    // Same centred column as the other family pages, so the header is not
+    // pinned under the top edge and the card is not full-bleed (COL-687).
+    <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-16 pt-12 md:pb-8 md:pt-20">
       <FamilySectionIntro
         active="billing"
         title={FAMILY_INVOICES_PAGE_TITLE}

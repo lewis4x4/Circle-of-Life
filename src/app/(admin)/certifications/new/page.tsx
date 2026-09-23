@@ -305,7 +305,7 @@ export default function AdminNewCertificationPage() {
                   <Input id="certification-credential-name"
                     value={certName}
                     onChange={(e) => setCertName(e.target.value)}
-                    placeholder="e.g. American Heart BLS — Healthcare Provider"
+                    placeholder="e.g. AHA BLS Provider"
                     required
                   />
                 </div>
@@ -318,7 +318,7 @@ export default function AdminNewCertificationPage() {
                 <Input id="certification-issuing-authority-optional"
                   value={issuingAuthority}
                   onChange={(e) => setIssuingAuthority(e.target.value)}
-                  placeholder="e.g. AHA Training Center, FL BON"
+                  placeholder="e.g. AHA Training Center"
                 />
               </div>
 
