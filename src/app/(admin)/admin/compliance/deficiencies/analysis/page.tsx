@@ -23,6 +23,7 @@ import {
 } from "recharts";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -185,12 +186,7 @@ export default function DeficienciesAnalysisPage() {
         </div>
 
         {!facilityReady ? (
-          <div className="rounded-lg bg-warning/10 p-8 border border-warning/20">
-            <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
-            <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
-              Choose a facility in header to load deficiency analysis.
-            </p>
-          </div>
+          <FacilityGateNotice reason="Deficiency trends and recurring tags are analysed one building's survey history at a time." />
         ) : null}
 
         {error ? (

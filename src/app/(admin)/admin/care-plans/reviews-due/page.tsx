@@ -6,6 +6,7 @@ import {
   parseSelectedFacilityCookieValue,
 } from "@/lib/facilities/selected-facility-cookie";
 import {
+  fetchActiveCarePlanCount,
   fetchCarePlanReviewsDue,
   type CarePlanReviewDueRow,
 } from "@/lib/care-plans/reviews-due";
@@ -20,9 +21,13 @@ export default async function CarePlanReviewsDuePage() {
   const supabase = await createClient();
   let initialRows: CarePlanReviewDueRow[] = [];
   let initialError: string | null = null;
+  let initialActivePlanCount: number | null = null;
 
   try {
-    initialRows = await fetchCarePlanReviewsDue(initialFacilityId, supabase);
+    [initialRows, initialActivePlanCount] = await Promise.all([
+      fetchCarePlanReviewsDue(initialFacilityId, supabase),
+      fetchActiveCarePlanCount(initialFacilityId, supabase),
+    ]);
   } catch (error) {
     initialError = error instanceof Error ? error.message : "Unable to load care plan reviews.";
   }
@@ -31,6 +36,7 @@ export default async function CarePlanReviewsDuePage() {
     <CarePlanReviewsDuePageClient
       initialRows={initialRows}
       initialError={initialError}
+      initialActivePlanCount={initialActivePlanCount}
       initialFacilityId={initialFacilityId}
     />
   );

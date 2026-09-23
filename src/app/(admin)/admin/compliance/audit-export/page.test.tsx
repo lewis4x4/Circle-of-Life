@@ -53,9 +53,14 @@ vi.mock("@/contexts/haven-auth-context", () => ({
 }));
 
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({
-    selectedFacilityId: facilityMock.selectedFacilityId,
-  }),
+  useFacilityStore: (selector?: (state: { selectedFacilityId: string | null; availableFacilities: { id: string; name: string }[] }) => unknown) => {
+    const state = { selectedFacilityId: facilityMock.selectedFacilityId, availableFacilities: [] };
+    return selector ? selector(state) : state;
+  },
+}));
+
+vi.mock("@/components/common/FacilityGate", () => ({
+  FacilityGateNotice: ({ reason }: { reason: string }) => <section data-testid="facility-gate">{reason}</section>,
 }));
 
 vi.mock("@/lib/audit-export", () => ({
@@ -230,7 +235,8 @@ describe("AuditLogExportPage auth hydration", () => {
     authMock.user = { id: "00000000-0000-4000-8000-000000000002" };
     authMock.appRole = "facility_admin";
     render(<AuditLogExportPage />);
-    expect(screen.getByText("Choose a facility in the header before exporting.")).toBeInTheDocument();
+    // COL-651: the shared gate (with its inline picker), not a header pointer.
+    expect(screen.getByTestId("facility-gate")).toHaveTextContent("one building at a time");
     expect(await screen.findByText(AUDIT_EXPORT_NO_JOBS_COPY)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Download CSV" })).toBeDisabled();
   });

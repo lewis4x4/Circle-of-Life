@@ -334,10 +334,12 @@ export default function CaregiverMedsPage() {
           </p>
         </div>
         <button 
+           type="button"
+           aria-label="Refresh medications"
            onClick={() => void load()}
            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors border border-white/5 tap-responsive"
         >
-           <RefreshCw className="w-4 h-4 text-zinc-300" />
+           <RefreshCw className="w-4 h-4 text-zinc-300" aria-hidden />
         </button>
       </div>
 

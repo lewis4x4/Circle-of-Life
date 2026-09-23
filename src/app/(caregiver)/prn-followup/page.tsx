@@ -290,8 +290,8 @@ export default function CaregiverPrnFollowupPage() {
                   {r.canDocument && openId === r.id ? (
                     <div className="mt-4 space-y-4 rounded-2xl border border-white/5 bg-black/40 p-5 shadow-inner">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-wider font-mono text-zinc-500 pl-1">Effectiveness Result</Label>
-                        <select
+                        <Label htmlFor="prn-effectiveness-result" className="text-[10px] font-bold uppercase tracking-wider font-mono text-zinc-500 pl-1">Effectiveness Result</Label>
+                        <select id="prn-effectiveness-result"
                           className="flex h-14 w-full appearance-none rounded-2xl border border-white/10 bg-black/60 px-5 text-sm text-zinc-200 font-medium font-mono focus:outline-none focus:ring-2 focus:ring-ring shadow-inner tap-responsive"
                           value={result}
                           onChange={(e) => setResult(e.target.value)}

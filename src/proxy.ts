@@ -9,7 +9,6 @@ import {
   hasPendingPasswordChange,
   isChangePasswordExemptPath,
 } from "@/lib/auth/must-change-password";
-import { resolveUiV2AdminRewritePath } from "@/lib/flags";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /**
@@ -65,14 +64,6 @@ export async function proxy(request: NextRequest) {
     if (redirect) {
       mergeSetCookieHeaders(response, redirect);
       return redirect;
-    }
-    const rewritePath = resolveUiV2AdminRewritePath(pathname);
-    if (rewritePath) {
-      const rewriteUrl = request.nextUrl.clone();
-      rewriteUrl.pathname = rewritePath;
-      const rewrite = NextResponse.rewrite(rewriteUrl);
-      mergeSetCookieHeaders(response, rewrite);
-      return rewrite;
     }
     return response;
   }

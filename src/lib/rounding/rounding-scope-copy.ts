@@ -9,9 +9,6 @@
  * it is scoped to without inventing a name it does not hold.
  */
 
-/** Shown when no building is selected. Every board says the same sentence. */
-export const ROUNDING_SELECT_FACILITY_FIRST_COPY = "Select a facility first.";
-
 /** Shown when a facility id is selected but its name has not resolved yet. */
 export const ROUNDING_NO_FACILITY_NAME_COPY = "No facility name posted";
 

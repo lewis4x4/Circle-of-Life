@@ -2,8 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ROUNDING_SELECT_FACILITY_FIRST_COPY } from "@/lib/rounding/rounding-scope-copy";
-
 const pageSource = fs.readFileSync(
   path.resolve(import.meta.dirname, "./page.tsx"),
   "utf8",
@@ -17,8 +15,8 @@ describe("AdminRoundingIntegrityPage facility scope copy", () => {
     expect(pageSource).toContain("formatIntegrityPageSubtitle");
   });
 
-  it("reuses the shared select-facility gap copy for empty-state titles", () => {
+  it("gates All facilities with the shared FacilityGate (COL-651)", () => {
     expect(pageSource).toContain("formatIntegrityNoFlagsEmptyTitle");
-    expect(ROUNDING_SELECT_FACILITY_FIRST_COPY).toBe("Select a facility first.");
+    expect(pageSource).toContain("<FacilityGateNotice");
   });
 });

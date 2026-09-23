@@ -19,6 +19,7 @@ import {
 } from "@/lib/dietary/snack-pass-time";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
@@ -508,6 +509,9 @@ export function AdminDietaryPageClient({
            </div>
         </div>
 
+        {!facilityReady ? (
+          <FacilityGateNotice reason="Diet orders, meal logs and snack passes are kept per building." />
+        ) : (
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px] md:col-span-3">
             <V2Card hoverColor="indigo" className="border-primary/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
@@ -531,12 +535,8 @@ export function AdminDietaryPageClient({
             </V2Card>
           </div>
         </KineticGrid>
+        )}
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
-          Select a facility to load diet orders.
-        </p>
-      )}
 
       {error && (
         <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">

@@ -225,6 +225,7 @@ export default function AdminTeamSpaceDetail() {
                         variant="ghost"
                         size="sm"
                         className="gap-2 text-danger"
+                        aria-label={`Remove ${userLabel(m.user_id, orgUsers)} from team`}
                         disabled={busy}
                         onClick={() => void removeMember(m)}
                       >

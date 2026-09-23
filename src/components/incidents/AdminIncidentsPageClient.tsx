@@ -29,7 +29,6 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { enumLabel } from "@/lib/display/enum-label";
-import { useLatestLoad } from "@/hooks/useLatestLoad";
 type BoardScope = "all" | "active" | "open";
 
 type AdminIncidentsPageClientProps = {
@@ -53,7 +52,10 @@ export function AdminIncidentsPageClient({
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility. Any later facility scope change falls through.
   const skipNextLoadRef = useRef(initialError == null);
-  const beginLoad = useLatestLoad();
+  // Only the load for the current facility scope may write rows. Without this,
+  // an "All facilities" request that resolves after a later single-facility
+  // request paints other buildings' incidents under the selected one (COL-662).
+  const requestSequence = useRef(0);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
@@ -61,30 +63,31 @@ export function AdminIncidentsPageClient({
   }, []);
 
   const loadIncidents = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
       skipNextLoadRef.current = false;
       return;
     }
     skipNextLoadRef.current = false;
-    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
     try {
       const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
-      if (!isCurrent()) return;
+      if (sequence !== requestSequence.current) return;
       setRows(liveRows);
     } catch (err) {
-      if (!isCurrent()) return;
+      if (sequence !== requestSequence.current) return;
       setRows([]);
       setError(err instanceof Error ? err.message : "Failed to load incidents");
     } finally {
-      if (isCurrent()) setIsLoading(false);
+      if (sequence === requestSequence.current) setIsLoading(false);
     }
-  }, [beginLoad, selectedFacilityId, initialFacilityId]);
+  }, [selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void loadIncidents();
+    return () => { requestSequence.current += 1; };
   }, [loadIncidents]);
 
   if (isLoading) {

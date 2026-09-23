@@ -54,9 +54,6 @@
   "src/components/admin/facilities/tabs/OverviewTab.tsx": {
     "silent-zero": 1
   },
-  "src/components/assessments/AdminOverdueAssessmentsPageClient.tsx": {
-    "all-clear-copy": 2
-  },
   "src/components/benefits/BenefitsQueue.tsx": {
     "silent-zero": 1
   },

@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { AdminEmptyState, AdminErrorState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -19,7 +20,7 @@ import { triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { computeTimesheet, facilityDayStart, payPeriodContaining, type PayPeriod } from "@/lib/timeclock/compute";
-import { TIMECLOCK_MANAGER_ONLY, TIMECLOCK_PICK_FACILITY, formatDayLabel, formatMinutesCompact, formatPeriodLabel } from "@/lib/timeclock/display-copy";
+import { TIMECLOCK_MANAGER_ONLY, formatDayLabel, formatMinutesCompact, formatPeriodLabel } from "@/lib/timeclock/display-copy";
 import { canReviewTimeclock, loadEmployeeNumbers, loadOrganizationPayPeriod, loadTimeclockPeriod } from "@/lib/timeclock/load";
 import {
   MATCH_TOLERANCE_MINUTES,
@@ -182,7 +183,7 @@ export function UpunchCompare({ now: nowProp, readFile }: UpunchCompareProps) {
       {error ? <AdminErrorState message={error} onRetry={() => void load()} /> : null}
 
       {!facilityId ? (
-        <AdminEmptyState title={TIMECLOCK_PICK_FACILITY} description="Use the facility selector in the top bar." />
+        <FacilityGateNotice reason="The uPunch comparison matches one building's punches against its uPunch export, so it runs for one facility at a time." />
       ) : loading || !haven ? (
         <AdminTableLoadingState />
       ) : (

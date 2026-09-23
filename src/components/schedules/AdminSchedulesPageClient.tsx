@@ -175,16 +175,16 @@ export function AdminSchedulesPageClient({
         datasetRowCount: rows.length,
         whenDatasetEmpty: {
           title: "No schedules in this scope",
-          description:
-            "Live data returned no schedule weeks for the selected facility. Use New schedule week or adjust scope.",
+          description: selectedFacilityId
+            ? "Live data returned no schedule weeks for the selected facility. Use + Initialize Week to start one."
+            : "Live data returned no schedule weeks at any of your facilities. Use + Initialize Week to start one.",
         },
         whenFiltersExcludeAll: {
           title: "No schedules match the current filters",
-          description:
-            "Schedules are created per facility and week. Pick a facility or clear filters to see more rows.",
+          description: "Schedules are created per facility and week. Clear filters to see more rows.",
         },
       }),
-    [rows.length],
+    [rows.length, selectedFacilityId],
   );
 
   const draftCount = rows.filter((r) => r.status === "draft").length;

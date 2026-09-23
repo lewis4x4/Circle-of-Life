@@ -9,6 +9,7 @@ import { AlertCircle, Calendar, ClipboardList, FileText } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { KpiCard, type KpiCardTone } from "@/components/ui/kpi-card";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -19,7 +20,6 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database, Json } from "@/types/database";
 import {
-  familyPortalAdminKpiValue,
   formatFamilyPortalAdminConferenceRoom,
   formatFamilyPortalAdminMatchedKeywords,
   formatFamilyPortalAdminNoteBody,
@@ -385,33 +385,27 @@ export default function AdminFamilyPortalPage() {
         </p>
       </header>
 
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Family notes, care conferences and consents are kept per building." />
+      ) : (
+      <>
       <section aria-label="Needs attention" className="space-y-3">
         <h2 className="text-[13px] font-semibold text-foreground">Needs attention</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <KpiCard
-            value={familyPortalAdminKpiValue("pending_triage", facilityReady, pendingAttentionCount)}
+            value={pendingAttentionCount}
             label="Pending triage"
             tone={pendingAttentionCount > 0 ? "warning" : "neutral"}
-            footnote={
-              facilityReady ? undefined : <span>Select a facility to load operational counts.</span>
-            }
+            footnote={undefined}
           />
           <KpiCard
-            value={familyPortalAdminKpiValue(
-              "conferences_this_week",
-              facilityReady,
-              conferencesThisWeekCount,
-            )}
+            value={conferencesThisWeekCount}
             label="Conferences this week"
             tone="neutral"
             footnote={undefined}
           />
           <KpiCard
-            value={familyPortalAdminKpiValue(
-              "consents_expiring",
-              facilityReady,
-              consentsExpiringCount,
-            )}
+            value={consentsExpiringCount}
             label="Consents expiring in 30 days"
             tone={consentExpiryTone}
             footnote={
@@ -422,12 +416,6 @@ export default function AdminFamilyPortalPage() {
           />
         </div>
       </section>
-
-      {!facilityReady && (
-        <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-[13px] text-muted-foreground">
-          Select a facility in the header to load triage, conferences, and consents.
-        </div>
-      )}
 
       {loadFailed && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-[13px] text-destructive">
@@ -828,6 +816,8 @@ export default function AdminFamilyPortalPage() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

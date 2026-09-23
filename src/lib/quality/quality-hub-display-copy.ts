@@ -12,16 +12,11 @@ export const QUALITY_HUB_ROW_COUNT_NOT_POSTED = "Row count not posted";
 
 export const QUALITY_HUB_NO_ORGANIZATION_METRIC_COPY = "No organization on this profile";
 
+/** The hub is gated behind <FacilityGate> without a facility, so tiles never render a facility gap (COL-651). */
 export type QualityHubMetricContext = {
-  noFacility: boolean;
   noOrganization: boolean;
   loading: boolean;
 };
-
-/** Metric strip when the header facility selector has no valid site. */
-export function qualityHubMetricNoFacilityCopy(): string {
-  return "Select a facility";
-}
 
 /** Metric strip while hub data is in flight. */
 export function qualityHubMetricLoadingCopy(): string {
@@ -38,7 +33,6 @@ export function qualityHubMetricValue(
   value: number,
   ctx: QualityHubMetricContext,
 ): string | number {
-  if (ctx.noFacility) return qualityHubMetricNoFacilityCopy();
   if (ctx.noOrganization) return qualityHubMetricNoOrganizationCopy();
   if (ctx.loading) return qualityHubMetricLoadingCopy();
   return value;

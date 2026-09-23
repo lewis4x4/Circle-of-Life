@@ -925,10 +925,11 @@ function AdminArAgingPageContent() {
                           <button
                             type="button"
                             aria-expanded={open}
+                            aria-label={`${open ? "Hide" : "Show"} invoices for ${r.residentName}`}
                             onClick={() => toggleExpanded(r.residentId)}
                             className="rounded p-1 hover:bg-muted"
                           >
-                            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            {open ? <ChevronDown className="h-4 w-4" aria-hidden /> : <ChevronRight className="h-4 w-4" aria-hidden />}
                           </button>
                         </td>
                         <td className="px-3 py-2 font-medium text-foreground">{r.residentName}</td>

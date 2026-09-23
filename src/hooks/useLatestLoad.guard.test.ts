@@ -9,11 +9,11 @@ import { describe, expect, it } from "vitest";
  * hydrates, so two reads can overlap. Every such client must let only the latest
  * read write state, or a stale unscoped read (its no-facility error) lands under
  * the selected facility (COL-673). Accepted guards: useLatestLoad (the shared
- * hook), the roster's loadSequenceRef, a request generation counter, or an
+ * hook), the roster's loadSequenceRef, a request generation or sequence counter, or an
  * isCurrent callback passed by an effect that cancels on cleanup.
  */
 const SRC = path.resolve(import.meta.dirname, "..");
-const GUARDS = [/\buseLatestLoad\(\)/, /\bloadSequenceRef\b/, /\brequestGeneration\b/, /isCurrent: \(\) => boolean/];
+const GUARDS = [/\buseLatestLoad\(\)/, /\bloadSequenceRef\b/, /\brequestGeneration\b/, /\brequestSequence\b/, /isCurrent: \(\) => boolean/];
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {

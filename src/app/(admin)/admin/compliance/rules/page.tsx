@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Play, TrendingUp } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -117,25 +118,20 @@ export default function ComplianceRulesPage() {
     }
   };
 
+  if (!facilityReady) {
+    return (
+      <FacilityGateNotice
+        title="Compliance Scoring"
+        reason="Rules are scored per building: each scan checks one facility's residents, staff and records."
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <h1 className="sr-only">Compliance Scoring</h1>
         <p className="text-sm text-slate-500">Loading compliance rules…</p>
-      </div>
-    );
-  }
-
-  if (!facilityReady) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Compliance Scoring</h1>
-        <Card className="border-amber-200 bg-amber-50">
-          <CardHeader>
-            <CardTitle>Select a Facility</CardTitle>
-            <CardDescription>Choose a facility to view compliance rules and run scans.</CardDescription>
-          </CardHeader>
-        </Card>
       </div>
     );
   }

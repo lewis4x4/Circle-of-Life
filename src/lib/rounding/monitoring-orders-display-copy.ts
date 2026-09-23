@@ -32,7 +32,8 @@ export function monitoringOrdersSubtitle(scope: RoundingFacilityScope): string {
   const base =
     "Residents on a cadence a clinician ordered, and the orders that have closed";
   if (scope.kind === "unscoped") {
-    return `${base}. Orders are per building. Select a facility first.`;
+    // The unscoped page is behind the facility gate (COL-651).
+    return `${base}. Orders are per building.`;
   }
   if (scope.kind === "missing_name") {
     return `${base}. No facility name posted.`;
