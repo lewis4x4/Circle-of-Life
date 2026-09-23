@@ -20,6 +20,7 @@ import {
 } from "@/lib/floor/check-form";
 import { claimFloorCheck, currentRetryOwner, saveFloorCheck } from "@/lib/floor/check-submit";
 import { dropFloorCache } from "@/lib/floor/memory-cache";
+import { resolveFloorRetryOwner } from "@/lib/floor/retry-owner";
 import { FLOOR_CHECK_NAME, checkTiming } from "@/lib/floor/now-rows";
 import { formatDisplayTime } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
@@ -69,11 +70,20 @@ function CheckForm({ data }: { data: FloorCheckData }) {
   const chartedAt = now ? formatDisplayTime(now, { timeZone }) : "";
   const set = (patch: Partial<FloorCheckDraft>) => setDraft((current) => ({ ...current, ...patch }));
 
+  // Offline, the owner remembered at unlock lets the check reach the outbox.
+  const ownerForThisUnlock = () =>
+    resolveFloorRetryOwner({
+      unlockId: profile.unlockId,
+      organizationId: facility.organizationId,
+      facilityId: facility.facilityId,
+      resolve: currentRetryOwner,
+    });
+
   async function takeCheck() {
     setBusy(true);
     setMessage(null);
     try {
-      await claimFloorCheck(data.task.id, await currentRetryOwner(facility.organizationId, facility.facilityId));
+      await claimFloorCheck(data.task.id, await ownerForThisUnlock());
       setNeedsClaim(false);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "The check could not be taken. Try again.");
@@ -89,7 +99,7 @@ function CheckForm({ data }: { data: FloorCheckData }) {
     setMessage(null);
     let owner;
     try {
-      owner = await currentRetryOwner(facility.organizationId, facility.facilityId);
+      owner = await ownerForThisUnlock();
     } catch (error) {
       setBusy(false);
       return setMessage(error instanceof Error ? error.message : "Your sign-in could not be confirmed.");
@@ -103,10 +113,17 @@ function CheckForm({ data }: { data: FloorCheckData }) {
       observedAt: attempt.observedAt,
     });
     if (result.status === "saved" || result.status === "queued") {
-      dropFloorCache("tasks:");
-      dropFloorCache("activity:");
-      dropFloorCache(`check:${data.task.id}`);
-      router.push("/floor");
+      // Saved: the lists must show it charted. Queued: keep what they hold, so
+      // Now still reads offline; the outbox already hides the queued check.
+      if (result.status === "saved") {
+        dropFloorCache("tasks:");
+        dropFloorCache("activity:");
+        dropFloorCache(`check:${data.task.id}`);
+      }
+      // Back returns from the router's own cache, so it also works with the
+      // Wi-Fi down; a fresh push would need the server.
+      if (window.history.length > 1) router.back();
+      else router.push("/floor");
       return;
     }
     setBusy(false);

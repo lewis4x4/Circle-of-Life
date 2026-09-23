@@ -9,7 +9,7 @@ import { nowCountSegments, selectNowChecks } from "@/lib/floor/now-rows";
 import { useFloorSession } from "./FloorContext";
 import { useFloorNow } from "./FloorClock";
 import { FloorNowList } from "./FloorNowList";
-import { FloorResidentsRail } from "./FloorResidentsRail";
+import { FloorResidentsRail, SomethingHappenedButton } from "./FloorResidentsRail";
 import { FloorStatePanel } from "./FloorStatePanel";
 import { MyShiftStrip } from "./MyShiftStrip";
 import { useFloorNowData } from "./useFloorNowData";
@@ -118,6 +118,9 @@ export function FloorNowScreen() {
           timeZone={timeZone}
           onRetry={census.reload}
         />
+      </div>
+      <div className="shrink-0 border-t border-border bg-chrome-secondary px-6 py-3 lg:hidden">
+        <SomethingHappenedButton href="/floor/report" />
       </div>
       <MyShiftStrip
         items={stripItems}

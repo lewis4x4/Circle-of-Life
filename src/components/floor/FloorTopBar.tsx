@@ -50,7 +50,7 @@ export function FloorTopBar({
         </span>
         <span
           role="status"
-          className={cn("flex items-center gap-1.5 text-xs", sync.kind === "synced" ? "text-chrome-foreground-muted" : "text-warning")}
+          className={cn("flex items-center gap-1.5 text-xs", sync.kind === "synced" ? "text-chrome-foreground-muted" : "text-floor-warning-text")}
         >
           <SyncIcon className="size-4" aria-hidden />
           {syncStateLabel(sync)}

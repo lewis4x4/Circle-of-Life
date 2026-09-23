@@ -89,8 +89,8 @@ export function FloorResidentsRail({
         </h2>
         {censusState === "ready" && signals ? (
           <p className="flex gap-2.5 text-xs font-medium tabular-nums">
-            {watchCount > 0 ? <span className="text-warning">{watchCount} watch</span> : null}
-            {alertCount > 0 ? <span className="text-destructive">{alertCount} alert</span> : null}
+            {watchCount > 0 ? <span className="text-floor-warning-text">{watchCount} watch</span> : null}
+            {alertCount > 0 ? <span className="text-floor-destructive-text">{alertCount} alert</span> : null}
           </p>
         ) : null}
       </div>
@@ -115,13 +115,15 @@ export function FloorResidentsRail({
               </li>
             ))}
           </ul>
-          <Link href="/floor/residents" className={cn("mx-4 mt-1 inline-flex min-h-11 w-fit items-center text-[13px] font-medium text-primary hover:underline", FLOOR_FOCUS_RING)}>
+          <Link href="/floor/residents" className={cn("mx-4 mt-1 inline-flex min-h-11 w-fit items-center text-[13px] font-medium text-floor-link hover:underline", FLOOR_FOCUS_RING)}>
             All {census.length} residents
           </Link>
         </>
       )}
-      <div className="min-h-4 flex-1" />
-      <SomethingHappenedButton href="/floor/report" className="mx-4 mb-4" />
+      <div className="hidden min-h-4 flex-1 lg:block" />
+      {/* In portrait the rail scrolls with the list, so the button sits in a fixed bar instead (FloorNowScreen). */}
+      <SomethingHappenedButton href="/floor/report" className="mx-4 mb-4 hidden lg:flex" />
+      <div className="h-4 lg:hidden" />
     </aside>
   );
 }

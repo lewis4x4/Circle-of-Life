@@ -8,6 +8,7 @@ import { workingFacilityKey } from "@/lib/caregiver/facility-context";
 import { FLOOR_DEVICE_HEADER, FLOOR_LOCK_ENDPOINT, FLOOR_LOCK_PATH, type FloorInactiveReason, type FloorLockReason } from "@/lib/floor/contract";
 import { resolveFloorDeviceStore } from "@/lib/floor/device-store";
 import { clearFloorCache } from "@/lib/floor/memory-cache";
+import { forgetFloorRetryOwner } from "@/lib/floor/retry-owner";
 import { clearFloorUnlockId, currentFloorUnlockId } from "@/lib/floor/session-context";
 import { clearFloorUnlockProfile, currentFloorUnlockProfile } from "@/lib/floor/unlock-profile";
 
@@ -24,6 +25,7 @@ export function forgetFloorPerson(): void {
   clearFloorUnlockId();
   clearFloorUnlockProfile();
   clearFloorCache();
+  forgetFloorRetryOwner();
 }
 
 /**

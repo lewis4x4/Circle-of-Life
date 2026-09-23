@@ -113,7 +113,7 @@ export function FloorHandoffScreen() {
                       {[enumLabel(note.shift), formatShortDateTime(note.createdAt, { timeZone }), note.authorName].filter(Boolean).join(" · ")}
                     </p>
                     {resident ? (
-                      <Link href={`/floor/residents/${resident.id}`} className={cn("inline-flex min-h-11 w-fit items-center text-[13px] font-medium text-primary hover:underline", FLOOR_FOCUS_RING)}>
+                      <Link href={`/floor/residents/${resident.id}`} className={cn("inline-flex min-h-11 w-fit items-center text-[13px] font-medium text-floor-link hover:underline", FLOOR_FOCUS_RING)}>
                         {resident.room ? `Rm ${resident.room} · ` : ""}
                         {resident.name}
                       </Link>

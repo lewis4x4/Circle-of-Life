@@ -9,7 +9,9 @@ import { currentShiftFor } from "@/lib/caregiver/shift";
 import type { FloorInactiveReason, FloorLockReason } from "@/lib/floor/contract";
 import { resolveFloorDeviceStore, type FloorDevice } from "@/lib/floor/device-store";
 import { floorLockHref, forgetFloorPerson, sendFloorLock } from "@/lib/floor/lock-client";
+import { currentRetryOwner } from "@/lib/floor/check-submit";
 import { replayFloorQueues } from "@/lib/floor/replay";
+import { resolveFloorRetryOwner } from "@/lib/floor/retry-owner";
 import { currentFloorUnlockId } from "@/lib/floor/session-context";
 import { currentFloorUnlockProfile, type FloorUnlockProfile } from "@/lib/floor/unlock-profile";
 import { formatDisplayTime } from "@/lib/format/datetime";
@@ -124,6 +126,14 @@ export function FloorShell({ children }: { children: ReactNode }) {
         });
       }
       setState({ status: "ready", device, profile, facility: resolved.ctx });
+      // Remember who saves checks for this unlock while Haven is reachable, so
+      // a check charted after the Wi-Fi drops still reaches the outbox.
+      void resolveFloorRetryOwner({
+        unlockId: profile.unlockId,
+        organizationId: resolved.ctx.organizationId,
+        facilityId: resolved.ctx.facilityId,
+        resolve: currentRetryOwner,
+      }).catch(() => undefined);
       // Items other people left on this tablet go out as their owners.
       void replayFloorQueues({ signedInUserId: profile.userId }).catch(() => undefined);
     })();
@@ -180,7 +190,7 @@ export function FloorShell({ children }: { children: ReactNode }) {
       ) : (
         <div className="h-14 shrink-0 border-b border-border bg-chrome-primary" aria-hidden />
       )}
-      <div className="flex min-h-0 flex-1 flex-col">
+      <main className="flex min-h-0 flex-1 flex-col">
         {state.status === "checking" ? (
           <FloorStatePanel state="loading" title="Opening the floor tablet" className="flex-1" />
         ) : state.status === "facility-error" ? (
@@ -188,7 +198,7 @@ export function FloorShell({ children }: { children: ReactNode }) {
         ) : (
           <FloorSessionContext.Provider value={session}>{children}</FloorSessionContext.Provider>
         )}
-      </div>
+      </main>
       <FloorTabBar />
     </div>
   );

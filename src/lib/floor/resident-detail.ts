@@ -37,6 +37,24 @@ export type ResidentDetail = {
   logsToday: { taskId: string; observedAt: string; summary: string; staffName: string | null }[];
 };
 
+/**
+ * "Ashley W." for the staff ids given, through `floor_staff_display_names`:
+ * a direct `staff` read only returns the viewer's own row under RLS, so
+ * another person's charted check would show no name. Ids it does not name are
+ * left out; callers show neutral copy.
+ */
+export async function fetchStaffDisplayNames(supabase: Client, staffIds: readonly string[]): Promise<Map<string, string>> {
+  const ids = [...new Set(staffIds)].filter(Boolean);
+  const names = new Map<string, string>();
+  for (let start = 0; start < ids.length; start += 200) {
+    const { data, error } = await supabase.rpc("floor_staff_display_names", { p_staff_ids: ids.slice(start, start + 200) });
+    // A name is a courtesy on this screen; the check itself still shows.
+    if (error) continue;
+    for (const row of data ?? []) if (row.display_name) names.set(row.staff_id, row.display_name);
+  }
+  return names;
+}
+
 /** Instruction fields, the value as the line and the field as its note. */
 export function knowBeforeItems(record: ResidentRecordFields): InfoItem[] {
   const items: InfoItem[] = [];
@@ -107,22 +125,13 @@ export async function fetchResidentDetail(
   const liveWatches = (watches.data ?? []).filter((row) => !row.ends_at || new Date(row.ends_at).getTime() > now.getTime());
   const protocolIds = [...new Set(liveWatches.map((row) => row.protocol_id).filter((id): id is string => Boolean(id)))];
   const staffIds = [...new Set((logs.data ?? []).map((row) => row.staff_id))];
-  const [protocols, staff] = await Promise.all([
+  const [protocols, staffNames] = await Promise.all([
     protocolIds.length > 0
       ? supabase.from("resident_watch_protocols").select("id, name").in("id", protocolIds)
       : Promise.resolve({ data: [] as { id: string; name: string }[], error: null }),
-    staffIds.length > 0
-      ? supabase.from("staff").select("id, first_name, last_name, preferred_name").in("id", staffIds)
-      : Promise.resolve({ data: [] as { id: string; first_name: string | null; last_name: string | null; preferred_name: string | null }[], error: null }),
+    fetchStaffDisplayNames(supabase, staffIds),
   ]);
   const protocolNames = new Map((protocols.data ?? []).map((row) => [row.id, row.name] as const));
-  const staffNames = new Map(
-    (staff.data ?? []).map((row) => {
-      const first = row.preferred_name?.trim() || row.first_name?.trim() || "";
-      const lastInitial = row.last_name?.trim().charAt(0);
-      return [row.id, first ? `${first}${lastInitial ? ` ${lastInitial}.` : ""}` : null] as const;
-    }),
-  );
 
   return {
     record: resident.data as unknown as ResidentRecordFields,
@@ -169,7 +178,8 @@ export function todayCheckItems(input: {
         return {
           key: task.id,
           title: `${formatDisplayTime(log.observedAt, { timeZone: input.timeZone })} · ${log.summary}`,
-          detail: [FLOOR_CHECK_NAME, log.staffName].filter(Boolean).join(" · "),
+          // Someone the display-name lookup would not name still charted it: say so neutrally.
+          detail: `${FLOOR_CHECK_NAME} · ${log.staffName ?? "Staff"}`,
         };
       }
       const timing = checkTiming(task.derived_status, task.due_at, input.now);

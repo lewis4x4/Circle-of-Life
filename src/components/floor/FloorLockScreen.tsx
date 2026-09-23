@@ -120,15 +120,16 @@ export function FloorLockScreen() {
               person ? (
                 <>
                   <FloorAvatar initials={person.initials} size="lg" filled />
-                  <span className="flex flex-col items-center gap-1.5 text-center">
-                    <span className="text-3xl font-semibold">{person.display_name}</span>
-                    <span className="text-[15px] tabular-nums text-muted-foreground">
+                  <div className="flex flex-col items-center gap-1.5 text-center">
+                    <h1 className="text-3xl font-semibold">{person.display_name}</h1>
+                    <p className="text-[15px] tabular-nums text-muted-foreground">
                       {clockedIn ? `Clocked in at the front door, ${clockedIn}` : person.role_label}
-                    </span>
-                  </span>
+                    </p>
+                  </div>
                 </>
               ) : (
-                <span className="flex w-full flex-col gap-2">
+                <div className="flex w-full flex-col gap-2">
+                  <h1 className="sr-only">Unlock with your employee number</h1>
                   <label htmlFor={employeeInputId} className="text-[17px] font-semibold">
                     Employee number
                   </label>
@@ -141,7 +142,7 @@ export function FloorLockScreen() {
                     className={cn("h-15 w-full rounded-[8px] border border-input bg-card px-4 text-xl tabular-nums text-foreground", FLOOR_FOCUS_RING)}
                   />
                   <span className="text-[13px] text-muted-foreground">For when your name is not on the list. Your manager sees it on the timesheet.</span>
-                </span>
+                </div>
               )
             }
           />

@@ -57,9 +57,12 @@
   --color-chrome-foreground-muted: hsl(var(--chrome-foreground-muted));
   --color-chrome-active: hsl(var(--chrome-active));
 
-  /* Floor tablet event color, defined in the `.floor-shell` scope only */
+  /* Floor tablet event color and text roles, defined in the `.floor-shell` scope only */
   --color-floor-event: hsl(var(--floor-event));
   --color-floor-event-foreground: hsl(var(--floor-event-foreground));
+  --color-floor-warning-text: hsl(var(--floor-warning-text));
+  --color-floor-destructive-text: hsl(var(--floor-destructive-text));
+  --color-floor-link: hsl(var(--floor-link));
 
   /* Haven domain status tokens (unchanged — preserved) */
   --color-acuity-1: var(--acuity-1);
@@ -518,6 +521,13 @@
 .floor-shell {
   --floor-event: 27 64% 48%;
   --floor-event-foreground: 23 53% 7%;
+  /* The rail, my-shift strip and footers sit on the lifted chrome, so muted
+     and status text needs more lift than on the near-black canvas to hold
+     WCAG AA 4.5:1 there (axe, COL-691). Same hues, lighter values. */
+  --muted-foreground: 40 6% 64%;
+  --floor-warning-text: 34 70% 60%;
+  --floor-destructive-text: 8 60% 70%;
+  --floor-link: 205 40% 72%;
 }
 
 /* Shared-device apps (floor tablet, front-door kiosk) are specified in px

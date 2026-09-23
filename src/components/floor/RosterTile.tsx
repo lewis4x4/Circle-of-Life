@@ -45,14 +45,14 @@ export function RosterTile({
       )}
     >
       {lastOnThisTablet && unsent === 0 ? (
-        <span className="absolute right-3.5 top-3.5 text-xs font-medium text-primary">Last on this tablet</span>
+        <span className="absolute right-3.5 top-3.5 text-xs font-medium text-floor-link">Last on this tablet</span>
       ) : null}
       {unsent > 0 ? (
         <span className="absolute right-3.5 top-3.5 flex flex-col items-end gap-1">
           <StatusPill tone="warning" className="h-6 rounded-[5px] px-2.5 text-xs">
             {`${unsent} unsent`}
           </StatusPill>
-          {lastOnThisTablet ? <span className="text-xs font-medium text-primary">Last on this tablet</span> : null}
+          {lastOnThisTablet ? <span className="text-xs font-medium text-floor-link">Last on this tablet</span> : null}
         </span>
       ) : null}
       <FloorAvatar initials={initials} size="md" />

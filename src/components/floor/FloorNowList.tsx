@@ -13,8 +13,8 @@ import { FLOOR_SECTION_LABEL } from "./floor-styles";
 import { NowRow } from "./NowRow";
 
 const SEGMENT_CLASS: Record<CountSegment["tone"], string> = {
-  destructive: "text-destructive",
-  warning: "text-warning",
+  destructive: "text-floor-destructive-text",
+  warning: "text-floor-warning-text",
   muted: "text-muted-foreground",
 };
 
