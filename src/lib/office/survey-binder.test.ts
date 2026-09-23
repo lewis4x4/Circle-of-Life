@@ -64,6 +64,7 @@ describe("fetchBinderEvidence", () => {
             return chain;
           },
           lte(column: string, value: string) {
+            state.column ??= column;
             state.lte = value;
             return chain;
           },
@@ -107,6 +108,16 @@ describe("fetchBinderEvidence", () => {
     expect(drills?.gte).toBe("2026-08-20");
     expect(drills?.lte).toBe("2026-10-19");
 
+    const drillsOverdue = queryLog.find(
+      (q) => q.table === "emergency_checklist_items" && q.column === "next_due_date" && q.gte === undefined,
+    );
+    expect(drillsOverdue?.lte).toBe("2026-08-19");
+
+    const expired = queryLog.find(
+      (q) => q.table === "facility_documents" && q.column === "expiration_date" && q.gte === undefined,
+    );
+    expect(expired?.lte).toBe("2026-08-19");
+
     const inservices = queryLog.find(
       (q) => q.table === "inservice_log_sessions" && q.column === "session_date",
     );
@@ -120,5 +131,6 @@ it("shows unavailable evidence separately from a confirmed zero", async () => {
  const evidence = await fetchBinderEvidence({ from: () => chain } as unknown as SupabaseClient, "facility");
  expect(evidence.documentCount).toBeNull();
  expect(evidence.expiringSoonCount).toBeNull();
+ expect(evidence.drillsOverdue).toBeNull();
  expect(evidence.lastSurveyAvailable).toBe(false);
 });
