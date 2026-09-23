@@ -3,14 +3,14 @@
 import { useRouter } from "next/navigation";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { Save } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import { BackLink } from "@/design-system/components/BackLink";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,16 +149,9 @@ export default function NewComplianceRulePage() {
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link
-          href="/admin/compliance/rules"
-          aria-label="Back to compliance rules"
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-        </Link>
+      <div className="space-y-3">
+        <BackLink label="Compliance rules" href="/admin/compliance/rules" />
         <div>
-          
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             New Compliance Rule
           </h1>
