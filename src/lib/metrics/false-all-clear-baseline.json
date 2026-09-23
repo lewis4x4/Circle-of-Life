@@ -81,9 +81,6 @@
   "src/components/coordinator/CoordinatorDashboardPageClient.tsx": {
     "silent-zero": 5
   },
-  "src/components/dietary/AdminDietaryPageClient.tsx": {
-    "all-clear-copy": 1
-  },
   "src/components/home/PastDueStrip.tsx": {
     "silent-zero": 1
   },
