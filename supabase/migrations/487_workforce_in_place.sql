@@ -152,22 +152,22 @@ CREATE POLICY workforce_managers_read_period_settings ON public.timeclock_organi
 ALTER TABLE public.shift_assignments ADD COLUMN IF NOT EXISTS shift_definition_id uuid REFERENCES public.facility_shift_definitions(id);
 
 ALTER POLICY admin_nurse_manage_schedules ON public.schedules
-  USING (organization_id=haven.organization_id() AND facility_id IN (SELECT haven.accessible_facility_ids()) AND haven.app_role()::text IN ('owner','org_admin','facility_admin','manager'))
-  WITH CHECK (organization_id=haven.organization_id() AND facility_id IN (SELECT haven.accessible_facility_ids()) AND haven.app_role()::text IN ('owner','org_admin','facility_admin','manager'));
+  USING (organization_id=(SELECT haven.organization_id()) AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager'))
+  WITH CHECK (organization_id=(SELECT haven.organization_id()) AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager'));
 ALTER POLICY staff_see_published_schedules ON public.schedules
-  USING (organization_id=haven.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (status='published' OR haven.app_role()::text IN ('owner','org_admin','facility_admin','manager')));
+  USING (organization_id=(SELECT haven.organization_id()) AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (status='published' OR (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager')));
 ALTER POLICY admin_nurse_manage_shift_assignments ON public.shift_assignments
-  USING (organization_id=haven.organization_id() AND facility_id IN (SELECT haven.accessible_facility_ids()) AND haven.app_role()::text IN ('owner','org_admin','facility_admin','manager'))
-  WITH CHECK (organization_id=haven.organization_id() AND facility_id IN (SELECT haven.accessible_facility_ids()) AND haven.app_role()::text IN ('owner','org_admin','facility_admin','manager'));
+  USING (organization_id=(SELECT haven.organization_id()) AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager'))
+  WITH CHECK (organization_id=(SELECT haven.organization_id()) AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager'));
 ALTER POLICY staff_see_shift_assignments ON public.shift_assignments
-  USING (organization_id=haven.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (
-    haven.app_role()::text IN ('owner','org_admin','facility_admin','manager') OR (
-      staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=auth.uid() AND s.deleted_at IS NULL)
+  USING (organization_id=(SELECT haven.organization_id()) AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (
+    (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager') OR (
+      staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=(SELECT auth.uid()) AND s.deleted_at IS NULL)
       AND EXISTS (SELECT 1 FROM public.schedules w WHERE w.id=shift_assignments.schedule_id AND w.status='published' AND w.deleted_at IS NULL)
     )
   ));
 CREATE POLICY workforce_manager_read_staff ON public.staff FOR SELECT TO authenticated
-  USING (organization_id=haven.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND haven.app_role()::text='manager');
+  USING (organization_id=(SELECT haven.organization_id()) AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (SELECT haven.app_role())::text='manager');
 
 -- Optimistic versions advance for every mutation, even within one transaction or after lock waits.
 CREATE OR REPLACE FUNCTION haven.schedule_updated_at() RETURNS trigger
@@ -315,20 +315,20 @@ COMMENT ON FUNCTION public.schedule_publish(uuid,timestamptz) IS 'Publishes a re
 
 -- Swap approval must share schedule authority. Participants retain their own request/confirmation visibility.
 CREATE POLICY workforce_manager_read_schedule_credentials ON public.staff_certifications FOR SELECT TO authenticated
-  USING (organization_id=haven.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND haven.app_role()::text='manager');
-ALTER POLICY staff_see_shift_swap_requests ON public.shift_swap_requests USING (organization_id=haven.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (
-    haven.app_role()::text IN ('owner','org_admin','facility_admin','manager')
-    OR requesting_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=auth.uid() AND s.deleted_at IS NULL)
-    OR covering_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=auth.uid() AND s.deleted_at IS NULL)
+  USING (organization_id=(SELECT haven.organization_id()) AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (SELECT haven.app_role())::text='manager');
+ALTER POLICY staff_see_shift_swap_requests ON public.shift_swap_requests USING (organization_id=(SELECT haven.organization_id()) AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (
+    (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager')
+    OR requesting_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=(SELECT auth.uid()) AND s.deleted_at IS NULL)
+    OR covering_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=(SELECT auth.uid()) AND s.deleted_at IS NULL)
   ));
-ALTER POLICY staff_update_shift_swap_requests ON public.shift_swap_requests USING (organization_id=haven.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (
-    haven.app_role()::text IN ('owner','org_admin','facility_admin','manager')
-    OR requesting_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=auth.uid() AND s.deleted_at IS NULL)
-    OR covering_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=auth.uid() AND s.deleted_at IS NULL)
-  )) WITH CHECK (organization_id=haven.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (
-    haven.app_role()::text IN ('owner','org_admin','facility_admin','manager')
-    OR requesting_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=auth.uid() AND s.deleted_at IS NULL)
-    OR covering_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=auth.uid() AND s.deleted_at IS NULL)
+ALTER POLICY staff_update_shift_swap_requests ON public.shift_swap_requests USING (organization_id=(SELECT haven.organization_id()) AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (
+    (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager')
+    OR requesting_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=(SELECT auth.uid()) AND s.deleted_at IS NULL)
+    OR covering_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=(SELECT auth.uid()) AND s.deleted_at IS NULL)
+  )) WITH CHECK (organization_id=(SELECT haven.organization_id()) AND deleted_at IS NULL AND facility_id IN (SELECT haven.accessible_facility_ids()) AND (
+    (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin','manager')
+    OR requesting_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=(SELECT auth.uid()) AND s.deleted_at IS NULL)
+    OR covering_staff_id IN (SELECT s.id FROM public.staff s WHERE s.user_id=(SELECT auth.uid()) AND s.deleted_at IS NULL)
   ));
 
 CREATE OR REPLACE FUNCTION public.haven_apply_approved_shift_swap()
