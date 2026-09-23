@@ -7,7 +7,9 @@ const state = vi.hoisted(() => ({
   schedule: { id: "week-1", facility_id: "facility-1", organization_id: "org-1", week_start_date: "2026-09-28", status: "draft", updated_at: "2026-09-23T12:00:00Z", published_at: null, notes: null },
   assignments: [] as Record<string, unknown>[],
   rpc: vi.fn(),
+  refresh: vi.fn(),
 }));
+vi.mock("@/components/workforce/WorkforceContext", () => ({ useWorkforce: () => ({ refresh: state.refresh }) }));
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "week-1" }) }));
 vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: state.role }) }));
 vi.mock("@/hooks/useFacilityStore", () => ({ useFacilityStore: () => ({ selectedFacilityId: null }) }));
@@ -31,6 +33,7 @@ vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({
 import SchedulePage from "./page";
 
 beforeEach(() => {
+  state.refresh.mockClear();
   state.role = "facility_admin";
   state.schedule.status = "draft";
   state.assignments = [];
@@ -49,6 +52,7 @@ describe("weekly schedule editing", () => {
       p_schedule_id: "week-1", p_expected_updated_at: "2026-09-23T12:00:00Z",
       p_cells: [{ staff_id: "staff-1", shift_date: "2026-09-28", shift_definition_id: "definition-1" }],
     }));
+    await waitFor(() => expect(state.refresh).toHaveBeenCalledOnce());
   });
   it("retains unsaved changes when the database rejects a stale save", async () => {
     state.rpc.mockResolvedValue({ error: { message: "Schedule changed. Reload before saving." } });

@@ -1,0 +1,48 @@
+{
+  "checked_at": "2026-09-23T22:40:19.994163+00:00",
+  "source_base": "82ddd099",
+  "full_release_ready": false,
+  "source_checks": {
+    "native_postgres": {
+      "exit_code": 0,
+      "migration_files": 486,
+      "sql_probes": 113,
+      "acceptance_suites": 7,
+      "care_event_parity_cases": 105
+    },
+    "initial_focused": {
+      "suites": 20,
+      "tests": 419
+    },
+    "current_base_integration": {
+      "suites": 9,
+      "tests": 58
+    },
+    "final_schedule_context_history": {
+      "suites": 3,
+      "tests": 15
+    },
+    "standalone_next_build": {
+      "exit_code": 0,
+      "scope": "current-base application compilation, separate from sequence-gated production build"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "synthetic_browser": {
+      "screenshots": 12,
+      "axe_routes": 3,
+      "hosted_authentication": false
+    }
+  },
+  "canonical_gate": {
+    "verdict": "FAIL",
+    "artifact": "test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json",
+    "remaining_blockers": [
+      "migration sequence requires483-486 before487",
+      "production build and its managed UI preview require that sequence"
+    ],
+    "superseded_failure": "native replay now passes in full after RLS initplan and fixture updates"
+  },
+  "production_changes_by_this_draft": false,
+  "adp_submission_available": false
+}

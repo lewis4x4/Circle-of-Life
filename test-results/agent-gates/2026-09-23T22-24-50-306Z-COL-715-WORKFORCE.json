@@ -1,0 +1,132 @@
+{
+  "segment": "COL-715-WORKFORCE",
+  "timestamp": "2026-09-23T22:24:50.306Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.package-manager",
+      "required": true,
+      "command": "npm run check:package-manager",
+      "status": "passed",
+      "duration_ms": 446,
+      "stdout": "[check:package-manager] PASS: package-lock.json is the only JavaScript package-manager lockfile\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 92,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 652,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 1051,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 18658,
+      "stdout": "[gitleaks] detector regression PASS: generic-api-key remains active\n[gitleaks] allowlist PASS: exempted files are still scanned for real credentials\n[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n6:25PM INF 2615 commits scanned.\n6:25PM INF scanned ~116054886 bytes (116.05 MB) in 18.2s\n6:25PM INF no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 78415,
+      "stdout": "Constitution lint passed for smart-rounding scope (63 files).\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Haven Workforce In Place/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "failed",
+      "duration_ms": 122,
+      "stdout": "",
+      "stderr": "[migrations:check] FAIL: gap in migration sequence: expected 483, found 487\n"
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": true,
+      "command": "npm run migrations:verify:pg",
+      "status": "failed",
+      "duration_ms": 94549,
+      "stdout": "[care-events:parity] PASS (105 cases, psql)\n",
+      "stderr": "file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:128\n      if (result.status !== 0) throw new Error(`${path.basename(file)}: ${result.stderr || result.error?.message || \"SQL failed\"}`);\n                                     ^\n\nError: review_rls_initplans.sql: psql:/Users/brianlewis/Circle of Life/Haven Workforce In Place/supabase/tests/review_rls_initplans.sql:35: ERROR:  Policies call a no-argument haven helper bare (wrap it as (SELECT haven.x())): public.schedules \"admin_nurse_manage_schedules\", public.schedules \"staff_see_published_schedules\", public.shift_assignments \"admin_nurse_manage_shift_assignments\", public.shift_assignments \"staff_see_shift_assignments\", public.shift_swap_requests \"staff_see_shift_swap_requests\", public.shift_swap_requests \"staff_update_shift_swap_requests\", public.staff \"workforce_manager_read_staff\", public.staff_certifications \"workforce_manager_read_schedule_credentials\"\nCONTEXT:  PL/pgSQL function inline_code_block line 12 at RAISE\n\n    at applyFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:128:38)\n    at nativeVerification (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:137:64)\n    at main (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:155:46)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:281:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.22.3\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 361,
+      "stdout": "[check:package-manager] PASS: package-lock.json is the only JavaScript package-manager lockfile\n",
+      "stderr": "[migrations:check] FAIL: gap in migration sequence: expected 483, found 487\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 404,
+      "stdout": "PASS\t18,000 compliance rows retained through 132 capped pages; every cut excludes configuration gaps\nPASS\tChanging or interrupted pagination fails instead of presenting partial compliance\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.preview-prerequisite",
+      "required": true,
+      "status": "failed",
+      "command": "start verified UI preview",
+      "stderr": "UI verification cannot start because the production build failed."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 4,
+    "skipped": 1,
+    "blocking_failures": [
+      "qa.migration-sequence",
+      "qa.migrations-apply-postgres",
+      "qa.root-build",
+      "cdo.preview-prerequisite"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Haven Workforce In Place/test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json"
+  ]
+}

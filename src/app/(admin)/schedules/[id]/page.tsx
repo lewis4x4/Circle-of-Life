@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
+import { useWorkforce } from "@/components/workforce/WorkforceContext";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { enumLabel } from "@/lib/display/enum-label";
@@ -31,6 +32,7 @@ export default function AdminScheduleWeekDetailPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const { appRole } = useHavenAuth();
+  const { refresh: refreshWorkforce } = useWorkforce();
   const canEdit = ["owner", "org_admin", "facility_admin", "manager"].includes(appRole ?? "");
   const [schedule, setSchedule] = useState<ScheduleRow | null>(null);
   const [people, setPeople] = useState<StaffRow[]>([]);
@@ -132,6 +134,7 @@ export default function AdminScheduleWeekDetailPage() {
       const result = await supabase.rpc(rpc as never, args as never);
       if (result.error) throw new Error(result.error.message);
       await load();
+      refreshWorkforce();
       setNotice(action === "publish" ? "Published. Assigned staff can now see this week in My schedule." : action === "copy" ? "Last week's assignments copied into this draft. Review the grid before publishing." : "Draft saved.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The schedule was not changed. Try again.");
