@@ -27,6 +27,7 @@ import {
 import { fetchActorContext } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { handoffSummaryLine } from "@/lib/registers/log-summary-lines";
 import { cn } from "@/lib/utils";
 
 const TIME_FMT = new Intl.DateTimeFormat("en-US", {
@@ -168,6 +169,7 @@ export default function AdminHandoffPage() {
   );
 
   const openCount = useMemo(() => notes.filter((n) => !n.acknowledged_at).length, [notes]);
+  const summaryLine = handoffSummaryLine({ facilityReady, loading: isLoading, error: loadError, openCount });
 
   const inputCls = "rounded-[9px] border border-border bg-background px-3 py-2 text-sm text-foreground";
 
@@ -180,7 +182,7 @@ export default function AdminHandoffPage() {
             Shift handoff
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            What the incoming shift needs to know. {openCount} unacknowledged on this shift.
+            What the incoming shift needs to know.{summaryLine ? ` ${summaryLine}` : ""}
           </p>
         </header>
 

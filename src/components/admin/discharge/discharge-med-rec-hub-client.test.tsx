@@ -76,7 +76,7 @@ describe("<DischargeMedRecHubClient /> facility gap copy", () => {
 
     expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
     expect(
-      screen.getByText(/select a facility in the header to load medication reconciliation for that site/i),
+      screen.getByText(/showing medication reconciliation for all your facilities/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/queue and workflow\./i)).toBeInTheDocument();
     expect(screen.queryByText("Demo ALF")).not.toBeInTheDocument();
@@ -99,7 +99,7 @@ describe("<DischargeMedRecHubClient /> facility gap copy", () => {
     expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
     expect(screen.queryByText("not-a-uuid")).not.toBeInTheDocument();
     expect(
-      screen.getByText(/select a facility in the header to load medication reconciliation for that site/i),
+      screen.getByText(/showing medication reconciliation for all your facilities/i),
     ).toBeInTheDocument();
   });
 
