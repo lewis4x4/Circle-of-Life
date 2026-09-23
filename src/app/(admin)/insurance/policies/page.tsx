@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { CoverageLapseBanner } from "@/components/insurance/coverage-lapse-banner";
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -101,6 +102,7 @@ export default function InsurancePoliciesPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 w-full">
         <InsuranceHubNav />
+        <CoverageLapseBanner />
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
