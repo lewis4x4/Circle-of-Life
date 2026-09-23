@@ -210,7 +210,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
           {actionSuccess}
         </div>
       )}
-      <input
+      <input aria-label="Filter documents"
         type="text"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
@@ -299,6 +299,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                 <td className="px-4 py-3">
                   <div className="space-y-1">
                     <select
+                      aria-label={`Status for ${doc.title}`}
                       value={doc.status}
                       onChange={(e) => void handleStatusChange(doc.id, e.target.value as DocumentStatus)}
                       className={`text-xs font-medium rounded-full px-2 py-1 border-0 cursor-pointer ${STATUS_COLORS[doc.status] ?? STATUS_COLORS.draft}`}
@@ -324,6 +325,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                 </td>
                 <td className="px-4 py-3">
                   <select
+                    aria-label={`Audience for ${doc.title}`}
                     value={doc.audience}
                     onChange={(e) => void handleAudienceChange(doc.id, e.target.value as DocumentAudience)}
                     className="text-xs rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-1 cursor-pointer"
