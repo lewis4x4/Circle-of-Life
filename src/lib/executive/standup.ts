@@ -9,6 +9,12 @@ import {
   todayFacilityDateIso,
 } from "@/lib/facility-wall-clock";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import {
+  CURRENT_AR_DEFINITION_COPY,
+  CURRENT_AR_INVOICE_STATUSES,
+  currentArNotYetSentNote,
+  isNotYetSentStatus,
+} from "@/lib/billing/receivables";
 
 export type StandupSourceMode = "auto" | "manual" | "hybrid" | "forecast";
 export type StandupValueType = "currency" | "count" | "percent" | "hours" | "text";
@@ -305,7 +311,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Current AR",
     valueType: "currency",
     sourceMode: "auto",
-    description: "Current open invoice balances for the selected scope.",
+    description: CURRENT_AR_DEFINITION_COPY,
   },
   {
     key: "current_total_census",
@@ -329,7 +335,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Uncollected AR Total",
     valueType: "currency",
     sourceMode: "auto",
-    description: "Open overdue balances for the selected scope.",
+    description: "The part of Current AR whose due date has passed, drafts included like Current AR.",
   },
   {
     key: "sp_female_beds_open",
@@ -1190,7 +1196,7 @@ export async function fetchExecutiveStandupLive(
     .select("facility_id, balance_due, due_date, total, period_start, deleted_at, status")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
-    .in("status", ["draft", "sent", "partial", "overdue"])
+    .in("status", [...CURRENT_AR_INVOICE_STATUSES])
     .limit(5000);
 
   let residentsQ = supabase
@@ -1336,6 +1342,8 @@ export async function fetchExecutiveStandupLive(
     const facilityTours = toursByFacility.get(facility.id) ?? [];
 
     const currentArCents = sum(facilityInvoices.map((row) => Math.max(0, row.balance_due ?? 0)));
+    const notYetSentInvoices = facilityInvoices.filter((row) => isNotYetSentStatus(row.status));
+    const notYetSentCents = sum(notYetSentInvoices.map((row) => Math.max(0, row.balance_due ?? 0)));
     const overdueArCents = sum(
       facilityInvoices
         .filter((row) => row.due_date && row.due_date < todayIso)
@@ -1413,7 +1421,18 @@ export async function fetchExecutiveStandupLive(
     metrics.current_ar_cents = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_ar_cents")!,
       currentArCents,
-      { sourceRefJson: [{ table: "invoices", mode: "open_balance" }] },
+      {
+        sourceRefJson: [
+          {
+            table: "invoices",
+            mode: "open_balance",
+            statuses: [...CURRENT_AR_INVOICE_STATUSES],
+            not_yet_sent_count: notYetSentInvoices.length,
+            not_yet_sent_cents: notYetSentCents,
+          },
+        ],
+        overrideNote: currentArNotYetSentNote(notYetSentInvoices.length, formatCurrencyFromCents(notYetSentCents)),
+      },
     );
     metrics.current_total_census = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_total_census")!,
@@ -1576,6 +1595,13 @@ export async function fetchExecutiveStandupLive(
       sourceRefJson: aggregateValue == null ? [] : [{ mode: "facility_rollup", facility_count: liveFacilities.length }],
       overrideNote: aggregateValue == null ? "Needs manual or future system capture." : null,
     });
+  }
+  if (totalMetrics.current_ar_cents.valueNumeric != null) {
+    const totalNotYetSent = invoiceRows.filter((row) => isNotYetSentStatus(row.status));
+    totalMetrics.current_ar_cents.overrideNote = currentArNotYetSentNote(
+      totalNotYetSent.length,
+      formatCurrencyFromCents(sum(totalNotYetSent.map((row) => Math.max(0, row.balance_due ?? 0)))),
+    );
   }
 
   const { score, topConcern } = computePressureScore(totalMetrics);
