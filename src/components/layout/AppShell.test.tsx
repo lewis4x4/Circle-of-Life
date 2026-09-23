@@ -369,3 +369,46 @@ it("marks the same pillar before and after hydration through the rounding rewrit
   expect(activeLinks("/admin/v2/rounding")).toEqual(["Clinical", "Smart Rounding"]);
   expect(activeLinks("/admin/rounding")).toEqual(["Clinical", "Smart Rounding"]);
 });
+
+describe("AppShell nav anchoring (COL-655)", () => {
+  const litLinks = (pathname: string, role = "owner") => {
+    pathMock.pathname = pathname;
+    authMock.loading = false;
+    authMock.appRole = role;
+    const { container, unmount } = renderAppShell();
+    const labels = (selector: string) =>
+      [...new Set([...container.querySelectorAll(selector)].map((link) => link.textContent?.trim()))];
+    const result = {
+      pillars: labels('nav[aria-label="Primary"] a[aria-current="page"]'),
+      rail: labels('aside a[aria-current="page"]'),
+      railItems: labels("aside a"),
+    };
+    unmount();
+    return result;
+  };
+
+  it("lights exactly one rail item on executive sub-pages (the owner's Home)", () => {
+    expect(litLinks("/admin/executive/cfo").rail).toEqual(["Home"]);
+    expect(litLinks("/admin/v2/executive/cfo").rail).toEqual(["Home"]);
+  });
+
+  it("lights the owning pillar, not Command, on ⌘K-only routes", () => {
+    const meetings = litLinks("/admin/meetings");
+    expect(meetings.pillars).toEqual(["Workforce"]);
+    expect(meetings.rail).toEqual(["Meetings"]);
+  });
+
+  it("shows a staff-launch-held Finance item in the rail while the operator is inside Finance", () => {
+    const ledger = litLinks("/admin/finance/ledger", "facility_admin");
+    expect(ledger.pillars).toEqual(["Business"]);
+    expect(ledger.rail).toEqual(["Finance"]);
+    // Off Finance pages the hold still keeps it off the rail.
+    expect(litLinks("/admin/vendors", "facility_admin").railItems).not.toContain("Finance");
+  });
+
+  it("gives account routes no pillar and no rail", () => {
+    const users = litLinks("/admin/settings/users");
+    expect(users.pillars).toEqual([]);
+    expect(users.railItems).toEqual([]);
+  });
+});
