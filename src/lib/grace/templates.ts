@@ -71,7 +71,7 @@ export const GRACE_TEMPLATES: GraceTemplate[] = [
     icon: Users,
     title: "New leads",
     subtitle: "Recent inquiries and pipeline activity",
-    roles: ["admin_assistant", "coordinator", "marketing", "manager", "facility_admin", "org_admin", "owner"],
+    roles: ["admin_assistant", "coordinator", "recruiter", "manager", "facility_admin", "org_admin", "owner"],
     type: "knowledge",
     phrase:
       "At {facilityName}, do we have any new leads in the past week? Give me the count, active pipeline count, and top lead names with status.",

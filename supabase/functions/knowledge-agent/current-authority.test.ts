@@ -18,7 +18,7 @@ Deno.test("referral pipeline roles match the database capability map", () => {
     "admin_assistant",
     "coordinator",
     "med_tech",
-    "marketing",
+    "recruiter",
   ]) {
     assertEquals(canReadReferralPipeline(role), true, role);
   }

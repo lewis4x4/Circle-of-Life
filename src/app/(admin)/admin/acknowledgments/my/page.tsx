@@ -20,6 +20,7 @@ import {
   type QueryError,
   type QueryResult,
 } from "@/lib/office/acknowledgments";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { fetchActorContext } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -94,7 +95,9 @@ export default function MyAcknowledgmentsPage() {
       setRequirements(reqRes.data ?? []);
       setMyAcks(ackRes.data ?? []);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load your acknowledgments.");
+      setLoadError(
+        formatLiveDataLoadError(err, "Your required reading could not be loaded right now. Try again."),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +149,8 @@ export default function MyAcknowledgmentsPage() {
         setSignatureName("");
         await load();
       } catch (err) {
-        setNotice(err instanceof Error ? err.message : "Failed to record your signature.");
+        console.error("[acknowledgments] signature not recorded", err);
+        setNotice("Your signature was not recorded. Try again, or tell your manager if this keeps happening.");
       } finally {
         setBusy(false);
       }

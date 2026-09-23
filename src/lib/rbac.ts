@@ -15,7 +15,7 @@ export const ROLE_HIERARCHY: Record<string, number> = {
   coordinator: 60,
   admin_assistant: 50,
   med_tech: 50,
-  marketing: 50,
+  recruiter: 50,
   cook: 40,
   maintenance_role: 40,
   broker: 30,
@@ -43,7 +43,7 @@ export const ALL_APP_ROLES = [
   "cook",
   "housekeeper",
   "maintenance_role",
-  "marketing",
+  "recruiter",
   "family",
   "broker",
 ] as const;
@@ -53,7 +53,7 @@ export type AppRole = (typeof ALL_APP_ROLES)[number];
 // ── Admin-shell eligible roles ────────────────────────────────────
 // All roles that may access the admin shell. Excludes family, housekeeper.
 // Retired roles are not listed: migration 468 folded nurse/caregiver into med_tech and
-// dietary/dietary_aide into cook. Marketing is admin-eligible but its admin nav is limited
+// dietary/dietary_aide into cook. Recruiter is admin-eligible but its admin nav is limited
 // to referrals / pipeline / reputation (see dashboard-routing.ts).
 
 export const ADMIN_ELIGIBLE_ROLES = new Set<string>([
@@ -66,7 +66,7 @@ export const ADMIN_ELIGIBLE_ROLES = new Set<string>([
   "med_tech",
   "cook",
   "maintenance_role",
-  "marketing",
+  "recruiter",
   "broker",
 ]);
 
@@ -114,7 +114,7 @@ export function isAtLeast(role: string, minTier: number): boolean {
 // Format: feature → role → permission level
 // med_tech holds the widest level any of nurse / caregiver / med_tech held, and cook the
 // widest of dietary / dietary_aide (migration 468 folded role_permissions the same way).
-// marketing has no entry: none of these features cover referrals / pipeline / reputation,
+// recruiter has no entry: none of these features cover referrals / pipeline / reputation,
 // which are gated per route.
 
 type PermissionLevel = "view" | "edit" | "delete" | "admin";
@@ -258,7 +258,7 @@ export const ROLE_LABELS: Record<string, string> = {
   cook: "Cook",
   housekeeper: "Housekeeper",
   maintenance_role: "Maintenance",
-  marketing: "Marketing",
+  recruiter: "Recruiter",
   family: "Family Member",
   broker: "Broker",
   // Legacy display only (history rows) — retired 2026-09-22, migration 468.
@@ -277,7 +277,7 @@ export const ROLE_DESCRIPTIONS: Record<string, string> = {
   coordinator: "Care coordination — care plans, assessments, family communication",
   med_tech: "Medication technician and floor care — Med-Tech cockpit, eMAR, med passes, controlled substances, plus the caregiver floor app (tasks, ADLs, rounding)",
   cook: "Cook — meal planning and preparation, diet orders, HACCP, tray and service tracking",
-  marketing: "Marketing — referrals, pipeline and reputation only",
+  recruiter: "Finds residents to place — referrals, pipeline and reputation only",
   nurse: "Legacy role — folded into Med-Tech",
   caregiver: "Legacy role — folded into Med-Tech",
   dietary: "Legacy role — folded into Cook",

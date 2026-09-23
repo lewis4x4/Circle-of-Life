@@ -156,9 +156,13 @@ export async function fetchCaregiverResidentProfile(
     )
     .eq("id", residentId)
     .is("deleted_at", null)
-    .single();
+    .maybeSingle();
 
-  if (rErr || !raw) return { ok: false, error: rErr?.message ?? "Resident not found" };
+  if (rErr) {
+    console.error("[resident-profile] resident read failed", rErr);
+    return { ok: false, error: "This resident's profile could not be loaded right now. Try again." };
+  }
+  if (!raw) return { ok: false, error: "Resident not found" };
   const r = raw as unknown as ResidentRow;
 
   let roomNumber: string | null = null;

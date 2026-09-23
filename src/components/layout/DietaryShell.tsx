@@ -7,7 +7,7 @@ import { WorkingFacilitySelector } from "@/components/caregiver/WorkingFacilityS
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { getAppRoleFromClaims, isDietaryRole, isAdminEligibleAppRole, isMarketingRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isDietaryRole, isAdminEligibleAppRole, isRecruiterRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -47,14 +47,14 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
     const role = getAppRoleFromClaims(user);
 
     // Dietary staff and any admin-eligible role can access
-    if (isDietaryRole(role) || (isAdminEligibleAppRole(role) && !isMarketingRole(role))) {
+    if (isDietaryRole(role) || (isAdminEligibleAppRole(role) && !isRecruiterRole(role))) {
       setAuthorized(true);
       setChecking(false);
       return;
     }
 
     // Redirect non-dietary roles to their shells
-    if (role === "housekeeper" || isMarketingRole(role)) {
+    if (role === "housekeeper" || isRecruiterRole(role)) {
       router.replace(getDashboardRouteForRole(role));
     } else if (role === "family") {
       router.replace("/family");

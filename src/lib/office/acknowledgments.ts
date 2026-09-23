@@ -42,7 +42,7 @@ export const ACK_ROLES: { id: string; label: string }[] = [
   { id: "cook", label: "Cook" },
   { id: "maintenance_role", label: "Maintenance" },
   { id: "housekeeper", label: "Housekeeper" },
-  { id: "marketing", label: "Marketing" },
+  { id: "recruiter", label: "Recruiter" },
 ];
 
 /** Retired roles (2026-09-22, migration 468) — labels for requirement rows written before the fold. */
