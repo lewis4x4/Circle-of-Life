@@ -5,7 +5,14 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchNurseMedicationBrief, type NurseMedicationBrief } from "@/lib/nurse/medication-brief";
-import { formatDoseAlertCount, formatNurseWatchlistRoomLabel } from "@/lib/nurse/medication-brief-display-copy";
+import {
+  NURSE_COUNT_UNAVAILABLE_COPY,
+  describeControlledCounts,
+  describeEmarCompliance,
+  describeMedErrors7d,
+  formatDoseAlertCount,
+  formatNurseWatchlistRoomLabel,
+} from "@/lib/nurse/medication-brief-display-copy";
 import { Pill, ShieldCheck, AlertTriangle, Activity, FileWarning, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,10 +63,10 @@ function NurseDashboardScope({ selectedFacilityId }: { selectedFacilityId: strin
 
       {/* Hero Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Active Medications" value={brief.activeMedications} icon={Pill} urgency="normal" subLabel="Currently prescribed" href="/admin/residents" />
-        <StatCard title="eMAR Compliance" value={`${brief.emarCompliancePct}%`} icon={Activity} urgency={brief.emarCompliancePct < 95 ? "critical" : "normal"} subLabel={brief.emarCompliancePct < 95 ? "Below 95% threshold" : "On target"} href="/med-tech" />
-        <StatCard title="Med Errors (7d)" value={brief.medErrors7d} icon={AlertTriangle} urgency={brief.medErrors7d > 0 ? "critical" : "normal"} subLabel={brief.medErrors7d > 0 ? "Requires review" : "None reported"} href="/admin/medications/errors?review=unreviewed" />
-        <StatCard title="Controlled Counts" value={brief.controlledDiscrepancies} icon={ShieldCheck} urgency={brief.controlledDiscrepancies > 0 ? "critical" : "normal"} subLabel={brief.controlledDiscrepancies > 0 ? "Discrepancies found" : "All verified"} href="/med-tech/controlled-count" />
+        <StatCard title="Active Medications" value={brief.activeMedications ?? NURSE_COUNT_UNAVAILABLE_COPY} icon={Pill} urgency="normal" subLabel={brief.activeMedications === null ? "Medication count unavailable" : "Currently prescribed"} href="/admin/residents" />
+        <StatCard title="eMAR Compliance" {...describeEmarCompliance(brief.emarCompliancePct)} icon={Activity} href="/med-tech" />
+        <StatCard title="Med Errors (7d)" {...describeMedErrors7d(brief.medErrors7d)} icon={AlertTriangle} href="/admin/medications/errors?review=unreviewed" />
+        <StatCard title="Controlled Counts" {...describeControlledCounts(brief.controlledDiscrepancies)} icon={ShieldCheck} href="/med-tech/controlled-count" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
