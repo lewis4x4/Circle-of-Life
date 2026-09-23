@@ -4,7 +4,7 @@ import { PendingCountReceipt } from "@/components/controlled-substance/PendingCo
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Loader2, Shield } from "lucide-react";
+import { ArrowLeft, Loader2, Shield } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
@@ -213,6 +213,10 @@ export function ControlledCountConsole({
 
   return (
     <div className="space-y-4 pb-8">
+      <Link href={backHref} className="inline-flex items-center gap-2 text-sm text-teal-500 hover:underline">
+        <ArrowLeft className="h-4 w-4" aria-hidden />
+        {backLabel}
+      </Link>
       <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-white">{title}</h1>
@@ -296,10 +300,6 @@ export function ControlledCountConsole({
       )}
 
       {pendingCountIds.length > 0 && !showCoSign ? <Button onClick={() => setShowCoSign(true)}>Resume saved count verification</Button> : null}
-
-      <Link href={backHref} className="block text-center text-sm text-teal-500 hover:underline">
-        {backLabel}
-      </Link>
 
       {showCoSign ? (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-4 sm:items-center">
