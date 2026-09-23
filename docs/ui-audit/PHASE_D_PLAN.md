@@ -1,5 +1,7 @@
 # PHASE_D_PLAN.md
 
+> **Roles note (2026-09-22, COL-615):** the role lists in this plan predate the role consolidation. `nurse` and `caregiver` are now `med_tech`; `dietary` and `dietary_aide` are now `cook`. See the Roles section in `AGENTS.md`.
+
 Planning document for Phase D of the UI audit. Phase D closes the 97 DRIFT routes that survived Phases A–C and resolves three accumulated infrastructure items (seed drift, gitleaks fingerprint churn, screenshot harness lessons-learned).
 
 **Status: PLANNING ONLY.** No code refactors land in the PR that introduces this document. Execution starts after explicit owner approval of the batches + codemods specified here.

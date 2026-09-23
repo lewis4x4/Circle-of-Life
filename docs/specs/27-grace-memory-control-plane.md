@@ -398,7 +398,7 @@ Target shape:
   "doc_type": "sop",
   "status": "active",
   "module": "compliance",
-  "roles": ["facility_admin", "nurse", "caregiver"],
+  "roles": ["facility_admin", "med_tech"],
   "facility_scope": "all",
   "facility_tags": [],
   "aliases": ["incident write-up", "event report", "safety report"],

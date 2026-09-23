@@ -7,7 +7,7 @@ facility_scope: all
 facility_tags: []
 entity_tags: []
 module: <module>
-roles: [owner, org_admin, facility_admin, manager, nurse, caregiver]
+roles: [owner, org_admin, facility_admin, manager, med_tech]
 topics: [<topic>]
 aliases: [<alias-1>, <alias-2>]
 owner: <owner>

@@ -28,8 +28,8 @@ Required env (auto-loaded from `.env.local`):
 
 | # | File | Workflow | What we assert | Failure means |
 |---:|---|---|---|---|
-| 1 | `01-caregiver-shift.spec.ts` | Caregiver opens shift → ADL entry | Caregiver lands on `/caregiver`, sees resident assignments, can open an ADL form, save with a test marker, and the row persists in `adl_logs` | Caregiver workflow is broken or the ADL form / save endpoint regressed |
-| 2 | `02-caregiver-incident.spec.ts` | Caregiver reports incident | Caregiver can submit a minor incident, the row lands in `incidents`, and a facility_admin signed-in in a second context can see it on `/admin/incidents` | Incident flow broken or admin visibility regressed |
+| 1 | `01-caregiver-shift.spec.ts` | Med-Tech opens shift in the floor app → ADL entry | Med-Tech opens the floor app `/caregiver`, sees resident assignments, can open an ADL form, save with a test marker, and the row persists in `adl_logs` | Floor-app workflow is broken or the ADL form / save endpoint regressed |
+| 2 | `02-caregiver-incident.spec.ts` | Med-Tech reports incident | Med-Tech can submit a minor incident, the row lands in `incidents`, and a facility_admin signed-in in a second context can see it on `/admin/incidents` | Incident flow broken or admin visibility regressed |
 | 3 | `03-medtech-medpass.spec.ts` | Med-tech med pass: given + refused | Med-tech can mark one med as given and another as refused; both decisions persist in `emar_records` | Med-pass workflow is broken — launch-blocker |
 | 4 | `04-management-census.spec.ts` | Management views census | Facility_admin command center renders an active-resident count that matches the DB | Dashboard data layer is mis-wired |
 | 5 | `05-management-careplan.spec.ts` | Management edits care plan | Facility_admin can edit a care-plan field; `version` bumps; original state restored in `finally` | Care-plan edit or versioning is broken |
@@ -42,7 +42,7 @@ Every test that mutates data:
 
 1. Writes a free-text field containing `homewood-launch-test:auto` (exported as `TEST_MARKER`)
 2. Has an `afterEach` (or `try/finally`) that deletes the marked rows or restores prior state
-3. Skips with a clear message if Homewood doesn't have the data preconditions met (e.g. no active residents → can't test the caregiver shift workflow)
+3. Skips with a clear message if Homewood doesn't have the data preconditions met (e.g. no active residents → can't test the floor-app shift workflow)
 
 Running the suite twice in a row must not produce drift — the cleanup helpers are deterministic on the marker.
 

@@ -7,10 +7,10 @@ Tooling: `@axe-core/playwright`. The 5 launch-relevant routes are scanned signed
 | Route | Role |
 |---|---|
 | `/admin/command` | facility_admin |
-| `/caregiver` | caregiver |
+| `/caregiver` | med_tech |
 | `/family` | family |
 | `/med-tech` | med_tech |
-| `/dietary` | dietary |
+| `/dietary` | cook |
 
 ## Running
 

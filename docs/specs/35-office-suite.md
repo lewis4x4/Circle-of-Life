@@ -39,7 +39,7 @@ table apply unchanged.
 |--------|-------------------|---------|-------------------------------------------|
 | `shift_swap_requests` | `status = 'pending' AND deleted_at IS NULL` | Approve / Deny (reason required) | `status='approved', approved_at, approved_by` · `status='denied', denied_reason` |
 | `time_records` | `approved = false AND clock_out IS NOT NULL AND deleted_at IS NULL` | Approve | `approved=true, approved_at, approved_by, updated_by` |
-| `mileage_logs` | `approved_at IS NULL AND deleted_at IS NULL` | Approve | `approved_at, approved_by, updated_by`; client-side role gate matches mileage hub (`owner`, `org_admin`, `facility_admin`, `nurse`) |
+| `mileage_logs` | `approved_at IS NULL AND deleted_at IS NULL` | Approve | `approved_at, approved_by, updated_by`; client-side role gate matches mileage hub (`owner`, `org_admin`, `facility_admin`, `med_tech`) |
 | `documents` (KB) | `status = 'pending_review'` | **Link-out only** → `/admin/knowledge/admin/review/[id]` | None from the inbox — F0-4 requires a real review (draft → review → publish), so publish stays on the KB review surface |
 
 ### Deliberately deferred (recorded so it isn't re-litigated)
@@ -152,7 +152,7 @@ All three: RLS enabled before data (org → `haven.accessible_facility_ids()`), 
 (`haven_capture_audit_log` — minutes are survey evidence per F0-2 spirit), soft deletes
 (`deleted_at`, **no DELETE policies**), `haven_set_updated_at` triggers, UUID PKs, denormalized
 `organization_id` + `facility_id`, UTC. Create/update limited to
-`owner/org_admin/facility_admin/manager/coordinator/nurse`; action-item assignees may update
+`owner/org_admin/facility_admin/manager/coordinator/med_tech`; action-item assignees may update
 their own items.
 
 ### OCE coupling (reuse mandate)

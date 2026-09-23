@@ -4,6 +4,8 @@
 **Build Week:** 13-14
 **Scope authority:** `PHASE2-SCOPE.md` (Module 7 — Core/Enhanced/Future tiers)
 
+> **Roles updated 2026-09-22 (COL-615):** the retired `nurse` and `caregiver` login roles are now `med_tech`, which holds everything both held; `dietary` / `dietary_aide` are now `cook`. See the Roles section in `AGENTS.md`.
+
 ---
 
 ## Phase 1 Foundation (already built — do not recreate)
@@ -131,16 +133,16 @@ CREATE POLICY staff_see_care_plan_tasks ON care_plan_tasks
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() NOT IN ('family', 'broker', 'dietary', 'maintenance_role')
+    AND haven.app_role() NOT IN ('family', 'broker', 'cook', 'maintenance_role')
   );
 
--- Operational staff complete tasks (caregiver + nurse mark care delivered)
+-- Operational staff complete tasks (Med-Techs mark care delivered)
 CREATE POLICY operational_staff_complete_care_plan_tasks ON care_plan_tasks
   FOR UPDATE
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('nurse', 'caregiver')
+    AND haven.app_role() IN ('med_tech')
   );
 
 -- Admin override (facility_admin+ can update for corrections, but audit trail preserves who)
@@ -154,7 +156,7 @@ CREATE POLICY admin_override_care_plan_tasks ON care_plan_tasks
 
 -- Tasks are system-generated (INSERT via Edge Function or application logic), not user-created.
 -- INSERT policy restricted to service_role. No direct user INSERT.
--- NOTE: The UI only shows "Complete/Skip/Unable" to nurse + caregiver roles.
+-- NOTE: The UI only shows "Complete/Skip/Unable" to the med_tech role.
 -- Admin override exists for data correction but is not surfaced as a primary workflow.
 
 -- CARE PLAN REVIEW ALERTS
@@ -166,7 +168,7 @@ CREATE POLICY staff_see_review_alerts ON care_plan_review_alerts
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() NOT IN ('family', 'broker', 'dietary', 'maintenance_role')
+    AND haven.app_role() NOT IN ('family', 'broker', 'cook', 'maintenance_role')
   );
 
 CREATE POLICY nurse_plus_manage_review_alerts ON care_plan_review_alerts
@@ -174,18 +176,18 @@ CREATE POLICY nurse_plus_manage_review_alerts ON care_plan_review_alerts
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- Alerts are system-generated. INSERT via service_role only.
 
 -- ASSESSMENTS INSERT — tighten per PHASE2-SCOPE role map
 -- Phase 1 allows all clinical staff to INSERT assessments.
--- Phase 2 restricts Braden and PHQ-9 to nurse+.
+-- Phase 2 restricted Braden and PHQ-9 to nurse+; since COL-615 that is med_tech+.
 -- This is enforced at application level (not RLS) because the
 -- assessment_templates.required_role field already declares who can
 -- administer each type. The UI checks this before rendering the form.
--- RLS remains: caregiver CAN insert assessments (for Katz ADL).
+-- RLS remains: med_tech CAN insert assessments (including Katz ADL).
 
 -- Apply audit triggers
 CREATE TRIGGER audit_care_plan_tasks AFTER INSERT OR UPDATE OR DELETE ON care_plan_tasks
@@ -211,7 +213,7 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON care_plan_tasks
    - Looks up `assessment_templates.risk_thresholds` to determine `assessments.risk_level`
    - Computes `assessments.next_due_date` = `assessment_date` + `assessment_templates.default_frequency_days`
 
-3. **Role enforcement.** The UI checks `assessment_templates.required_role` against the current user's `app_role`. If the user's role is not in the array, the assessment type is not offered. Katz ADL allows `caregiver`; Braden and PHQ-9 do not.
+3. **Role enforcement.** The UI checks `assessment_templates.required_role` against the current user's `app_role`. If the user's role is not in the array, the assessment type is not offered. Since COL-615, `med_tech` holds every assessment type the retired `nurse` and `caregiver` roles held (Katz ADL, Morse, Braden, PHQ-9).
 
 4. **Score-change triggers.** After saving an assessment, compare the new `risk_level` to the most recent prior assessment of the same type for the same resident:
    - If risk_level worsened → create a `care_plan_review_alerts` row with `trigger_type = 'assessment_threshold'`
@@ -241,15 +243,15 @@ acuity_level:
 
 ### Care Plan Editing & Versioning
 
-1. **Creating a new version.** When a nurse edits an active care plan:
+1. **Creating a new version.** When a Med-Tech (or administrator) edits an active care plan:
    - The current plan's status changes to `'archived'`
    - A new `care_plans` row is created with `version = previous.version + 1`, `previous_version_id = previous.id`, `status = 'draft'`
    - All active `care_plan_items` from the previous version are copied to the new plan
-   - The nurse edits items on the new draft
+   - The Med-Tech edits items on the new draft
 
 2. **Approval workflow.** Draft → under_review → active:
-   - `under_review`: nurse marks plan ready for approval
-   - `active`: facility_admin or nurse with approval authority sets `approved_by`, `approved_at`, `status = 'active'`
+   - `under_review`: Med-Tech marks plan ready for approval
+   - `active`: facility_admin or Med-Tech with approval authority sets `approved_by`, `approved_at`, `status = 'active'`
    - When a plan becomes active, its `review_due_date` is set to `effective_date + 90 days`
 
 3. **Only one active plan per resident.** Constraint enforced at application level: before activating a new version, the previous active version is archived.
@@ -289,13 +291,13 @@ Active `care_plan_items` with a `frequency` value generate daily tasks in `care_
    - [ ] Update care plan items as needed
    - [ ] Set new review date
    - [ ] Obtain approval signature
-4. **Resolution:** When the nurse marks the review complete, alert status → `'resolved'`, and the care plan's `reviewed_at` and `reviewed_by` are updated.
+4. **Resolution:** When the Med-Tech marks the review complete, alert status → `'resolved'`, and the care plan's `reviewed_at` and `reviewed_by` are updated.
 
 ### Care Plan State Transitions
 
 ```
-draft → under_review       (nurse submits for approval)
-under_review → active      (facility_admin or nurse approves)
+draft → under_review       (Med-Tech submits for approval)
+under_review → active      (facility_admin or Med-Tech approves)
 under_review → draft       (approver returns with feedback)
 active → archived          (only when a new version is activated, or resident discharged)
 archived → (terminal)      (archived plans are immutable — no further transitions)
@@ -324,28 +326,30 @@ Only **one open or acknowledged alert** per `(care_plan_id, trigger_type)` at a 
 
 | Scenario | Behavior |
 |----------|----------|
-| Second fall incident while first alert still open | No new `fall_incident` alert. The existing one remains. Nurse should address it. |
+| Second fall incident while first alert still open | No new `fall_incident` alert. The existing one remains. The Med-Tech should address it. |
 | Assessment worsens again while `assessment_threshold` alert open | No new alert. `trigger_detail` is NOT updated (preserves original trigger context). |
 | Quarterly due alert already open, then plan goes overdue | The `check-review-alerts` cron updates the existing alert's `trigger_type` from `quarterly_due` to `quarterly_overdue` (same row, no duplicate). |
 | Alert resolved, then new triggering event occurs | New alert is allowed (previous resolved alert no longer matches the unique index). |
 
 ### Permissions Map
 
-| Action | owner | org_admin | facility_admin | nurse | caregiver | family |
-|--------|-------|-----------|----------------|-------|-----------|--------|
-| Create assessment (Katz ADL) | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| Create assessment (Morse, Braden, PHQ-9) | ✓ | ✓ | ✓ | ✓ | — | — |
-| View assessment results | ✓ | ✓ | ✓ | ✓ | ✓ (read) | summary only |
-| Create/edit care plan items | ✓ | ✓ | ✓ | ✓ | — | — |
-| Submit plan for review (draft → under_review) | ✓ | ✓ | ✓ | ✓ | — | — |
-| Approve plan (under_review → active) | ✓ | ✓ | ✓ | ✓ | — | — |
-| Return plan (under_review → draft) | ✓ | ✓ | ✓ | ✓ | — | — |
-| Complete/skip care plan task | — | — | — | ✓ | ✓ | — |
-| Resolve review alert | ✓ | ✓ | ✓ | ✓ | — | — |
-| View care plan | ✓ | ✓ | ✓ | ✓ | ✓ (read) | simplified |
-| View task queue | — | — | — | ✓ | ✓ | — |
+| Action | owner | org_admin | facility_admin | med_tech | family |
+|--------|-------|-----------|----------------|----------|--------|
+| Create assessment (Katz ADL) | ✓ | ✓ | ✓ | ✓ | — |
+| Create assessment (Morse, Braden, PHQ-9) | ✓ | ✓ | ✓ | ✓ | — |
+| View assessment results | ✓ | ✓ | ✓ | ✓ | summary only |
+| Create/edit care plan items | ✓ | ✓ | ✓ | ✓ | — |
+| Submit plan for review (draft → under_review) | ✓ | ✓ | ✓ | ✓ | — |
+| Approve plan (under_review → active) | ✓ | ✓ | ✓ | ✓ | — |
+| Return plan (under_review → draft) | ✓ | ✓ | ✓ | ✓ | — |
+| Complete/skip care plan task | — | — | — | ✓ | — |
+| Resolve review alert | ✓ | ✓ | ✓ | ✓ | — |
+| View care plan | ✓ | ✓ | ✓ | ✓ | simplified |
+| View task queue | — | — | — | ✓ | — |
 
-**Note on approval authority:** In Phase 2, any nurse or facility_admin can approve. There is no separate "approval authority" flag. If this needs to be restricted to specific nurses (e.g., DON only), a `can_approve_care_plans` boolean on `staff` or `user_profiles` can be added later without schema changes to `care_plans`.
+`med_tech` holds the union of the retired `nurse` and `caregiver` columns (COL-615). `cook`, `housekeeper`, `maintenance_role` and `recruiter` have no care-plan access.
+
+**Note on approval authority:** Any Med-Tech or facility_admin can approve. There is no separate "approval authority" flag. If this needs to be restricted to specific people (e.g., DON only), a `can_approve_care_plans` boolean on `staff` or `user_profiles` can be added later without schema changes to `care_plans`.
 
 ### Family Visibility of Assessment Data
 
@@ -447,7 +451,7 @@ This is consistent with Phase 1's family care plan view which already shows care
 - Each row: Resident name, alert type, trigger detail, days until/past due
 - Click → opens review workflow with checklist
 
-### Caregiver Shell
+### Floor app (`/caregiver`, Med-Tech)
 
 #### Task Queue (`/caregiver/tasks`)
 
@@ -494,13 +498,13 @@ These features have schema designed above but UI may be deferred:
 
 ### Quarterly Review Narrative Draft
 
-- When a nurse opens a quarterly review, generate a narrative summary from 90-day structured data:
+- When a Med-Tech opens a quarterly review, generate a narrative summary from 90-day structured data:
   - Assessment scores and changes
   - ADL log completion rates
   - Incident count and types
   - Medication changes
   - Condition changes
-- Output as editable text in a textarea; nurse reviews and modifies before saving to `care_plans.notes`
+- Output as editable text in a textarea; the Med-Tech reviews and modifies before saving to `care_plans.notes`
 - This is **data assembly**, not AI generation — concatenates structured facts into sentences
 
 ### Assessment Overdue Alerts on Dashboard
