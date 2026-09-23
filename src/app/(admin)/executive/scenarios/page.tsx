@@ -325,7 +325,8 @@ export default function ExecutiveScenariosPage() {
               {/* Projection Table */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3">Monthly Detail</h3>
-                <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                {/* A scroll box must be reachable by keyboard (axe scrollable-region-focusable, COL-658). */}
+                <div tabIndex={0} role="region" aria-label="Monthly detail" className="overflow-x-auto max-h-[300px] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <table className="w-full text-left">
                     <thead className="sticky top-0 bg-card/90">
                       <tr className="border-b border-border">

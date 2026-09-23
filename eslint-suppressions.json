@@ -252,41 +252,26 @@
   "src/app/(caregiver)/prn-followup/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 1
     }
   },
   "src/app/(caregiver)/resident/[id]/adl/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 2
     }
   },
   "src/app/(caregiver)/resident/[id]/behavior/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 8
     }
   },
   "src/app/(caregiver)/resident/[id]/condition-change/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 3
     }
   },
   "src/app/(caregiver)/resident/[id]/log/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 5
     }
   },
   "src/app/(family)/family/billing/page.tsx": {
@@ -354,19 +339,9 @@
       "count": 1
     }
   },
-  "src/components/caregiver/ResidentAdlCard.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 2
-    }
-  },
   "src/components/caregiver/ShiftHandoffBoard.tsx": {
     "haven-time/require-time-zone": {
       "count": 2
-    }
-  },
-  "src/components/controlled-substance/ControlledCountConsole.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 6
     }
   },
   "src/components/coordinator/CoordinatorDashboardPageClient.tsx": {
@@ -392,9 +367,6 @@
   "src/components/executive/time-range-selector.tsx": {
     "haven-time/require-time-zone": {
       "count": 3
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 2
     }
   },
   "src/components/family-portal/StaffFamilyBulletinSection.tsx": {
@@ -402,23 +374,8 @@
       "count": 1
     }
   },
-  "src/components/med-tech/IncidentModal.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 5
-    }
-  },
   "src/components/med-tech/ShiftBar.tsx": {
     "haven-time/require-time-zone": {
-      "count": 1
-    }
-  },
-  "src/components/medication/CountInitiationModal.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 5
-    }
-  },
-  "src/components/medication/DiscrepancyResolutionModal.tsx": {
-    "jsx-a11y/label-has-associated-control": {
       "count": 1
     }
   },
@@ -462,11 +419,6 @@
       "count": 1
     }
   },
-  "src/components/rounding/CadenceTemplatePortfolio.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 1
-    }
-  },
   "src/components/rounding/CadenceVersionHistory.tsx": {
     "haven-time/require-time-zone": {
       "count": 4
@@ -490,11 +442,6 @@
   "src/components/schedules/AdminSchedulesPageClient.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    }
-  },
-  "src/components/staff/StaffProfileSections.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 20
     }
   },
   "src/components/staff/StaffTimeclockAccess.tsx": {

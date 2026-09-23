@@ -165,10 +165,10 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
           {step === 0 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <p id="mt-incident-resident-label" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Resident
-                </label>
-                <div className="grid grid-cols-2 gap-2">
+                </p>
+                <div role="group" aria-labelledby="mt-incident-resident-label" className="grid grid-cols-2 gap-2">
                   {residents.map((r) => (
                     <button
                       key={r.id}
@@ -189,10 +189,10 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <p id="mt-incident-category-label" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Category
-                </label>
-                <div className="grid grid-cols-2 gap-2">
+                </p>
+                <div role="group" aria-labelledby="mt-incident-category-label" className="grid grid-cols-2 gap-2">
                   {CATEGORIES.map((c) => (
                     <button
                       key={c.value}
@@ -210,10 +210,10 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <p id="mt-incident-severity-label" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Severity
-                </label>
-                <div className="grid grid-cols-1 gap-2">
+                </p>
+                <div role="group" aria-labelledby="mt-incident-severity-label" className="grid grid-cols-1 gap-2">
                   {SEVERITIES.map((item) => (
                     <button
                       key={item.value}
@@ -244,10 +244,10 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label htmlFor="mt-incident-location" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Location
                 </label>
-                <input
+                <input id="mt-incident-location"
                   value={locationDescription}
                   onChange={(e) => setLocationDescription(e.target.value)}
                   placeholder="Medication cart, resident room, hall, med room…"
@@ -256,10 +256,10 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label htmlFor="mt-incident-narrative-min-10-characters" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Narrative <span className="text-slate-600 normal-case font-normal">(min. 10 characters)</span>
                 </label>
-                <textarea
+                <textarea id="mt-incident-narrative-min-10-characters"
                   value={narrative}
                   onChange={(e) => setNarrative(e.target.value)}
                   rows={5}

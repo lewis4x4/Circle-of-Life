@@ -275,8 +275,8 @@ export default function CaregiverResidentAdlPage() {
             <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">ADL</Label>
-                  <select
+                  <Label htmlFor="adl-adl" className="text-xs text-zinc-400">ADL</Label>
+                  <select id="adl-adl"
                     className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                     value={adlType}
                     onChange={(e) => setAdlType(e.target.value)}
@@ -289,8 +289,8 @@ export default function CaregiverResidentAdlPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Assistance</Label>
-                  <select
+                  <Label htmlFor="adl-assistance" className="text-xs text-zinc-400">Assistance</Label>
+                  <select id="adl-assistance"
                     className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                     value={assistance}
                     onChange={(e) => setAssistance(e.target.value as Database["public"]["Enums"]["assistance_level"])}

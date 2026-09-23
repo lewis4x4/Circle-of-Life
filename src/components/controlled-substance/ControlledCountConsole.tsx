@@ -239,14 +239,14 @@ export function ControlledCountConsole({
       ) : (
         <>
           <div className="space-y-2">
-            <Label className="text-zinc-300">Count date (ET)</Label>
+            <p className="text-sm leading-none font-medium text-zinc-300">Count date (ET)</p>
             <p className="text-sm text-white">{todayFacilityDateIso()}</p>
             <p className="text-xs text-zinc-500">Shift counts use today&apos;s Eastern (ET) calendar date.</p>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-zinc-300">Shift ending</Label>
-            <select
+            <Label htmlFor="count-shift-ending" className="text-zinc-300">Shift ending</Label>
+            <select id="count-shift-ending"
               value={shift}
               onChange={(e) => setShift(e.target.value as Database["public"]["Enums"]["shift_type"])}
               className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white"
@@ -272,9 +272,9 @@ export function ControlledCountConsole({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Label className="text-xs text-zinc-400">Expected quantity from inventory ledger</Label><Input aria-label="Expected quantity from inventory ledger" inputMode="numeric" value={line.expected} onChange={(e) => setLines((prev) => prev.map((x) => x.med.id === line.med.id ? { ...x, expected: e.target.value } : x))} />
-                  <Label className="text-xs text-zinc-400">Actual count on hand</Label>
-                  <Input
+                  <Label htmlFor="count-expected-quantity-from-inventory-ledger" className="text-xs text-zinc-400">Expected quantity from inventory ledger</Label><Input id="count-expected-quantity-from-inventory-ledger" aria-label="Expected quantity from inventory ledger" inputMode="numeric" value={line.expected} onChange={(e) => setLines((prev) => prev.map((x) => x.med.id === line.med.id ? { ...x, expected: e.target.value } : x))} />
+                  <Label htmlFor="count-actual-count-on-hand" className="text-xs text-zinc-400">Actual count on hand</Label>
+                  <Input id="count-actual-count-on-hand"
                     aria-label="Actual count on hand"
                     inputMode="numeric"
                     value={line.actual}
@@ -314,8 +314,8 @@ export function ControlledCountConsole({
             {coError ? <p className="mt-2 text-sm text-red-400">{coError}</p> : null}
             <div className="mt-4 space-y-3">
               <div>
-                <Label className="text-zinc-300">Email</Label>
-                <Input
+                <Label htmlFor="count-email" className="text-zinc-300">Email</Label>
+                <Input id="count-email"
                   type="email"
                   autoComplete="off"
                   value={coEmail}
@@ -324,8 +324,8 @@ export function ControlledCountConsole({
                 />
               </div>
               <div>
-                <Label className="text-zinc-300">Password</Label>
-                <Input
+                <Label htmlFor="count-password" className="text-zinc-300">Password</Label>
+                <Input id="count-password"
                   type="password"
                   autoComplete="off"
                   value={coPassword}
