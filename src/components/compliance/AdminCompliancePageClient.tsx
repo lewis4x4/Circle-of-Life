@@ -348,13 +348,13 @@ export function AdminCompliancePageClient({
             <Tile
               title="Open deficiencies"
               value={snapLoading ? null : snapshot?.openDeficiencies ?? 0}
-              href="/admin/compliance/deficiencies/new"
+              href="#open-deficiencies"
               hoverColor="red"
             />
           </div>
         </KineticGrid>
 
-        <div className="space-y-4">
+        <div id="open-deficiencies" className="scroll-mt-24 space-y-4">
           <div className="flex items-center gap-3">
             <FileWarning className="h-6 w-6 text-primary" />
             <h2 className="text-xl font-semibold tracking-tight text-foreground">Open Deficiencies</h2>
