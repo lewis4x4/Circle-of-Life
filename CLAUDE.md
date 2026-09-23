@@ -63,7 +63,7 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 
 ### App Router shape
 - `src/app/` uses **route groups** to layer experiences without affecting the URL: `(admin)`, `(caregiver)`, `(med-tech)`, `(dietary)`, `(family)`, `(onboarding)`. Most operator surfaces live under `src/app/(admin)/admin/<segment>/`.
-- `next.config.ts` redirects bare `/<segment>` → `/admin/<segment>` for mirrored hubs. Do not add a top-level `/<segment>/page.tsx` if `(admin)/<segment>` exists — the redirect will collide. `check:admin-shell` runs in `build` to enforce this.
+- `next.config.ts` redirects bare `/<segment>` → `/admin/<segment>` for mirrored hubs. Do not add a top-level `/<segment>/page.tsx` if `(admin)/<segment>` exists — the redirect will collide. `check:admin-shell` runs in `build` to enforce this. The redirect list lives in `src/lib/routing/legacy-redirects.ts`; only `(admin)/admin/layout.tsx` mounts the admin shell, so a mirrored `(admin)/<segment>` missing from that list renders with no header or nav (COL-644). `src/lib/routing/route-shell-coverage.test.ts` fails on any such gap and on any unclassified top-level `src/app` folder.
 - A `v2` namespace under `(admin)/admin/v2/` is the design-system-composed surface (lint forbids direct primitive imports outside `design-preview/`).
 
 ### Design system
