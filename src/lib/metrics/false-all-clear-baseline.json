@@ -8,12 +8,6 @@
   "src/app/(admin)/admin/meetings/page.tsx": {
     "count-or-zero": 1
   },
-  "src/app/(admin)/admin/operations/missed/page.tsx": {
-    "all-clear-copy": 1
-  },
-  "src/app/(admin)/admin/operations/overdue/page.tsx": {
-    "all-clear-copy": 1
-  },
   "src/app/(admin)/admin/rounding/reports/page.tsx": {
     "silent-zero": 2
   },
@@ -102,9 +96,6 @@
   },
   "src/components/incidents/AdminIncidentDetailPageClient.tsx": {
     "all-clear-copy": 1
-  },
-  "src/components/operations/OperationsCalendarPage.tsx": {
-    "silent-zero": 1
   },
   "src/components/resident-intake/types.ts": {
     "count-or-zero": 1

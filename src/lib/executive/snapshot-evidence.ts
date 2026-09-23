@@ -333,13 +333,14 @@ export function billedRevenuePeriod(state: ExecutiveSnapshotState): string | nul
 export function billedRevenuePeriodLine(state: ExecutiveSnapshotState): string {
   const period = billedRevenuePeriod(state);
   if (!period) return "No billing period is recorded with this figure.";
-  return `Invoices dated ${period}.`;
+  return `Sent invoices dated ${period}.`;
 }
 
 /**
  * What the billed total counts, so a portfolio-wide zero is read as "nothing
- * was issued" rather than "billing was not looked at". Issued invoices only:
- * drafts and voided invoices are outside the figure by design.
+ * was sent" rather than "billing was not looked at". "Billed" means sent: the
+ * statuses in BILLED_INVOICE_STATUSES (`src/lib/billing/receivables.ts`).
+ * Drafts and voided invoices are outside the figure by design (COL-667).
  */
 export const BILLED_REVENUE_SCOPE_LINE =
-  "Counts issued invoices at every facility in scope. Draft and voided invoices are not included.";
+  "Billed means sent: invoices sent to a payer at every facility in scope. Drafts are not billed until they are sent; Billing lists them as not yet sent. Voided invoices are not included.";
