@@ -496,7 +496,7 @@ export function AdminResidentsPageClient({
         whenDatasetEmpty: {
           title: "No residents in this scope",
           description:
-            "Live resident roster returned no residents for the selected facility. Change facility scope or start a new admission from the pipeline.",
+            "Live resident roster returned no residents in this scope. Change facility scope or start a new admission from the pipeline.",
         },
         whenFiltersExcludeAll: {
           title: "No residents match the current filters",

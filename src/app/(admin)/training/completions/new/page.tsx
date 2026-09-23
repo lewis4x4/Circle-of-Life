@@ -27,6 +27,7 @@ import {
   trainingCompletionCertificatePath,
 } from "@/lib/training/competency-storage";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const MAX_CERT_PDF_BYTES = 15 * 1024 * 1024;
 
@@ -46,7 +47,7 @@ const DELIVERY: Database["public"]["Enums"]["training_delivery_method"][] = [
 ];
 
 function deliveryLabel(d: (typeof DELIVERY)[number]) {
-  return d.replace(/_/g, " ");
+  return enumLabel(d);
 }
 
 export default function AdminNewTrainingCompletionPage() {
@@ -291,8 +292,8 @@ export default function AdminNewTrainingCompletionPage() {
       </div>
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        RLS: only <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can insert
-        completion rows.
+        Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can log
+        completions..
       </p>
 
       {facilityReady ? (

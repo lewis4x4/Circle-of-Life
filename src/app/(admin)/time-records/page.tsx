@@ -309,9 +309,9 @@ export default function AdminTimeRecordsPage() {
         <header className="mb-8">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
-              Time & Attendance {pendingApproval > 0 && <></>}
-            </h2>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+              Time records
+            </h1>
           </div>
         </header>
 

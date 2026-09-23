@@ -297,7 +297,7 @@ export default function AdminTrainingNewDemonstrationPage() {
                   onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Baya or other competency certificate. Stored in org-scoped private Storage (PDF only, max 15 MB).
+                  Baya or other competency certificate. Stored privately for your organization (PDF only, max 15 MB).
                 </p>
               </div>
               <Button type="submit" disabled={submitBlocked}>

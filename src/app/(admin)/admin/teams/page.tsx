@@ -77,10 +77,10 @@ export default function AdminTeamSpacesPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-2 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <Users2 className="h-8 w-8 text-info shrink-0" aria-hidden />
               Team spaces
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Shared spaces for a department or project. Members can read pages shared into the
               space; the author still owns and edits each page.

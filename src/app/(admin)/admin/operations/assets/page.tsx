@@ -15,6 +15,7 @@ import { formatOperationsAssetsCardDescription } from "@/lib/operations/operatio
 import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
 import { assetSummaryStates } from "@/lib/operations/operations-metric-states";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type AssetRow = {
   id: string;
@@ -191,7 +192,7 @@ export default function OperationsAssetsPage() {
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
               {["generator", "aed", "fire_extinguisher", "sprinkler_system", "hood_suppression", "ac_unit", "elevator", "kitchen_equipment", "laundry_equipment", "furniture", "vehicle", "other"].map((option) => (
-                <option key={option} value={option}>{option.replace(/_/g, " ")}</option>
+                <option key={option} value={option}>{enumLabel(option)}</option>
               ))}
             </select>
           </Field>
@@ -241,7 +242,7 @@ export default function OperationsAssetsPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{asset.name}</h3>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-600">
-                      {asset.asset_type.replace(/_/g, " ")}
+                      {enumLabel(asset.asset_type)}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">

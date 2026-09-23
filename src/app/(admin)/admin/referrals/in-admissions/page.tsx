@@ -23,6 +23,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type LeadRow = Pick<
   Database["public"]["Tables"]["referral_leads"]["Row"],
@@ -63,7 +64,7 @@ type QueueRow = {
 type PhaseFilter = "all" | HandoffPhase;
 
 function formatStatus(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 export default function AdminReferralsInAdmissionsPage() {
@@ -301,7 +302,7 @@ export default function AdminReferralsInAdmissionsPage() {
           {phaseFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="bg-info/10 text-info border-info/30">
-                Phase filter: {phaseFilter === "complete" ? "stable" : phaseFilter.replace(/_/g, " ")}
+                Phase filter: {phaseFilter === "complete" ? "stable" : enumLabel(phaseFilter)}
               </Badge>
               <Link href="/admin/referrals/in-admissions" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
                 Clear phase filter

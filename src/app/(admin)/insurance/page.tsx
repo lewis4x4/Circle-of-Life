@@ -145,7 +145,7 @@ export default function AdminInsuranceHubPage() {
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Insurance & risk</h1>
             <p className="text-sm text-muted-foreground">
-              Corporate policies, renewals, claims, COIs, and workers&apos; compensation (Module 18).
+              Corporate policies, renewals, claims, COIs, and workers&apos; compensation.
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {authLoading
@@ -255,7 +255,7 @@ export default function AdminInsuranceHubPage() {
           <div className="p-4 sm:p-6 mb-4 rounded-lg border border-border bg-card shadow-sm">
             <h3 className="text-xl font-semibold text-foreground mb-1">Total cost of risk (TCoR)</h3>
             <p className="text-sm font-mono tracking-wide text-muted-foreground">
-              Module 18 Enhanced — rolling ~12 months. Premiums sum stated policy premiums for in-force policies
+              Rolling ~12 months. Premiums sum stated policy premiums for in-force policies
               overlapping the window; losses sum paid + reserve on claims whose loss date (or reported date) falls in the
               window. Operational estimate, not GAAP.
             </p>

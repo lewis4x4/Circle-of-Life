@@ -222,7 +222,7 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
             <h2 id="pay-period-heading" className="text-sm font-semibold">
               Pay period
             </h2>
-            <p className="text-xs text-muted-foreground">Frequency and the Monday the period starts on. Must match ADP (COL-357).</p>
+            <p className="text-xs text-muted-foreground">Frequency and the Monday the period starts on. Must match ADP.</p>
           </div>
           <div>
             <label htmlFor="pay-period-kind" className="text-xs font-medium text-muted-foreground">

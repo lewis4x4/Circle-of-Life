@@ -18,6 +18,7 @@ import {
   formatCaregiverResidentAcuity,
   formatCaregiverResidentMood,
 } from "@/lib/caregiver/resident-detail-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export default function CaregiverResidentQuickProfilePage() {
   const params = useParams<{ id: string }>();
@@ -122,7 +123,7 @@ export default function CaregiverResidentQuickProfilePage() {
               <h4 className="text-rose-300 font-semibold tracking-wide text-lg mb-1">Vital Sign Alert</h4>
               {vitalAlerts.map((a) => (
                 <p key={a.id} className="text-rose-200 mt-1 font-mono leading-relaxed">
-                  <span className="font-bold text-white capitalize">{a.vital_type.replace(/_/g, " ")}</span> is <span className="font-bold text-rose-300">{a.recorded_value}</span> — exceeds threshold <span className="font-bold">{a.threshold_value}</span> ({a.direction}). Notify nurse immediately.
+                  <span className="font-bold text-white capitalize">{enumLabel(a.vital_type)}</span> is <span className="font-bold text-rose-300">{a.recorded_value}</span> — exceeds threshold <span className="font-bold">{a.threshold_value}</span> ({a.direction}). Notify nurse immediately.
                 </p>
               ))}
             </div>

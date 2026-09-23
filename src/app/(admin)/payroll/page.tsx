@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
+import { enumLabel } from "@/lib/display/enum-label";
 type BatchRow = Database["public"]["Tables"]["payroll_export_batches"]["Row"];
 type PayrollBatchStatus = Database["public"]["Enums"]["payroll_export_batch_status"];
 
@@ -68,7 +69,7 @@ function buildPayrollBatchesCsv(rows: BatchRow[]): string {
 }
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function batchStatusTone(status: string): "muted" | "warning" | "danger" {
@@ -206,7 +207,7 @@ export default function AdminPayrollHubPage() {
           <div className="col-span-1 md:col-span-2 h-[180px]">
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Batches for external payroll systems. Idempotency enforced.</p>
+                 <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Batches for external payroll systems. Each batch exports once.</p>
                  <div className="flex w-full gap-2 justify-start lg:justify-end">
                    <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-medium uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
                      + New Batch

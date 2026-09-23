@@ -49,6 +49,7 @@ import type { Database } from "@/types/database";
 import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
 import { ADMIN_STAFFING_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 import { AdminEmptyState, AdminErrorState } from "@/components/common/admin-list-patterns";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type ComplianceFilter = "all" | "non_compliant" | "compliant";
 type WindowFilter = "all" | "24h";
@@ -356,9 +357,9 @@ export function AdminStaffingConsolePageClient({
             )}
           </div>
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-              Workforce Command
-            </h2>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+              Staffing alerts
+            </h1>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
               Operational staffing, schedule gaps, attendance events, and credential blockers for the selected scope.
             </p>
@@ -407,6 +408,7 @@ export function AdminStaffingConsolePageClient({
           </Link>
         </div>
       ) : null}
+
 
       <section className="grid gap-4 md:grid-cols-3" aria-label="Workforce status">
         <div className={panelClass}>
@@ -613,7 +615,7 @@ export function AdminStaffingConsolePageClient({
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline" className="capitalize">
-                            {row.event_type.replace(/_/g, " ")}
+                            {enumLabel(row.event_type)}
                           </Badge>
                           <span>{formatFacilityTimestampEt(row.occurred_at)} ET</span>
                         </div>
@@ -636,6 +638,7 @@ export function AdminStaffingConsolePageClient({
               </div>
               <Badge variant="secondary">Requisitions</Badge>
             </div>
+
 
             <div className="mt-4 grid gap-3">
               <label className="grid gap-1.5 text-sm font-medium">

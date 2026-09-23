@@ -148,7 +148,7 @@ export default function NewPurchaseOrderPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">PO header & line</CardTitle>
-            <CardDescription>PO numbers are allocated by year (org-scoped).</CardDescription>
+            <CardDescription>PO numbers run by year across your organization.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="max-w-lg space-y-4">

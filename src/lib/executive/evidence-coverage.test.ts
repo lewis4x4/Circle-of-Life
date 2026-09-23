@@ -7,6 +7,7 @@ import {
   coverageHeadline,
   coverageSummaryLine,
   noAlertsCopy,
+  openRoundingSignals,
   type CoverageInput,
 } from "./evidence-coverage";
 
@@ -329,6 +330,19 @@ describe("executive evidence coverage", () => {
     const empty = noAlertsCopy(rows);
     expect(empty.headline).toBe("No critical alerts recorded in the available data.");
     expect(empty.body).toContain("6 of 6 measures are not fully reported");
+  });
+
+  it("does not say 'no critical alerts' beside open rounding escalations (COL-649)", () => {
+    const rows = buildExecutiveCoverage(BASE);
+    const signals = openRoundingSignals([
+      { observed: true, openEscalations: 1000, heatBand: "critical" },
+      { observed: false, openEscalations: 0, heatBand: "stable" },
+    ]);
+    expect(signals).toEqual({ roundingEscalations: 1000, criticalFacilities: 1 });
+    const copy = noAlertsCopy(rows, signals);
+    expect(copy.headline).not.toMatch(/no critical alerts/i);
+    expect(copy.headline).toContain("not an all-clear");
+    expect(copy.body).toContain("1000 open rounding escalations and 1 facility in the critical rounding band");
   });
 
   it("gives every gap a destination that the page can actually open", () => {

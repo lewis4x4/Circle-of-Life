@@ -41,13 +41,15 @@ function createCountQueryMock(result: CountResult = { count: 0, error: null, dat
 }
 
 // from() order: 0 resident_medications, 1-2 emar, 3 medication_errors count,
-// 4 medication_errors linked incidents, 5 controlled, 6-7 emar, then 8 incidents
-// (issued after the linked ids resolve).
+// 4 medication_errors linked incidents, 5 controlled discrepancies, 6-7 emar,
+// 8 controlled counts on file, then 9 incidents (issued after the linked ids
+// resolve).
 const MED_ERROR_REPORTS_INDEX = 3;
 const MED_ERROR_LINKED_INDEX = 4;
 const CONTROLLED_QUERY_INDEX = 5;
-const MED_ERROR_INCIDENTS_INDEX = 8;
-const QUERY_COUNT = 9;
+const CONTROLLED_ON_FILE_INDEX = 8;
+const MED_ERROR_INCIDENTS_INDEX = 9;
+const QUERY_COUNT = 10;
 const FACILITY_ID = "00000000-0000-4000-8000-0000000000f1";
 
 function mockQueries(results: Partial<Record<number, CountResult>> = {}) {
@@ -167,6 +169,21 @@ describe("fetchNurseMedicationBrief controlled substance discrepancies", () => {
 
     expect(brief.controlledDiscrepancies).toBeNull();
     expect(brief.activeMedications).toBe(0);
+  });
+
+  it("counts controlled substance records on file and has no eMAR rate over zero scheduled doses (COL-649)", async () => {
+    const { tables } = mockQueries({
+      1: { count: 0, error: null },
+      2: { count: 0, error: null },
+      [CONTROLLED_ON_FILE_INDEX]: { count: 0, error: null },
+    });
+
+    const brief = await fetchNurseMedicationBrief(FACILITY_ID);
+
+    expect(tables[CONTROLLED_ON_FILE_INDEX]).toBe("controlled_substance_counts");
+    expect(brief.controlledCountsOnFile).toBe(0);
+    expect(brief.emarScheduledToday).toBe(0);
+    expect(brief.emarCompliancePct).toBeNull();
   });
 
   it("returns null for med errors and eMAR compliance when their queries error", async () => {

@@ -17,6 +17,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -32,9 +33,10 @@ import {
 import { buildMorningHuddlePrintHtml } from "@/lib/office/morning-huddle-print";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function humanize(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatEtTime(iso: string): string {
@@ -138,32 +140,32 @@ export default function AdminMorningBriefingPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <Sunrise className="h-8 w-8 text-warning shrink-0" aria-hidden />
               Morning huddle
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Per-facility daily briefing: overnight incidents, census moves, today&apos;s shift
               roster, open operations tasks, and medication flags — printable as a one-pager for
-              the stand-up meeting. Data is live and RLS-scoped; times are America/New_York.
+              the stand-up meeting. Data is live for the facilities you have access to; times are Eastern.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider"
-            disabled={!data}
-            onClick={printBriefing}
-          >
-            <Printer className="h-4 w-4" aria-hidden />
-            Print one-pager
-          </Button>
+          {facilityReady ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider"
+              disabled={!data}
+              onClick={printBriefing}
+            >
+              <Printer className="h-4 w-4" aria-hidden />
+              Print one-pager
+            </Button>
+          ) : null}
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — the morning huddle is a per-facility briefing.
-          </p>
+          <FacilityGateNotice reason="The morning huddle is one building's briefing: its overnight incidents, census moves, shift roster and med flags." />
         ) : null}
 
         {facilityReady && isLoading ? <AdminTableLoadingState /> : null}

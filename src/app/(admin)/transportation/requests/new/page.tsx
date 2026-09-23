@@ -225,7 +225,7 @@ export default function NewResidentTransportRequestPage() {
       <Card className="border-slate-200/80 dark:border-slate-800">
         <CardHeader>
           <CardTitle>Resident trip</CardTitle>
-          <CardDescription>Appointment transport — requested → scheduled → completed (spec 15).</CardDescription>
+          <CardDescription>Appointment transport — requested, then scheduled, then completed.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={(e) => void submit(e)}>

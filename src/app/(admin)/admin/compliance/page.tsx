@@ -22,7 +22,7 @@ export default async function AdminCompliancePage() {
   let initialSnapError: string | null = null;
 
   // The hub is per-facility; with no facility the tiles say so instead of
-  // showing organisation-wide counts under a facility-gate banner (COL-649).
+  // showing organisation-wide counts under a facility-picker banner (COL-649).
   if (isValidFacilityIdForQuery(initialFacilityId)) {
     try {
       const supabase = await createClient();

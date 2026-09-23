@@ -12,7 +12,7 @@ export function overviewTabOccupancyPctValue(
   occupiedBeds: number,
   denomBeds: number,
 ): number | null {
-  const censusLoaded = facilityPortfolioCensusLoaded(facility, bedsLoadedCount);
+  const censusLoaded = bedsLoadedCount > 0 ? facilityPortfolioCensusLoaded(facility, occupiedBeds) : facilityPortfolioCensusLoaded(facility);
   if (!censusLoaded) return null;
   return computePortfolioOccupancyPct(occupiedBeds, denomBeds);
 }

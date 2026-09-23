@@ -185,7 +185,7 @@ export default function ExecutiveStandupPage() {
                 <FileSpreadsheet className="h-3.5 w-3.5" />
                 Weekly stand up
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Executive Standup Pack</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Stand Up pack</h1>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
                 Live operating graph plus a frozen weekly standup pack. This replaces the current spreadsheet workflow with
                 governed metrics, draft generation, and board-ready exports.

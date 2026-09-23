@@ -55,7 +55,7 @@ export function Cockpit() {
           </h2>
           <p className="text-sm text-slate-400">
             {noShift
-              ? "No med-tech shift is open for you, so there is no med pass to show here. Clock in and work medications from the floor app."
+              ? "No med-tech shift is open for you, so there is no med pass to show here. Clocking in on the time clock opens your shift here; until then, work medications from the floor app."
               : error}
           </p>
           {noShift ? (

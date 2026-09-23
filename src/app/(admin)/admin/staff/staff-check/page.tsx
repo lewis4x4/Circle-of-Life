@@ -59,9 +59,10 @@ export default async function StaffCheckPage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-      <h1 className="text-lg font-medium text-foreground">Staff check</h1>
+      {/* The client renders the page's one h1 (COL-658: this duplicated it). */}
       <FacilityGate
         facilityId={facilityId}
+        title="Staff check"
         reason="A staff check walks one building's roster against who can sign in there, so it runs for one facility at a time."
       >
         <StaffCheckClient

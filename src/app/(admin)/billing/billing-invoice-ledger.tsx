@@ -375,7 +375,7 @@ function BillingInvoiceLedgerInner({
   layout = "standard",
   initialCohortResidentCount = 0,
   cardTitle = "Invoice ledger",
-  cardDescription = "Open invoices and balances from the billing schema (RLS-scoped).",
+  cardDescription = "Open invoices and balances for the facilities you have access to.",
   residentIdFilter = null,
   initialRows,
   initialError,
@@ -2181,7 +2181,7 @@ function BillingInvoiceLedgerInner({
                     <Link href="/admin/billing/settings" className="text-primary underline-offset-4 hover:underline">
                       Billing settings
                     </Link>{" "}
-                    explains what is available in this pilot build.
+                    explains what is available today.
                   </p>
                 </div>
               </div>

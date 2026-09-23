@@ -192,9 +192,9 @@ export function AdminSchedulesPageClient({
         <header className="mb-8">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
               Schedule Engine {draftCount > 0 && <></>}
-            </h2>
+            </h1>
           </div>
         </header>
 

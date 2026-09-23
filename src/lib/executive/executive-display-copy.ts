@@ -1,3 +1,5 @@
+import { enumLabel } from "@/lib/display/enum-label";
+
 /**
  * Quiet Operator copy for executive surfaces when KPI/board metrics are absent.
  * Copy reflects real data gaps — never fabricates occupancy, revenue, or confidence.
@@ -108,12 +110,12 @@ export function formatExecutiveFacilityCensusStripLine(census: ExecutiveFacility
 
 export function formatExecutivePacketStatus(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY;
-  return value;
+  return enumLabel(value);
 }
 
 export function formatExecutiveConfidenceBand(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return EXECUTIVE_NO_CONFIDENCE_POSTED_COPY;
-  return value;
+  return enumLabel(value);
 }
 
 export function formatExecutiveLeagueScore(value: number | null | undefined): string {

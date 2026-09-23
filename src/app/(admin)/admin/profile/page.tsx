@@ -135,7 +135,9 @@ export default function AdminProfilePage() {
           <h1
             ref={headingRef}
             tabIndex={-1}
-            className="text-2xl font-semibold tracking-tight text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+            // Focus lands here for screen readers on arrival; a non-interactive
+            // heading draws no focus ring (COL-658).
+            className="text-2xl font-semibold tracking-tight text-foreground outline-none"
           >
             My profile
           </h1>

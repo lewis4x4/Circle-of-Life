@@ -226,8 +226,8 @@ export default function AdminNewInserviceSessionPage() {
       </div>
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        RLS: only <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can create
-        sessions.
+        Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can create
+        sessions..
       </p>
 
       {facilityReady ? (
