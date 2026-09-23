@@ -49,7 +49,7 @@ const DISCHARGE_TYPE_HELPER_INLINE = DISCHARGE_TYPE_OPTIONS.map((o) => o.label).
 
 const ACTIVE_DRAFT_STATUSES = ["draft", "pharmacist_review"] as const;
 
-const MED_REC_QUEUE_PATH = "/pipeline/discharge-management";
+const MED_REC_QUEUE_PATH = "/admin/discharge";
 
 const DRAFTS_PANEL_GENERIC_ERROR = "Couldn't load in-progress drafts. Refresh to try again.";
 const CREATE_DRAFT_GENERIC_ERROR = "Couldn't create this draft. Refresh and try again.";

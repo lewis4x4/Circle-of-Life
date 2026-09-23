@@ -1,13 +1,14 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
 import { describe, expect, it } from "vitest";
 
-const source = readFileSync(path.join(process.cwd(), "next.config.ts"), "utf8");
+import { ADMIN_ALIAS_SEGMENTS, LEGACY_REDIRECTS } from "@/lib/routing/legacy-redirects";
 
 describe("family-messages short URL", () => {
   it("redirects /family-messages to the admin hub like other mirrored segments", () => {
-    expect(source).toContain('"family-messages"');
-    expect(source).toContain("destination: `/admin/${seg}`");
+    expect(ADMIN_ALIAS_SEGMENTS).toContain("family-messages");
+    expect(LEGACY_REDIRECTS).toContainEqual({
+      source: "/family-messages",
+      destination: "/admin/family-messages",
+      permanent: true,
+    });
   });
 });
